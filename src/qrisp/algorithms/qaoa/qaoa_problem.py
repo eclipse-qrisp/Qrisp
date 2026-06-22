@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,22 +17,20 @@
 
 import time
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp import QuantumArray, h, x
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
-
-import jax
-import jax.numpy as jnp
-from qrisp.jasp import check_for_tracing_mode, sample, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, sample
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
 class QAOAProblem:
-    r"""
-    Central structure to facilitate treatment of QAOA problems.
+    r"""Central structure to facilitate treatment of QAOA problems.
 
     This class encapsulates the cost operator, mixer operator, and classical cost function for a specific QAOA problem instance. It also provides methods to set the initial state preparation function, classical cost post-processing function, and optimizer for the problem.
 
@@ -84,9 +81,7 @@ class QAOAProblem:
 
     """
 
-    def __init__(
-        self, cost_operator, mixer, cl_cost_function, init_function=None, callback=False
-    ):
+    def __init__(self, cost_operator, mixer, cl_cost_function, init_function=None, callback=False):
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
@@ -98,27 +93,22 @@ class QAOAProblem:
         self.optimization_costs = []
 
     def set_callback(self):
-        """
-        Sets ``callback=True`` for saving intermediate results.
-
-        """
-
+        """Sets ``callback=True`` for saving intermediate results."""
         self.callback = True
 
     def set_init_function(self, init_function):
-        """
-        Set the initial state preparation function for the QAOA problem.
+        """Set the initial state preparation function for the QAOA problem.
 
         Parameters
         ----------
         init_function : function
             The initial state preparation function for the specific QAOA problem instance.
+
         """
         self.init_function = init_function
 
     def computeParams(self, p, dt):
-        """
-        Compute the angle parameters gamma and beta based on the given inputs. Used for the TQA warm starting the initial parameters for QAOA.
+        """Compute the angle parameters gamma and beta based on the given inputs. Used for the TQA warm starting the initial parameters for QAOA.
 
         Parameters
         ----------
@@ -131,8 +121,8 @@ class QAOAProblem:
         -------
         np.array
             A concatenated numpy array of gamma and beta values.
-        """
 
+        """
         if check_for_tracing_mode():
             import jax.numpy as jnp
         else:
@@ -144,8 +134,7 @@ class QAOAProblem:
         return jnp.concatenate((gamma, beta))
 
     def compile_circuit(self, qarg, depth, init_type="random"):
-        """
-        Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
+        r"""Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
 
         Parameters
         ----------
@@ -168,7 +157,6 @@ class QAOAProblem:
 
         Examples
         --------
-
         We create a MaxCut instance and compile the circuit:
 
 
@@ -258,8 +246,8 @@ class QAOAProblem:
         «             ┌─┴─┐├──────────────┤
         «qarg_dupl.2: ┤ X ├┤ Rx(2*beta_4) ├
         «             └───┘└──────────────┘
-        """
 
+        """
         temp = list(qarg.qs.data)
 
         # Define QAOA angle parameters gamma and beta for QAOA circuit
@@ -270,9 +258,7 @@ class QAOAProblem:
         # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
             self.init_function(qarg)
-        elif (
-            init_type == "tqa"
-        ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+        elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
             x(qarg)
             h(qarg)
         else:
@@ -295,11 +281,8 @@ class QAOAProblem:
 
         return compiled_qc, gamma + beta
 
-    def optimization_routine(
-        self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options
-    ):
-        """
-        Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
+    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options):
+        """Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
         Parameters
         ----------
@@ -329,14 +312,12 @@ class QAOAProblem:
             The optimized parameters of the problem instance.
         float or jax.Array
             The expectation value of the classical cost function for the optimized parameters.
+
         """
-
         if check_for_tracing_mode():
-
             # Define optimization wrapper function to be minimized using QAOA
             def optimization_wrapper(theta, state_prep, mes_kwargs):
-                """
-                Wrapper function for the optimization method used in QAOA.
+                """Wrapper function for the optimization method used in QAOA.
 
                 This function calculates the value of the classical cost function.
 
@@ -356,8 +337,8 @@ class QAOAProblem:
                 -------
                 float
                     The expected value of the classical cost function.
-                """
 
+                """
                 res_sample = sample(state_prep, shots=mes_kwargs["shots"])(theta)
 
                 cl_cost = self.cl_cost_function(res_sample)
@@ -365,8 +346,7 @@ class QAOAProblem:
                 return cl_cost
 
             def tqa_angles(p, state_prep, mes_kwargs, steps=10):
-                """
-                Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
+                """Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
 
                 The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps.
                 Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams`
@@ -389,8 +369,8 @@ class QAOAProblem:
                 -------
                 jax.Array
                     A concatenated jax.numpy array of optimal gamma and beta values.
-                """
 
+                """
                 dt = jnp.linspace(0.1, 1, steps)
 
                 energy = jnp.array([0.0] * steps)
@@ -404,11 +384,9 @@ class QAOAProblem:
                 return self.computeParams(p, dt_max)
 
         else:
-
             # Define optimization wrapper function to be minimized using QAOA
             def optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs):
-                """
-                Wrapper function for the optimization method used in QAOA.
+                """Wrapper function for the optimization method used in QAOA.
 
                 This function calculates the value of the classical cost function.
 
@@ -429,12 +407,11 @@ class QAOAProblem:
                 -------
                 float
                     The expected value of the classical cost function.
+
                 """
                 subs_dic = {symbols[i]: theta[i] for i in range(len(symbols))}
 
-                res_dic = qarg.get_measurement(
-                    subs_dic=subs_dic, precompiled_qc=qc, **mes_kwargs
-                )
+                res_dic = qarg.get_measurement(subs_dic=subs_dic, precompiled_qc=qc, **mes_kwargs)
 
                 cl_cost = self.cl_cost_function(res_dic)
 
@@ -444,8 +421,7 @@ class QAOAProblem:
                 return cl_cost
 
             def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10):
-                """
-                Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
+                """Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
 
                 The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps.
                 Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams`
@@ -472,8 +448,8 @@ class QAOAProblem:
                 -------
                 np.array
                     A concatenated numpy array of optimal gamma and beta values.
-                """
 
+                """
                 dt = np.linspace(0.1, 1, steps)
 
                 energy = []
@@ -495,9 +471,7 @@ class QAOAProblem:
                 # Prepare initial state - if no init_function is specified, prepare uniform superposition
                 if self.init_function is not None:
                     self.init_function(qarg)
-                elif (
-                    init_type == "tqa"
-                ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+                elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                     x(qarg)
                     h(qarg)
                 else:
@@ -511,20 +485,16 @@ class QAOAProblem:
                 return qarg
 
         else:
-
             qarg = qarg_prep()
             compiled_qc, symbols = self.compile_circuit(qarg, depth, init_type)
 
         # Initialization for optimization parameters
         if init_point is None:
-
             if init_type == "random":
                 # Random initialization
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
-                    init_point = (
-                        jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi / 2
-                    )
+                    init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi / 2
                 else:
                     init_point = np.random.rand(2 * depth) * np.pi / 2
 
@@ -533,17 +503,12 @@ class QAOAProblem:
                 if check_for_tracing_mode():
                     init_point = tqa_angles(depth, state_prep, mes_kwargs)
                 else:
-                    init_point = tqa_angles(
-                        depth, qarg, compiled_qc, symbols, mes_kwargs
-                    )
+                    init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
 
             else:
-                raise Exception(
-                    f"Parameter initialization method {init_type} is not available."
-                )
+                raise Exception(f"Parameter initialization method {init_type} is not available.")
 
         if check_for_tracing_mode():
-
             res_sample = jasp_minimize(
                 optimization_wrapper,
                 init_point,
@@ -558,7 +523,6 @@ class QAOAProblem:
             return res_sample.x, res_sample.fun
 
         else:
-
             res_sample = minimize(
                 optimization_wrapper,
                 init_point,
@@ -580,8 +544,7 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        """
-        Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
+        r"""Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
 
         Parameters
@@ -614,28 +577,27 @@ class QAOAProblem:
         -------
         dict or jax.Array
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
-        """
 
+        """
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumArray):
+            template = qarg.qtype.template()
+            shape = qarg.shape
+
+            def qarg_prep():
+                return QuantumArray(qtype=template.construct(), shape=shape)
+
         else:
-            if isinstance(qarg, QuantumArray):
-                template = qarg.qtype.template()
-                shape = qarg.shape
+            template = qarg.template()
 
-                def qarg_prep():
-                    return QuantumArray(qtype=template.construct(), shape=shape)
-
-            else:
-                template = qarg.template()
-
-                def qarg_prep():
-                    return template.construct()
+            def qarg_prep():
+                return template.construct()
 
         # Set default options
         options["maxiter"] = max_iter
 
-        if not "shots" in mes_kwargs:
+        if "shots" not in mes_kwargs:
             mes_kwargs["shots"] = 5000
 
         # Delete callback
@@ -653,9 +615,7 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg)
-            elif (
-                init_type == "tqa"
-            ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg)
                 h(qarg)
             else:
@@ -688,8 +648,7 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""
-        This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
+        r"""This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
         such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
 
         .. math::
@@ -731,7 +690,6 @@ class QAOAProblem:
 
         Examples
         --------
-
         We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a ciruit with the :ref:`QAOAProblem` instance.
 
         ::
@@ -767,27 +725,25 @@ class QAOAProblem:
                 print([index for index, value in enumerate(res) if value == '1'], prob, cl_cost({res : 1}))
 
         """
-
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumArray):
+            template = qarg.qtype.template()
+            shape = qarg.shape
+
+            def qarg_prep():
+                return QuantumArray(qtype=template.construct(), shape=shape)
+
         else:
-            if isinstance(qarg, QuantumArray):
-                template = qarg.qtype.template()
-                shape = qarg.shape
+            template = qarg.template()
 
-                def qarg_prep():
-                    return QuantumArray(qtype=template.construct(), shape=shape)
-
-            else:
-                template = qarg.template()
-
-                def qarg_prep():
-                    return template.construct()
+            def qarg_prep():
+                return template.construct()
 
         # Set default options
         options["maxiter"] = max_iter
 
-        if not "shots" in mes_kwargs:
+        if "shots" not in mes_kwargs:
             mes_kwargs["shots"] = 5000
 
         opt_theta, opt_res = self.optimization_routine(
@@ -798,16 +754,13 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg_gen)
-            elif (
-                init_type == "tqa"
-            ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg_gen)
                 h(qarg_gen)
             else:
                 h(qarg_gen)
 
             for i in jrange(depth):
-
                 self.cost_operator(qarg_gen, opt_theta[i])
                 self.mixer(qarg_gen, opt_theta[i + depth])
 
@@ -826,8 +779,7 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        """
-        This method enables convenient data collection regarding performance of the implementation.
+        r"""This method enables convenient data collection regarding performance of the implementation.
 
         Parameters
         ----------
@@ -865,7 +817,6 @@ class QAOAProblem:
 
         Examples
         --------
-
         We create a MaxCut instance and benchmark several parameters
 
         ::
@@ -900,22 +851,20 @@ class QAOAProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
-
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumArray):
+            template = qarg.qtype.template()
+            shape = qarg.shape
+
+            def qarg_prep():
+                return QuantumArray(qtype=template.construct(), shape=shape)
+
         else:
-            if isinstance(qarg, QuantumArray):
-                template = qarg.qtype.template()
-                shape = qarg.shape
+            template = qarg.template()
 
-                def qarg_prep():
-                    return QuantumArray(qtype=template.construct(), shape=shape)
-
-            else:
-                template = qarg.template()
-
-                def qarg_prep():
-                    return template.construct()
+            def qarg_prep():
+                return template.construct()
 
         data_dict = {
             "layer_depth": [],
@@ -932,7 +881,6 @@ class QAOAProblem:
             for s in shot_range:
                 for it in iter_range:
                     for k in range(repetitions):
-
                         start_time = time.time()
 
                         temp_mes_kwargs = dict(mes_kwargs)
@@ -961,17 +909,11 @@ class QAOAProblem:
         return QAOABenchmark(data_dict, optimal_solution, self.cl_cost_function)
 
     def visualize_cost(self):
-        """
-        Visualizes the cost during the optimization process. Can only be used if ``callback=True``.
-
-        """
-
+        """Visualizes the cost during the optimization process. Can only be used if ``callback=True``."""
         import matplotlib.pyplot as plt
 
         if not self.callback:
-            raise Exception(
-                "Visualization can only be performed for a QAOA instance with callback=True"
-            )
+            raise Exception("Visualization can only be performed for a QAOA instance with callback=True")
 
         x = list(range(len(self.optimization_costs)))
         y = self.optimization_costs

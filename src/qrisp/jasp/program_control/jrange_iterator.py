@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,8 @@
 """
 
 import jax.numpy as jnp
-from jax._src.array import ArrayImpl
 from jax import jit
+from jax._src.array import ArrayImpl
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
@@ -44,7 +43,6 @@ JRANGE_MARKER_NAME = "_jrange_marker"
 
 
 class JRangeIterator:
-
     def __init__(self, *args):
 
         # Differentiate between the 2 possible cases of input signature
@@ -76,8 +74,6 @@ class JRangeIterator:
         # We capture the loop semantics using the JIterationEnvironment.
         # The actual jax loop primitive is then compiled in
         # JIterationEnvironment.jcompile
-        from qrisp.jasp import TracingQuantumSession
-        from qrisp import reset
 
         self.iteration += 1
         if self.iteration == 1:
@@ -89,7 +85,6 @@ class JRangeIterator:
             return self.loop_index
 
         elif self.iteration == 2:
-
             # Perform the incrementation (step size 1)
             self.loop_index += 1
 
@@ -105,7 +100,6 @@ class JRangeIterator:
             return self.loop_index
 
         elif self.iteration == 3:
-
             self.loop_index += 1
 
             # Marker for the second environment, right before __exit__.
@@ -116,8 +110,7 @@ class JRangeIterator:
 
 
 def jrange(*args):
-    """
-    Performs a loop with a dynamic bound. Similar to the Python native ``range``,
+    """Performs a loop with a dynamic bound. Similar to the Python native ``range``,
     this iterator can receive one argument (stop) or two arguments (start, stop).
     Step size is always 1.
 
@@ -143,7 +136,6 @@ def jrange(*args):
 
     Examples
     --------
-
     We construct a function that encodes an integer into an arbitrarily sized
     :ref:`QuantumVariable`:
 
@@ -176,7 +168,7 @@ def jrange(*args):
     9
     >>> jaspr(5, 9)
     10
-    
+
     We now give examples that violate the above rules (ie. no carries and changing
     iteration behavior).
 
@@ -358,16 +350,15 @@ def jrange(*args):
     iterates from ``qv.size - start - 1`` down to ``start``. JASP handles
     the reversed iteration and proper daggers automatically, including at
     higher nesting levels.
-    """
 
-    if len(args) not in (1, 2): 
+    """
+    if len(args) not in (1, 2):
         raise TypeError(
             f"jrange takes 1 or 2 arguments ({len(args)} given). "
             "The step argument of jrange has been removed "
             "in version 0.9. Use arithmetic on the loop variable to achieve "
             "stepping behavior."
         )
-
 
     new_args = []
     if check_for_tracing_mode():
@@ -406,6 +397,7 @@ def make_tracer(x):
     ------
     Exception
         If the type of *x* is not supported.
+
     """
     if isinstance(x, bool):
         dtype = jnp.bool
@@ -436,6 +428,7 @@ def jlen(x):
     -------
     int
         ``len(x)`` if *x* is a list, otherwise ``x.size``.
+
     """
     if isinstance(x, list):
         return len(x)

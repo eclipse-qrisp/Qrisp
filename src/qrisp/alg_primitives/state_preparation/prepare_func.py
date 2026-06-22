@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -42,8 +41,7 @@ def prepare(
     reversed: bool = False,
     method: str = "auto",
 ):
-    r"""
-    Prepare a quantum state on ``qv`` from a target amplitude vector.
+    r"""Prepare a quantum state on ``qv`` from a target amplitude vector.
 
     Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` (corresponding to ``target_array``),
     this routine prepares the quantum state:
@@ -93,7 +91,6 @@ def prepare(
 
     Examples
     --------
-
     In this example, we create a :ref:`QuantumFloat` and prepare the normalized state
     $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
 
@@ -170,7 +167,6 @@ def prepare(
         a state with 64 or more qubits using the ``qswitch`` method.
 
     """
-
     if method not in {"auto", "qiskit", "qswitch"}:
         raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'")
 
@@ -179,10 +175,7 @@ def prepare(
     if not is_tracing:
         expected = 1 << qv.size
         if target_array.size != expected:
-            raise ValueError(
-                f"Statevector length must be {expected} for {qv.size} qubits, "
-                f"got {target_array.size}."
-            )
+            raise ValueError(f"Statevector length must be {expected} for {qv.size} qubits, got {target_array.size}.")
         target_array = np.asarray(target_array)
         norm = np.linalg.norm(target_array)
         if np.isclose(norm, 0.0):

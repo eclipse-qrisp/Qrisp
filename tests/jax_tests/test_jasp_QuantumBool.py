@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,19 @@
 ********************************************************************************
 """
 
+
 def test_jasp_QuantumBool():
 
     from qrisp import QuantumBool, measure
     from qrisp.jasp import jaspify
 
     @jaspify
-    def main(i,j):
+    def main(i, j):
         a = QuantumBool()
         a[:] = i
         b = QuantumBool()
         b[:] = j
-    
+
         return measure(a), measure(b)
 
     res = main(True, False)

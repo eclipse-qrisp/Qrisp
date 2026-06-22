@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,11 +18,13 @@
 
 from __future__ import annotations
 
-from jax.numpy import bitwise_count
-import jax.numpy as jnp
-from qrisp import QuantumVariable, x, cx, mcx, h, measure, reset, z
-from qrisp.environments import control, custom_control
 from typing import TYPE_CHECKING
+
+import jax.numpy as jnp
+from jax.numpy import bitwise_count
+
+from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
+from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
 
@@ -272,8 +273,9 @@ def carry_venting_adder(
     num_vents : int
         Number of vents written to the bitmask (helps callers reconstruct
         the vent layout without knowing internal bit-indexing details).
+
     """
-    from qrisp.jasp import jrange, jlen, q_fori_loop
+    from qrisp.jasp import jlen, jrange, q_fori_loop
 
     num_qubits = jlen(target)
 
@@ -405,9 +407,7 @@ def carry_venting_adder(
     def write_final_carry_to_msb(target, clean_anc, ventmask, carry_xor_cnt):
         last_i = num_qubits - 2
         d_last = _extract_bit(d, last_i)
-        current_carry = clean_anc[
-            num_main % 2
-        ]  # carry lives in the alternator that didn't just vent
+        current_carry = clean_anc[num_main % 2]  # carry lives in the alternator that didn't just vent
 
         # Correction: X^{d_{last_i-1}} on current_carry to account for d's effect on
         # the previous step's carry computation.
@@ -425,9 +425,7 @@ def carry_venting_adder(
 
         # Full MCX-based last block: write the carry into target[n-1].
         with control(num_qubits > 3):
-            bit_inverted_mcx(
-                current_carry, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl
-            )
+            bit_inverted_mcx(current_carry, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
             cx(current_carry, target[last_i])
 
         # Fused carry-xor: write the last carry into the next unwritten slot.
@@ -524,7 +522,7 @@ def carry_xor_block(
     Steps 3-4 use parity-checking gates because the dirty workspace stores
     carries differently from the clean ancilla chain.
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     num_dirty_qubits = jlen(dirty_ancillas)
 
@@ -545,9 +543,7 @@ def carry_xor_block(
     for j in jrange(num_dirty_qubits - 1):
         i = (num_dirty_qubits - 1) - j
         bit_i = _extract_bit(d, i)
-        bit_inverted_mcx(
-            target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i, ctrl=ctrl
-        )
+        bit_inverted_mcx(target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i, ctrl=ctrl)
 
     # Flip each dirty qubit if the addend bit is 1
     for i in jrange(num_dirty_qubits):
@@ -573,9 +569,7 @@ def carry_xor_block(
     for j in jrange(num_dirty_qubits - 1):
         i = j + 1
         bit_i = _extract_bit(d, i)
-        bit_inverted_zz_zz_mcx(
-            dirty_ancillas[i - 1], target[i], dirty_ancillas[i], bit_i, ctrl=ctrl
-        )
+        bit_inverted_zz_zz_mcx(dirty_ancillas[i - 1], target[i], dirty_ancillas[i], bit_i, ctrl=ctrl)
 
 
 def dirty_ancillae_adder(
@@ -602,7 +596,7 @@ def dirty_ancillae_adder(
           that fixes the Z-phase from the vented measurements and returns
           the dirty qubits to all zeros.
 
-     Parameters
+    Parameters
     ----------
     target : QuantumVariable
         Target register, little-endian (index 0 = LSB). Modified in place.
@@ -619,8 +613,9 @@ def dirty_ancillae_adder(
     -------
     int
         Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.
+
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     num_targets = jlen(target)
 
@@ -649,9 +644,7 @@ def dirty_ancillae_adder(
     # XOR excess vent bits (beyond num_dirty) into the last dirty slot's
     # correction so their Z-phase errors are not left uncorrected.
     excess = ventmask >> num_dirty
-    ventmask_fixed = (ventmask & ((1 << num_dirty) - 1)) ^ (
-        (bitwise_count(excess) & 1) << (num_dirty - 1)
-    )
+    ventmask_fixed = (ventmask & ((1 << num_dirty) - 1)) ^ ((bitwise_count(excess) & 1) << (num_dirty - 1))
 
     # CZ pass 1: correct Z-phases using ventmask (excess XORed into last slot)
     for k in jrange(num_dirty):
@@ -773,8 +766,9 @@ def gidney_cq_venting_adder(
         result = main()
         # result is 15 (10 + 5 = 15)
         # when ctrl is not provided, target stays unchanged
+
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     if isinstance(d, (QuantumVariable, list)):
         raise TypeError("The first argument must be a classical integer.")
@@ -782,9 +776,7 @@ def gidney_cq_venting_adder(
         raise TypeError("The second argument must be a QuantumVariable.")
 
     if not check_for_tracing_mode():
-        raise RuntimeError(
-            "The Gidney Classical-Quantum adder does not work in standard python execution mode."
-        )
+        raise RuntimeError("The Gidney Classical-Quantum adder does not work in standard python execution mode.")
 
     from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
     from qrisp.jasp.program_control.prefix_control import q_cond
@@ -830,7 +822,6 @@ def gidney_cq_venting_adder(
         corrected by a CZ sandwich with two carry_xor passes (Fig. 3).
         n_half, d_lo, and d_hi are closed over from the outer scope.
         """
-
         clean0 = clean_anc[0]  # mid-carry ancilla (clean0 in paper notation)
 
         # Step 1: Place clean0 into target[n_half].
@@ -844,9 +835,7 @@ def gidney_cq_venting_adder(
         # Step 2: Vented addition on bottom half (Fig. 2).
         # carry_venting_adder vents carries in the X-basis and returns
         # an integer ventmask whose k-th bit holds the k-th vent outcome.
-        ventmask_lo, _ = carry_venting_adder(
-            d_lo, target[: n_half + 1], clean_anc[1:], c_in=c_in, ctrl=ctrl
-        )
+        ventmask_lo, _ = carry_venting_adder(d_lo, target[: n_half + 1], clean_anc[1:], c_in=c_in, ctrl=ctrl)
 
         # Step 3: Swap clean0 back out — clean0 now holds the carry into
         # the top half (the carry out of the bottom half).
@@ -858,9 +847,13 @@ def gidney_cq_venting_adder(
         # target[n_half:] is the top half with clean0 as carry-in.
         # target[:max(1, n-n_half-2)] are borrowed as dirty workspace.
         dirty_ancillae_adder(
-            d_hi, target[n_half:],
+            d_hi,
+            target[n_half:],
             dirty_ancillas=target[: jnp.maximum(1, jlen(target) - n_half - 2)],
-            ancilla=clean_anc[1:], c_in=clean0, ctrl=ctrl, c_out=c_out,
+            ancilla=clean_anc[1:],
+            c_in=clean0,
+            ctrl=ctrl,
+            c_out=c_out,
         )
 
         # Step 5: MX measurement on clean0 (X-basis: H then Z-measurement).
@@ -873,8 +866,7 @@ def gidney_cq_venting_adder(
         ventmask_lo_mask = (1 << (n_half - 1)) - 1
         high_vent_bits = ventmask_lo >> (n_half - 1)
         full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
-            ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64)
-            << (n_half - 1)
+            ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64) << (n_half - 1)
         )
 
         # Step 6: Phase correction for bottom half vents (CZ sandwich +
@@ -913,5 +905,3 @@ def gidney_cq_venting_adder(
     #   internal q_cond creates nested tracing sessions that interfere.
     # n >= 6 → split_path  (split-half carry-venting, faithful to the paper)
     q_cond(num_targets < 6, gidney_path, split_path, target, clean_anc)
-
-    return None

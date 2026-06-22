@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,11 +18,12 @@
 from __future__ import annotations
 
 import functools
+
 import numpy as np
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 # The gray-synthesis Toffoli circuit is built lazily (on first call) rather than
@@ -76,12 +76,9 @@ def is_toffoli(op) -> bool:
     >>>
     >>> is_toffoli(qc.data[0].op)
     True
+
     """
-    return (
-        isinstance(op, ControlledOperation)
-        and len(op.controls) == 2
-        and op.base_operation.name == "x"
-    )
+    return isinstance(op, ControlledOperation) and len(op.controls) == 2 and op.base_operation.name == "x"
 
 
 @CircuitPass
@@ -113,7 +110,6 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-
     We showcase the distinction in Toffoli decompositions.
 
     >>> from qrisp import QuantumCircuit, PassManager
@@ -121,9 +117,9 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     >>> qc = QuantumCircuit(3)
     >>> qc.ccx(0, 1, 2)
     >>> print(qc)
-    <BLANKLINE>            
+    <BLANKLINE>
     qb_95: ──■──
-             │  
+             │
     qb_96: ──■──
            ┌─┴─┐
     qb_97: ┤ X ├
@@ -133,7 +129,7 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     >>> pm_0 += decompose()
     >>> decomposed_qc = pm_0.run(qc)
     >>> print(decomposed_qc)
-           ┌─────┐                                                 
+           ┌─────┐
     qb_95: ┤ Tdg ├───────■─────────■────■───────────────────────■──
            ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
     qb_96: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
@@ -144,23 +140,24 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     While this implementation has only a T-depth of 4, the CX gates
     essentially "cycle" through the connectivity requirements. On
     a linear chain connectivity, several swaps would be required.
-    
+
     >>> pm_1 = PassManager()
     >>> pm_1 += gray_synth_toffoli
     >>> pm_1 += decompose()
     >>> optimized_qc = pm_1.run(qc)
     >>> print(optimized_qc)
-           ┌───┐                                                  ┌────────┐     
+           ┌───┐                                                  ┌────────┐
     qb_95: ┤ T ├───────────────────■─────────────────────■────■───┤ gphase ├──■──
            ├───┤                   │                     │  ┌─┴─┐┌┴────────┤┌─┴─┐
     qb_96: ┤ T ├───────■───────────┼─────────■───────────┼──┤ X ├┤ P(-π/4) ├┤ X ├
            ├───┤┌───┐┌─┴─┐┌─────┐┌─┴─┐┌───┐┌─┴─┐┌─────┐┌─┴─┐├───┤└─────────┘└───┘
     qb_97: ┤ H ├┤ T ├┤ X ├┤ Tdg ├┤ X ├┤ T ├┤ X ├┤ Tdg ├┤ X ├┤ H ├────────────────
-           └───┘└───┘└───┘└─────┘└───┘└───┘└───┘└─────┘└───┘└───┘      
-    
+           └───┘└───┘└───┘└─────┘└───┘└───┘└───┘└─────┘└───┘└───┘
+
     This implementation has T-depth 5 but the first 4 CX gates can be implemented
-    swap-free on a linear chain connectivity. After this, a single SWAP (that can 
+    swap-free on a linear chain connectivity. After this, a single SWAP (that can
     be fused with one of the CX) is suffificient to execute the remaining CX.
+
     """
     qc_new = qc.clearcopy()
 
@@ -172,6 +169,7 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
             # from qrisp.core, which is not yet available when qrisp.circuit.passes
             # is first loaded.
             from qrisp.alg_primitives.mcx_algs import ctrl_state_wrap
+
             assert isinstance(op, ControlledOperation)
             new_op = op.copy()
             new_op.definition = ctrl_state_wrap(_get_gray_toffoli_qc(), op.ctrl_state)

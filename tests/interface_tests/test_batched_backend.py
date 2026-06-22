@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -309,9 +308,7 @@ def test_batched_measurement_emits_deprecation_warning():
     a = QuantumFloat(3)
     a[:] = 7
 
-    with pytest.warns(
-        QrispDeprecationWarning, match="batched_measurement is deprecated"
-    ):
+    with pytest.warns(QrispDeprecationWarning, match="batched_measurement is deprecated"):
         batched_measurement([a], backend=bb)
 
 
@@ -512,7 +509,6 @@ def test_dispatch_timeout_propagates_to_job_result():
 
 def test_dispatch_mixed_shots_uses_single_run_async_call():
     """dispatch() must issue exactly one run_async call even when circuits use different shot counts."""
-
     counting = CountingWrapper(QrispSimulatorBackend())
     bb = counting.batched()
 
@@ -538,7 +534,6 @@ def test_dispatch_mixed_shots_uses_single_run_async_call():
 
 def test_dispatch_mixed_shots_passes_shots_list_to_run_async():
     """dispatch() must forward the per-circuit shot counts as a list to run_async."""
-
     counting = CountingWrapper(QrispSimulatorBackend())
     bb = counting.batched()
 
@@ -563,7 +558,6 @@ def test_dispatch_mixed_shots_passes_shots_list_to_run_async():
 
 def test_dispatch_uniform_shots_passes_scalar_to_run_async():
     """dispatch() must pass a scalar when all circuits share the same shot count."""
-
     counting = CountingWrapper(QrispSimulatorBackend())
     bb = counting.batched()
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,7 +19,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core import QuantumVariable, QuantumArray, merge, recursive_qs_search
+from qrisp.core import QuantumArray, QuantumVariable, merge, recursive_qs_search
 from qrisp.environments import IterationEnvironment
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -33,8 +32,7 @@ def amplitude_amplification(
     iter: int = 1,
     reflection_indices: list[int] | None = None,
 ) -> None:
-    r"""
-    This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
+    r"""This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
 
     The problem of quantum amplitude amplification is described as follows:
 
@@ -53,27 +51,27 @@ def amplitude_amplification(
     Parameters
     ----------
     args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
-        The quantum variable, array, or collection thereof on which amplitude amplification 
-        is performed. These variables must already be prepared in the initial state 
-        :math:`\ket{\Psi}` before calling this method (i.e., the user is responsible 
+        The quantum variable, array, or collection thereof on which amplitude amplification
+        is performed. These variables must already be prepared in the initial state
+        :math:`\ket{\Psi}` before calling this method (i.e., the user is responsible
         for applying the ``state_function`` to the zero state prior to execution).
     state_function : Callable
         A Python function preparing the state :math:`\ket{\Psi}` from the zero state.
-        The required signature of this function depends on the input ``args``: 
+        The required signature of this function depends on the input ``args``:
 
-        - if ``args`` is a single variable or array, it receives that single object. 
-        - if ``args`` is a list, the elements are unpacked and passed as separate 
-          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature 
+        - if ``args`` is a single variable or array, it receives that single object.
+        - if ``args`` is a list, the elements are unpacked and passed as separate
+          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature
           must be ``state_function(qv1, qv2)``).
 
-        Although ``args`` must already be in the state :math:`\ket{\Psi}` upon input, 
-        this function is strictly required internally to construct the amplitude 
-        amplification operator :math:`\mathcal{Q}` (specifically to perform the 
+        Although ``args`` must already be in the state :math:`\ket{\Psi}` upon input,
+        this function is strictly required internally to construct the amplitude
+        amplification operator :math:`\mathcal{Q}` (specifically to perform the
         reflection about the initial state).
     oracle_function : Callable
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         Like ``state_function``, its required signature matches the structure of ``args``:
-        it takes a single argument if ``args`` is a single object, or unpacked 
+        it takes a single argument if ``args`` is a single object, or unpacked
         positional arguments if ``args`` is a list.
     kwargs_oracle : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is None.
@@ -89,7 +87,6 @@ def amplitude_amplification(
 
     Examples
     --------
-
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{16})\ket{0}+\sin(\frac{\pi}{16})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{16})\approx 0.19509`.
 
@@ -126,8 +123,6 @@ def amplitude_amplification(
     0.19509*|False> + 0.98079*|True>
 
     """
-
-
     if kwargs_oracle is None:
         kwargs_oracle = {}
 

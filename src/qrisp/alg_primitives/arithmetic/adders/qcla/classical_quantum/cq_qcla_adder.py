@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import (
     cq_calc_carry,
 )
@@ -26,9 +25,9 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path i
     cq_sum_path,
     cq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.environments import QuantumEnvironment, custom_control, invert
 from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.environments import QuantumEnvironment, invert, custom_control
 
 verify_manual_uncomputations = np.zeros(1)
 
@@ -45,9 +44,7 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
         a = bin_rep(a % (2 ** len(b)), len(b))[::-1]
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
     R = radix_base**radix_exponent
 
@@ -87,9 +84,7 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
 
             with invert():
                 # We use the redirect_qfunction decorator to steer the function onto c
-                redirect_qfunction(cq_calc_carry)(
-                    a, b, radix_base, radix_exponent, target=c, ctrl=ctrl
-                )
+                redirect_qfunction(cq_calc_carry)(a, b, radix_base, radix_exponent, target=c, ctrl=ctrl)
 
             # Flip the sum back
             for i in range(len(b)):

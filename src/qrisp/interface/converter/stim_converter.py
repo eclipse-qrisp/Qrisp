@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,8 +22,7 @@ def qrisp_to_stim(
     return_detector_map=False,
     return_observable_map=False,
 ):
-    """
-    Convert a Qrisp quantum circuit to a Stim circuit.
+    """Convert a Qrisp quantum circuit to a Stim circuit.
 
     Parameters
     ----------
@@ -101,11 +99,11 @@ def qrisp_to_stim(
     >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in measurement_map}
     >>> sorted_clbits = sorted(measurement_map.keys(), key=lambda cb: clbit_indices[cb])
     >>> reordered = samples[:, [measurement_map[cb] for cb in sorted_clbits]]
+
     """
     import stim
-    from qrisp import QuantumCircuit
+
     from qrisp.circuit.operation import ClControlledOperation
-    from qrisp.jasp.primitives.parity_primitive import ParityOperation
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
@@ -186,9 +184,7 @@ def qrisp_to_stim(
             # Qrisp measurements have both qubits and clbits
             clbits = instr.clbits
             if len(qubit_indices) != len(clbits):
-                raise ValueError(
-                    f"Measurement has {len(qubit_indices)} qubits but {len(clbits)} classical bits"
-                )
+                raise ValueError(f"Measurement has {len(qubit_indices)} qubits but {len(clbits)} classical bits")
 
             # Add each measurement and track the mapping
             for qubit_idx, clbit in zip(qubit_indices, clbits):
@@ -208,9 +204,7 @@ def qrisp_to_stim(
         # Handle two-qubit gates
         elif op_name in two_qubit_gates:
             if len(qubit_indices) != 2:
-                raise ValueError(
-                    f"Gate {op_name} requires exactly 2 qubits, got {len(qubit_indices)}"
-                )
+                raise ValueError(f"Gate {op_name} requires exactly 2 qubits, got {len(qubit_indices)}")
             stim_gate = two_qubit_gates[op_name]
             stim_circuit.append(stim_gate, qubit_indices)
 
@@ -245,7 +239,6 @@ def qrisp_to_stim(
                 stim_circuit.append(op.stim_name, targets, op.params)
 
         elif op_name == "parity":
-
             # All clbits are now inputs (no output clbit)
             measurement_clbits = instr.clbits
 
@@ -256,16 +249,12 @@ def qrisp_to_stim(
             for clbit in measurement_clbits:
                 if clbit in clbit_to_measurement_idx:
                     # It's a direct measurement
-                    current_components.symmetric_difference_update(
-                        {clbit_to_measurement_idx[clbit]}
-                    )
+                    current_components.symmetric_difference_update({clbit_to_measurement_idx[clbit]})
 
                 elif clbit in clbit_to_observable_info:
                     # It's a previous parity result (observable)
                     # Merge its components
-                    current_components.symmetric_difference_update(
-                        clbit_to_observable_info[clbit]["measurements"]
-                    )
+                    current_components.symmetric_difference_update(clbit_to_observable_info[clbit]["measurements"])
 
                 else:
                     raise Exception(
@@ -303,9 +292,7 @@ def qrisp_to_stim(
 
                 # Emit instruction if there are targets
                 if stim_targets:
-                    stim_circuit.append(
-                        "OBSERVABLE_INCLUDE", stim_targets, [new_stim_idx]
-                    )
+                    stim_circuit.append("OBSERVABLE_INCLUDE", stim_targets, [new_stim_idx])
 
             else:
                 # --- Detector Mode ---
@@ -339,20 +326,15 @@ def qrisp_to_stim(
             )
 
         elif isinstance(op, ClControlledOperation):
-
             if op.num_control != 1:
-                raise NotImplementedError(
-                    "Stim conversion only supports single-bit classical control for now."
-                )
+                raise NotImplementedError("Stim conversion only supports single-bit classical control for now.")
 
             # Identify the control bit and the operation's target qubits
             control_clbit = instr.clbits[0]
 
             # Verify the control bit corresponds to a known measurement
             if control_clbit not in clbit_to_measurement_idx:
-                raise ValueError(
-                    "Classical control bit must be a result of a previous measurement."
-                )
+                raise ValueError("Classical control bit must be a result of a previous measurement.")
 
             # Convert absolute measurement index to Stim's relative record format (rec[-k])
             meas_idx = clbit_to_measurement_idx[control_clbit]
@@ -382,10 +364,7 @@ def qrisp_to_stim(
 
         # Unknown gate
         else:
-            raise ValueError(
-                f"Unknown or unsupported gate: {op_name}. "
-                f"Stim only supports Clifford gates."
-            )
+            raise ValueError(f"Unknown or unsupported gate: {op_name}. Stim only supports Clifford gates.")
 
     res = [stim_circuit]
 

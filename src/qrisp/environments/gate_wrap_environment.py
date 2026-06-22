@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc, XGate
+from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc
 from qrisp.environments import QuantumEnvironment
 
 
 class GateWrapEnvironment(QuantumEnvironment):
-    """
-    This environment allows to hide complexity in the circuit visualisation.
+    """This environment allows to hide complexity in the circuit visualisation.
     Operations appended inside this environment are bundled into a single
     :ref:`Instruction` object.
 
@@ -39,7 +37,6 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We create some :ref:`QuantumVariable` and execute some gates inside
     a GateWrapEnvironment: ::
 
@@ -146,12 +143,8 @@ class GateWrapEnvironment(QuantumEnvironment):
 
         qc = QuantumCircuit(len(self.env_qs.qubits), len(self.env_qs.clbits))
 
-        translation_dic = {
-            self.env_qs.qubits[i]: qc.qubits[i] for i in range(len(qc.qubits))
-        }
-        translation_dic.update(
-            {self.env_qs.clbits[i]: qc.clbits[i] for i in range(len(qc.clbits))}
-        )
+        translation_dic = {self.env_qs.qubits[i]: qc.qubits[i] for i in range(len(qc.qubits))}
+        translation_dic.update({self.env_qs.clbits[i]: qc.clbits[i] for i in range(len(qc.clbits))})
 
         qubit_set = set([])
 
@@ -159,9 +152,7 @@ class GateWrapEnvironment(QuantumEnvironment):
         alloc_list = []
 
         for instr in compiled_qc.data:
-            qubit_set = qubit_set.union(
-                set([translation_dic[qb] for qb in instr.qubits])
-            )
+            qubit_set = qubit_set.union(set([translation_dic[qb] for qb in instr.qubits]))
             if instr.op.name == "qb_dealloc":
                 instr.qubits[0].allocated = True
                 # dealloc_list.append(instr)
@@ -189,9 +180,7 @@ class GateWrapEnvironment(QuantumEnvironment):
                     qc.qubits.pop(i)
                     break
 
-        translation_dic_inv = {
-            translation_dic[key]: key for key in translation_dic.keys()
-        }
+        translation_dic_inv = {translation_dic[key]: key for key in translation_dic.keys()}
 
         gate = qc.to_gate(self.name)
 

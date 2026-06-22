@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,19 @@
 ********************************************************************************
 """
 
-from itertools import product
 from collections.abc import Mapping
+from itertools import product
 
 import numpy as np
 import pytest
+from qrisp.grover import grovers_alg, tag_state
+
 from qrisp import (
-    QuantumVariable,
-    QuantumArray,
     OutcomeArray,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
+    QuantumVariable,
     auto_uncompute,
     h,
     invert,
@@ -34,20 +35,18 @@ from qrisp import (
     multi_measurement,
     p,
 )
-from qrisp.grover import tag_state, grovers_alg
 
 
 def assert_valid_measurement(mes_res):
     assert isinstance(mes_res, Mapping), "Measurement result is not a mapping"
     assert all(isinstance(k, tuple) for k in mes_res.keys()), "Keys must be tuples"
-    assert all(
-        (isinstance(v, float) and 0 <= v <= 1) for v in mes_res.values()
-    ), "Values must be probabilities between 0 and 1"
+    assert all((isinstance(v, float) and 0 <= v <= 1) for v in mes_res.values()), (
+        "Values must be probabilities between 0 and 1"
+    )
 
 
 def test_grovers_basic_oracle():
     """Tests Grover's algorithm with a simple oracle that tags a specific state."""
-
     qf_list = [QuantumFloat(2), QuantumFloat(2)]
 
     def test_oracle(qf_list):
@@ -67,7 +66,6 @@ def test_grovers_basic_oracle():
 
 def test_grovers_equation_oracle():
     """Tests Grover's algorithm with an oracle that tags states based on a simple equation (multiplication)."""
-
     qf_list = [QuantumFloat(2, -1, signed=True), QuantumFloat(2, -1, signed=True)]
 
     def equation_oracle(qf_list):
@@ -88,9 +86,7 @@ def test_grovers_equation_oracle():
     winner_states = {(0.5, -0.5), (-0.5, 0.5)}
     assert set(list(mes_res.keys())[:2]) == winner_states
 
-    valid_states = list(
-        product([0.0, -0.5, 0.5, -1.0, 1.0, -1.5, 1.5, -2.0, 2.0], repeat=2)
-    )
+    valid_states = list(product([0.0, -0.5, 0.5, -1.0, 1.0, -1.5, 1.5, -2.0, 2.0], repeat=2))
     assert all(item in valid_states for item in mes_res.keys())
 
 
@@ -182,9 +178,7 @@ def test_grovers_exact_missing_winner_amount():
         pass
 
     # Assert that the correct ValueError is raised with the expected message
-    with pytest.raises(
-        ValueError, match="Exact Grover's algorithm requires 'winner_state_amount'"
-    ):
+    with pytest.raises(ValueError, match="Exact Grover's algorithm requires 'winner_state_amount'"):
         grovers_alg(qv, dummy_oracle, exact=True, winner_state_amount=None)
 
 

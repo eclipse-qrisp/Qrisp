@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,6 +18,7 @@
 """Tests for QrispSimulatorBackend and QrispSimulatorJob."""
 
 import pytest
+from conftest import CountingWrapper
 
 from qrisp import QuantumCircuit, QuantumFloat, h
 from qrisp.circuit import Operation
@@ -27,7 +27,6 @@ from qrisp.default_backend import QrispSimulatorBackend, QrispSimulatorJob, def_
 from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobFailureError, JobResult, JobStatus
 from qrisp.interface.measurement_result import LazyDict
-from conftest import CountingWrapper
 
 
 def _simple_computation():
@@ -94,7 +93,6 @@ class TestQrispSimulatorJobInterface:
         job = backend.run_async(res.qs.compile())
         job.cancel()
         assert job.status() == JobStatus.DONE
-
 
     def test_failure_raises_job_failure_error(self):
         """result() must raise JobFailureError (not a raw simulator exception) on failure."""
@@ -275,9 +273,11 @@ class TestQrispSimulatorBackendBatched:
         bb.dispatch()
         assert counting.run_async_call_count == 1
 
+
 # ---------------------------------------------------------------------------
 # Tests for PassManager (pm) integration
 # ---------------------------------------------------------------------------
+
 
 def _prepend_x_on_first_qubit(qc):
     """Insert an X gate at the beginning of the circuit, before any measurements."""

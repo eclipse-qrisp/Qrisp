@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,15 +17,15 @@
 
 import numpy as np
 
-from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.alg_primitives import QFT
-from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult
-from qrisp.core.gate_application_functions import h, cx, swap, mcx
-from qrisp.environments import conjugate, control
+from qrisp.alg_primitives.arithmetic import hybrid_mult, multi_controlled_U_g
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
     modinv,
     montgomery_encoder,
 )
+from qrisp.core.gate_application_functions import cx, h, mcx, swap
+from qrisp.environments import conjugate, control
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def QREDC(t, N, m):
@@ -34,7 +33,6 @@ def QREDC(t, N, m):
     u = QuantumFloat(0, qs=t.qs, name="u*")
 
     for i in range(m):
-
         h(t[0])
 
         transfer_lsb(t, u)
@@ -45,7 +43,6 @@ def QREDC(t, N, m):
     QFT(t, inv=True, exec_swap=False)
 
     with conjugate(QFT)(t[:-1], exec_swap=False):
-
         multi_controlled_U_g(t[:-1], [t.sign()], N)
 
     cx(t[0], t.sign())
@@ -128,7 +125,6 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
 
     with conjugate(QFT)(u, exec_swap=False):
         if isinstance(b, QuantumFloat):
-
             hybrid_mult(
                 a,
                 b,
@@ -140,7 +136,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
 
         else:
             for i in range(len(a)):
-                multi_controlled_U_g(u, [a[i]], -((2**i * b)) * modinv(N, 2 ** (m + 1)))
+                multi_controlled_U_g(u, [a[i]], -(2**i * b) * modinv(N, 2 ** (m + 1)))
 
     if permeable_if_zero:
         mcx(list(a) + [t[0]], u[-1], ctrl_state="0" * len(a) + "1", method="balauca")
@@ -203,15 +199,13 @@ def qft_semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
     X = X % a.modulus
 
     if X == 0:
-        raise Exception(
-            "Tried to perform in-place multiplication with 0 (not invertible)"
-        )
+        raise Exception("Tried to perform in-place multiplication with 0 (not invertible)")
     if X == 1:
         return a
 
     tmp = a.duplicate(qs=a.qs)
 
-    from qrisp import multi_measurement, less_than, redirect_qfunction, QuantumModulus
+    from qrisp import QuantumModulus, less_than, redirect_qfunction
 
     if treat_invalid:
         a.__class__ = QuantumFloat
@@ -223,9 +217,7 @@ def qft_semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
         with control(ctrl, invert=True):
             swap(tmp, a)
 
-    tmp = montgomery_mod_semi_mul(
-        a, X, output_qg=tmp, permeable_if_zero=ctrl is not None
-    )
+    tmp = montgomery_mod_semi_mul(a, X, output_qg=tmp, permeable_if_zero=ctrl is not None)
 
     if ctrl is not None:
         with control(ctrl, invert=True):

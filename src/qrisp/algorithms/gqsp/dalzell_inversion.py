@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 from collections.abc import Callable
+
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
@@ -26,8 +26,7 @@ from qrisp.block_encodings import BlockEncoding
 
 
 def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, kappa: float) -> BlockEncoding:
-    r"""
-    Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_ 
+    r"""Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_
     to solve the Quantum Linear System Problem (QSLP) $A\vec{x}=\vec{b}$, using kernel reflection.
     When applied to a state $\ket{0}$, the algorithm prepares a state $\tilde{x}\propto A^{-1}\ket{b}$
     within target precision $\epsilon$ of the ideal solution $\ket{x}$.
@@ -118,7 +117,6 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
     Examples
     --------
-
     ::
     
         import numpy as np
@@ -190,7 +188,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
         # [0.51816163 0.43295659 0.60721322 0.4187472 ]
 
     """
-    from qrisp import h, x, control, QuantumBool
+    from qrisp import QuantumBool, control, h, x
 
     def prep_b_ext(*args):
         ext = args[0]
@@ -198,13 +196,13 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
         h(ext)
         with control(ext[0], ctrl_state=0):
             prep_b(*ops_A)
-            
+
     # Define BlockEncoding of A_t
     # A_t = |0><0| ⊗ A + (1 / t) |1><1| ⊗ |0><0|
-    P0 = BlockEncoding.from_projector(0,0)
-    P10 = BlockEncoding.from_projector((1,0), (1,0))
+    P0 = BlockEncoding.from_projector(0, 0)
+    P10 = BlockEncoding.from_projector((1, 0), (1, 0))
     A_t = P0.kron(A) + (A.alpha / t) * P10
-    
+
     # Define BlockEncoding of the kernel projector I - |b_t><b_t|
     P = BlockEncoding.from_projector(prep_b_ext, kernel=True, num_ops=2)
 
@@ -220,34 +218,33 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     def new_unitary(*args):
         anc_ext = args[0]
         ancs_ = args[1 : 1 + KR.num_ancs]
-        args_ = args[1 + KR.num_ancs:]
+        args_ = args[1 + KR.num_ancs :]
 
         x(anc_ext)
         KR.unitary(*ancs_, anc_ext, *args_)
 
     new_anc_templates = [QuantumBool().template()] + KR._anc_templates
-    return BlockEncoding(KR.alpha, new_anc_templates, new_unitary, num_ops=KR.num_ops-1)
+    return BlockEncoding(KR.alpha, new_anc_templates, new_unitary, num_ops=KR.num_ops - 1)
 
 
 def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.float64]:
-    """
-    Constructs the Chebyshev polynomial for the Kernel Reflection 
+    r"""Constructs the Chebyshev polynomial for the Kernel Reflection
     Polynomial $K_{\delta, \ell}(x)$ from `Dalzell (2024) <https://arxiv.org/pdf/2406.12086>`_ Eq 62.
-    
+
     Parameters
     ----------
     delta : float
         The spectral gap threshold ($0 < \delta < 1$).
     eps : float
         The maximum allowed error on the interval $[\delta, 1]$. Defaults to 1e-3.
-    
+
     Returns
     -------
     ndarray
-        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded 
+        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the kernel reflection, ordered from lowest order term to highest.
-    """
 
+    """
     # 1. Calculate the required degree parameter ell for the
     # Kernel Reflection Polynomial to achieve a target error eps.
     # Formula 51 (Dalzell 2024, arXiv:2406.12086):
@@ -262,20 +259,20 @@ def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.f
     c_2 = -1.0 / (1 - delta**2)
     # Instantiate z(x) as a Chebyshev series object:
     z_cheb = Chebyshev([c_0, 0.0, c_2])
-    
+
     # 2.2 Define the outer Chebyshev polynomial T_ell(z).
     coeffs_T_ell = [0.0] * ell + [1.0]
     T_ell = Chebyshev(coeffs_T_ell)
-    
+
     # 2.3 Compose the polynomials: T_ell_z(x) = T_ell(z(x)).
     T_ell_z = T_ell(z_cheb)
-    
+
     # 2.4 Calculate the normalization constant.
     # Evaluate T_ell at the scalar value z_0 = (1 + delta^2) / (1 - delta^2).
     z_0 = (1 + delta**2) / (1 - delta**2)
     T_ell_z0 = T_ell(z_0)
-    
+
     # 2.5 Construct the final normalized Kernel Reflection Polynomial.
     K_cheb = -1.0 + 2.0 * (T_ell_z + 1.0) / (T_ell_z0 + 1.0)
-    
+
     return K_cheb.coef

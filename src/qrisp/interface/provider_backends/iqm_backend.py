@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -60,8 +59,7 @@ def _map_iqm_status(iqm_job) -> JobStatus:
 
 
 class IQMJob(Job):
-    """
-    A :class:`~qrisp.interface.Job` that wraps a single IQM ``CircuitJob``.
+    """A :class:`~qrisp.interface.Job` that wraps a single IQM ``CircuitJob``.
 
     .. warning::
 
@@ -100,6 +98,7 @@ class IQMJob(Job):
         client : IQMClient
             The IQM client used to fetch measurement counts after completion.
             Stored directly to avoid accessing a protected member of the backend.
+
         """
         super().__init__(backend=backend, job_id=str(iqm_job.job_id))
         self._iqm_job = iqm_job
@@ -116,8 +115,7 @@ class IQMJob(Job):
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
-        """
-        Block until the IQM job finishes and return the :class:`~qrisp.interface.JobResult`.
+        """Block until the IQM job finishes and return the :class:`~qrisp.interface.JobResult`.
 
         Waiting is delegated to ``CircuitJob.wait_for_completion()``.
         Counts are fetched via ``IQMClient.get_job_measurement_counts``,
@@ -139,6 +137,7 @@ class IQMJob(Job):
             If the IQM job failed.
         JobCancelledError
             If the IQM job was cancelled.
+
         """
         if self._cached_result is not None:
             return self._cached_result
@@ -153,9 +152,7 @@ class IQMJob(Job):
                 raise JobCancelledError(f"IQM job {self._job_id!r} was cancelled.")
             if final_iqm_status != IQMJobStatus.COMPLETED:
                 self._last_known_status = JobStatus.ERROR
-                raise JobFailureError(
-                    f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}."
-                )
+                raise JobFailureError(f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}.")
 
         except (JobCancelledError, JobFailureError):
             raise
@@ -165,9 +162,7 @@ class IQMJob(Job):
 
         self._last_known_status = JobStatus.DONE
 
-        counts_batch_raw = self._iqm_client.get_job_measurement_counts(
-            self._iqm_job.job_id
-        )
+        counts_batch_raw = self._iqm_client.get_job_measurement_counts(self._iqm_job.job_id)
 
         counts_batch = []
         for c in counts_batch_raw:
@@ -180,8 +175,7 @@ class IQMJob(Job):
         return self._cached_result
 
     def cancel(self) -> bool:
-        """
-        Attempt to cancel the underlying IQM job.
+        """Attempt to cancel the underlying IQM job.
 
         Returns
         -------
@@ -189,6 +183,7 @@ class IQMJob(Job):
             ``True`` if the cancellation request was dispatched successfully;
             ``False`` if the job is already in a terminal state or cancellation
             failed.
+
         """
         if self._last_known_status in JOB_FINAL_STATES:
             return False
@@ -210,8 +205,7 @@ class IQMJob(Job):
 
 
 class IQMBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` for executing circuits on IQM hardware.
+    """A :class:`~qrisp.interface.Backend` for executing circuits on IQM hardware.
 
     .. warning::
 
@@ -260,7 +254,6 @@ class IQMBackend(Backend):
 
     Examples
     --------
-
     We evaluate a :ref:`QuantumFloat` multiplication on the 20-qubit IQM Garnet.
 
     >>> from qrisp.interface import IQMBackend
@@ -293,6 +286,7 @@ class IQMBackend(Backend):
         qc.measure(0)
 
         meas_res = qc.run(shots = 10000, backend = custom_transpiled_garnet)
+
     """
 
     def __init__(
@@ -308,15 +302,10 @@ class IQMBackend(Backend):
     ):
 
         if not isinstance(api_token, str):
-            raise TypeError(
-                "api_token must be a string. "
-                "You can create an API token on the IQM Resonance website."
-            )
+            raise TypeError("api_token must be a string. You can create an API token on the IQM Resonance website.")
 
         if server_url is not None and device_instance is not None:
-            raise ValueError(
-                "Please provide either a server_url or a device_instance, but not both."
-            )
+            raise ValueError("Please provide either a server_url or a device_instance, but not both.")
 
         if server_url is None and device_instance is None:
             raise ValueError("Please provide either a server_url or a device_instance.")
@@ -337,16 +326,13 @@ class IQMBackend(Backend):
             from iqm.qiskit_iqm.iqm_provider import IQMBackend as _IQMProviderBackend
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-iqm to use the IQMBackend. "
-                "You can do this by running `pip install qrisp[iqm]`."
+                "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
             ) from exc
 
         if server_url is None:
             server_url = "https://resonance.meetiqm.com/"
 
-        self._client = IQMClient(
-            iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
-        )
+        self._client = IQMClient(iqm_server_url=server_url, token=api_token, quantum_computer=device_instance)
         self._iqm_provider_backend = _IQMProviderBackend(
             self._client,
             calibration_set_id=calibration_set_id,
@@ -365,9 +351,7 @@ class IQMBackend(Backend):
 
             def transpiler(qc):
                 qiskit_qc = qc.to_qiskit()
-                transpiled_qiskit_qc = transpile_to_IQM(
-                    qiskit_qc, self._iqm_provider_backend
-                )
+                transpiled_qiskit_qc = transpile_to_IQM(qiskit_qc, self._iqm_provider_backend)
                 return QuantumCircuit.from_qiskit(transpiled_qiskit_qc)
 
         self._transpiler = transpiler
@@ -385,8 +369,7 @@ class IQMBackend(Backend):
         circuits,
         shots: int | list[int] | None = None,
     ) -> IQMJob:
-        """
-        Transpile and submit one or more circuits to the IQM backend.
+        """Transpile and submit one or more circuits to the IQM backend.
 
         This method returns an ``IQMJob`` immediately.  Call
         :meth:`Job.result` on the returned object to block and retrieve the
@@ -406,6 +389,7 @@ class IQMBackend(Backend):
         Returns
         -------
         IQMJob
+
         """
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
@@ -425,15 +409,11 @@ class IQMBackend(Backend):
         circuit_batch = []
         for qc in circuits:
             if self._device_instance == "sirius":
-                qiskit_qc = self._transpile_to_iqm(
-                    qc.to_qiskit(), self._iqm_provider_backend
-                )
+                qiskit_qc = self._transpile_to_iqm(qc.to_qiskit(), self._iqm_provider_backend)
             else:
                 transpiled_qc = self._transpiler(qc)
                 qiskit_qc = transpiled_qc.to_qiskit()
-            circuit_batch.append(
-                self._iqm_provider_backend.serialize_circuit(qiskit_qc)
-            )
+            circuit_batch.append(self._iqm_provider_backend.serialize_circuit(qiskit_qc))
 
         iqm_job = self._client.submit_circuits(
             circuit_batch,

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -15,7 +14,6 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-
 
 """
 Optimization pass for unwrapping 0-dimensional linalg.generic operations
@@ -43,17 +41,16 @@ from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
-    op_type_rewrite_pattern,
     PatternRewriter,
     PatternRewriteWalker,
     RewritePattern,
+    op_type_rewrite_pattern,
 )
 from xdsl.rewriter import InsertPoint
 
 
 def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
-    """
-    Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
+    """Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
 
     Parameters
@@ -63,6 +60,7 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
     xdsl_module: builtin.ModuleOp
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
+
     """
     patterns = [FoldScalarLinalgGeneric()]
 
@@ -113,12 +111,11 @@ class FoldScalarLinalgGeneric(RewritePattern):
             %scalar = tensor.extract %in[] : tensor<i1>
             %v      = arith.extui %scalar : i1 to i64
             %result = tensor.from_elements %v : tensor<i64>
+
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: linalg.GenericOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: linalg.GenericOp, rewriter: PatternRewriter) -> None:
         # Guard: only 0-d generics
         if len(op.iterator_types.data) != 0:
             return
@@ -151,9 +148,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
             cloned = op_in_body.clone()
 
             # Safely remap operands based on our running dictionary
-            new_operands = [
-                mapping.get(operand, operand) for operand in cloned.operands
-            ]
+            new_operands = [mapping.get(operand, operand) for operand in cloned.operands]
             cloned.operands = tuple(new_operands)  # Reassign safely
 
             rewriter.insert_op(cloned, InsertPoint.before(op))

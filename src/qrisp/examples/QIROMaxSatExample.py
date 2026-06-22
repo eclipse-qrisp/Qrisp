@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,9 +16,8 @@
 """
 
 # imports
+
 from qrisp import QuantumVariable
-import matplotlib.pyplot as plt
-import networkx as nx
 from qrisp.algorithms.qiro import *
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
@@ -67,7 +65,6 @@ print("QIRO 5 best results")
 maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(testCostFun({key: 1}))
 

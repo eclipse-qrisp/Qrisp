@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -35,8 +34,7 @@ from qrisp.interface.provider_backends.aqt_backend import AQTBackend, AQTJob
 
 @pytest.fixture()
 def aqt_mocks(monkeypatch):
-    """
-    Inject mock ``qiskit_aqt_provider`` modules into ``sys.modules``.
+    """Inject mock ``qiskit_aqt_provider`` modules into ``sys.modules``.
 
     This allows ``AQTBackend.__init__`` to execute its
     ``from qiskit_aqt_provider import ...`` imports without the real package
@@ -47,6 +45,7 @@ def aqt_mocks(monkeypatch):
     tuple[MagicMock, MagicMock]
         ``(mock_provider_cls, mock_sampler_cls)``, which are the mock class
         objects for ``AQTProvider`` and ``AQTSampler`` respectively.
+
     """
     mock_provider_cls = MagicMock(name="AQTProvider")
     mock_sampler_cls = MagicMock(name="AQTSampler")
@@ -58,17 +57,14 @@ def aqt_mocks(monkeypatch):
     mock_primitives_module.AQTSampler = mock_sampler_cls
 
     monkeypatch.setitem(sys.modules, "qiskit_aqt_provider", mock_aqt_module)
-    monkeypatch.setitem(
-        sys.modules, "qiskit_aqt_provider.primitives", mock_primitives_module
-    )
+    monkeypatch.setitem(sys.modules, "qiskit_aqt_provider.primitives", mock_primitives_module)
 
     return mock_provider_cls, mock_sampler_cls
 
 
 @pytest.fixture()
 def aqt_backend(aqt_mocks):
-    """
-    A ready-to-use ``AQTBackend`` wired to a mock AQT device named ``"test_device"``.
+    """A ready-to-use ``AQTBackend`` wired to a mock AQT device named ``"test_device"``.
 
     The ``AQTSampler`` mock is returned alongside the backend so individual
     tests can configure its return values and inspect its call arguments.
@@ -77,6 +73,7 @@ def aqt_backend(aqt_mocks):
     -------
     tuple[AQTBackend, MagicMock]
         ``(backend, mock_sampler_cls)``
+
     """
     mock_provider_cls, mock_sampler_cls = aqt_mocks
 
@@ -113,8 +110,7 @@ def _make_quasi_result(quasi_dists: list[dict]) -> MagicMock:
 
 
 def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None = None):
-    """
-    Return a mock AQT primitive job.
+    """Return a mock AQT primitive job.
 
     Parameters
     ----------
@@ -122,14 +118,13 @@ def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None 
         If provided, ``result()`` returns a mock carrying these distributions.
     fail
         If provided, ``result()`` raises this exception instead.
+
     """
     mock_job = MagicMock()
     if fail is not None:
         mock_job.result.side_effect = fail
     else:
-        mock_job.result.return_value = _make_quasi_result(
-            quasi_dists if quasi_dists is not None else [{0: 1.0}]
-        )
+        mock_job.result.return_value = _make_quasi_result(quasi_dists if quasi_dists is not None else [{0: 1.0}])
     return mock_job
 
 
@@ -195,9 +190,7 @@ class TestAQTBackendConstruction:
         mock_provider_cls.return_value.get_backend.return_value = mock_device
 
         AQTBackend("token", "ibex", "my_workspace")
-        mock_provider_cls.return_value.get_backend.assert_called_once_with(
-            name="ibex", workspace="my_workspace"
-        )
+        mock_provider_cls.return_value.get_backend.assert_called_once_with(name="ibex", workspace="my_workspace")
 
 
 class TestAQTBackendOptions:
@@ -246,14 +239,13 @@ class TestAQTBackendOptions:
 
 class TestAQTRunAsync:
     """Correctness of run_async: circuit conversion, result parsing, and
-    sampler configuration."""
+    sampler configuration.
+    """
 
     def test_quasi_dists_converted_to_bitstrings(self, aqt_backend):
         """Integer keys from quasi_dists are converted to '0'/'1' bitstrings."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.6, 1: 0.4}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.6, 1: 0.4}])
 
         result = backend.run(_simple_circuit(), shots=100)
         assert result == {"0": 0.6, "1": 0.4}
@@ -262,9 +254,7 @@ class TestAQTRunAsync:
         """For a 2-clbit circuit, outcome 0 is rendered as '00', not '0'."""
         backend, mock_sampler_cls = aqt_backend
         # Outcomes: 0b00 → "00", 0b11 → "11"
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.5, 3: 0.5}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.5, 3: 0.5}])
 
         result = backend.run(_two_bit_circuit(), shots=100)
         assert "00" in result
@@ -275,9 +265,7 @@ class TestAQTRunAsync:
     def test_results_split_per_circuit(self, aqt_backend):
         """Each circuit in the batch gets its own result dict."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.7, 1: 0.3}, {0: 0.4, 1: 0.6}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.7, 1: 0.3}, {0: 0.4, 1: 0.6}])
 
         results = backend.run([_simple_circuit(), _simple_circuit()], shots=100)
 
@@ -293,9 +281,7 @@ class TestAQTRunAsync:
 
         backend.run(_simple_circuit(), shots=100)
 
-        mock_sampler_cls.return_value.set_transpile_options.assert_called_once_with(
-            optimization_level=3
-        )
+        mock_sampler_cls.return_value.set_transpile_options.assert_called_once_with(optimization_level=3)
 
     def test_new_sampler_created_per_run_async(self, aqt_backend):
         """A fresh ``AQTSampler`` is constructed for each ``run_async`` call."""
@@ -318,9 +304,7 @@ class TestAQTRunAsync:
     def test_run_async_shots_list_warns_and_uses_max(self, aqt_backend):
         """run_async with a list of shots must warn and run all circuits at max(shots)."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 1.0}, {0: 1.0}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 1.0}, {0: 1.0}])
 
         with pytest.warns(UserWarning, match="per-circuit shot counts"):
             backend.run_async([_simple_circuit(), _simple_circuit()], shots=[100, 300])
@@ -512,9 +496,7 @@ class TestAQTBackendEdgeCases:
     def test_run_with_list_of_circuits_returns_list(self, aqt_backend):
         """run() returns a list of dicts when a sequence of circuits is submitted."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.6, 1: 0.4}, {0: 0.3, 1: 0.7}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.6, 1: 0.4}, {0: 0.3, 1: 0.7}])
 
         results = backend.run([_simple_circuit(), _simple_circuit()], shots=100)
 
@@ -529,11 +511,10 @@ class TestAQTErrorPropagation:
 
     def test_sampler_run_error_propagates_from_run_async(self, aqt_backend):
         """If ``AQTSampler.run()`` raises at submission time, the error propagates
-        directly from ``run_async`` (before a job handle is created)."""
+        directly from ``run_async`` (before a job handle is created).
+        """
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.side_effect = RuntimeError(
-            "submission failed"
-        )
+        mock_sampler_cls.return_value.run.side_effect = RuntimeError("submission failed")
 
         with pytest.raises(RuntimeError, match="submission failed"):
             backend.run_async(_simple_circuit(), shots=100)
@@ -592,9 +573,7 @@ class TestAQTBackendBatched:
         with pytest.raises(TypeError, match="workspace"):
             AQTBackend(api_token="token", device_instance="ibex", workspace=42)
 
-    @pytest.mark.skip(
-        reason="requires AQT hardware credentials and qiskit-aqt-provider"
-    )
+    @pytest.mark.skip(reason="requires AQT hardware credentials and qiskit-aqt-provider")
     def test_integration_batching_properties(self):
         """Placeholder: full batching integration test for AQTBackend.
 

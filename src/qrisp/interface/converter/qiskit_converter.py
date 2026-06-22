@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,11 +16,11 @@
 """
 
 import numpy as np
-from sympy import lambdify, Expr
+from sympy import Expr, lambdify
 
-from qrisp.misc import bin_rep
+from qrisp.circuit import ClControlledOperation, ControlledOperation, PRXGate
 from qrisp.circuit.standard_operations import op_list
-from qrisp.circuit import ControlledOperation, ClControlledOperation, PRXGate
+from qrisp.misc import bin_rep
 
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
@@ -64,14 +63,13 @@ def convert_to_qiskit(qc, transpile=False):
 
         for p in params:
             if isinstance(p, Expr):
-
                 free_symbols = list(p.free_symbols)
                 lambd_expr = lambdify(free_symbols, p)
 
                 qiskit_symbs = []
 
                 for s in free_symbols:
-                    if not s in symbol_param_dic:
+                    if s not in symbol_param_dic:
                         symbol_param_dic[s] = Parameter(str(s))
 
                     qiskit_symbs.append(symbol_param_dic[s])
@@ -107,9 +105,7 @@ def convert_to_qiskit(qc, transpile=False):
             try:
                 from qiskit.circuit import IfElseOp
 
-                qregs = [
-                    qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits
-                ]
+                qregs = [qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits]
                 body_qc = QuantumCircuit(*qregs)
                 if op.base_op.definition:
                     body_qc = body_qc.compose(op.base_op.definition.to_qiskit())
@@ -137,21 +133,15 @@ def convert_to_qiskit(qc, transpile=False):
                 qiskit_definition = convert_to_qiskit(op.base_operation.definition)
                 base_gate = qiskit_definition.to_gate()
                 base_gate.name = op.base_operation.name
-                qiskit_ins = base_gate.control(
-                    len(op.controls), ctrl_state=op.ctrl_state[::-1]
-                )
+                qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
 
+            elif op.base_operation.name == "gphase":
+                qiskit_ins = create_qiskit_instruction(op, params)
+            elif op.num_qubits == op.base_operation.num_qubits:
+                qiskit_ins = create_qiskit_instruction(op.base_operation, params)
             else:
-
-                if op.base_operation.name == "gphase":
-                    qiskit_ins = create_qiskit_instruction(op, params)
-                elif op.num_qubits == op.base_operation.num_qubits:
-                    qiskit_ins = create_qiskit_instruction(op.base_operation, params)
-                else:
-                    base_gate = create_qiskit_instruction(op.base_operation, params)
-                    qiskit_ins = base_gate.control(
-                        len(op.controls), ctrl_state=op.ctrl_state[::-1]
-                    )
+                base_gate = create_qiskit_instruction(op.base_operation, params)
+                qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
         else:
             qiskit_ins = create_qiskit_instruction(op, params)
 
@@ -163,9 +153,10 @@ def convert_to_qiskit(qc, transpile=False):
 
 def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
-    from qiskit.circuit import Measure, Reset, Barrier
-    from qrisp.circuit import ControlledOperation
     from qiskit import QiskitError
+    from qiskit.circuit import Barrier, Measure, Reset
+
+    from qrisp.circuit import ControlledOperation
 
     if op.name == "cx":
         if hasattr(op, "ctrl_state"):
@@ -193,15 +184,11 @@ def create_qiskit_instruction(op, params=[]):
             qiskit_definition = convert_to_qiskit(op.base_operation.definition)
             base_gate = qiskit_definition.to_gate()
             base_gate.name = op.base_operation.name
-            qiskit_ins = base_gate.control(
-                len(op.controls), ctrl_state=op.ctrl_state[::-1]
-            )
+            qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
 
         else:
             base_gate = create_qiskit_instruction(op.base_operation, params)
-            qiskit_ins = base_gate.control(
-                len(op.controls), ctrl_state=op.ctrl_state[::-1]
-            )
+            qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
     elif op.name == "rxx":
         qiskit_ins = qsk_gates.RXXGate(*params)
     elif op.name == "rzz":
@@ -282,10 +269,10 @@ op_dic["u"] = op_dic["u3"]
 
 
 def convert_from_qiskit(qiskit_qc):
-    from qiskit.circuit import ControlledGate, ParameterExpression
     from qiskit import QuantumCircuit as QiskitQuantumCircuit
+    from qiskit.circuit import ControlledGate, ParameterExpression
 
-    from qrisp import Clbit, ControlledOperation, QuantumCircuit, Barrier, Qubit
+    from qrisp import Barrier, Clbit, ControlledOperation, QuantumCircuit, Qubit
 
     qc = QuantumCircuit()
 
@@ -293,7 +280,6 @@ def convert_from_qiskit(qiskit_qc):
         q_reg = qiskit_qc.qubits[i]._register
 
         if q_reg is not None:
-
             if hasattr(q_reg, "_bits"):
                 qb_list = q_reg._bits
             else:
@@ -330,7 +316,7 @@ def convert_from_qiskit(qiskit_qc):
 
         if hasattr(qiskit_op, "condition_bits"):
             condition_bits = [cb_dic[cb] for cb in qiskit_op.condition_bits]
-            if len(condition_bits):
+            if condition_bits:
                 condition_value = qiskit_op.condition[1]
         elif hasattr(qiskit_op, "is_control_flow") and qiskit_op.is_control_flow():
             condition_bits = [cb_dic[cb] for cb in qiskit_qc.data[i].clbits]
@@ -342,14 +328,13 @@ def convert_from_qiskit(qiskit_qc):
 
         qrisp_params = []
 
-        while len(params):
+        while params:
             p = params.pop(0)
             if isinstance(p, np.ndarray):
                 params = list(p.flatten()) + params
             elif isinstance(p, np.number):
                 qrisp_params.append(p.item())
             elif isinstance(p, ParameterExpression):
-
                 lambd_expr = sympify(ParameterExpression.sympify(p))
 
                 qrisp_params.append(lambd_expr)
@@ -386,24 +371,16 @@ def convert_from_qiskit(qiskit_qc):
                     op = op_dic[qiskit_op.name.lower()](*params)
                 except KeyError:
                     if qiskit_op.definition is not None:
-                        op = convert_from_qiskit(qiskit_op.definition).to_gate(
-                            name=qiskit_op.name
-                        )
+                        op = convert_from_qiskit(qiskit_op.definition).to_gate(name=qiskit_op.name)
                     else:
-                        raise Exception(
-                            "Could not convert Qiskit operation "
-                            + str(qiskit_op.name)
-                            + " to Qrisp"
-                        )
+                        raise Exception("Could not convert Qiskit operation " + str(qiskit_op.name) + " to Qrisp")
 
         if controlled_gate:
             qiskit_op = qiskit_qc.data[i].operation
             op = ControlledOperation(
                 base_operation=op,
                 num_ctrl_qubits=qiskit_op.num_ctrl_qubits,
-                ctrl_state=bin_rep(qiskit_op.ctrl_state, qiskit_op.num_ctrl_qubits)[
-                    ::-1
-                ],
+                ctrl_state=bin_rep(qiskit_op.ctrl_state, qiskit_op.num_ctrl_qubits)[::-1],
             )
 
         if op.name == "barrier":

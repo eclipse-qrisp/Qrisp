@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -54,30 +53,26 @@ The transformation works by:
 """
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 
-import numpy as np
-
-from jax import make_jaxpr, jit, debug, pure_callback, ShapeDtypeStruct
-from jax.extend.core import ClosedJaxpr, Literal, Var
-from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
-from jax import Array
+import numpy as np
+from jax import Array, ShapeDtypeStruct, debug, jit, make_jaxpr, pure_callback
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Var
+from jax.lax import cond, fori_loop, switch, while_loop
 
-from qrisp.circuit import PTControlledOperation, Operation
+from qrisp.circuit import Operation, PTControlledOperation
 from qrisp.jasp import (
-    QuantumPrimitive,
     AbstractQuantumState,
-    AbstractQubitArray,
     AbstractQubit,
-    eval_jaxpr,
+    AbstractQubitArray,
     Jaspr,
+    Jlist,
+    QuantumPrimitive,
+    eval_jaxpr,
     extract_invalues,
     insert_outvalues,
-    Jlist,
 )
-
-from jax.extend.core import JaxprEqn
 from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
 
 # Type aliases for clarity
@@ -90,8 +85,7 @@ def make_cl_func_eqn_evaluator(
     call_graph_stats: dict | None = None,
     callback_threshold: int | None = None,
 ) -> Callable:
-    """
-    Factory that creates a cl_func_eqn_evaluator for transforming quantum
+    """Factory that creates a cl_func_eqn_evaluator for transforming quantum
     primitives into classical bit operations.
 
     The returned evaluator is passed to eval_jaxpr as a custom equation handler.
@@ -119,6 +113,7 @@ def make_cl_func_eqn_evaluator(
     Callable
         An equation evaluator function with signature
         ``(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None``.
+
     """
 
     def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
@@ -126,7 +121,6 @@ def make_cl_func_eqn_evaluator(
         # to one of the implementations below. Otherwise we return True to indicate
         # default interpretation.
         if isinstance(eqn.primitive, QuantumPrimitive):
-
             invars = eqn.invars
             outvars = eqn.outvars
 
@@ -151,22 +145,19 @@ def make_cl_func_eqn_evaluator(
             elif eqn.primitive.name == "jasp.parity":
                 process_parity(eqn, context_dic)
             else:
-                raise Exception(
-                    f"Don't know how to process QuantumPrimitive {eqn.primitive}"
-                )
+                raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
+        # Handle classical control flow primitives that may contain quantum operations
+        elif eqn.primitive.name == "while":
+            return process_while(eqn, context_dic, call_graph_stats, callback_threshold)
+        elif eqn.primitive.name == "cond":
+            return process_cond(eqn, context_dic, call_graph_stats, callback_threshold)
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic, call_graph_stats, callback_threshold)
+        elif eqn.primitive.name == "jit":
+            process_pjit(eqn, context_dic, call_graph_stats, callback_threshold)
         else:
-            # Handle classical control flow primitives that may contain quantum operations
-            if eqn.primitive.name == "while":
-                return process_while(eqn, context_dic, call_graph_stats, callback_threshold)
-            elif eqn.primitive.name == "cond":
-                return process_cond(eqn, context_dic, call_graph_stats, callback_threshold)
-            elif eqn.primitive.name == "scan":
-                return process_scan(eqn, context_dic, call_graph_stats, callback_threshold)
-            elif eqn.primitive.name == "jit":
-                process_pjit(eqn, context_dic, call_graph_stats, callback_threshold)
-            else:
-                # Return True to indicate default JAX evaluation should be used
-                return True
+            # Return True to indicate default JAX evaluation should be used
+            return True
 
     return cl_func_eqn_evaluator
 
@@ -175,11 +166,8 @@ def make_cl_func_eqn_evaluator(
 cl_func_eqn_evaluator = make_cl_func_eqn_evaluator()
 
 
-def process_create_qubits(
-    invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process the create_qubits primitive by allocating qubit indices from the free pool.
+def process_create_qubits(invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process the create_qubits primitive by allocating qubit indices from the free pool.
 
     This function handles qubit allocation by:
     1. Popping the requested number of qubit indices from the free_qubits stack
@@ -196,6 +184,7 @@ def process_create_qubits(
         Output variables: [qubit_array, updated_quantum_circuit]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     # The first invar of the create_qubits primitive is an AbstractQuantumState
     # which is represented by a BitArray and a Jlist of free qubit indices
@@ -205,9 +194,7 @@ def process_create_qubits(
 
     # Create a new Jlist to hold the allocated qubit indices
     # The max_size is proportional to the total bit array capacity
-    reg_qubits = Jlist(
-        init_val=jnp.array([], dtype=jnp.int64), max_size=64 * qreg.size // 64
-    )
+    reg_qubits = Jlist(init_val=jnp.array([], dtype=jnp.int64), max_size=64 * qreg.size // 64)
 
     def loop_body(i: int, val_tuple: tuple[Jlist, Jlist]) -> tuple[Jlist, Jlist]:
         """Pop a qubit index from free pool and add to the new register."""
@@ -233,8 +220,7 @@ def process_create_qubits(
 
 
 def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
-    """
-    Process the fuse primitive which concatenates qubit arrays or individual qubits.
+    """Process the fuse primitive which concatenates qubit arrays or individual qubits.
 
     The fuse operation combines two quantum registers (or individual qubits) into
     a single register. It handles four cases:
@@ -249,13 +235,11 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         The fuse equation with two input variables to combine.
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     invalues = extract_invalues(eqn, context_dic)
 
-    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
-        eqn.invars[1].aval, AbstractQubit
-    ):
-
+    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubit):
         # To find the maximum size of the newly created Jlist,
         # we need to search through the context dic for an
         # AbstractQuantumState.
@@ -274,15 +258,11 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
         # Case 1: Two individual qubits -> create a new list containing both
         res_qubits = Jlist(invalues, max_size=max_size)
-    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(
-        eqn.invars[1].aval, AbstractQubit
-    ):
+    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(eqn.invars[1].aval, AbstractQubit):
         # Case 2: Array + Qubit -> append qubit to a copy of the array
         res_qubits = invalues[0].copy()
         res_qubits.append(invalues[1])
-    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
-        eqn.invars[1].aval, AbstractQubitArray
-    ):
+    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubitArray):
         # Case 3: Qubit + Array -> prepend qubit to a copy of the array
         res_qubits = invalues[1].copy()
         res_qubits.prepend(invalues[0])
@@ -294,11 +274,8 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     insert_outvalues(eqn, context_dic, res_qubits)
 
 
-def process_get_qubit(
-    invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process the get_qubit primitive to retrieve a single qubit index from a QubitArray.
+def process_get_qubit(invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process the get_qubit primitive to retrieve a single qubit index from a QubitArray.
 
     Parameters
     ----------
@@ -308,17 +285,15 @@ def process_get_qubit(
         Output variable: [qubit_index]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     reg_qubits = context_dic[invars[0]]
     index = context_dic[invars[1]]
     context_dic[outvars[0]] = reg_qubits[index]
 
 
-def process_slice(
-    invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process the slice primitive to extract a sub-range of qubits from a QubitArray.
+def process_slice(invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process the slice primitive to extract a sub-range of qubits from a QubitArray.
 
     Parameters
     ----------
@@ -328,6 +303,7 @@ def process_slice(
         Output variable: [sliced_qubit_array]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     reg_qubits = context_dic[invars[0]]
     start = context_dic[invars[1]]
@@ -336,11 +312,8 @@ def process_slice(
     context_dic[outvars[0]] = reg_qubits[start:stop]
 
 
-def process_get_size(
-    invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process the get_size primitive to retrieve the number of qubits in a QubitArray.
+def process_get_size(invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process the get_size primitive to retrieve the number of qubits in a QubitArray.
 
     Parameters
     ----------
@@ -350,16 +323,14 @@ def process_get_size(
         Output variable: [size]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     # The size is stored in the counter field of the Jlist
     context_dic[outvars[0]] = context_dic[invars[0]].counter
 
 
-def process_op(
-    op: Operation, invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process quantum gate operations by applying classical bit manipulations.
+def process_op(op: Operation, invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process quantum gate operations by applying classical bit manipulations.
 
     This function handles gates that preserve classical states:
     - X gate: unconditional bit flip
@@ -384,6 +355,7 @@ def process_op(
     ------
     Exception
         If the gate cannot be simulated classically (e.g., H, RX, RY).
+
     """
     # Extract the bit array from the quantum circuit tuple
     bit_array = context_dic[invars[-1]][0]
@@ -436,11 +408,8 @@ def process_op(
     context_dic[outvars[-1]] = (bit_array, context_dic[invars[-1]][1])
 
 
-def cl_multi_cx(
-    bit_array: BitArray, ctrl_state: str, bit_pos: list[QubitIndex]
-) -> BitArray:
-    """
-    Apply a multi-controlled X (NOT) gate to the bit array.
+def cl_multi_cx(bit_array: BitArray, ctrl_state: str, bit_pos: list[QubitIndex]) -> BitArray:
+    """Apply a multi-controlled X (NOT) gate to the bit array.
 
     This function computes the AND of all control conditions and conditionally
     flips the target bit. The control state string specifies whether each control
@@ -468,6 +437,7 @@ def cl_multi_cx(
     - ctrl_state="1": CX gate (flip target if control is 1)
     - ctrl_state="11": CCX/Toffoli gate (flip target if both controls are 1)
     - ctrl_state="01": Flip target if first control is 0 AND second control is 1
+
     """
     # Start with True (represented as 1) - will be ANDed with all control conditions
     flip = jnp.asarray(1, dtype=bit_array.dtype)
@@ -487,11 +457,8 @@ def cl_multi_cx(
     return bit_array
 
 
-def process_measurement(
-    invars: list[Var], outvars: list[Var], context_dic: ContextDict
-) -> None:
-    """
-    Process measurement primitives by reading bit values from the bit array.
+def process_measurement(invars: list[Var], outvars: list[Var], context_dic: ContextDict) -> None:
+    """Process measurement primitives by reading bit values from the bit array.
 
     Since we're simulating classical states only, measurement simply reads the
     current bit value(s). For a QubitArray, the result is an integer formed by
@@ -507,6 +474,7 @@ def process_measurement(
         Output variables: [measurement_result, updated_quantum_circuit]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     # Retrieve the bit array from the quantum circuit
     bit_array = context_dic[invars[-1]][0]
@@ -525,11 +493,8 @@ def process_measurement(
     context_dic[outvars[0]] = meas_res
 
 
-def exec_multi_measurement(
-    bit_array: BitArray, qubit_reg: Jlist
-) -> tuple[BitArray, Array]:
-    """
-    Perform measurement on multiple qubits, returning an integer result.
+def exec_multi_measurement(bit_array: BitArray, qubit_reg: Jlist) -> tuple[BitArray, Array]:
+    """Perform measurement on multiple qubits, returning an integer result.
 
     Each qubit's bit value is read and combined into an integer where qubit i
     contributes to bit position i of the result (little-endian ordering).
@@ -545,11 +510,10 @@ def exec_multi_measurement(
     -------
     tuple[BitArray, Array]
         A tuple of (unchanged bit_array, measurement result as int64).
+
     """
 
-    def loop_body(
-        i: int, arg_tuple: tuple[int, BitArray, Jlist]
-    ) -> tuple[int, BitArray, Jlist]:
+    def loop_body(i: int, arg_tuple: tuple[int, BitArray, Jlist]) -> tuple[int, BitArray, Jlist]:
         """Accumulate bit values into an integer."""
         acc, bit_array, qubit_reg = arg_tuple
         qb_index = qubit_reg[i]
@@ -558,9 +522,7 @@ def exec_multi_measurement(
         acc = acc + (jnp.asarray(res_bl, dtype="int64") << i)
         return (acc, bit_array, qubit_reg)
 
-    acc, bit_array, qubit_reg = fori_loop(
-        0, qubit_reg.counter, loop_body, (0, bit_array, qubit_reg)
-    )
+    acc, bit_array, qubit_reg = fori_loop(0, qubit_reg.counter, loop_body, (0, bit_array, qubit_reg))
 
     return bit_array, acc
 
@@ -603,8 +565,7 @@ def process_while(
     call_graph_stats: dict | None = None,
     callback_threshold: int | None = None,
 ) -> bool | None:
-    """
-    Process while loop primitives that may contain quantum operations.
+    """Process while loop primitives that may contain quantum operations.
 
     If the while loop involves quantum state (AbstractQuantumState), the body
     and condition Jaxprs are converted to their classical equivalents before
@@ -626,8 +587,8 @@ def process_while(
     bool | None
         Returns True if no quantum types are involved (use default evaluation).
         Returns None if the loop was handled by this function.
-    """
 
+    """
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
     overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
@@ -639,21 +600,21 @@ def process_while(
     else:
         bit_array_padding = 0
 
-    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold)
-    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold)
+    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(
+        body_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold
+    )
+    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(
+        cond_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold
+    )
 
     def body_fun(args: list) -> list:
         """Execute the loop body with flattened/unflattened signature conversion."""
         constants = args[eqn.params["cond_nconsts"] : overall_constant_amount]
         carries = args[overall_constant_amount:]
 
-        flattened_invalues = flatten_signature(
-            constants + carries, body_jaxpr.jaxpr.invars
-        )
+        flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
         body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
-        unflattened_body_outvalues = unflatten_signature(
-            body_res, body_jaxpr.jaxpr.outvars
-        )
+        unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
 
         return list(args[:overall_constant_amount]) + list(unflattened_body_outvalues)
 
@@ -662,9 +623,7 @@ def process_while(
         constants = args[: eqn.params["cond_nconsts"]]
         carries = args[overall_constant_amount:]
 
-        flattened_invalues = flatten_signature(
-            constants + carries, cond_jaxpr.jaxpr.invars
-        )
+        flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
     # Execute the while loop and extract the carry values (skip constants)
@@ -674,8 +633,7 @@ def process_while(
 
 
 def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None, callback_threshold=None) -> None:
-    """
-    Process conditional (if/else) primitives that may contain quantum operations.
+    """Process conditional (if/else) primitives that may contain quantum operations.
 
     Converts the branch Jaxprs to their classical equivalents if they contain
     quantum operations, then uses JAX's switch primitive to select the branch.
@@ -690,6 +648,7 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
         Call graph analysis results for callback optimization.
     callback_threshold : int | None, optional
         Threshold for callback wrapping decisions.
+
     """
     invalues = extract_invalues(eqn, context_dic)
 
@@ -714,8 +673,7 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
 
 
 def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=None):
-    """
-    Process scan primitive for cl_func_interpreter.
+    """Process scan primitive for cl_func_interpreter.
     Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
 
     Parameters
@@ -728,6 +686,7 @@ def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=Non
         Call graph analysis results for callback optimization.
     callback_threshold : int | None, optional
         Threshold for callback wrapping decisions.
+
     """
     from jax.lax import scan as jax_scan
 
@@ -747,7 +706,9 @@ def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=Non
 
     # Reinterpret the scan body with the appropriate eqn_evaluator
     scan_body_jaxpr = eqn.params["jaxpr"]
-    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=make_cl_func_eqn_evaluator(call_graph_stats, callback_threshold))
+    scan_body = eval_jaxpr(
+        scan_body_jaxpr, eqn_evaluator=make_cl_func_eqn_evaluator(call_graph_stats, callback_threshold)
+    )
 
     # Create wrapper function that includes constants
     if num_consts > 0:
@@ -780,9 +741,7 @@ def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=Non
         init_arg = tuple(init)
 
     # Call JAX scan
-    final_carry, ys = jax_scan(
-        wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll
-    )
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
 
     # Prepare output
     if not isinstance(final_carry, tuple):
@@ -810,8 +769,7 @@ _traced_fun_cache: OrderedDict[tuple[int, int, int | None, int], tuple[Callable,
 
 
 def _should_use_callback(jaxpr, call_graph_stats, callback_threshold=None):
-    """
-    Decide whether *jaxpr* should be called via ``jax.pure_callback``.
+    """Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
     A sub-jaxpr benefits from callback wrapping when it is **reused**
     (``call_count >= 2``), large enough to matter, and operates on quantum
@@ -832,6 +790,7 @@ def _should_use_callback(jaxpr, call_graph_stats, callback_threshold=None):
     Returns
     -------
     bool
+
     """
     if call_graph_stats is None:
         return False
@@ -842,14 +801,13 @@ def _should_use_callback(jaxpr, call_graph_stats, callback_threshold=None):
         return False
     return (
         stats.call_count > 1
-        and stats.call_count*stats.inlined_eqn_count >= callback_threshold
+        and stats.call_count * stats.inlined_eqn_count >= callback_threshold
         and isinstance(jaxpr.jaxpr.invars[-1].aval, AbstractQuantumState)
     )
 
 
 def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_threshold=None):
-    """
-    Compile a sub-jaxpr to a JIT-compiled function and cache the result.
+    """Compile a sub-jaxpr to a JIT-compiled function and cache the result.
 
     For ``Jaspr`` instances the quantum-to-classical transformation is applied
     first; plain ``ClosedJaxpr`` objects are compiled directly.
@@ -872,10 +830,11 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_th
     tuple[Callable, tuple[ShapeDtypeStruct, ...]]
         ``(jitted_fun, result_shapes)`` – the compiled function and the
         output shape specification needed by ``jax.pure_callback``.
+
     """
     key = (id(jaxpr), bit_array_size, callback_threshold, id(call_graph_stats))
     if key in _traced_fun_cache:
-        _traced_fun_cache.move_to_end(key)          # mark as recently used
+        _traced_fun_cache.move_to_end(key)  # mark as recently used
         return _traced_fun_cache[key]
 
     from jax.core import eval_jaxpr as jax_eval_jaxpr
@@ -889,15 +848,12 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_th
     def jitted_fun(*args):
         return jax_eval_jaxpr(cl_func_jaxpr.jaxpr, cl_func_jaxpr.consts, *args)
 
-    result_shapes = tuple(
-        ShapeDtypeStruct(v.aval.shape, v.aval.dtype)
-        for v in cl_func_jaxpr.jaxpr.outvars
-    )
+    result_shapes = tuple(ShapeDtypeStruct(v.aval.shape, v.aval.dtype) for v in cl_func_jaxpr.jaxpr.outvars)
 
     result = (jitted_fun, result_shapes)
     _traced_fun_cache[key] = result
     if len(_traced_fun_cache) > _TRACED_FUN_CACHE_MAX_SIZE:
-        _traced_fun_cache.popitem(last=False)       # evict least-recently used
+        _traced_fun_cache.popitem(last=False)  # evict least-recently used
     return result
 
 
@@ -905,9 +861,9 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_th
 # process_pjit – handles the ``jit`` primitive
 # ---------------------------------------------------------------------------
 
+
 def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None, callback_threshold=None) -> None:
-    """
-    Process a ``jit`` (pjit) equation in the boolean-simulation interpreter.
+    """Process a ``jit`` (pjit) equation in the boolean-simulation interpreter.
 
     Three cases are distinguished:
 
@@ -927,15 +883,14 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
         Call-graph analysis results from ``analyze_call_graph``.
     callback_threshold : int | None, optional
         Threshold for callback wrapping decisions.
+
     """
     invalues = extract_invalues(eqn, context_dic)
     name = eqn.params["name"]
 
     # ---- Gidney MCX shortcuts ------------------------------------------------
     if name in ("gidney_mcx_impl", "gidney_mcx_inv_impl"):
-        unflattened_outvalues = [
-            (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
-        ]
+        unflattened_outvalues = [(cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])]
         insert_outvalues(eqn, context_dic, unflattened_outvalues)
         return
 
@@ -954,9 +909,7 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
     jaxpr = eqn.params["jaxpr"]
     bit_array_padding = invalues[-1][0].shape[0] * 64 if isinstance(jaxpr, Jaspr) else 0
 
-    traced_fun, result_shapes = _compile_sub_jaxpr(
-        jaxpr, bit_array_padding, call_graph_stats, callback_threshold
-    )
+    traced_fun, result_shapes = _compile_sub_jaxpr(jaxpr, bit_array_padding, call_graph_stats, callback_threshold)
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
     if _should_use_callback(jaxpr, call_graph_stats, callback_threshold):
@@ -968,8 +921,7 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
 
 
 def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
-    """
-    Process qubit deletion with uncomputation verification.
+    """Process qubit deletion with uncomputation verification.
 
     This function handles the deletion of qubits by:
     1. Checking that each qubit is in the |0⟩ state (proper uncomputation)
@@ -985,6 +937,7 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         The delete_qubits equation.
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     invalues = extract_invalues(eqn, context_dic)
 
@@ -1000,9 +953,7 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         """Called when qubit is properly uncomputed (in |0⟩ state)."""
         return
 
-    def loop_body(
-        i: int, value_tuple: tuple[Jlist, BitArray, Jlist]
-    ) -> tuple[Jlist, BitArray, Jlist]:
+    def loop_body(i: int, value_tuple: tuple[Jlist, BitArray, Jlist]) -> tuple[Jlist, BitArray, Jlist]:
         """Check each qubit and return its index to the free pool."""
         qubit_reg, bit_array, free_qubits = value_tuple
 
@@ -1017,17 +968,14 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
         return qubit_reg, bit_array, free_qubits
 
-    qubit_reg, bit_array, free_qubits = fori_loop(
-        0, qubit_reg.counter, loop_body, (qubit_reg, bit_array, free_qubits)
-    )
+    qubit_reg, bit_array, free_qubits = fori_loop(0, qubit_reg.counter, loop_body, (qubit_reg, bit_array, free_qubits))
 
     outvalues = (bit_array, free_qubits)
     insert_outvalues(eqn, context_dic, outvalues)
 
 
 def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
-    """
-    Process reset operations that set qubits to the |0⟩ state.
+    """Process reset operations that set qubits to the |0⟩ state.
 
     This function resets qubits by flipping any bits that are currently 1.
     It handles both single qubit resets and QubitArray resets.
@@ -1038,6 +986,7 @@ def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         The reset equation.
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
+
     """
     invalues = extract_invalues(eqn, context_dic)
 
@@ -1050,25 +999,22 @@ def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
         def loop_body(i: int, bit_array: BitArray) -> BitArray:
             """Reset a single qubit by flipping it if it's 1."""
-            bit_array = conditional_bit_flip_bit_array(
-                bit_array, i, get_bit_array(bit_array, i)
-            )
+            bit_array = conditional_bit_flip_bit_array(bit_array, i, get_bit_array(bit_array, i))
             return bit_array
 
         bit_array = fori_loop(start, stop, loop_body, bit_array)
     else:
         # Reset a single qubit
-        bit_array = conditional_bit_flip_bit_array(
-            bit_array, invalues[0], get_bit_array(bit_array, invalues[0])
-        )
+        bit_array = conditional_bit_flip_bit_array(bit_array, invalues[0], get_bit_array(bit_array, invalues[0]))
 
     outvalues = (bit_array, invalues[-1][1])
     insert_outvalues(eqn, context_dic, outvalues)
 
 
-def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stats=None, callback_threshold=None) -> ClosedJaxpr:
-    """
-    Transform a Jaspr (quantum program) into a classical ClosedJaxpr.
+def jaspr_to_cl_func_jaxpr(
+    jaspr: Jaspr, bit_array_padding: int, call_graph_stats=None, callback_threshold=None
+) -> ClosedJaxpr:
+    """Transform a Jaspr (quantum program) into a classical ClosedJaxpr.
 
     This is the main transformation function that converts a quantum program
     representation into a purely classical JAX expression. The transformation
@@ -1101,6 +1047,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stat
     1. Creating dummy input values with appropriate shapes/types
     2. Using make_jaxpr to trace through eval_jaxpr with the custom equation evaluator
     3. The resulting Jaxpr contains only classical operations
+
     """
     # Create dummy input values for tracing
     args: list[Any] = []
@@ -1137,11 +1084,8 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stat
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator))(*args)
 
 
-def conditional_bit_flip_bit_array(
-    bit_array: BitArray, index: QubitIndex, condition: Array
-) -> BitArray:
-    """
-    Conditionally flip a bit in the packed bit array.
+def conditional_bit_flip_bit_array(bit_array: BitArray, index: QubitIndex, condition: Array) -> BitArray:
+    """Conditionally flip a bit in the packed bit array.
 
     The bit array stores 64 bits per uint64 element. This function computes
     the array index and bit position within that element, then XORs the bit
@@ -1167,6 +1111,7 @@ def conditional_bit_flip_bit_array(
     - array_index = index // 64 (which uint64 element)
     - int_index = index % 64 (which bit within that element)
     - The bit is flipped by XORing with (condition << int_index)
+
     """
     index = jnp.uint64(index)
     # Compute which uint64 element contains this bit (index >> 6 == index // 64)
@@ -1183,8 +1128,7 @@ conditional_bit_flip_bit_array = jit(conditional_bit_flip_bit_array, donate_argn
 
 
 def get_bit_array(bit_array: BitArray, index: QubitIndex) -> Array:
-    """
-    Get the value of a single bit from the packed bit array.
+    """Get the value of a single bit from the packed bit array.
 
     Parameters
     ----------
@@ -1197,6 +1141,7 @@ def get_bit_array(bit_array: BitArray, index: QubitIndex) -> Array:
     -------
     Array
         The bit value (0 or 1) as a JAX array.
+
     """
     index = jnp.uint64(index)
     # Compute which uint64 element contains this bit
@@ -1208,8 +1153,7 @@ def get_bit_array(bit_array: BitArray, index: QubitIndex) -> Array:
 
 
 def unflatten_signature(values: tuple, variables: list[Var]) -> list[Any]:
-    """
-    Convert flattened JAX values back to structured quantum types.
+    """Convert flattened JAX values back to structured quantum types.
 
     During JAX tracing, quantum types (AbstractQuantumState, AbstractQubitArray)
     are flattened into multiple array values. This function reconstructs the
@@ -1229,6 +1173,7 @@ def unflatten_signature(values: tuple, variables: list[Var]) -> list[Any]:
         - AbstractQuantumState -> (bit_array, Jlist)
         - AbstractQubitArray -> Jlist
         - Other types -> unchanged
+
     """
     values = list(values)
     unflattened_values: list[Any] = []
@@ -1251,8 +1196,7 @@ def unflatten_signature(values: tuple, variables: list[Var]) -> list[Any]:
 
 
 def flatten_signature(values: list[Any], variables: list[Var]) -> list[Array]:
-    """
-    Flatten structured quantum types into plain JAX arrays.
+    """Flatten structured quantum types into plain JAX arrays.
 
     Quantum types need to be flattened for JAX operations like switch and
     while_loop that expect flat argument lists.
@@ -1271,6 +1215,7 @@ def flatten_signature(values: list[Any], variables: list[Var]) -> list[Array]:
         - AbstractQuantumState (bit_array, Jlist) -> [bit_array, array, counter]
         - AbstractQubitArray Jlist -> [array, counter]
         - Other types -> unchanged
+
     """
     values = list(values)
     flattened_values: list[Array] = []
@@ -1292,8 +1237,7 @@ def flatten_signature(values: list[Any], variables: list[Var]) -> list[Array]:
 
 
 def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None, callback_threshold=None) -> ClosedJaxpr:
-    """
-    Ensure a Jaxpr is converted to classical form if it contains quantum types.
+    """Ensure a Jaxpr is converted to classical form if it contains quantum types.
 
     This function checks if the Jaxpr contains any quantum abstract types and
     converts it to a classical Jaxpr if necessary. If no quantum types are
@@ -1314,15 +1258,14 @@ def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None, 
     -------
     ClosedJaxpr
         Either the converted classical Jaxpr or the original wrapped as ClosedJaxpr.
+
     """
     bit_array_padding = 0
 
     # Check if any input variable is a quantum type
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]
-        if isinstance(
-            invar.aval, (AbstractQuantumState, AbstractQubitArray, AbstractQubit)
-        ):
+        if isinstance(invar.aval, (AbstractQuantumState, AbstractQubitArray, AbstractQubit)):
             if isinstance(invar.aval, AbstractQuantumState):
                 # Get bit array size from the quantum circuit value
                 bit_array_padding = invalues[i][0].shape[0] * 64

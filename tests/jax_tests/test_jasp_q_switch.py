@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,16 +17,25 @@
 
 # classical indexed switch tests
 
+
 def test_jasp_q_switch_classical_index():
     from qrisp import QuantumFloat, jaspify, measure, q_switch
 
     @jaspify
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         branches = [f0, f1, f2, f3]
         operand = QuantumFloat(2)
 
@@ -41,16 +49,25 @@ def test_jasp_q_switch_classical_index():
 
 # quantum indexed switch tests
 
+
 def test_jasp_q_switch_quantum_index():
     from qrisp import QuantumFloat, jaspify, measure, q_switch
 
     @jaspify
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         index = QuantumFloat(2)
         index[:] = index_val
         branches = [f0, f1, f2, f3]
@@ -70,17 +87,18 @@ def test_jasp_q_switch_multiple_operands():
     @jaspify
     def main(index_val):
 
-        def f0(x, y): pass
+        def f0(x, y):
+            pass
 
-        def f1(x ,y): 
+        def f1(x, y):
             x += 1
             y += 1
 
-        def f2(x, y): 
+        def f2(x, y):
             x += 2
             y += 2
 
-        def f3(x, y): 
+        def f3(x, y):
             x += 3
             y += 3
 
@@ -99,9 +117,10 @@ def test_jasp_q_switch_multiple_operands():
 
 
 def test_jasp_q_switch_hamiltonian_simulation():
-    from qrisp import QuantumFloat, h, q_switch, terminal_sampling
     import numpy as np
-    from qrisp.operators import X, Y, Z
+
+    from qrisp import QuantumFloat, h, q_switch, terminal_sampling
+    from qrisp.operators import Y, Z
 
     H1 = Z(0) * Z(1)
     H2 = Y(0) + Y(1)
@@ -136,9 +155,10 @@ def test_jasp_q_switch_hamiltonian_simulation():
 
 def test_jasp_q_switch_inversion():
 
-    from qrisp import QuantumFloat, q_switch, jaspify, measure
     import jax.numpy as jnp
     from jax import jit
+
+    from qrisp import QuantumFloat, jaspify, measure, q_switch
 
     @jit
     def extract_boolean_digit(integer, digit):
@@ -167,7 +187,7 @@ def test_jasp_q_switch_inversion():
 
 
 def test_jasp_q_switch_function():
-    from qrisp import QuantumFloat, q_switch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, q_switch
 
     # tree
     @boolean_simulation
@@ -217,7 +237,7 @@ def test_jasp_q_switch_function():
 
 
 def test_jasp_q_switch_function_control():
-    from qrisp import QuantumFloat, q_switch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, q_switch
 
     # tree
     @boolean_simulation
@@ -275,7 +295,7 @@ def test_jasp_q_switch_function_control():
 
 
 def test_jasp_q_switch_tree_list():
-    from qrisp import QuantumFloat, q_switch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, q_switch
 
     def branches(i, operand):
         operand += i
@@ -322,7 +342,7 @@ def test_jasp_q_switch_tree_list():
 
 
 def test_jasp_q_switch_tree_list_control():
-    from qrisp import QuantumFloat, q_switch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, q_switch
 
     def branches(i, operand):
         operand += i

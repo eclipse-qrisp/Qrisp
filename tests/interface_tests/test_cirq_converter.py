@@ -5,6 +5,7 @@ import cirq
 import numpy as np
 import pytest
 from cirq import final_state_vector, num_qubits, unitary
+from qrisp.grover import diffuser
 
 from qrisp import (
     QPE,
@@ -20,10 +21,8 @@ from qrisp import (
     x,
     z,
 )
-from qrisp.circuit import QuantumCircuit
-from qrisp.circuit import ControlledOperation
-from qrisp.grover import diffuser
-from qrisp.interface.converter.cirq_converter import convert_to_cirq, convert_from_cirq
+from qrisp.circuit import ControlledOperation, QuantumCircuit
+from qrisp.interface.converter.cirq_converter import convert_from_cirq, convert_to_cirq
 
 
 def _build_single_qubit_circ():
@@ -164,18 +163,16 @@ def test_grover():
     cirq_circuit = convert_to_cirq(qrisp_circuit)
     cirq_sv = final_state_vector(cirq_circuit)
     np.testing.assert_array_almost_equal(
-        np.zeros(np.shape(cirq_sv)), np.round(qrisp_sv - cirq_sv),
+        np.zeros(np.shape(cirq_sv)),
+        np.round(qrisp_sv - cirq_sv),
     )
 
     qrisp_restored = QuantumCircuit.from_cirq(cirq_circuit)
-    np.testing.assert_array_almost_equal(
-        qrisp_restored.statevector_array(), qrisp_sv, decimal=5
-    )
+    np.testing.assert_array_almost_equal(qrisp_restored.statevector_array(), qrisp_sv, decimal=5)
 
 
 def test_recursive_conversion():
     """Verify an op that is non-elementary and has the definition attribute can be converted recursively."""
-
     qc = QuantumCircuit(4)
     qc.rxx(0.3, 0, 1)
     qc.rxx(0.3, 2, 3)
@@ -186,7 +183,7 @@ def test_recursive_conversion():
 
 def test_convert_to_cirq_cirq_qubits_passthrough():
     """Providing custom cirq_qubits should be preserved after transpilation."""
-    from qrisp import QuantumVariable, h, QPE, p
+    from qrisp import QPE, QuantumVariable, h, p
 
     def U(qv):
         p(0.5 * 2 * np.pi, qv[0])
@@ -207,9 +204,7 @@ def test_convert_to_cirq_cirq_qubits_passthrough():
 def _mock_unknown_circ():
     """Qrisp circuit with a MagicMock operation (triggers Exception during transpile)."""
     qc = QuantumCircuit(1)
-    qc.data = [
-        MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])
-    ]
+    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
     return qc
 
 
@@ -226,7 +221,7 @@ def _mock_none_gate_circ():
 
 def _real_unknown_circ():
     """Circuit with a real operation not in gate_map and no definition."""
-    from qrisp.circuit import Operation, Instruction
+    from qrisp.circuit import Instruction, Operation
 
     qc = QuantumCircuit(1)
     op = Operation(name="foo", num_qubits=1)
@@ -350,9 +345,7 @@ def test_roundtrip_preserves_unitary(circ_builder):
 def _circ_h_cx_rz_measure():
     """Cirq circuit with H, CX, RZ, and a two-qubit measurement."""
     q0, q1 = cirq.LineQubit.range(2)
-    return cirq.Circuit(
-        [cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)]
-    )
+    return cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)])
 
 
 def _circ_h_cx():
@@ -383,9 +376,7 @@ def test_convert_from_cirq_circuits(circ_builder, use_classmethod, expected_name
 
     # verify unitary when circuit has no measurement gates
     if not any(d.op.name == "measure" for d in qrisp_qc.data):
-        np.testing.assert_array_almost_equal(
-            np.abs(qrisp_qc.get_unitary()), np.abs(cirq.unitary(cirq_circ))
-        )
+        np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(cirq.unitary(cirq_circ)))
 
 
 def test_convert_from_cirq_reset():
@@ -443,9 +434,7 @@ def test_convert_from_cirq_single_gate(gate_key, expected_name):
     assert qrisp_qc.data[0].op.name == expected_name
 
     expected_unitary = cirq.unitary(cirq_circ)
-    np.testing.assert_array_almost_equal(
-        np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary)
-    )
+    np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary))
 
 
 @pytest.mark.parametrize(
@@ -504,15 +493,9 @@ def test_convert_from_cirq_controlled_gates(key):
 
     builders = {
         "X.controlled()": cirq.Circuit([cirq.X.controlled()(q0, q1)]),
-        "ControlledOperation": cirq.Circuit(
-            [cirq.ControlledOperation([q0], cirq.X(q1))]
-        ),
-        "Toffoli_via_ControlledGate": cirq.Circuit(
-            [cirq.ControlledGate(cirq.X, num_controls=2)(q0, q1, q2)]
-        ),
-        "anti_control_via_control_values": cirq.Circuit(
-            [cirq.X.controlled(control_values=[0, 1])(q0, q1, q2)]
-        ),
+        "ControlledOperation": cirq.Circuit([cirq.ControlledOperation([q0], cirq.X(q1))]),
+        "Toffoli_via_ControlledGate": cirq.Circuit([cirq.ControlledGate(cirq.X, num_controls=2)(q0, q1, q2)]),
+        "anti_control_via_control_values": cirq.Circuit([cirq.X.controlled(control_values=[0, 1])(q0, q1, q2)]),
     }
 
     cirq_circ = builders[key]
@@ -711,7 +694,8 @@ def test_convert_from_cirq_mixed_qubit_types():
 
 def _build_multi_valued_inner_circ():
     """GateOperation wrapping a ControlledGate with multi-valued control (0 OR 1),
-    triggering error in the ControlledGate unwrap while-loop."""
+    triggering error in the ControlledGate unwrap while-loop.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)
@@ -722,7 +706,8 @@ def _build_multi_valued_inner_circ():
 
 def _build_invalid_control_inner_circ():
     """GateOperation wrapping a ControlledGate with control value 2 (bypassed Cirq validation),
-    triggering unsupported-value error in the unwrap while-loop."""
+    triggering unsupported-value error in the unwrap while-loop.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)
@@ -733,7 +718,8 @@ def _build_invalid_control_inner_circ():
 
 def _build_invalid_control_outer_circ():
     """ControlledOperation with control value 2 (bypassed Cirq validation),
-    triggering unsupported-value error in the extra_controls path."""
+    triggering unsupported-value error in the extra_controls path.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)
