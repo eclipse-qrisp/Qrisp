@@ -95,9 +95,8 @@ def convert_to_qiskit(qc, transpile=False):
             qiskit_ins.name = op.name
 
         elif op.name == "gphase":
-            temp_qc = QuantumCircuit(1)
-            qiskit_ins = temp_qc.to_gate()
-            qiskit_ins.name = "gphase"
+            qiskit_qc.global_phase += float(params[0])
+            continue
 
         elif isinstance(op, ClControlledOperation):
             q_reg = QuantumRegister(op.num_qubits)
@@ -408,5 +407,11 @@ def convert_from_qiskit(qiskit_qc):
             op = op.c_if(len(condition_bits), condition_value)
 
         qc.append(op, qubits, clbits)
+
+    # Propagate Qiskit's global phase (stored as a circuit attribute,
+    # not an instruction).  Dropping it changes the unitary — critical
+    # for controlled operations built from gate definitions with phase.
+    if abs(getattr(qiskit_qc, "global_phase", 0)) > 1e-10:
+        qc.gphase(qiskit_qc.global_phase, qc.qubits[0])
 
     return qc
