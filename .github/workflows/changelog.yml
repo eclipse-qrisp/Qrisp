@@ -1,17 +1,13 @@
 name: Changelog Reminder
 
-# Trigger: runs on every PR event targeting main
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main]
 
-# Needed to post/update comments on the PR
 permissions:
   pull-requests: write
 
-# Cancel any in-progress run for this workflow + branch so only the
-# latest commit is evaluated
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -24,10 +20,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Step 1 -- inspect changelog-dev.rst for real entries
-      # Real entries always contain "PR #" references. Template
-      # boilerplate (comments, section headers, underlines) does not.
-      - name: Check if changelog-dev.rst has actual entries
+      - name: Check changelog-dev.rst for entries
         id: check
         run: |
           if grep -q "PR #" documentation/source/general/changelog/changelog-dev.rst 2>/dev/null; then
@@ -36,62 +29,54 @@ jobs:
             echo "modified=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Step 2 -- find any previously posted changelog comment on this PR
-      # Uses a plain-text marker that GitHub's API will not strip.
       - name: Find existing changelog comment
         id: find
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
-          body-includes: "CHANGELOG_CHECK_MARKER"
+          body-includes: CHANGELOG_CHECK_MARKER
 
-      # Step 3a -- no entry found: post/update a reminder checklist
-      # edit-mode: replace ensures the old comment is updated in place,
-      # never duplicated.
       - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
-        uses: peter-evans/create-or-update-comment@v5.0.0
+        uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            [CHANGELOG_CHECK_MARKER]
+            CHANGELOG_CHECK_MARKER
 
             :memo: **Please update the developer changelog**
 
-            It looks like this PR doesn't include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
+            It looks like this PR does not include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
 
             Make sure your entry covers all of the following:
 
-            - [ ] **Section** - placed under the right heading (feature section, `Additional Updates`, or `Compatibility`)
-            - [ ] **First-time contributor?** - add yourself under `First Time Contributors`
+            - [ ] **Section** - placed under the right heading (feature section, Additional Updates, or Compatibility)
+            - [ ] **First-time contributor?** - add yourself under First Time Contributors
             - [ ] **Description** - a concise explanation of what changed and why
-            - [ ] **PR link** - reference the PR using `` `PR #NNN <URL>`_ ``
-            - [ ] **Component** - which class/module/function was affected (use ``:class:`` / ``:func:`` roles)
+            - [ ] **PR link** - reference the PR using `PR #NNN <URL>`
+            - [ ] **Component** - which class/module/function was affected (use :class: / :func: roles)
             - [ ] **Deprecations** - if applicable, what replaces the old API
 
-            See `changelog-template.rst` for the full section layout.
+            See changelog-template.rst for the full section layout.
           edit-mode: replace
 
-      # Step 3b -- entry found: replace the reminder with a thank-you
       - name: Post acknowledgment comment
         if: steps.check.outputs.modified == 'true'
-        uses: peter-evans/create-or-update-comment@v5.0.0
+        uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            [CHANGELOG_CHECK_MARKER]
+            CHANGELOG_CHECK_MARKER
 
             :white_check_mark: **Changelog entry confirmed**
 
             Thanks for adding an entry to `documentation/source/general/changelog/changelog-dev.rst`!
           edit-mode: replace
 
-      # Step 4 -- fail the workflow so the PR cannot be merged without
-      # a changelog entry
-      - name: Fail if changelog-dev.rst has no entries
+      - name: Fail if no changelog entry
         if: steps.check.outputs.modified == 'false'
         run: |
           echo "::error::changelog-dev.rst was not updated with entries for this PR."
