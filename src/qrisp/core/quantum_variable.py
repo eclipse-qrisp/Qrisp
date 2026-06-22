@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -30,8 +29,7 @@ if TYPE_CHECKING:
 
 
 class QuantumVariable:
-    """
-    The QuantumVariable is the quantum equivalent of a regular variable in classical
+    """The QuantumVariable is the quantum equivalent of a regular variable in classical
     programming languages. All :ref:`quantum types <QuantumTypes>` inherit from this
     class. The QuantumVariable allows many automizations and quality of life
     improvements such as hidden qubit management, de/encoding to human readable labels
@@ -190,7 +188,6 @@ class QuantumVariable:
 
     Examples
     --------
-
     Writing a function that brings an arbitrary QuantumVariable into a GHZ state
 
     ::
@@ -216,8 +213,7 @@ class QuantumVariable:
     name_tracker = {}
 
     def __init__(self, size, qs=None, name=None):
-        r"""
-        Constructs a QuantumVariable - possibly with a given name or in a given
+        r"""Constructs a QuantumVariable - possibly with a given name or in a given
         QuantumSession.
 
         Parameters
@@ -234,7 +230,6 @@ class QuantumVariable:
             generic name is given.
 
         """
-
         # Store quantum session
         from qrisp.core import QuantumSession
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
@@ -242,16 +237,13 @@ class QuantumVariable:
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
-                raise Exception(
-                    "Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)"
-                )
+                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)")
 
             self.qubit_cache = {}
+        elif qs is not None:
+            self.qs = qs
         else:
-            if qs is not None:
-                self.qs = qs
-            else:
-                self.qs = QuantumSession()
+            self.qs = QuantumSession()
 
         # self.size = size
 
@@ -328,7 +320,6 @@ class QuantumVariable:
                     except RuntimeError:
                         pass
 
-        import weakref
 
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
@@ -416,8 +407,7 @@ class QuantumVariable:
         return return_function
 
     def delete(self, verify=False, recompute=False):
-        r"""
-        This method is for deleting a QuantumVariable and thus freeing up and resetting
+        r"""This method is for deleting a QuantumVariable and thus freeing up and resetting
         the used qubits.
 
         Note that this method has a different function than the destructor. Calling this
@@ -450,7 +440,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumVariable, execute some gates and try to delete with
         verify = True
 
@@ -472,7 +461,6 @@ class QuantumVariable:
         Exception: Tried to perform operation x on unallocated qubit qv_1.0.
 
         """
-
         from qrisp.jasp import TracingQuantumSession
 
         if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
@@ -500,12 +488,10 @@ class QuantumVariable:
         for qb in self.reg:
             if not qb.allocated:
                 return True
-        else:
-            return False
+        return False
 
     def duplicate(self, name=None, qs=None, init=False, qubits=None):
-        r"""
-        Duplicates the QuantumVariable in the sense that a new QuantumVariable is
+        r"""Duplicates the QuantumVariable in the sense that a new QuantumVariable is
         created with same type and parameters but initialized in the $\ket{0}$ state.
 
         Parameters
@@ -527,7 +513,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumFloat and duplicate:
 
         >>> from qrisp import QuantumFloat
@@ -539,7 +524,6 @@ class QuantumVariable:
         4
 
         """
-
         from qrisp.core import QuantumSession
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
@@ -559,7 +543,6 @@ class QuantumVariable:
         # Register duplicate variable in session
 
         if name is not None:
-
             if name[-1] == "*":
                 self.user_given_name = False
                 name = name[:-1]
@@ -599,8 +582,7 @@ class QuantumVariable:
         return duplicate
 
     def decoder(self, i):
-        """
-        The decoder method specifies how a QuantumVariable turns the outcomes of
+        """The decoder method specifies how a QuantumVariable turns the outcomes of
         measurements into human-readable values. It recieves an integer ``i`` and
         returns a human-readable value.
 
@@ -616,12 +598,10 @@ class QuantumVariable:
 
         Returns
         -------
-
             A human-readable value. Has to be hashable.
 
         Examples
         --------
-
         We create a QuantumFloat and inspect its decoder:
 
         >>> from qrisp import QuantumFloat
@@ -631,8 +611,8 @@ class QuantumVariable:
 
         This implies that if the 3 qubits of this QuantumFloat are measured in state
         001, this outcome corresponds to the value 0.5.
-        """
 
+        """
         from qrisp.misc import bin_rep
 
         return bin_rep(i, self.size)[::-1]
@@ -641,8 +621,7 @@ class QuantumVariable:
         return i
 
     def encoder(self, value):
-        """
-        The encoder reverses the decoder, it turns human-readable values into integers.
+        """The encoder reverses the decoder, it turns human-readable values into integers.
 
         If not overloaded, the encoder will perform a linear search on decoder inputs to
         match the given value.
@@ -664,7 +643,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumChar and inspect it's encoder:
 
         >>> from qrisp import QuantumChar
@@ -683,8 +661,7 @@ class QuantumVariable:
         raise Exception("Value " + str(value) + " not supported by encoder.")
 
     def encode(self, value, permit_dirtyness=False):
-        """
-        The encode method allows to quickly bring a QuantumVariable in a desired
+        """The encode method allows to quickly bring a QuantumVariable in a desired
         computational basis state.
 
         A shorthand for this method is given by the ``[:]`` operator.
@@ -705,7 +682,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create two quantum floats and encode the value 2.5. For one of them, we
         perform an x gate onto the corresponding qubits, resulting in an error.
 
@@ -720,22 +696,18 @@ class QuantumVariable:
         {2.5: 1.0}
 
         """
-
         from qrisp.jasp import TracingQuantumSession
         from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
                 if not check_if_fresh(self.reg, self.qs):
-                    raise Exception(
-                        "Tried to initialize qubits which are not fresh anymore."
-                    )
+                    raise Exception("Tried to initialize qubits which are not fresh anymore.")
 
         int_encoder(self, self.encoder(value))
 
     def init_state(self, params, method="auto"):
-        r"""
-        Initialize an arbitrary quantum state on this quantum variable.
+        r"""Initialize an arbitrary quantum state on this quantum variable.
 
         This method supports two input formats:
 
@@ -838,7 +810,6 @@ class QuantumVariable:
         using ``qf.qs.statevector("function")`` as above.
 
         """
-
         # Imports here to avoid circular dependencies
         import jax.numpy as jnp
 
@@ -861,8 +832,7 @@ class QuantumVariable:
         self.qs.append(operation, self)
 
     def extend(self, amount, position=-1):
-        """
-        This method is used to add more qubits to the QuantumVariable. Using the
+        """This method is used to add more qubits to the QuantumVariable. Using the
         position keyword it is possible to specify the position where the qubits should
         be added. By default, the qubits are added at the end.
 
@@ -887,7 +857,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumVariable and extend it with some extra qubits.
 
         >>> from qrisp import QuantumVariable
@@ -899,12 +868,10 @@ class QuantumVariable:
         [Qubit(qv.0), Qubit(qv.1), Qubit(qv.2), Qubit(qv.6), Qubit(qv.6), Qubit(qv.6)]
 
         """
-
         insertion_qubits = self.qs.request_qubits(amount)
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -913,23 +880,17 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-
             if position == -1:
                 position = self.size
 
             for i in range(amount):
                 insertion_qubits[i].identifier = (
-                    self.name
-                    + "_ext_"
-                    + str(self.qs.qubit_index_counter[0])
-                    + "."
-                    + str(self.size)
+                    self.name + "_ext_" + str(self.qs.qubit_index_counter[0]) + "." + str(self.size)
                 )
                 self.reg.insert(position + i, insertion_qubits[i])
 
     def reduce(self, qubits, verify=False):
-        r"""
-        Reduces the qubit count of the QuantumVariable by removing a specified set of
+        r"""Reduces the qubit count of the QuantumVariable by removing a specified set of
         qubits.
 
         Parameters
@@ -951,7 +912,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumVariable with 5 qubits and remove the first 2
 
         >>> from qrisp import QuantumVariable
@@ -963,7 +923,6 @@ class QuantumVariable:
         [Qubit(qv.2), Qubit(qv.3), Qubit(qv.4)]
 
         """
-
         try:
             len(qubits)
         except TypeError:
@@ -976,9 +935,7 @@ class QuantumVariable:
         for i in range(len(qubits)):
             for j in range(self.size):
                 if self.reg[j] == qubits[i]:
-                    self.reg[j].identifier = "reduced_" + str(
-                        self.qs.qubit_index_counter[0]
-                    )
+                    self.reg[j].identifier = "reduced_" + str(self.qs.qubit_index_counter[0])
                     self.qs.qubit_index_counter += 1
                     self.reg.pop(j)
                     break
@@ -998,8 +955,7 @@ class QuantumVariable:
         filename=None,
         precompiled_qc=None,
     ) -> "DecodedMeasurementResult":
-        r"""
-        Method for quick access to the measurement results of the state of the variable.
+        r"""Method for quick access to the measurement results of the state of the variable.
         Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like
         a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.
 
@@ -1008,7 +964,7 @@ class QuantumVariable:
         plot : Bool, optional
             Plots the measurement results as a historgram. The default is False.
         backend : BackendLike, optional
-            The backend on which to evaluate the quantum circuit. 
+            The backend on which to evaluate the quantum circuit.
             The default can be specified in the file default_backend.py.
         shots : integer, optional
             The amount of shots to evaluate the circuit. The default is given by the backend it runs on.
@@ -1043,7 +999,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create an integer :ref:`QuantumFloat`, encode the value 1 and bring the qubit
         with significance 2 in superposition. We utilize the Qiskit transpiler by
         transpiling into the gate set $\{\text{CX}, \text{U}\}$
@@ -1055,8 +1010,8 @@ class QuantumVariable:
         >>> mes_results = qf.get_measurement(transpilation_kwargs = {"basis_gates" : ["cx", "u"]})  # noqa:501
         >>> print(mes_results)
         {1.0: 0.5, 3.0: 0.5}
-        """
 
+        """
         if backend is None:
             if self.qs.backend is None:
                 from qrisp.default_backend import def_backend
@@ -1076,9 +1031,7 @@ class QuantumVariable:
 
         if precompiled_qc is None:
             if compile:
-                qc = qompiler(
-                    self.qs, intended_measurements=self.reg, **compilation_kwargs
-                )
+                qc = qompiler(self.qs, intended_measurements=self.reg, **compilation_kwargs)
             else:
                 qc = self.qs.copy()
         else:
@@ -1117,9 +1070,7 @@ class QuantumVariable:
                 try:
                     hash(temp)
                 except TypeError:
-                    raise Exception(
-                        "Outcome value " + str(self.decoder(i)) + " is not hashable"
-                    )
+                    raise Exception("Outcome value " + str(self.decoder(i)) + " is not hashable")
                 outcome_labels.append(temp)
             plot_histogram(outcome_labels, dict(result), filename)
             plt.show()
@@ -1127,8 +1078,7 @@ class QuantumVariable:
         return result
 
     def most_likely(self, **kwargs):
-        """
-        Performs a measurement and returns the most likely outcome.
+        """Performs a measurement and returns the most likely outcome.
 
         Parameters
         ----------
@@ -1136,7 +1086,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         >>> from qrisp import QuantumFloat, ry
         >>> import numpy as np
         >>> qf = QuantumFloat(3)
@@ -1147,7 +1096,6 @@ class QuantumVariable:
         1
 
         """
-
         return list(self.get_measurement())[0]
 
     def __getitem__(self, key):
@@ -1201,9 +1149,7 @@ class QuantumVariable:
 
     def __setitem__(self, key, value):
         if key != slice(None, None, None):
-            raise Exception(
-                "Tried to encode value into QuantumVariable using non-trivial slicing."
-            )
+            raise Exception("Tried to encode value into QuantumVariable using non-trivial slicing.")
 
         if isinstance(type(value), type(None)):
             return
@@ -1219,8 +1165,7 @@ class QuantumVariable:
         self.encode(value)
 
     def app_phase_function(self, phi):
-        r"""
-        Applies a previously specified phase function to each computational basis state
+        r"""Applies a previously specified phase function to each computational basis state
         of the QuantumVariable using Gray-Synthesis.
 
         For a given phase function $\phi(x)$ and a QuantumVariable in state
@@ -1238,7 +1183,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumFloat and encode the k-th basis state of the Fourier basis.
         Finally, we will apply an inverse Fourier transformation to measure k in the
         computational basis.
@@ -1281,14 +1225,12 @@ class QuantumVariable:
 
 
         """
-
         from qrisp.misc import app_phase_function
 
         app_phase_function([self], phi)
 
     def uncompute(self, do_it=True, recompute=False):
-        """
-        Method for automatic uncomputation. Uses a generalized form of
+        """Method for automatic uncomputation. Uses a generalized form of
         `this algorithm <https://dl.acm.org/doi/10.1145/3453483.3454040>`_.
 
         For more information check the
@@ -1308,7 +1250,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create two QuantumVariables, apply some gates and perform automatic
         uncomputation:
 
@@ -1366,7 +1307,6 @@ class QuantumVariable:
 
 
         """
-
         if self.is_deleted():
             raise Exception("Tried to uncompute deleted QuantumVariable")
 
@@ -1416,15 +1356,12 @@ class QuantumVariable:
 
     def __iter__(self):
         if not isinstance(self.reg, list):
-            raise Exception(
-                "Tried to perform a static iteration on a dynamic QuantumVariable"
-            )
+            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
         else:
             return self.reg.__iter__()
 
     def init_from(self, other):
-        r"""
-        Method to initiate a QuantumVariable based on the state of another. This method
+        r"""Method to initiate a QuantumVariable based on the state of another. This method
         does NOT copy the state. Much rather it performs the operation
 
 
@@ -1458,7 +1395,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumFloat, and bring it into superposition.
 
         >>> from qrisp import QuantumFloat, h, multi_measurement
@@ -1487,11 +1423,8 @@ class QuantumVariable:
 
 
         """
-
         if not type(self) == type(other):
-            raise Exception(
-                "Tried to initialize " + str(type(self)) + " from " + str(type(other))
-            )
+            raise Exception("Tried to initialize " + str(type(self)) + " from " + str(type(other)))
 
         from qrisp.misc import check_if_fresh
 
@@ -1502,8 +1435,7 @@ class QuantumVariable:
 
     @classmethod
     def custom(self, label_list, decoder=None, qs=None, name=None):
-        """
-        Creates a QuantumVariable with customized outcome labels.
+        """Creates a QuantumVariable with customized outcome labels.
 
         Note that this is a class method, implying there is no need to create another
         QuantumVariable first to call this method.
@@ -1530,7 +1462,6 @@ class QuantumVariable:
 
         Examples
         --------
-
         We create a QuantumVariable with some examples values as outcome labels and
         bring it into uniform superposition.
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,12 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit
-
+from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
-    reduced_margolus_qc,
     margolus_qc,
     maslov_qc,
+    reduced_margolus_qc,
     reduced_maslov_qc,
 )
 

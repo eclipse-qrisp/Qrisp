@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,19 +18,16 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.core.gate_application_functions import p, z
-from qrisp.core import QuantumArray
 from qrisp.alg_primitives.arithmetic.SBP_arithmetic import (
     hybrid_mult,
     polynomial_encoder,
 )
+from qrisp.core import QuantumArray
+from qrisp.core.gate_application_functions import p, z
 
 
-def q_matmul(
-    q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_tolerant=False
-):
-    """
-    Matrix multiplication for QuantumArrays.
+def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_tolerant=False):
+    """Matrix multiplication for QuantumArrays.
 
     Parameters
     ----------
@@ -67,7 +63,6 @@ def q_matmul(
 
     Examples
     --------
-
     We multiply a QuantumArray with a multiply of the identity matrix (np.eye):
 
     >>> import numpy as np
@@ -83,12 +78,8 @@ def q_matmul(
                    [6, 8]]): 1.0}
 
     """
-
     if q_array_0.shape[1] != q_array_1.shape[0]:
-        raise Exception(
-            "Tried to perform matrix multiplication"
-            "with differing contraction index size"
-        )
+        raise Exception("Tried to perform matrix multiplicationwith differing contraction index size")
 
     L = q_array_0.shape[0]
     K = q_array_0.shape[1]
@@ -118,9 +109,7 @@ def q_matmul(
 
             from qrisp.alg_primitives.arithmetic import create_output_qf
 
-            qtype = create_output_qf(
-                list(q_array_0.flatten()) + list(q_array_1.flatten()), poly
-            )
+            qtype = create_output_qf(list(q_array_0.flatten()) + list(q_array_1.flatten()), poly)
 
         if res_bit_shape == "eq":
             qtype = q_array_0[0, 0]
@@ -193,33 +182,14 @@ def q_matmul(
                         if res[i, j].signed and K % 2:
                             z(res[i, j][-1])
 
-                else:
-                    if k == 0:
-                        if output_array is not None:
-                            hybrid_mult(
-                                q_array_0[i, k],
-                                q_array_1[k, j],
-                                output_qf=res[i, j],
-                                init_op="qft",
-                                terminal_op=None,
-                                phase_tolerant=phase_tolerant,
-                            )
-                        else:
-                            hybrid_mult(
-                                q_array_0[i, k],
-                                q_array_1[k, j],
-                                output_qf=res[i, j],
-                                init_op="h",
-                                terminal_op=None,
-                                phase_tolerant=phase_tolerant,
-                            )
-                    elif k == K - 1:
+                elif k == 0:
+                    if output_array is not None:
                         hybrid_mult(
                             q_array_0[i, k],
                             q_array_1[k, j],
                             output_qf=res[i, j],
-                            init_op=None,
-                            terminal_op="qft",
+                            init_op="qft",
+                            terminal_op=None,
                             phase_tolerant=phase_tolerant,
                         )
                     else:
@@ -227,17 +197,34 @@ def q_matmul(
                             q_array_0[i, k],
                             q_array_1[k, j],
                             output_qf=res[i, j],
-                            init_op=None,
+                            init_op="h",
                             terminal_op=None,
                             phase_tolerant=phase_tolerant,
                         )
+                elif k == K - 1:
+                    hybrid_mult(
+                        q_array_0[i, k],
+                        q_array_1[k, j],
+                        output_qf=res[i, j],
+                        init_op=None,
+                        terminal_op="qft",
+                        phase_tolerant=phase_tolerant,
+                    )
+                else:
+                    hybrid_mult(
+                        q_array_0[i, k],
+                        q_array_1[k, j],
+                        output_qf=res[i, j],
+                        init_op=None,
+                        terminal_op=None,
+                        phase_tolerant=phase_tolerant,
+                    )
 
     return res
 
 
 def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="eq"):
-    """
-    Performs matrix multiplication between a classical numpy array and a QuantumArray
+    """Performs matrix multiplication between a classical numpy array and a QuantumArray
 
     Parameters
     ----------
@@ -266,7 +253,6 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
 
     Examples
     --------
-
     We multiply a QuantumArray with a scalar multiple of the identity matrix (np.eye):
 
     >>> import numpy as np
@@ -283,15 +269,14 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
 
     """
     if q_matrix.shape[1] != cl_matrix.shape[0]:
-        raise Exception(
-            "Tried to apply matrix multiplication with unfitting dimensions"
-        )
+        raise Exception("Tried to apply matrix multiplication with unfitting dimensions")
 
     L = q_matrix.shape[0]
     K = q_matrix.shape[1]
     J = cl_matrix.shape[1]
 
     from sympy import Symbol
+
     from qrisp import QuantumFloat
 
     if output_array is None:
@@ -316,10 +301,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
         output_array = QuantumArray(shape=(L, J), qtype=qtype, qs=q_matrix.qs)
 
     if output_array.shape != (L, J):
-        raise Exception(
-            "Tried to to encode matrix multiplication"
-            "into Quantum Array of unfitting size"
-        )
+        raise Exception("Tried to to encode matrix multiplicationinto Quantum Array of unfitting size")
 
     from sympy.matrices import zeros
 
@@ -368,8 +350,7 @@ def modinv(a, m):
 # [qv1, qv2,.. qvn] with a n x n matrix  A
 # ie. the array contains [a11*qv1 +a12*qv2+ ... , a21*qv1..] after
 def inplace_matrix_app(vector, matrix):
-    r"""
-    Performs inplace matrix application to a vector-valued QuantumArray.
+    r"""Performs inplace matrix application to a vector-valued QuantumArray.
     Note that due to reversibility reasons, the matrix can only contain integers
     and has to be invertible over $\text{GL}(2^n)$.
     This is equal to the condition that the determinant is odd.
@@ -388,7 +369,6 @@ def inplace_matrix_app(vector, matrix):
 
     Examples
     --------
-
     We perform an inplace matrix multiplication between a randomly chosen matrix
     and a randomly chosen vector
 
@@ -402,19 +382,15 @@ def inplace_matrix_app(vector, matrix):
     >>> inplace_matrix_app(q_vector, matrix)
     >>> print(q_vector)
     {OutcomeArray([4, 4, 7]): 1.0}
-    """
 
+    """
     if len(vector.shape) != 1:
-        raise Exception(
-            "Tried to multiply matrix with Quantum Array with unfitting shape"
-        )
+        raise Exception("Tried to multiply matrix with Quantum Array with unfitting shape")
 
     n = vector.shape[0]
 
     if n != matrix.shape[0] or n != matrix.shape[1]:
-        raise Exception(
-            "Tried to multiply matrix with Quantum Array with unfitting shape"
-        )
+        raise Exception("Tried to multiply matrix with Quantum Array with unfitting shape")
 
     bit = vector[0].size
 
@@ -474,9 +450,7 @@ def inplace_matrix_app(vector, matrix):
                 raise Exception("Could not find invertible element")
 
         # Generate inverse equation
-        eval_inverse = modinv(coeff, 2**bit) * (
-            -target_values[i].subs({x[j]: 0}) + ancilla_symbol
-        )
+        eval_inverse = modinv(coeff, 2**bit) * (-target_values[i].subs({x[j]: 0}) + ancilla_symbol)
 
         from qrisp.qtypes.quantum_float import trunc_poly
 
@@ -488,9 +462,7 @@ def inplace_matrix_app(vector, matrix):
 
         for k in range(i + 1, n):
             # Substitue in the following equations
-            target_values[k] = (
-                target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
-            )
+            target_values[k] = target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
 
             # Truncate coefficients
             target_values[k] = trunc_poly(target_values[k], (0, bit))
@@ -553,17 +525,11 @@ def auto_matmul_wrapper(a, b, out=None):
         return semi_classic_matmul(b.transpose(), a.transpose(), out).transpose()
 
     else:
-        raise Exception(
-            "Could not proccess input constellation "
-            + str(type(a))
-            + " and "
-            + str(type(b))
-        )
+        raise Exception("Could not proccess input constellation " + str(type(a)) + " and " + str(type(b)))
 
 
 def dot(a, b, out=None):
-    """
-    Port of the popular `numpy function
+    """Port of the popular `numpy function
     <https://numpy.org/doc/stable/reference/generated/numpy.dot.html>`_
     with similar semantics.
 
@@ -583,7 +549,6 @@ def dot(a, b, out=None):
 
     Examples
     --------
-
     We create two QuantumArrays and apply dot as a function
     performing matrix-vector multiplication.
 
@@ -626,48 +591,44 @@ def dot(a, b, out=None):
     if isinstance(a, QuantumFloat) or isinstance(b, QuantumFloat):
         return np.dot(a, b, out)
 
+    elif len(a.shape) == 1 and len(b.shape) == 1:
+        temp_0 = a.reshape((1, a.shape[0]))
+        temp_1 = b.reshape((a.shape[0], 1))
+        res = (auto_matmul_wrapper(temp_0, temp_1, out))[0, 0]
+        return res
+
+    elif len(a.shape) == 2 and len(b.shape) == 2:
+        return auto_matmul_wrapper(a, b, out)
+
+    elif len(b.shape) == 1:
+        temp_0 = a.reshape((a.size // b.shape[-1], b.shape[-1]))
+        temp_1 = b.reshape((b.shape[0], 1))
+
+        new_shape = list(b.shape)
+        new_shape[-1] = b.shape[0]
+
+        res = (auto_matmul_wrapper(temp_0, temp_1, out)).reshape(new_shape)
+
+        return res
+
     else:
-        if len(a.shape) == 1 and len(b.shape) == 1:
-            temp_0 = a.reshape((1, a.shape[0]))
-            temp_1 = b.reshape((a.shape[0], 1))
-            res = (auto_matmul_wrapper(temp_0, temp_1, out))[0, 0]
-            return res
+        temp_0 = a.reshape((a.size // b.shape[-1], b.shape[-1]))
 
-        elif len(a.shape) == 2 and len(b.shape) == 2:
-            return auto_matmul_wrapper(a, b, out)
+        temp_1 = np.swapaxes(b, 0, -2)
+        temp_1 = np.reshape(temp_1, (temp_1.shape[0], temp_1.size // temp_1.shape[0]))
 
-        elif len(b.shape) == 1:
-            temp_0 = a.reshape((a.size // b.shape[-1], b.shape[-1]))
-            temp_1 = b.reshape((b.shape[0], 1))
+        res = auto_matmul_wrapper(temp_0, temp_1, out)
 
-            new_shape = list(b.shape)
-            new_shape[-1] = b.shape[0]
+        res_shape = list(temp_1.shape)
+        res_shape.pop(-2)
 
-            res = (auto_matmul_wrapper(temp_0, temp_1, out)).reshape(new_shape)
+        res_shape = list(temp_0.shape)[:-1] + res_shape
 
-            return res
-
-        else:
-            temp_0 = a.reshape((a.size // b.shape[-1], b.shape[-1]))
-
-            temp_1 = np.swapaxes(b, 0, -2)
-            temp_1 = np.reshape(
-                temp_1, (temp_1.shape[0], temp_1.size // temp_1.shape[0])
-            )
-
-            res = auto_matmul_wrapper(temp_0, temp_1, out)
-
-            res_shape = list(temp_1.shape)
-            res_shape.pop(-2)
-
-            res_shape = list(temp_0.shape)[:-1] + res_shape
-
-            return np.reshape(res, res_shape)
+        return np.reshape(res, res_shape)
 
 
 def tensordot(a, b, axes):
-    r"""
-    Port of `numpy tensordot
+    r"""Port of `numpy tensordot
     <https://numpy.org/doc/stable/reference/generated/numpy.tensordot.html>`_
     with similar semantics.
 
@@ -687,7 +648,6 @@ def tensordot(a, b, axes):
 
     Examples
     --------
-
     Using ``tensordot`` we can perform the arithmetic for simulating a quantum computer
     *on a quantum computer*.
 
@@ -743,7 +703,6 @@ def tensordot(a, b, axes):
      -0.25 -0.25 -0.25 -0.25]
 
     """
-
     try:
         iter(axes)
     except Exception:

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,14 +17,11 @@
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.block_encodings.constructors.from_lcu import build_from_lcu
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 
 
-def build_from_operator(
-    cls: BlockEncoding, O: QubitOperator | FermionicOperator
-) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding from an operator.
+def build_from_operator(cls: BlockEncoding, O: QubitOperator | FermionicOperator) -> BlockEncoding:
+    r"""Constructs a BlockEncoding from an operator.
 
     Parameters
     ----------
@@ -45,7 +41,6 @@ def build_from_operator(
 
     Examples
     --------
-
     >>> from qrisp.block_encodings import BlockEncoding
     >>> from qrisp.operators import X, Y, Z
     >>> H = X(0)*X(1) + 0.2*Y(0)*Y(1)

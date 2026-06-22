@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,20 +18,16 @@
 # -*- coding: utf-8 -*-
 
 
-import threading
-
 import numpy as np
 from numba import njit
 
 from qrisp.circuit import (
-    Instruction,
-    QuantumCircuit,
-    transpile,
-    Reset,
     ClControlledOperation,
     CXGate,
-    Operation,
+    Instruction,
     Measurement,
+    Operation,
+    QuantumCircuit,
 )
 from qrisp.permeability.type_checker import is_permeable
 
@@ -95,9 +90,7 @@ class GroupedInstruction:
 
         self.gain = 0
         for i in range(len(indices)):
-            self.gain += (
-                1 << self.instr_list[indices[i]].op.num_qubits
-            )  # + memory_bandwidth_penalty
+            self.gain += 1 << self.instr_list[indices[i]].op.num_qubits  # + memory_bandwidth_penalty
 
         self.gain = self.gain - 2 ** len(self.qubits) * 0.45
 
@@ -181,9 +174,7 @@ def find_group(int_qc, max_recursion_depth):
 
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
-def find_grouping_options(
-    int_qc, traversed_qb_sets, max_recursion_depth, qubits=None, established_indices=[]
-):
+def find_grouping_options(int_qc, traversed_qb_sets, max_recursion_depth, qubits=None, established_indices=[]):
     # If no set of qubit is proposed, we search for the instructions that could
     # be executed now (ie. in a QuantumCircuit they would be on the left end)
     # and search for groups starting with these instructions
@@ -202,37 +193,25 @@ def find_grouping_options(
     # instruction_indices, expansion_options = get_circuit_block(int_qc.source.data,
     # int_to_qb_set(qubits, int_qc.source), list(established_indices))
 
-    instruction_indices, expansion_options = get_circuit_block_(
-        int_qc, qubits, np.array(established_indices)
-    )
+    instruction_indices, expansion_options = get_circuit_block_(int_qc, qubits, np.array(established_indices))
 
     # Create the list of grouping options
     # options = [GroupedInstruction(qc.source.data, instruction_indices,  qubits)]
-    options = [
-        GroupedInstruction(
-            int_qc, instruction_indices, int_to_qb_set(qubits, int_qc.source)
-        )
-    ]
+    options = [GroupedInstruction(int_qc, instruction_indices, int_to_qb_set(qubits, int_qc.source))]
 
     # Check some conditions that determine if no further recursion should be performed
-    if (
-        len(expansion_options) == 0
-        or max_recursion_depth == 0
-        or len(int_to_qb_set(qubits, int_qc.source)) >= 7
-    ):
+    if len(expansion_options) == 0 or max_recursion_depth == 0 or len(int_to_qb_set(qubits, int_qc.source)) >= 7:
         return options
 
     # Now, include the proposed expansion options
     for i in range(len(expansion_options)):
         # Calculate the hash of the proposed set of qubits
         # proposed_set = sum([hash(qb) for qb in qubits + [expansion_options[i]]])
-        proposed_set = qubits | qb_set_to_int(
-            [expansion_options[i]], int_qc.qb_to_index
-        )
+        proposed_set = qubits | qb_set_to_int([expansion_options[i]], int_qc.qb_to_index)
         # proposed_set = qubits.union(BinaryQubitSet([expansion_options[i]], qc.source))
 
         # If this set has not been checked yet, add to the options
-        if not proposed_set in traversed_qb_sets:
+        if proposed_set not in traversed_qb_sets:
             # options += find_grouping_options(qc_data, traversed_qb_sets,
             # max_recursion_depth - 1, qubits = qubits + [expansion_options[i]],
             # established_indices = list(instruction_indices))
@@ -410,7 +389,7 @@ def insert_disentangling(qc):
     disentangling_counter = 0
     i = 0
     while i < len(reversed_data):
-        if not reversed_data[i].op.name in ["measure", "reset"]:
+        if reversed_data[i].op.name not in ["measure", "reset"]:
             i += 1
             continue
 
@@ -531,9 +510,7 @@ def qc_to_int_list(qc, qb_to_index):
     res_list = []
     for instr in qc.data:
         res_list.append(qb_set_to_int(instr.qubits, qb_to_index))
-        if instr.op.name in ["measure", "reset", "disentangle"] or (
-            isinstance(instr.op, ClControlledOperation)
-        ):
+        if instr.op.name in ["measure", "reset", "disentangle"] or (isinstance(instr.op, ClControlledOperation)):
             res_list[-1] *= -1
 
     return res_list
@@ -615,9 +592,7 @@ def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices)
         else:
             qubits = qubits & (((1 << n) - 1) ^ intersection)
             # qubits = qubits - intersection
-            expansion_options = expansion_options | (
-                instr_qubits & (((1 << n) - 1) ^ intersection)
-            )
+            expansion_options = expansion_options | (instr_qubits & (((1 << n) - 1) ^ intersection))
             # expansion_options = expansion_options.union(instr_qubits - intersection)
 
     # Return result
@@ -680,9 +655,7 @@ def binary_get_circuit_block(int_qc_list, qubits, n, established_indices):
         else:
             qubits = qubits & (((1 << n) - 1) ^ intersection)
             # qubits = qubits - intersection
-            expansion_options = expansion_options | (
-                instr_qubits & (((1 << n) - 1) ^ intersection)
-            )
+            expansion_options = expansion_options | (instr_qubits & (((1 << n) - 1) ^ intersection))
             # expansion_options = expansion_options.union(instr_qubits - intersection)
 
     # Return result
@@ -730,12 +703,7 @@ def extract_measurements(qc):
     data = []
     mes_dic = {}
     for instr in qc.data[::-1]:
-
-        if (
-            instr.op.name == "measure"
-            and instr.qubits[0] in qubits
-            and instr.clbits[0] in clbits
-        ):
+        if instr.op.name == "measure" and instr.qubits[0] in qubits and instr.clbits[0] in clbits:
             mes_list.append(instr)
         else:
             data.append(instr)
@@ -779,18 +747,13 @@ def insert_multiverse_measurements(qc):
             next_instr_is_reset = False
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
-
                     if data[j].op.name == "reset":
                         next_instr_is_reset = True
                         data.pop(j)
                         break
-                    elif not is_permeable(
-                        data[j].op, [data[j].qubits.index(meas_qubit)]
-                    ):
+                    elif not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
                         break
-                if meas_clbit in data[j].clbits and not isinstance(
-                    data[j], ClControlledOperation
-                ):
+                if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
                     break
 
                 # This treats the case that two measurements with the same outcome are performed
@@ -816,7 +779,6 @@ def insert_multiverse_measurements(qc):
             mes_instr.qubits = [qb]
 
         elif instr.op.name == "reset":
-
             meas_qubit = instr.qubits[0]
             new_data.append(Instruction(Disentangler(warning=False), [meas_qubit]))
 
@@ -833,12 +795,10 @@ def insert_multiverse_measurements(qc):
             new_data.append(Instruction(Disentangler(), [qb]))
 
         elif isinstance(instr.op, ClControlledOperation):
-
             new_qubits = []
             ctrl_state = instr.op.ctrl_state
             control_qubits = []
             for j in range(len(instr.clbits)):
-
                 cb = instr.clbits[j]
 
                 if cb not in cb_to_qb_dic:
@@ -853,9 +813,7 @@ def insert_multiverse_measurements(qc):
             else:
                 new_data.append(
                     Instruction(
-                        instr.op.base_op.control(
-                            len(control_qubits), ctrl_state=ctrl_state
-                        ),
+                        instr.op.base_op.control(len(control_qubits), ctrl_state=ctrl_state),
                         control_qubits + instr.qubits,
                     )
                 )

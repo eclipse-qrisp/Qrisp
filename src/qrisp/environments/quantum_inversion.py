@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,14 +21,12 @@ from qrisp.environments.quantum_environments import QuantumEnvironment
 
 # Environment inheritor where the environment content is appended as the inverse
 class InversionEnvironment(QuantumEnvironment):
-    """
-    This QuantumEnvironment can be used to invert (i.e. "dagger") a block of operations.
+    """This QuantumEnvironment can be used to invert (i.e. "dagger") a block of operations.
 
     An alias for this is ``invert``.
 
     Examples
     --------
-
     We increment a :ref:`QuantumFloat` and afterwards revert using the
     InversionEnvironment: ::
 
@@ -303,10 +300,7 @@ class InversionEnvironment(QuantumEnvironment):
         i = 0
         while i < len(self.env_qs.data):
             instr = self.env_qs.data[i]
-            if (
-                instr.op.name == "qb_alloc"
-                and not instr.qubits[0] in initially_allocated_qubits
-            ):
+            if instr.op.name == "qb_alloc" and instr.qubits[0] not in initially_allocated_qubits:
                 initially_allocated_qubits.append(self.env_qs.data.pop(i).qubits[0])
                 continue
             i += 1
@@ -317,10 +311,7 @@ class InversionEnvironment(QuantumEnvironment):
         self.env_qs.data.reverse()
         while i < len(self.env_qs.data):
             instr = self.env_qs.data[i]
-            if (
-                instr.op.name == "qb_dealloc"
-                and not instr.qubits[0] in deallocated_qubits
-            ):
+            if instr.op.name == "qb_dealloc" and instr.qubits[0] not in deallocated_qubits:
                 deallocated_qubits.append(self.env_qs.data.pop(i).qubits[0])
                 continue
             i += 1

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,12 +16,12 @@
 """
 
 import stim
+
 from qrisp.circuit import Operation, QuantumCircuit
 
 
 class StimNoiseGate(Operation):
-    """
-    Class for representing Stim errors in Qrisp circuits.
+    """Class for representing Stim errors in Qrisp circuits.
 
     This class is used to wrap Stim instructions into Qrisp Operations. These operations are
     effectively identity gates (they have an empty definition) but carry the information about the Stim
@@ -68,7 +67,6 @@ class StimNoiseGate(Operation):
 
     Examples
     --------
-
     We construct a simple circuit that contains both: quantum gates and error instructions.
 
     ::
@@ -112,7 +110,7 @@ class StimNoiseGate(Operation):
 
         if self.pauli_string is not None:
             # Check for compatibility
-            if not (stim_name in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]):
+            if stim_name not in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]:
                 raise Exception(
                     f"Stim error {stim_name} does not support Pauli strings. Supported gates are E, CORRELATED_ERROR, ELSE_CORRELATED_ERROR"
                 )

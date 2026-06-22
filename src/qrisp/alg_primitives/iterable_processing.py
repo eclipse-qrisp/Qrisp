@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,6 +21,7 @@ from qrisp.core import cx, swap
 from qrisp.environments import control
 from qrisp.jasp import check_for_tracing_mode, jlen, jrange, while_loop
 
+
 def demux(
     input,
     ctrl_qv,
@@ -30,8 +30,7 @@ def demux(
     permit_mismatching_size=False,
     parallelize_qc=False,
 ):
-    """
-    This functions allows moving an input value into an iterable output, where the
+    """This functions allows moving an input value into an iterable output, where the
     position is specified by a ``QuantumFloat``. Demux is short for demultiplexer and
     is a standard component in `classical electrical circuitry
     <https://en.wikipedia.org/wiki/Multiplexer>`_.
@@ -78,7 +77,6 @@ def demux(
 
     Examples
     --------
-
     We create a ``QuantumBool`` and demux it into a ``QuantumArray`` ::
 
         from qrisp import *
@@ -117,8 +115,8 @@ def demux(
 
     >>> print(multi_measurement([index, qf]))
     {(0, '1000'): 0.5, (2, '0010'): 0.5}
-    """
 
+    """
     from qrisp import QuantumArray, QuantumVariable, Qubit, control, swap
 
     if output is None:
@@ -128,21 +126,14 @@ def demux(
             output = QuantumVariable(2 ** len(ctrl_qv))
         else:
             raise Exception("Don't know how to handle input type " + str(type(input)))
-    else:
-        if isinstance(output, QuantumArray):
-            for qv in output.flatten()[1:]:
-                if qv.name == input.name:
-                    raise Exception(
-                        "Tried to in-place demux QuantumArray entry,"
-                        "which is not a 0-th position"
-                    )
-        elif isinstance(output, QuantumVariable):
-            for qb in output.reg[1:]:
-                if qb.identifier == input.identifier:
-                    raise Exception(
-                        "Tried to in-place demux QuantumVariable entry,"
-                        "which is not a 0-th position"
-                    )
+    elif isinstance(output, QuantumArray):
+        for qv in output.flatten()[1:]:
+            if qv.name == input.name:
+                raise Exception("Tried to in-place demux QuantumArray entry,which is not a 0-th position")
+    elif isinstance(output, QuantumVariable):
+        for qb in output.reg[1:]:
+            if qb.identifier == input.identifier:
+                raise Exception("Tried to in-place demux QuantumVariable entry,which is not a 0-th position")
 
     n = int(np.ceil(np.log2(len(output))))
     N = 2**n
@@ -170,7 +161,6 @@ def demux(
         return output
 
     if n > 1:
-
         if parallelize_qc:
             demux_ancilla = QuantumVariable(len(ctrl_qv) - 1)
             cx(ctrl_qv[:-1], demux_ancilla)
@@ -228,8 +218,7 @@ def q_swap_into(q_array, index, qv):
 
 
 def cyclic_shift(iterable, shift_amount=1):
-    r"""
-    Performs a cyclic shift of the values of an iterable with logarithmic depth.
+    r"""Performs a cyclic shift of the values of an iterable with logarithmic depth.
     The shifting amount can be specified.
 
 
@@ -242,7 +231,6 @@ def cyclic_shift(iterable, shift_amount=1):
 
     Examples
     --------
-
     We create a QuantumArray, initiate a sequence of increments and perform a cyclic shift.
 
     >>> from qrisp import QuantumFloat, QuantumArray, cyclic_shift
@@ -263,12 +251,11 @@ def cyclic_shift(iterable, shift_amount=1):
     >>> cyclic_shift(qa, shift_amount)
     >>> print(qa)
     {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333, OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333, OutcomeArray([3, 4, 5, 6, 7, 0, 1, 2]): 0.3333}
-    """
 
-    from qrisp import QuantumFloat, control, QuantumBool, cx
+    """
+    from qrisp import QuantumFloat, control
 
     if isinstance(shift_amount, QuantumFloat):
-
         if shift_amount.mshape[0] < 0:
             raise Exception("Tried to quantum shift by non-integer QuantumFloat")
 
@@ -294,7 +281,6 @@ def cyclic_shift(iterable, shift_amount=1):
             return cyclic_shift(iterable[::-1], -shift_amount)
 
         if shift_amount != 1:
-
             perm = np.arange(N)
             perm = (perm - shift_amount) % (N)
 
@@ -304,9 +290,9 @@ def cyclic_shift(iterable, shift_amount=1):
         singular_shift(iterable[: 2**n])
         singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
 
+
 def _cyclic_shift_jasp(iterable, shift_amount):
-    """
-    JASP-compatible implementation of cyclic_shift for arbitrary integer
+    """JASP-compatible implementation of cyclic_shift for arbitrary integer
     shift_amount. Decomposes into repeated applications of shift-by-1 using
     singular_shift with DynamicQubitArray slicing/fusion.
 
@@ -319,12 +305,14 @@ def _cyclic_shift_jasp(iterable, shift_amount):
         The iterable to shift (must have a .reg attribute supporting slicing).
     shift_amount : int
         The (classical) shift amount.
+
     """
     if shift_amount == 0:
         return
 
     if shift_amount < 0:
         from qrisp import invert
+
         with invert():
             _cyclic_shift_jasp(iterable, -shift_amount)
         return
@@ -334,8 +322,7 @@ def _cyclic_shift_jasp(iterable, shift_amount):
 
 
 def _cyclic_shift_one(iterable):
-    """
-    JASP-compatible single cyclic shift (shift_amount=1).
+    """JASP-compatible single cyclic shift (shift_amount=1).
     Decomposes into two singular_shift calls using DynamicQubitArray
     slicing and fusion, mirroring the non-JASP decomposition:
         singular_shift(iterable[:2**n])
@@ -359,9 +346,9 @@ def _cyclic_shift_one(iterable):
 
 
 def compute_floor_log2(N):
+    """Computes floor(log2(N)) in a JASP-compatible way using while_loop.
     """
-    Computes floor(log2(N)) in a JASP-compatible way using while_loop.
-    """
+
     def body_fun(val):
         result, current = val
         current = current // 2
@@ -376,8 +363,7 @@ def compute_floor_log2(N):
 
 
 def compute_ladder_iterations(N):
-    """
-    Computes the number of ladder iterations (swap levels) required by
+    """Computes the number of ladder iterations (swap levels) required by
     ``singular_shift`` for an iterable of length ``N``.
 
     The ladder algorithm swaps at distances 1, 2, 4, …, 2^(k-1).
@@ -386,10 +372,11 @@ def compute_ladder_iterations(N):
 
     Args:
         N (int): The length of the iterable.
+
     Returns:
         int: The number of iterations (ceil(log2(N))).
-    """
 
+    """
     power = 1
     iterations = 0
 
@@ -403,23 +390,24 @@ def compute_ladder_iterations(N):
     power, iterations = while_loop(cond_fun, body_fun, (power, iterations))
     return iterations
 
+
 def singular_shift(iterable, use_saeedi=False):
 
     N = jlen(iterable)
 
     if use_saeedi:
         for i in jrange(N // 2):
-            j = (N - i) % N   # equivalent to -i % N
+            j = (N - i) % N  # equivalent to -i % N
 
             expr_out = j != i + 1
-            expr_in =  i + 1 < N
+            expr_in = i + 1 < N
             with control(expr_out):
                 with control(expr_in):
                     swap(iterable[j], iterable[i + 1])
 
         for i in jrange(N // 2):
-            j = (N - i) % N   # equivalent to -i % N
-            
+            j = (N - i) % N  # equivalent to -i % N
+
             expr_out = j != i + 2
             expr_in = i + 2 < N
             with control(expr_out):
@@ -427,7 +415,6 @@ def singular_shift(iterable, use_saeedi=False):
                     swap(iterable[j], iterable[i + 2])
 
     else:
-
         iterations = compute_ladder_iterations(N)
         for j in jrange(iterations):
             step = 2 * 2**j
@@ -465,8 +452,7 @@ def to_cycles(perm):
 
 
 def permute_iterable(iterable, perm):
-    """
-    Applies an arbitrary permutation to an iterable with logarithmic depth.
+    """Applies an arbitrary permutation to an iterable with logarithmic depth.
 
     Parameters
     ----------
@@ -477,7 +463,6 @@ def permute_iterable(iterable, perm):
 
     Examples
     --------
-
     We create a QuantumArray containing increments and apply a specified permutation.
 
     >>> from qrisp import QuantumFloat, QuantumArray, permute_iterable
@@ -553,7 +538,6 @@ def permute_iterable(iterable, perm):
         QuantumFloat qa_7
 
     """
-
     from sympy.combinatorics import Permutation
 
     inv_perm = list(Permutation(perm) ** -1)

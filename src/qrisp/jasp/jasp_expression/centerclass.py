@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,35 +15,30 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
 import jax
-from qrisp._cache_config import qrisp_lru_compilation_cache
 from jax import make_jaxpr
-from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.extend.core import ClosedJaxpr, Jaxpr, Literal
+from jax.tree_util import tree_flatten
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import (
     eval_jaxpr,
-    flatten_environments,
-    cond_to_cl_control,
     extract_invalues,
     flatten_environments,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.interpreters import (
+    ProcessedMeasurement,  # noqa: F401 — re-exported via qrisp.jasp.jasp_expression
+)
+from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
-    QuantumPrimitive,
-    ParityOperation,
 )
-from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement  # noqa: F401 — re-exported via qrisp.jasp.jasp_expression
-from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive
-from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
 
 
 class Jaspr(ClosedJaxpr):
-    """
-    The ``Jaspr`` class enables an efficient representations of a wide variety
+    """The ``Jaspr`` class enables an efficient representations of a wide variety
     of (hybrid) algorithms. For many applications, the representation is agnostic
     to the scale of the problem, implying function calls with 10 or 10000 qubits
     can be represented by the same object. The actual unfolding to a circuit-level
@@ -161,18 +155,14 @@ class Jaspr(ClosedJaxpr):
             kwargs["consts"] = args[0].consts
 
         if "jaxpr" in kwargs:
-
             ClosedJaxpr.__init__(self, kwargs["jaxpr"], kwargs["consts"])
         else:
-
             if "consts" in kwargs:
                 consts = kwargs["consts"]
                 del kwargs["consts"]
             else:
                 if len(kwargs["constvars"]):
-                    raise Exception(
-                        "Tried to create Jaspr with constvars but no constants"
-                    )
+                    raise Exception("Tried to create Jaspr with constvars but no constants")
                 consts = []
 
             ClosedJaxpr.__init__(self, jaxpr=Jaxpr(**kwargs), consts=consts)
@@ -258,8 +248,7 @@ class Jaspr(ClosedJaxpr):
         return res
 
     def inverse(self):
-        """
-        Returns the inverse Jaspr (if applicable). For Jaspr that contain realtime
+        """Returns the inverse Jaspr (if applicable). For Jaspr that contain realtime
         computations or measurements, the inverse does not exist.
 
         Returns
@@ -269,7 +258,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the daggered version:
 
         ::
@@ -295,12 +283,12 @@ class Jaspr(ClosedJaxpr):
             #     g:QuantumState = t_dg c f
             #     h:QuantumState = cx g e f
             #   in (h, d) }
+
         """
         return invert_jaspr(self)
 
     def control(self, num_ctrl, ctrl_state=-1):
-        """
-        Returns the controlled version of the Jaspr. The control qubits are added
+        """Returns the controlled version of the Jaspr. The control qubits are added
         to the signature of the Jaspr as the arguments after the QuantumState.
 
         Parameters
@@ -317,7 +305,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the controlled version:
 
         ::
@@ -368,8 +355,7 @@ class Jaspr(ClosedJaxpr):
         return ControlledJaspr.from_cache(self, ctrl_state)
 
     def to_qc(self, *args):
-        """
-        Converts the Jaspr into a :ref:`QuantumCircuit` if applicable. Circuit
+        """Converts the Jaspr into a :ref:`QuantumCircuit` if applicable. Circuit
         conversion of algorithms involving realtime computations is not possible.
 
         Any computations that perform classical postprocessing of measurements
@@ -393,7 +379,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the QuantumCircuit:
 
         ::
@@ -450,8 +435,7 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_qc(self, *args)
 
     def extract_post_processing(self, *args):
-        """
-        Extracts the post-processing logic from this Jaspr and returns a function
+        """Extracts the post-processing logic from this Jaspr and returns a function
         that performs the post-processing on measurement results.
 
         This method is useful for separating the quantum circuit from the classical
@@ -480,7 +464,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a Jaspr that performs post-processing on measurement results:
 
         ::
@@ -527,6 +510,7 @@ class Jaspr(ClosedJaxpr):
         Note that the static arguments (in this case `1`) must be the same as those
         used for circuit extraction, since they affect the structure of both the
         quantum circuit and the post-processing logic.
+
         """
         from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
 
@@ -536,8 +520,7 @@ class Jaspr(ClosedJaxpr):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
 
     def flatten_environments(self):
-        """
-        Flattens all environments by applying the corresponding compilation
+        """Flattens all environments by applying the corresponding compilation
         routines such that no more ``q_env`` primitives are left.
 
         Returns
@@ -547,7 +530,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a Jaspr containing an :ref:`InversionEnvironment` and flatten:
 
         ::
@@ -622,33 +604,26 @@ class Jaspr(ClosedJaxpr):
 
         args = [BufferedQuantumState()] + list(tree_flatten(args)[0])
 
-        from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
+        from qrisp.jasp import eval_jaxpr
 
         flattened_jaspr = self
 
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "jit":
-
                 if eqn.params["name"] == "expectation_value_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
 
-                    sampling_evaluator("ev")(
-                        eqn, context_dic, eqn_evaluator=eqn_evaluator
-                    )
+                    sampling_evaluator("ev")(eqn, context_dic, eqn_evaluator=eqn_evaluator)
                     return
 
                 if eqn.params["name"] == "sampling_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
 
-                    sampling_evaluator("array")(
-                        eqn, context_dic, eqn_evaluator=eqn_evaluator
-                    )
+                    sampling_evaluator("array")(eqn, context_dic, eqn_evaluator=eqn_evaluator)
                     return
 
                 invalues = extract_invalues(eqn, context_dic)
-                outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*invalues)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
                 if not isinstance(outvalues, (list, tuple)):
                     outvalues = [outvalues]
                 insert_outvalues(eqn, context_dic, outvalues)
@@ -657,9 +632,7 @@ class Jaspr(ClosedJaxpr):
             else:
                 return True
 
-        res = eval_jaxpr(flattened_jaspr, eqn_evaluator=eqn_evaluator)(
-            *(args + self.consts)
-        )
+        res = eval_jaxpr(flattened_jaspr, eqn_evaluator=eqn_evaluator)(*(args + self.consts))
 
         if len(self.outvars) == 2:
             return res[1]
@@ -693,7 +666,9 @@ class Jaspr(ClosedJaxpr):
     def depth(self, *args, meas_behavior, max_qubits=1024, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold)(*args)
+        return profile_jaspr(
+            self, "depth", meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
+        )(*args)
 
     def num_qubits(self, *args, meas_behavior, max_allocations=1000, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
@@ -730,8 +705,7 @@ class Jaspr(ClosedJaxpr):
         return res
 
     def qjit(self, *args, function_name="jaspr_function", device=None):
-        """
-        Leverages the Catalyst pipeline to compile a QIR representation of
+        """Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
@@ -755,9 +729,7 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(
-            flattened_jaspr, function_name=function_name, device=device
-        )
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
@@ -774,7 +746,6 @@ class Jaspr(ClosedJaxpr):
         remove_redundant_allocations(res)
         return res
 
-
     def update_eqns(self, eqns):
         return Jaspr(
             constvars=list(self.constvars),
@@ -786,8 +757,7 @@ class Jaspr(ClosedJaxpr):
         )
 
     def to_qir(self):
-        """
-        Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        """Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
@@ -801,7 +771,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the QIR string:
 
         ::
@@ -821,7 +790,8 @@ class Jaspr(ClosedJaxpr):
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_qir())
 
-        Yields:
+        Yields
+        ------
 
         .. code-block:: none
 
@@ -1068,9 +1038,8 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qir(self.flatten_environments())
 
-    def to_mlir(self, lower_stablehlo = False):
-        """
-        Compiles the Jaspr to an xDSL module using the Jasp Dialect.
+    def to_mlir(self, lower_stablehlo=False):
+        """Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install qrisp[xdsl]``).
 
         .. note::
@@ -1091,9 +1060,9 @@ class Jaspr(ClosedJaxpr):
         Parameters
         ----------
         lower_stablehlo : bool, optional
-            If True, runs additional MLIR passes to lower StableHLO operations 
-            (like arithmetic and data operations) to lower-level dialects such 
-            as linalg, arith, and tensor. StableHLO control flow involving 
+            If True, runs additional MLIR passes to lower StableHLO operations
+            (like arithmetic and data operations) to lower-level dialects such
+            as linalg, arith, and tensor. StableHLO control flow involving
             quantum types is preserved and rewritten to SCF by xDSL.
             The default is False.
 
@@ -1104,7 +1073,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the MLIR string:
 
         ::
@@ -1149,8 +1117,7 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_mlir(self, lower_stablehlo)
 
     def to_catalyst_mlir(self):
-        """
-        Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        """Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
@@ -1164,7 +1131,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the MLIR string:
 
         ::
@@ -1244,8 +1210,7 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_mlir(self.flatten_environments())
 
     def to_qasm(self, *args):
-        """
-        Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
+        """Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
         as long as no computations on the measurement results are performed.
 
         Parameters
@@ -1260,7 +1225,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the QASM 2 string:
 
         ::
@@ -1342,8 +1306,7 @@ class Jaspr(ClosedJaxpr):
         return qrisp_qc.qasm()
 
     def to_catalyst_jaxpr(self):
-        """
-        Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        """Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
@@ -1358,7 +1321,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the Catalyst Jaxpr:
 
         ::
@@ -1428,8 +1390,7 @@ class Jaspr(ClosedJaxpr):
 
 
 def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=None):
-    """
-    Creates a function that produces the jaxpr of a traced function.
+    """Creates a function that produces the jaxpr of a traced function.
 
     This is a modified version of JAX's ``make_jaxpr`` that supports
     ``return_shape=True`` even when the function returns custom abstract
@@ -1475,6 +1436,7 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
     ...     return {"a": x + 1, "b": x * 2}
     >>> jaxpr, out_tree = make_jaxpr_mod(f, return_shape=True)(1.0)
     >>> # out_tree can be used with tree_unflatten to reconstruct the dict
+
     """
     from jax._src.interpreters import partial_eval as pe
     from jax._src.util import split_list
@@ -1484,33 +1446,26 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
             # Use jit(...).trace() directly to get access to _out_tree
             # This avoids JAX's make_jaxpr return_shape logic which fails on
             # custom abstract types that don't have shape/dtype attributes.
-            traced = jax.jit(
-                fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-            ).trace(*args, **kwargs)
+            traced = jax.jit(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes).trace(*args, **kwargs)
 
             # Extract the jaxpr, handling constants if needed
             # (same logic as JAX's make_jaxpr)
             if traced._num_consts:
                 consts, _ = split_list(traced._args_flat, [traced._num_consts])
-                jaxpr_ = pe.convert_invars_to_constvars(
-                    traced.jaxpr.jaxpr, traced._num_consts
-                )
+                jaxpr_ = pe.convert_invars_to_constvars(traced.jaxpr.jaxpr, traced._num_consts)
                 closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
             else:
                 closed_jaxpr = traced.jaxpr
 
             return closed_jaxpr, traced._out_tree
         else:
-            return make_jaxpr(
-                fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-            )(*args, **kwargs)
+            return make_jaxpr(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes)(*args, **kwargs)
 
     return jaxpr_creator
 
 
 def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
-    """
-    Creates a function that returns the Jaspr representation of a quantum function.
+    """Creates a function that returns the Jaspr representation of a quantum function.
 
     This function is analogous to JAX's ``make_jaxpr``, but produces a Jaspr
     (a Jaxpr enhanced with quantum primitives) from a Qrisp quantum function.
@@ -1540,7 +1495,6 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
 
     Examples
     --------
-
     **Basic quantum circuit with measurement**
 
     Create a Jaspr for a simple Bell state circuit:
@@ -1616,9 +1570,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     adjusted_jax_kwargs = dict(jax_kwargs)
     if "static_argnums" in adjusted_jax_kwargs:
         if isinstance(adjusted_jax_kwargs["static_argnums"], list):
-            adjusted_jax_kwargs["static_argnums"] = list(
-                adjusted_jax_kwargs["static_argnums"]
-            )
+            adjusted_jax_kwargs["static_argnums"] = list(adjusted_jax_kwargs["static_argnums"])
             for i in range(len(adjusted_jax_kwargs["static_argnums"])):
                 adjusted_jax_kwargs["static_argnums"][i] += 1
         else:
@@ -1707,8 +1659,7 @@ def check_aval_equivalence(invars_1, invars_2):
 
 
 def remove_redundant_allocations(closed_jaxpr):
-    """
-    Optimizes the Jaspr by removing redundant qubit allocations.
+    """Optimizes the Jaspr by removing redundant qubit allocations.
 
     Strategy:
     1.  Map usages of all variables to identify how QubitArrays are consumed.

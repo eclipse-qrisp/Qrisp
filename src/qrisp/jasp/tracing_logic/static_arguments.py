@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,7 +24,6 @@ from jax import tree_util
 # prevents Jax from turning them dynamic. This is helpful because some types (such as functions)
 # will never be dynamic and can therefore automatically be denoted as static.
 class StaticArg:
-
     # The idea is to wrap the value in a class that has a custom (un)flattening procedure
     # to hide the object from jax
     def __init__(self, val):
@@ -43,8 +41,6 @@ def unflatten_qv(aux_data, children):
     return aux_data.val
 
 
-import types
-from jax import tree_util
 
 
 def unflatten_function(aux_data, children):

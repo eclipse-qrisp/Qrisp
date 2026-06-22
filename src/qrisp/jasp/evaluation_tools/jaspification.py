@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,27 +15,25 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
 import jax
-from qrisp._cache_config import qrisp_lru_compilation_cache
-from jax.tree_util import tree_unflatten, tree_flatten
 from jax._src.lib.mlir import ir
+from jax.tree_util import tree_flatten, tree_unflatten
 
-from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
+from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.circuit import fast_append
+from qrisp.core import recursive_qv_search
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
+from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
-    AbstractQubitArray,
     AbstractQubit,
+    AbstractQubitArray,
 )
-from qrisp.core import recursive_qv_search
-from qrisp.circuit import fast_append
 
 
 def jaspify(func=None, terminal_sampling=False):
-    """
-    This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+    """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
 
@@ -63,7 +60,6 @@ def jaspify(func=None, terminal_sampling=False):
 
     Examples
     --------
-
     We simulate a function creating a simple GHZ state:
 
     ::
@@ -127,7 +123,6 @@ def jaspify(func=None, terminal_sampling=False):
 
 
     """
-
     if isinstance(func, bool):
         terminal_sampling = func
         func = None
@@ -157,8 +152,7 @@ def jaspify(func=None, terminal_sampling=False):
 
 
 def stimulate(func=None):
-    """
-    This function leverages the
+    """This function leverages the
     `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
     to evaluate a Jasp-traceable function containing only Clifford gates.
     Stim is a popular tool to simulate quantum error correction codes.
@@ -180,7 +174,6 @@ def stimulate(func=None):
 
     Examples
     --------
-
     We simulate a function creating a simple GHZ state:
 
     ::
@@ -226,7 +219,6 @@ def stimulate(func=None):
         # Yields either 0 or 31
 
     """
-
     from qrisp.jasp import make_jaspr
 
     def return_function(*args):
@@ -256,12 +248,10 @@ def simulate_jaspr(
     return_gate_counts=False,
 ):
 
-    from qrisp.jasp import Jaspr
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
+    from qrisp.jasp import Jaspr
 
-    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(
-        jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState
-    ):
+    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
         return None
 
     if simulator == "stim":
@@ -275,12 +265,10 @@ def simulate_jaspr(
     def eqn_evaluator(eqn, context_dic):
 
         if eqn.primitive.name == "jit":
-
             function_name = eqn.params["name"]
             jaxpr = eqn.params["jaxpr"]
 
             if terminal_sampling:
-
                 translation_dic = {
                     "expectation_value_eval_function": "ev",
                     "sampling_eval_function": "array",
@@ -305,10 +293,7 @@ def simulate_jaspr(
                 ):
                     break
             else:
-
-                compiled_function, is_executable = compile_cl_func(
-                    jaxpr.jaxpr, function_name
-                )
+                compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
 
                 # Functions with purely classical inputs/outputs can still contain
                 # kernelized quantum functions. This will raise an NotImplementedError
@@ -333,9 +318,7 @@ def simulate_jaspr(
                 invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
                 outvalues = [invalues[-1]]
             else:
-                outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*invalues)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)

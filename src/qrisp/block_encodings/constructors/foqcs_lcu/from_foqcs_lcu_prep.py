@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,11 @@
 from typing import Callable
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
-from qrisp.environments import conjugate, invert
+from qrisp.core import cx, cz
+from qrisp.environments import invert
 from qrisp.jasp import qache
 from qrisp.qtypes import QuantumVariable
-from qrisp.core import cx, cz
+
 from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
 
@@ -33,11 +33,9 @@ def build_from_foqcs_lcu_prep(
     num_q_ops: int = 1,
     is_hermitian: bool = False,
     norm: "ArrayLike" = 1,
-    num_q_anc: int = -1
+    num_q_anc: int = -1,
 ) -> BlockEncoding:
-    r"""
-
-    .. note::
+    r""".. note::
 
         This implementation is designed for building custom FOQCS-LCU
         block encodings. For automatic construction from a given operator, use
@@ -188,7 +186,6 @@ def build_from_foqcs_lcu_prep(
 
     Notes
     -----
-
     **State Preparation in FOQCS-LCU**
 
     The FOQCS-LCU block encoding unitary $U$ relies on distinct right and left state preparation subroutines, denoted as $P_R$ and $P_L$, alongside a $\text{SELECT}$ operation:
@@ -206,7 +203,6 @@ def build_from_foqcs_lcu_prep(
 
     Examples
     --------
-
     This example constructs a FOQCS-LCU block encoding for the one-dimensional
     nearest-neighbour Heisenberg Hamiltonian
 
@@ -502,7 +498,7 @@ def build_from_foqcs_lcu_prep(
         #
         # In this example, the custom PREP activates x[0] and z[1], so SELECT applies
         # X(0)Z(1). Since the operand starts in |00>, the Z(1) part has no visible
-        # phase effect and X(0) flips the first operand qubit. The inverse of prep_l 
+        # phase effect and X(0) flips the first operand qubit. The inverse of prep_l
         # then uncomputes the PREP register, so all ancillas return to |00000>.
         # Therefore, the expected measurement result is the operand state |10> and
         # the ancilla state |00000>, with probability 1: {('10', '00000'): 1.0}
@@ -515,14 +511,16 @@ def build_from_foqcs_lcu_prep(
     elif num_q_anc >= num_q_ops * 2:
         n_anc = num_q_anc
     else:
-        raise ValueError(f"FOQCS-LCU requires at least 2L ancillary qubits."
-                         f" Expected at least {num_q_ops * 2}, but received {num_q_anc}.")
+        raise ValueError(
+            f"FOQCS-LCU requires at least 2L ancillary qubits."
+            f" Expected at least {num_q_ops * 2}, but received {num_q_anc}."
+        )
 
     # FOQCS-LCU SELECT
     def _select(num_q_ops: int, n_anc: int, ancillae, *operands):
         extra_anc = n_anc - num_q_ops * 2
-        cx(ancillae[extra_anc:extra_anc + num_q_ops], operands[0])
-        cz(ancillae[extra_anc + num_q_ops:], operands[0])
+        cx(ancillae[extra_anc : extra_anc + num_q_ops], operands[0])
+        cz(ancillae[extra_anc + num_q_ops :], operands[0])
 
     @qache
     def unitary(*args):

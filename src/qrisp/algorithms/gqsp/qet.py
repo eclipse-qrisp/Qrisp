@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,18 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+
 import jax.numpy as jnp
 
-from qrisp.core.gate_application_functions import rx
-from qrisp.environments import conjugate, control
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
-from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
+from qrisp.algorithms.gqsp.helper_functions import _rescale_poly, poly2cheb
 from qrisp.block_encodings import BlockEncoding
+from qrisp.core.gate_application_functions import rx
+from qrisp.environments import conjugate, control
 from qrisp.jasp import jrange
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
@@ -39,8 +39,7 @@ def QET(
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
     rescale: bool = True,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+    r"""Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
     For a block-encoded **Hermitian** operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns
     a BlockEncoding of the operator $p(H)$.
@@ -86,7 +85,6 @@ def QET(
 
     Examples
     --------
-
     Define a Hermitian matrix $A$ and a vector $\vec{b}$.
 
     ::
@@ -141,17 +139,13 @@ def QET(
         # [-0.024058    0.57657692  0.61493253  0.53743673]
 
     """
-
     # is_real = jnp.allclose(p.imag, 0, atol=1e-6)
     # is_even = jnp.allclose(p[1::2], 0, atol=1e-6)
     is_odd = jnp.allclose(p[0::2], 0, atol=1e-6)
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
 
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)
@@ -193,6 +187,4 @@ def QET(
             H.unitary(*args[1:])
 
     new_anc_templates = [QuantumBool().template()] + H._anc_templates
-    return BlockEncoding(
-        alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False
-    )
+    return BlockEncoding(alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False)

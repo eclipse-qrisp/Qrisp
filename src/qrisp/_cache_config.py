@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ _ALL_LRU_CACHES = []
 
 
 def qrisp_lru_compilation_cache(func=None, *, maxsize=None):
-    """
-    Decorator that applies ``functools.lru_cache`` with *maxsize* taken from
+    """Decorator that applies ``functools.lru_cache`` with *maxsize* taken from
     ``QRISP_COMPILATION_CACHE_SIZE`` (overridable via the environment variable
     ``QRISP_COMPILATION_CACHE_SIZE``) and registers the decorated function for
     centralized cache clearing via :func:`clear_all_caches`.

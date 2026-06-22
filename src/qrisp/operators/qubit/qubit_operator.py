@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,22 +16,19 @@
 """
 
 from itertools import product
-import warnings
 
-import sympy as sp
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+import sympy as sp
 
-from qrisp.operators.hamiltonian_tools import group_up_iterable
+from qrisp import IterationEnvironment, conjugate, cx, cz, h, invert, merge, s, sx_dg
+from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.measurement import get_measurement
-from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
-from qrisp.misc.exceptions import QrispDeprecationWarning
-
-from qrisp.jasp import check_for_tracing_mode, jrange, qache
+from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
+from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.qubit_term import QubitTerm
 
 threshold = 1e-9
 
@@ -42,8 +38,7 @@ threshold = 1e-9
 
 
 class QubitOperator(Hamiltonian):
-    r"""
-    This class provides an efficient implementation of QubitOperators, i.e.
+    r"""This class provides an efficient implementation of QubitOperators, i.e.
     Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
     Supported are operators of the following form:
     
@@ -110,7 +105,6 @@ class QubitOperator(Hamiltonian):
 
     Examples
     --------
-    
     A QubitOperator can be specified conveniently in terms of arithmetic 
     combinations of the mentioned operators:
 
@@ -184,8 +178,7 @@ class QubitOperator(Hamiltonian):
         return len(self.terms_dict)
 
     def coeffs(self):
-        """
-        Returns the coefficients of the operator.
+        """Returns the coefficients of the operator.
 
         Returns
         -------
@@ -194,7 +187,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         >>> from qrisp.operators import X, Y, Z
         >>> H = X(0)*X(1)+Y(0)*Y(1)+0.5*Z(0)*Z(1)
         >>> H.coeffs()
@@ -222,8 +214,7 @@ class QubitOperator(Hamiltonian):
         return str(self)
 
     def to_expr(self):
-        """
-        Returns a SymPy expression representing the operator.
+        """Returns a SymPy expression representing the operator.
 
         Returns
         -------
@@ -231,7 +222,6 @@ class QubitOperator(Hamiltonian):
             A SymPy expression representing the operator.
 
         """
-
         expr = 0
         for term, coeff in self.terms_dict.items():
             expr += coeff * term.to_expr()
@@ -248,8 +238,7 @@ class QubitOperator(Hamiltonian):
         return res
 
     def __add__(self, other):
-        """
-        Returns the sum of the operator self and other.
+        """Returns the sum of the operator self and other.
 
         Parameters
         ----------
@@ -262,7 +251,6 @@ class QubitOperator(Hamiltonian):
             The sum of the operator self and other.
 
         """
-
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
@@ -284,8 +272,7 @@ class QubitOperator(Hamiltonian):
         return result
 
     def __sub__(self, other):
-        """
-        Returns the difference of the operator self and other.
+        """Returns the difference of the operator self and other.
 
         Parameters
         ----------
@@ -298,7 +285,6 @@ class QubitOperator(Hamiltonian):
             The difference of the operator self and other.
 
         """
-
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
@@ -320,8 +306,7 @@ class QubitOperator(Hamiltonian):
         return result
 
     def __rsub__(self, other):
-        """
-        Returns the difference of the operator other and self.
+        """Returns the difference of the operator other and self.
 
         Parameters
         ----------
@@ -334,7 +319,6 @@ class QubitOperator(Hamiltonian):
             The difference of the operator other and self.
 
         """
-
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
@@ -356,8 +340,7 @@ class QubitOperator(Hamiltonian):
         return result
 
     def __mul__(self, other):
-        """
-        Returns the product of the operator self and other.
+        """Returns the product of the operator self and other.
 
         Parameters
         ----------
@@ -370,7 +353,6 @@ class QubitOperator(Hamiltonian):
             The product of the operator self and other.
 
         """
-
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
@@ -381,15 +363,9 @@ class QubitOperator(Hamiltonian):
         for term1, coeff1 in self.terms_dict.items():
             for term2, coeff2 in other.terms_dict.items():
                 curr_term, curr_coeff = term1 * term2
-                res_terms_dict[curr_term] = (
-                    res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
-                )
+                res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
 
-        res_terms_dict = {
-            term: coeff
-            for term, coeff in res_terms_dict.items()
-            if abs(coeff) >= threshold
-        }
+        res_terms_dict = {term: coeff for term, coeff in res_terms_dict.items() if abs(coeff) >= threshold}
         result = QubitOperator(res_terms_dict)
         return result
 
@@ -401,8 +377,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def __iadd__(self, other):
-        """
-        Adds other to the operator self.
+        """Adds other to the operator self.
 
         Parameters
         ----------
@@ -410,7 +385,6 @@ class QubitOperator(Hamiltonian):
             A scalar or a QubitOperator to add to the operator self.
 
         """
-
         if isinstance(other, (int, float, complex)):
             self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(), 0) + other
             return self
@@ -424,8 +398,7 @@ class QubitOperator(Hamiltonian):
         return self
 
     def __isub__(self, other):
-        """
-        Substracts other from the operator self.
+        """Substracts other from the operator self.
 
         Parameters
         ----------
@@ -433,7 +406,6 @@ class QubitOperator(Hamiltonian):
             A scalar or a QubitOperator to substract from the operator self.
 
         """
-
         if isinstance(other, (int, float, complex)):
             self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(), 0) - other
             return self
@@ -447,8 +419,7 @@ class QubitOperator(Hamiltonian):
         return self
 
     def __imul__(self, other):
-        """
-        Multiplys other to the operator self.
+        """Multiplys other to the operator self.
 
         Parameters
         ----------
@@ -456,17 +427,12 @@ class QubitOperator(Hamiltonian):
             A scalar or a QubitOperator to multiply with the operator self.
 
         """
-
         if isinstance(other, (int, float, complex)):
             # other = QubitOperator({QubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
 
-            res_terms_dict = {
-                term: coeff
-                for term, coeff in self.terms_dict.items()
-                if abs(coeff) >= threshold
-            }
+            res_terms_dict = {term: coeff for term, coeff in self.terms_dict.items() if abs(coeff) >= threshold}
             self.terms_dict = res_terms_dict
             return self
 
@@ -478,15 +444,9 @@ class QubitOperator(Hamiltonian):
         for term1, coeff1 in self.terms_dict.items():
             for term2, coeff2 in other.terms_dict.items():
                 curr_term, curr_coeff = term1 * term2
-                res_terms_dict[curr_term] = (
-                    res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
-                )
+                res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
 
-        res_terms_dict = {
-            term: coeff
-            for term, coeff in res_terms_dict.items()
-            if abs(coeff) >= threshold
-        }
+        res_terms_dict = {term: coeff for term, coeff in res_terms_dict.items() if abs(coeff) >= threshold}
         self.terms_dict = res_terms_dict
         return self
 
@@ -495,9 +455,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def subs(self, subs_dict):
-        """
-
-        Parameters
+        """Parameters
         ----------
         subs_dict : dict
             A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
@@ -508,14 +466,11 @@ class QubitOperator(Hamiltonian):
             The resulting QubitOperator.
 
         """
-
         res_terms_dict = {}
 
         for term, coeff in self.terms_dict.items():
             curr_term, curr_coeff = term.subs(subs_dict)
-            res_terms_dict[curr_term] = (
-                res_terms_dict.get(curr_term, 0) + curr_coeff * coeff
-            )
+            res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff
 
         return QubitOperator(res_terms_dict)
 
@@ -524,16 +479,13 @@ class QubitOperator(Hamiltonian):
     #
 
     def find_minimal_qubit_amount(self):
-        indices = sum(
-            [list(term.factor_dict.keys()) for term in self.terms_dict.keys()], []
-        )
+        indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
         if len(indices) == 0:
             return 0
         return max(indices) + 1
 
     def commutator(self, other):
-        """
-        Computes the commutator.
+        """Computes the commutator.
 
         .. math::
 
@@ -551,7 +503,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         We compute the commutator of a ladder operator with a Pauli string.
 
         >>> from qrisp.operators import A,C,X,Z
@@ -562,7 +513,6 @@ class QubitOperator(Hamiltonian):
 
 
         """
-
         res = 0
 
         for term_self, coeff_self in self.terms_dict.items():
@@ -577,8 +527,7 @@ class QubitOperator(Hamiltonian):
         return res
 
     def apply_threshold(self, threshold):
-        """
-        Removes all terms with coefficient absolute value below the specified threshold.
+        """Removes all terms with coefficient absolute value below the specified threshold.
 
         Parameters
         ----------
@@ -586,7 +535,6 @@ class QubitOperator(Hamiltonian):
             The threshold for the coefficients of the terms.
 
         """
-
         delete_list = []
         new_terms_dict = dict(self.terms_dict)
         for term, coeff in self.terms_dict.items():
@@ -605,10 +553,8 @@ class QubitOperator(Hamiltonian):
         H = 0
 
         for pauli_indicator_tuple in product(range(4), repeat=n):
-
             temp_H = 1
             for i in range(n):
-
                 if pauli_indicator_tuple[i] == 1:
                     temp_H = X(i) * temp_H
                 if pauli_indicator_tuple[i] == 2:
@@ -621,9 +567,7 @@ class QubitOperator(Hamiltonian):
             else:
                 temp_H_array = temp_H.to_array(n)
 
-            coefficient = np.dot(
-                temp_H_array.flatten().conjugate(), numpy_array.flatten()
-            )
+            coefficient = np.dot(temp_H_array.flatten().conjugate(), numpy_array.flatten())
 
             H += (coefficient / 2 ** (n)) * temp_H
 
@@ -631,8 +575,7 @@ class QubitOperator(Hamiltonian):
 
     @classmethod
     def from_matrix(self, matrix, reverse_endianness=False):
-        r"""
-        Represents a matrix as an operator
+        r"""Represents a matrix as an operator
 
         .. math::
 
@@ -655,7 +598,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         ::
 
             from scipy.sparse import csr_matrix
@@ -671,9 +613,9 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-        from scipy.sparse import csr_matrix
-        from numpy import ndarray
         import numpy as np
+        from numpy import ndarray
+        from scipy.sparse import csr_matrix
 
         OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
 
@@ -682,9 +624,7 @@ class QubitOperator(Hamiltonian):
         elif isinstance(matrix, csr_matrix):
             new_matrix = matrix.copy()
         else:
-            raise Exception(
-                "Cannot construct QubitOperator from type " + str(type(matrix))
-            )
+            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
 
         M, N = new_matrix.shape
         n = max(int(np.ceil(np.log2(M))), int(np.ceil(np.log2(N))))
@@ -709,8 +649,7 @@ class QubitOperator(Hamiltonian):
         return O
 
     def to_sparse_matrix(self, factor_amount=None):
-        r"""
-        Returns a scipy matrix representing the operator
+        r"""Returns a scipy matrix representing the operator
 
         .. math::
 
@@ -731,7 +670,6 @@ class QubitOperator(Hamiltonian):
             The sparse matrix representing the operator.
 
         """
-
         import scipy.sparse as sp
 
         operator_matrices = {
@@ -762,9 +700,7 @@ class QubitOperator(Hamiltonian):
             curr_dict = term.factor_dict
             term_dicts.append(curr_dict)
             coeffs.append(coeff)
-            participating_indices = participating_indices.union(
-                term.non_trivial_indices()
-            )
+            participating_indices = participating_indices.union(term.non_trivial_indices())
 
         if factor_amount is None:
             if len(participating_indices):
@@ -774,7 +710,7 @@ class QubitOperator(Hamiltonian):
                 M = sp.csr_matrix((1, 1))
                 for coeff in coeffs:
                     res *= coeff
-                if len(coeffs):
+                if coeffs:
                     M[0, 0] = res
                 return M
         elif participating_indices and factor_amount < max(participating_indices) + 1:
@@ -789,8 +725,7 @@ class QubitOperator(Hamiltonian):
         return M
 
     def to_array(self, factor_amount=None):
-        r"""
-        Returns a numpy array representing the operator
+        r"""Returns a numpy array representing the operator
 
         .. math::
 
@@ -812,7 +747,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         >>> from qrisp.operators import *
         >>> O = X(0)*X(1) + 2*P0(0)*P0(1) + 3*P1(0)*P1(1)
         >>> O.to_array()
@@ -825,8 +759,7 @@ class QubitOperator(Hamiltonian):
         return np.array(self.to_sparse_matrix(factor_amount).todense())
 
     def to_pauli(self):
-        """
-        Returns an equivalent operator, which however only contains Pauli factors.
+        """Returns an equivalent operator, which however only contains Pauli factors.
 
         Returns
         -------
@@ -835,7 +768,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         We create a QubitOperator containing A and C terms and convert it to a
         Pauli based representation.
 
@@ -845,7 +777,6 @@ class QubitOperator(Hamiltonian):
         0.25*X_0*X_1*Z_2 + 0.25*I*X_0*Y_1*Z_2 - 0.25*I*Y_0*X_1*Z_2 + 0.25*Y_0*Y_1*Z_2
 
         """
-
         res = 0
         for term, coeff in self.terms_dict.items():
             res += coeff * term.to_pauli()
@@ -854,9 +785,8 @@ class QubitOperator(Hamiltonian):
         return res
 
     def _to_pauli_dict(self) -> dict:
-        r"""
-        Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
-        
+        r"""Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
+
         The operator is first converted to Pauli form using :meth:`to_pauli`.
         Each dictionary key represents one Pauli string as a tuple of
         ``(index, pauli)`` pairs, sorted by qubit index. The corresponding value is
@@ -872,7 +802,7 @@ class QubitOperator(Hamiltonian):
             The keys have the form
             ::
                 ((int, str), (int, str), ...)
-       
+
             where the integer is the qubit index and the string is one of
             ``"X"``, ``"Y"``, or ``"Z"``.
 
@@ -907,19 +837,13 @@ class QubitOperator(Hamiltonian):
         result = {}
 
         for term, coeff in O.terms_dict.items():
-            factors = tuple(
-                sorted(
-                    (int(index), str(pauli))
-                    for index, pauli in term.factor_dict.items()
-                )
-            )
+            factors = tuple(sorted((int(index), str(pauli)) for index, pauli in term.factor_dict.items()))
             result[factors] = result.get(factors, 0) + coeff
 
         return result
 
     def adjoint(self):
-        """
-        Returns the adjoint operator.
+        """Returns the adjoint operator.
 
         Returns
         -------
@@ -928,13 +852,13 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         We create a QubitOperator and inspect its adjoint.
 
         >>> from qrisp.operators import A,C,Z
         >>> H = A(0)*C(1)*Z(2)
         >>> print(H.adjoint())
         C_0*A_1*Z_2
+
         """
         new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
@@ -942,8 +866,7 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
 
     def hermitize(self):
-        """
-        Returns the hermitian part of self.
+        r"""Returns the hermitian part of self.
 
         $H = (O + O^\dagger)/2$
 
@@ -973,8 +896,7 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict).apply_threshold(0)
 
     def ground_state_energy(self):
-        """
-        Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
+        """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
         -------
@@ -982,7 +904,6 @@ class QubitOperator(Hamiltonian):
             The ground state energy.
 
         """
-
         from scipy.sparse.linalg import eigsh
 
         hamiltonian = self.hermitize()
@@ -1005,8 +926,7 @@ class QubitOperator(Hamiltonian):
 
     # Commutativity: Partitions the QubitOperator into QubitOperators with pairwise commuting QubitTerms
     def commuting_groups(self):
-        r"""
-        Partitions the QubitOperator into QubitOperators with pairwise commuting terms. That is,
+        r"""Partitions the QubitOperator into QubitOperators with pairwise commuting terms. That is,
 
         .. math::
 
@@ -1020,16 +940,12 @@ class QubitOperator(Hamiltonian):
             The partition of the Hamiltonian.
 
         """
-
         groups = []  # Groups of commuting QubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(
-            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
-        )
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for term, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
@@ -1058,8 +974,7 @@ class QubitOperator(Hamiltonian):
 
     # Qubit-wise commutativity: Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting QubitTerms
     def commuting_qw_groups(self, show_bases=False, use_graph_coloring=True):
-        r"""
-        Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting terms. That is,
+        r"""Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting terms. That is,
 
         .. math::
 
@@ -1073,15 +988,11 @@ class QubitOperator(Hamiltonian):
             The partition of the Hamiltonian.
 
         """
-
         groups = []  # Groups of qubit-wise commuting QubitTerms
         bases = []  # Bases as termTerms
 
         if use_graph_coloring:
-
-            term_groups = group_up_iterable(
-                list(self.terms_dict.keys()), lambda a, b: a.commute_qw(b)
-            )
+            term_groups = group_up_iterable(list(self.terms_dict.keys()), lambda a, b: a.commute_qw(b))
             for term_group in term_groups:
                 H = QubitOperator({term: self.terms_dict[term] for term in term_group})
                 groups.append(H)
@@ -1102,12 +1013,9 @@ class QubitOperator(Hamiltonian):
                 return groups
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(
-            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
-        )
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for term, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 n = len(groups)
@@ -1131,8 +1039,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def change_of_basis(self, qarg=None, method="commuting_qw"):
-        """
-        Performs several operations on a quantum argument such that the hermitian
+        """Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
 
         Parameters
@@ -1150,7 +1057,6 @@ class QubitOperator(Hamiltonian):
             A qubit operator that contains only diagonal entries (I, Z, P0, P1).
 
         """
-
         # Assuming all terms of self commute qubit-wise,
         # the basis change for Pauli factor is trivial:
         # Z stays the same, for X we apply an h gate and for Y and s_dg.
@@ -1208,9 +1114,7 @@ class QubitOperator(Hamiltonian):
 
         n = self.find_minimal_qubit_amount()
         if not check_for_tracing_mode() and len(qarg) < n:
-            raise Exception(
-                "Tried to change the basis of an Operator on a quantum argument with insufficient qubits."
-            )
+            raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
 
         # This dictionary will contain the new terms/coefficient comination for the
         # diagonal operator
@@ -1229,7 +1133,6 @@ class QubitOperator(Hamiltonian):
 
             # We iterate through the terms and apply the appropriate basis transformation
             for term, coeff in self.terms_dict.items():
-
                 factor_dict = term.factor_dict
                 # This dictionary will contain the factors of the new term
                 new_factor_dict = {}
@@ -1240,7 +1143,6 @@ class QubitOperator(Hamiltonian):
                 prefactors.append(prefactor)
 
                 for j in range(n):
-
                     # If there is no entry in the factor dict, this corresponds to
                     # identity => no basis change required.
                     if j not in factor_dict:
@@ -1272,7 +1174,6 @@ class QubitOperator(Hamiltonian):
                     new_factor_dict[j] = "Z"
 
         if method == "commuting":
-
             # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
             x_vectors = []
             z_vectors = []
@@ -1334,15 +1235,12 @@ class QubitOperator(Hamiltonian):
                 h_vector = np.zeros(m, dtype=int)
                 h_vector[h_list] = 1
                 sh_vector = s_vector[perm] + h_vector % 2
-                sign_vector = (
-                    sh_vector @ (x_matrix[qb_indices] * z_matrix[qb_indices]) % 2
-                )
+                sign_vector = sh_vector @ (x_matrix[qb_indices] * z_matrix[qb_indices]) % 2
 
                 # Lower triangular part of A
                 A_low = np.tril(A)
 
                 for index, z_vector in enumerate(R_inv.T):
-
                     # Determine the sign of the product of the selected graph state stabilizers:
                     #
                     # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
@@ -1359,9 +1257,7 @@ class QubitOperator(Hamiltonian):
 
                     n2 = sum((z_vector @ A) * z_vector % 2)
 
-                    new_factor_dict = {
-                        qb_indices[perm[i]]: "Z" for i in range(m) if z_vector[i] == 1
-                    }
+                    new_factor_dict = {qb_indices[perm[i]]: "Z" for i in range(m) if z_vector[i] == 1}
                     new_factor_dicts.append(new_factor_dict)
 
                     prefactor = (-1) ** sign_vector[index] * (-1) ** (n1 + n2 / 2)
@@ -1371,40 +1267,32 @@ class QubitOperator(Hamiltonian):
 
         # Ladder operators
         for term, coeff in self.terms_dict.items():
-
             prefactor = prefactors.pop(0)
             new_factor_dict = new_factor_dicts.pop(0)
 
             # Next we treat the ladder operators
-            ladder_operators = [
-                base for base in term.factor_dict.items() if base[1] in ["A", "C"]
-            ]
+            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
             ladder_operators.sort(key=lambda x: x[0])
 
-            if len(ladder_operators):
-
+            if ladder_operators:
                 # The anchor factor is the "last" ladder operator.
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
                 new_factor_dict[ladder_operators[-1][0]] = "Z"
 
-                ladder_indices = set(
-                    ladder_factor[0] for ladder_factor in ladder_operators
-                )
+                ladder_indices = set(ladder_factor[0] for ladder_factor in ladder_operators)
 
                 # Perform the cnot gates
                 for j in range(len(ladder_operators) - 1):
-
                     if anchor_factor[1] == "C":
                         if ladder_operators[j][1] == "A":
                             new_factor_dict[ladder_operators[j][0]] = "P1"
                         else:
                             new_factor_dict[ladder_operators[j][0]] = "P0"
+                    elif ladder_operators[j][1] == "A":
+                        new_factor_dict[ladder_operators[j][0]] = "P0"
                     else:
-                        if ladder_operators[j][1] == "A":
-                            new_factor_dict[ladder_operators[j][0]] = "P0"
-                        else:
-                            new_factor_dict[ladder_operators[j][0]] = "P1"
+                        new_factor_dict[ladder_operators[j][0]] = "P1"
 
                 for ind_set in processed_ladder_index_sets:
                     if ind_set.intersection(ladder_indices):
@@ -1414,7 +1302,6 @@ class QubitOperator(Hamiltonian):
                             )
                         break
                 else:
-
                     # Perform the cnot gates
                     if qarg is not None:
                         for j in range(len(ladder_operators) - 1):
@@ -1517,10 +1404,8 @@ class QubitOperator(Hamiltonian):
 
         # We iterate through the terms and apply the appropriate basis transformation
         for term, coeff in self.terms_dict.items():
-
             factor_dict = term.factor_dict
             for j in range(n):
-
                 # If there is no entry in the factor dict, this corresponds to
                 # identity => no basis change required.
                 if j not in factor_dict:
@@ -1546,12 +1431,9 @@ class QubitOperator(Hamiltonian):
                     qc.sx(j)
 
             # Next we treat the ladder operators
-            ladder_operators = [
-                base for base in term.factor_dict.items() if base[1] in ["A", "C"]
-            ]
+            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
 
-            if len(ladder_operators):
-
+            if ladder_operators:
                 # The anchor factor is the "last" ladder operator.
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
@@ -1574,8 +1456,7 @@ class QubitOperator(Hamiltonian):
         return qc, QubitOperator(self.terms_dict)
 
     def get_operator_variance(self, n=1):
-        """
-        Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
+        """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
 
         Normally to compute the variance of an operator, the distribution has to be known.
         Since the distribution is not known without querying the quantum device,
@@ -1621,7 +1502,6 @@ class QubitOperator(Hamiltonian):
 
         return var * alpha_n
 
-
     def expectation_value(
         self,
         state_prep,
@@ -1634,8 +1514,7 @@ class QubitOperator(Hamiltonian):
         precompiled_qc=None,
         measurement_data=None,  # measurement settings
     ):
-        r"""
-        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
@@ -1689,7 +1568,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
 
         We prepare the state
@@ -1777,18 +1655,18 @@ class QubitOperator(Hamiltonian):
              qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
                    ├─────────┤└┬─┬┘└╥┘
              qv.1: ┤ Ry(π/2) ├─┤M├──╫─
-                   └─────────┘ └╥┘  ║ 
+                   └─────────┘ └╥┘  ║
             cb_15: ═════════════╬═══╩═
-                                ║     
+                                ║
             cb_16: ═════════════╩═════
-                                    
+
                    ┌─────────┐     ┌─┐
              qv.0: ┤ Ry(π/2) ├─────┤M├───
                    ├─────────┤┌───┐└╥┘┌─┐
              qv.1: ┤ Ry(π/2) ├┤ H ├─╫─┤M├
                    └─────────┘└───┘ ║ └╥┘
             cb_21: ═════════════════╩══╬═
-                                       ║ 
+                                       ║
             cb_22: ════════════════════╩═
 
         The operator contains three terms.  ``X(0)*Z(1)`` and ``X(0)``
@@ -1813,7 +1691,6 @@ class QubitOperator(Hamiltonian):
                     diagonalisation_method=diagonalisation_method,
                 )
             else:
-
                 if precompiled_qc is not None:
                     qarg = QuantumVariable(self.find_minimal_qubit_amount())
                 else:
@@ -1839,8 +1716,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def trotterization(self, order=1, method="commuting_qw", forward_evolution=True):
-        r"""
-        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
+        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
 
         .. math::
@@ -1890,7 +1766,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         We simulate a simple QubitOperator.
 
         >>> from sympy import Symbol
@@ -1930,25 +1805,15 @@ class QubitOperator(Hamiltonian):
 
             def trotter_step(qarg, t, steps):
                 for com_group in commuting_groups:
-                    qw_groups = com_group.group_up(
-                        lambda a, b: a.commute_qw(b) and a.ladders_agree(b)
-                    )
+                    qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
                     for qw_group in qw_groups:
-
-                        with conjugate(qw_group.change_of_basis)(
-                            qarg
-                        ) as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(
-                                lambda a, b: not a.intersect(b)
-                            )
+                        with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
+                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
-                                        -coeff
-                                        * t
-                                        / steps
-                                        * (-1) ** int(forward_evolution),
+                                        -coeff * t / steps * (-1) ** int(forward_evolution),
                                         qarg,
                                     )
 
@@ -1958,21 +1823,13 @@ class QubitOperator(Hamiltonian):
                 for com_group in commuting_groups:
                     qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
                     for qw_group in qw_groups:
-
-                        with conjugate(com_group.change_of_basis)(
-                            qarg, method="commuting"
-                        ) as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(
-                                lambda a, b: not a.intersect(b)
-                            )
+                        with conjugate(com_group.change_of_basis)(qarg, method="commuting") as diagonal_operator:
+                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
-                                        -coeff
-                                        * t
-                                        / steps
-                                        * (-1) ** int(forward_evolution),
+                                        -coeff * t / steps * (-1) ** int(forward_evolution),
                                         qarg,
                                     )
 
@@ -2002,8 +1859,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def qdrift(self, forward_evolution=True):
-        r"""
-        Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
+        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift**
         (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
 
         QDrift approximates the exact time-evolution operator
@@ -2061,7 +1917,6 @@ class QubitOperator(Hamiltonian):
         
         Examples
         --------
-            
         Below is an example usage of the :func:`qdrift` function to simulate a quantum system governed
         by an Ising Hamiltonian on a one-dimensional chain graph.
 
@@ -2151,6 +2006,7 @@ class QubitOperator(Hamiltonian):
 
         """
         from jax import random
+
         from qrisp.jasp import q_switch
 
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
@@ -2188,8 +2044,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def unitaries(self):
-        r"""
-        Returns unitiaries and coefficients for the Pauli representation of the operator.
+        r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
         Note that this method will always consider the **hermitized** operator, i.e.
 
         .. math::
@@ -2213,7 +2068,6 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-
         Applying a Hamiltonian operator via Linear Combination of Unitaries.
 
         ::

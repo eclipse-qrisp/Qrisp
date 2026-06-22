@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import weakref
+
 from jax._src.array import ArrayImpl
 
 # This module contains the necessary tools to merge QuantumSessions
@@ -118,15 +118,10 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
 
     resolve_naming_collisions(qs_0, qs_1)
 
-    intersecting_qubits = set([qb.identifier for qb in qs_0.qubits]).intersection(
-        [qb.identifier for qb in qs_1.qubits]
-    )
+    intersecting_qubits = set([qb.identifier for qb in qs_0.qubits]).intersection([qb.identifier for qb in qs_1.qubits])
 
     if len(intersecting_qubits):
-        raise Exception(
-            f"Tried to merge two QuantumSessions containing identically named "
-            f"qubits {intersecting_qubits}"
-        )
+        raise Exception(f"Tried to merge two QuantumSessions containing identically named qubits {intersecting_qubits}")
 
     if len(qs_0.env_stack) < len(qs_1.env_stack):
         qs_0, qs_1 = qs_1, qs_0
@@ -159,10 +154,7 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
 
     if qs_0.backend is not None and qs_1.backend is not None:
         if id(qs_0.backend) != id(qs_1.backend):
-            raise Exception(
-                "Tried to merge QuantumSessions with differing, "
-                "non-trivial default backends."
-            )
+            raise Exception("Tried to merge QuantumSessions with differing, non-trivial default backends.")
 
     if qs_0.backend is None:
         qs_0.backend = qs_1.backend
@@ -201,9 +193,7 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
 
     reorder_quantum_variables(qs_0)
 
-    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(
-        qs_1.will_be_uncomputed
-    )
+    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(qs_1.will_be_uncomputed)
     # Add variables to the uncomputation stack
     qs_0.uncomp_stack.extend(qs_1.uncomp_stack)
 
@@ -243,16 +233,14 @@ def resolve_naming_collisions(qs_0, qs_1):
             if qv_1.user_given_name:
                 if qv_0.user_given_name:
                     raise Exception(
-                        "Tried to merge QuantumSession containing "
-                        f"identically named QuantumVariables {qv_1.name}"
+                        f"Tried to merge QuantumSession containing identically named QuantumVariables {qv_1.name}"
                     )
 
                 qv_0, qv_1 = qv_1, qv_0
 
-            else:
-                if qv_0.creation_time > qv_1.creation_time:
-                    if not qv_1.user_given_name:
-                        qv_0, qv_1 = qv_1, qv_0
+            elif qv_0.creation_time > qv_1.creation_time:
+                if not qv_1.user_given_name:
+                    qv_0, qv_1 = qv_1, qv_0
 
             proposed_new_name = qv_1.name + "_1"
             k = 1
@@ -372,23 +360,22 @@ def recursive_qs_search(input):
                 if isinstance(input[i], ArrayImpl):
                     continue
                 result += recursive_qs_search(input[i])
+    elif isinstance(input, QuantumSession):
+        result = [input]
+    elif isinstance(input, QuantumEnvironment):
+        result = [input.env_qs]
     else:
-        if isinstance(input, QuantumSession):
-            result = [input]
-        elif isinstance(input, QuantumEnvironment):
-            result = [input.env_qs]
-        else:
-            try:
-                if isinstance(input(), QuantumSession):
-                    result = [input()]
-            except TypeError:
-                pass
+        try:
+            if isinstance(input(), QuantumSession):
+                result = [input()]
+        except TypeError:
+            pass
 
-            try:
-                if isinstance(input.qs(), QuantumSession):
-                    result = [input.qs()]
-            except AttributeError:
-                pass
+        try:
+            if isinstance(input.qs(), QuantumSession):
+                result = [input.qs()]
+        except AttributeError:
+            pass
 
     return result
 

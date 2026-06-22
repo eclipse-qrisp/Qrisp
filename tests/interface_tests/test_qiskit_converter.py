@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,8 @@
 
 import numpy as np
 import pytest
-from qiskit.quantum_info import Operator
 from qiskit import QuantumCircuit as QiskitQC
+from qiskit.quantum_info import Operator
 
 from qrisp import QuantumCircuit
 from qrisp.circuit import PRXGate
@@ -30,10 +29,10 @@ from qrisp.interface.converter.qiskit_converter import (
     convert_to_qiskit,
 )
 
-
 # ══════════════════════════════════════════════════════════════════════════
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════
+
 
 def assert_unitary_equal(qc_a, qc_b, atol=1e-13):
     u_a = Operator(qc_a).data if isinstance(qc_a, QiskitQC) else Operator(qc_a.to_qiskit()).data
@@ -44,6 +43,7 @@ def assert_unitary_equal(qc_a, qc_b, atol=1e-13):
 # ══════════════════════════════════════════════════════════════════════════
 # Qrisp → Qiskit → Qrisp  round-trip
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class TestQrispToQiskitRoundtrip:
     """Standard gates survive Qrisp → Qiskit → Qrisp round-trip."""
@@ -61,10 +61,15 @@ class TestQrispToQiskitRoundtrip:
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
-    @pytest.mark.parametrize("gate,params", [
-        ("rx", [0.5]), ("ry", [1.2]), ("rz", [-0.3]),
-        ("p", [np.pi / 3]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,params",
+        [
+            ("rx", [0.5]),
+            ("ry", [1.2]),
+            ("rz", [-0.3]),
+            ("p", [np.pi / 3]),
+        ],
+    )
     def test_single_qubit_rotations(self, gate, params):
         qc = QuantumCircuit(1)
         getattr(qc, gate)(*params, 0)
@@ -179,6 +184,7 @@ class TestQrispToQiskitRoundtrip:
 # Qiskit → Qrisp → Qiskit  round-trip
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestQiskitToQrispRoundtrip:
     """Standard Qiskit gates survive Qiskit → Qrisp → Qiskit round-trip."""
 
@@ -187,28 +193,47 @@ class TestQiskitToQrispRoundtrip:
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
-    @pytest.mark.parametrize("gate,args", [
-        ("h", [0]), ("x", [1]), ("y", [0]), ("z", [1]),
-        ("s", [0]), ("t", [1]), ("sx", [0]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,args",
+        [
+            ("h", [0]),
+            ("x", [1]),
+            ("y", [0]),
+            ("z", [1]),
+            ("s", [0]),
+            ("t", [1]),
+            ("sx", [0]),
+        ],
+    )
     def test_single_qubit_clifford(self, gate, args):
         qc = QiskitQC(2)
         getattr(qc, gate)(*args)
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
-    @pytest.mark.parametrize("gate,args", [
-        ("rx", [0.5, 0]), ("ry", [1.2, 0]), ("rz", [-0.3, 0]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,args",
+        [
+            ("rx", [0.5, 0]),
+            ("ry", [1.2, 0]),
+            ("rz", [-0.3, 0]),
+        ],
+    )
     def test_single_qubit_rotations(self, gate, args):
         qc = QiskitQC(1)
         getattr(qc, gate)(*args)
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
-    @pytest.mark.parametrize("theta,phi", [
-        (0.7, 1.2), (np.pi, 0.0), (0.0, 2.5), (-0.5, -1.0),
-    ])
+    @pytest.mark.parametrize(
+        "theta,phi",
+        [
+            (0.7, 1.2),
+            (np.pi, 0.0),
+            (0.0, 2.5),
+            (-0.5, -1.0),
+        ],
+    )
     def test_rgate_to_prx(self, theta, phi):
         """Qiskit RGate maps to PRXGate and back."""
         qc = QiskitQC(1)
@@ -250,6 +275,7 @@ class TestQiskitToQrispRoundtrip:
     def test_qubit_names_preserved(self):
         """Qubit register names survive round-trip."""
         from qiskit import QuantumRegister
+
         qr = QuantumRegister(2, "data")
         qc = QiskitQC(qr)
         qc.h(qr[0])
@@ -295,6 +321,7 @@ class TestQiskitToQrispRoundtrip:
 # Controlled operations
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestControlledOperations:
     """Multi-controlled gates convert correctly."""
 
@@ -337,6 +364,7 @@ class TestControlledOperations:
 # Direct Qrisp ↔ Qiskit unitary comparison (no round-trip)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 def _reverse_qubit_order(U: np.ndarray) -> np.ndarray:
     """Reverse qubit ordering: MSB-first (Qrisp) → LSB-first (Qiskit)."""
     n = int(np.log2(U.shape[0]))
@@ -349,8 +377,9 @@ def _assert_qrisp_qiskit_unitary_equal(qrisp_qc: QuantumCircuit, qiskit_qc: Qisk
     U_qrisp = qrisp_qc.get_unitary()
     U_qiskit = Operator(qiskit_qc).data
     U_qrisp_lsb = _reverse_qubit_order(U_qrisp)
-    assert np.allclose(U_qrisp_lsb, U_qiskit, atol=atol), \
+    assert np.allclose(U_qrisp_lsb, U_qiskit, atol=atol), (
         f"unitaries differ after qubit-order reversal\n{U_qrisp_lsb}\n{U_qiskit}"
+    )
 
 
 class TestQrispToQiskitUnitary:
@@ -369,9 +398,15 @@ class TestQrispToQiskitUnitary:
         qiskit_qc = convert_to_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
 
-    @pytest.mark.parametrize("gate,args", [
-        ("rx", [0.5]), ("ry", [1.2]), ("rz", [-0.3]), ("p", [np.pi / 3]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,args",
+        [
+            ("rx", [0.5]),
+            ("ry", [1.2]),
+            ("rz", [-0.3]),
+            ("p", [np.pi / 3]),
+        ],
+    )
     def test_rotation_1q(self, gate, args):
         qc = QuantumCircuit(1)
         getattr(qc, gate)(*args, 0)
@@ -452,18 +487,29 @@ class TestQiskitToQrispUnitary:
         qrisp_qc = convert_from_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
 
-    @pytest.mark.parametrize("gate,args", [
-        ("h", [0]), ("x", [1]), ("y", [0]), ("z", [1]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,args",
+        [
+            ("h", [0]),
+            ("x", [1]),
+            ("y", [0]),
+            ("z", [1]),
+        ],
+    )
     def test_clifford_1q(self, gate, args):
         qc = QiskitQC(2)
         getattr(qc, gate)(*args)
         qrisp_qc = convert_from_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
 
-    @pytest.mark.parametrize("gate,args", [
-        ("rx", [0.5, 0]), ("ry", [1.2, 0]), ("rz", [-0.3, 0]),
-    ])
+    @pytest.mark.parametrize(
+        "gate,args",
+        [
+            ("rx", [0.5, 0]),
+            ("ry", [1.2, 0]),
+            ("rz", [-0.3, 0]),
+        ],
+    )
     def test_rotation_1q(self, gate, args):
         qc = QiskitQC(1)
         getattr(qc, gate)(*args)
@@ -502,6 +548,7 @@ class TestQiskitToQrispUnitary:
 
     def test_controlled_rgate(self):
         from qiskit.circuit.library import RGate
+
         qc = QiskitQC(2)
         qc.append(RGate(0.6, 0.8).control(1), [0, 1])
         qrisp_qc = convert_from_qiskit(qc)

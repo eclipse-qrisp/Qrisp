@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,10 @@
 
 
 def test_mcx():
-    from qrisp import h, mcx, QuantumVariable, multi_measurement, bin_rep, QuantumBool
     import numpy as np
+
+    from qrisp import QuantumBool, QuantumVariable, bin_rep, h, mcx, multi_measurement
+
     np.random.seed(42)  # Deterministic for reproducible test results
 
     def test_mcx_inner(n, ctrl_state, method, test_phase=True, num_ancilla=0):

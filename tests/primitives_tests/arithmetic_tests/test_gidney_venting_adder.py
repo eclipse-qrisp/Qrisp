@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,27 +21,26 @@ import pytest
 from qrisp import (
     QuantumBool,
     QuantumFloat,
-    x,
-    h,
-    z,
-    measure,
     control,
-    invert,
     gidney_adder,
+    h,
+    invert,
+    measure,
+    x,
+    z,
 )
-from qrisp.jasp import jaspify, count_ops, terminal_sampling, jrange
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
     bit_inverted_mcx,
-    zz_mcx,
-    zz_zz_mcx,
     bit_inverted_zz_zz_mcx,
     carry_venting_adder,
     carry_xor_block,
     dirty_ancillae_adder,
     gidney_cq_venting_adder,
+    zz_mcx,
+    zz_zz_mcx,
 )
-
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.jasp import count_ops, jaspify, jrange, terminal_sampling
 
 ZZ_PARITY_CASES = [
     (0, 0, 0),
@@ -69,9 +67,7 @@ ALL_BIT_INVERTED_CASES = [
 ]
 
 
-@pytest.mark.parametrize(
-    "ctrl_val, b, expected_tgt, ctrl_qbl_val", ALL_BIT_INVERTED_CASES
-)
+@pytest.mark.parametrize("ctrl_val, b, expected_tgt, ctrl_qbl_val", ALL_BIT_INVERTED_CASES)
 def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt, ctrl_qbl_val):
     """Verify bit_inverted_mcx toggles target when (ctrl XOR b) = 1, with optional control qubit."""
 
@@ -127,9 +123,7 @@ def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
     assert int(measured_tgt) == expected_tgt
 
 
-@pytest.mark.parametrize(
-    "z_left_v, z_left_right_v, z_right_v, expected_tgt", DUAL_ZZ_CASES
-)
+@pytest.mark.parametrize("z_left_v, z_left_right_v, z_right_v, expected_tgt", DUAL_ZZ_CASES)
 def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
     """Verify zz_zz_mcx toggles target based on parity of three control qubits."""
 
@@ -165,9 +159,7 @@ ALL_BIT_INVERTED_ZZ_ZZ_CASES = [
 ]
 
 
-@pytest.mark.parametrize(
-    "ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl_val", ALL_BIT_INVERTED_ZZ_ZZ_CASES
-)
+@pytest.mark.parametrize("ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl_val", ALL_BIT_INVERTED_ZZ_ZZ_CASES)
 def test_bit_inverted_zz_zz_mcx_jasp(ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl_val):
     """Verify bit_inverted_zz_zz_mcx toggles target based on ctrl XOR b with optional control qubit."""
 
@@ -270,9 +262,7 @@ CARRY_XOR_IDS = [
 ]
 
 
-@pytest.mark.parametrize(
-    "init, d, c_in_val, n, use_ctrl", CARRY_XOR_CASES, ids=CARRY_XOR_IDS
-)
+@pytest.mark.parametrize("init, d, c_in_val, n, use_ctrl", CARRY_XOR_CASES, ids=CARRY_XOR_IDS)
 def test_carry_xor_block(init, d, c_in_val, n, use_ctrl):
     """Full phase correction sequence restores dirty ancillas (see dirty_ancillae_adder pattern)."""
 
@@ -342,9 +332,7 @@ ALL_DIRTY_ADD_CASES = [
 ]
 
 
-@pytest.mark.parametrize(
-    "init, d, c_in_val, expected, n, ctrl_val", ALL_DIRTY_ADD_CASES
-)
+@pytest.mark.parametrize("init, d, c_in_val, expected, n, ctrl_val", ALL_DIRTY_ADD_CASES)
 def test_dirty_ancillae_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
     """Verify dirty_ancillae_adder computes sum correctly and restores dirty qubits to |0⟩."""
 
@@ -466,9 +454,7 @@ ALL_GIDNEY_CQ_CASES = [
 ]
 
 
-@pytest.mark.parametrize(
-    "init, d, c_in_val, expected, n, ctrl_val", ALL_GIDNEY_CQ_CASES
-)
+@pytest.mark.parametrize("init, d, c_in_val, expected, n, ctrl_val", ALL_GIDNEY_CQ_CASES)
 def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
     """Verify gidney_cq_venting_adder computes (init + d + c_in) mod 2ⁿ with modular wrap and optional control."""
 
@@ -554,13 +540,9 @@ def test_gidney_cq_venting_adder_c_out(init, d, c_in_val, n):
     def second_arg_type_error():
         gidney_cq_venting_adder(1, 2)
 
-    with pytest.raises(
-        TypeError, match="The first argument must be a classical integer"
-    ):
+    with pytest.raises(TypeError, match="The first argument must be a classical integer"):
         first_arg_type_error()
-    with pytest.raises(
-        TypeError, match="The second argument must be a QuantumVariable"
-    ):
+    with pytest.raises(TypeError, match="The second argument must be a QuantumVariable"):
         second_arg_type_error()
 
 
@@ -840,9 +822,7 @@ def test_gidney_cq_venting_adder_bigint(init, d, c_in_val, expected, n):
                 x(c_in)
         else:
             c_in = None
-        gidney_cq_venting_adder(
-            BigInteger.create(d, 1), target, c_in if c_in is not None else None
-        )
+        gidney_cq_venting_adder(BigInteger.create(d, 1), target, c_in if c_in is not None else None)
         return measure(target)
 
     assert int(main()) == expected
@@ -961,9 +941,7 @@ def test_terminal_carry_in(init, d, c_in_val, expected, n):
     assert int(t_val) == expected
 
 
-@pytest.mark.parametrize(
-    "init, d, c_in_val, ctrl_val, expected, n", TERMINAL_CARRY_CTRL_CASES
-)
+@pytest.mark.parametrize("init, d, c_in_val, ctrl_val, expected, n", TERMINAL_CARRY_CTRL_CASES)
 def test_terminal_carry_and_ctrl(init, d, c_in_val, ctrl_val, expected, n):
     """Addition with carry-in and control via terminal sampling."""
     res = _ts_add_carry_ctrl(init, d, c_in_val, ctrl_val, n)
@@ -986,11 +964,11 @@ def test_terminal_dirty_adder():
 def _ts_cq_gidney_roundtrip(n):
     """Check gidney_cq_venting_adder and gidney_adder cancel in superposition."""
     target = QuantumFloat(n)  # defaults to encoding 0
-    h(target)                 # |0⟩ → |+⟩⊗ⁿ
-    gidney_cq_venting_adder(1, target)   # add 1
+    h(target)  # |0⟩ → |+⟩⊗ⁿ
+    gidney_cq_venting_adder(1, target)  # add 1
     with invert():
-        gidney_adder(1, target)          # subtract 1
-    h(target)                             # |+⟩⊗ⁿ → |0⟩⊗ⁿ
+        gidney_adder(1, target)  # subtract 1
+    h(target)  # |+⟩⊗ⁿ → |0⟩⊗ⁿ
     return target
 
 

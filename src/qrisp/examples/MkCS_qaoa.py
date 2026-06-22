@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,24 +15,22 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import (
-    create_coloring_operator,
-    XY_mixer,
-    apply_XY_mixer,
-    QAOAProblem,
-    create_coloring_cl_cost_function,
-    RX_mixer,
-)
-from qrisp import QuantumArray, QuantumVariable
-import networkx as nx
-from operator import itemgetter
-import numpy as np
 import random
+from operator import itemgetter
+
+import networkx as nx
+import numpy as np
+from qrisp.qaoa import (
+    QAOAProblem,
+    apply_XY_mixer,
+    create_coloring_operator,
+)
+
+from qrisp import QuantumArray, QuantumVariable
 
 
 class QuantumColor(QuantumVariable):
-    """
-    The QuantumColor is a custom QuantumVariable implemented with tackling the Max-k-Colorable-Subgraph problem
+    """The QuantumColor is a custom QuantumVariable implemented with tackling the Max-k-Colorable-Subgraph problem
     and other coloring optimization problems in mind. It provides flexibility in choosing encoding methods and
     leverages efficient data structures like QuantumArrays to enhance computational performance.
 
@@ -70,11 +67,11 @@ class QuantumColor(QuantumVariable):
     -------
     decoder(i)
         Decode the color from the given index for both binary and one-hot encoding.
+
     """
 
     def __init__(self, list_of_colors, one_hot_enc=True):
-        """
-        Initialize the QuantumColor with a list of colors and a flag indicating whether to use one-hot encoding.
+        """Initialize the QuantumColor with a list of colors and a flag indicating whether to use one-hot encoding.
 
         Parameters
         ----------
@@ -93,13 +90,10 @@ class QuantumColor(QuantumVariable):
 
         # If binary encoding is used, the size of QuantumVariable is the maximal value of log2 for the number of colors
         else:
-            QuantumVariable.__init__(
-                self, size=int(np.ceil(np.log2(len(list_of_colors))))
-            )
+            QuantumVariable.__init__(self, size=int(np.ceil(np.log2(len(list_of_colors)))))
 
     def decoder(self, i):
-        """
-        Decode the color from the given index i.
+        """Decode the color from the given index i.
 
         Parameters
         ----------
@@ -173,8 +167,7 @@ color_list = ["red", "blue", "yellow", "green"]
 
 
 def cl_cost_function(counts):
-    """
-    The cl_cost_function provides the definition of the classical cost function for
+    """The cl_cost_function provides the definition of the classical cost function for
     the Max-k-Colorable Subgraph problem and calculates the relative energy in respect
     to the amount of counts for each sample.
 
@@ -189,8 +182,8 @@ def cl_cost_function(counts):
         The classical cost functions returns the ratio between the energy calculated
         using the mkcs_obj objective funcion and the amount of counts used in the
         experiment.
-    """
 
+    """
     # Set energy and total_counts to 0
     energy = 0
     total_counts = 0
@@ -200,7 +193,6 @@ def cl_cost_function(counts):
 
     # Iterate over all items in counts in reverse order
     for meas, meas_count in list(counts.items())[::-1]:
-
         # Calculate objective function for current measurement
         obj_for_meas = mkcs_obj(meas, G)
 
@@ -220,8 +212,7 @@ def cl_cost_function(counts):
 
 
 def mkcs_obj(quantumcolor_array, G):
-    """
-    The mkcs_obj is the objective function for the Max-k-Colorable Subgraph problem
+    """The mkcs_obj is the objective function for the Max-k-Colorable Subgraph problem
     instance. As the name suggests, it calculates the value of the objective function
     using which one can compare results and pinpoint the optimal result with the
     lowest free energy value.
@@ -247,13 +238,11 @@ def mkcs_obj(quantumcolor_array, G):
         of the free energy objective function
 
     """
-
     # Set value of color integer to 1
     color = 1
 
     # Iterate over all edges in graph G
     for pair in list(G.edges()):
-
         # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
             color *= 4
@@ -282,8 +271,7 @@ init_state = [random.choice(color_list) for _ in range(len(G))]
 
 
 def initial_state_mkcs(qarg):
-    """
-    The initial_state_mkcs function provides the correct initial state of qubits in
+    """The initial_state_mkcs function provides the correct initial state of qubits in
     the system on which we run the optimization. In the case of the Max-k-Colorable
     Subgraph problem, the initial state of the systemis simply any random coloring
     of nodes of the graph.
@@ -301,7 +289,6 @@ def initial_state_mkcs(qarg):
         the information of the initial state of the system.
 
     """
-
     # Set all elements in qarg to initial state
     qarg[:] = init_state
 
@@ -310,7 +297,6 @@ def initial_state_mkcs(qarg):
 
 
 from qrisp.default_backend import def_backend
-from qrisp.interface import QiskitBackend
 
 # Set default backend for QAOA
 qrisp_sim = def_backend
@@ -329,9 +315,7 @@ coloring_instance.set_init_function(initial_state_mkcs)
 start_time = time.time()
 
 # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-res = coloring_instance.run(
-    qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=25
-)
+res = coloring_instance.run(qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=25)
 
 print(qarg.qs)
 
@@ -342,20 +326,14 @@ print(time.time() - start_time)
 
 # Get the best solution and print it
 best_coloring, best_solution = min(
-    [
-        (mkcs_obj(quantumcolor_array, G), quantumcolor_array)
-        for quantumcolor_array in res.keys()
-    ],
+    [(mkcs_obj(quantumcolor_array, G), quantumcolor_array) for quantumcolor_array in res.keys()],
     key=itemgetter(0),
 )
 print(f"Best string: {best_solution} with coloring: {-best_coloring}")
 
 # Get final solution with optimized gamma and beta angle parameter values and print it
 best_coloring, res_str = min(
-    [
-        (mkcs_obj(quantumcolor_array, G), quantumcolor_array)
-        for quantumcolor_array in list(res.keys())[:5]
-    ],
+    [(mkcs_obj(quantumcolor_array, G), quantumcolor_array) for quantumcolor_array in list(res.keys())[:5]],
     key=itemgetter(0),
 )
 print("QAOA solution: ", res_str)

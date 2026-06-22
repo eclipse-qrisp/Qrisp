@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -70,8 +69,7 @@ def maxcut_energy(
 
 
 def create_maxcut_cl_cost_function(G: nx.Graph) -> Callable[[dict], float]:
-    """
-    Creates the classical cost function for an instance of the maximum cut
+    """Creates the classical cost function for an instance of the maximum cut
     problem for a given graph ``G``.
 
     Parameters
@@ -95,7 +93,6 @@ def create_maxcut_cl_cost_function(G: nx.Graph) -> Callable[[dict], float]:
 
         int_list = []
         if not isinstance(counts_keys[0], str):
-
             for c_array in counts_keys:
                 integer = int("".join(list(c_array))[::-1], 2)
                 int_list.append(integer)
@@ -119,8 +116,7 @@ def extract_boolean_digit(integer, digit):
 
 
 def create_cut_computer(G: nx.Graph) -> Callable[[ArrayLike], Array]:
-    """
-    Create a JIT-compiled function that computes the cut value for a given graph G.
+    """Create a JIT-compiled function that computes the cut value for a given graph G.
 
     Parameters
     ----------
@@ -138,9 +134,7 @@ def create_cut_computer(G: nx.Graph) -> Callable[[ArrayLike], Array]:
     @jit
     def cut_computer(x: ArrayLike) -> Array:
         x_uint = jnp.uint32(x)
-        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(
-            x_uint, edge_list[:, 1]
-        )
+        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(x_uint, edge_list[:, 1])
         # Count the number of edges crossing the cut
         cut = jnp.sum(bools)
         return -cut
@@ -151,8 +145,7 @@ def create_cut_computer(G: nx.Graph) -> Callable[[ArrayLike], Array]:
 def create_maxcut_sample_array_post_processor(
     G: nx.Graph,
 ) -> Callable[[ArrayLike], Array]:
-    """
-    Creates the sample array post processor for the MaxCut problem for a given graph ``G``.
+    """Creates the sample array post processor for the MaxCut problem for a given graph ``G``.
 
     .. note::
         This function is intended for use with :ref:`dynamic (Jasp) QAOA <JaspQAOA>` only.
@@ -188,8 +181,7 @@ def create_maxcut_sample_array_post_processor(
 
 
 def create_maxcut_cost_operator(G: nx.Graph) -> Callable:
-    r"""
-    Creates the cost operator for an instance of the maximum cut problem for a given graph ``G``.
+    r"""Creates the cost operator for an instance of the maximum cut problem for a given graph ``G``.
 
     Parameters
     ----------
@@ -224,8 +216,7 @@ def create_maxcut_cost_operator(G: nx.Graph) -> Callable:
 
 
 def maxcut_problem(G: nx.Graph) -> QAOAProblem:
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters
@@ -239,7 +230,4 @@ def maxcut_problem(G: nx.Graph) -> QAOAProblem:
         A QAOA problem instance for MaxCut for a given graph ``G``.
 
     """
-
-    return QAOAProblem(
-        create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G)
-    )
+    return QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))

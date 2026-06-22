@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ from qrisp.core.quantum_variable import QuantumVariable
 
 
 class QuantumBool(QuantumVariable):
-    """
-    QuantumBools are the quantum type, which represents boolean truth values.
+    """QuantumBools are the quantum type, which represents boolean truth values.
     They are the return type of comparison operators like the equality ``==``.
 
     Apart from their behavior as a QuantumVariable, they can also be treated like
@@ -38,7 +36,6 @@ class QuantumBool(QuantumVariable):
 
     Examples
     --------
-
     We create a QuantumBool and set it to uniform superposition
 
     >>> from qrisp import QuantumBool, h
@@ -180,11 +177,9 @@ class QuantumBool(QuantumVariable):
         return xor_qbl
 
     def flip(self):
-        """
-        Flips the QuantumBool's value.
+        """Flips the QuantumBool's value.
 
         """
-
         from qrisp import x
 
         x(self[0])

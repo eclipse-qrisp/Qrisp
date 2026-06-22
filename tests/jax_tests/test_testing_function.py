@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,24 +18,25 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_testing_function():
-    
+
     @qache
     def inner_function(qv):
         h(qv[0])
         cx(qv[0], qv[1])
-        cx(qv[0], qv[qv.size-1])
+        cx(qv[0], qv[qv.size - 1])
         return qv.size
-    
+
     def outer_function(x):
         qv = QuantumVariable(x)
         temp_0 = inner_function(qv)
         temp_1 = inner_function(qv)
         temp_2 = inner_function(qv)
         return qv
-    
+
     testing_function = jasp_function_test(outer_function)
-    
+
     assert testing_function(5)
     assert testing_function(6)
     assert testing_function(7)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -45,12 +44,8 @@ def _invert_inpl_function(func):
 
 
 # Switch implementation for quantum index
-def _q_switch_q(
-    index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
-):
-    r"""
-    Executes a switch - case statement distinguishing between given in-place functions.
-
+def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None):
+    r"""Executes a switch - case statement distinguishing between given in-place functions.
 
     Parameters
     ----------
@@ -73,7 +68,6 @@ def _q_switch_q(
 
     Examples
     --------
-
     We write a script that uses a :ref:`QuantumFloat` as index to select
     different operations on another operand :ref:`QuantumFloat`. The index variable is
     put into superposition such that all branches are executed in superposition.
@@ -106,7 +100,6 @@ def _q_switch_q(
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-
     if is_function_mode := callable(branches):
         if branch_amount is None:
             index_size = len(index) if isinstance(index, list) else index.size
@@ -128,14 +121,11 @@ def _q_switch_q(
         xrange = range
 
     else:
-        raise TypeError(
-            "Argument 'branches' must be a list or a callable(i, *operands)"
-        )
+        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
 
     method = "tree" if method == "auto" else method
 
     if method == "sequential":
-
         control_qbl = QuantumBool()
 
         for i in xrange(branch_amount):
@@ -146,18 +136,16 @@ def _q_switch_q(
                             branches(i, *operands)
                         else:
                             branches[i](*operands)
+                    elif is_function_mode:
+                        with control(ctrl):
+                            branches(i, *operands)
                     else:
-                        if is_function_mode:
-                            with control(ctrl):
-                                branches(i, *operands)
-                        else:
-                            with control(ctrl):
-                                branches[i](*operands)
+                        with control(ctrl):
+                            branches[i](*operands)
 
         control_qbl.delete()
 
     elif method == "parallel":
-
         if check_for_tracing_mode():
             raise NotImplementedError(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
@@ -179,7 +167,6 @@ def _q_switch_q(
         # This QuantumArray acts as an addressable QRAM via the demux function
 
         if branch_amount != 2**index.size:
-
             warnings.warn(
                 "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
             )
@@ -198,13 +185,12 @@ def _q_switch_q(
                                 branches(i, qa[i])
                             else:
                                 branches[i](qa[i])
+                        elif is_function_mode:
+                            with control(ctrl):
+                                branches(i, qa[i])
                         else:
-                            if is_function_mode:
-                                with control(ctrl):
-                                    branches(i, qa[i])
-                            else:
-                                with control(ctrl):
-                                    branches[i](qa[i])
+                            with control(ctrl):
+                                branches[i](qa[i])
 
         qa.delete()
 
@@ -213,7 +199,6 @@ def _q_switch_q(
 
     # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
-
         # Jasp mode
         if check_for_tracing_mode():
             xrange = jrange
@@ -354,7 +339,6 @@ def _q_switch_q(
 
         # List mode
         elif isinstance(branches, list):
-
             if len(branches) % 2 != 0:
 
                 def identity(_):
@@ -429,9 +413,7 @@ def _q_switch_q(
                     x_cond(j == i, apply, lambda x: None, branches[j])
 
         else:
-            raise TypeError(
-                "Argument 'branches' must be a list or a callable(i, *operands)"
-            )
+            raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
 
         def body_fun(pos, val):
             anc, ca, oper = val
@@ -458,9 +440,7 @@ def _q_switch_q(
 
         # Perform leafs and jumps
 
-        _, _, _ = x_fori_loop(
-            0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands)
-        )
+        _, _, _ = x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
 
         # Perfrom last leaf
         x_cond(
@@ -502,9 +482,7 @@ def _q_switch_q(
         anc.delete()
 
     else:
-        raise Exception(
-            f"Don't know compile method {method} for switch-case structure."
-        )
+        raise Exception(f"Don't know compile method {method} for switch-case structure.")
 
 
 temp = _q_switch_q.__doc__

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,18 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
 import numpy as np
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+
 from qrisp._cache_config import qrisp_lru_compilation_cache
-
-from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
-
+from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit
-from qrisp.jasp import TracingQuantumSession
 
 
 class ControlledJaspr(Jaspr):
-    """
-    This class enables the representation of controlled quantum functions.
+    """This class enables the representation of controlled quantum functions.
 
     The advantage of treating controlled functions in a separate manner is
     that controlled function have an efficient control themselves:
@@ -51,17 +47,13 @@ class ControlledJaspr(Jaspr):
         if ctrl_state == "1" and base_jaspr.ctrl_jaspr is not None:
             controlled_jaspr = base_jaspr.ctrl_jaspr
         else:
-            controlled_jaspr = multi_control_jaspr(
-                base_jaspr, len(ctrl_state), ctrl_state
-            )
+            controlled_jaspr = multi_control_jaspr(base_jaspr, len(ctrl_state), ctrl_state)
 
         Jaspr.__init__(self, controlled_jaspr)
         self.envs_flattened = True
 
         if self.base_jaspr.inv_jaspr and not stop_recursion:
-            self.inv_jaspr = ControlledJaspr(
-                base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True
-            )
+            self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
 
     def control(self, num_ctrl, ctrl_state=-1):
 
@@ -100,8 +92,7 @@ def copy_jaxpr(jaxpr):
 
 
 def control_eqn(eqn, ctrl_qubit_var):
-    """
-    Receives and equation that describes either an operation or a pjit primitive
+    """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
 
     Parameters
@@ -115,10 +106,9 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr, AbstractQuantumState
+    from qrisp.jasp import AbstractQuantumState, Jaspr
 
     if eqn.primitive.name == "jit":
-
         new_params = dict(eqn.params)
 
         invars = list(eqn.invars)
@@ -128,12 +118,8 @@ def control_eqn(eqn, ctrl_qubit_var):
 
             invars = [ctrl_qubit_var] + eqn.invars
 
-            new_params["in_shardings"] = (new_params["in_shardings"][-1],) + new_params[
-                "in_shardings"
-            ]
-            new_params["in_layouts"] = (new_params["in_layouts"][-1],) + new_params[
-                "in_layouts"
-            ]
+            new_params["in_shardings"] = (new_params["in_shardings"][-1],) + new_params["in_shardings"]
+            new_params["in_layouts"] = (new_params["in_layouts"][-1],) + new_params["in_layouts"]
             new_params["donated_invars"] = (False,) + new_params["donated_invars"]
 
         return JaxprEqn(
@@ -147,7 +133,6 @@ def control_eqn(eqn, ctrl_qubit_var):
         )
 
     elif eqn.primitive.name == "while":
-
         new_params = dict(eqn.params)
 
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
@@ -157,7 +142,6 @@ def control_eqn(eqn, ctrl_qubit_var):
         if isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumState) and isinstance(
             body_jaxpr.outvars[-1].aval, AbstractQuantumState
         ):
-
             # Generate controlled body jaxpr
             new_params["body_jaxpr"] = control_jaspr(Jaspr(eqn.params["body_jaxpr"]))
             new_invars.insert(eqn.params["cond_nconsts"], ctrl_qubit_var)
@@ -165,9 +149,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         else:
             new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_params["body_jaxpr"] = ClosedJaxpr(
-                new_jaxpr, eqn.params["body_jaxpr"].consts
-            )
+            new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["body_jaxpr"].consts)
 
         if isinstance(cond_jaxpr.invars[-1].aval, AbstractQuantumState) and isinstance(
             cond_jaxpr.outvars[-1].aval, AbstractQuantumState
@@ -176,9 +158,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_params["cond_jaxpr"] = ClosedJaxpr(
-                new_jaxpr, eqn.params["cond_jaxpr"].consts
-            )
+            new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["cond_jaxpr"].consts)
 
         control_var_count[0] += 1
         temp = JaxprEqn(
@@ -193,7 +173,6 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         return temp
     elif eqn.primitive.name == "cond":
-
         new_params = dict(eqn.params)
 
         if isinstance(eqn.invars[-1].aval, AbstractQuantumState) and isinstance(
@@ -201,9 +180,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         ):
             branch_list = []
             for i in range(len(new_params["branches"])):
-                controlled_branch_jaxpr = control_jaspr(
-                    Jaspr(new_params["branches"][i])
-                )
+                controlled_branch_jaxpr = control_jaspr(Jaspr(new_params["branches"][i]))
                 branch_list.append(controlled_branch_jaxpr)
         else:
             return eqn
@@ -228,9 +205,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         return JaxprEqn(
             primitive=eqn.primitive,
-            invars=[ctrl_qubit_var]
-            + eqn.invars[:-num_qubits]
-            + eqn.invars[-num_qubits:],
+            invars=[ctrl_qubit_var] + eqn.invars[:-num_qubits] + eqn.invars[-num_qubits:],
             outvars=eqn.outvars,
             params=new_params,
             source_info=eqn.source_info,
@@ -242,8 +217,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def control_jaspr(jaspr):
-    """
-    Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
+    """Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
     (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
@@ -258,8 +232,7 @@ def control_jaspr(jaspr):
         The controlled Jaspr.
 
     """
-
-    from qrisp.jasp import Jaspr, AbstractQubit
+    from qrisp.jasp import AbstractQubit, Jaspr
 
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
@@ -293,8 +266,7 @@ def control_jaspr(jaspr):
 
 
 def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
-    """
-    Similar to control_jaspr but allows specification of more than
+    """Similar to control_jaspr but allows specification of more than
     one control and a control state
 
     Parameters
@@ -312,7 +284,6 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
         The controlled Jaspr.
 
     """
-
     from qrisp.jasp import make_jaspr
 
     ctrl_vars = [Var(aval=AbstractQubit()) for _ in range(num_ctrl)]
@@ -341,7 +312,6 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
         from qrisp.circuit import XGate
 
         if num_ctrls == 1:
-
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls)
             temp = controlled_jaspr.embedd(*args, inline=True)
@@ -350,7 +320,6 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
             return temp
 
         else:
-
             from qrisp import QuantumBool
 
             mcx_operation = XGate().control(num_ctrls, ctrl_state=ctrl_state)

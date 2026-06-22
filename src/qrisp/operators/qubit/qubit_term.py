@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import gphase, rz, cx, conjugate, custom_control, x, y, z
-from qrisp.operators.qubit.visualization import X_, Y_, Z_
-
-from sympy import Symbol
 import numpy as np
+from sympy import Symbol
+
+from qrisp import conjugate, custom_control, cx, gphase, rz, x, y, z
+from qrisp.operators.qubit.visualization import X_, Y_, Z_
 
 PAULI_TABLE = {
     ("I", "I"): ("I", 1),
@@ -236,25 +235,19 @@ class QubitTerm:
     @custom_control(static_argnums=0)
     def simulate(self, coeff, qv, ctrl=None):
 
+
         from qrisp import (
-            h,
-            cx,
-            rz,
-            mcp,
-            conjugate,
-            control,
             QuantumBool,
-            mcx,
-            x,
-            p,
-            s,
             QuantumEnvironment,
-            gphase,
             QuantumVariable,
+            control,
             find_qs,
+            gphase,
+            mcp,
+            mcx,
+            p,
         )
         from qrisp.operators import QubitOperator
-        import numpy as np
 
         # If required, do change of basis. Change of basis here means, that
         # the quantum argument is conjugated with a function that makes the
@@ -309,9 +302,7 @@ class QubitTerm:
 
         for i in range(len(projector_indices)):
             # projector_ctrl_state += str(int(projector_state[i]))
-            projector_ctrl_state += int(projector_state[i]) * 2 ** (
-                len(projector_qubits)
-            )
+            projector_ctrl_state += int(projector_state[i]) * 2 ** (len(projector_qubits))
             projector_qubits.append(qv[projector_indices[i]])
 
         # If no non-trivial indices are found, we perform a global phase
@@ -322,7 +313,6 @@ class QubitTerm:
 
         # If there are only projectors, the circuit is a mcp gate
         elif len(Z_indices) == 0:
-
             # Perform the mcp
             if len(projector_qubits) == 1:
                 if projector_ctrl_state == 0:
@@ -413,13 +403,9 @@ class QubitTerm:
 
                 reduction_qubits = list(projector_qubits)
                 fresh_ancillae = list(ancillae)
-                ctrl_list = [
-                    str(int((ctrl_state >> i) % 2))
-                    for i in range(len(reduction_qubits))
-                ]
+                ctrl_list = [str(int((ctrl_state >> i) % 2)) for i in range(len(reduction_qubits))]
 
                 while len(reduction_qubits) > 2:
-
                     k = len(reduction_qubits) // 2
 
                     balauca_layer(
@@ -441,22 +427,17 @@ class QubitTerm:
                     ctrl_state="".join(ctrl_list),
                 )
 
-            balauca_ancillae = QuantumVariable(
-                len(projector_qubits) - 1, qs=qs, name="balauca_ancilla*"
-            )
+            balauca_ancillae = QuantumVariable(len(projector_qubits) - 1, qs=qs, name="balauca_ancilla*")
 
             env = conjugate(semi_balauca_mcx)(
                 projector_qubits,
                 hs_anc,
                 projector_ctrl_state,
-                ancillae=[
-                    balauca_ancillae[k] for k in range(len(projector_qubits) - 1)
-                ],
+                ancillae=[balauca_ancillae[k] for k in range(len(projector_qubits) - 1)],
             )
 
         # Perform the conjugation
         with env:
-
             # The following qubit will be the target of the RZ gate
             anchor_index = Z_indices[-1]
 
@@ -477,10 +458,7 @@ class QubitTerm:
                     cx(qv[i], qv[anchor_index])
 
             # Perform the conjugation
-            with conjugate(flip_anchor_qubit)(
-                qv, anchor_index=anchor_index, Z_indices=Z_indices[:-1]
-            ):
-
+            with conjugate(flip_anchor_qubit)(qv, anchor_index=anchor_index, Z_indices=Z_indices[:-1]):
                 # Perform the controlled RZ
                 if control_qubit_available:
                     # Use Selinger's circuit (page 5)
@@ -516,8 +494,7 @@ class QubitTerm:
         return res
 
     def to_expr(self):
-        """
-        Returns a SymPy expression representing the QubitTerm.
+        """Returns a SymPy expression representing the QubitTerm.
 
         Returns
         -------
@@ -563,12 +540,7 @@ class QubitTerm:
             else:
                 return self
         else:
-            raise TypeError(
-                "Unsupported operand type(s) for ** or pow(): "
-                + str(type(self))
-                + " and "
-                + str(type(e))
-            )
+            raise TypeError("Unsupported operand type(s) for ** or pow(): " + str(type(self)) + " and " + str(type(e)))
 
     def __mul__(self, other):
         result_factor_dict = {}
@@ -587,9 +559,7 @@ class QubitTerm:
         return QubitTerm(result_factor_dict), result_coeff
 
     def subs(self, subs_dict):
-        """
-
-        Parameters
+        """Parameters
         ----------
         subs_dict : dict
             A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
@@ -617,8 +587,7 @@ class QubitTerm:
     #
 
     def unitary(self, sign=False):
-        """
-        Returns the unitary for the term self.
+        """Returns the unitary for the term self.
 
         Parameters
         ----------
@@ -642,8 +611,7 @@ class QubitTerm:
         return unitary_
 
     def apply_unitary(self, operand, sign=False):
-        """
-        Applies the unitary for the term self to the ``operand``.
+        """Applies the unitary for the term self to the ``operand``.
 
         Parameters
         ----------
@@ -677,8 +645,7 @@ class QubitTerm:
         return temp
 
     def commute(self, other):
-        """
-        Checks if two QubitTerms commute.
+        """Checks if two QubitTerms commute.
 
         """
         a = self.factor_dict
@@ -708,8 +675,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_pauli(self, other):
-        """
-        Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
+        """Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
 
         """
         a = self.factor_dict
@@ -740,8 +706,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_qw(self, other):
-        """
-        Checks if two QubitTerms commute qubit-wise.
+        """Checks if two QubitTerms commute qubit-wise.
 
         """
         a = self.factor_dict
@@ -752,26 +717,18 @@ class QubitTerm:
         keys.update(set(b.keys()))
 
         for key in keys:
-            if (
-                not PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
-                == PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
-            ):
+            if not PAULI_TABLE[a.get(key, "I"), b.get(key, "I")] == PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]:
                 return False
         return True
 
     def intersect(self, other):
-        """
-        Checks if two QubitTerms operate on the same qubit.
+        """Checks if two QubitTerms operate on the same qubit.
 
         """
-        return (
-            len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys()))
-            != 0
-        )
+        return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
 
     def ladders_agree(self, other):
-        """
-        Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
+        """Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
 
         Parameters
         ----------
@@ -783,17 +740,12 @@ class QubitTerm:
         None.
 
         """
-        ladder_indices_self = [
-            factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]
-        ]
-        ladder_indices_other = [
-            factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]
-        ]
+        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
         return set(ladder_indices_self) == set(ladder_indices_other)
 
     def ladders_intersect(self, other):
-        """
-        Checks if the ladder operators of two QubitTerms operate on the same qubit.
+        """Checks if the ladder operators of two QubitTerms operate on the same qubit.
 
         Parameters
         ----------
@@ -805,10 +757,6 @@ class QubitTerm:
         None.
 
         """
-        ladder_indices_self = [
-            factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]
-        ]
-        ladder_indices_other = [
-            factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]
-        ]
+        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
         return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -24,7 +23,6 @@ import jax.numpy as jnp
 
 @jax.tree_util.register_pytree_node_class
 class Jlist:
-
     fill_value = 0
 
     def __init__(self, init_val=None, max_size=int(2**10)):
@@ -37,7 +35,6 @@ class Jlist:
         n = 0
 
         if init_val is not None:
-
             if isinstance(init_val, list):
                 n = len(init_val)
             else:
@@ -114,7 +111,6 @@ class Jlist:
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-
             if key.start is None:
                 start = 0
             else:
@@ -135,9 +131,7 @@ class Jlist:
 
             new_array = jnp.zeros(self.max_size, dtype=jnp.int64)
 
-            new_array, _ = jax.lax.fori_loop(
-                0, length, body_fun, (new_array, self.array)
-            )
+            new_array, _ = jax.lax.fori_loop(0, length, body_fun, (new_array, self.array))
 
             res = Jlist.__new__(Jlist)
             res.array = new_array
@@ -161,16 +155,14 @@ class Jlist:
         return copy.copy(self)
 
     def flatten(self):
-        """
-        Flatten the DynamicJaxArray into a tuple of arrays and auxiliary data.
+        """Flatten the DynamicJaxArray into a tuple of arrays and auxiliary data.
         This is useful for JAX transformations and serialization.
         """
         return (self.array, self.counter), tuple()
 
     @classmethod
     def unflatten(cls, aux_data, children):
-        """
-        Recreate a DynamicJaxArray from flattened data.
+        """Recreate a DynamicJaxArray from flattened data.
         """
         array, counter = children
         obj = cls(max_size=array.shape[0])

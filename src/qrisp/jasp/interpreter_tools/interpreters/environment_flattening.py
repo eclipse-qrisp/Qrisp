@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
+
+from jax.extend.core import JaxprEqn
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from jax.extend.core import JaxprEqn, ClosedJaxpr
-
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumState
 
@@ -40,8 +38,7 @@ def copy_jaxpr_eqn(eqn):
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def flatten_environments(jaspr):
-    """
-    This function takes in a jaspr with QuantumEnvironment primitives
+    """This function takes in a jaspr with QuantumEnvironment primitives
     (```q_env```) and compiles these according to their semantics.
 
     Parameters
@@ -93,8 +90,7 @@ def flatten_environments(jaspr):
 
 
 def flatten_environments_in_pjit_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -108,7 +104,6 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
     jaxpr = eqn.params["jaxpr"]
@@ -123,8 +118,7 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
 
 
 def flatten_environments_in_while_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -138,7 +132,6 @@ def flatten_environments_in_while_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
     eqn.params["body_jaxpr"] = flatten_environments(eqn.params["body_jaxpr"])
@@ -147,8 +140,7 @@ def flatten_environments_in_while_eqn(eqn, context_dic):
 
 
 def flatten_environments_in_cond_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -162,7 +154,6 @@ def flatten_environments_in_cond_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
     branch_list = []

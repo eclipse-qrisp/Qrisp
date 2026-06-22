@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,9 +19,9 @@ from .block_encoding_base import BlockEncoding
 from .constructors import (
     build_from_array,
     build_from_eye,
-    build_from_lcu,
-    build_from_foqcs_lcu_prep,
     build_from_foqcs_lcu_operator,
+    build_from_foqcs_lcu_prep,
+    build_from_lcu,
     build_from_operator,
     build_from_projector,
 )

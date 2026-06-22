@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,14 @@
 """
 
 import numpy as np
+
 from qrisp import (
-    QuantumBool,
-    QuantumArray,
     OutcomeArray,
+    QuantumArray,
+    QuantumBool,
+    amplitude_amplification,
     ry,
     z,
-    amplitude_amplification,
 )
 
 
@@ -120,9 +120,7 @@ def test_amplitude_amplification_oblivious():
 
     # Perform reflection ONLY with respect to the first variable (index 0)
     state_function(qa)
-    amplitude_amplification(
-        qa, state_function, oracle_function, iter=1, reflection_indices=[0]
-    )
+    amplitude_amplification(qa, state_function, oracle_function, iter=1, reflection_indices=[0])
 
     # Check that the amplification still succeeded on the targeted qubit
     assert np.isclose(qa[0].get_measurement()[True], 0.31, atol=1e-2)

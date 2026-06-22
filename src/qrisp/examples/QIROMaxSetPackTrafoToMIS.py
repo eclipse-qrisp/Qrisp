@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qiro import *
-from qrisp import QuantumVariable
+import random
+
 import networkx as nx
 
-
-import random
+from qrisp import QuantumVariable
+from qrisp.algorithms.qiro import *
 
 random.seed(105)
 # sets are given as list of lists
@@ -64,9 +63,7 @@ qiro_instance = QIROProblem(
 )
 
 # We run the qiro instance and get the results!
-res_qiro = qiro_instance.run_qiro(
-    qarg=qarg, depth=3, n_recursions=2, mes_kwargs=mes_kwargs
-)
+res_qiro = qiro_instance.run_qiro(qarg=qarg, depth=3, n_recursions=2, mes_kwargs=mes_kwargs)
 # and also the final graph, that has been adjusted
 final_Graph = qiro_instance.problem
 
@@ -76,7 +73,6 @@ maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 costFunc = create_max_indep_set_cl_cost_function(G)
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(costFunc({key: 1}))
 

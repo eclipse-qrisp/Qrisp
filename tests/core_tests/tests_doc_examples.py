@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 
 def test_QuantumArray_indexing():
-    from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, multi_measurement
+    from qrisp import QuantumArray, QuantumBool, QuantumFloat, h
 
     q_array = QuantumArray(QuantumBool(), shape=(4, 4))
     index_0 = QuantumFloat(2)
@@ -52,7 +51,7 @@ def test_QuantumDictionary_load():
 
 
 def test_QuantumFloat():
-    from qrisp import QuantumFloat, invert
+    from qrisp import QuantumFloat
 
     qf_6 = QuantumFloat(3)
     qf_7 = QuantumFloat(3)
@@ -79,20 +78,21 @@ def test_QuantumFloat():
 
 
 def test_ConditionEnvironment():
+    import numpy as np
+
     from qrisp import (
+        ConditionEnvironment,
+        QuantumBool,
         QuantumChar,
         QuantumFloat,
-        QuantumBool,
         QuantumVariable,
-        h,
-        x,
         cx,
+        h,
         mcx,
-        p,
         multi_measurement,
-        ConditionEnvironment,
+        p,
+        x,
     )
-    import numpy as np
 
     q_ch = QuantumChar()
     qf = QuantumFloat(3, signed=True)
@@ -114,9 +114,7 @@ def test_ConditionEnvironment():
         res = QuantumBool(name="res_bool")
 
         if qv_0.size != qv_1.size:
-            raise Exception(
-                "Tried to evaluate equality condition for QuantumVariables of differing size"
-            )
+            raise Exception("Tried to evaluate equality condition for QuantumVariables of differing size")
 
         temp_qv = QuantumVariable(qv_0.size)
 
@@ -145,7 +143,7 @@ def test_ConditionEnvironment():
 
 
 def test_InversionEnvironment():
-    from qrisp import QuantumFloat, invert, QuantumBool, h, q_mult, multi_measurement
+    from qrisp import QuantumBool, QuantumFloat, h, invert, multi_measurement, q_mult
 
     qf = QuantumFloat(3)
 

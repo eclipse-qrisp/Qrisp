@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
+from qrisp import QuantumBool, auto_uncompute, h, x
 from qrisp.alg_primitives import IQAE
-from qrisp import h, cx, x, z, auto_uncompute, QuantumBool, control
 
 
 def uniform(*args):
@@ -26,8 +25,7 @@ def uniform(*args):
 
 
 def QMCI(qargs, function, distribution=None, mes_kwargs={}):
-    r"""
-    Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
+    r"""Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
     This implementation utilizes :ref:`IQAE`. A detailed explanation can be found in the `QMCI tutorial <https://www.qrisp.eu/general/tutorial/QMCItutorial.html>`_.
 
     QMCI performs numerical integration of (high-dimensional) functions w.r.t. probability distributions:
@@ -56,7 +54,6 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
 
     Examples
     --------
-
     We integrate the function $f(x)=x^2$ over the integral $[0,1]$.
     Therefore, the function is evaluated at $8=2^3$ sampling points as specified by ``QuantumFloat(3,-3)``.
     The $y$-axis is representend by ``QuantumFloat(6,-6)``.

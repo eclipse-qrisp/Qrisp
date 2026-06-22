@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,19 +15,13 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import qache
 from qrisp.jasp.jasp_expression import make_jaspr
-from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
-from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
 
 
 def terminal_sampling(func=None, shots=0):
-    """
-    The ``terminal_sampling`` decorator performs a hybrid simulation and afterwards
+    """The ``terminal_sampling`` decorator performs a hybrid simulation and afterwards
     samples from the resulting quantum state.
     The idea behind this function is that it is very cheap for a classical simulator
     to sample from a given quantum state without simulating the whole state from
@@ -63,7 +56,6 @@ def terminal_sampling(func=None, shots=0):
 
     Examples
     --------
-
     We sample from a :ref:`QuantumFloat` that has been brought in a superposition.
 
     ::
@@ -125,8 +117,8 @@ def terminal_sampling(func=None, shots=0):
     is depending on the measurement outcome of the :ref:`QuantumBool`. The
     ``terminal_sampling`` function performs this simulation (including the measurement)
     only once and simply samples from the final distribution.
-    """
 
+    """
     if isinstance(func, int):
         shots = func
         func = None

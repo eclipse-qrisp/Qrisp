@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
-from qrisp.jasp import qache, jrange
-from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.environments import control
 from qrisp.core import cx, x
+from qrisp.environments import control
+from qrisp.jasp import jrange, qache
+from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 @qache(static_argnames="inpl_adder")
@@ -44,7 +42,6 @@ def jasp_squaring(a, inpl_adder=gidney_adder):
     temp = QuantumBool()
 
     for i in jrange(a.size):
-
         cx(a[i], temp[0])
 
         with control(temp[0]):
@@ -66,9 +63,7 @@ def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
     # https://arxiv.org/abs/2112.10537
 
     n = factor_1.size - 1
-    s = QuantumFloat(
-        factor_1.size + factor_2.size, exponent=factor_1.exponent + factor_2.exponent
-    )
+    s = QuantumFloat(factor_1.size + factor_2.size, exponent=factor_1.exponent + factor_2.exponent)
 
     # Handle trivial cases first
     with control(factor_1.size == 1):
@@ -82,7 +77,6 @@ def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
 
     # Non trivial case
     with control((factor_1.size > 1) & (factor_2.size > 1)):
-
         for i in jrange(factor_2.size):
             cx(factor_2[i], s[i + n])
 
@@ -95,7 +89,6 @@ def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
             cx(factor_1[1], s[j])
 
         for i in jrange(1, factor_1.size - 1):
-
             inpl_adder(factor_2[: s.size - i], s[i - 1 :])
 
             cx(factor_1[i], factor_1[i + 1])

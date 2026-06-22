@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,11 @@
 ********************************************************************************
 """
 
-from jax.lax import while_loop
-from jax.extend.core import Literal
 from jax.core import ShapedArray
+from jax.extend.core import Literal
+from jax.lax import while_loop
 
 from qrisp.environments import QuantumEnvironment
-
 
 # The jrange feature executes 2 iterations of the loop to capture
 # the loop body in a QuantumEnvironment. We need 2 iterations to
@@ -105,7 +103,6 @@ def iteration_env_evaluator(eqn, context_dic):
     call stores the equation; the second call retrieves it, pairs the two
     iterations, and compiles them into a JAX ``while_loop`` primitive.
     """
-
     # First call: store the equation keyed by the primitive's identity.
     # The primitive is the JIterationEnvironment instance, which is unique
     # to this jrange loop, so the key distinguishes different loops.
@@ -121,7 +118,7 @@ def iteration_env_evaluator(eqn, context_dic):
     # Flatten any nested environments inside the loop bodies.
     iter_1_jaspr = iteration_1_eqn.params["jaspr"].flatten_environments()
     iter_2_jaspr = iteration_2_eqn.params["jaspr"].flatten_environments()
-    
+
     # The second iteration's body must return exactly one value (the
     # QuantumCircuit).  Multiple outputs would indicate an unsupported
     # external carry value escaping the loop.
@@ -150,10 +147,7 @@ def iteration_env_evaluator(eqn, context_dic):
             if eqn.primitive.name == "jit":
                 if eqn.params.get("name") == JRANGE_MARKER_NAME:
                     return eqn
-        raise Exception(
-            f"JIterationEnvironment: could not find marker equation "
-            f"'{JRANGE_MARKER_NAME}' in body Jaxpr."
-        )
+        raise Exception(f"JIterationEnvironment: could not find marker equation '{JRANGE_MARKER_NAME}' in body Jaxpr.")
 
     # --- Use ORIGINAL (unflattened) bodies for Var identification ---
     # These Vars match iteration_*_eqn.invars.
@@ -163,7 +157,8 @@ def iteration_env_evaluator(eqn, context_dic):
     def _find_vars_from_marker(body, eqn_invars):
         """Return (threshold_var, loop_index_var) from a body Jaspr.
         The returned Vars are looked up in *eqn_invars* so they match
-        the equation's invar list (original or flattened)."""
+        the equation's invar list (original or flattened).
+        """
         marker = _find_marker_eqn(body.eqns)
         thresh = marker.invars[1]
         updated = marker.invars[0]
@@ -175,9 +170,7 @@ def iteration_env_evaluator(eqn, context_dic):
                 loop = eqn.invars[0]
                 break
         if loop is None:
-            raise Exception(
-                "Could not find increment equation feeding the jrange marker."
-            )
+            raise Exception("Could not find increment equation feeding the jrange marker.")
         # Verify the vars are in the target invars list
         if thresh not in eqn_invars:
             raise Exception("Threshold var not found in equation invars.")
@@ -186,20 +179,12 @@ def iteration_env_evaluator(eqn, context_dic):
         return thresh, loop
 
     # Original Vars → for iteration_*_eqn.invars
-    threshold_var, loop_index_var = _find_vars_from_marker(
-        orig_body_1, iteration_1_eqn.invars
-    )
-    threshold_var_2, loop_index_var_2 = _find_vars_from_marker(
-        orig_body_2, iteration_2_eqn.invars
-    )
+    threshold_var, loop_index_var = _find_vars_from_marker(orig_body_1, iteration_1_eqn.invars)
+    threshold_var_2, loop_index_var_2 = _find_vars_from_marker(orig_body_2, iteration_2_eqn.invars)
 
     # Flattened Vars → for iter_*_jaspr.invars
-    thresh_flat_1, loop_flat_1 = _find_vars_from_marker(
-        iter_1_jaspr, iter_1_jaspr.invars
-    )
-    thresh_flat_2, loop_flat_2 = _find_vars_from_marker(
-        iter_2_jaspr, iter_2_jaspr.invars
-    )
+    thresh_flat_1, loop_flat_1 = _find_vars_from_marker(iter_1_jaspr, iter_1_jaspr.invars)
+    thresh_flat_2, loop_flat_2 = _find_vars_from_marker(iter_2_jaspr, iter_2_jaspr.invars)
 
     # --- inc_res_index: from the flattened body's marker outvar ---
     marker_flat_1 = _find_marker_eqn(iter_1_jaspr.eqns)
@@ -210,9 +195,7 @@ def iteration_env_evaluator(eqn, context_dic):
             inc_res_index = i
             break
     if inc_res_index is None:
-        raise Exception(
-            "Could not find marker output in iteration 1 outvars."
-        )
+        raise Exception("Could not find marker output in iteration 1 outvars.")
 
     # --- Rearrange: threshold at position 0, loop index at position 1 ---
     def _move_var_to_front(invars_list, target_var):
@@ -271,9 +254,7 @@ def iteration_env_evaluator(eqn, context_dic):
             # Variable was updated — find which output of iteration 1
             # provides the new value for iteration 2's input.
             try:
-                res_index = iteration_1_eqn.outvars.index(
-                    iteration_2_eqn.invars[i]
-                )
+                res_index = iteration_1_eqn.outvars.index(iteration_2_eqn.invars[i])
             except ValueError:
                 # If the iter 2 invar is not part of the iter 1 outvars
                 # and also not part of the iter 1 invars, it is most likely
@@ -356,7 +337,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     eqn_list_1 = list(jaxpr_1.eqns)
 
     while eqn_list_0:
-
         eqn_0 = eqn_list_0.pop(0)
         eqn_1 = eqn_list_1.pop(0)
 
@@ -364,10 +344,7 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
         # differing semantics
 
         if eqn_0.primitive.name != eqn_1.primitive.name:
-            if (
-                eqn_0.primitive.name == "convert_element_type"
-                and eqn_0.invars[0] in jaxpr_0.invars
-            ):
+            if eqn_0.primitive.name == "convert_element_type" and eqn_0.invars[0] in jaxpr_0.invars:
                 eqn_list_1.insert(0, eqn_1)
                 continue
             raise Exception("Jax semantics changed during jrange iteration")
@@ -385,7 +362,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
                     raise Exception("Jax semantics changed during jrange iteration")
             elif var_0 in translation_dic:
                 if translation_dic[var_0] != var_1:
-
                     raise Exception("Jax semantics changed during jrange iteration")
             else:
                 translation_dic[var_0] = var_1

@@ -16,8 +16,7 @@
 # ********************************************************************************
 # """
 
-"""
-This module defines :class:`BatchedBackend`, obtained via
+"""This module defines :class:`BatchedBackend`, obtained via
 :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
 """
 
@@ -39,8 +38,7 @@ from qrisp.interface.measurement_result import MeasurementResult
 # only populated after ``dispatch`` is called. Inheriting from
 # ``Backend`` would therefore violate the Liskov Substitution Principle.
 class BatchedBackend:
-    """
-    A class that buffers circuit submissions and executes them on an explicit
+    """A class that buffers circuit submissions and executes them on an explicit
     :meth:`dispatch` call.
 
     Obtain an instance via :meth:`~qrisp.interface.Backend.batched`:
@@ -81,7 +79,6 @@ class BatchedBackend:
 
     Examples
     --------
-
     In this example, we collect two measurements, then dispatch:
 
     .. code-block:: python
@@ -116,6 +113,7 @@ class BatchedBackend:
         from qrisp import batched_measurement
         results = batched_measurement([c, f], backend=batched_backend)
         print(results)  # [{3: 1.0}, {5: 1.0}]
+
     """
 
     def __init__(
@@ -150,18 +148,15 @@ class BatchedBackend:
         ----------
         **kwargs
             Key-value pairs to update.
+
         """
         self._backend.update_options(**kwargs)
 
     @overload
-    def run(
-        self, circuits: QuantumCircuit, shots: int | None = None
-    ) -> MeasurementResult: ...
+    def run(self, circuits: QuantumCircuit, shots: int | None = None) -> MeasurementResult: ...
 
     @overload
-    def run(
-        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
-    ) -> list[MeasurementResult]: ...
+    def run(self, circuits: Sequence[QuantumCircuit], shots: int | None = None) -> list[MeasurementResult]: ...
 
     def run(
         self,
@@ -187,6 +182,7 @@ class BatchedBackend:
         MeasurementResult or list[MeasurementResult]
             A single lazy result for a single circuit, or a list of lazy
             results when multiple circuits are given.
+
         """
         Backend._validate_shots(shots)
         batch = not isinstance(circuits, QuantumCircuit)
@@ -252,6 +248,7 @@ class BatchedBackend:
         Exception
             Re-raises any exception thrown by the wrapped backend during
             execution, after injecting the error into all pending results.
+
         """
         queries = list(self._queries)
         self._queries = []
@@ -298,11 +295,7 @@ class BatchedBackend:
         """Submit one chunk of circuits and inject results into the corresponding placeholders."""
         unique = set(chunk_shots)
         effective_shots = chunk_shots[0] if len(unique) == 1 else chunk_shots
-        chunk_counts = (
-            self._backend.run_async(chunk_circuits, shots=effective_shots)
-            .result(timeout=timeout)
-            .all_counts
-        )
+        chunk_counts = self._backend.run_async(chunk_circuits, shots=effective_shots).result(timeout=timeout).all_counts
         for raw, counts in zip(chunk_raws, chunk_counts):
             raw._inject(counts)
 

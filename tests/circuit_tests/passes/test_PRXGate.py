@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,10 @@
 ********************************************************************************
 """
 
-import pytest
 import numpy as np
-from qrisp.circuit import PRXGate
+
 from qrisp import U3Gate
+from qrisp.circuit import PRXGate
 
 
 class TestPRXGateConstruction:
@@ -113,8 +112,10 @@ class TestPRXGateUnitary:
         qc.append(PRXGate(a, b), [0])
         U_prx = qc.get_unitary()
 
-        U_expected = np.array([
-            [np.cos(a / 2), -1j * np.exp(-1j * b) * np.sin(a / 2)],
-            [-1j * np.exp(1j * b) * np.sin(a / 2), np.cos(a / 2)],
-        ])
+        U_expected = np.array(
+            [
+                [np.cos(a / 2), -1j * np.exp(-1j * b) * np.sin(a / 2)],
+                [-1j * np.exp(1j * b) * np.sin(a / 2), np.cos(a / 2)],
+            ]
+        )
         assert np.allclose(U_prx, U_expected, atol=1e-6)
