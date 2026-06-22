@@ -50,7 +50,6 @@ def fermionic_trotterization(H, forward_evolution=True):
         qarg = [qarg[i] for i in range(n)]
 
         for group in groups:
-
             # We now treat the fermionic swaps.
             # The problem here is that terms like
             # a(0)*a(2) + a(1)*a(3)
@@ -87,7 +86,6 @@ def fermionic_trotterization(H, forward_evolution=True):
             n = group.find_minimal_qubit_amount()
 
             for term in terms:
-
                 # For non-unipolar factors (i.e. a(i)*c(i) for instance), no matching is necessary.
                 index_list = term.get_unipolars()
 
@@ -181,7 +179,6 @@ def kai_pflaume(singles, couples, n):
     females.reverse()
 
     for f in females:
-
         m = couples[f]
         # Move the female adjacent to the male
         for i in range(permutation.index(f), permutation.index(m) - 1):

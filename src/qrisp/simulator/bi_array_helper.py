@@ -299,7 +299,6 @@ def permute_axes(index, index_bit_permutation, jit=True):
             np.array(perm),
         )
     else:
-
         permuter(
             index,
             new_index,
@@ -549,7 +548,6 @@ def coo_mult_kernel(A_col, A_data, B_row, B_data, unique_marker_a, unique_marker
     for i in prange(len(unique_marker_a) - 1):
         comparison_block_a = A_col[unique_marker_a[i] : unique_marker_a[i + 1]]
         for j in range(len(unique_marker_b) - 1):
-
             if comparison_block_a[0] > B_row[unique_marker_b[j + 1] - 1]:
                 continue
 
@@ -600,7 +598,6 @@ def coo_sparse_matrix_mult(A, B):
         )
 
     else:
-
         new_col, new_row, new_data = coo_sparse_matrix_mult_inner(
             B.col,
             B.row,
@@ -628,7 +625,6 @@ def coo_sparse_matrix_mult(A, B):
 def sparse_matrix_mult(A, B):
 
     if A.shape[0] * A.shape[1] < B.shape[0] * B.shape[1]:
-
         log_shape_0_a = np.log2(A.shape[0])
         log_shape_1_b = np.log2(B.shape[1])
 

@@ -31,7 +31,6 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
     from qrisp.circuit import QuantumCircuit, Clbit, Qubit
 
     with fast_append():
-
         transpiled_qc = QuantumCircuit()
 
         # [transpiled_qc.add_qubit(Qubit(qb.identifier)) for qb in qc.qubits]
@@ -63,8 +62,8 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
         if transpile_predicate is None:
             transpile_predicate_ = lambda i, op: i < transpilation_level
         else:
-            transpile_predicate_ = (
-                lambda i, op: i < transpilation_level and transpile_predicate(op)
+            transpile_predicate_ = lambda i, op: (
+                i < transpilation_level and transpile_predicate(op)
             )
 
         transpile_inner(qc, transpiled_qc, translation_dic, transpile_predicate_)

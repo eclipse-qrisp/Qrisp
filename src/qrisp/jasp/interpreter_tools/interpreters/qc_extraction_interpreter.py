@@ -18,14 +18,14 @@
 QuantumCircuit Extraction Interpreter
 =====================================
 
-This module implements the interpreter for converting Jaspr (JAX-based quantum 
+This module implements the interpreter for converting Jaspr (JAX-based quantum
 intermediate representation) into static QuantumCircuit objects.
 
 Overview
 --------
-Jaspr represents hybrid quantum-classical algorithms using JAX's tracing 
-infrastructure. While this representation is powerful for optimization and 
-compilation, it needs to be "lowered" to a QuantumCircuit for execution on 
+Jaspr represents hybrid quantum-classical algorithms using JAX's tracing
+infrastructure. While this representation is powerful for optimization and
+compilation, it needs to be "lowered" to a QuantumCircuit for execution on
 current quantum hardware or simulators that expect circuit-based input.
 
 The Challenge
@@ -39,7 +39,7 @@ The main challenge in this conversion is handling **measurement results**:
 2. **In QuantumCircuit**: Measurement results are represented as `Clbit` objects.
    These are non-JAX types that cannot be processed by JAX primitives.
 
-When we encounter classical post-processing of measurement results (e.g., 
+When we encounter classical post-processing of measurement results (e.g.,
 `meas_res * 2` or `parity(m1, m2)`), we cannot represent this computation
 in the QuantumCircuit itself. Instead, we use placeholder objects.
 

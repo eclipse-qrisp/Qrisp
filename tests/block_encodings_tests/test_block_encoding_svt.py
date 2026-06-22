@@ -23,12 +23,25 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
-@pytest.mark.parametrize("H1, H2, poly, parity", [
-    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2), np.array([1.,0.,1.]), True),
-    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2), np.array([0.,1.,0.,1.]), False),
-])
+@pytest.mark.parametrize(
+    "H1, H2, poly, parity",
+    [
+        (
+            X(0) * X(1) + 0.2 * Y(0) * Y(1),
+            Z(0) * Z(1) + X(2),
+            np.array([1.0, 0.0, 1.0]),
+            True,
+        ),
+        (
+            0.5 * X(1) + 0.7 * Y(1) + 0.3 * X(4),
+            Z(0) + Z(1) + X(2),
+            np.array([0.0, 1.0, 0.0, 1.0]),
+            False,
+        ),
+    ],
+)
 def test_block_encoding_svt_scaling(H1, H2, poly, parity):
-    """ Tests that the scaling factor alpha of BlockEncodings obtained via QSVT (used for BlockEncoding.svt) is correct."""
+    """Tests that the scaling factor alpha of BlockEncodings obtained via QSVT (used for BlockEncoding.svt) is correct."""
 
     parity_str = "even" if parity else "odd"
 
@@ -36,7 +49,7 @@ def test_block_encoding_svt_scaling(H1, H2, poly, parity):
     BE2 = BlockEncoding.from_operator(H2)
 
     # Apply polynomial to QubitOperator H1 and add H2
-    H3 = sum(poly[k] * H1 ** k for k in range(len(poly))) + H2
+    H3 = sum(poly[k] * H1**k for k in range(len(poly))) + H2
     BE3 = BlockEncoding.from_operator(H3)
 
     # Apply polynomial to BlockEncoding BE1 and add BE2
@@ -51,7 +64,9 @@ def test_block_encoding_svt_scaling(H1, H2, poly, parity):
     res_be3 = main(BE3)
     res_be_svt = main(BE_svt)
 
-    for k in range(2 ** n):
+    for k in range(2**n):
         val_be3 = res_be3.get(k, 0)
         val_be_svt = res_be_svt.get(k, 0)
-        assert np.isclose(val_be3, val_be_svt), f"Mismatch at state |{k}>: {val_be3} vs {val_be_svt}"
+        assert np.isclose(val_be3, val_be_svt), (
+            f"Mismatch at state |{k}>: {val_be3} vs {val_be_svt}"
+        )

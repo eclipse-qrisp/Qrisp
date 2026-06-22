@@ -85,9 +85,7 @@ def get_quantum_operations(jaspr: Jaspr) -> List[str]:
     quantum_operations = set()
 
     for eqn in jaspr.eqns:
-
         if eqn.primitive.name == "jasp.quantum_gate":
-
             if eqn.params["gate"].definition:
                 for op_name in (
                     eqn.params["gate"].definition.transpile().count_ops().keys()

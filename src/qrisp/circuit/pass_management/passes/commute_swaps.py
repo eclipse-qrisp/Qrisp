@@ -59,16 +59,16 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.h(0)
         >>> qc.swap(0, 1)
         >>> print(qc)
-               ┌───┐   
+               ┌───┐
         qb_65: ┤ H ├─X─
-               └───┘ │ 
+               └───┘ │
         qb_66: ──────X─
 
         >>> pm = PassManager()
         >>> pm += commute_swaps
         >>> optimized_qc = pm.run(qc)
         >>> print(optimized_qc)
-        <BLANKLINE>                          
+        <BLANKLINE>
         qb_65: ─X──────
                 │ ┌───┐
         qb_66: ─X─┤ H ├
@@ -83,7 +83,6 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         qc_new.append(instr)
 
         if instr.op.name == "swap":
-
             dic_update: dict[Qubit, list[int]] = {qb: [] for qb in instr.qubits}
 
             for j in range(2):

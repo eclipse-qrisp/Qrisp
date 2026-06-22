@@ -23,13 +23,22 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp.gqsp import dalzell_inversion
 
 
-@pytest.mark.parametrize("A, b", [
-    (np.array([[ 0.78, -0.01, -0.16, -0.1 ],
-    [-0.01,  0.57, -0.03,  0.08],
-    [-0.16, -0.03,  0.69, -0.15],
-    [-0.1 ,  0.08, -0.15,  0.88]]), 
-    np.array([1, 1, 1, 1])),
-])
+@pytest.mark.parametrize(
+    "A, b",
+    [
+        (
+            np.array(
+                [
+                    [0.78, -0.01, -0.16, -0.1],
+                    [-0.01, 0.57, -0.03, 0.08],
+                    [-0.16, -0.03, 0.69, -0.15],
+                    [-0.1, 0.08, -0.15, 0.88],
+                ]
+            ),
+            np.array([1, 1, 1, 1]),
+        ),
+    ],
+)
 def test_dalzell_inversion(A, b):
     """Test Dalzell's inversion algorithm on a small 4x4 matrix."""
 
@@ -59,12 +68,11 @@ def test_dalzell_inversion(A, b):
     res_dict = main()
 
     # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
-    # Verify constant success probability for t = |x| 
+    # Verify constant success probability for t = |x|
     # Empirical threshold value 0.5
-    assert(success_prob > 0.5)
+    assert success_prob > 0.5
 
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
     amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])

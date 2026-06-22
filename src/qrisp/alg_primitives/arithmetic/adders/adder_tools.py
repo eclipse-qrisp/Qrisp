@@ -176,7 +176,6 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 ancilla_var_2.delete()
 
         elif isinstance(qf2, (list, QuantumVariable)):
-
             if len(qf2) < len(qf1):
                 ancilla_var = QuantumVariable(
                     len(qf1) - len(qf2), name="add_ammend_anc*", qs=qf1[0].qs()
@@ -194,7 +193,6 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 pass
 
         elif isinstance(qf2, int) and ammend_cl_int:
-
             ancilla_var = QuantumFloat(len(qf1), name="add_ammend_anc*", qs=qf1[0].qs())
 
             ancilla_var.encode(qf2 % 2 ** len(qf1))

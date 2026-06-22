@@ -109,7 +109,7 @@ def apply_poly(
 
     """
     from qrisp.algorithms.gqsp import GQET
-    
+
     if isinstance(p, list):
         p = np.array(p)
     return GQET(self, p, kind=kind)

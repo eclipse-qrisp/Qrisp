@@ -358,7 +358,6 @@ class QuantumModulus(QuantumFloat):
 
     def encoder(self, i):
         if check_for_tracing_mode():
-
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
                 BigInteger,
             )

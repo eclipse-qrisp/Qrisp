@@ -1666,9 +1666,9 @@ class BackendTestLikeProtocol:
             BackendNoDefaultOptions(),
             BackendWithChildDefaultOptions(),
         ]:
-            assert isinstance(
-                backend, BackendLike
-            ), f"{type(backend).__name__} does not satisfy BackendLike"
+            assert isinstance(backend, BackendLike), (
+                f"{type(backend).__name__} does not satisfy BackendLike"
+            )
 
     def test_batched_backend_is_not_backend_subclass(self):
         """BatchedBackend must NOT be a subclass of Backend — that is the LSP design decision."""

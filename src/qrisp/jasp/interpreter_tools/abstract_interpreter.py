@@ -221,7 +221,6 @@ def eval_jaxpr_with_context_dic(
     """Evaluate a Jaxpr using the provided context dictionary and equation evaluator."""
 
     for eqn in jaxpr.eqns:
-
         # TODO: We should probably find a more elegant way to handle
         # control flow primitives without hardcoding them here.
         default_eval = eqn_evaluator(eqn, context_dic)
@@ -231,7 +230,6 @@ def eval_jaxpr_with_context_dic(
                 eqn.primitive.name in ["while", "cond", "scan"]
                 and not check_for_tracing_mode()
             ):
-
                 from qrisp.jasp import (
                     evaluate_cond_eqn,
                     evaluate_scan,

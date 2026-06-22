@@ -18,13 +18,20 @@
 
 from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps
 from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
-from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
-from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
+from qrisp.circuit.pass_management.passes.cancel_zero_controls import (
+    cancel_zero_controls,
+)
+from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
+    combine_single_qubit_gates,
+)
 from qrisp.circuit.pass_management.passes.commute_swaps import commute_swaps
 from qrisp.circuit.pass_management.passes.convert_to_cx import convert_to_cx
 from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 from qrisp.circuit.pass_management.passes.decompose import decompose
-from qrisp.circuit.pass_management.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
+from qrisp.circuit.pass_management.passes.gray_synth_toffoli import (
+    gray_synth_toffoli,
+    is_toffoli,
+)
 from qrisp.circuit.pass_management.passes.manual_layout import manual_layout
 from qrisp.circuit.pass_management.passes.remove_barriers import remove_barriers
 from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
@@ -49,5 +56,5 @@ __all__ = [
     "reverse_parallelize",
     "visualize",
     "convert_to_prx",
-    "PRXGate"
+    "PRXGate",
 ]

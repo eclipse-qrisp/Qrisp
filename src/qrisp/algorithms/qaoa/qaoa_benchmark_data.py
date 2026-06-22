@@ -161,14 +161,12 @@ class QAOABenchmark:
         """
 
         if isinstance(cost_metric, str):
-
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
             else:
                 raise Exception(f"Cost metric {cost_metric} is unknown")
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
                 gain_metric = lambda x: approximation_ratio(
                     x["counts"], self.optimal_solution, self.cost_function
@@ -185,7 +183,6 @@ class QAOABenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -260,7 +257,6 @@ class QAOABenchmark:
             cost_name = cost_metric.__name__
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
                 gain_name = "Approximation ratio"
             elif gain_metric == "tts":
@@ -325,7 +321,6 @@ class QAOABenchmark:
         """
 
         if isinstance(metric, str):
-
             if metric == "approx_ratio":
 
                 def approx_ratio(x):
@@ -347,7 +342,6 @@ class QAOABenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -437,7 +431,6 @@ class QAOABenchmark:
         )
 
         for i, run_data in enumerate(run_data_list):
-
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
 

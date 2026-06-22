@@ -164,7 +164,8 @@ def test_grover():
     cirq_circuit = convert_to_cirq(qrisp_circuit)
     cirq_sv = final_state_vector(cirq_circuit)
     np.testing.assert_array_almost_equal(
-        np.zeros(np.shape(cirq_sv)), np.round(qrisp_sv - cirq_sv),
+        np.zeros(np.shape(cirq_sv)),
+        np.round(qrisp_sv - cirq_sv),
     )
 
     qrisp_restored = QuantumCircuit.from_cirq(cirq_circuit)

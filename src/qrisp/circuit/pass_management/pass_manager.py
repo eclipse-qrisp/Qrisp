@@ -228,9 +228,7 @@ class PassManager:
         current = qc
         for circuit_pass in self._passes:
             if verification_type == "unitary":
-                passed = circuit_pass.compare_unitary(
-                    current, **verification_kwargs
-                )
+                passed = circuit_pass.compare_unitary(current, **verification_kwargs)
             else:
                 passed = circuit_pass.compare_measurement(
                     current, **verification_kwargs

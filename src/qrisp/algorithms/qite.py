@@ -178,7 +178,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
     """
     if not check_for_tracing_mode():
-
         if k == 0:
             U_0(qarg)
         else:
@@ -197,14 +196,12 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                         mcp(t_, qarg, ctrl_state=0, method="khattar")
 
             if method == "GC":
-
                 QITE(qarg, U_0, exp_H, s, k - 1, method=method)
 
                 with conjugate(exp_H)(qarg, s_):
                     reflection(qarg, s_)
 
             if method == "HOPF":
-
                 phi = (sp.sqrt(5) - 1) / 2
 
                 QITE(qarg, U_0, exp_H, s, k - 1, method=method)
@@ -217,7 +214,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 exp_H(qarg, -phi * s_)
 
     else:
-
         """
         To create a jasp-compatible implementation of QITE, we need to remove the recursive structure.
         We achieve this by fully expanding the recursive formula for $U_k$ down to the $k=0$ level.
@@ -331,7 +327,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
             exp_H(qarg, -time)
 
         if method == "HOPF":
-
             phi = (jnp.sqrt(5) - 1) / 2
 
             def body_fun(i, val):

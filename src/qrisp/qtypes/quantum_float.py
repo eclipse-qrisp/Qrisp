@@ -398,18 +398,18 @@ class QuantumFloat(QuantumVariable):
         # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
         if not check_for_tracing_mode() and not self.signed and i < 0:
-                raise ValueError(
-                    "Tried to encode negative number in an unsigned QuantumFloat"
-                )
+            raise ValueError(
+                "Tried to encode negative number in an unsigned QuantumFloat"
+            )
 
         # the following check is based on the math for fixed point arithmetic which varies according to the
         # size, exponent, and whether the QuantumFloat is signed or unsigned.
 
         # calculate the integer bounds based on mantissa size (msize)
-        max_int = (1<<self.msize) - 1
+        max_int = (1 << self.msize) - 1
         if self.signed:
             # Signed range: -2^msize to 2^msize - 1
-            min_int = -(1<<self.msize)
+            min_int = -(1 << self.msize)
         else:
             # Unsigned range: 0 to 2^msize - 1
             min_int = 0
@@ -434,7 +434,7 @@ class QuantumFloat(QuantumVariable):
                 )
 
         if self.signed:
-            res = _signed_int_iso(i / jnp.float64(2** self.exponent) , self.msize)
+            res = _signed_int_iso(i / jnp.float64(2**self.exponent), self.msize)
         else:
             res = i / jnp.float64(2) ** self.exponent
 

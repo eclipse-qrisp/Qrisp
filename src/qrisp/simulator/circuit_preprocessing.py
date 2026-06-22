@@ -18,7 +18,6 @@
 
 # -*- coding: utf-8 -*-
 
-
 import threading
 
 import numpy as np
@@ -730,7 +729,6 @@ def extract_measurements(qc):
     data = []
     mes_dic = {}
     for instr in qc.data[::-1]:
-
         if (
             instr.op.name == "measure"
             and instr.qubits[0] in qubits
@@ -779,7 +777,6 @@ def insert_multiverse_measurements(qc):
             next_instr_is_reset = False
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
-
                     if data[j].op.name == "reset":
                         next_instr_is_reset = True
                         data.pop(j)
@@ -816,7 +813,6 @@ def insert_multiverse_measurements(qc):
             mes_instr.qubits = [qb]
 
         elif instr.op.name == "reset":
-
             meas_qubit = instr.qubits[0]
             new_data.append(Instruction(Disentangler(warning=False), [meas_qubit]))
 
@@ -833,12 +829,10 @@ def insert_multiverse_measurements(qc):
             new_data.append(Instruction(Disentangler(), [qb]))
 
         elif isinstance(instr.op, ClControlledOperation):
-
             new_qubits = []
             ctrl_state = instr.op.ctrl_state
             control_qubits = []
             for j in range(len(instr.clbits)):
-
                 cb = instr.clbits[j]
 
                 if cb not in cb_to_qb_dic:

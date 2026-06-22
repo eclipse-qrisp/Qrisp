@@ -203,7 +203,6 @@ class QuantumState:
         ind_array = np.zeros(1, dtype=np.int64)
 
         for tf in involved_factors:
-
             tf_mes_qubits = []
             for qb in mes_qubits:
                 if hash(involved_factors_dic[qb]) == hash(tf):

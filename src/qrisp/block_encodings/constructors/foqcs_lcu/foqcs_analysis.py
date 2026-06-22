@@ -19,17 +19,13 @@
 from functools import partial
 import numpy as np
 from qrisp.operators import QubitOperator
-from .foqcs_preps import (
-    foqcs_prep_heisenberg,
-    foqcs_prep_spin_glass
-    )
+from .foqcs_preps import foqcs_prep_heisenberg, foqcs_prep_spin_glass
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
 
+
 def foqcs_analyze_operator_spin_glass(
-        O: QubitOperator,
-        L: int = -1,
-        tol: float = _FOQCS_SPIN_GLASS_TOL
+    O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:
     """
     Verifies operator against the spin-glass model.
@@ -75,11 +71,21 @@ def foqcs_analyze_operator_spin_glass(
     if L == -1:
         L = min_qubits
     elif L < min_qubits:
-        raise ValueError(f"Received L = {L}, while operator acts on {min_qubits} qubits.")
+        raise ValueError(
+            f"Received L = {L}, while operator acts on {min_qubits} qubits."
+        )
 
     terms = O._to_pauli_dict()
-    g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
-    J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
+    g_dict = {
+        "X": np.zeros(L, dtype="complex"),
+        "Y": np.zeros(L, dtype="complex"),
+        "Z": np.zeros(L, dtype="complex"),
+    }
+    J_dict = {
+        "X": np.zeros((L, L), dtype="complex"),
+        "Y": np.zeros((L, L), dtype="complex"),
+        "Z": np.zeros((L, L), dtype="complex"),
+    }
 
     for pauli_str, coeff in terms.items():
         # All coeffs in arrays are zeroes, so just skip entry
@@ -88,12 +94,14 @@ def foqcs_analyze_operator_spin_glass(
 
         # Fail on a constant: cI
         if len(pauli_str) == 0:
-            raise ValueError(f"FOQCS-LCU does not support constant/identity terms,"
-                             f" but received {(pauli_str, coeff)}")
+            raise ValueError(
+                f"FOQCS-LCU does not support constant/identity terms,"
+                f" but received {(pauli_str, coeff)}"
+            )
 
         # Inspect one-body terms Xi, Yi, Zi:
         if len(pauli_str) == 1:
-            (i, pauli), = pauli_str
+            ((i, pauli),) = pauli_str
             g_dict[pauli][i] += coeff
             continue
 
@@ -102,8 +110,10 @@ def foqcs_analyze_operator_spin_glass(
             (i, pauli_i), (j, pauli_j) = sorted(pauli_str)
 
             if pauli_i != pauli_j:
-                raise ValueError(f"FOQCS-LCU supports only same-axis couplings,"
-                                 f" but received: {pauli_i}({i}) * {pauli_j}({j})")
+                raise ValueError(
+                    f"FOQCS-LCU supports only same-axis couplings,"
+                    f" but received: {pauli_i}({i}) * {pauli_j}({j})"
+                )
 
             J_dict[pauli_i][i, j] += coeff
             J_dict[pauli_i][j, i] += coeff
@@ -113,16 +123,15 @@ def foqcs_analyze_operator_spin_glass(
             raise ValueError(f"FOQCS-LCU supports only one and two-body interactions.")
 
     return {
-            "method": "spin_glass",
-            "L": L,
-            "g": g_dict,
-            "J": J_dict,
-        }
+        "method": "spin_glass",
+        "L": L,
+        "g": g_dict,
+        "J": J_dict,
+    }
+
 
 def foqcs_analyze_operator_heisenberg(
-        O: QubitOperator,
-        L: int = -1,
-        tol: float = _FOQCS_SPIN_GLASS_TOL
+    O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:
     """
     Verify the operator against specific Heisenberg model.
@@ -189,7 +198,7 @@ def foqcs_analyze_operator_heisenberg(
 
         nn_val = np.array(
             [J_dict[pauli][i, i + 1] for i in range(L - 1)],
-            dtype = complex,
+            dtype=complex,
         )
         # All same-axis nearest-neighbours interactions must be uniform
         if not np.allclose(nn_val, nn_val[0], atol=tol):
@@ -206,16 +215,15 @@ def foqcs_analyze_operator_heisenberg(
                     raise ValueError("Heisenberg Rejected: not NN interactions present")
 
     return {
-            "method": "heisenberg",
-            "L": L,
-            "g": g_heis_dict,
-            "J": J_heis_dict,
-        }
+        "method": "heisenberg",
+        "L": L,
+        "g": g_heis_dict,
+        "J": J_heis_dict,
+    }
+
 
 def foqcs_analyze_operator(
-        O: QubitOperator,
-        L: int = -1,
-        tol: float = _FOQCS_SPIN_GLASS_TOL
+    O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:
     r"""
     Verifies oeprator against different FOQCS-LCU-compatible models.
@@ -260,11 +268,10 @@ def foqcs_analyze_operator(
 
     return res
 
+
 def is_operator_foqcs_compatible(
-        O: QubitOperator,
-        L: int = -1,
-        tol: float = _FOQCS_SPIN_GLASS_TOL
-) -> dict: # Or None, if incompatible
+    O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
+) -> dict:  # Or None, if incompatible
     r"""
     Runs `foqcs_analyze_operator` without rasing an error on unsuccessful attempt.
 
@@ -286,13 +293,14 @@ def is_operator_foqcs_compatible(
 
     """
     try:
-        return foqcs_analyze_operator(O, L = L, tol = tol)
+        return foqcs_analyze_operator(O, L=L, tol=tol)
     except ValueError:
         return None
 
+
 def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     r"""
-    Performs necessary preprocessing for `BlockEncoding.from_foqcs_lcu_prep`, preparing 
+    Performs necessary preprocessing for `BlockEncoding.from_foqcs_lcu_prep`, preparing
     its parameters based on the analysis output from `foqcs_analyze_operator`
 
     Parameters
@@ -339,7 +347,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
 
     """
     if aresult["method"] == "heisenberg":
-        #print("Parsing as Heisenberg model")
+        # print("Parsing as Heisenberg model")
         # Do Heisenberg model preprocessing here
         heis_L = aresult["L"]
         g = aresult["g"]
@@ -364,14 +372,8 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         )
         norm = np.linalg.norm(coeff_vec)
 
-        _g = {
-            p: _g[p] / norm
-            for p in paulis
-        }
-        _J = {
-            p: _J[p] / norm
-            for p in paulis
-        }
+        _g = {p: _g[p] / norm for p in paulis}
+        _J = {p: _J[p] / norm for p in paulis}
         # Calculate the norm factor
         alpha = norm**2
         # Create partial PREP_R and PREP_L functions
@@ -381,18 +383,12 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
             g=_g,
             J=_J,
         )
-        prep_l = partial(
-            foqcs_prep_heisenberg,
-            L=heis_L,
-            g=_g,
-            J=_J,
-            conjugate=True
-        )
+        prep_l = partial(foqcs_prep_heisenberg, L=heis_L, g=_g, J=_J, conjugate=True)
 
         return prep_r, prep_l, heis_L, False, alpha
 
     elif aresult["method"] == "spin_glass":
-        #print("Parsing as Spin-Glass model")
+        # print("Parsing as Spin-Glass model")
 
         sg_L = aresult["L"]
         g = aresult["g"]
@@ -448,11 +444,9 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         coeff_vec = []
 
         for p in paulis:
-
             coeff_vec.extend(_g[p])
 
             for diag in _J[p]:
-
                 coeff_vec.extend(diag)
 
         coeff_vec = np.array(coeff_vec, dtype=complex)
@@ -476,4 +470,4 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
 
         return prep_r, prep_l, sg_L, False, alpha
 
-    raise KeyError(f"Failed to handle FOQCS-LCU method: \"{aresult['method']}\"")
+    raise KeyError(f'Failed to handle FOQCS-LCU method: "{aresult["method"]}"')

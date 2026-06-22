@@ -497,7 +497,6 @@ def extract_stim(func=None, *, detector_order="chronological"):
                 # wrapped in typed numpy array subtypes for identification.
                 new_result = []
                 for i in range(len(staticalization_result) - 1):
-
                     val = staticalization_result[i]
 
                     # Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits

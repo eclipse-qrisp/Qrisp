@@ -183,7 +183,6 @@ def ladder2_synth_jax(x, y, method="khattar"):
         )
 
         for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
-
             mcx(
                 x[X_prime_func(2 * i - 1, k, N >> k)]
                 + y.reg[

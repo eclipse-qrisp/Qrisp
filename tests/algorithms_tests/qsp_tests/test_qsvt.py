@@ -28,20 +28,23 @@ def evaluate_parity_polynomial(poly, S, parity):
     """Evaluate the fixed parity polynomial on the singular values."""
     start = 0 if parity == "even" else 1
     coeffs = poly[start::2][::-1]
-    
+
     S_poly = np.polyval(coeffs, S**2)
     if parity == "odd":
         S_poly *= S
-        
+
     return S_poly
 
 
-@pytest.mark.parametrize("poly, parity", [
-    (np.array([1., 1.]), "odd"),
-    (np.array([1., 2., 1.]), "even"),
-    (np.array([0.,1.,0.,1.]), "odd"),
-    (np.array([2.,1.,0.,1.,2.,3.]), "odd"),
-])
+@pytest.mark.parametrize(
+    "poly, parity",
+    [
+        (np.array([1.0, 1.0]), "odd"),
+        (np.array([1.0, 2.0, 1.0]), "even"),
+        (np.array([0.0, 1.0, 0.0, 1.0]), "odd"),
+        (np.array([2.0, 1.0, 0.0, 1.0, 2.0, 3.0]), "odd"),
+    ],
+)
 def test_qsvt(poly, parity):
     """Test QSVT on a small 4x4 matrix with a simple polynomial transformation."""
 
@@ -52,14 +55,18 @@ def test_qsvt(poly, parity):
     # [1. 0. 0. 3.]]
     N = 4
     A = np.eye(N, k=1) + 3 * np.eye(N)
-    A[N-1,0] = 1
+    A[N - 1, 0] = 1
 
-    b = np.array([1,0,0,0])
+    b = np.array([1, 0, 0, 0])
 
     # Define BlockEncoding for A
-    def U0(qv): pass
-    def U1(qv): qv-=1
-    BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
+    def U0(qv):
+        pass
+
+    def U1(qv):
+        qv -= 1
+
+    BE = BlockEncoding.from_lcu(np.array([3, 1]), [U0, U1])
 
     # Apply polynomial via QSVT
     BE_poly = QSVT(BE, poly, parity=parity)
@@ -104,14 +111,18 @@ def test_qsvt_inversion():
     # [1. 0. 0. 3.]]
     N = 4
     A = np.eye(N, k=1) + 3 * np.eye(N)
-    A[N-1,0] = 1
+    A[N - 1, 0] = 1
 
-    b = np.array([1,0,0,0])
+    b = np.array([1, 0, 0, 0])
 
     # Define BlockEncoding for A
-    def U0(qv): pass
-    def U1(qv): qv-=1
-    BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
+    def U0(qv):
+        pass
+
+    def U1(qv):
+        qv -= 1
+
+    BE = BlockEncoding.from_lcu(np.array([3, 1]), [U0, U1])
 
     # Apply inversion via QSVT
     BE_inv = inversion(BE, 0.01, np.linalg.cond(A), method="QSVT")

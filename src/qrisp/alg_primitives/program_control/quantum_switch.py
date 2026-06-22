@@ -135,7 +135,6 @@ def _q_switch_q(
     method = "tree" if method == "auto" else method
 
     if method == "sequential":
-
         control_qbl = QuantumBool()
 
         for i in xrange(branch_amount):
@@ -157,7 +156,6 @@ def _q_switch_q(
         control_qbl.delete()
 
     elif method == "parallel":
-
         if check_for_tracing_mode():
             raise NotImplementedError(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
@@ -179,7 +177,6 @@ def _q_switch_q(
         # This QuantumArray acts as an addressable QRAM via the demux function
 
         if branch_amount != 2**index.size:
-
             warnings.warn(
                 "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
             )
@@ -213,7 +210,6 @@ def _q_switch_q(
 
     # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
-
         # Jasp mode
         if check_for_tracing_mode():
             xrange = jrange
@@ -354,7 +350,6 @@ def _q_switch_q(
 
         # List mode
         elif isinstance(branches, list):
-
             if len(branches) % 2 != 0:
 
                 def identity(_):

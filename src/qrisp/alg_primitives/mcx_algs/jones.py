@@ -28,7 +28,6 @@ from qrisp.alg_primitives.mcx_algs.circuit_library import (
 
 # Implementation of the T-Depth 1 Toffoli found in https://arxiv.org/pdf/1212.5069.pdf
 class JonesToffoli(Operation):
-
     def __init__(self, ctrl_state="11"):
 
         definition = QuantumCircuit(5)

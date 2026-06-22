@@ -88,9 +88,9 @@ class TestScalarLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], (
+            "make_jaxpr did not produce a Tracer (test precondition failed)"
+        )
         assert results[1], "Tracer is not an instance of ScalarLike"
 
     def test_numpy_array_is_rejected(self):
@@ -127,9 +127,9 @@ class TestNDArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], (
+            "make_jaxpr did not produce a Tracer (test precondition failed)"
+        )
         assert results[1], "Tracer is not an instance of NDArrayLike"
 
     def test_python_scalar_is_rejected(self):
@@ -177,9 +177,9 @@ class TestArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], (
+            "make_jaxpr did not produce a Tracer (test precondition failed)"
+        )
         assert results[1], "Tracer is not an instance of ArrayLike"
 
     @pytest.mark.parametrize("value", ["string", [1, 2, 3], {"key": 1}, None, (1, 2)])
@@ -228,9 +228,9 @@ class TestFloatLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], (
+            "make_jaxpr did not produce a Tracer (test precondition failed)"
+        )
         assert results[1], "Tracer is not an instance of FloatLike"
 
     @pytest.mark.parametrize(

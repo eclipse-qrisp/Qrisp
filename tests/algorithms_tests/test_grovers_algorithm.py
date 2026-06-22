@@ -40,9 +40,9 @@ from qrisp.grover import tag_state, grovers_alg
 def assert_valid_measurement(mes_res):
     assert isinstance(mes_res, Mapping), "Measurement result is not a mapping"
     assert all(isinstance(k, tuple) for k in mes_res.keys()), "Keys must be tuples"
-    assert all(
-        (isinstance(v, float) and 0 <= v <= 1) for v in mes_res.values()
-    ), "Values must be probabilities between 0 and 1"
+    assert all((isinstance(v, float) and 0 <= v <= 1) for v in mes_res.values()), (
+        "Values must be probabilities between 0 and 1"
+    )
 
 
 def test_grovers_basic_oracle():

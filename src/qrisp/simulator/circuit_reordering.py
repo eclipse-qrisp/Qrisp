@@ -225,7 +225,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # Now we succesively determine the minimal circuit required to execute
     # for each non-unitary operation
     while node_costs:
-
         # This node contains the non-unitary operation
         evaluation_node = node_costs.pop(0)[0]
 

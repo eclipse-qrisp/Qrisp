@@ -181,7 +181,6 @@ class QIROProblem(QAOAProblem):
         exclusions = []
 
         for index in range(n_recursions):
-
             new_problem, solutions, sign, exclusions = self.replacement_routine(
                 res, [self.problem, solutions, exclusions]
             )

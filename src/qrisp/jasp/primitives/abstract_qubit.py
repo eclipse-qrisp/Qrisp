@@ -20,7 +20,6 @@ from jax.core import AbstractValue
 
 
 class AbstractQubit(AbstractValue):
-
     def __repr__(self):
         return "Qubit"
 

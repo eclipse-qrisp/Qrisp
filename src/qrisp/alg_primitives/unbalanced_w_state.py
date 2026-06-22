@@ -24,9 +24,9 @@ from qrisp.typing import NDArrayLike
 from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
 
+
 def unbalanced_w_state(
-    qv: QuantumVariable | Sequence[Qubit],
-    amplitudes: NDArrayLike
+    qv: QuantumVariable | Sequence[Qubit], amplitudes: NDArrayLike
 ) -> None:
     r"""
     Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
@@ -96,7 +96,7 @@ def unbalanced_w_state(
     """
     a = jnp.asarray(amplitudes, dtype=complex)
 
-    n = a.shape[0] # Use the static shape of amplitudes
+    n = a.shape[0]  # Use the static shape of amplitudes
 
     if not check_for_tracing_mode():
         if len(qv) != n:
@@ -125,15 +125,19 @@ def unbalanced_w_state(
     # flip          : [a3^2, a2^2, a1^2, a0^2]
     # cumsum        : [a3^2, a3^2 + a2^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 + a1^2 + a0^2]
     # flip          : [a3^2 + a2^2 + a1^2 + a0^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 , a3^2]
-    abs_a_squared = abs_a ** 2
+    abs_a_squared = abs_a**2
     remaining_arr = jnp.sqrt(jnp.flip(jnp.cumsum(jnp.flip(abs_a_squared))))
     # Calculate rations for arccos. Replace 0/0 division by 1
     # for `arccos(1) = 0` to do nothing.
-    numerators = abs_a[:-1] # Strip one last fraction, as num_{n-1} / rem_{n-1} is not needed.
+    numerators = abs_a[
+        :-1
+    ]  # Strip one last fraction, as num_{n-1} / rem_{n-1} is not needed.
     denominators = remaining_arr[:-1]
     denominators_no_zeroes = jnp.where(denominators > 1e-15, denominators, 1.0)
     # remaining_arr = 0 only when abs_a = 0, so it is safe.
-    ratio_arr = jnp.where(denominators > 1e-15, numerators / denominators_no_zeroes, 1.0)
+    ratio_arr = jnp.where(
+        denominators > 1e-15, numerators / denominators_no_zeroes, 1.0
+    )
     # Get precomputed angles. Choose θ so that cos(θ/2) = |a_i| / remaining
     # i.e. qubit i retains exactly magnitude |a_i|
     theta_arr = 2 * jnp.arccos(jnp.clip(ratio_arr, -1.0, 1.0))

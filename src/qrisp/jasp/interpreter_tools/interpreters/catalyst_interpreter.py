@@ -111,7 +111,6 @@ def catalyst_eqn_evaluator(eqn, context_dic):
     # default interpretation.
 
     if isinstance(eqn.primitive, QuantumPrimitive):
-
         invars = eqn.invars
         outvars = eqn.outvars
 
@@ -330,7 +329,6 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
 
     # Otherwise we simply call the bind method
     else:
-
         if op.name == "gphase":
             return catalyst_qbs
 
@@ -389,7 +387,6 @@ def process_measurement(invars, outvars, context_dic):
 
     # This case treats the QubitArray situation
     if isinstance(invars[0].aval, AbstractQubitArray):
-
         # Retrieve the start and the endpoint indices of the QubitArray
         qubit_list = context_dic[invars[0]]
 
@@ -400,7 +397,6 @@ def process_measurement(invars, outvars, context_dic):
 
     # The singular Qubit case
     else:
-
         # Get the position of the Qubit
         qb_pos = context_dic[invars[0]]
 
@@ -542,7 +538,6 @@ def process_cond(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
 
     if isinstance(eqn.invars[-1].aval, AbstractQuantumState):
-
         if len(branch_list) > 2:
             raise Exception(
                 "Converting cond primitive with more than 2 branches to Catalyst is currently not supported."
@@ -560,7 +555,6 @@ def process_cond(eqn, context_dic):
 
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
     else:
-
         unflattened_outvalues = eqn.primitive.bind(
             *invalues, branches=tuple(branch_list), linear=False
         )

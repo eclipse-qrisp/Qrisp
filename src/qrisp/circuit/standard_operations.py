@@ -168,7 +168,6 @@ def CPGate(phi: FloatLike = 0):
         if np.abs(phi - np.pi) < 1e-8:
             return CZGate()
         if np.abs(phi) < 1e-8:
-
             from qrisp.circuit.quantum_circuit import QuantumCircuit
 
             temp_circ = QuantumCircuit(2)

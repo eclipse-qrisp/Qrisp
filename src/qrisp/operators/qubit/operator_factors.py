@@ -21,7 +21,6 @@ from qrisp.operators.qubit.qubit_operator import QubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 
-
 def X(arg):
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "X"}): 1})

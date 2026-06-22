@@ -22,7 +22,9 @@ import numpy as np
 import pytest
 from qrisp import QuantumCircuit, Qubit, U3Gate
 from qrisp.circuit import ControlledOperation, Operation, PTControlledOperation
-from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
+from qrisp.circuit.pass_management.passes.cancel_zero_controls import (
+    cancel_zero_controls,
+)
 
 
 def _make_circuit(n: int = 4):
@@ -110,7 +112,8 @@ class TestControlledOperations:
         qc.append(ctrl_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
         controlled = [
-            i for i in result.data
+            i
+            for i in result.data
             if isinstance(i.op, ControlledOperation) or i.op.name.endswith("my_h")
         ]
         assert len(controlled) == 0
@@ -132,7 +135,8 @@ class TestControlledOperations:
         qc.append(pt_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
         meaningful = [
-            i for i in result.data
+            i
+            for i in result.data
             if i.op.name not in ("qb_alloc", "qb_dealloc", "barrier")
         ]
         assert len(meaningful) == 0

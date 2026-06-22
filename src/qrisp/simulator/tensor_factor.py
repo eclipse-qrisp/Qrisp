@@ -27,7 +27,6 @@ from qrisp.simulator.numerics_config import float_thresh, xp
 
 
 class TensorFactor:
-
     index_init = xp.zeros(1, dtype=xp.int64)
     data_init = xp.ones(1, dtype=xp.complex64)
 
@@ -43,7 +42,6 @@ class TensorFactor:
         self.n = len(qubits)
 
         if init_tensor_array is None:
-
             self.tensor_array = SparseBiArray(
                 (self.index_init, self.data_init), shape=(2**self.n,)
             )
@@ -197,7 +195,6 @@ class TensorFactor:
         if return_res_tf:
             tf_list = []
             for i in range(len(p_list)):
-
                 new_bi_arrays[i].data *= 1 / p_list[i] ** 0.5
                 tf_list.append(TensorFactor(list(new_qubit_list), new_bi_arrays[i]))
         else:

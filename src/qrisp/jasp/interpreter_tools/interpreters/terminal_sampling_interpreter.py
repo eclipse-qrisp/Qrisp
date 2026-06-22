@@ -209,7 +209,6 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                 # This case describes the logic to use the simulator sampling features
                 if function_name == "sampling_helper_1":
-
                     # Collect the qubits to be measured into a single list
                     qubits = []
                     for i in range(len(invalues) - 1):
@@ -245,7 +244,6 @@ def terminal_sampling_evaluator(sampling_res_type):
                 # into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
-
                     if sampling_res_type == "ev":
                         sampling_res = jnp.zeros(len(eqn.outvars))
                     elif sampling_res_type == "array":
@@ -259,7 +257,6 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                     # Iterate through the sampled values
                     for k, v in meas_res_dic.items():
-
                         # We now evaluate the function that was previously traced
                         # to perform the decoding. The first few arguments of this
                         # function are the integers to be decoded.

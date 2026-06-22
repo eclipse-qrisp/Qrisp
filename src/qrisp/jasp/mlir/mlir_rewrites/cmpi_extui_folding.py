@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
 

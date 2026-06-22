@@ -96,7 +96,6 @@ def QFT_inner(
                 accumulated_phases[i] = 0
 
     else:
-
         from qrisp import QuantumFloat, conjugate
 
         reservoir = QuantumFloat(n + 1)
@@ -108,9 +107,7 @@ def QFT_inner(
                 p(np.pi * 2 ** (i - n + 1), reservoir[i])
 
         with conjugate(prepare_reservoir)(reservoir):
-
             for i in range(n):
-
                 h(qv[i])
 
                 if i == n - 1:

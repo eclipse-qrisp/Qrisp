@@ -64,7 +64,6 @@ def convert_to_qiskit(qc, transpile=False):
 
         for p in params:
             if isinstance(p, Expr):
-
                 free_symbols = list(p.free_symbols)
                 lambd_expr = lambdify(free_symbols, p)
 
@@ -142,7 +141,6 @@ def convert_to_qiskit(qc, transpile=False):
                 )
 
             else:
-
                 if op.base_operation.name == "gphase":
                     qiskit_ins = create_qiskit_instruction(op, params)
                 elif op.num_qubits == op.base_operation.num_qubits:
@@ -293,7 +291,6 @@ def convert_from_qiskit(qiskit_qc):
         q_reg = qiskit_qc.qubits[i]._register
 
         if q_reg is not None:
-
             if hasattr(q_reg, "_bits"):
                 qb_list = q_reg._bits
             else:
@@ -349,7 +346,6 @@ def convert_from_qiskit(qiskit_qc):
             elif isinstance(p, np.number):
                 qrisp_params.append(p.item())
             elif isinstance(p, ParameterExpression):
-
                 lambd_expr = sympify(ParameterExpression.sympify(p))
 
                 qrisp_params.append(lambd_expr)

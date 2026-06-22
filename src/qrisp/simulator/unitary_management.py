@@ -125,11 +125,9 @@ def calc_embedded_unitary(gate, n, destination_qubits):
         gate.unitary = gate_array
 
     elif gate.definition is not None:
-
         gate_array = __calc_circuit_unitary(gate.definition)
         gate.unitary = gate_array
     else:
-
         gate_array = gate.get_unitary()
 
     # Numpy arrays are only fast on a low scale than BiArrays. Therefore,  we generate

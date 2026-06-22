@@ -63,7 +63,6 @@ def cl_cost_function(counts):
 
     # Iterate over all items in counts
     for meas, meas_count in counts.items():
-
         # Calculate objective function for current measurement
         obj_for_meas = maxcut_obj(meas, G)
 
@@ -106,7 +105,6 @@ def maxcut_obj(x, G):
 
     # Iterate over all edges in graph G
     for i, j in G.edges():
-
         # If the nodes are not the same, the edge is cut
         if x[i] != x[j]:  # the edge is cut
             cut -= 1

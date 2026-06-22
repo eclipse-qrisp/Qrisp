@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for unwrapping 0-dimensional linalg.generic operations
 in MLIR/xDSL.

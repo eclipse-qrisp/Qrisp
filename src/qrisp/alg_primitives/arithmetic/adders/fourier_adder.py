@@ -65,7 +65,6 @@ def fourier_adder(a, b, perform_QFT=True):
         env = QuantumEnvironment()
 
     with env:
-
         b = list(b)
         b = b[::-1]
 
@@ -74,7 +73,6 @@ def fourier_adder(a, b, perform_QFT=True):
                 p(a * np.pi * 2 ** (1 + i - len(b)), b[i])
 
         else:
-
             if len(a) > len(b):
                 raise Exception(
                     "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
@@ -84,7 +82,6 @@ def fourier_adder(a, b, perform_QFT=True):
             phase_correction_b = np.zeros(len(b))
             for j in range(len(a)):
                 for i in range(len(b)):
-
                     if 1 + j + i - len(b) >= 1:
                         continue
                     if 1 + j + i - len(b) == 0:
@@ -107,7 +104,6 @@ def fourier_adder(a, b, perform_QFT=True):
 
 
 class QuasiRZZ(Operation):
-
     def __init__(self, angle):
         qc = QuantumCircuit(2)
         qc.cx(qc.qubits[1], qc.qubits[0])

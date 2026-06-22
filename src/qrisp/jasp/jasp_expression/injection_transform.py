@@ -96,7 +96,6 @@ def injection_transform(jaspr, qubit_array_outvar):
     deleted_quantum_circuit_variable = None
 
     for i in range(len(jaspr.eqns)):
-
         eqn = jaspr.eqns[i]
 
         # Delete the equation by skipping the last line of the loop
@@ -108,7 +107,6 @@ def injection_transform(jaspr, qubit_array_outvar):
         # Recursively apply the injection transform
         elif eqn.primitive.name == "jit":
             if qubit_array_outvar in eqn.outvars:
-
                 # Retrieve the Jaspr to be transformed
                 sub_jaspr = eqn.params["jaxpr"]
 

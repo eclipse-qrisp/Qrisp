@@ -48,8 +48,8 @@ def lightcone_reduction(qc, intended_measurements):
     qc_new = qc.clearcopy()
 
     # Define prefered instructions
-    measure_identifier = (
-        lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
+    measure_identifier = lambda x: (
+        x.op.name == "measure" and x.qubits[0] in intended_measurements
     )
 
     def sub_sort(dag):

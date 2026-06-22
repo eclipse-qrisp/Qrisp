@@ -73,9 +73,9 @@ def convert_to_cx(
         >>> qc = QuantumCircuit(2)
         >>> qc.cz(0, 1)
         >>> print(qc)
-        <BLANKLINE>                            
+        <BLANKLINE>
         qb_69: ──■──
-                 │  
+                 │
         qb_70: ──■──
         >>> pm = PassManager()
         >>> pm += convert_to_cx()

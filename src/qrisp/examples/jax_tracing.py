@@ -53,7 +53,6 @@ def compile_inv_environments(closed_jaxpr):
     environment_stack = [[]]
     # Loop through equations and compile inversion environments accordingly
     for eqn in jaxpr.eqns:
-
         op_name = eqn.primitive.name
 
         if (

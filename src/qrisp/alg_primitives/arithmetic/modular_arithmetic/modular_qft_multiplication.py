@@ -34,7 +34,6 @@ def QREDC(t, N, m):
     u = QuantumFloat(0, qs=t.qs, name="u*")
 
     for i in range(m):
-
         h(t[0])
 
         transfer_lsb(t, u)
@@ -45,7 +44,6 @@ def QREDC(t, N, m):
     QFT(t, inv=True, exec_swap=False)
 
     with conjugate(QFT)(t[:-1], exec_swap=False):
-
         multi_controlled_U_g(t[:-1], [t.sign()], N)
 
     cx(t[0], t.sign())
@@ -128,7 +126,6 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
 
     with conjugate(QFT)(u, exec_swap=False):
         if isinstance(b, QuantumFloat):
-
             hybrid_mult(
                 a,
                 b,
@@ -140,7 +137,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
 
         else:
             for i in range(len(a)):
-                multi_controlled_U_g(u, [a[i]], -((2**i * b)) * modinv(N, 2 ** (m + 1)))
+                multi_controlled_U_g(u, [a[i]], -(2**i * b) * modinv(N, 2 ** (m + 1)))
 
     if permeable_if_zero:
         mcx(list(a) + [t[0]], u[-1], ctrl_state="0" * len(a) + "1", method="balauca")

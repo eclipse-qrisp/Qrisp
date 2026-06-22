@@ -209,7 +209,6 @@ class QuantumArray:
         self.qtype_template = qtype.template()
 
         if check_for_tracing_mode():
-
             if isinstance(qtype.reg, list):
                 raise Exception(
                     "Tried to create QuantumArray with qtype defined outside of tracing context"
@@ -542,8 +541,8 @@ class QuantumArray:
         qtype : QuantumVariable
             The type of the quantum variable to return.
         axis : int or tuple of ints, optional
-            The axes to reduce over. If None (default), reduces over all axes. 
-            If an integer is provided, it is treated as a single axis. 
+            The axes to reduce over. If None (default), reduces over all axes.
+            If an integer is provided, it is treated as a single axis.
             If a tuple of integers is provided, it specifies multiple axes to reduce over.
 
         Returns
@@ -734,7 +733,9 @@ class QuantumArray:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
+            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
+                combine_single_qubit_gates,
+            )
 
             qc = combine_single_qubit_gates(qc)
 
@@ -838,12 +839,12 @@ class QuantumArray:
         ValueError
             If the shapes of self and other are incompatible for matrix multiplication.
         TypeError
-            If the types of self and other are incompatible for matrix multiplication: 
+            If the types of self and other are incompatible for matrix multiplication:
                 - If self is not a QuantumArray of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
                 - If other is a QuantumArray but not of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
         NotImplementedError
             If matrix multiplication between the given types is not supported:
-                - If self is a QuantumArray of QuantumModulus, matrix multiplication with another QuantumArray is not supported. 
+                - If self is a QuantumArray of QuantumModulus, matrix multiplication with another QuantumArray is not supported.
                   Other must be a classical array of integers.
                 - If self is a QuantumArray of QuantumFloat, matrix multiplication is not supported in tracing mode.
 
@@ -892,14 +893,16 @@ class QuantumArray:
             raise ValueError(
                 f"Incompatible shapes for matrix multiplication: {self.shape} and {other.shape}"
             )
-        
+
         if not isinstance(self.qtype, (QuantumFloat, QuantumModulus)):
             raise TypeError(
                 f"Matrix multiplication requires qtype 'QuantumFloat' or 'QuantumModulus'. "
                 f"Got {type(self.qtype).__name__}."
             )
-        
-        if isinstance(other, QuantumArray) and not isinstance(other.qtype, (QuantumFloat, QuantumModulus)):
+
+        if isinstance(other, QuantumArray) and not isinstance(
+            other.qtype, (QuantumFloat, QuantumModulus)
+        ):
             raise TypeError(
                 f"Matrix multiplication requires both arrays to have qtype 'QuantumFloat' or 'QuantumModulus'. "
                 f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
@@ -1100,7 +1103,6 @@ class QuantumArray:
                     cx(self.qb_array[i], res.qb_array[i])
 
         else:
-
             if qs is None:
                 res.qs = QuantumSession()
             else:
@@ -1196,7 +1198,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_float import QuantumFloat
 
         if mode == "float":
-            valid_qtype = QuantumFloat #QuantumModulus is subclass of QuantumFloat, so this covers both cases
+            valid_qtype = QuantumFloat  # QuantumModulus is subclass of QuantumFloat, so this covers both cases
         elif mode == "bool":
             valid_qtype = QuantumBool
         else:
@@ -1440,7 +1442,7 @@ class QuantumArray:
             if not isinstance(self.qtype, QuantumModulus):
                 raise NotImplementedError(
                     "Quantum-classical multiplication is not supported for non-QuantumModulus types."
-                )   
+                )
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations are handled by QuantumFloat)
             out_type = self.qtype
@@ -1816,7 +1818,7 @@ class QuantumArray:
             If the qtypes of self and other are not QuantumBool.
         ValueError
             If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
-    
+
         Examples
         --------
         >>> import numpy as np
@@ -2199,11 +2201,11 @@ class QuantumArray:
         ValueError
             If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
         TypeError
-            If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported. 
+            If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported.
             Use out-of-place multiplication instead.
         NotImplementedError
             If in tracing mode and self's ``qtype`` is not QuantumModulus, since quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types.
- 
+
         Examples
         --------
 
@@ -2228,7 +2230,7 @@ class QuantumArray:
             raise TypeError(
                 "Quantum-quantum in-place multiplication is not supported. Use out-of-place multiplication instead."
             )
-        
+
         if check_for_tracing_mode() and not isinstance(self.qtype, QuantumModulus):
             raise NotImplementedError(
                 "Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types."
@@ -2275,7 +2277,6 @@ class QuantumArray:
 
 
 class QuantumArrayIterator:
-
     def __init__(self, qa):
         self.qa = qa
         self.counter = -1

@@ -249,7 +249,6 @@ class DepthMetric(BaseMetric):
         qubit_map = dict(zip(concrete_qubits, qubits, strict=True))
 
         for _, inner_def_qubits in _iter_definition_ops(transpiled_definition):
-
             if not inner_def_qubits:
                 continue
 
@@ -274,7 +273,6 @@ class DepthMetric(BaseMetric):
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):
-
             _, size = target
 
             def body_fun(i, acc):
@@ -284,7 +282,6 @@ class DepthMetric(BaseMetric):
             context_dic["_depth_meas_number"] = meas_number + size
 
         else:  # measuring a single qubit
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             context_dic["_depth_meas_number"] = meas_number + jnp.int32(1)
@@ -387,7 +384,10 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def get_depth_profiler(
-    jaspr: Jaspr, meas_behavior: Callable, max_qubits: int = 1024, callback_threshold=None
+    jaspr: Jaspr,
+    meas_behavior: Callable,
+    max_qubits: int = 1024,
+    callback_threshold=None,
 ) -> Tuple[Callable, None]:
     """
     Build a depth profiling computer for a given Jaspr.
@@ -423,7 +423,9 @@ def get_depth_profiler(
     # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
     # to avoid XLA compilation blowup (see profiling_interpreter.py).
     _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(depth_metric, call_graph_stats, callback_threshold)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
+        depth_metric, call_graph_stats, callback_threshold
+    )
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def depth_profiler(*args):

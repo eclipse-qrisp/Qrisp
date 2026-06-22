@@ -101,7 +101,6 @@ def extract_order(mes_res, a, N):
         pass
 
     while True:
-
         r_values = get_r_values(approximations.pop(0))
 
         for r in r_values:
@@ -159,7 +158,6 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     a_proposals = find_optimal_a(N)
 
     for a in a_proposals:
-
         K = np.gcd(a, N)
 
         if K != 1:

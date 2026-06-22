@@ -362,7 +362,6 @@ class ConditionEnvironment(QuantumEnvironment):
                 self.parent_cond_env = env
                 break
             if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
-
                 if not type(env) == QuantumEnvironment:
                     break
 

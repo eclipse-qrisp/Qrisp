@@ -30,7 +30,6 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
     except Exception as e:
-
         # Handle the case that the user specified an empty qubit list, i.e.
         # cx([], [])
         if "Couldn't find QuantumSession" in str(e):
@@ -496,7 +495,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     from qrisp.environments import invert
 
     if isinstance(controls, list):
-
         new_controls = []
         for qbl in controls:
             if isinstance(qbl, QuantumBool):
@@ -506,14 +504,12 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         controls = new_controls
 
     if isinstance(target, (list, QuantumVariable)):
-
         if isinstance(target, QuantumBool):
             target = target[0]
         else:
             raise Exception("mcx target is not of type Qubit or QuantumBool")
 
     if not check_for_tracing_mode():
-
         qubits_0 = list(controls)
         qubits_1 = [target]
 
@@ -1270,7 +1266,6 @@ def measure(qubits):
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
-
         clbits = []
         if hasattr(qubits, "__len__"):
             for qb in qubits:

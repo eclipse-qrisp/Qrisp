@@ -22,7 +22,9 @@ from qrisp.environments import invert
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 
 
-def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
+def apply_inv(
+    self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT"
+) -> BlockEncoding:
     r"""
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
@@ -137,7 +139,6 @@ def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQ
 
     # The operator is unitary (up to scaling).
     if self.num_ancs == 0:
-
         if not self.is_hermitian:
 
             def new_unitary(*args):

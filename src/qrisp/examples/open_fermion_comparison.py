@@ -199,7 +199,6 @@ def filter_clifford(qc):
 
     # Filter out non-clifford operations
     for instr in qc.data:
-
         if len(instr.op.params) > 0:
             par = instr.op.params[0]
 
@@ -231,7 +230,6 @@ def filter_clifford(qc):
             else:
                 qc_new.append(instr)
         elif instr.op.name == "u3":
-
             for par in instr.op.params:
                 if par not in [i * np.pi / 4 for i in range(8)]:
                     break
@@ -294,7 +292,7 @@ for idx, molecule_data in enumerate(molecule_list):
     print(molecule_data)
     results = benchmark_hamiltonian_simulation(molecule_data)
 
-    molecules.append(f"Molecule {idx+1}")
+    molecules.append(f"Molecule {idx + 1}")
     of_rz_counts.append(results["OpenFermion"]["RZ count"])
     of_rz_depths.append(results["OpenFermion"]["RZ depth"])
     of_precisions.append(results["OpenFermion"]["Precision"])

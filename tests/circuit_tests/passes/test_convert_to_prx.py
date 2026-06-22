@@ -53,7 +53,11 @@ class TestConvertToPRXDecompositions:
 
         for instr in result.data:
             op = instr.op
-            if isinstance(op, U3Gate) and not isinstance(op, PRXGate) and op.name != "gphase":
+            if (
+                isinstance(op, U3Gate)
+                and not isinstance(op, PRXGate)
+                and op.name != "gphase"
+            ):
                 raise AssertionError(f"Leftover non-PRX U3Gate: {op.name}")
 
     def test_unitary_preserved_after_conversion(self):
@@ -186,5 +190,6 @@ class TestConvertToPRXRandomCircuits:
                 if op.name in ("qb_alloc", "qb_dealloc", "barrier"):
                     continue
                 if op.num_qubits == 1 and op.num_clbits == 0:
-                    assert isinstance(op, PRXGate) or op.name == "gphase", \
+                    assert isinstance(op, PRXGate) or op.name == "gphase", (
                         f"Non-PRX single-qubit gate: {op.name}"
+                    )

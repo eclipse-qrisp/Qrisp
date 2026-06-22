@@ -26,7 +26,13 @@ from .constructors import (
     build_from_operator,
     build_from_projector,
 )
-from .transformations import apply_inv, apply_poly, apply_pseudo_inv, apply_sim, apply_svt
+from .transformations import (
+    apply_inv,
+    apply_poly,
+    apply_pseudo_inv,
+    apply_sim,
+    apply_svt,
+)
 
 BlockEncoding.from_array = classmethod(build_from_array)
 BlockEncoding.from_eye = classmethod(build_from_eye)

@@ -121,7 +121,7 @@ def iteration_env_evaluator(eqn, context_dic):
     # Flatten any nested environments inside the loop bodies.
     iter_1_jaspr = iteration_1_eqn.params["jaspr"].flatten_environments()
     iter_2_jaspr = iteration_2_eqn.params["jaspr"].flatten_environments()
-    
+
     # The second iteration's body must return exactly one value (the
     # QuantumCircuit).  Multiple outputs would indicate an unsupported
     # external carry value escaping the loop.
@@ -210,9 +210,7 @@ def iteration_env_evaluator(eqn, context_dic):
             inc_res_index = i
             break
     if inc_res_index is None:
-        raise Exception(
-            "Could not find marker output in iteration 1 outvars."
-        )
+        raise Exception("Could not find marker output in iteration 1 outvars.")
 
     # --- Rearrange: threshold at position 0, loop index at position 1 ---
     def _move_var_to_front(invars_list, target_var):
@@ -271,9 +269,7 @@ def iteration_env_evaluator(eqn, context_dic):
             # Variable was updated — find which output of iteration 1
             # provides the new value for iteration 2's input.
             try:
-                res_index = iteration_1_eqn.outvars.index(
-                    iteration_2_eqn.invars[i]
-                )
+                res_index = iteration_1_eqn.outvars.index(iteration_2_eqn.invars[i])
             except ValueError:
                 # If the iter 2 invar is not part of the iter 1 outvars
                 # and also not part of the iter 1 invars, it is most likely
@@ -356,7 +352,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     eqn_list_1 = list(jaxpr_1.eqns)
 
     while eqn_list_0:
-
         eqn_0 = eqn_list_0.pop(0)
         eqn_1 = eqn_list_1.pop(0)
 
@@ -385,7 +380,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
                     raise Exception("Jax semantics changed during jrange iteration")
             elif var_0 in translation_dic:
                 if translation_dic[var_0] != var_1:
-
                     raise Exception("Jax semantics changed during jrange iteration")
             else:
                 translation_dic[var_0] = var_1

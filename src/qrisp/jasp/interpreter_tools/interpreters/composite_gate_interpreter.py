@@ -23,7 +23,12 @@ from jax.extend.core import JaxprEqn
 import jax.numpy as jnp
 from sympy import lambdify as _lambdify
 
-from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
+from qrisp.jasp.interpreter_tools import (
+    exec_eqn,
+    reinterpret,
+    extract_invalues,
+    insert_outvalues,
+)
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
 from qrisp.circuit.operation import U3Gate as _U3Gate
@@ -36,12 +41,12 @@ _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 # bind_parameters({alpha: val}) and get back a fully concrete gate with params=[val].
 _U3_IDENTITY_FACTORIES = {
     "gphase": lambda: _std_ops.GPhaseGate(_greek_letters[0]),
-    "rx":     lambda: _std_ops.RXGate(_greek_letters[0]),
-    "ry":     lambda: _std_ops.RYGate(_greek_letters[0]),
-    "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
-    "p":      lambda: _std_ops.PGate(_greek_letters[0]),
-    "u1":     lambda: _std_ops.U1Gate(_greek_letters[0]),
-    "u3":     lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
+    "rx": lambda: _std_ops.RXGate(_greek_letters[0]),
+    "ry": lambda: _std_ops.RYGate(_greek_letters[0]),
+    "rz": lambda: _std_ops.RZGate(_greek_letters[0]),
+    "p": lambda: _std_ops.PGate(_greek_letters[0]),
+    "u1": lambda: _std_ops.U1Gate(_greek_letters[0]),
+    "u3": lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
 }
 
 
@@ -115,12 +120,17 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # the same ordering.  We sort by _greek_letter_order (the canonical
             # index of each symbol in the greek_letters sequence) to get a stable,
             # deterministic ordering regardless of Python's set hash randomisation.
-            sorted_syms = sorted(op.abstract_params, key=lambda s: _greek_letter_order[s])
+            sorted_syms = sorted(
+                op.abstract_params, key=lambda s: _greek_letter_order[s]
+            )
             sorted_tracers = [param_dict[sym] for sym in sorted_syms]
             # Evaluate each symbolic parameter expression (e.g. -alpha/2) against
             # the parent gate's symbol->tracer bindings to produce a concrete JAX
             # tracer for each parameter slot.
-            computed_tracers = [_lambdify(sorted_syms, expr, modules="jax")(*sorted_tracers) for expr in op.params]
+            computed_tracers = [
+                _lambdify(sorted_syms, expr, modules="jax")(*sorted_tracers)
+                for expr in op.params
+            ]
             # Emit an identity-param version of the gate (params = [alpha, beta, ...])
             # together with the pre-computed tracers.  This is required because
             # append_impl later calls gate.bind_parameters({alpha: val}), which
@@ -128,7 +138,9 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # gphase(-alpha/2)) would cause the expression to be applied a second
             # time: bind_parameters({alpha: val}) would yield -val/2 instead of val.
             identity_op = _make_identity_param_op(op)
-            return quantum_gate_p.bind(*qubit_tracers, *computed_tracers, abs_qst, gate=identity_op)
+            return quantum_gate_p.bind(
+                *qubit_tracers, *computed_tracers, abs_qst, gate=identity_op
+            )
         if op.params:
             # Gate has only constant (non-symbolic) parameters — e.g. rz(-π/2)
             # emitted as an internal fixed rotation inside a composite gate
@@ -140,7 +152,9 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # branch above.
             const_tracers = [jnp.float64(float(p)) for p in op.params]
             identity_op = _make_identity_param_op(op)
-            return quantum_gate_p.bind(*qubit_tracers, *const_tracers, abs_qst, gate=identity_op)
+            return quantum_gate_p.bind(
+                *qubit_tracers, *const_tracers, abs_qst, gate=identity_op
+            )
 
         return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
@@ -175,7 +189,9 @@ def decompose_eqn_evaluator(eqn, context_dic):
         # Preserve the parent gate's symbol -> tracer association so primitive
         # sub-gates can recover the correct tracer even when they reference only
         # a subset of the parent's parameters.
-        param_dict = {gate.params[i]: param_tracers[i] for i in range(len(param_tracers))}
+        param_dict = {
+            gate.params[i]: param_tracers[i] for i in range(len(param_tracers))
+        }
 
         abs_qst = _apply_op(gate, qubit_tracers, abs_qst, param_dict=param_dict)
         insert_outvalues(eqn, context_dic, abs_qst)
@@ -232,4 +248,5 @@ def _decompose_sub_jaxpr(jaxpr):
 def decompose_composite_gates(jaspr):
     """Return a new Jaspr with all composite (non-primitive) gates recursively inlined."""
     from qrisp.jasp import Jaspr
+
     return Jaspr(reinterpret(jaspr, decompose_eqn_evaluator))

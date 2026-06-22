@@ -340,7 +340,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
         i = 0
         while i < len(content_circ.qubits):
-
             qb = content_circ.qubits[i]
 
             if added_depth_dic[qb]:
@@ -376,7 +375,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
 
 class ConjugatedOperation(Operation):
-
     def __init__(self, conjugation_circ, content_circ):
 
         self.conjugation_gate = conjugation_circ.to_gate(name="conjugator")
@@ -437,7 +435,6 @@ def conjugate(conjugation_function, allocation_management=True):
 
 
 class PJITEnvironment(QuantumEnvironment):
-
     def jcompile(self, eqn, context_dic):
 
         from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr

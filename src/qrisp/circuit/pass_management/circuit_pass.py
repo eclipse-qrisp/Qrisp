@@ -63,9 +63,7 @@ class CircuitPass:
             return _convert_to_cz
     """
 
-    def __init__(
-        self, func: Callable[[QuantumCircuit], QuantumCircuit]
-    ) -> None:
+    def __init__(self, func: Callable[[QuantumCircuit], QuantumCircuit]) -> None:
         """
         Parameters
         ----------
@@ -74,7 +72,9 @@ class CircuitPass:
             and ``__doc__`` are copied onto the ``CircuitPass`` instance.
         """
         self._func: Callable[[QuantumCircuit], QuantumCircuit] = func
-        functools.update_wrapper(self, func, assigned=('__module__', '__doc__', '__annotations__'))
+        functools.update_wrapper(
+            self, func, assigned=("__module__", "__doc__", "__annotations__")
+        )
         self.__wrapped__ = func
         self.__name__ = func.__name__
 
@@ -171,28 +171,26 @@ class CircuitPass:
             measurement instructions.
         """
         if not isinstance(qc, QuantumCircuit):
-            raise TypeError(
-                f"Expected a QuantumCircuit, got {type(qc).__name__}."
-            )
+            raise TypeError(f"Expected a QuantumCircuit, got {type(qc).__name__}.")
 
         # Check that the input circuit contains no measurements
         if any(instr.op.name == "measure" for instr in qc.data):
-                raise ValueError(
-                    "The input circuit contains measurement instructions, "
-                    "which break unitarity. Remove measurements before "
-                    "calling compare_unitary."
-                )
+            raise ValueError(
+                "The input circuit contains measurement instructions, "
+                "which break unitarity. Remove measurements before "
+                "calling compare_unitary."
+            )
 
         # Apply the pass to a copy to avoid mutating the original
         transformed_qc = self(qc.copy())
 
         # Check that the transformed circuit contains no measurements
         if any(instr.op.name == "measure" for instr in transformed_qc.data):
-                raise ValueError(
-                    "The transformed circuit contains measurement "
-                    "instructions, which break unitarity. The pass should "
-                    "not introduce measurements."
-                )
+            raise ValueError(
+                "The transformed circuit contains measurement "
+                "instructions, which break unitarity. The pass should "
+                "not introduce measurements."
+            )
 
         return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
 
@@ -281,9 +279,7 @@ class CircuitPass:
             If *qc* is not a :class:`~qrisp.QuantumCircuit`.
         """
         if not isinstance(qc, QuantumCircuit):
-            raise TypeError(
-                f"Expected a QuantumCircuit, got {type(qc).__name__}."
-            )
+            raise TypeError(f"Expected a QuantumCircuit, got {type(qc).__name__}.")
 
         if backend is None:
             from qrisp.default_backend import def_backend

@@ -156,7 +156,6 @@ def rsa_encrypt_string(e, N, message):
     ciphertext = ""
 
     for i in range(len(chunks)):
-
         encrypted_int = rsa_encrypt(e, N, int(chunks[i], 2))
         ciphertext += bin(encrypted_int)[2:].zfill(chunksize + 1)
 

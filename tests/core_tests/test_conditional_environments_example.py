@@ -31,7 +31,7 @@ from qrisp import (
     OutcomeArray,
     multi_measurement,
     auto_uncompute,
-    invert
+    invert,
 )
 
 
@@ -54,7 +54,7 @@ def test_conditional_environments_example():
         h(q_array[0][0])
 
         with q_array[0] == -0.5:
-            q_array[2].encode(-0.5, permit_dirtyness = True)
+            q_array[2].encode(-0.5, permit_dirtyness=True)
             q_array[1] -= -1
             with q_array[1] == 1:
                 q_array[3].init_from(q_array[2])
@@ -151,16 +151,16 @@ def test_conditional_environments_example():
             print(d.qs)
 
     assert len(a.qs.qv_list) == 4
-    
+
     @auto_uncompute
     def test_function(qf_a, qbl):
-        
+
         with qf_a == 0:
             x(qbl)
-        
+
         # print(qbl.qs)
         return qbl
-        
+
     qf_a = QuantumFloat(2)
     qbl = QuantumBool()
 
@@ -168,5 +168,5 @@ def test_conditional_environments_example():
 
     with invert():
         test_function(qf_a, qbl)
-        
+
     print(qf_a.qs)

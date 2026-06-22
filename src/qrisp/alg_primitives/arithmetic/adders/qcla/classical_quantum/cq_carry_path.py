@@ -72,7 +72,6 @@ def calc_P_group(P):
 def calc_G_group(P, G):
 
     for i in range(len(G) - 1):
-
         controls = [G[i]] + P[i + 1 :]
         for p in controls:
             if isinstance(p, QuantumBool):
@@ -80,7 +79,6 @@ def calc_G_group(P, G):
             if check_if_fresh([p], p.qs()):
                 break
         else:
-
             if len(P[i + 1 :]) == 1:
                 mcx(controls, G[-1], method="jones")
             else:
@@ -109,7 +107,6 @@ def propagate_carry(P, G):
     # information because none of the CARRY status has been calculated yet)
 
     for i in range(1, len(G))[::-1]:
-
         for j in range(i):
             if len(P[j + 1 : i + 1]) == 1:
                 method = "jones"
@@ -264,9 +261,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
     # to be uncomputed. The uncomputation is performed using the auto_uncompute
     # decorator. This decorator uncomputes all local variables.
     if R > 1:
-        brent_kung_ancilla = QuantumVariable(
-            c.size * (R - 1), name="bk_ancilla*"
-        )
+        brent_kung_ancilla = QuantumVariable(c.size * (R - 1), name="bk_ancilla*")
         anc_list = list(brent_kung_ancilla)
     else:
         anc_list = []
@@ -299,9 +294,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
             parallel_ancillae = list(parallel_anc_var)
 
     for i in range(min(len(g), len(a), len(b))):
-
         if a[i] == "1":
-
             # To get p_i = a_i XOR b_i we can simply flip b_i (because we know
             # that a_i = 1)
             x(b[i])

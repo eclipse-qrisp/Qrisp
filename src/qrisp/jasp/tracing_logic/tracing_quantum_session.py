@@ -110,7 +110,6 @@ class TracingQuantumSession:
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
             for i in jrange(qubits[0].size):
                 self.append(
                     operation,
@@ -120,7 +119,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], list):
-
             for i in range(len(qubits[0])):
                 self.append(
                     operation,
@@ -130,7 +128,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], QuantumArray):
-
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
                     raise Exception(

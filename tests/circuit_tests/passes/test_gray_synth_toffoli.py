@@ -69,6 +69,7 @@ class TestIsToffoli:
 
     def test_controlled_h_rejected(self):
         from qrisp.circuit.standard_operations import HGate
+
         op = HGate().control(2)
         assert not is_toffoli(op)
 
@@ -88,9 +89,7 @@ class TestGrayToffoliCircuit:
 
     def test_unitary_matches_toffoli(self):
         toffoli_qc = QuantumCircuit(3)
-        toffoli_qc.ccx(
-            toffoli_qc.qubits[0], toffoli_qc.qubits[1], toffoli_qc.qubits[2]
-        )
+        toffoli_qc.ccx(toffoli_qc.qubits[0], toffoli_qc.qubits[1], toffoli_qc.qubits[2])
         U_gray = _get_gray_toffoli_qc().get_unitary()
         U_tof = toffoli_qc.get_unitary()
 
@@ -98,7 +97,9 @@ class TestGrayToffoliCircuit:
         if np.abs(U_gray.flatten()[idx]) > 1e-10:
             phase = U_tof.flatten()[idx] / U_gray.flatten()[idx]
             np.testing.assert_allclose(
-                U_gray * phase, U_tof, atol=1e-7,
+                U_gray * phase,
+                U_tof,
+                atol=1e-7,
                 err_msg="Gray Toffoli unitary does not match Toffoli (up to global phase)",
             )
 
@@ -176,7 +177,9 @@ class TestGraySynthToffoliPass:
         U_orig = qc.get_unitary()
         U_result = result.get_unitary()
         np.testing.assert_allclose(
-            U_orig, U_result, atol=1e-8,
+            U_orig,
+            U_result,
+            atol=1e-8,
             err_msg="Pass output is not unitarily equivalent to input",
         )
 
@@ -189,9 +192,12 @@ class TestGraySynthToffoliPass:
         U_orig = qc.get_unitary()
         U_result = result.get_unitary()
         np.testing.assert_allclose(
-            U_orig, U_result, atol=1e-8,
+            U_orig,
+            U_result,
+            atol=1e-8,
             err_msg="Multiple-Toffoli pass output is not unitarily equivalent",
         )
+
 
 # ------------------------------------------------------------------
 # Correctness: compare_unitary (CircuitPass API)

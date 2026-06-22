@@ -854,7 +854,6 @@ class QuantumBacktrackingTree:
             height_tracker = -1
 
         for i in range(qpe_res.size):
-
             if height_tracker >= 0 and False:
                 for j in range(2**i):
                     self.quantum_step(
@@ -1222,13 +1221,10 @@ class QuantumBacktrackingTree:
         last_layer = [root]
 
         for i in range(self.max_depth):
-
             next_layer = []
 
             for parent_node in last_layer:
-
                 for j in range(2 ** self.branch_qa[0].size):
-
                     child_node_path = list(parent_node.path) + [
                         self.branch_qa[0].decoder(j)
                     ]
@@ -1317,7 +1313,6 @@ class QuantumBacktrackingTree:
             children = list(G.neighbors(node))
 
             for i in range(len(children)):
-
                 theta = theta_start + i * delta_theta
 
                 res_dic[children[i]] = (r * np.sin(theta), r * np.cos(theta))
@@ -1492,7 +1487,6 @@ class QuantumBacktrackingTree:
 
         # Go through all internal label consteallations (ie. node states)
         for internal_label_const in internal_label_product[::-1]:
-
             # print(internal_label_const)
             # Get the path to that node state
             path = self.path_decoder(internal_label_const[0], internal_label_const[1:])
@@ -1507,7 +1501,6 @@ class QuantumBacktrackingTree:
             # If there are no external qvs, we can simply call the sv_function
             # with the label dic
             if len(external_qvs) == 0:
-
                 amplitude = sv_function(internal_label_dic, 5)
 
                 if abs(amplitude) < 1e-5:
@@ -1522,9 +1515,7 @@ class QuantumBacktrackingTree:
             # If there are external qvs we do a similar procedure to go through
             # all label constellations
             else:
-
                 for external_label_const in external_label_product:
-
                     # Set up the external label dic
                     external_label_dic = {
                         external_qvs[i]: external_label_const[i]
@@ -1554,7 +1545,6 @@ class QuantumBacktrackingTree:
 
 
 class OHQInt(QuantumVariable):
-
     def decoder(self, i):
         # One hot encoding:
         # Red:   [1,0,0,0]
@@ -1576,7 +1566,6 @@ class OHQInt(QuantumVariable):
     def __eq__(self, other):
 
         if isinstance(other, int):
-
             self.encoder(other)
 
             eq_qbl = QuantumBool()
@@ -1764,7 +1753,6 @@ def c_iswap_reduced(phi, ctrl, target_0, target_1):
 
 
 class Subtree(QuantumBacktrackingTree):
-
     def __init__(self, parent_tree, root_path):
 
         if len(root_path) > parent_tree.max_depth:
@@ -1905,7 +1893,6 @@ def find_solution(
     # Sort for the value of tree.h
     new_branches.sort(key=lambda x: x[1])
     for b in new_branches:
-
         # Get the path to the new node
         if isinstance(tree, Subtree):
             new_path = tree.original_tree.path_decoder(b[1], b[2])
@@ -1943,7 +1930,6 @@ def find_solution(
 
 
 class QBTNode:
-
     def __init__(self, tree, path, amplitude=None):
 
         self.h = tree.max_depth - len(path)

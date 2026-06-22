@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for unwrapping scalar tensor packing and eliminating
 dead tensor operations in MLIR/xDSL.

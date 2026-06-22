@@ -245,7 +245,6 @@ def qrisp_to_stim(
                 stim_circuit.append(op.stim_name, targets, op.params)
 
         elif op_name == "parity":
-
             # All clbits are now inputs (no output clbit)
             measurement_clbits = instr.clbits
 
@@ -339,7 +338,6 @@ def qrisp_to_stim(
             )
 
         elif isinstance(op, ClControlledOperation):
-
             if op.num_control != 1:
                 raise NotImplementedError(
                     "Stim conversion only supports single-bit classical control for now."

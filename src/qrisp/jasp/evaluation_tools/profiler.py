@@ -287,7 +287,9 @@ def count_ops(
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
+                *args,
+                meas_behavior=meas_behavior,
+                callback_threshold=callback_threshold,
             )
 
         return ops_counter
@@ -439,7 +441,10 @@ def depth(
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].depth(
-                *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
+                *args,
+                meas_behavior=meas_behavior,
+                max_qubits=max_qubits,
+                callback_threshold=callback_threshold,
             )
 
         return depth_counter
@@ -619,7 +624,10 @@ def num_qubits(
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].num_qubits(
-                *args, meas_behavior=meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
+                *args,
+                meas_behavior=meas_behavior,
+                max_allocations=max_allocations,
+                callback_threshold=callback_threshold,
             )
 
         return qubits_counter

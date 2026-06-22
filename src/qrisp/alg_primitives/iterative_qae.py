@@ -105,11 +105,9 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     """
 
     if callable(qargs):
-
         init_function = qargs
 
     else:
-
         templates = [qv.template() for qv in qargs]
 
         def init_function():

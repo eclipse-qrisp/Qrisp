@@ -161,10 +161,8 @@ class Jaspr(ClosedJaxpr):
             kwargs["consts"] = args[0].consts
 
         if "jaxpr" in kwargs:
-
             ClosedJaxpr.__init__(self, kwargs["jaxpr"], kwargs["consts"])
         else:
-
             if "consts" in kwargs:
                 consts = kwargs["consts"]
                 del kwargs["consts"]
@@ -628,7 +626,6 @@ class Jaspr(ClosedJaxpr):
 
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "jit":
-
                 if eqn.params["name"] == "expectation_value_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
 
@@ -688,18 +685,32 @@ class Jaspr(ClosedJaxpr):
     def count_ops(self, *args, meas_behavior, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "count_ops", meas_behavior, callback_threshold=callback_threshold)(*args)
+        return profile_jaspr(
+            self, "count_ops", meas_behavior, callback_threshold=callback_threshold
+        )(*args)
 
     def depth(self, *args, meas_behavior, max_qubits=1024, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold)(*args)
+        return profile_jaspr(
+            self,
+            "depth",
+            meas_behavior,
+            max_qubits=max_qubits,
+            callback_threshold=callback_threshold,
+        )(*args)
 
-    def num_qubits(self, *args, meas_behavior, max_allocations=1000, callback_threshold=None):
+    def num_qubits(
+        self, *args, meas_behavior, max_allocations=1000, callback_threshold=None
+    ):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(
-            self, "num_qubits", meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
+            self,
+            "num_qubits",
+            meas_behavior,
+            max_allocations=max_allocations,
+            callback_threshold=callback_threshold,
         )(*args)
 
     def embedd(self, *args, name=None, inline=False):
@@ -773,7 +784,6 @@ class Jaspr(ClosedJaxpr):
         res = Jaspr(jaxpr=closed_jaxpr.jaxpr, consts=closed_jaxpr.consts)
         remove_redundant_allocations(res)
         return res
-
 
     def update_eqns(self, eqns):
         return Jaspr(
@@ -1068,7 +1078,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qir(self.flatten_environments())
 
-    def to_mlir(self, lower_stablehlo = False):
+    def to_mlir(self, lower_stablehlo=False):
         """
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install qrisp[xdsl]``).
@@ -1091,9 +1101,9 @@ class Jaspr(ClosedJaxpr):
         Parameters
         ----------
         lower_stablehlo : bool, optional
-            If True, runs additional MLIR passes to lower StableHLO operations 
-            (like arithmetic and data operations) to lower-level dialects such 
-            as linalg, arith, and tensor. StableHLO control flow involving 
+            If True, runs additional MLIR passes to lower StableHLO operations
+            (like arithmetic and data operations) to lower-level dialects such
+            as linalg, arith, and tensor. StableHLO control flow involving
             quantum types is preserved and rewritten to SCF by xDSL.
             The default is False.
 

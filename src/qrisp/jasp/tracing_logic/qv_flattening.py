@@ -42,7 +42,6 @@ from qrisp.jasp.tracing_logic import (
 # The QuantumVariable template doesn't carry the register information (only the
 # size) and can therefore be passed around like a classical value.
 class QuantumVariableTemplate:
-
     def __init__(self, qv, size_tracked=True):
         self.duplication_counter = 0
         self.qv = copy.copy(qv)

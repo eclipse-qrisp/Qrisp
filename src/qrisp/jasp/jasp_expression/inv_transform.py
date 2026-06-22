@@ -368,9 +368,11 @@ def invert_loop_eqn(eqn):
     carry_avals = [v.aval for v in eqn.invars[-carries_count:]]
 
     if cond_eq.primitive.name == "ge":
+
         def swapped_cond(*carries):
             return carries[pos_b] >= carries[pos_a]
     else:
+
         def swapped_cond(*carries):
             return carries[pos_b] <= carries[pos_a]
 
@@ -382,8 +384,10 @@ def invert_loop_eqn(eqn):
     new_invars = list(invars)
     eqn_pos_a = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_a
     eqn_pos_b = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_b
-    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = \
-        new_invars[eqn_pos_b], new_invars[eqn_pos_a]
+    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = (
+        new_invars[eqn_pos_b],
+        new_invars[eqn_pos_a],
+    )
 
     # Assemble the inverted while equation directly — no while_loop
     # re-trace, avoiding JAX's non-deterministic body_nconsts.

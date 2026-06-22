@@ -28,7 +28,6 @@ from sympy import Symbol
 
 
 class a_(Symbol):
-
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index):
@@ -40,7 +39,6 @@ class a_(Symbol):
 
 
 class c_(Symbol):
-
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index):

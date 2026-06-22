@@ -82,12 +82,10 @@ class HLOControlFlowReplacement(RewritePattern):
 
         # stablehlo.case -> scf.index_switch
         if op_name == "stablehlo.case":
-
             # Extract scalar from a tensor value (StableHLO convention) as i32 then cast to index.
             i32_case_indicator = tensor.ExtractOp(op.operands[0], [], builtin.i32)
 
             if len(op.regions) == 2:
-
                 const_op = arith.ConstantOp(
                     builtin.IntegerAttr(0, builtin.IntegerType(32))
                 )
@@ -107,7 +105,6 @@ class HLOControlFlowReplacement(RewritePattern):
                 return
 
             else:
-
                 # StableHLO case selector is an i32 scalar; SCF switch expects an index.
                 # We also enumerate cases 0..N-1 and use the last region as default.
                 case_values = builtin.DenseArrayBase.from_list(
@@ -133,7 +130,6 @@ class HLOControlFlowReplacement(RewritePattern):
 
         # stablehlo.while -> scf.while
         if op_name == "stablehlo.while":
-
             while_op = scf.WhileOp(
                 arguments=op.operands,
                 result_types=op.result_types,

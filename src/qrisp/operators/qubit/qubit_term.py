@@ -322,7 +322,6 @@ class QubitTerm:
 
         # If there are only projectors, the circuit is a mcp gate
         elif len(Z_indices) == 0:
-
             # Perform the mcp
             if len(projector_qubits) == 1:
                 if projector_ctrl_state == 0:
@@ -419,7 +418,6 @@ class QubitTerm:
                 ]
 
                 while len(reduction_qubits) > 2:
-
                     k = len(reduction_qubits) // 2
 
                     balauca_layer(
@@ -456,7 +454,6 @@ class QubitTerm:
 
         # Perform the conjugation
         with env:
-
             # The following qubit will be the target of the RZ gate
             anchor_index = Z_indices[-1]
 
@@ -480,7 +477,6 @@ class QubitTerm:
             with conjugate(flip_anchor_qubit)(
                 qv, anchor_index=anchor_index, Z_indices=Z_indices[:-1]
             ):
-
                 # Perform the controlled RZ
                 if control_qubit_available:
                     # Use Selinger's circuit (page 5)

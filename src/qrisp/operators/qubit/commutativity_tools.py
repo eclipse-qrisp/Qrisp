@@ -244,7 +244,6 @@ def construct_change_of_basis(S):
     ####################
 
     if n > k:
-
         C = S2[:k, :]
         D = S2[k:n, :]
         F = S2[-(n - k) :, :]
@@ -260,7 +259,6 @@ def construct_change_of_basis(S):
         R2_inv = np.block([[np.eye(k, dtype=int)], [np.zeros((n - k, k), dtype=int)]])
 
     else:
-
         S3 = S2
         R2_inv = np.eye(n, dtype=int)
 

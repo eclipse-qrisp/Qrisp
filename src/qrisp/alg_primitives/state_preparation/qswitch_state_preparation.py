@@ -253,7 +253,6 @@ def _preprocess(
     subvecs = target_array[jnp.newaxis, :]
     acc_phases = jnp.zeros((1,), dtype=jnp.float64)
     for l in range(n):
-
         num_nodes = 1 << l
         sub_len = 1 << (n - l)
 
@@ -356,7 +355,6 @@ def prepare_qswitch(
     ry(thetas[0][0], qv[0])
 
     for layer_size in xrange(1, qv.size - 1):
-
         q_switch(
             qv[:layer_size],
             make_case_fn(layer_size),

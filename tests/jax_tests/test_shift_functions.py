@@ -54,7 +54,7 @@ def test_singular_shift_static_non_power_of_2():
     from qrisp import QuantumFloat, singular_shift
 
     for n_bits in [3, 5, 6, 7]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             singular_shift(qf)
@@ -105,7 +105,7 @@ def test_singular_shift_dynamic_non_power_of_2():
         return measure(qf)
 
     for n_bits in [3, 5, 6, 7]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_singular_shift(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]
@@ -122,7 +122,7 @@ def test_singular_shift_saeedi_static():
     from qrisp import QuantumFloat, singular_shift
 
     for n_bits in [3, 4, 5]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             singular_shift(qf, use_saeedi=True)
@@ -149,7 +149,7 @@ def test_singular_shift_saeedi_dynamic():
         return measure(qf)
 
     for n_bits in [3, 4, 5]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_singular_shift_saeedi(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]
@@ -199,7 +199,7 @@ def test_cyclic_shift_static_shift_1():
     from qrisp import QuantumFloat, cyclic_shift
 
     for n_bits in [3, 4, 5, 6]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             cyclic_shift(qf, shift_amount=1)
@@ -226,7 +226,7 @@ def test_cyclic_shift_dynamic_shift_1():
         return measure(qf)
 
     for n_bits in [3, 4, 5, 6]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_cyclic_shift(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]

@@ -144,7 +144,6 @@ class FermionicOperator(Hamiltonian):
         new_terms_dict = {}
 
         for term, coeff in self.terms_dict.items():
-
             # We only store the sorted version of each term.
             # Sorting here means permuting the creators/annihilators
             # while considering the sign of the permutation applied by the sort.
@@ -700,7 +699,6 @@ class FermionicOperator(Hamiltonian):
         else:
             raise Exception(f"Don't know fermionic mapping {mapping_type}.")
 
-
     def expectation_value(
         self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs
     ):
@@ -919,7 +917,6 @@ class FermionicOperator(Hamiltonian):
         terms_dict = {}
 
         for term, coeff in of_fermionic_hamiltonian.terms.items():
-
             ladder_list = []
 
             for tup in term[::-1]:

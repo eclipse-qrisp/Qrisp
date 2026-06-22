@@ -672,7 +672,6 @@ class SparseBiArray(BiArray):
             outcome_index_list.append(sprs.row[unique_markers[i]])
 
             if return_new_arrays:
-
                 new_bi_array = SparseBiArray(
                     (sprs.col[unique_markers[i] : unique_markers[i + 1]], temp_data),
                     shape=(self.size // 2 ** len(indices),),

@@ -782,7 +782,7 @@ class BlockEncoding:
             "depth": circuit_depth,
             "qubits": qubit_counts["peak_allocations"],
         }
-    
+
     def dagger(self) -> BlockEncoding:
         r"""
         Returns a new BlockEncoding representing the Hermitian conjugate of the operator.

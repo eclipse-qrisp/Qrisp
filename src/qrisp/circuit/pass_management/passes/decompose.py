@@ -52,7 +52,9 @@ def _collect_gphases(qc: QuantumCircuit) -> QuantumCircuit:
 
     # Emit accumulated phase
     accumulated_phase = accumulated_phase % (2 * np.pi)
-    if isinstance(accumulated_phase, sp.Expr) or (abs(accumulated_phase) > 1e-10 and anchor_qubit is not None):
+    if isinstance(accumulated_phase, sp.Expr) or (
+        abs(accumulated_phase) > 1e-10 and anchor_qubit is not None
+    ):
         new_qc.gphase(accumulated_phase, anchor_qubit)
 
     return new_qc
@@ -113,17 +115,17 @@ def decompose(
         >>> qc.mcx([0, 1], 2)
         >>> print(qc)
         qb_71: ──■──
-                 │  
+                 │
         qb_72: ──■──
                ┌─┴─┐
         qb_73: ┤ X ├
                └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += decompose()
         >>> decomposed_qc = pm.run(qc)
         >>> print(decomposed_qc)
-               ┌─────┐                                                 
+               ┌─────┐
         qb_71: ┤ Tdg ├───────■─────────■────■───────────────────────■──
                ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
         qb_72: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├

@@ -139,7 +139,9 @@ def get_measurement(
     # Bind parameters
     if subs_dic:
         qc = qc.bind_parameters(subs_dic)
-        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
+        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
+            combine_single_qubit_gates,
+        )
 
         qc = combine_single_qubit_gates(qc)
 
@@ -154,7 +156,6 @@ def get_measurement(
 
 
 class QubitOperatorMeasurement:
-
     def __init__(self, hamiltonian, diagonalisation_method="commuting_qw"):
 
         n = hamiltonian.find_minimal_qubit_amount()
@@ -193,7 +194,6 @@ class QubitOperatorMeasurement:
         self.measurement_operators = []
 
         for group in self.groups:
-
             qv = QuantumVariable(n)
 
             meas_op = group.change_of_basis(qv, diagonalisation_method)

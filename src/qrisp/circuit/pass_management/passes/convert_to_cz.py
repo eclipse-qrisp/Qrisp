@@ -73,7 +73,7 @@ def convert_to_cz(
         >>> qc = QuantumCircuit(2)
         >>> qc.cx(0, 1)
         >>> print(qc)
-        <BLANKLINE>                            
+        <BLANKLINE>
         qb_69: ──■──
                ┌─┴─┐
         qb_70: ┤ X ├

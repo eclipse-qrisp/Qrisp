@@ -283,7 +283,12 @@ class BaseMetric(ABC):
 # ``jax.pure_callback`` to prevent XLA from inlining it at every call site.
 # ---------------------------------------------------------------------------
 
-def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats: dict | None, callback_threshold: int | None) -> bool:
+
+def _should_use_profiling_callback(
+    jaxpr: Jaxpr | ClosedJaxpr,
+    call_graph_stats: dict | None,
+    callback_threshold: int | None,
+) -> bool:
     """
     Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
@@ -402,7 +407,9 @@ def get_compiled_profiler(
         return _profiler_cache[key]
 
     metric = metric_cls.from_cache_key(cache_key)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats, callback_threshold)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
+        metric, call_graph_stats, callback_threshold
+    )
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
 
     # Always JIT-compile the profiler.  When the caller decides to wrap
@@ -422,7 +429,9 @@ def get_compiled_profiler(
     return result
 
 
-def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, callback_threshold=None) -> Callable:
+def make_profiling_eqn_evaluator(
+    metric: BaseMetric, call_graph_stats=None, callback_threshold=None
+) -> Callable:
     """
     Build a profiling equation evaluator for a given metric.
 
@@ -441,7 +450,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
         Minimum value of ``call_count * inlined_eqn_count`` required to trigger
         ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
         entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
-        (fastest compilation). 
+        (fastest compilation).
 
     Returns
     -------
@@ -469,7 +478,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
-
             branch_fns = [
                 eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
                 for branch_jaxpr in eqn.params["branches"]
@@ -482,7 +490,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "while":
-
             body_jaxpr = eqn.params["body_jaxpr"]
             cond_jaxpr = eqn.params["cond_jaxpr"]
             body_nconsts = eqn.params["body_nconsts"]
@@ -512,7 +519,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "scan":
-
             # Reinterpret the scan body function
             scan_body = eval_jaxpr(
                 eqn.params["jaxpr"], eqn_evaluator=profiling_eqn_evaluator
@@ -584,7 +590,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "jit":
-
             # For qached functions, we want to make sure, the compiled function
             # contains only a single implementation per qached function.
 
@@ -615,10 +620,16 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
 
             sub_jaxpr = eqn.params["jaxpr"]
             profiler, jaxpr_evaluator = get_compiled_profiler(
-                sub_jaxpr, type(metric), metric.cache_key(), call_graph_stats, callback_threshold
+                sub_jaxpr,
+                type(metric),
+                metric.cache_key(),
+                call_graph_stats,
+                callback_threshold,
             )
 
-            if _should_use_profiling_callback(sub_jaxpr, call_graph_stats, callback_threshold):
+            if _should_use_profiling_callback(
+                sub_jaxpr, call_graph_stats, callback_threshold
+            ):
                 # Compute output shape spec for pure_callback.  We use the
                 # raw (un-jitted) evaluator + make_jaxpr to trace the shapes,
                 # since the profiling transform replaces quantum abstract

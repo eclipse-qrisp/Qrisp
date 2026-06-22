@@ -199,8 +199,7 @@ class JobResult:
 
     def __repr__(self) -> str:
         return (
-            f"JobResult(num_circuits={self.num_circuits}, "
-            f"metadata={self.metadata!r})"
+            f"JobResult(num_circuits={self.num_circuits}, metadata={self.metadata!r})"
         )
 
 

@@ -485,7 +485,9 @@ def test_callback_threshold_num_qubits():
     )
 
     # Very large threshold
-    result_large = num_qubits(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
+    result_large = num_qubits(meas_behavior="0", callback_threshold=10**9)(
+        make_circuit
+    )()
     assert result_large == baseline, (
         f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
     )
@@ -498,7 +500,12 @@ def test_callback_threshold_num_qubits():
     )
 
     # Verify the result dictionary has expected keys
-    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+    for key in (
+        "total_allocated",
+        "total_deallocated",
+        "peak_allocations",
+        "finally_allocated",
+    ):
         assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"
 
 
@@ -559,7 +566,12 @@ def test_callback_threshold_num_qubits_nested():
         f"  baseline={baseline}\n  got={result_1}"
     )
 
-    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+    for key in (
+        "total_allocated",
+        "total_deallocated",
+        "peak_allocations",
+        "finally_allocated",
+    ):
         assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"
 
 
@@ -602,5 +614,10 @@ def test_callback_threshold_num_qubits_jrange():
         f"  baseline={baseline}\n  got={result_500}"
     )
 
-    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+    for key in (
+        "total_allocated",
+        "total_deallocated",
+        "peak_allocations",
+        "finally_allocated",
+    ):
         assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"

@@ -95,7 +95,6 @@ def create_maxcut_cl_cost_function(G: nx.Graph) -> Callable[[dict], float]:
 
         int_list = []
         if not isinstance(counts_keys[0], str):
-
             for c_array in counts_keys:
                 integer = int("".join(list(c_array))[::-1], 2)
                 int_list.append(integer)

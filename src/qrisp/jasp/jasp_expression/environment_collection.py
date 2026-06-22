@@ -90,7 +90,6 @@ def collect_environments(closed_jaxpr):
         eqn = eqn_list[j]
 
         if eqn.primitive.name == "jit":
-
             new_params = dict(eqn.params)
 
             collected_jaspr = collect_environments(eqn.params["jaxpr"])
@@ -108,7 +107,6 @@ def collect_environments(closed_jaxpr):
             )
 
         if eqn.primitive.name == "cond":
-
             new_params = dict(eqn.params)
 
             branch_list = []
@@ -130,7 +128,6 @@ def collect_environments(closed_jaxpr):
             )
 
         if eqn.primitive.name == "while":
-
             new_params = dict(eqn.params)
 
             body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
@@ -149,7 +146,6 @@ def collect_environments(closed_jaxpr):
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
-
             # Find the position of the enter primitive.
             for i in range(len(new_eqn_list))[::-1]:
                 enter_eq = new_eqn_list[i]

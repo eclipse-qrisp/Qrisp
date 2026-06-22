@@ -440,7 +440,6 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-
             if exception_value:
                 raise exception_value
 

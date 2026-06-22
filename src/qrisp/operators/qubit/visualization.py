@@ -28,7 +28,6 @@ from sympy import Symbol
 
 
 class X_(Symbol):
-
     __slots__ = ("axis", "index")
 
     def __new__(cls, index):
@@ -40,7 +39,6 @@ class X_(Symbol):
 
 
 class Y_(Symbol):
-
     __slots__ = ("axis", "index")
 
     def __new__(cls, index):
@@ -52,7 +50,6 @@ class Y_(Symbol):
 
 
 class Z_(Symbol):
-
     __slots__ = ("axis", "index")
 
     def __new__(cls, index):

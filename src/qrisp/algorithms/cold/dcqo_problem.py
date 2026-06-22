@@ -205,8 +205,8 @@ class DCQOProblem:
         # Functions for t = g(lam) and derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            g = t_list                        # g(lam[s]) = t[s] by definition
-            g_deriv = 1.0 / lamdot            # dt/dlambda = 1 / (dlambda/dt)
+            g = t_list  # g(lam[s]) = t[s] by definition
+            g_deriv = 1.0 / lamdot  # dt/dlambda = 1 / (dlambda/dt)
 
             self.g = g
             self.g_deriv = g_deriv
@@ -291,7 +291,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
             # print(f"Alpha = {coeffs}")
@@ -355,7 +354,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
@@ -592,7 +590,7 @@ class DCQOProblem:
     ):
         """
         Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
-        evolution time and method. 
+        evolution time and method.
 
         There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
         If the user chooses a quantum backend this iterative optimization can potentially use a lot of computing time.

@@ -83,13 +83,11 @@ class ControlEnvironment(QuantumEnvironment):
             self.ctrl_state = str(ctrl_state)
 
         if check_for_tracing_mode():
-
             QuantumEnvironment.__init__(self, list(ctrl_qubits))
             if not isinstance(ctrl_qubits, list):
                 ctrl_qubits = [ctrl_qubits]
 
         else:
-
             if isinstance(ctrl_qubits, list):
                 self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
             else:
@@ -156,7 +154,6 @@ class ControlEnvironment(QuantumEnvironment):
                 self.parent_cond_env = env
                 break
             if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
-
                 if not type(env) == QuantumEnvironment:
                     break
 
@@ -179,7 +176,6 @@ class ControlEnvironment(QuantumEnvironment):
             cond_compile_ctrl_state = self.ctrl_state
 
             if self.parent_cond_env is not None:
-
                 # In the parent case we also need to make sure that the code is executed
                 # if the parent environment is executed. A possible approach would be
                 # to control the content on both, the parent and the chield truth value.
@@ -226,7 +222,6 @@ class ControlEnvironment(QuantumEnvironment):
                 cond_compile_ctrl_state = cond_compile_ctrl_state + parent_ctrl_state
 
             if len(ctrl_qubits) > 1:
-
                 if len(ctrl_qubits) > 5:
                     method = "auto"
                 else:
@@ -328,7 +323,6 @@ class ControlEnvironment(QuantumEnvironment):
                     ctrl_state = "1"
 
                 if self.invert:
-
                     new_ctrl_state = ""
                     for c in ctrl_state:
                         if c == "1":
@@ -369,7 +363,6 @@ class ControlEnvironment(QuantumEnvironment):
                 x(self.condition_truth_value)
 
             if len(ctrl_qubits) > 1:
-
                 if len(ctrl_qubits) > 5:
                     method = "auto"
                 else:
@@ -453,7 +446,6 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
 
     # Iterate through the data
     for def_instr in instruction.op.definition.data:
-
         if new_control_qubit in def_instr.qubits:
             # If the instruction is targeting the control qubit, we call the function
             # recursively to make sure that we are indeed appending a custom_control

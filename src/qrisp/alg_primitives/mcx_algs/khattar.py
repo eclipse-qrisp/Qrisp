@@ -183,7 +183,6 @@ def khattar_mcx(ctrls, target, ctrl_state):
     ctrl_state = cond(ctrl_state == -1, lambda x: x + 2**N, lambda x: x, ctrl_state)
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
-
         if isinstance(ctrls, list):
             if N == 1:
                 cx(ctrls[0], target[0])
@@ -248,7 +247,6 @@ def khattar_mcp(phi, ctrls, ctrl_state):
     target = QuantumFloat(1)
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
-
         with control(N == 1):
             p(phi, ctrls[0])
 

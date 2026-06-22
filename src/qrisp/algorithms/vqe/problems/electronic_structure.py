@@ -117,7 +117,6 @@ def spacial_to_spin(one_int, two_int):
 
     for i in range(num_spacial_orbs):
         for j in range(num_spacial_orbs):
-
             one_int_spin[2 * i][2 * j] = one_int[i][j]
 
             one_int_spin[2 * i + 1][2 * j + 1] = one_int[i][j]
@@ -131,7 +130,6 @@ def spacial_to_spin(one_int, two_int):
         for j in range(num_spacial_orbs):
             for k in range(num_spacial_orbs):
                 for l in range(num_spacial_orbs):
-
                     two_int_spin[2 * i][2 * j + 1][2 * k + 1][2 * l] = two_int[i][j][k][
                         l
                     ]

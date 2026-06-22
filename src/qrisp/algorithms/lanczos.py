@@ -617,7 +617,6 @@ def lanczos_alg(
     ground_state_energy = jnp.min(eigvals) * BE.alpha
 
     if show_info:
-
         results = {
             "energy": ground_state_energy,
             "eigvals": eigvals,
@@ -631,5 +630,4 @@ def lanczos_alg(
         return ground_state_energy, results
 
     else:
-
         return ground_state_energy

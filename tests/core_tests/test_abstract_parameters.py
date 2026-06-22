@@ -77,7 +77,7 @@ def test_abstract_parameters():
 
     for i in range(n):
         qc.cx(i, i + 1)
-        qc.p(parameter_list[i]**(i%10), i)
+        qc.p(parameter_list[i] ** (i % 10), i)
 
     m = 100
 
@@ -91,7 +91,7 @@ def test_abstract_parameters():
         )
 
     duration = time.time() - start_time
-    print("Took " + str(duration/m) + " per binding iteration")
+    print("Took " + str(duration / m) + " per binding iteration")
 
     # Test the fix for https://github.com/eclipse-qrisp/Qrisp/issues/540
     phi = Symbol("phi")

@@ -180,7 +180,6 @@ def _process_qrisp_circuit(
             continue
 
         with qml.QueuingManager.stop_recording():
-
             qml_op = qml_gate_desc.gate_class(*qml_params, wires=targets)
 
             if is_inverse:

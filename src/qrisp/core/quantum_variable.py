@@ -559,7 +559,6 @@ class QuantumVariable:
         # Register duplicate variable in session
 
         if name is not None:
-
             if name[-1] == "*":
                 self.user_given_name = False
                 name = name[:-1]
@@ -904,7 +903,6 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -913,7 +911,6 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-
             if position == -1:
                 position = self.size
 
@@ -1008,7 +1005,7 @@ class QuantumVariable:
         plot : Bool, optional
             Plots the measurement results as a historgram. The default is False.
         backend : BackendLike, optional
-            The backend on which to evaluate the quantum circuit. 
+            The backend on which to evaluate the quantum circuit.
             The default can be specified in the file default_backend.py.
         shots : integer, optional
             The amount of shots to evaluate the circuit. The default is given by the backend it runs on.
@@ -1087,7 +1084,9 @@ class QuantumVariable:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
+            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
+                combine_single_qubit_gates,
+            )
 
             qc = combine_single_qubit_gates(qc)
 

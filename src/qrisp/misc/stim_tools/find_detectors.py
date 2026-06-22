@@ -137,7 +137,9 @@ def _prepare_for_tqecd(stim_circ):
         key = (
             "R"
             if inst.name in _RESET_OPS
-            else "M" if inst.name in _MEASUREMENT_OPS else "G"
+            else "M"
+            if inst.name in _MEASUREMENT_OPS
+            else "G"
         )
         cur[key].append(inst)
     if cur["M"]:

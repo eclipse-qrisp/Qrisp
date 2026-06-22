@@ -331,11 +331,9 @@ class QuantumSession(QuantumCircuit):
             )
 
         if verify:
-
             if len(self.env_stack):
                 verification_qc = self.copy()
             else:
-
                 # In the case the qubits have been uncomputed automatically,
                 # the uncomputation algorithm already appended the deallocation
                 # instructions. In order to compile the QuantumSession without
@@ -464,7 +462,6 @@ class QuantumSession(QuantumCircuit):
             qubits[0].allocated = True
 
         if self.xla_mode >= 3:
-
             self.data.append(Instruction(operation, qubits, clbits))
 
             if operation.name == "qb_dealloc":

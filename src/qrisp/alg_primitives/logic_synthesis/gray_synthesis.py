@@ -428,7 +428,6 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
 
 
 class GraySynthGate(Operation):
-
     def __init__(self, target_phases, phase_tolerant=False):
 
         definition = gray_synth_qc(target_phases, phase_tolerant)

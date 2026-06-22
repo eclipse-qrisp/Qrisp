@@ -110,7 +110,6 @@ def get_jasp_measurement(
     shots_list = [N * s for s in stds]
 
     for index, group in enumerate(groups):
-
         # Calculate the new measurement operators (after change of basis)
         meas_op = group.change_of_basis(method=diagonalisation_method)
 

@@ -66,7 +66,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
     with fast_append(2):
-
         qc = qc.transpile()
 
         # Count the amount of measurements (we can stop the simulation after all
@@ -146,7 +145,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
             # If the operation is unitary, we apply this unitary on to the required
             # qubit indices
             else:
-
                 iqs.apply_operation(instr.op, qubit_indices)
 
             # If all measurements have been performed, break
@@ -179,9 +177,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
         # If shots >= 1000000, no samples will be drawn and the distribution will
         # be returned instead
         if shots is None:
-
             for j in range(len(outcome_list)):
-
                 outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
 
                 p = float(cl_prob[j])
@@ -220,7 +216,6 @@ def gen_res_dict(samples):
     temp = {}
 
     for i in range(len(hist)):
-
         if hist[i] != 0:
             temp[i] = hist[i]
 
@@ -424,7 +419,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
     allocation_amount = 0
 
     for instr in qc.data:
-
         if instr.op.name == "qb_dealloc":
             allocated_qubits -= 1
             deallocated_qubits.append(instr.qubits[0])
@@ -435,7 +429,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
                 max_req_qubits += 1
 
     progress_bar = tqdm(
-        desc=f"Simulating {max_req_qubits-allocation_amount} qubits..",
+        desc=f"Simulating {max_req_qubits - allocation_amount} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
         ncols=min(85, shutil.get_terminal_size().columns),
         leave=False,
@@ -469,7 +463,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         #     qubit_to_index_dic[qc.qubits[i]] = i
 
         for i in range(len(qc.data)):
-
             # Set alias for the instruction of this operation
             instr = qc.data[i]
 

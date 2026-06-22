@@ -1066,7 +1066,6 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
     bit_shift = 0
 
     if int(mult_int) != mult_int:
-
         c = abs(mult_int)
 
         for i in range(32):
@@ -1107,7 +1106,6 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
     from qrisp import cyclic_shift, control, QuantumFloat
 
     if isinstance(bit_shift, QuantumFloat):
-
         if bit_shift.signed or qf.signed:
             raise Exception(
                 "Quantum-quantum bitshifting is currently only supported for unsigned arguments"
@@ -1120,9 +1118,7 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
         return
 
     if treat_overflow:
-
         if bit_shift > 0:
-
             if qf.signed:
                 qf.extend(bit_shift, position=qf.size - 1)
             else:

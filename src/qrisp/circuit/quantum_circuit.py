@@ -2428,7 +2428,6 @@ class QuantumCircuit:
 
         """
         if clbits is None:
-
             if isinstance(qubits, (Qubit, int)):
                 # For single-qubit measurement,
                 # we allocate exactly one classical bit.

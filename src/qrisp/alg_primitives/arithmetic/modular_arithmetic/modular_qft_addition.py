@@ -74,7 +74,6 @@ def beauregard_adder(a, b, modulus):
     a = list(a) + [sign[0]]
 
     with conjugate(QFT)(a, exec_swap=False):
-
         qft_basis_adder(b, a)
 
         with invert():

@@ -147,7 +147,6 @@ class IterationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if set(self.env_qs.qv_list) != self.inital_qvs and self.iteration_amount > 1:
-
             if exception_value is None:
                 raise Exception(
                     "Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables"
@@ -170,7 +169,6 @@ class IterationEnvironment(QuantumEnvironment):
         # This comes at the cost that the allocation algorithm might find better
         # ways if it has insight into the internal allocation structure.
         if self.precompile:
-
             # Compile the quantum environment to retrieve the compiled data
             QuantumEnvironment.compile(self)
 
@@ -252,7 +250,6 @@ class IterationEnvironment(QuantumEnvironment):
 
         # The non-precompiled case is much simpler
         else:
-
             QuantumEnvironment.compile(self)
 
             compiled_data = list(self.env_qs.data)

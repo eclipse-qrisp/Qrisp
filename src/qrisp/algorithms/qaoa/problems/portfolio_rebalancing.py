@@ -56,7 +56,6 @@ def portfolio_cost_operator(problem):
         for i in range(len(s)):
             prefac = 0
             for j in range(len(s)):
-
                 prefac = gamma * covar_matrix[i][j] / 4 * risk_return
                 rzz(-prefac, l[i], s[j])
                 rzz(-prefac, s[i], l[j])
@@ -117,7 +116,6 @@ def portfolio_cl_cost_function(problem):
 
         key_list = []
         for key, val in res.items():
-
             # half = len(key)/2
             # new_key = [int(key[i])-int(key[i+half]) for i in range(half)]
             new_key = [int(key[0][i]) - int(key[1][i]) for i in range(half)]  # ??????

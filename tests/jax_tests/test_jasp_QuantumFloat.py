@@ -16,26 +16,44 @@
 ********************************************************************************
 """
 
+
 def test_jasp_QuantumFloat():
 
-    # Test decoder for QuantumFloat (Issue #271) 
+    # Test decoder for QuantumFloat (Issue #271)
     from qrisp import QuantumFloat, h
     from qrisp.jasp import terminal_sampling, qache, make_jaspr
 
     @terminal_sampling
     def main():
-        a = QuantumFloat(3, -2, signed = True) 
+        a = QuantumFloat(3, -2, signed=True)
 
         h(a)
 
         return a
-    
+
     res = main()
-    assert res == {-2.0: 0.0625, -1.75: 0.0625, -1.5: 0.0625, -1.25: 0.0625, -1.0: 0.0625, -0.75: 0.0625, -0.5: 0.0625, -0.25: 0.0625, 0.0: 0.0625, 0.25: 0.0625, 0.5: 0.0625, 0.75: 0.0625, 1.0: 0.0625, 1.25: 0.0625, 1.5: 0.0625, 1.75: 0.0625}
-    
-    # Test that the signed attribute behaves statically and the exponent 
+    assert res == {
+        -2.0: 0.0625,
+        -1.75: 0.0625,
+        -1.5: 0.0625,
+        -1.25: 0.0625,
+        -1.0: 0.0625,
+        -0.75: 0.0625,
+        -0.5: 0.0625,
+        -0.25: 0.0625,
+        0.0: 0.0625,
+        0.25: 0.0625,
+        0.5: 0.0625,
+        0.75: 0.0625,
+        1.0: 0.0625,
+        1.25: 0.0625,
+        1.5: 0.0625,
+        1.75: 0.0625,
+    }
+
+    # Test that the signed attribute behaves statically and the exponent
     # attribute dynamically.
-    
+
     @qache
     def inner(qf):
         assert isinstance(qf.signed, bool)
@@ -44,14 +62,12 @@ def test_jasp_QuantumFloat():
 
     @make_jaspr
     def main():
-        a = QuantumFloat(3, -1, signed = True)
+        a = QuantumFloat(3, -1, signed=True)
         inner(a)
         inner(a)
-        b = QuantumFloat(3, -1, signed = False)
+        b = QuantumFloat(3, -1, signed=False)
         inner(b)
         inner(b)
 
         assert a.signed == True
         assert b.signed == False
-
-

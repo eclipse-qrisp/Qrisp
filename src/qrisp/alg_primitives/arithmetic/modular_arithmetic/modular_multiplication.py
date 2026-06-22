@@ -107,7 +107,6 @@ def QREDC(t, N, m):
 
     # Perform the loop of the Montgomery reduction
     for k in range(m):
-
         # Set the alias similar to the classical version
         temp = S[0]
 
@@ -177,7 +176,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
         # Perform the uncomputation as described in the paper
         for k in range(len(a)):
             with control(a[k]):
-                t.inpl_adder(-((2**k * b)) * modinv(N, 2 ** (m + 1)), u)
+                t.inpl_adder(-(2**k * b) * modinv(N, 2 ** (m + 1)), u)
 
     if permeable_if_zero:
         # cx(t[0], u[-1])
@@ -323,7 +322,6 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
         return a
 
     with fast_append(2):
-
         # Create the temporary value
         tmp = a.duplicate(qs=a.qs)
 

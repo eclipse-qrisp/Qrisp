@@ -216,7 +216,11 @@ def boolean_simulation(
     # Handle both @boolean_simulation and @boolean_simulation(...) syntax
     if len(func) == 0:
         # Called with arguments: @boolean_simulation(bit_array_padding=...)
-        return lambda x: boolean_simulation(x, bit_array_padding=bit_array_padding, callback_threshold=callback_threshold)
+        return lambda x: boolean_simulation(
+            x,
+            bit_array_padding=bit_array_padding,
+            callback_threshold=callback_threshold,
+        )
     else:
         # Called without arguments: @boolean_simulation
         func = func[0]

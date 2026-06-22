@@ -173,7 +173,6 @@ def custom_control(*func, **cusc_kwargs):
     def adaptive_control_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
-
             from qrisp.core import recursive_qs_search
             from qrisp import (
                 merge,
@@ -241,7 +240,6 @@ def custom_control(*func, **cusc_kwargs):
                     res = func(*args, ctrl=control_qb, **kwargs)
 
         else:
-
             args = list(args)
             for i in range(len(args)):
                 if isinstance(args[i], bool):
@@ -296,7 +294,6 @@ def custom_control(*func, **cusc_kwargs):
 
 
 class CustomControlEnvironment(QuantumEnvironment):
-
     def __init__(self, control_qb, name):
 
         self.control_qb = control_qb
@@ -318,7 +315,6 @@ class CustomControlEnvironment(QuantumEnvironment):
         self.env_qs.data = []
 
         for instr in temp:
-
             if instr.op.name in ["qb_alloc", "qb_dealloc"]:
                 self.env_qs.append(instr)
             elif self.control_qb in instr.qubits:
@@ -334,7 +330,6 @@ class CustomControlEnvironment(QuantumEnvironment):
 
 
 class CustomControlOperation(Operation):
-
     def __init__(self, init_op, targeting_control=False):
 
         self.targeting_control = targeting_control
@@ -362,7 +357,6 @@ class CustomControlOperation(Operation):
 
             self.is_qfree = init_op.is_qfree
         else:
-
             definition = QuantumCircuit(init_op.num_qubits, init_op.num_clbits)
             definition.append(init_op, definition.qubits, definition.clbits)
 

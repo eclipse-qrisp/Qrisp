@@ -261,7 +261,6 @@ class VQEProblem:
         """
 
         if check_for_tracing_mode():
-
             # Define optimization wrapper function to be minimized using VQE
             def optimization_wrapper(theta, state_prep, mes_kwargs):
                 """
@@ -294,7 +293,6 @@ class VQEProblem:
                 return expectation
 
         else:
-
             # Define optimization wrapper function to be minimized using VQE
             def optimization_wrapper(
                 theta, state_prep, mes_kwargs, compiled_qc, symbols, measurement_data
@@ -342,7 +340,6 @@ class VQEProblem:
 
         # Initialization for optimization parameters
         if init_point is None:
-
             if init_type == "random":
                 # Random optimization parameters
                 if check_for_tracing_mode():
@@ -377,7 +374,6 @@ class VQEProblem:
 
         # Perform optimization using specified method
         if check_for_tracing_mode():
-
             res_sample = jasp_minimize(
                 optimization_wrapper,
                 init_point,
@@ -392,7 +388,6 @@ class VQEProblem:
             return res_sample.x, res_sample.fun
 
         else:
-
             compiled_qc, symbols = self.compile_circuit(qarg_prep(), depth)
 
             res_sample = minimize(
@@ -476,11 +471,9 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-
             measurement_data = None
 
         else:
-
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
                 diagonalisation_method=mes_kwargs["diagonalisation_method"],
@@ -566,11 +559,9 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-
             measurement_data = None
 
         else:
-
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
                 diagonalisation_method=mes_kwargs["diagonalisation_method"],
@@ -707,7 +698,6 @@ class VQEProblem:
             for s in precision_range:
                 for it in iter_range:
                     for k in range(repetitions):
-
                         start_time = time.time()
 
                         temp_mes_kwargs = dict(mes_kwargs)

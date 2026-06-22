@@ -170,7 +170,6 @@ class NumQubitsMetric(BaseMetric):
             context_dic["_meas_number"] = meas_number + invalues[0]
 
         else:  # measuring a single qubit
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             context_dic["_meas_number"] = meas_number + jnp.int32(1)
@@ -260,7 +259,7 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
         )
 
     alloc_dict = {
-        f"alloc{i+1}": int(allocations_array[i])
+        f"alloc{i + 1}": int(allocations_array[i])
         for i in range(int(allocations_counter_index))
     }
     dict_values = alloc_dict.values()
@@ -321,7 +320,9 @@ def get_num_qubits_profiler(
     # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
     # to avoid XLA compilation blowup (see profiling_interpreter.py).
     _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric, call_graph_stats, callback_threshold)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
+        num_qubits_metric, call_graph_stats, callback_threshold
+    )
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def num_qubits_profiler(*args):

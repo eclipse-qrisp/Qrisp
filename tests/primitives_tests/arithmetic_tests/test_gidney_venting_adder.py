@@ -986,11 +986,11 @@ def test_terminal_dirty_adder():
 def _ts_cq_gidney_roundtrip(n):
     """Check gidney_cq_venting_adder and gidney_adder cancel in superposition."""
     target = QuantumFloat(n)  # defaults to encoding 0
-    h(target)                 # |0⟩ → |+⟩⊗ⁿ
-    gidney_cq_venting_adder(1, target)   # add 1
+    h(target)  # |0⟩ → |+⟩⊗ⁿ
+    gidney_cq_venting_adder(1, target)  # add 1
     with invert():
-        gidney_adder(1, target)          # subtract 1
-    h(target)                             # |+⟩⊗ⁿ → |0⟩⊗ⁿ
+        gidney_adder(1, target)  # subtract 1
+    h(target)  # |+⟩⊗ⁿ → |0⟩⊗ⁿ
     return target
 
 

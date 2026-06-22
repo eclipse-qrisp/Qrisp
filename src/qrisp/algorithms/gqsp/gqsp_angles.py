@@ -275,10 +275,10 @@ def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
         Always raised until the XQSP convention is mathematically verified.
     """
     raise NotImplementedError(
-            "The XQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #return jnp.arctan(-jnp.imag(F))
+        "The XQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # return jnp.arctan(-jnp.imag(F))
 
 
 @jax.jit
@@ -302,10 +302,10 @@ def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
         Always raised until the YQSP convention is mathematically verified.
     """
     raise NotImplementedError(
-            "The YQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #return jnp.arctan(jnp.real(F))
+        "The YQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # return jnp.arctan(jnp.real(F))
 
 
 def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
@@ -378,7 +378,7 @@ def gqsp_angles(p: "ArrayLike") -> tuple[tuple[Array, Array, Array], Array]:
     return (theta, phi, lambda_), alpha
 
 
-# https://arxiv.org/pdf/2503.03026 
+# https://arxiv.org/pdf/2503.03026
 # Not verified to be correct.
 def xqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
     r"""
@@ -407,15 +407,15 @@ def xqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
 
     """
     raise NotImplementedError(
-            "The XQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #F, alpha = poly_to_nlft_sequence(p)
-    #phi = _xqsp_angles_from_nlft_sequence(F)
-    #return phi, alpha
+        "The XQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # F, alpha = poly_to_nlft_sequence(p)
+    # phi = _xqsp_angles_from_nlft_sequence(F)
+    # return phi, alpha
 
 
-# https://arxiv.org/pdf/2503.03026 
+# https://arxiv.org/pdf/2503.03026
 # Not verified to be correct.
 def yqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
     r"""
@@ -444,12 +444,12 @@ def yqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
 
     """
     raise NotImplementedError(
-            "The YQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #F, alpha = poly_to_nlft_sequence(p)
-    #phi = _yqsp_angles_from_nlft_sequence(F)
-    #return phi, alpha
+        "The YQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # F, alpha = poly_to_nlft_sequence(p)
+    # phi = _yqsp_angles_from_nlft_sequence(F)
+    # return phi, alpha
 
 
 def laurent_to_analytic_coeffs(
@@ -559,7 +559,9 @@ def qsp_angles(
     return phi, alpha
 
 
-def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> tuple[Array, Array]:
+def qsvt_angles(
+    p: "ArrayLike", parity: Literal["even", "odd"] = "odd"
+) -> tuple[Array, Array]:
     r"""
     Computes the QSVT angles for a given polynomial.
 

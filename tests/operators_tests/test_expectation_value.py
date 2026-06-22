@@ -23,29 +23,59 @@ from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.operators import X, Y, Z, A, C, P0, P1
 
 
-def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
-    
+def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
+
     non_sampling_backend = QrispSimulatorBackend()
 
     def testing_helper(state_prep, operator_combinations):
         for H in operator_combinations:
             if isinstance(H, int):
                 continue
-            
+
             print(H)
-            assert abs(H.expectation_value(state_prep, precision=0.0005, backend = non_sampling_backend)() - 
-                       H.to_pauli().expectation_value(state_prep, precision=0.0005, backend = non_sampling_backend)()) < 1E-1
-            assert abs(H.expectation_value(state_prep, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend)() - 
-                       H.to_pauli().expectation_value(state_prep, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend)()) < 1E-1
-            
-            # Jasp tests 
+            assert (
+                abs(
+                    H.expectation_value(
+                        state_prep, precision=0.0005, backend=non_sampling_backend
+                    )()
+                    - H.to_pauli().expectation_value(
+                        state_prep, precision=0.0005, backend=non_sampling_backend
+                    )()
+                )
+                < 1e-1
+            )
+            assert (
+                abs(
+                    H.expectation_value(
+                        state_prep,
+                        precision=0.0005,
+                        diagonalisation_method="commuting",
+                        backend=non_sampling_backend,
+                    )()
+                    - H.to_pauli().expectation_value(
+                        state_prep,
+                        precision=0.0005,
+                        diagonalisation_method="commuting",
+                        backend=non_sampling_backend,
+                    )()
+                )
+                < 1e-1
+            )
+
+            # Jasp tests
             @jaspify(terminal_sampling=True)
             def main():
                 return H.expectation_value(state_prep, precision=0.01)()
 
-            assert abs(main() - H.expectation_value(state_prep, precision=0.01, backend = non_sampling_backend)()) < 1E-1
+            assert (
+                abs(
+                    main()
+                    - H.expectation_value(
+                        state_prep, precision=0.01, backend=non_sampling_backend
+                    )()
+                )
+                < 1e-1
+            )
 
     # Set the random seed for reproducibility
     random.seed(seed)
@@ -55,26 +85,31 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
 
     # Generate all possible combinations of operators
     all_combinations = []
-    
+
     if exhaustive:
         for op1 in operator_list:
             for op2 in operator_list:
                 for op3 in operator_list:
                     for op4 in operator_list:
-                        
-                        H = op1(0)*op2(1)*op3(2)*op4(3)
-                        
+                        H = op1(0) * op2(1) * op3(2) * op4(3)
+
                         if H == 1:
                             continue
-                        
+
                         all_combinations.append(H)
     else:
         for _ in range(sample_size):
-            combination = [random.choice(operator_list) for _ in range(4)]  # Choose 4 operators
-            H = combination[0](0) * combination[1](1) * combination[2](2) * combination[3](3)
+            combination = [
+                random.choice(operator_list) for _ in range(4)
+            ]  # Choose 4 operators
+            H = (
+                combination[0](0)
+                * combination[1](1)
+                * combination[2](2)
+                * combination[3](3)
+            )
             all_combinations.append(H)
 
-   
     def state_prep():
         qv = QuantumFloat(4)
         return qv
@@ -109,17 +144,17 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
 
 def test_expectation_value_issue_165():
     """Test the expectation value method for the specific case of issue #165."""
-        
+
     def state_prep():
         qv = QuantumVariable(4)
         x(qv[0])
         x(qv[1])
         return qv
 
-    H = A(0)*C(1)*C(2)*A(3) + P1(0)*P1(2) + P1(1)*P1(3)
+    H = A(0) * C(1) * C(2) * A(3) + P1(0) * P1(2) + P1(1) * P1(3)
 
-    assert H.expectation_value(state_prep, diagonalisation_method='commuting')() == 0
-    assert H.expectation_value(state_prep, diagonalisation_method='commuting_qw')() == 0
+    assert H.expectation_value(state_prep, diagonalisation_method="commuting")() == 0
+    assert H.expectation_value(state_prep, diagonalisation_method="commuting_qw")() == 0
 
 
 def test_expectation_value_batched_backend():
@@ -133,8 +168,8 @@ def test_expectation_value_batched_backend():
         f = d + e
         return f
 
-    H = Z(0)*Z(1)*Z(2)*Z(3) + X(0)*X(1)*X(2)*X(3)
+    H = Z(0) * Z(1) * Z(2) * Z(3) + X(0) * X(1) * X(2) * X(3)
 
     bb = QrispSimulatorBackend().batched()
 
-    ev = H.expectation_value(state_prep, backend = bb)()
+    ev = H.expectation_value(state_prep, backend=bb)()

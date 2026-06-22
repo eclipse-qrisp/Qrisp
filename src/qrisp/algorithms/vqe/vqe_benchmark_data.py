@@ -160,14 +160,12 @@ class VQEBenchmark:
         """
 
         if isinstance(cost_metric, str):
-
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
             else:
                 raise Exception(f"Cost metric {cost_metric} is unknown")
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
                 gain_metric = lambda x: approximation_ratio(
                     x["energy"], self.optimal_energy
@@ -179,7 +177,6 @@ class VQEBenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -316,7 +313,6 @@ class VQEBenchmark:
         """
 
         if isinstance(metric, str):
-
             if metric == "approx_ratio":
 
                 def approx_ratio(x):
@@ -331,7 +327,6 @@ class VQEBenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -421,7 +416,6 @@ class VQEBenchmark:
         )
 
         for i, run_data in enumerate(run_data_list):
-
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
 

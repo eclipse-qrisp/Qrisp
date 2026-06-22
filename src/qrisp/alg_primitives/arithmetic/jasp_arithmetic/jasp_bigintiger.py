@@ -72,8 +72,9 @@ class BigInteger:
             return lax.fori_loop(
                 0,
                 self.digits.shape[0],
-                lambda i, val: jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i)
-                + val,
+                lambda i, val: (
+                    jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i) + val
+                ),
                 0.0,
             )
         else:
@@ -138,7 +139,7 @@ class BigInteger:
         """
         if n < 0:
             raise ValueError(f"Input must be non-negative, got {n}.")
-    
+
         digits = []
         for i in range(size):
             digits.append(n % BASE)

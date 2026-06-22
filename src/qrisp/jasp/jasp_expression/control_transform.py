@@ -118,7 +118,6 @@ def control_eqn(eqn, ctrl_qubit_var):
     from qrisp.jasp import Jaspr, AbstractQuantumState
 
     if eqn.primitive.name == "jit":
-
         new_params = dict(eqn.params)
 
         invars = list(eqn.invars)
@@ -147,7 +146,6 @@ def control_eqn(eqn, ctrl_qubit_var):
         )
 
     elif eqn.primitive.name == "while":
-
         new_params = dict(eqn.params)
 
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
@@ -157,7 +155,6 @@ def control_eqn(eqn, ctrl_qubit_var):
         if isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumState) and isinstance(
             body_jaxpr.outvars[-1].aval, AbstractQuantumState
         ):
-
             # Generate controlled body jaxpr
             new_params["body_jaxpr"] = control_jaspr(Jaspr(eqn.params["body_jaxpr"]))
             new_invars.insert(eqn.params["cond_nconsts"], ctrl_qubit_var)
@@ -193,7 +190,6 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         return temp
     elif eqn.primitive.name == "cond":
-
         new_params = dict(eqn.params)
 
         if isinstance(eqn.invars[-1].aval, AbstractQuantumState) and isinstance(
@@ -341,7 +337,6 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
         from qrisp.circuit import XGate
 
         if num_ctrls == 1:
-
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls)
             temp = controlled_jaspr.embedd(*args, inline=True)
@@ -350,7 +345,6 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
             return temp
 
         else:
-
             from qrisp import QuantumBool
 
             mcx_operation = XGate().control(num_ctrls, ctrl_state=ctrl_state)

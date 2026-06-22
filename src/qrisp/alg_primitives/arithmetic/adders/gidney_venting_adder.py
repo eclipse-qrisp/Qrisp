@@ -858,9 +858,13 @@ def gidney_cq_venting_adder(
         # target[n_half:] is the top half with clean0 as carry-in.
         # target[:max(1, n-n_half-2)] are borrowed as dirty workspace.
         dirty_ancillae_adder(
-            d_hi, target[n_half:],
+            d_hi,
+            target[n_half:],
             dirty_ancillas=target[: jnp.maximum(1, jlen(target) - n_half - 2)],
-            ancilla=clean_anc[1:], c_in=clean0, ctrl=ctrl, c_out=c_out,
+            ancilla=clean_anc[1:],
+            c_in=clean0,
+            ctrl=ctrl,
+            c_out=c_out,
         )
 
         # Step 5: MX measurement on clean0 (X-basis: H then Z-measurement).

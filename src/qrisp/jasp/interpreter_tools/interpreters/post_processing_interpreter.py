@@ -2,7 +2,7 @@
 Post-processing extraction for Jaspr objects.
 
 This module provides functionality to extract the post-processing logic from a Jaspr object
-and convert it into a function that can be applied to measurement results from a 
+and convert it into a function that can be applied to measurement results from a
 quantum backend.
 
 The key function is `extract_post_processing(jaspr, *args)` which:
@@ -274,7 +274,6 @@ def extract_post_processing(jaspr, *args):
             # We use LRU caching to ensure identical jaxprs use the same function instance,
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
-
                 closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
                 if closed_jaxpr is None:
                     return False
@@ -301,7 +300,6 @@ def extract_post_processing(jaspr, *args):
 
             # Handle while loops
             if eqn.primitive.name == "while":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
@@ -345,7 +343,6 @@ def extract_post_processing(jaspr, *args):
 
             # Handle conditional (cond/switch)
             if eqn.primitive.name == "cond":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
@@ -367,7 +364,6 @@ def extract_post_processing(jaspr, *args):
 
             # Handle scan/map loops
             if eqn.primitive.name == "scan":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)

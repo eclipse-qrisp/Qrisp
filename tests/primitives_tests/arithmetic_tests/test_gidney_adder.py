@@ -1038,7 +1038,6 @@ def test_gidney_adder_invalid_binary_string_dynamic():
         main()
 
 
-
 @pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 5, 10)])
 def test_gidney_adder_classical_a_cin_dynamic(n_bits, a_val, b_val):
     """Classical a + c_in in dynamic mode."""

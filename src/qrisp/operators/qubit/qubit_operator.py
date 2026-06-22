@@ -605,10 +605,8 @@ class QubitOperator(Hamiltonian):
         H = 0
 
         for pauli_indicator_tuple in product(range(4), repeat=n):
-
             temp_H = 1
             for i in range(n):
-
                 if pauli_indicator_tuple[i] == 1:
                     temp_H = X(i) * temp_H
                 if pauli_indicator_tuple[i] == 2:
@@ -856,7 +854,7 @@ class QubitOperator(Hamiltonian):
     def _to_pauli_dict(self) -> dict:
         r"""
         Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
-        
+
         The operator is first converted to Pauli form using :meth:`to_pauli`.
         Each dictionary key represents one Pauli string as a tuple of
         ``(index, pauli)`` pairs, sorted by qubit index. The corresponding value is
@@ -872,7 +870,7 @@ class QubitOperator(Hamiltonian):
             The keys have the form
             ::
                 ((int, str), (int, str), ...)
-       
+
             where the integer is the qubit index and the string is one of
             ``"X"``, ``"Y"``, or ``"Z"``.
 
@@ -1029,7 +1027,6 @@ class QubitOperator(Hamiltonian):
         )
 
         for term, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
@@ -1078,7 +1075,6 @@ class QubitOperator(Hamiltonian):
         bases = []  # Bases as termTerms
 
         if use_graph_coloring:
-
             term_groups = group_up_iterable(
                 list(self.terms_dict.keys()), lambda a, b: a.commute_qw(b)
             )
@@ -1107,7 +1103,6 @@ class QubitOperator(Hamiltonian):
         )
 
         for term, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 n = len(groups)
@@ -1229,7 +1224,6 @@ class QubitOperator(Hamiltonian):
 
             # We iterate through the terms and apply the appropriate basis transformation
             for term, coeff in self.terms_dict.items():
-
                 factor_dict = term.factor_dict
                 # This dictionary will contain the factors of the new term
                 new_factor_dict = {}
@@ -1240,7 +1234,6 @@ class QubitOperator(Hamiltonian):
                 prefactors.append(prefactor)
 
                 for j in range(n):
-
                     # If there is no entry in the factor dict, this corresponds to
                     # identity => no basis change required.
                     if j not in factor_dict:
@@ -1272,7 +1265,6 @@ class QubitOperator(Hamiltonian):
                     new_factor_dict[j] = "Z"
 
         if method == "commuting":
-
             # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
             x_vectors = []
             z_vectors = []
@@ -1342,7 +1334,6 @@ class QubitOperator(Hamiltonian):
                 A_low = np.tril(A)
 
                 for index, z_vector in enumerate(R_inv.T):
-
                     # Determine the sign of the product of the selected graph state stabilizers:
                     #
                     # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
@@ -1371,7 +1362,6 @@ class QubitOperator(Hamiltonian):
 
         # Ladder operators
         for term, coeff in self.terms_dict.items():
-
             prefactor = prefactors.pop(0)
             new_factor_dict = new_factor_dicts.pop(0)
 
@@ -1382,7 +1372,6 @@ class QubitOperator(Hamiltonian):
             ladder_operators.sort(key=lambda x: x[0])
 
             if len(ladder_operators):
-
                 # The anchor factor is the "last" ladder operator.
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
@@ -1394,7 +1383,6 @@ class QubitOperator(Hamiltonian):
 
                 # Perform the cnot gates
                 for j in range(len(ladder_operators) - 1):
-
                     if anchor_factor[1] == "C":
                         if ladder_operators[j][1] == "A":
                             new_factor_dict[ladder_operators[j][0]] = "P1"
@@ -1414,7 +1402,6 @@ class QubitOperator(Hamiltonian):
                             )
                         break
                 else:
-
                     # Perform the cnot gates
                     if qarg is not None:
                         for j in range(len(ladder_operators) - 1):
@@ -1517,10 +1504,8 @@ class QubitOperator(Hamiltonian):
 
         # We iterate through the terms and apply the appropriate basis transformation
         for term, coeff in self.terms_dict.items():
-
             factor_dict = term.factor_dict
             for j in range(n):
-
                 # If there is no entry in the factor dict, this corresponds to
                 # identity => no basis change required.
                 if j not in factor_dict:
@@ -1551,7 +1536,6 @@ class QubitOperator(Hamiltonian):
             ]
 
             if len(ladder_operators):
-
                 # The anchor factor is the "last" ladder operator.
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
@@ -1620,7 +1604,6 @@ class QubitOperator(Hamiltonian):
         alpha_n = 1 - 1 / (2**n + 1)
 
         return var * alpha_n
-
 
     def expectation_value(
         self,
@@ -1777,18 +1760,18 @@ class QubitOperator(Hamiltonian):
              qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
                    ├─────────┤└┬─┬┘└╥┘
              qv.1: ┤ Ry(π/2) ├─┤M├──╫─
-                   └─────────┘ └╥┘  ║ 
+                   └─────────┘ └╥┘  ║
             cb_15: ═════════════╬═══╩═
-                                ║     
+                                ║
             cb_16: ═════════════╩═════
-                                    
+
                    ┌─────────┐     ┌─┐
              qv.0: ┤ Ry(π/2) ├─────┤M├───
                    ├─────────┤┌───┐└╥┘┌─┐
              qv.1: ┤ Ry(π/2) ├┤ H ├─╫─┤M├
                    └─────────┘└───┘ ║ └╥┘
             cb_21: ═════════════════╩══╬═
-                                       ║ 
+                                       ║
             cb_22: ════════════════════╩═
 
         The operator contains three terms.  ``X(0)*Z(1)`` and ``X(0)``
@@ -1813,7 +1796,6 @@ class QubitOperator(Hamiltonian):
                     diagonalisation_method=diagonalisation_method,
                 )
             else:
-
                 if precompiled_qc is not None:
                     qarg = QuantumVariable(self.find_minimal_qubit_amount())
                 else:
@@ -1934,7 +1916,6 @@ class QubitOperator(Hamiltonian):
                         lambda a, b: a.commute_qw(b) and a.ladders_agree(b)
                     )
                     for qw_group in qw_groups:
-
                         with conjugate(qw_group.change_of_basis)(
                             qarg
                         ) as diagonal_operator:
@@ -1958,7 +1939,6 @@ class QubitOperator(Hamiltonian):
                 for com_group in commuting_groups:
                     qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
                     for qw_group in qw_groups:
-
                         with conjugate(com_group.change_of_basis)(
                             qarg, method="commuting"
                         ) as diagonal_operator:

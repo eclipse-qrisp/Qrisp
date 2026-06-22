@@ -205,8 +205,7 @@ class Backend(ABC):
 
         if not isinstance(options, Mapping):
             raise TypeError(
-                f"'options' must be a dict-like Mapping, "
-                f"got {type(options).__name__}"
+                f"'options' must be a dict-like Mapping, got {type(options).__name__}"
             )
 
         # Shallow-copy and convert to dict so that:

@@ -153,7 +153,9 @@ class Operation:
         # (up to local phase shifts). Permeability means that this gate commutes with
         # the z operator on a given qubit
         self.is_qfree: bool | None = None
-        self.permeability: dict[int, bool | None] = {i: None for i in range(self.num_qubits)}
+        self.permeability: dict[int, bool | None] = {
+            i: None for i in range(self.num_qubits)
+        }
 
     def copy(self):
         """
@@ -298,7 +300,6 @@ class Operation:
 
             res = QubitAlloc()
         elif self.name == "barrier":
-
             res = self.copy()
         # Otherwise raise an error
         else:
@@ -377,7 +378,6 @@ class Operation:
         if (
             method.find("pt") != -1 or method.find("gidney") != -1
         ) and res_num_ctrl_qubits != 1:
-
             return PTControlledOperation(
                 self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
             )
@@ -436,7 +436,6 @@ class Operation:
                 self.lambdified_params.append(lambdify(args, par, modules="numpy"))
 
         for l_par in self.lambdified_params:
-
             new_params.append(l_par(*repl_args))
 
         res = self.copy()
@@ -909,7 +908,6 @@ class ControlledOperation(PTControlledOperation):
 
 
 class ClControlledOperation(Operation):
-
     def __init__(self, base_op, num_control=1, ctrl_state=-1):
 
         if ctrl_state == -1:
@@ -925,7 +923,6 @@ class ClControlledOperation(Operation):
         self.ctrl_state = ctrl_state
 
         if base_op.definition:
-
             from qrisp import Clbit, QuantumCircuit
 
             definition = QuantumCircuit()

@@ -111,7 +111,6 @@ class CountOpsMetric(BaseMetric):
             counting_array[counting_index] += invalues[0]
 
         else:
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             counting_array[counting_index] += incrementation_constants[0]
@@ -272,7 +271,9 @@ def get_count_ops_profiler(
     # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
     # to avoid XLA compilation blowup (see profiling_interpreter.py).
     _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats, callback_threshold)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
+        count_ops_metric, call_graph_stats, callback_threshold
+    )
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):

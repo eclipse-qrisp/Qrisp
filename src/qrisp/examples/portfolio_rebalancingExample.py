@@ -157,7 +157,6 @@ for (
     val,
 ) in theNiceQAOA.items():  # for name, age in dictionary.iteritems():  (for Python 2.x)
     if key in maxfive:
-
         print((key, val))
         print(a_cost_fct(key))
 

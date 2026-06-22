@@ -19,6 +19,7 @@
 # Created by ann81984 at 06.05.2022
 from qrisp import QuantumFloat, QuantumArray, tensordot, dot
 import numpy as np
+
 np.random.seed(42)  # Deterministic for reproducible test results
 
 
@@ -70,7 +71,7 @@ def test_matrix_multiplication_example():
     test_0 = np.round(np.random.rand(3, 4) * 5)
     test_1 = np.round(np.random.rand(4, 2) * 5)
 
-    q_array = QuantumArray(qtype=qtype, shape = test_1.shape)
+    q_array = QuantumArray(qtype=qtype, shape=test_1.shape)
 
     q_array[:] = test_1
 

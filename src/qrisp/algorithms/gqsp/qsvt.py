@@ -181,7 +181,7 @@ def QSVT(
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     # If rescale=False, the returned block-encoding will implement p(A/alpha) instead of p(A),
-    # where alpha is the normalization factor of the input block-encoding A. 
+    # where alpha is the normalization factor of the input block-encoding A.
     if rescale:
         p = _rescale_poly(A.alpha, p, kind=kind)
 

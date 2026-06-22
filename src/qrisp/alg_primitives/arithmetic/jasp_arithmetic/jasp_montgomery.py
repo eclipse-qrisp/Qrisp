@@ -31,7 +31,7 @@ from .jasp_mod_tools import (
     montgomery_decoder,
     modinv,
     best_montgomery_shift,
-    smallest_power_of_two
+    smallest_power_of_two,
 )
 
 
@@ -50,7 +50,7 @@ def q_montgomery_reduction(
     - aux has m+1 qubits (for u-tilde including the folded sign bit),
     - res has n qubits (holds the reduced result).
 
-    Algorithm 
+    Algorithm
     ---------
     - Estimation (m steps): For each LSB, conditionally subtract floor(N/2) on the
       truncated slice (implicit right-shift).
@@ -341,6 +341,7 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     """
 
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 

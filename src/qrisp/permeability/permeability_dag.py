@@ -161,7 +161,6 @@ class InstructionNode(UnqompNode):
 # As a subclass of networkx's DiGraph, it can be processed by
 # many of networkx's algorithms.
 class PermeabilityGraph(nx.DiGraph):
-
     def __init__(self, qc, remove_artificials=False):
 
         nx.DiGraph.__init__(self)
@@ -455,14 +454,12 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
     # We iterate through the QuantumCircuit and process each Instruction
     for i in range(len(qc.data)):
-
         # Set alias
         instr = qc.data[i]
 
         # We check whether the relevant Qubit already have an allocation node.
         for qb in instr.qubits:
             if qb not in recent_node_dic:
-
                 # If the qubit has not been allocated yet but the first instruction being
                 # executed is not an allocation, we insert and "artificial" allocation node
                 is_artificial = instr.op.name != "qb_alloc"
@@ -527,7 +524,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
         # To connect the edges, we iterate over each qubit
         for j in range(len(instr.qubits)):
-
             # Set alias
             qb = instr.qubits[j]
 
@@ -542,7 +538,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
             # Case streak is terminated or edge_type is neutral
             else:
-
                 # If the streak has more than one member, we insert a terminator node.
                 # For that, we get the successors and filter out the edges that don't
                 # describe the relevant qubit
@@ -555,7 +550,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
                 # Insert the terminator if there are more than one streak_member to our qubit
                 if len(streak_members) > 1:
-
                     # Create the TerminatorNode
                     terminator = TerminatorNode(qb)
                     # dag.add_node(terminator)
@@ -570,7 +564,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     # successor with the hight value layer and increase it by one.
                     value_layers = []
                     for s in streak_members:
-
                         # Add anti-depedency edge
                         dag.add_edge(
                             s, terminator, edge_type="anti_dependency", qubits=[qb]

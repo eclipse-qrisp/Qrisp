@@ -139,8 +139,9 @@ class TestDecomposePass:
 
         gphase_ops = [instr for instr in result.data if instr.op.name == "gphase"]
         assert len(gphase_ops) == 1, f"Expected 1 gphase, got {len(gphase_ops)}"
-        assert abs(gphase_ops[0].op.params[0] - 1.0) < 1e-10, \
+        assert abs(gphase_ops[0].op.params[0] - 1.0) < 1e-10, (
             f"Expected accumulated phase 1.0, got {gphase_ops[0].op.params[0]}"
+        )
 
     def test_collect_gphases_no_gphases(self):
         """Circuit with no gphase gates is unchanged."""
@@ -172,8 +173,9 @@ class TestDecomposePass:
         assert len(gphase_ops) == 1
         # The gphase should be on qubit 0 (first qubit of CX, the last num_qubits>0 instr)
         anchor_qubit = gphase_ops[0].qubits[0]
-        assert anchor_qubit == qc.qubits[0], \
+        assert anchor_qubit == qc.qubits[0], (
             f"Expected gphase on qubit 0, got {anchor_qubit}"
+        )
 
     def test_collect_gphases_only_gphases(self):
         """Circuit with only gphase gates: no anchor → no gphase emitted."""
@@ -205,8 +207,9 @@ class TestDecomposePass:
         # Compare unitaries — the gphase gate carries the global phase
         U_orig = qc.get_unitary()
         U_result = result.get_unitary()
-        assert np.allclose(U_orig, U_result, atol=1e-6), \
+        assert np.allclose(U_orig, U_result, atol=1e-6), (
             "Unitaries must match after gphase collection"
+        )
 
     def test_collect_gphases_default_false(self):
         """Default behaviour (collect_gphases=False) leaves gphase gates untouched."""
@@ -219,8 +222,7 @@ class TestDecomposePass:
         result = pm.run(qc)
 
         gphase_ops = [instr for instr in result.data if instr.op.name == "gphase"]
-        assert len(gphase_ops) == 1, \
-            "Default decompose should preserve gphase gates"
+        assert len(gphase_ops) == 1, "Default decompose should preserve gphase gates"
 
     def test_decompose_predicate_selective(self):
         """A ``decompose_predicate`` can target specific gates by name."""

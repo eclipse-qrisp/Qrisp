@@ -23,7 +23,6 @@ from qrisp.simulator import QuantumState, advance_quantum_state, gen_res_dict
 
 
 class BufferedQuantumState:
-
     def __init__(self, simulator="qrisp"):
 
         if simulator == "qrisp":

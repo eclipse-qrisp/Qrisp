@@ -113,7 +113,6 @@ def evaluate_while_loop(
     outvalues = invalues[overall_constant_amount:]
 
     while break_condition(invalues):
-
         constants = invalues[num_const_cond_args:overall_constant_amount]
         carries = invalues[overall_constant_amount:]
 

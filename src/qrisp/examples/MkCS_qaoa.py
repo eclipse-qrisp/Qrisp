@@ -200,7 +200,6 @@ def cl_cost_function(counts):
 
     # Iterate over all items in counts in reverse order
     for meas, meas_count in list(counts.items())[::-1]:
-
         # Calculate objective function for current measurement
         obj_for_meas = mkcs_obj(meas, G)
 
@@ -253,7 +252,6 @@ def mkcs_obj(quantumcolor_array, G):
 
     # Iterate over all edges in graph G
     for pair in list(G.edges()):
-
         # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
             color *= 4

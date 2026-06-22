@@ -68,7 +68,6 @@ def int_encoder(qv, encoding_number):
                 x(qv[i])
 
     else:
-
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
         )
@@ -506,9 +505,7 @@ def gate_wrap_inner(
             not_permeable_qubits = []
 
             if isinstance(permeability, list):
-
                 for i in range(len(args)):
-
                     if i in permeability:
                         extension_list = permeable_qubits
                     else:
@@ -541,7 +538,6 @@ def gate_wrap_inner(
                         not_permeable_qubits += qv.reg
 
             elif isinstance(permeability, str):
-
                 for arg in args:
                     if isinstance(arg, QuantumVariable):
                         permeable_qubits += arg.reg
@@ -575,14 +571,12 @@ def gate_wrap_inner(
                         extension_list += qv.reg
 
             for i in range(len(gwe.instruction.qubits)):
-
                 qb = gwe.instruction.qubits[i]
                 if qb in permeable_qubits:
                     permeability_dict[i] = True
                 elif qb in not_permeable_qubits:
                     permeability_dict[i] = False
                 elif qb in ancillas:
-
                     # Even though ancilla qubits are permeable, we want to be able to
                     # use the gate_wrap decorator as an interface to perform
                     # recomputation. If we mark them as permeable, Unqomp won't  wrap
@@ -1537,7 +1531,6 @@ def redirect_qfunction(function_to_redirect):
                 qs.abs_qst = res[-1]
 
         else:
-
             qargs = [
                 arg
                 for arg in list(args) + [target]
@@ -1574,7 +1567,6 @@ def redirect_qfunction(function_to_redirect):
                 i = 0
                 res_is_new = False
                 while i < len(env.env_qs.data):
-
                     instr = env.env_qs.data[i]
 
                     if isinstance(instr, QuantumEnvironment):
@@ -1683,9 +1675,7 @@ def get_sympy_state(qs, decimals):
         amplitude = sv_array[ind]
 
         if not sv_array.dtype == np.dtype("O"):
-
             if decimals is None:
-
                 try:
                     abs_amp = trigify_amp(amplitude, nnz)
                 except TypeError:
@@ -1702,7 +1692,6 @@ def get_sympy_state(qs, decimals):
 
                 ket_expr = exp(I * phase * pi) * abs_amp * nnz**0.5
             else:
-
                 ket_expr = sympy.N(amplitude, decimals)
 
         else:
@@ -1732,7 +1721,6 @@ def get_sympy_state(qs, decimals):
                     if np.angle(complex(a.evalf())) / np.pi == 1:
                         phase = -1
                     else:
-
                         phase = sp.exp(
                             sp.I
                             * nsimplify(
@@ -2129,7 +2117,6 @@ def inpl_adder_test(inpl_adder):
     from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
-
         for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
@@ -2150,16 +2137,16 @@ def inpl_adder_test(inpl_adder):
             )
 
             # Test correct phase behavior
-            assert (
-                np.sum(np.abs(angles)) < 0.1
-            ), f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            assert np.sum(np.abs(angles)) < 0.1, (
+                f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            )
 
             mes_res = multi_measurement([a, b, c])
 
             for a, b, c in mes_res.keys():
-                assert (a + b) % (
-                    2**i
-                ) == c, f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                assert (a + b) % (2**i) == c, (
+                    f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                )
 
         if i < 6:
             for j in range(1, 2**i):
@@ -2178,19 +2165,18 @@ def inpl_adder_test(inpl_adder):
                         np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
                     ]
                 )
-                assert (
-                    np.sum(np.abs(angles)) < 0.1
-                ), f"Classical-quantum adder produced a faulty phase shift on input size {i}."
+                assert np.sum(np.abs(angles)) < 0.1, (
+                    f"Classical-quantum adder produced a faulty phase shift on input size {i}."
+                )
 
                 mes_res = multi_measurement([a, b])
 
                 for a, b in mes_res.keys():
-                    assert (b + j) % (
-                        2**i
-                    ) == a, f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+                    assert (b + j) % (2**i) == a, (
+                        f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+                    )
 
     for i in range(1, 7):
-
         for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
@@ -2212,22 +2198,21 @@ def inpl_adder_test(inpl_adder):
                     np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
                 ]
             )
-            assert (
-                np.sum(np.abs(angles)) < 0.1
-            ), f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            assert np.sum(np.abs(angles)) < 0.1, (
+                f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            )
 
             mes_res = multi_measurement([a, b, c, qbl])
 
             for a, b, c, qbl in mes_res.keys():
-
                 if qbl:
-                    assert (a + b) % (
-                        2**i
-                    ) == c, f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                    assert (a + b) % (2**i) == c, (
+                        f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                    )
                 else:
-                    assert (
-                        c == b
-                    ), f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+                    assert c == b, (
+                        f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+                    )
 
         if i < 6:
             for j in range(1, 2**i):
@@ -2249,21 +2234,21 @@ def inpl_adder_test(inpl_adder):
                         np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
                     ]
                 )
-                assert (
-                    np.sum(np.abs(angles)) < 0.1
-                ), f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
+                assert np.sum(np.abs(angles)) < 0.1, (
+                    f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
+                )
 
                 mes_res = multi_measurement([a, b, qbl])
 
                 for a, b, qbl in mes_res.keys():
                     if qbl:
-                        assert (b + j) % (
-                            2**i
-                        ) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                        assert (b + j) % (2**i) == a, (
+                            f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                        )
                     else:
-                        assert (
-                            b == a
-                        ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        assert b == a, (
+                            f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        )
 
 
 def batched_measurement(variables, backend, shots=None):

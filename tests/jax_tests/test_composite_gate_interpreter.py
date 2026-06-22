@@ -34,6 +34,7 @@ from qrisp.jasp.primitives import quantum_gate_p
 # while/cond are inspected recursively) and collect gate objects.
 # ---------------------------------------------------------------------------
 
+
 def _collect_gates_from_jaxpr(jaxpr):
     """Yield every gate object found in quantum_gate_p equations, recursing
     into jit/while/cond sub-jaxprs."""
@@ -106,7 +107,9 @@ def assert_same_distribution(jaspr_a, jaspr_b):
     assert np.allclose(
         [probs_a[k] for k in keys],
         [probs_b[k] for k in keys],
-    ), f"Probability distributions differ:\n  original:   {probs_a}\n  decomposed: {probs_b}"
+    ), (
+        f"Probability distributions differ:\n  original:   {probs_a}\n  decomposed: {probs_b}"
+    )
 
 
 def assert_same_unitary(jaspr_a, jaspr_b):
@@ -115,12 +118,15 @@ def assert_same_unitary(jaspr_a, jaspr_b):
     qc_b = jaspr_b.to_qc()[-1]
     u_a = qc_a.get_unitary()
     u_b = qc_b.get_unitary()
-    assert np.allclose(u_a, u_b, atol=1e-6), f"Unitary matrices differ:\n  original:   {u_a}\n  decomposed: {u_b}"
+    assert np.allclose(u_a, u_b, atol=1e-6), (
+        f"Unitary matrices differ:\n  original:   {u_a}\n  decomposed: {u_b}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_decompose_state_preparation():
     """prepare() inserts a state_init composite gate.  After decomposition,
@@ -231,9 +237,7 @@ def test_call_graph_compression_preserved():
     # Collect the ClosedJaxpr objects from all top-level jit equations
     def _jit_jaxprs(jaxpr):
         return [
-            eqn.params["jaxpr"]
-            for eqn in jaxpr.eqns
-            if eqn.primitive.name == "jit"
+            eqn.params["jaxpr"] for eqn in jaxpr.eqns if eqn.primitive.name == "jit"
         ]
 
     orig_jaxprs = _jit_jaxprs(jaspr)
@@ -427,7 +431,7 @@ def test_decompose_parametrized_xxyy():
         h(qv)
         xxyy(1.1, 0.4, qv[0], qv[1])
         h(qv)
-        return qv  
+        return qv
 
     jaspr_fixed = make_jaspr(circuit_fixed)()
     decomposed_fixed = decompose_composite_gates(jaspr_fixed)

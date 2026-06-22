@@ -73,7 +73,6 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
     # we just directly remove clauses from the problem, or literals from the clause.
     if isinstance(max_item, int):
-
         max_item += 1
 
         for sgl_clause in clauses:

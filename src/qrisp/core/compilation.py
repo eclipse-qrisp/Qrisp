@@ -28,7 +28,7 @@ from qrisp.circuit import (
     transpile,
     Instruction,
     fast_append,
-    decompose
+    decompose,
 )
 from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 from qrisp.misc import get_depth_dic, retarget_instructions
@@ -129,7 +129,6 @@ def qompiler(
         def allocation_level_transpile_predicate(op):
 
             if isinstance(op, PTControlledOperation):
-
                 if op.base_operation.name == "x":
                     return False
                 if op.base_operation.name == "p" and op.num_qubits == 2:
@@ -150,8 +149,9 @@ def qompiler(
 
         # Transpile to the first level
 
-        qc = decompose(decompose_predicate=permeability_transpile_predicate, 
-                       collect_gphases = True)(qc)
+        qc = decompose(
+            decompose_predicate=permeability_transpile_predicate, collect_gphases=True
+        )(qc)
 
         if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
@@ -187,8 +187,10 @@ def qompiler(
         # previous order which might have been intentionally picked to optimize depth.
         # In summary: Transpiling more aggressively leads to less qubits but more depth.
 
-        transpiled_qc = decompose(decompose_predicate=allocation_level_transpile_predicate,
-                                  collect_gphases=True)(qc)
+        transpiled_qc = decompose(
+            decompose_predicate=allocation_level_transpile_predicate,
+            collect_gphases=True,
+        )(qc)
 
         reordered_qc = optimize_allocations(transpiled_qc)
 
@@ -207,8 +209,9 @@ def qompiler(
                 or allocation_level_transpile_predicate(op)
             )
 
-        reordered_qc = decompose(decompose_predicate=logic_synth_transpile_predicate, 
-                                 collect_gphases=True)(reordered_qc)
+        reordered_qc = decompose(
+            decompose_predicate=logic_synth_transpile_predicate, collect_gphases=True
+        )(reordered_qc)
 
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
@@ -248,7 +251,6 @@ def qompiler(
         data_list = list(reordered_qc.data)
 
         while data_list:
-
             instr = data_list.pop(0)
 
             if instr.op.name == "barrier":
@@ -261,7 +263,7 @@ def qompiler(
                     # available Qubits by their corresponding depth. Note that we add
                     # the identifier in order to prevent non-deterministic behavior
 
-                    alloc_cost = lambda x: (str(depth_dic[x]).zfill(20) + x.identifier)
+                    alloc_cost = lambda x: str(depth_dic[x]).zfill(20) + x.identifier
 
                     free_qb_list.sort(key=alloc_cost)
 
@@ -342,14 +344,12 @@ def qompiler(
                         del translation_dic[qb]
 
             elif isinstance(instr.op, GidneyLogicalAND) and compile_mcm:
-
                 if not instr.op.inv:
                     qc.append(
                         instr.op.recompile(compile_mcm),
                         [translation_dic[qb] for qb in instr.qubits],
                     )
                 else:
-
                     compile_qubits = [translation_dic[qb] for qb in instr.qubits]
                     qb_depth = max([depth_dic[qb] for qb in compile_qubits])
 
@@ -545,6 +545,7 @@ def gen_hybrid_mcx_data(
 
     return data
 
+
 def update_depth_dic(instruction, depth_dic, depth_indicator=None):
 
     if depth_indicator is None:
@@ -616,7 +617,6 @@ def qft_cancellation(qc):
     from numpy.linalg import norm
 
     for i in range(len(qc.data)):
-
         instr = qc.data[i]
         if "QFT" == instr.op.name[:3] and "adder" not in instr.op.name:
             previous_instruction_type = []

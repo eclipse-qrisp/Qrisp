@@ -103,7 +103,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm += cancel_zero_controls
         >>> optimized_qc = pm.run(qc)
         >>> print(optimized_qc)
-        <BLANKLINE>             
+        <BLANKLINE>
         qb_58: ─────
                ┌───┐
         qb_59: ┤ H ├
@@ -118,11 +118,11 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm += cancel_zero_controls
         >>> optimized = pm.run(qc)
         >>> print(optimized)
-        <BLANKLINE>                    
+        <BLANKLINE>
         qb_60:
         <BLANKLINE>
-        qb_61: 
-        <BLANKLINE>    
+        qb_61:
+        <BLANKLINE>
     """
     fresh = set(qc.qubits)  # all qubits start in \|0⟩
     qc_new = qc.clearcopy()
