@@ -61,10 +61,8 @@ The :ref:`BlockEncoding <BlockEncoding>` class gains the following new construct
   now supports general complex coefficients 
   (previously, only real non-negative coefficients were supported).
 
-GQSVT, introduced in PR #479, is available as one of the three methods on
-:func:`inv <qrisp.block_encodings.BlockEncoding.inv>` (``method="GQSVT"``), giving you
-a Hermitianization-based fallback for cases where QET's Hermitian-only restriction
-doesn't apply. Two further standalone functions round out the ``qrisp.gqsp`` module:
+* :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>` perform (Gerneralized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
+Two further standalone functions round out the ``qrisp.gqsp`` module:
 :func:`dalzell_inversion <qrisp.gqsp.dalzell_inversion>`, Qrisp's implementation of
 the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
 :func:`pseudo_inversion <qrisp.gqsp.pseudo_inversion>` for QSVT-based threshold
