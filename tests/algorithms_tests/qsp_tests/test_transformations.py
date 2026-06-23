@@ -18,9 +18,10 @@
 import pytest
 import numpy as np
 
-from qrisp import multi_measurement, terminal_sampling, QuantumFloat
+from qrisp import multi_measurement, prepare, terminal_sampling, QuantumFloat
 from qrisp.block_encodings import BlockEncoding
 from qrisp.gqsp import GQET, QET, QSVT, GQSVT
+from qrisp.operators import X, Y, Z
 
 
 def post_selection(res_dict):
@@ -34,7 +35,8 @@ def post_selection(res_dict):
 
 # Issue #681
 @pytest.mark.parametrize("alg", [QET, GQET, QSVT, GQSVT])
-def test_non_hermitian_block_encoding(alg):
+@pytest.mark.parametrize("mode", ["static", "dynamic"])
+def test_non_hermitian_block_encoding(alg, mode):
     """The test constructs a non-Hermitian block-encoding of a Hermitian matrix A and applies a polynomial transformation to it using the specified algorithm (QET, GQET, QSVT, and GQSVT).
     The resulting amplitudes are compared against the expected target amplitudes calculated using NumPy.
     Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
@@ -77,8 +79,6 @@ def test_non_hermitian_block_encoding(alg):
     coeffs = np.array([2.0, 1.0, 1.0])
 
     BE = BlockEncoding.from_lcu(coeffs, unitaries, is_hermitian=False)
-
-
     BE_poly = alg(BE, np.array([0.0, 0.0, 0.0, 1.0]), kind="Polynomial")
 
     # Calculate target amplitudes for comparison
@@ -87,10 +87,77 @@ def test_non_hermitian_block_encoding(alg):
         ancillas = BE_poly.apply(operand) 
         return operand, *ancillas
 
-    operand, *ancillas = main()
-    res_dict = multi_measurement([operand] + ancillas)
-    amps = post_selection(res_dict)
-    amps_jasp = post_selection(terminal_sampling(main)())
+    if mode == "static":
+        operand, *ancillas = main()
+        res_dict = multi_measurement([operand] + ancillas)
+        amps = post_selection(res_dict)
+        assert np.allclose(amps, target_amps, atol=1e-4)
+    elif mode == "dynamic":
+        amps_jasp = post_selection(terminal_sampling(main)())
+        assert np.allclose(amps_jasp, target_amps, atol=1e-4)
 
-    assert np.allclose(amps, target_amps, atol=1e-4)
-    assert np.allclose(amps_jasp, target_amps, atol=1e-4)
+
+# Issue #680
+@pytest.mark.parametrize("alg", [QET, GQET, QSVT, GQSVT])
+@pytest.mark.parametrize("mode", ["static", "dynamic"])
+def test_nested_polynomial_application(alg, mode):
+    """The test constructs a Hermitian block-encoding of an Ising Hamiltonian and applies nested polynomial transformations to it using the specified algorithm (QET, GQET, QSVT, and GQSVT).
+    The resulting amplitudes are compared against the expected target amplitudes calculated using NumPy.
+    Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
+    Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary in the second application (Issue #681). 
+    """
+
+    if alg == QET and mode == "static":
+        pytest.skip("(Issue #680).")
+
+    def create_ising_hamiltonian(L, J, B):
+        H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
+            + sum(B * X(i) for i in range(L))
+        return H
+
+    L = 4
+    H = create_ising_hamiltonian(L, 0.25, 0.5)
+    alpha = np.sum(np.abs(H.coeffs()))
+    H = (1.0 / alpha) * H
+
+    H2 = 0.9 * H + 0.8 * H * H * H
+    H3 = 0.9 * H2 + 0.8 * H2 * H2 * H2
+
+    BE = BlockEncoding.from_operator(H)
+    BE3 = BlockEncoding.from_operator(H3)
+
+    def operand_prep():
+        operand = QuantumFloat(L)
+        prepare(operand, np.array([0.0, 0.9, 0.0, 0.8, 0.1, 0.4, 0.2, 0.3, 0.0, 0.9, 0.0, 0.8, 0.1, 0.4, 0.2, 0.3]))
+        return operand
+
+    # Calculate target amplitudes for comparison
+    def main():
+        operand = operand_prep()
+        ancillas = BE3.apply(operand) 
+        return operand, *ancillas
+
+    if mode == "static":
+        operand, *ancillas = main()
+        res_dict = multi_measurement([operand] + ancillas)
+        target_amps = post_selection(res_dict)
+    elif mode == "dynamic":
+        target_amps = post_selection(terminal_sampling(main)())
+
+    BE_poly = alg(BE, np.array([0.0, 0.9, 0.0, 0.8]), kind="Polynomial")
+    BE_poly_poly = alg(BE_poly, np.array([0.0, 0.9, 0.0, 0.8]), kind="Polynomial")
+
+    # Nested polynomial application
+    def main():
+        operand = operand_prep()
+        ancillas = BE_poly_poly.apply(operand) 
+        return operand, *ancillas
+
+    if mode == "static":
+        operand, *ancillas = main()
+        res_dict = multi_measurement([operand] + ancillas)
+        amps = post_selection(res_dict)
+        assert np.allclose(amps, target_amps, atol=1e-3)
+    elif mode == "dynamic":
+        amps_jasp = post_selection(terminal_sampling(main)())
+        assert np.allclose(amps_jasp, target_amps, atol=1e-4)
