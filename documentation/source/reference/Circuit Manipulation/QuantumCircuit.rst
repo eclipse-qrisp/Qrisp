@@ -26,6 +26,8 @@ Constructing QuantumCircuits
    QuantumCircuit.extend
    QuantumCircuit.bind_parameters
    QuantumCircuit.transpile
+   QuantumCircuit.control
+   QuantumCircuit.compose
 
 Evaluating QuantumCircuits
 --------------------------
@@ -42,7 +44,11 @@ Evaluating QuantumCircuits
    QuantumCircuit.count_ops
    QuantumCircuit.get_unitary
    QuantumCircuit.compare_unitary
+   QuantumCircuit.get_depth_dic
+   QuantumCircuit.cnot_count
    QuantumCircuit.to_latex
+   QuantumCircuit.to_qasm2
+   QuantumCircuit.to_qasm3
    QuantumCircuit.qasm
    
  
@@ -56,8 +62,11 @@ Interfacing
    QuantumCircuit.to_qiskit
    QuantumCircuit.to_pennylane
    QuantumCircuit.to_pytket
+   QuantumCircuit.to_stim
    QuantumCircuit.from_qasm_str
    QuantumCircuit.from_qasm_file
+   QuantumCircuit.to_cirq
+   QuantumCircuit.from_cirq
    
 
 
@@ -74,7 +83,7 @@ Operation application methods
    >>> qc.x([0,1,2,3])
    >>> print(qc)
    
-   ::
+   .. code-block:: none
    
              ┌───┐┌───┐     ┌───┐┌───┐┌───┐
        qb_0: ┤ X ├┤ X ├─────┤ X ├┤ X ├┤ X ├
@@ -93,6 +102,7 @@ Operation application methods
    :toctree: generated/
    
    QuantumCircuit.measure
+   QuantumCircuit.parity
    QuantumCircuit.cx
    QuantumCircuit.cy
    QuantumCircuit.cz
@@ -122,5 +132,8 @@ Operation application methods
    QuantumCircuit.unitary
    QuantumCircuit.gphase
    QuantumCircuit.id
+   QuantumCircuit.crx
+   QuantumCircuit.barrier
+   QuantumCircuit.r
 
   

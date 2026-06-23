@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,13 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp.core import QuantumVariable, measure
-from qrisp.jasp import sample
-
 import jax
 import jax.numpy as jnp
-from jax.lax import while_loop, fori_loop
+import numpy as np
+
+from qrisp.jasp import sample
 
 
 def get_jasp_measurement(
@@ -32,8 +29,7 @@ def get_jasp_measurement(
     precision=0.01,
     diagonalisation_method="commuting_qw",
 ):
-    r"""
-    This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+    r"""This method returns the expected value of a Hamiltonian for the state of a quantum argument.
 
     Parameters
     ----------
@@ -61,7 +57,6 @@ def get_jasp_measurement(
         The expected value of the Hamiltonian.
 
     """
-
     hamiltonian = hamiltonian.hermitize()
     hamiltonian = hamiltonian.eliminate_ladder_conjugates()
     hamiltonian = hamiltonian.apply_threshold(0)
@@ -74,11 +69,7 @@ def get_jasp_measurement(
         # In order for the change of basis function (below) to work properly,
         # the ladder terms either need to completely agree or completely disagree
         for group in temp_groups:
-            groups.extend(
-                group.group_up(
-                    lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                )
-            )
+            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
     elif diagonalisation_method == "commuting":
         temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
@@ -86,11 +77,7 @@ def get_jasp_measurement(
         # In order for the change of basis function (below) to work properly,
         # the ladder terms either need to completely agree or completely disagree
         for group in temp_groups:
-            groups.extend(
-                group.group_up(
-                    lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                )
-            )
+            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
     else:
         raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
@@ -110,7 +97,6 @@ def get_jasp_measurement(
     shots_list = [N * s for s in stds]
 
     for index, group in enumerate(groups):
-
         # Calculate the new measurement operators (after change of basis)
         meas_op = group.change_of_basis(method=diagonalisation_method)
 
@@ -127,11 +113,11 @@ def get_jasp_measurement(
         temp_meas_ops = []
         temp_coeff = []
         for term, coeff in meas_op.terms_dict.items():
-            temp_meas_ops.append(term.serialize())
-            temp_coeff.append(coeff)
+            temp_meas_ops.append(jnp.array(term.serialize(), dtype=jnp.int64))
+            temp_coeff.append(jnp.real(coeff))
 
-        meas_coeffs.append(temp_coeff)
-        meas_ops.append(temp_meas_ops)
+        meas_coeffs.append(jnp.array(temp_coeff, dtype=jnp.float64))
+        meas_ops.append(jnp.array(temp_meas_ops))
 
     expectation = jasp_evaluate_expectation_jitted(samples, meas_ops, meas_coeffs)
     return expectation
@@ -139,32 +125,12 @@ def get_jasp_measurement(
 
 @jax.jit
 def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
-    """
-    Evaluate the expectation.
-
-    """
-
-    def body_fun(i, val):
-        expectation, N, op, samples, coefficient = val
-        expectation += (
-            1
-            / N
-            * jasp_evaluate_observable_jitted(op, samples[i])
-            * jnp.real(coefficient)
-        )
-        return expectation, N, op, samples, coefficient
-
+    """Evaluate the expectation."""
     expectation = 0
 
-    for index1, ops in enumerate(operators):
-        for index2, op in enumerate(ops):
-            N = len(samples[index1])
-            expectation, _, _, _, _ = fori_loop(
-                0,
-                N,
-                body_fun,
-                (expectation, N, op, samples[index1], coefficients[index1][index2]),
-            )
+    # Evaluate and sum intermediate results for each measurement setting
+    for index, ops in enumerate(operators):
+        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index]) / len(samples[index])
 
     return expectation
 
@@ -177,27 +143,13 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
     # The observable is given as tuple, containing four integers.
     # To understand the meaning of these integers check QubitTerm.serialize.
-
+    # print(observable)
     # Unwrap the tuple
     z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
 
     # Compute whether the sign should be sign flipped based on the Z operators
     sign_flip_int = z_int & x
-    sign_flip = 0
-
-    def cond_fun(state):
-        sign_flip_int, sign_flip = state
-        return sign_flip_int > 0
-
-    def body_fun(state):
-        sign_flip_int, sign_flip = state
-        sign_flip += sign_flip_int & 1
-        sign_flip_int >>= 1
-        return sign_flip_int, sign_flip
-
-    sign_flip_int, sign_flip = while_loop(
-        cond_fun, body_fun, (sign_flip_int, sign_flip)
-    )
+    sign_flip = jax.lax.population_count(sign_flip_int)
 
     # If there is a ladder operator in the term, we need to half the energy
     # because we want to measure (|110><110| - |111><111|)/2
@@ -208,8 +160,23 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
     corrected_x = x ^ AND_ctrl_state
 
     # If all bits are in the 0 state the AND is true.
-    return (
-        prefactor
-        * (-1) ** sign_flip
-        * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
+    return prefactor * jnp.where(sign_flip % 2 == 0, 1, -1) * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
+
+
+@jax.jit
+def sum_over_observables_and_samples(observables, x_values, coefficients):
+
+    def body_fun(i, val):
+        sum_val = val
+        obs = observables[i]
+        c = coefficients[i]
+        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(obs, x_values)
+        return sum_val + c * jnp.sum(results)
+
+    total_sum = jax.lax.fori_loop(
+        0,
+        observables.shape[0],
+        body_fun,
+        jnp.float64(0),
     )
+    return total_sum

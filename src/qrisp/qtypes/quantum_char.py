@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,8 +19,7 @@ from qrisp.core import QuantumVariable
 
 
 class QuantumChar(QuantumVariable):
-    r"""
-    A QuantumVariable which represents characters. By default, the QuantumChar is
+    r"""A QuantumVariable which represents characters. By default, the QuantumChar is
     initialized in NISQ mode, meaning that instead of 256 characters it can only hold
     32, saving almost 40% in qubit cost.
 

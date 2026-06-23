@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,14 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit
-
+from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
-    reduced_margolus_qc,
     margolus_qc,
     maslov_qc,
+    reduced_margolus_qc,
     reduced_maslov_qc,
 )
 
@@ -60,20 +56,4 @@ def pt_multi_cx(n, reduced=False):
 
         res = input_qv.qs.copy()
 
-    return res.to_gate(f"pt{n}cx")
-
-
-def gray_pt_mcx(n, ctrl_state):
-    input_qv = QuantumVariable(n)
-    output_qv = QuantumVariable(1, qs=input_qv.qs)
-
-    tt_str = 2**n * ["0"]
-    tt_str[int(ctrl_state[::-1], 2)] = "1"
-    from qrisp import TruthTable
-
-    tt = TruthTable([tt_str])
-
-    tt.q_synth(input_qv, output_qv, method="gray_pt")
-
-    res = input_qv.qs.copy()
     return res.to_gate(f"pt{n}cx")

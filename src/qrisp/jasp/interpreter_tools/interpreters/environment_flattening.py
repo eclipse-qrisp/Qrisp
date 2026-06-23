@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +15,11 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
+from jax.extend.core import JaxprEqn
 
-from jax.core import JaxprEqn, ClosedJaxpr
-
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -32,13 +30,14 @@ def copy_jaxpr_eqn(eqn):
         params=dict(eqn.params),
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def flatten_environments(jaspr):
-    """
-    This function takes in a jaspr with QuantumEnvironment primitives
+    """This function takes in a jaspr with QuantumEnvironment primitives
     (```q_env```) and compiles these according to their semantics.
 
     Parameters
@@ -54,9 +53,9 @@ def flatten_environments(jaspr):
     """
     from qrisp.jasp import Jaspr
 
-    if (len(jaspr.invars) == 0 or len(jaspr.outvars) == 0) or not (
-        isinstance(jaspr.invars[-1].aval, AbstractQuantumCircuit)
-        and isinstance(jaspr.outvars[-1].aval, AbstractQuantumCircuit)
+    if (len(jaspr.jaxpr.invars) == 0 or len(jaspr.jaxpr.outvars) == 0) or not (
+        isinstance(jaspr.jaxpr.invars[-1].aval, AbstractQuantumState)
+        and isinstance(jaspr.jaxpr.outvars[-1].aval, AbstractQuantumState)
     ):
         return jaspr
 
@@ -71,7 +70,7 @@ def flatten_environments(jaspr):
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "jasp.q_env":
             eqn.primitive.jcompile(eqn, context_dic)
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             flatten_environments_in_pjit_eqn(eqn, context_dic)
         elif eqn.primitive.name == "while":
             flatten_environments_in_while_eqn(eqn, context_dic)
@@ -90,8 +89,7 @@ def flatten_environments(jaspr):
 
 
 def flatten_environments_in_pjit_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -105,23 +103,21 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
-    jaxpr = eqn.params["jaxpr"].jaxpr
+    jaxpr = eqn.params["jaxpr"]
 
     from qrisp.jasp import Jaspr
 
     if isinstance(jaxpr, Jaspr):
         jaxpr = jaxpr.flatten_environments()
 
-    eqn.params["jaxpr"] = ClosedJaxpr(jaxpr, eqn.params["jaxpr"].consts)
+    eqn.params["jaxpr"] = jaxpr
     exec_eqn(eqn, context_dic)
 
 
 def flatten_environments_in_while_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -135,20 +131,15 @@ def flatten_environments_in_while_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
-    eqn.params["body_jaxpr"] = ClosedJaxpr(
-        flatten_environments(eqn.params["body_jaxpr"].jaxpr),
-        eqn.params["body_jaxpr"].consts,
-    )
+    eqn.params["body_jaxpr"] = flatten_environments(eqn.params["body_jaxpr"])
 
     exec_eqn(eqn, context_dic)
 
 
 def flatten_environments_in_cond_eqn(eqn, context_dic):
-    """
-    Flattens environments in a pjit primitive
+    """Flattens environments in a pjit primitive
 
     Parameters
     ----------
@@ -162,16 +153,12 @@ def flatten_environments_in_cond_eqn(eqn, context_dic):
     None.
 
     """
-
     eqn = copy_jaxpr_eqn(eqn)
 
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
-        collected_branch_jaxpr = flatten_environments(eqn.params["branches"][i].jaxpr)
-        collected_branch_jaxpr = ClosedJaxpr(
-            collected_branch_jaxpr, eqn.params["branches"][i].consts
-        )
+        collected_branch_jaxpr = flatten_environments(eqn.params["branches"][i])
         branch_list.append(collected_branch_jaxpr)
 
     eqn.params["branches"] = tuple(branch_list)

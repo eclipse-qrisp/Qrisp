@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,16 +15,20 @@
 ********************************************************************************
 """
 
-from jax.lax import cond
 import jax
+from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
-from qrisp.jasp import extract_invalues, insert_outvalues, check_for_tracing_mode
+from qrisp.jasp import (
+    check_for_tracing_mode,
+    extract_invalues,
+    get_last_equation,
+    insert_outvalues,
+)
 
 
 class ClControlEnvironment(QuantumEnvironment):
-    r"""
-    The ``ClControlEnvironment`` enables execution of quantum code conditioned on
+    r"""The ``ClControlEnvironment`` enables execution of quantum code conditioned on
     classical values. The environment works with similar semantics as the
     :ref:`ControlEnvironment`, implying this environment can also be entered
     using the ``control`` keyword.
@@ -37,8 +40,7 @@ class ClControlEnvironment(QuantumEnvironment):
         environment may be used outside of the environment.
 
     Examples
-    ========
-
+    --------
     We condition a quantum computation on the outcome of a previous measurement.
 
     ::
@@ -231,7 +233,6 @@ class ClControlEnvironment(QuantumEnvironment):
 
         # If there is more than one control variable, loop through
         if len(ctrl_vars) > 1:
-
             for i in range(1, len(ctrl_vars)):
                 tmp = ctrl_vars[i]
                 if self.ctrl_state != -1 and ((self.ctrl_state & 1 << i) == 0):
@@ -242,28 +243,23 @@ class ClControlEnvironment(QuantumEnvironment):
         if self.invert:
             cond_bl = ~cond_bl
 
+        @jax.jit
         def identity_fun(*args):
             return args[-1]
 
         true_fun = identity_fun
         false_fun = identity_fun
 
-        res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
+        res_abs_qst = cond(cond_bl, true_fun, false_fun, *env_vars)
 
-        insert_outvalues(eqn, context_dic, [res_abs_qc])
+        insert_outvalues(eqn, context_dic, [res_abs_qst])
 
-        traced_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        traced_eqn = get_last_equation()
 
         branch_0 = traced_eqn.params["branches"][0]
-        branch_1 = traced_eqn.params["branches"][1]
+        branch_0.jaxpr.eqns.pop(0)
+        branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
 
         from qrisp.jasp import Jaspr
 
-        traced_eqn.params["branches"] = (
-            jax.core.ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr), branch_0.consts),
-            jax.core.ClosedJaxpr(body_jaspr, branch_1.consts),
-        )
+        traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0), body_jaspr)

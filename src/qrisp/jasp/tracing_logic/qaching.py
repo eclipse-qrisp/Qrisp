@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,17 +16,18 @@
 """
 
 import jax
-import jax.numpy as jnp
 
-from qrisp.core import recursive_qv_search, recursive_qa_search
-
-from qrisp.jasp.primitives import AbstractQuantumCircuit
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
+from qrisp.core import recursive_qa_search, recursive_qv_search
+from qrisp.jasp.primitives import AbstractQuantumState
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    get_last_equation,
+)
 
 
 def qache(*func, **kwargs):
-    """
-    This decorator allows you to mark a function as "reusable". Reusable here means
+    """This decorator allows you to mark a function as "reusable". Reusable here means
     that the jasp expression of this function will be cached and reused in the next
     calls (if the function is called with the same signature).
 
@@ -61,7 +61,6 @@ def qache(*func, **kwargs):
 
     Examples
     --------
-
     We create a simple function that is qached. To simulate an expensive compilation
     task we insert a ``time.sleep`` command.
 
@@ -103,38 +102,38 @@ def qache(*func, **kwargs):
     has been traced twice and recalled from the cache twice. We take a look at the :ref:`jaspr`.
 
     >>> print(jaspr)
-    let inner_function = { lambda ; a:QuantumCircuit b:QubitArray. let
+    let inner_function = { lambda ; a:QuantumState b:QubitArray. let
         c:Qubit = jasp.get_qubit b 0
-        d:QuantumCircuit = jasp.h a c
+        d:QuantumState = jasp.h a c
         e:Qubit = jasp.get_qubit b 1
-        f:QuantumCircuit = jasp.cx d c e
-        g:QuantumCircuit h:bool[] = jasp.measure f c
+        f:QuantumState = jasp.cx d c e
+        g:QuantumState h:bool[] = jasp.measure f c
       in (g, h) } in
-    let inner_function1 = { lambda ; i:QuantumCircuit j:QubitArray k:i32[] l:bool[]. let
+    let inner_function1 = { lambda ; i:QuantumState j:QubitArray k:i32[] l:bool[]. let
         m:Qubit = jasp.get_qubit j 0
-        n:QuantumCircuit = jasp.h i m
+        n:QuantumState = jasp.h i m
         o:Qubit = jasp.get_qubit j 1
-        p:QuantumCircuit = jasp.cx n m o
-        q:QuantumCircuit r:bool[] = jasp.measure p m
+        p:QuantumState = jasp.cx n m o
+        q:QuantumState r:bool[] = jasp.measure p m
       in (q, r) } in
-    { lambda ; s:QuantumCircuit. let
-        t:QuantumCircuit u:QubitArray = jasp.create_qubits s 2
-        v:QuantumCircuit w:QubitArray = jasp.create_qubits t 2
-        x:QuantumCircuit y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
+    { lambda ; s:QuantumState. let
+        t:QuantumState u:QubitArray = jasp.create_qubits s 2
+        v:QuantumState w:QubitArray = jasp.create_qubits t 2
+        x:QuantumState y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
           u
-        z:QuantumCircuit ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
+        z:QuantumState ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
           w 0 False
-        bb:QuantumCircuit bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
+        bb:QuantumState bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
           u
-        bd:QuantumCircuit be:bool[] = pjit[
+        bd:QuantumState be:bool[] = pjit[
           name=inner_function
           jaxpr=inner_function1
         ] bb w 0 False
         bf:bool[] = and y ba
         bg:bool[] = and bf bc
         bh:bool[] = and bg be
-        bi:QuantumCircuit = jasp.reset bd u
-        bj:QuantumCircuit = jasp.delete_qubits bi u
+        bi:QuantumState = jasp.reset bd u
+        bj:QuantumState = jasp.delete_qubits bi u
       in (bj, bh) }
 
     As expected, we see three different function definitions:
@@ -185,10 +184,9 @@ def qache(*func, **kwargs):
         # Yields: Exception: Found in-place parameter modification of QuantumVariable qf
 
     """
-
-    if len(kwargs) and len(func) == 0:
+    if kwargs and len(func) == 0:
         return lambda x: qache_helper(x, kwargs)
-    elif len(kwargs) and len(func):
+    elif kwargs and func:
         return qache_helper(func[0], kwargs)
     else:
         return qache_helper(func[0], {})
@@ -209,22 +207,22 @@ def qache_helper(func, jax_kwargs):
 
     # There are however some more things to consider.
 
-    # The Qrisp function doesn't have the AbstractQuantumCircuit object (which is carried by
+    # The Qrisp function doesn't have the AbstractQuantumState object (which is carried by
     # the tracing QuantumSession) in the signature.
 
     # To make jax properly treat this, we modify the function signature
 
-    # This function performs the input function but also has the AbstractQuantumCircuit
+    # This function performs the input function but also has the AbstractQuantumState
     # in the signature.
     def ammended_function(*args, **kwargs):
 
-        abs_qc = kwargs[10*"~"]
-        del kwargs[10*"~"]
+        abs_qst = kwargs[10 * "~"]
+        del kwargs[10 * "~"]
 
-        # Set the given AbstractQuantumCircuit as the
+        # Set the given AbstractQuantumState as the
         # one carried by the tracing QuantumSession
-        abs_qs = TracingQuantumSession.get_instance()
-        abs_qs.abs_qc = abs_qc
+        tr_qs = TracingQuantumSession.get_instance()
+        tr_qs.abs_qst = abs_qst
 
         # We now iterate through the QuantumVariables of the signature to perform two steps:
         # 1. The QuantumVariables from the signature went through a flatten/unflattening process.
@@ -237,7 +235,7 @@ def qache_helper(func, jax_kwargs):
 
         flattened_qvs = []
         for qv in arg_qvs:
-            abs_qs.register_qv(qv, None)
+            tr_qs.register_qv(qv, None)
             flattened_qvs.extend(list(flatten_qv(qv)[0]))
 
         # Execute the function
@@ -255,16 +253,12 @@ def qache_helper(func, jax_kwargs):
         for qv in arg_qvs:
             flat_qv = list(flatten_qv(qv)[0])
             for i in range(len(flat_qv)):
-                if not flat_qv[i] is flattened_qvs.pop(0):
-                    raise Exception(
-                        f"Found in-place parameter modification of QuantumVariable {qv.name}"
-                    )
+                if flat_qv[i] is not flattened_qvs.pop(0):
+                    raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
 
-        abs_qs.garbage_collection(arg_qvs + res_qvs)
-
-        new_abs_qc = abs_qs.abs_qc
-        # Return the result and the result AbstractQuantumCircuit.
-        return res, new_abs_qc
+        new_abs_qst = tr_qs.abs_qst
+        # Return the result and the result AbstractQuantumState.
+        return res, new_abs_qst
 
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
@@ -280,9 +274,9 @@ def qache_helper(func, jax_kwargs):
         if not check_for_tracing_mode():
             return func(*args, **kwargs)
 
-        # Get the AbstractQuantumCircuit for tracing
-        abs_qs = TracingQuantumSession.get_instance()
-        abs_qs.start_tracing(abs_qs.abs_qc)
+        # Get the AbstractQuantumState for tracing
+        tr_qs = TracingQuantumSession.get_instance()
+        tr_qs.start_tracing(tr_qs.abs_qst)
 
         # Make sure literals are 32 bit
         args = list(args)
@@ -298,51 +292,46 @@ def qache_helper(func, jax_kwargs):
 
         # Excecute the function
         ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10*"~"] = abs_qs.abs_qc
+        ammended_kwargs[10 * "~"] = tr_qs.abs_qst
         try:
-            res, abs_qc_new = ammended_function(*args, **ammended_kwargs)
+            res, abs_qst_new = ammended_function(*args, **ammended_kwargs)
         except Exception as e:
-            abs_qs.conclude_tracing()
+            tr_qs.conclude_tracing()
             raise e
 
-        abs_qs.conclude_tracing()
+        tr_qs.conclude_tracing()
 
         # Convert the jaxpr from the traced equation in to a Jaspr
         from qrisp.jasp import Jaspr
 
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        eqn = get_last_equation()
+
         jaxpr = eqn.params["jaxpr"].jaxpr
 
-        if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(eqn.invars[-1].aval, AbstractQuantumState):
             for i in range(len(eqn.invars)):
-                if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
+                if isinstance(eqn.invars[i].aval, AbstractQuantumState):
                     eqn.invars[-1], eqn.invars[i] = eqn.invars[i], eqn.invars[-1]
                     break
-        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumState):
             for i in range(len(jaxpr.invars)):
-                if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
+                if isinstance(jaxpr.invars[i].aval, AbstractQuantumState):
                     jaxpr.invars[-1], jaxpr.invars[i] = (
                         jaxpr.invars[i],
                         jaxpr.invars[-1],
                     )
                     break
 
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
-            Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts
-        )
+        eqn.params["jaxpr"] = Jaspr.from_cache(eqn.params["jaxpr"])
 
-        # Update the AbstractQuantumCircuit of the TracingQuantumSession
-        abs_qs.abs_qc = abs_qc_new
+        # Update the AbstractQuantumState of the TracingQuantumSession
+        tr_qs.abs_qst = abs_qst_new
 
         # The QuantumVariables from the result went through a flatten/unflattening cycly.
         # The unflattening creates a new QuantumVariable object, that is however not yet
         # registered in any QuantumSession. We register these in the current QuantumSession.
         for qv in recursive_qv_search(res):
-            abs_qs.register_qv(qv, None)
+            tr_qs.register_qv(qv, None)
 
         # Return the result.
         return res

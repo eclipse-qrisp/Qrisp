@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
+from jax.core import AbstractValue
 
 
 class AbstractQubit(AbstractValue):
-
     def __repr__(self):
         return "Qubit"
 
@@ -33,11 +31,8 @@ class AbstractQubit(AbstractValue):
         return isinstance(other, AbstractQubit)
 
     def _add(self, a, b):
-        from qrisp.jasp import fuse_qb_array, DynamicQubitArray
+        from qrisp.jasp import DynamicQubitArray, fuse_qb_array
 
         if isinstance(b, DynamicQubitArray):
             b = b.tracer
         return DynamicQubitArray(fuse_qb_array(a, b))
-
-
-raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval

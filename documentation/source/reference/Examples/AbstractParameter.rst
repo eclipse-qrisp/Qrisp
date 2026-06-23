@@ -25,7 +25,7 @@ To evaluate the circuit we can now substitute using the :meth:`bind_parameters <
 >>> bound_qc = qc.bind_parameters(subs_dict)
 >>> print(bound_qc)
 
-::
+.. code-block:: none
 
     qb_34: ──────o───────
                  │       

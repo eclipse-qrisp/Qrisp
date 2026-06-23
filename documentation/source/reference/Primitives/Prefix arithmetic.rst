@@ -16,6 +16,8 @@ In-place adders
    fourier_adder
    cuccaro_adder
    gidney_adder
+   gidney_cq_venting_adder
+   remaud_adder
    qcla
 
 QuantumFloat processing
@@ -33,6 +35,14 @@ QuantumFloat processing
    q_divmod
    q_div
    qf_inversion
+   q_isqrt
+   q_max
+   q_min
+   q_floor
+   q_ceil
+   q_round
+   q_fractional
+   q_modf
    
 QuantumArray processing
 -----------------------

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,15 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qaoa.qaoa_problem import QAOAProblem
-import inspect
-import numpy as np
 import copy
+
+from qrisp.algorithms.qaoa.qaoa_problem import QAOAProblem
 
 
 class QIROProblem(QAOAProblem):
-    r"""
-    Central structure to run QIRO algorithms. A subclass of the :ref:`QAOAProblem` class.
+    r"""Central structure to run QIRO algorithms. A subclass of the :ref:`QAOAProblem` class.
     The idea is based on the paper by `J. Finzgar et al. <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_.
 
     This class encapsulates the replacement routine, cost operator, mixer operator, classical cost function
@@ -96,7 +93,7 @@ class QIROProblem(QAOAProblem):
         plt.show()
 
 
-    For an in-depth tutorial, make sure to check out :ref:`the QIRO tutorial <Qiro_tutorial>`!
+    For an in-depth tutorial, make sure to check out `the QIRO tutorial <https://www.qrisp.eu/general/tutorial/QIROtutorial.html>`_!
 
     Parameters
     ----------
@@ -147,8 +144,7 @@ class QIROProblem(QAOAProblem):
         self.qiro_init_function = init_function
 
     def run_qiro(self, qarg, depth, n_recursions, mes_kwargs={}, max_iter=50):
-        """
-        Run the specific QIRO problem instance with given quantum argument, depth of QAOA circuit, number of recursions,
+        """Run the specific QIRO problem instance with given quantum argument, depth of QAOA circuit, number of recursions,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
 
         Parameters
@@ -170,7 +166,6 @@ class QIROProblem(QAOAProblem):
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum variable.
 
         """
-
         from qrisp import QuantumVariable
 
         self.set_init_function(self.init_function)
@@ -181,7 +176,6 @@ class QIROProblem(QAOAProblem):
         exclusions = []
 
         for index in range(n_recursions):
-
             new_problem, solutions, sign, exclusions = self.replacement_routine(
                 res, [self.problem, solutions, exclusions]
             )
@@ -189,9 +183,7 @@ class QIROProblem(QAOAProblem):
             corr_vals.append(sign)
             self.problem = new_problem
 
-            self.cost_operator = self.qiro_cost_operator(
-                [new_problem, solutions, exclusions]
-            )
+            self.cost_operator = self.qiro_cost_operator([new_problem, solutions, exclusions])
             self.mixer = self.qiro_mixer([new_problem, solutions, exclusions])
             self.init_function = self.qiro_init_function(  # problem = new_problem,
                 solutions=solutions, exclusions=exclusions

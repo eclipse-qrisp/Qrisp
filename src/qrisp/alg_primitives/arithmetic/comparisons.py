@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +15,12 @@
 ********************************************************************************
 """
 
+from qrisp.environments import adaptive_condition, conjugate, control
 from qrisp.misc.utility import lifted
-from qrisp.environments import adaptive_condition, conjugate
 
 
 def less_than_gate(a, b):
-    from qrisp import QuantumBool, QuantumFloat, cx, inpl_add
+    from qrisp import QuantumBool, QuantumFloat, cx
 
     a = a.duplicate()
 
@@ -110,9 +109,7 @@ def less_than_gate(a, b):
 
     res_gate = qc.to_gate("less_than")
     res_gate.is_qfree = True
-    res_gate.permeability = {
-        i: i < qc.qubits.index(res) for i in range(res_gate.num_qubits)
-    }
+    res_gate.permeability = {i: i < qc.qubits.index(res) for i in range(res_gate.num_qubits)}
 
     return res_gate
 
@@ -197,7 +194,10 @@ def less_than(a, b):
 
 @lifted
 def equal(qf_0, qf_1):
+    import jax.numpy as jnp
+
     from qrisp import QuantumBool, QuantumFloat, cx, mcx
+    from qrisp.jasp import jrange
 
     eq_qbl = QuantumBool(qs=qf_0.qs, name="eq_qbl*")
 
@@ -206,30 +206,29 @@ def equal(qf_0, qf_1):
             qf_0, qf_1 = qf_1, qf_0
 
         mcx_qubits = []
+        mcx_qubits += qf_0.reg
 
         if qf_1.signed and qf_0.signed:
             cx(qf_1.sign(), qf_0.sign())
-            mcx_qubits.append(qf_0.sign())
 
-        elif qf_0.signed:
-            mcx_qubits.append(qf_0.sign())
+        m0 = qf_0.msize
+        m1 = qf_1.msize
+        e0 = qf_0.exponent
+        e1 = qf_1.exponent
 
-        significance_dict = {}
+        # We calculate the overlap of bits with the same significance of qf_0 and qf_1.
+        l = jnp.maximum(e0, e1)
+        r = jnp.minimum(e0 + m0, e1 + m1)
+        d = r - l
 
-        for i in range(qf_0.msize):
-            significance_dict[qf_0.exponent + i] = qf_0[i]
-            mcx_qubits.append(qf_0[i])
+        def conjugator(qf_0, qf_1):
+            for i in jrange(d):
+                cx(qf_1[i + l - e1], qf_0[i + l - e0])
 
-        def conjugator(qf_1, significance_dict):
-            for i in range(qf_1.msize):
-                if i + qf_1.exponent in significance_dict:
-                    cx(qf_1[i], significance_dict[i + qf_1.exponent])
+        mcx_qubits += qf_1.reg[: l - e1]
+        mcx_qubits += qf_1.reg[e0 + m0 - e1 : e1 + m1 - e1]
 
-        for i in range(qf_1.msize):
-            if i + qf_1.exponent not in significance_dict:
-                mcx_qubits.append(qf_1[i])
-
-        with conjugate(conjugator)(qf_1, significance_dict):
+        with conjugate(conjugator)(qf_0, qf_1):
             mcx(mcx_qubits, eq_qbl, ctrl_state=0)
 
         if qf_1.signed and qf_0.signed:
@@ -237,10 +236,12 @@ def equal(qf_0, qf_1):
 
         return eq_qbl
 
-    if qf_0.truncate(qf_1) != qf_1:
-        return always_false()
+    # if qf_0.truncate(qf_1) != qf_1:
+    #    return always_false()
 
-    mcx(qf_0, eq_qbl, ctrl_state=qf_0.encoder(qf_1))
+    # We compare a QuantumFloat to a classical float. If the condition is False, the result is always False.
+    with control(qf_0.truncate(qf_1) == qf_1):
+        mcx(qf_0, eq_qbl, ctrl_state=qf_0.encoder(qf_1))
 
     return eq_qbl
 

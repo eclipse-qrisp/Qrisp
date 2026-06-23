@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,7 +15,7 @@
 ********************************************************************************
 """
 
-from qrisp import cx, x, control
+from qrisp import control, cx, x
 from qrisp.alg_primitives.arithmetic.adders import fourier_adder
 from qrisp.qtypes.quantum_float import QuantumFloat
 
@@ -48,7 +47,6 @@ def q_int_mult(factor_1, factor_2, inpl_adder=fourier_adder, target_qf=None):
 
     cx(factor_1[0], s)
     for i in range(factor_1.size):
-
         inpl_adder(factor_2[: len(s) - i], s[i:])
 
         if i != factor_1.size - 1:

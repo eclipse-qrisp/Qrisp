@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +15,14 @@
 ********************************************************************************
 """
 
+import jax
 import numpy as np
 
-from qrisp.jasp import qache, jrange, DynamicQubitArray
-from qrisp.core import swap, h, p, cp
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.core import cp, h, p, swap
+from qrisp.environments import conjugate, control
+from qrisp.jasp import DynamicQubitArray, jrange, qache
 from qrisp.qtypes import QuantumFloat
-from qrisp.environments import control, conjugate
 
 
 @qache
@@ -45,8 +46,16 @@ def qft(qv):
 @qache
 def jasp_fourier_adder(a, b):
 
-    if isinstance(b, list):
+    if isinstance(a, list):
         n_a = len(a)
+    elif isinstance(a, BigInteger):
+
+        @jax.jit
+        def get_size(a):
+            return a.bit_size()
+
+        n_a = get_size(a)
+        a = a()
     else:
         n_a = a.size
 

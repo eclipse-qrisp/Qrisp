@@ -121,7 +121,7 @@ Visualize the QuantumSession of the QuantumFloat ``qf``.
 
 >>> print(qf.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------

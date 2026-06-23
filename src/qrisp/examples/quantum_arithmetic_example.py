@@ -1,6 +1,5 @@
-"""
-/*********************************************************************
-* Copyright (c) 2025 the Qrisp Authors
+"""/*********************************************************************
+* Copyright (c) 2026 the Qrisp Authors
 *
 * This program and the accompanying materials are made
 * available under the terms of the Eclipse Public License 2.0
@@ -10,13 +9,14 @@
 **********************************************************************
 """
 
+import time
+
 import numpy as np
 from numpy.linalg import norm
-import time
-from qrisp import QuantumFloat, transpile
-from qrisp.simulator import statevector_sim
 from qiskit import Aer, execute
 
+from qrisp import QuantumFloat, transpile
+from qrisp.simulator import statevector_sim
 
 n = 6
 

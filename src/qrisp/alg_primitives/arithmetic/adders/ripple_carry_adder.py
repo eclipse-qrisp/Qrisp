@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,99 +15,18 @@
 ********************************************************************************
 """
 
-import numpy as np
-
-from qrisp import QuantumCircuit
-from qrisp.misc import gate_wrap
-
-# Implementation of the modular Cuccaro-Adder https://arxiv.org/pdf/quant-ph/0410184.pdf
-# Has complexity O(log(N)) (Fourier-Adding has O(log(N)^2))
+from qrisp import *
+from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
 
-def MAJ_gate():
-    qc = QuantumCircuit(3)
-
-    qc.cx(2, 1)
-    qc.cx(2, 0)
-    qc.mcx([0, 1], 2)
-
-    result = qc.to_gate()
-
-    result.name = "MAJ"
-
-    return result
-
-
-def UMA_gate(mode=2):
-    qc = QuantumCircuit(3)
-    if mode == 2:
-        qc.mcx([0, 1], 2)
-        qc.cx(2, 0)
-        qc.cx(0, 1)
-
-    if mode == 3:
-        qc.x(1)
-        qc.cx(0, 1)
-        qc.mcx([0, 1], 2)
-        qc.x(1)
-        qc.cx(2, 0)
-        qc.cx(2, 1)
-
-    result = qc.to_gate()
-    result.name = "UMA"
-    return result
-
-
-# Performs inplace addition on qv2, ie.
-# qv1 += qv2
+class RemovedFunctionError(Exception):
+    pass
 
 
 def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Cuccaro-procedure with qubit lists of unequal length"
-        )
-
-    from qrisp.core import QuantumVariable
-
-    if carry_in is None:
-        # Request ancilla Qubit
-        ancilla = QuantumVariable(1)
-    else:
-        ancilla = [carry_in]
-
-    # Prepare MAJ/UMA gate qubits
-    slot_1_qbs = list(ancilla) + qubit_list_1[:-1]
-    slot_2_qbs = qubit_list_2
-    slot_3_qbs = qubit_list_1
-
-    iterations = len(slot_1_qbs)
-
-    # Perform 1st step of the modular addition section
-    for i in range(iterations):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-        qs.append(MAJ_gate(), qbits)
-
-    # Calculate output qbit
-    if output_qubit:
-        qs.cx(qbits[2], output_qubit)
-
-    # Perform UMA iterations
-    for i in range(iterations - 1, -1, -1):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-
-        qs.append(UMA_gate(), qbits)
-
-    if carry_in is None:
-        # Detete ancilla
-        ancilla.delete()
-
-
-# Wrapper for the Cuccaro procedure
-# This function mainly serves to determine the input qubits of the Cucarro procedure
-# depending on the shape of the input QuantumFloats
-# The effect of this function is
-# qv1 += qv2
+    raise RemovedFunctionError(
+        "The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder."
+    )
 
 
 @gate_wrap(is_qfree=True, permeability=[1])
@@ -119,15 +37,13 @@ def inpl_add(
     ignore_overflow_error=False,
     adder="thapliyal",
 ):
-    """
-    Performs in-place addition of the second argument onto the first.
+    """Performs in-place addition of the second argument onto the first.
     In Python syntax: ::
 
         qf1 += qf2
 
-    There are two different algorithms available:
+    There is one algorithm available:
     The `Thapliyal adder <https://arxiv.org/abs/1712.02630>`_
-    and the `Cuccaro adder <https://arxiv.org/abs/quant-ph/0410184>`_
 
     Parameters
     ----------
@@ -142,7 +58,7 @@ def inpl_add(
         If set to False, an Exception will be raised if qf2 has higher maximum
         significance than qf2. The default is False.
     adder : str, optional
-        Specifies the adder. Available are "thapliyal" and "cuccaro".
+        Specifies the adder.
         The default is "thapliyal".
 
     Raises
@@ -152,7 +68,6 @@ def inpl_add(
 
     Examples
     --------
-
     We create two QuantumFloats and apply the inplace adder
 
     >>> from qrisp import QuantumFloat, inpl_add
@@ -163,24 +78,22 @@ def inpl_add(
     >>> inpl_add(qf_0, qf_1)
     >>> print(qf_0)
     {7.0: 1.0}
-    """
 
+    """
     qs = qf1.qs
 
     # If qf2 has lower exponent, the qf2 bits with less significance than all of qf1
     # can not be added to qf1 (rounding error)
     if not ignore_rounding_error and qf1.exponent > qf2.exponent:
         raise Exception(
-            "Tried to add QuantumFloat to QuantumFloat of lower precision"
-            " (set ignore_rounding_error = True)"
+            "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_rounding_error = True)"
         )
 
     # If qf2 has higher maximum significance than qf1, the qf2 bits with higher
     # significance than all of qf1 can not be added to qf1 (overflow error)
     if not ignore_overflow_error and qf1.mshape[1] < qf2.mshape[1]:
         raise Exception(
-            "Tried to add QuantumFloat to QuantumFloat of lower precision"
-            " (set ignore_overflow_error = True)"
+            "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_overflow_error = True)"
         )
 
     # Determine the significance range
@@ -190,9 +103,7 @@ def inpl_add(
     significance_range_qf2 = list(range(qf2.mshape[0], qf2.mshape[1] + 1))
 
     # Determine the intersection of the significance ranges
-    signficance_range_intersetion = list(
-        set(significance_range_qf1).intersection(significance_range_qf2)
-    )
+    signficance_range_intersetion = list(set(significance_range_qf1).intersection(significance_range_qf2))
 
     # Determine maximum and minimum significance of the addition
     # The maximum significance is the maximum significance of qf1
@@ -216,9 +127,7 @@ def inpl_add(
 
     if max_sig > max(significance_range_qf2):
         # print(max_sig-max(significance_range_qf2))
-        ancilla_var = QuantumVariable(
-            max_sig - max(significance_range_qf2) - int(qf2.signed)
-        )
+        ancilla_var = QuantumVariable(max_sig - max(significance_range_qf2) - int(qf2.signed))
         augmented_qf2_qbs = qf2.reg + ancilla_var.reg
     else:
         augmented_qf2_qbs = qf2.reg
@@ -275,14 +184,8 @@ def inpl_add(
         for i in range(ancilla_var.size):
             qs.cx(qf2[-1], ancilla_var[i])
 
-    if adder == "cuccaro":
-        cuccaro_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
-    elif adder == "thapliyal":
-        thapliyal_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
+    if adder == "thapliyal":
+        thapliyal_procedure(qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1])
     else:
         raise Exception("Adder " + adder + " not implemented")
 
@@ -309,61 +212,3 @@ def inpl_add(
 temp = inpl_add.__doc__
 inpl_add = gate_wrap(inpl_add)
 inpl_add.__doc__ = temp
-
-
-# Adder based on https://arxiv.org/abs/1712.02630
-
-
-def TR_gate():
-    qc = QuantumCircuit(3)
-    qc.crx(-np.pi / 2, 1, 2)
-    qc.p(-np.pi / 4, 1)
-    qc.cx(0, 1)
-
-    qc.p(np.pi / 4, 0)
-    qc.crx(np.pi / 2, 0, 2)
-
-    qc.p(np.pi / 4, 1)
-    qc.crx(np.pi / 2, 1, 2)
-
-    # Error in Thapliyal paper? Doesnt work if there is no inverse here
-    result = qc.to_gate().inverse()
-    result.name = "TR"
-    return result
-
-
-def thapliyal_procedure(qc, qubit_list_1, qubit_list_2, output_qubit):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Thapliyal-procedure with qubit lists of unequal length"
-        )
-
-    n = len(qubit_list_1)
-
-    # Step 1
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
-
-    # Step 2
-    qc.cx(qubit_list_1[-1], output_qubit)
-
-    for i in range(n - 2, 0, -1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 3
-    for i in range(n - 1):
-        qc.mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
-
-    # Step 4
-    qc.append(TR_gate(), [qubit_list_1[-1], qubit_list_2[-1], output_qubit])
-
-    for i in range(n - 2, -1, -1):
-        qc.append(TR_gate(), [qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1]])
-
-    # Step 5
-    for i in range(1, n - 1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 6
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])

@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,12 +19,12 @@ import numpy as np
 
 from qrisp import (
     QuantumArray,
-    QuantumFloat,
     QuantumBool,
-    multi_measurement,
-    tensordot,
+    QuantumFloat,
     dot,
     h,
+    multi_measurement,
+    tensordot,
 )
 
 # Quantum-Quantum matrix multiplication

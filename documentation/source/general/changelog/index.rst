@@ -9,6 +9,8 @@ Version history
 .. toctree::
    :maxdepth: 2
    
+   0.9
+   0.8
    0.7
    0.6
    0.5

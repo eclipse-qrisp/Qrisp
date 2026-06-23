@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -39,9 +38,7 @@ def accept(tree):
 
 from qrisp.quantum_backtracking import QuantumBacktrackingTree
 
-tree = QuantumBacktrackingTree(
-    max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject
-)
+tree = QuantumBacktrackingTree(max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject)
 
 tree.init_node([])
 
@@ -64,9 +61,7 @@ def reject(tree):
     return QuantumBool()
 
 
-tree = QuantumBacktrackingTree(
-    max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject
-)
+tree = QuantumBacktrackingTree(max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject)
 
 tree.init_node([])
 
@@ -90,8 +85,6 @@ def reject(tree):
 
 
 max_depth = 4
-tree = QuantumBacktrackingTree(
-    max_depth, branch_qv=QuantumFloat(1), accept=accept, reject=reject
-)
+tree = QuantumBacktrackingTree(max_depth, branch_qv=QuantumFloat(1), accept=accept, reject=reject)
 
 tree.find_solution(precision=5)

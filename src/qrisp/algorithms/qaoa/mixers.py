@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,28 +16,23 @@
 """
 
 from qrisp import (
-    QuantumVariable,
-    h,
-    barrier,
-    rz,
-    ry,
-    rx,
-    cx,
     QuantumArray,
-    xxyy,
-    p,
-    invert,
-    conjugate,
-    mcp,
+    QuantumVariable,
     auto_uncompute,
+    conjugate,
     control,
+    invert,
+    mcp,
+    rx,
+    ry,
+    rz,
+    xxyy,
 )
 from qrisp.jasp import jrange
 
 
 def RX_mixer(qv, beta):
-    """
-    Applies an RX gate to each qubit in ``qv``.
+    """Applies an RX gate to each qubit in ``qv``.
 
     The RX gate is a single-qubit rotation about the x-axis. It is used as a mixer in QAOA to drive transitions between different states.
 
@@ -54,8 +48,7 @@ def RX_mixer(qv, beta):
 
 
 def RY_mixer(qv, beta):
-    """
-    Applies an RY gate to each qubit in ``qv``.
+    """Applies an RY gate to each qubit in ``qv``.
 
     The RY gate is a single-qubit rotation about the x-axis. It is used as a mixer in QAOA to drive transitions between different states.
 
@@ -71,8 +64,7 @@ def RY_mixer(qv, beta):
 
 
 def XY_mixer(qv, beta):
-    """
-    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with its neighbour at least once.
+    """Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with its neighbour at least once.
 
     The XX+YY gate is a two-qubit gate that performs rotations around the XY plane. It is used as a mixer in QAOA to drive transitions between different states.
 
@@ -108,8 +100,7 @@ def apply_XY_mixer(quantumcolor_array, beta):
 
 
 def RZ_mixer(qv, beta):
-    """
-    This function applies an RZ gate with a negative phase shift to a given quantum variable.
+    """This function applies an RZ gate with a negative phase shift to a given quantum variable.
 
     Parameters
     ----------
@@ -123,8 +114,7 @@ def RZ_mixer(qv, beta):
 
 
 def grover_mixer(qv, beta):
-    """
-    Performs the parametrized Grover diffuser.
+    """Performs the parametrized Grover diffuser.
 
     Parameters
     ----------
@@ -140,8 +130,7 @@ def grover_mixer(qv, beta):
 
 
 def constrained_mixer_gen(constraint_oracle, winner_state_amount):
-    r"""
-    Generates a customized mixer function that leaves arbitrary constraints intact.
+    r"""Generates a customized mixer function that leaves arbitrary constraints intact.
     The constraints are specified via a ``constraint_oracle`` function, which
     is taking a :ref:`QuantumVariable` or :ref:`QuantumArray` and apply a phase $\phi$
     (specified by the keyword argument ``phase``) to the states that are allowed
@@ -154,7 +143,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     by the constraints.
 
     For more details regarding implementation specifics please check the
-    corresponding :ref:`tutorial <ConstrainedMixers>`.
+    corresponding :ref:`tutorial <QAOA101>`.
 
     Parameters
     ----------
@@ -174,7 +163,6 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
 
     Examples
     --------
-
     We create a mixer function that only mixes among the states where the first and the
     last qubit disagree. In more mathematical terms - they satisfy the following
     constraint function.
@@ -226,7 +214,6 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
 
 
     """
-
     from qrisp.grover import grovers_alg
 
     def prep_psi(qarg):
@@ -236,9 +223,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
         elif isinstance(qarg, QuantumArray):
             qubit_amount = len(qarg.qtype) * len(qarg.flatten())
         else:
-            raise Exception(
-                f"Argument type {type(qarg)} not supported for constrained mixer"
-            )
+            raise Exception(f"Argument type {type(qarg)} not supported for constrained mixer")
 
         grovers_alg(
             qarg,
@@ -261,8 +246,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
 
 
 def controlled_RX_mixer_gen(predicate):
-    r"""
-    Generate a controlled RX mixer for a given predicate function.
+    r"""Generate a controlled RX mixer for a given predicate function.
 
     Parameters
     ----------
@@ -279,7 +263,6 @@ def controlled_RX_mixer_gen(predicate):
 
     Examples
     --------
-
     We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if
     all neighbors $j$ of the node $i$ in the graph $G$ are not selected, and ``False`` otherwise.
 
@@ -335,20 +318,17 @@ def mcp_as_hamiltonian(qv, beta):
 
 # formulate on q_array
 def portfolio_mixer():
-    """
-    Multi-Channel constrained mixer to be applied for a discrete portfolio rebalancing problem, as seen in https://arxiv.org/pdf/2006.00354.pdf.
+    """Multi-Channel constrained mixer to be applied for a discrete portfolio rebalancing problem, as seen in https://arxiv.org/pdf/2006.00354.pdf.
     This Mixer keeps the constraints in terms of lots on the portfolio intact. This is achieved by mixing between Dicke States.
 
 
-    Returns:
-    --------
-
+    Returns
+    -------
     apply_mixer : function
         The Mixer to be applied to a QuantumVariable
 
-    Examples:
-    ---------
-
+    Examples
+    --------
     We initiate a QuantumVariable in the "0011" state and from this partially mix into the Dicke state space with Hamming weight 2.
 
     ::

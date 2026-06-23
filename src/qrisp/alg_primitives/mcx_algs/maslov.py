@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import QuantumCircuit
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    margolus_qc,
     maslov_qc,
     toffoli_qc,
-    margolus_qc,
 )
+from qrisp.circuit import QuantumCircuit
 from qrisp.misc.utility import bin_rep
 
 

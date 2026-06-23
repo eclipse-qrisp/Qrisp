@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,31 +17,31 @@
 
 from qrisp import *
 from qrisp.jasp import *
-from jax import make_jaxpr
+
 
 def test_terminal_sampling():
-    
+
     @terminal_sampling
     def main():
-        
+
         qbl = QuantumBool()
         qf = QuantumFloat(4)
-        
+
         # Bring qbl into superposition
         h(qbl)
-        
+
         # Perform a measure
         cl_bl = measure(qbl)
-        
+
         # Perform a conditional operation based on the measurement outcome
         with control(cl_bl):
             qf[:] = 1
             h(qf[2])
-        
+
         return qf, qbl
 
     assert main() in [{(1.0, True): 0.5, (5.0, True): 0.5}, {(0.0, False): 1.0}]
-    
+
     @terminal_sampling
     def main(i, j):
         qf = QuantumFloat(3)
@@ -56,11 +55,11 @@ def test_terminal_sampling():
     for i in range(3):
         for j in range(3):
             assert main(i, j) == {(0.0, 0.0, False): 0.5, (2**i, 2**j, True): 0.5}
-            
+
     def ansatz(theta):
 
         qv = QuantumFloat(2)
-        rx(theta[0],qv)
+        rx(theta[0], qv)
         return qv
 
     @terminal_sampling
@@ -73,3 +72,14 @@ def test_terminal_sampling():
         return qf
 
     main()
+
+    @terminal_sampling
+    def main():
+        a = QuantumFloat(2, signed=True)
+        b = QuantumFloat(2)
+
+        h(a)
+
+        return a, b  # This does not work
+
+    res = main()

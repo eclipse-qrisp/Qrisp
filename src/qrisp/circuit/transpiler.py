@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,20 +17,19 @@
 
 import numpy as np
 
+from qrisp.circuit import fast_append
 from qrisp.circuit.instruction import Instruction
 from qrisp.circuit.operation import (
     Operation,
 )
-from qrisp.circuit import fast_append
 
 
 # This function dissolves any Operation objects that have a definition circuit such
 # that the result only consists of elementary gates
 def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs):
-    from qrisp.circuit import QuantumCircuit, Clbit, Qubit
+    from qrisp.circuit import Clbit, QuantumCircuit, Qubit
 
     with fast_append():
-
         transpiled_qc = QuantumCircuit()
 
         # [transpiled_qc.add_qubit(Qubit(qb.identifier)) for qb in qc.qubits]
@@ -49,23 +47,13 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
             else:
                 transpiled_qc.add_clbit(Clbit(cb.identifier))
 
-        translation_dic = {
-            qc.qubits[i].identifier: transpiled_qc.qubits[i]
-            for i in range(len(qc.qubits))
-        }
-        translation_dic.update(
-            {
-                qc.clbits[i].identifier: transpiled_qc.clbits[i]
-                for i in range(len(qc.clbits))
-            }
-        )
+        translation_dic = {qc.qubits[i].identifier: transpiled_qc.qubits[i] for i in range(len(qc.qubits))}
+        translation_dic.update({qc.clbits[i].identifier: transpiled_qc.clbits[i] for i in range(len(qc.clbits))})
 
         if transpile_predicate is None:
             transpile_predicate_ = lambda i, op: i < transpilation_level
         else:
-            transpile_predicate_ = (
-                lambda i, op: i < transpilation_level and transpile_predicate(op)
-            )
+            transpile_predicate_ = lambda i, op: i < transpilation_level and transpile_predicate(op)
 
         transpile_inner(qc, transpiled_qc, translation_dic, transpile_predicate_)
 
@@ -101,17 +89,13 @@ def transpile_inner(
                 definition = instr.op.definition
 
                 new_translation_dic = {
-                    definition.qubits[j].identifier: translation_dic[
-                        instr.qubits[j].identifier
-                    ]
+                    definition.qubits[j].identifier: translation_dic[instr.qubits[j].identifier]
                     for j in range(len(instr.qubits))
                 }
 
                 new_translation_dic.update(
                     {
-                        definition.clbits[j].identifier: translation_dic[
-                            instr.clbits[j].identifier
-                        ]
+                        definition.clbits[j].identifier: translation_dic[instr.clbits[j].identifier]
                         for j in range(len(instr.clbits))
                     }
                 )

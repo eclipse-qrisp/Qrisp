@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -151,9 +150,7 @@ def parallelize_qc(qc, depth_indicator=None):
 
 # Kahns Algorithm based on
 # https://www.geeksforgeeks.org/topological-sorting-indegree-based-solution/
-def depth_sensitive_topological_sort(
-    indices, indptr, int_qc, num_qubits, depth_indicators
-):
+def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_indicators):
     # Create a vector to store indegrees of all
     # vertices. Initialize all indegrees as 0.
     n = len(indptr) - 1
@@ -205,17 +202,17 @@ def depth_sensitive_topological_sort(
             node_costs[i] = np.max(depth_array) + depth_indicators[node] / 10**8
 
             # Multiple possible heuristics
-            # node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
+            node_costs[i] = np.max(depth_array) + depth_indicators[node] / 10**8 - np.min(depth_array) / 10**12
             # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
-            a = 10
-            b = 1
+            # a = 10
+            # b = 1
 
-            node_costs[i] = depth_indicators[node] * a * max_time + b * np.sum(
-                (np.max(depth_array) + depth_indicators[node]) - depth_array
-            )
+            # node_costs[i] = depth_indicators[node] * a * max_time + b * np.sum(
+            #     (np.max(depth_array) + depth_indicators[node]) - depth_array
+            # )
 
         u = queue.pop(np.argmin(node_costs))
 
@@ -226,8 +223,7 @@ def depth_sensitive_topological_sort(
 
         for i in range(num_qubits):
             if int_qc[u, i // 64] & 1 << (i % 64):
-                if depths[i] > max_depth:
-                    max_depth = depths[i]
+                max_depth = max(max_depth, depths[i])
 
         for i in range(num_qubits):
             if int_qc[u, i // 64] & 1 << (i % 64):
@@ -244,6 +240,4 @@ def depth_sensitive_topological_sort(
     return top_order
 
 
-depth_sensitive_topological_sort_jitted = njit(cache=True)(
-    depth_sensitive_topological_sort
-)
+depth_sensitive_topological_sort_jitted = njit(cache=True)(depth_sensitive_topological_sort)

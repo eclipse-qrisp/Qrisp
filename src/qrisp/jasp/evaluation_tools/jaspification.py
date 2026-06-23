@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,26 +15,24 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
-
 import jax
+from jax._src.lib.mlir import ir
 from jax.tree_util import tree_flatten, tree_unflatten
 
-from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
-from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
-from qrisp.jasp.primitives import (
-    OperationPrimitive,
-    AbstractQuantumCircuit,
-    AbstractQubitArray,
-    AbstractQubit,
-)
-from qrisp.core import recursive_qv_search
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit import fast_append
+from qrisp.core import recursive_qv_search
+from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
+from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jasp.primitives import (
+    AbstractQuantumState,
+    AbstractQubit,
+    AbstractQubitArray,
+)
 
 
 def jaspify(func=None, terminal_sampling=False):
-    """
-    This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+    """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
 
@@ -62,7 +59,6 @@ def jaspify(func=None, terminal_sampling=False):
 
     Examples
     --------
-
     We simulate a function creating a simple GHZ state:
 
     ::
@@ -126,7 +122,6 @@ def jaspify(func=None, terminal_sampling=False):
 
 
     """
-
     if isinstance(func, bool):
         terminal_sampling = func
         func = None
@@ -136,27 +131,18 @@ def jaspify(func=None, terminal_sampling=False):
 
     from qrisp.jasp import make_jaspr
 
-    treedef_container = []
-
-    def tracing_function(*args):
-        res = func(*args)
-        flattened_values, tree_def = tree_flatten(res)
-        treedef_container.append(tree_def)
-        return flattened_values
-
     def return_function(*args):
-        # To prevent "accidental deletion" induced non-determinism we set the
-        # garbage collection mode to manual
-        if terminal_sampling:
-            garbage_collection = "manual"
-        else:
-            garbage_collection = "auto"
-        jaspr = make_jaspr(tracing_function, garbage_collection=garbage_collection)(
-            *args
-        )
+        # Use return_shape=True to capture the output PyTree structure
+        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
+
+        # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
-            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+            jaspr_res = tree_unflatten(out_tree, jaspr_res)
+        elif jaspr_res is not None:
+            # Single value case - still unflatten to handle any wrapping
+            jaspr_res = tree_unflatten(out_tree, [jaspr_res])
+
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to jaspify function returning a QuantumVariable")
         return jaspr_res
@@ -165,8 +151,7 @@ def jaspify(func=None, terminal_sampling=False):
 
 
 def stimulate(func=None):
-    """
-    This function leverages the
+    """This function leverages the
     `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
     to evaluate a Jasp-traceable function containing only Clifford gates.
     Stim is a popular tool to simulate quantum error correction codes.
@@ -188,7 +173,6 @@ def stimulate(func=None):
 
     Examples
     --------
-
     We simulate a function creating a simple GHZ state:
 
     ::
@@ -234,22 +218,20 @@ def stimulate(func=None):
         # Yields either 0 or 31
 
     """
-
     from qrisp.jasp import make_jaspr
 
-    treedef_container = []
-
-    def tracing_function(*args):
-        res = func(*args)
-        flattened_values, tree_def = tree_flatten(res)
-        treedef_container.append(tree_def)
-        return flattened_values
-
     def return_function(*args):
-        jaspr = make_jaspr(tracing_function)(*args)
+        # Use return_shape=True to capture the output PyTree structure
+        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, simulator="stim")
+
+        # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
-            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+            jaspr_res = tree_unflatten(out_tree, jaspr_res)
+        elif jaspr_res is not None:
+            # Single value case - still unflatten to handle any wrapping
+            jaspr_res = tree_unflatten(out_tree, [jaspr_res])
+
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
@@ -258,12 +240,17 @@ def stimulate(func=None):
 
 
 def simulate_jaspr(
-    jaspr, *args, terminal_sampling=False, simulator="qrisp", return_gate_counts=False
+    jaxpr,
+    *args,
+    terminal_sampling=False,
+    simulator="qrisp",
+    return_gate_counts=False,
 ):
 
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
+    from qrisp.jasp import Jaspr
 
-    if len(jaspr.outvars) == 1:
+    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
         return None
 
     if simulator == "stim":
@@ -276,13 +263,11 @@ def simulate_jaspr(
 
     def eqn_evaluator(eqn, context_dic):
 
-        if eqn.primitive.name == "pjit":
-
+        if eqn.primitive.name == "jit":
             function_name = eqn.params["name"]
             jaxpr = eqn.params["jaxpr"]
 
             if terminal_sampling:
-
                 translation_dic = {
                     "expectation_value_eval_function": "ev",
                     "sampling_eval_function": "array",
@@ -303,14 +288,11 @@ def simulate_jaspr(
             for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
                 if isinstance(
                     var.aval,
-                    (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit),
+                    (AbstractQuantumState, AbstractQubitArray, AbstractQubit),
                 ):
                     break
             else:
-
-                compiled_function, is_executable = compile_cl_func(
-                    jaxpr.jaxpr, function_name
-                )
+                compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
 
                 # Functions with purely classical inputs/outputs can still contain
                 # kernelized quantum functions. This will raise an NotImplementedError
@@ -325,40 +307,43 @@ def simulate_jaspr(
                         else:
                             insert_outvalues(eqn, context_dic, [outvalues])
                         return False
-                    except NotImplementedError:
+                    except (TypeError, ir.MLIRError):
                         is_executable[0] = False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
             # slows down the simulation
-            if eqn.params["name"] == "gidney_mcx_inv":
+            if eqn.params["name"] == "gidney_mcx_inv_impl":
                 invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
                 outvalues = [invalues[-1]]
             else:
-                outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*invalues)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)
-
-        elif eqn.primitive.name == "jasp.quantum_kernel":
+        elif eqn.primitive.name == "jasp.create_quantum_kernel":
             insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
+        elif eqn.primitive.name == "jasp.consume_quantum_kernel":
+            pass
         else:
             return True
 
     with fast_append(3):
-        res = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*(args))
+        res = eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator)(*(args))
 
     if return_gate_counts:
         return res[-1].gate_counts
 
-    if len(jaspr.outvars) == 2:
-        return res[0]
+    if isinstance(jaxpr, Jaspr):
+        if len(jaxpr.jaxpr.outvars) == 2:
+            return res[0]
+        else:
+            return res[:-1]
     else:
-        return res[:-1]
+        return res
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def compile_cl_func(jaxpr, function_name):
     return jax.jit(eval_jaxpr(jaxpr)), [True]

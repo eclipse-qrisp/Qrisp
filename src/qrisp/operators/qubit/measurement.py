@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,8 +20,9 @@ import math
 import numpy as np
 from numba import njit
 
-from qrisp.core import QuantumVariable, QuantumArray
+from qrisp.core import QuantumArray, QuantumVariable
 from qrisp.core.compilation import qompiler
+from qrisp.interface import BatchedBackend
 
 
 def get_measurement(
@@ -37,8 +37,7 @@ def get_measurement(
     diagonalisation_method="commuting_qw",
     measurement_data=None,  # measurement settings
 ):
-    r"""
-    This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+    r"""This method returns the expected value of a Hamiltonian for the state of a quantum argument.
 
     Parameters
     ----------
@@ -47,7 +46,7 @@ def get_measurement(
     precision: float, optional
         The precision with which the expectation of the Hamiltonian is to be evaluated.
         The default is 0.01. The number of shots scales quadratically with the inverse precision.
-    backend : :ref:`BackendClient`, optional
+    backend : BackendLike, optional
         The backend on which to evaluate the quantum circuit. The default can be
         specified in the file default_backend.py.
     compile : bool, optional
@@ -83,7 +82,6 @@ def get_measurement(
         The expected value of the Hamiltonian.
 
     """
-
     from qrisp import QuantumSession, merge
 
     if isinstance(qarg, QuantumVariable):
@@ -94,17 +92,13 @@ def get_measurement(
     elif isinstance(qarg, QuantumArray):
         for qv in qarg.flatten():
             if qv.is_deleted():
-                raise Exception(
-                    "Tried to measure QuantumArray containing deleted QuantumVariables"
-                )
+                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
         qs = qarg.qs
     elif isinstance(qarg, list):
         qs = QuantumSession()
         for arg in qarg:
             if isinstance(arg, QuantumVariable) and qv.is_deleted():
-                raise Exception(
-                    "Tried to measure QuantumArray containing deleted QuantumVariables"
-                )
+                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
             merge(qs, arg)
 
     if backend is None:
@@ -138,22 +132,19 @@ def get_measurement(
     # Bind parameters
     if subs_dic:
         qc = qc.bind_parameters(subs_dic)
-        from qrisp.core.compilation import combine_single_qubit_gates
+        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
         qc = combine_single_qubit_gates(qc)
 
     qc = qc.transpile()
 
     if measurement_data is None:
-        measurement_data = QubitOperatorMeasurement(
-            hamiltonian, diagonalisation_method=diagonalisation_method
-        )
+        measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalisation_method=diagonalisation_method)
 
     return measurement_data.get_measurement(qc, qubit_list, precision, backend)
 
 
 class QubitOperatorMeasurement:
-
     def __init__(self, hamiltonian, diagonalisation_method="commuting_qw"):
 
         n = hamiltonian.find_minimal_qubit_amount()
@@ -164,11 +155,7 @@ class QubitOperatorMeasurement:
             # In order for the change of basis function (below) to work properly,
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
-                self.groups.extend(
-                    group.group_up(
-                        lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                    )
-                )
+                self.groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
         elif diagonalisation_method == "commuting":
             temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
@@ -176,23 +163,16 @@ class QubitOperatorMeasurement:
             # In order for the change of basis function (below) to work properly,
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
-                self.groups.extend(
-                    group.group_up(
-                        lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                    )
-                )
+                self.groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
         else:
-            raise Exception(
-                f"Unknown diagonalisation method: {diagonalisation_method}."
-            )
+            raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
 
         self.stds = []
         self.change_of_basis_gates = []
         self.measurement_operators = []
 
         for group in self.groups:
-
             qv = QuantumVariable(n)
 
             meas_op = group.change_of_basis(qv, diagonalisation_method)
@@ -210,37 +190,29 @@ class QubitOperatorMeasurement:
         from qrisp.misc import get_measurement_from_qc
 
         results = []
-        meas_ops = []
         meas_coeffs = []
+        meas_ops = []
 
-        for i in range(len(self.measurement_operators)):
+        for group, gate, shots_base in zip(
+            self.measurement_operators,
+            self.change_of_basis_gates,
+            self.shots_list,
+        ):
+            shots = int(shots_base / precision**2)
 
-            group = self.measurement_operators[i]
-
-            shots = int(self.shots_list[i] / precision**2)
-
-            qubits = [
-                qubit_list[j] for j in range(self.change_of_basis_gates[i].num_qubits)
-            ]
+            qubits = [qubit_list[j] for j in range(gate.num_qubits)]
 
             curr = qc.copy()
-            curr.append(self.change_of_basis_gates[i], qubits)
+            curr.append(gate, qubits)
 
-            res = get_measurement_from_qc(curr, list(qubit_list), backend, shots)
-            results.append(res)
+            results.append(get_measurement_from_qc(curr, list(qubit_list), backend, shots))
+            meas_ops.append([term.serialize() for term in group.terms_dict])
+            meas_coeffs.append(list(group.terms_dict.values()))
 
-            temp_meas_ops = []
-            temp_coeff = []
-            for term, coeff in group.terms_dict.items():
-                temp_meas_ops.append(term.serialize())
-                temp_coeff.append(coeff)
+        if isinstance(backend, BatchedBackend):
+            backend.dispatch()
 
-            meas_coeffs.append(temp_coeff)
-            meas_ops.append(temp_meas_ops)
-
-        samples = create_padded_array([list(res.keys()) for res in results]).astype(
-            np.int64
-        )
+        samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
         probs = create_padded_array([list(res.values()) for res in results])
         meas_ops = create_padded_array(meas_ops, use_tuples=True).astype(np.int64)
         meas_coeffs = create_padded_array(meas_coeffs)
@@ -249,14 +221,16 @@ class QubitOperatorMeasurement:
 
 
 def create_padded_array(list_of_lists, use_tuples=False):
-    """
-    Create a padded numpy array from a list of lists with varying lengths.
+    """Create a padded numpy array from a list of lists with varying lengths.
 
-    Parameters:
+    Parameters
+    ----------
     list_of_lists (list): A list of lists with potentially different lengths.
 
-    Returns:
+    Returns
+    -------
     numpy.ndarray: A 2D numpy array with padded rows.
+
     """
     # Find the maximum length of any list in the input
     max_length = max(len(lst) for lst in list_of_lists)
@@ -265,9 +239,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
     if not use_tuples:
         padded_lists = [lst + [0] * (max_length - len(lst)) for lst in list_of_lists]
     else:
-        padded_lists = [
-            lst + [(0, 0, 0, 0)] * (max_length - len(lst)) for lst in list_of_lists
-        ]
+        padded_lists = [lst + [(0, 0, 0, 0)] * (max_length - len(lst)) for lst in list_of_lists]
 
     # Convert to numpy array
     return np.array(padded_lists)
@@ -279,10 +251,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
 
 
 def evaluate_expectation(samples, probs, operators, coefficients):
-    """
-    Evaluate the expectation.
-
-    """
+    """Evaluate the expectation."""
     # print(results)
     # print(operators)
     # print(coefficients)
@@ -294,11 +263,7 @@ def evaluate_expectation(samples, probs, operators, coefficients):
         for index2, op in enumerate(ops):
             for i in range(len(samples[index1])):
                 outcome, probability = samples[index1, i], probs[index1, i]
-                expectation += (
-                    probability
-                    * evaluate_observable(op, outcome)
-                    * np.real(coefficients[index1][index2])
-                )
+                expectation += probability * evaluate_observable(op, outcome) * np.real(coefficients[index1][index2])
 
     return expectation
 
@@ -347,10 +312,7 @@ evaluate_observable_jitted = njit(cache=True)(evaluate_observable)
 
 @njit(cache=True)
 def evaluate_expectation_jitted(samples, probs, operators, coefficients):
-    """
-    Evaluate the expectation.
-
-    """
+    """Evaluate the expectation."""
     expectation = 0
 
     for index1, ops in enumerate(operators):
@@ -358,17 +320,14 @@ def evaluate_expectation_jitted(samples, probs, operators, coefficients):
             for i in range(len(samples[index1])):
                 outcome, probability = samples[index1, i], probs[index1, i]
                 expectation += (
-                    probability
-                    * evaluate_observable_jitted(op, outcome)
-                    * np.real(coefficients[index1][index2])
+                    probability * evaluate_observable_jitted(op, outcome) * np.real(coefficients[index1][index2])
                 )
 
     return expectation
 
 
 def partition(values, num_qubits):
-    """
-    Partitions a list of integers into a list of lists of integers with size 64 bit.
+    """Partitions a list of integers into a list of lists of integers with size 64 bit.
 
     Parameters
     ----------
@@ -383,7 +342,6 @@ def partition(values, num_qubits):
         A list of NumPy numpy.uint64 arrays.
 
     """
-
     M = math.ceil(num_qubits / 64)
     N = len(values)
 

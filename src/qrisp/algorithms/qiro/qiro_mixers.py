@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import x, rx, rz, auto_uncompute, control
+from qrisp import auto_uncompute, control, rx, rz, x
 
 
 def qiro_rx_mixer(problem_updated):
-    """
-    RX-Mixer for QIRO algorithm. Works analogously to the normal RX-Mixer, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+    """RX-Mixer for QIRO algorithm. Works analogously to the normal RX-Mixer, but respects solutions and exclusions that have been found in the QIRO reduction steps.
 
     Parameters
     ----------
@@ -36,7 +34,6 @@ def qiro_rx_mixer(problem_updated):
         The RX-mixer, according to the update steps that have been undertaken
 
     """
-
     solutions = problem_updated[1]
     exclusions = problem_updated[2]
     union = solutions + exclusions
@@ -44,15 +41,14 @@ def qiro_rx_mixer(problem_updated):
     def RX_mixer(qv, beta):
 
         for i in range(len(qv)):
-            if not i in union:
+            if i not in union:
                 rx(2 * beta, qv[i])
 
     return RX_mixer
 
 
 def qiro_rz_mixer(problem_updated):
-    """
-    This function applies an RZ gate with a negative phase shift to a given quantum variable.
+    """This function applies an RZ gate with a negative phase shift to a given quantum variable.
 
     Parameters
     ----------
@@ -62,7 +58,6 @@ def qiro_rz_mixer(problem_updated):
         The phase shift value for the RZ gate.
 
     """
-
     solutions = problem_updated[1]
     exclusions = problem_updated[2]
     union = solutions + exclusions
@@ -70,15 +65,14 @@ def qiro_rz_mixer(problem_updated):
     def RZ_mixer(qv, beta):
 
         for i in range(len(qv)):
-            if not i in union:
+            if i not in union:
                 rz(2 * beta, qv[i])
 
     return RZ_mixer
 
 
 def qiro_controlled_RX_mixer_gen(predicate, union):
-    r"""
-    For a QIRO MIS instances, generate a controlled RX mixer for a given predicate function.
+    r"""For a QIRO MIS instances, generate a controlled RX mixer for a given predicate function.
 
     Parameters
     ----------
@@ -98,7 +92,6 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
 
     Examples
     --------
-
     We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if
     all neighbors $j$ of the node $i$ in the graph $G$ are not selected, and ``False`` otherwise.
 
@@ -141,8 +134,7 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
 
 
 def qiro_init_function(solutions=[], exclusions=[]):
-    """
-    State initialization function for QIRO algorithm. Works analogously to the normal initialization function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+    """State initialization function for QIRO algorithm. Works analogously to the normal initialization function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
 
     Parameters
     ----------
@@ -164,7 +156,7 @@ def qiro_init_function(solutions=[], exclusions=[]):
 
         # for i in problem.nodes:
         for i in range(len(qv)):
-            if not i in union:
+            if i not in union:
                 h(qv[i])
         for i in solutions:
             x(qv[i])

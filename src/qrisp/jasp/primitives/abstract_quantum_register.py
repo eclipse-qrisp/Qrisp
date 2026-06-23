@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
-import jax.numpy as jnp
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings, ShapedArray
-from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubit
+from jax.core import AbstractValue, ShapedArray, Tracer
+
+from qrisp.jasp.primitives import AbstractQubit, QuantumPrimitive
 
 get_qubit_p = QuantumPrimitive("get_qubit")
 get_size_p = QuantumPrimitive("get_size")
@@ -27,6 +26,9 @@ fuse_p = QuantumPrimitive("fuse")
 
 
 class AbstractQubitArray(AbstractValue):
+    def __init__(self):
+        self.vma = None
+        AbstractValue.__init__(self)
 
     def __repr__(self):
         return "QubitArray"
@@ -52,7 +54,7 @@ class AbstractQubitArray(AbstractValue):
             from qrisp.jasp import TracingQuantumSession
 
             qs = TracingQuantumSession.get_instance()
-            if not id_tuple in qs.qubit_cache:
+            if id_tuple not in qs.qubit_cache:
                 from qrisp.jasp import get_qubit
 
                 qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
@@ -60,6 +62,8 @@ class AbstractQubitArray(AbstractValue):
 
 
 def get_qubit(qb_array, index):
+    if not isinstance(index, (Tracer, int)):
+        index = int(index)
     return get_qubit_p.bind(qb_array, index)
 
 
@@ -75,19 +79,18 @@ def fuse_qb_array(qb_array_0, qb_array_1):
     return fuse_p.bind(qb_array_0, qb_array_1)
 
 
-raise_to_shaped_mappings[AbstractQubitArray] = lambda aval, _: aval
-
-
 @get_qubit_p.def_abstract_eval
 def get_qubit_abstract_eval(qb_array, index):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return AbstractQubit()
 
@@ -98,10 +101,12 @@ def get_size_abstract_eval(qb_array):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return ShapedArray((), dtype="int64")
 
@@ -112,10 +117,12 @@ def get_slice_abstract_eval(qb_array, start, stop):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return AbstractQubitArray()
 
@@ -137,10 +144,12 @@ def get_qubit_impl(qb_array, index):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return qb_array[index]
 
@@ -151,10 +160,12 @@ def get_size_impl(qb_array):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return len(qb_array)
 
@@ -165,10 +176,12 @@ def get_slice_impl(qb_array, start, stop):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return qb_array[start:stop]
 
@@ -179,12 +192,13 @@ def fuse_impl(arg_0, arg_1):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     if not isinstance(arg_0, list):
         arg_0 = [arg_0]
 

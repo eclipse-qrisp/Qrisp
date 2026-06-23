@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,47 +15,64 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.qpe import QPE
+from collections.abc import Callable, Sequence
+from typing import Any
+
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
+from qrisp.alg_primitives.qpe import QPE
+from qrisp.core import QuantumArray, QuantumVariable
+from qrisp.qtypes import QuantumFloat
 
 
 def QAE(
-    args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None
-):
-    r"""
-    This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
+    args: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
+    state_function: Callable,
+    oracle_function: Callable,
+    kwargs_oracle: dict[str, Any] | None = None,
+    precision: int | None = None,
+    target: QuantumFloat | None = None,
+) -> QuantumFloat:
+    r"""This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
 
     The problem of quantum amplitude estimation is described as follows:
 
     * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
     * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
-    * Find an estimate for :math:`a=\langle\Psi_1|\Psi_1\rangle`, the probability that a measurement of $\ket{\Psi}$ yields a good state.
+    * Find an estimate for :math:`a=\langle\Psi_1|\Psi_1\rangle`, the probability that a measurement of :math:`\ket{\Psi}` yields a good state.
 
     Parameters
     ----------
-    args : QuantumVariable or list[QuantumVariable]
-        The (list of) QuantumVariables which represent the state,
-        the quantum amplitude estimation is performed on.
-    state_function : function
-        A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables in the list ``args`` as arguments in the
-        course of this algorithm.
-    oracle_function : function
+    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
+        The quantum variable, array, or collection thereof on which quantum amplitude estimation
+        is performed. These variables must initially be in the zero state (:math:`\ket{0}`).
+        The QAE algorithm will internally apply the ``state_function`` to these variables
+        to prepare the initial state :math:`\ket{\Psi}`.
+    state_function : Callable
+        A Python function preparing the state :math:`\ket{\Psi}` from the zero state.
+        This function is applied internally by the algorithm.
+        The required signature of this function depends on the input ``args``:
+
+        - if ``args`` is a single variable or array, it receives that single object.
+        - if ``args`` is a sequence, the elements are unpacked and passed as separate
+          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature
+          must be ``state_function(qv1, qv2)``).
+
+    oracle_function : Callable
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
-        This function will receive the variables in the list ``args`` as arguments in the
-        course of this algorithm.
+        Like ``state_function``, its required signature matches the structure of ``args``:
+        it takes a single argument if ``args`` is a single object, or unpacked
+        positional arguments if ``args`` is a sequence.
     kwargs_oracle : dict, optional
-        A dictionary containing keyword arguments for the oracle. The default is {}.
+        A dictionary containing keyword arguments for the oracle. The default is None.
     precision : int, optional
-        The precision of the estimation. The default is None.
+        The precision of the estimation (the number of evaluation qubits). The default is None.
     target : QuantumFloat, optional
         A target QuantumFloat to perform the estimation into. The default is None.
-        If given neither a precision nor a target, an Exception will be raised.
+        If neither ``precision`` nor ``target`` is provided, a ValueError will be raised.
 
     Returns
     -------
-
-    res : QuantumFloat
+    QuantumFloat
         A QuantumFloat encoding the angle :math:`\theta` as a fraction of :math:`\pi`,
         such that :math:`\tilde{a}=\sin^2(\theta)` is an estimate for :math:`a`.
 
@@ -69,9 +85,13 @@ def QAE(
 
         with probability of at least :math:`8/\pi^2`.
 
+    Raises
+    ------
+    ValueError
+        If neither ``precision`` nor ``target`` is provided.
+
     Examples
     --------
-
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{8})\ket{0}+\sin(\frac{\pi}{8})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{8})`.
 
@@ -101,7 +121,7 @@ def QAE(
     **Numerical integration**
 
 
-    Here, we demonstarate how to use QAE for numerical integration.
+    Here, we demonstrate how to use QAE for numerical integration.
 
     Consider a continuous function $f\colon[0,1]\rightarrow[0,1]$. We wish to evaluate
 
@@ -169,6 +189,16 @@ def QAE(
     0.26430
 
     """
+    if kwargs_oracle is None:
+        kwargs_oracle = {}
+
+    if precision is None and target is None:
+        raise ValueError(
+            "Tried to call Quantum Amplitude Estimation without specifying either 'precision' or 'target'."
+        )
+
+    if isinstance(args, (QuantumVariable, QuantumArray)):
+        args = [args]
 
     state_function(*args)
     res = QPE(
