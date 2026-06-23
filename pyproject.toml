@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-aqt = ["qiskit-aqt-provider==1.15.0"]
+aqt = ["qiskit-aqt-provider==1.15.0", "pytest-httpx"]
 qiskit = ["qiskit-aer==0.17.2", "qiskit-ibm-runtime==0.44.1"]
 iqm = ["iqm-client[qiskit]>=33.0.3", "iqm-pulse<13.0"]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane==0.45.0"]
