@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,18 +17,16 @@
 
 import numpy as np
 
-from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.alg_primitives.arithmetic.comparisons import less_than
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
     modinv,
     montgomery_encoder,
 )
-from qrisp.environments import custom_control
-from qrisp.core.gate_application_functions import cx, swap, mcx
-from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.environments import control, invert
 from qrisp.circuit import fast_append
-from qrisp.permeability import auto_uncompute
+from qrisp.core.gate_application_functions import cx, mcx, swap
+from qrisp.environments import control, custom_control, invert
+from qrisp.misc.utility import bin_rep, redirect_qfunction
+from qrisp.qtypes import QuantumFloat, QuantumModulus
 
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
@@ -41,8 +38,7 @@ from qrisp.permeability import auto_uncompute
 
 
 def cl_montgomery_reduction(t, N, m):
-    """
-    This function serves as an example, how classical Montgomery reduction works.
+    """This function serves as an example, how classical Montgomery reduction works.
 
     Note, that the return value is not t%N but (t*2**-m)%N. This is called Montgomery
     form and doesn't really create in any problems because it is just a matter of
@@ -65,7 +61,6 @@ def cl_montgomery_reduction(t, N, m):
         A garbage variable with the value u = (-tN**-1)%(2**m)
 
     """
-
     S = t
     u = int(0)
     for k in range(m):
@@ -92,6 +87,7 @@ def transfer_lsb(from_qv, to_qv):
 
     # Insert the qubit in the target
     to_qv.reg.insert(len(to_qv), lsb)
+    lsb.identifier = to_qv.name + "_ext_." + str(len(to_qv) - 1)
 
 
 # This function realizes the first step of the Montgomery reduction
@@ -106,7 +102,6 @@ def QREDC(t, N, m):
 
     # Perform the loop of the Montgomery reduction
     for k in range(m):
-
         # Set the alias similar to the classical version
         temp = S[0]
 
@@ -149,6 +144,7 @@ def QREDC(t, N, m):
     S.signed = False
 
     u.reg.insert(len(u), sgn)
+    sgn.identifier = u.name + "_ext_." + str(len(u) - 1)
 
     # Adjust the m attribute, which indicates the current Montgomery shift of this
     # QuantumModulus
@@ -175,7 +171,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
         # Perform the uncomputation as described in the paper
         for k in range(len(a)):
             with control(a[k]):
-                t.inpl_adder(-((2**k * b)) * modinv(N, 2 ** (m + 1)), u)
+                t.inpl_adder(-(2**k * b) * modinv(N, 2 ** (m + 1)), u)
 
     if permeable_if_zero:
         # cx(t[0], u[-1])
@@ -274,9 +270,7 @@ def montgomery_mod_semi_mul(a, b, output_qg=None, permeable_if_zero=False):
     t.inpl_adder = a.inpl_adder
 
     # Perform Montgomery reduction and return
-    return montgomery_red(
-        t, a, b_encoded, N, m_shift, permeable_if_zero=permeable_if_zero
-    )
+    return montgomery_red(t, a, b_encoded, N, m_shift, permeable_if_zero=permeable_if_zero)
 
 
 @custom_control
@@ -314,14 +308,11 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
 
     # Check some special cases
     if X == 0:
-        raise Exception(
-            "Tried to perform in-place multiplication with 0 (not invertible)"
-        )
+        raise Exception("Tried to perform in-place multiplication with 0 (not invertible)")
     if X == 1:
         return a
 
     with fast_append(2):
-
         # Create the temporary value
         tmp = a.duplicate(qs=a.qs)
 
@@ -346,9 +337,7 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
                     ft_swap(tmp[i], a[i])
 
         # Perform the out of place multiplication
-        tmp = montgomery_mod_semi_mul(
-            a, X, output_qg=tmp, permeable_if_zero=ctrl is not None
-        )
+        tmp = montgomery_mod_semi_mul(a, X, output_qg=tmp, permeable_if_zero=ctrl is not None)
 
         # Perform the intermediate swap
         if ctrl is not None:
@@ -406,15 +395,16 @@ def montgomery_mod_mul(a, b, output_qg=None):
 
     m = int(np.ceil(np.log2((a.modulus - 1) ** 2) + 1)) - a.size
 
-    from qrisp import h, merge, QFT, q_int_mult
+    from qrisp import merge, q_int_mult
+    from qrisp.qtypes.quantum_modulus import _moduli_neq
 
-    if a.modulus != b.modulus:
+    if _moduli_neq(a.modulus, b.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     if output_qg is None:
         t = QuantumFloat(a.size + m, signed=True)
     else:
-        if output_qg.modulus != a.modulus:
+        if _moduli_neq(output_qg.modulus, a.modulus):
             raise Exception("Output QuantumModulus has incompatible modulus")
 
         merge(output_qg.qs, a.qs)

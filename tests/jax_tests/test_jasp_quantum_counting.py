@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,10 +15,12 @@
 ********************************************************************************
 """
 
+
 def test_jasp_quantum_counting():
-    from qrisp import quantum_counting, z, QuantumFloat
-    from qrisp.jasp import jaspify
     import numpy as np
+
+    from qrisp import QuantumFloat, quantum_counting, z
+    from qrisp.jasp import jaspify
 
     def oracle(qv):
         z(qv[-1])
@@ -28,7 +29,7 @@ def test_jasp_quantum_counting():
     def main():
         res = quantum_counting(QuantumFloat(3), oracle, 3)
         return res
-    
+
     res = main()
 
-    assert np.abs(res-4) < 1e-4
+    assert np.abs(res - 4) < 1e-4

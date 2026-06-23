@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,4 +18,5 @@
 
 from qrisp.jasp.interpreter_tools.dynamic_list import *
 from qrisp.jasp.interpreter_tools.abstract_interpreter import *
+from qrisp.jasp.interpreter_tools.call_graph_analysis import *
 from qrisp.jasp.interpreter_tools.interpreters import *

@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,15 +15,17 @@
 ********************************************************************************
 """
 
-import jax
-
-from qrisp.jasp.primitives import quantum_kernel_p, AbstractQubit, AbstractQubitArray
-from qrisp.jasp.tracing_logic import TracingQuantumSession, qache
+from qrisp.jasp.primitives import (
+    AbstractQubit,
+    AbstractQubitArray,
+    consume_quantum_kernel_p,
+    create_quantum_kernel_p,
+)
+from qrisp.jasp.tracing_logic import TracingQuantumSession, get_last_equation, qache
 
 
 def quantum_kernel(func):
-    """
-    This decorator allows you to annotate a subroutine as a "quantum kernel".
+    """This decorator allows you to annotate a subroutine as a "quantum kernel".
     Quantum kernels are functions that are restricted in the sense that they
     can not have quantum inputs or outputs, yet their inner working can be quantum.
     What is the benefit in that? The underlying idea why this
@@ -64,7 +65,6 @@ def quantum_kernel(func):
 
     Examples
     --------
-
     We demonstrate a naive implementation of an expectation value please use
     :ref:`expectation_value` if you required this functionality. For this
     we define a state preparation procedure and call it from a kernelized
@@ -116,8 +116,9 @@ def quantum_kernel(func):
         # Expected: 2**4/2 = 8
 
     """
-
-    func = qache(func)
+    func = qache(
+        func,
+    )
 
     def return_function(*args, **kwargs):
 
@@ -125,7 +126,7 @@ def quantum_kernel(func):
 
         qs = TracingQuantumSession.get_instance()
 
-        qs.start_tracing(quantum_kernel_p.bind())
+        qs.start_tracing(create_quantum_kernel_p.bind())
 
         try:
             res = func(*args, **kwargs)
@@ -133,14 +134,9 @@ def quantum_kernel(func):
             qs.conclude_tracing()
             raise e
 
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
-        flattened_jaspr = Jaspr.from_cache(
-            collect_environments(eqn.params["jaxpr"].jaxpr)
-        ).flatten_environments()
+        eqn = get_last_equation()
+
+        flattened_jaspr = Jaspr.from_cache(collect_environments(eqn.params["jaxpr"])).flatten_environments()
         for var in flattened_jaspr.invars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum input")
@@ -148,11 +144,11 @@ def quantum_kernel(func):
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum output")
 
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
-            flattened_jaspr, eqn.params["jaxpr"].consts
-        )
+        eqn.params["jaxpr"] = flattened_jaspr
 
-        qs.conclude_tracing()
+        abs_qst = qs.conclude_tracing()
+
+        consume_quantum_kernel_p.bind(abs_qst)
 
         return res
 

@@ -55,7 +55,7 @@ This is particularly important for testing and verifying classical code running 
 Jasp tutorial
 ~~~~~~~~~~~~~
 
-More details and an user friendly walkthrough through the added functionalities of the Jasp module are provided in :ref:`documentation <jasp>` or in the :ref:`Jasp tutorial <jasp_tutorial>`.
+More details and an user friendly walkthrough through the added functionalities of the Jasp module are provided in :ref:`documentation <jasp>` or in the `JASP tutorial <https://www.qrisp.eu/general/tutorial/Jasp.html>`_.
 
 Double-Bracket Quantum Imaginary Time Evolution (DB-QITE)
 ---------------------------------------------------------
@@ -68,7 +68,7 @@ Integration of Quantum Monte Carlo with Iterative QAE
 
 * Numerical integration is now available within Qrisp, which allows for approximating integrals not solvable analytically. Such integrals appear in many different places, from chemistry, through many-body physics, to mathematical finance.
 * This is done by combining :ref:`Quantum Monte Carlo <QMCI>` techniques with a :ref:`resource efficient amplitude estimation algorithm <IQAE>`, which iteratively applies quantum amplitude amplification to find an estimation for the probability of measuring a good state (more info in :ref:`IQAE <IQAE>`)
-* More details and example of using this approach for integrating the function $f(x)=x^2$ w.r.t. the uniform distribution over the interval $[0,1]$ can be found in the :ref:`tutorial <QMCItutorial>`.
+* More details and example of using this approach for integrating the function $f(x)=x^2$ w.r.t. the uniform distribution over the interval $[0,1]$ can be found in the `tutorial on the Quantum Monte Carlo integration in Qrisp <https://www.qrisp.eu/general/tutorial/QMCItutorial.html>`_.
 
 UI Changes
 ----------

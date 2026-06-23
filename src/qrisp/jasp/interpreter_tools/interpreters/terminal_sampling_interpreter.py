@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,22 +15,24 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
-from random import shuffle
-
+import jax
+import jax.numpy as jnp
 import numpy as np
 
-import jax.numpy as jnp
-import jax
-
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
+    exec_eqn,
     extract_invalues,
     insert_outvalues,
-    exec_eqn,
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
     evaluate_while_loop,
+)
+from qrisp.jasp.primitives import (
+    AbstractQuantumState,
+    AbstractQubit,
+    AbstractQubitArray,
 )
 
 # The following function implements the behavior of the jaspify simulator for terminal sampling
@@ -77,29 +78,29 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
 #           _:i64[] _:i64[] f:f64[1] = while[
 #             body_jaxpr={ lambda ; g:i64[] h:i64[] i:f64[1]. let
 #                 j:i64[] = add g 1
-#                 k:QuantumCircuit = jasp.quantum_kernel
-#                 _:QuantumCircuit l:f64[1] = pjit[
+#                 k:QuantumState = jasp.quantum_kernel
+#                 _:QuantumState l:f64[1] = pjit[
 #                   name=sampling_body_func
-#                   jaxpr={ lambda ; m:QuantumCircuit n:i64[] o:f64[1]. let
+#                   jaxpr={ lambda ; m:QuantumState n:i64[] o:f64[1]. let
 
 # -------------------------------------------------------------------------------------
 
-#                       p:QuantumCircuit q:QubitArray r:i64[] _:bool[] = pjit[
+#                       p:QuantumState q:QubitArray r:i64[] _:bool[] = pjit[
 #                         name=user_func
-#                         jaxpr={ lambda ; s:QuantumCircuit. let
-#                             t:QuantumCircuit u:QubitArray = jasp.create_qubits s
+#                         jaxpr={ lambda ; s:QuantumState. let
+#                             t:QuantumState u:QubitArray = jasp.create_qubits s
 #                               4
 #                             v:Qubit = jasp.get_qubit u 0
-#                             w:QuantumCircuit = jasp.h t v
+#                             w:QuantumState = jasp.h t v
 #                           in (w, u, 0, False) }
 #                       ] m
 
 # -------------------------------------------------------------------------------------
 
-#                       x:QuantumCircuit y:i64[] = pjit[
+#                       x:QuantumState y:i64[] = pjit[
 #                         name=sampling_helper_1
-#                         jaxpr={ lambda ; z:QuantumCircuit ba:QubitArray. let
-#                             bb:QuantumCircuit bc:i64[] = jasp.measure z ba
+#                         jaxpr={ lambda ; z:QuantumState ba:QubitArray. let
+#                             bb:QuantumState bc:i64[] = jasp.measure z ba
 #                           in (bb, bc) }
 #                       ] p q
 
@@ -128,8 +129,8 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
 #                         shape=(1,)
 #                       ] bd
 #                       bk:f64[1] = add o bj
-#                       bl:QuantumCircuit = jasp.reset x q
-#                       _:QuantumCircuit = jasp.delete_qubits bl q
+#                       bl:QuantumState = jasp.reset x q
+#                       _:QuantumState = jasp.delete_qubits bl q
 #                     in (x, bk) }
 #                 ] k g i
 #               in (j, h, l) }
@@ -185,16 +186,14 @@ def terminal_sampling_evaluator(sampling_res_type):
                     break_after_first_iter=True,
                 )
 
-            if eqn.primitive.name == "pjit":
+            if eqn.primitive.name == "jit":
                 invalues = extract_invalues(eqn, context_dic)
 
                 function_name = eqn.params["name"]
 
                 # sampling_body_func is called with the ev_eqn_evaluator
                 if function_name == "sampling_body_func":
-                    outvalues = eval_jaxpr(
-                        eqn.params["jaxpr"], eqn_evaluator=sampling_body_eqn_evaluator
-                    )(*invalues)
+                    outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=sampling_body_eqn_evaluator)(*invalues)
                     insert_outvalues(eqn, context_dic, outvalues)
                     return
 
@@ -203,7 +202,6 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                 # This case describes the logic to use the simulator sampling features
                 if function_name == "sampling_helper_1":
-
                     # Collect the qubits to be measured into a single list
                     qubits = []
                     for i in range(len(invalues) - 1):
@@ -239,7 +237,6 @@ def terminal_sampling_evaluator(sampling_res_type):
                 # into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
-
                     if sampling_res_type == "ev":
                         sampling_res = jnp.zeros(len(eqn.outvars))
                     elif sampling_res_type == "array":
@@ -253,7 +250,6 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                     # Iterate through the sampled values
                     for k, v in meas_res_dic.items():
-
                         # We now evaluate the function that was previously traced
                         # to perform the decoding. The first few arguments of this
                         # function are the integers to be decoded.
@@ -279,20 +275,19 @@ def terminal_sampling_evaluator(sampling_res_type):
                         # We now build the key for the result dic
                         # For that we turn the jax types into the corresponding
                         # Python types.
-                        if not isinstance(outvalues, tuple):
+
+                        # This treats the case that the decoder returned only
+                        # a single result (instead of a tuple).
+                        if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues * v
                             elif sampling_res_type == "array":
                                 # sampling_res.extend(v*[outvalues[0]])
-                                key = outvalues[0]
-                                if key.size == 1:
-                                    sampling_res_dict[key.item()] = v
-                                else:
-                                    sampling_res_dict[tuple(np.array(key))] = v
-                                    # sampling_res.extend(v*[key])
+                                sampling_res_dict[outvalues.item()] = v
+                                # sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
-                                if not type(v) in [int, float]:
+                                if type(v) not in [int, float]:
                                     if v.dtype in [np.float64, np.float32]:
                                         v = float(v.item())
                                     elif v.dtype in [np.int32, np.int64]:
@@ -303,20 +298,19 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                         # If the user given function returned more than one
                         # value, the key is a tuple to be build up
-                        else:
-                            if sampling_res_type == "ev":
-                                sampling_res += jnp.array(outvalues) * v
-                            elif sampling_res_type == "array":
-                                sampling_res.extend(v * [outvalues])
-                            elif sampling_res_type == "dict":
-                                if not type(v) in [int, float]:
-                                    if v.dtype in [np.float64, np.float32]:
-                                        v = float(v.item())
-                                    elif v.dtype in [np.int32, np.int64]:
-                                        v = int(v.item())
-                                    else:
-                                        raise
-                                sampling_res[tuple(x.item() for x in outvalues)] = v
+                        elif sampling_res_type == "ev":
+                            sampling_res += jnp.array(outvalues) * v
+                        elif sampling_res_type == "array":
+                            sampling_res_dict[tuple(np.array(outvalues))] = v
+                        elif sampling_res_type == "dict":
+                            if type(v) not in [int, float]:
+                                if v.dtype in [np.float64, np.float32]:
+                                    v = float(v.item())
+                                elif v.dtype in [np.int32, np.int64]:
+                                    v = int(v.item())
+                                else:
+                                    raise
+                            sampling_res[tuple(x.item() for x in outvalues)] = v
 
                     if sampling_res_type == "array":
                         keys = np.array(list(sampling_res_dict.keys()))
@@ -330,12 +324,8 @@ def terminal_sampling_evaluator(sampling_res_type):
                             sampling_res = sampling_res[0]
                     elif sampling_res_type == "dict":
                         # Sort the counts such the most probable values come first
-                        sampling_res = dict(
-                            sorted(sampling_res.items(), key=lambda item: item[0])
-                        )
-                        sampling_res = dict(
-                            sorted(sampling_res.items(), key=lambda item: -item[1])
-                        )
+                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
+                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
 
                     decoded_meas_res.append(sampling_res)
 
@@ -344,9 +334,7 @@ def terminal_sampling_evaluator(sampling_res_type):
         # Execute the above defined interpreter
         sampling_body_jaxpr = eqn.params["jaxpr"].jaxpr
 
-        outvalues = eval_jaxpr(
-            sampling_body_jaxpr, eqn_evaluator=sampling_body_eqn_evaluator
-        )(*invalues)
+        outvalues = eval_jaxpr(sampling_body_jaxpr, eqn_evaluator=sampling_body_eqn_evaluator)(*invalues)
 
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
@@ -356,6 +344,65 @@ def terminal_sampling_evaluator(sampling_res_type):
     return sampling_eqn_evaluator
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def decoder_compiler(jaxpr, eqn_evaluator):
-    return jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator))
+    """This function compiles the decoder using the Jax pipeline into a binary
+    such that it can be evaluated fast. This is important because the decoding
+    step can become a critical bottleneck in some sampling based simulations.
+
+    There are a couple of problems that can arise here.
+
+    1. If the decoder is something really trivial, it might be faster to just
+       call it via the interpreter because there is compile time overhead.
+
+    2. Some decoders need the size of the corresponding QuantumVariable. The size
+       is however accessed through the "jasp.get_size" primitive, which in turn
+       needs access to the AbstractQubitArray. It can therefore happen that
+       the decoder-Jaxpr contains not only classical elements but also quantum.
+       Since there is no "default" implementation on how Jax compiles them into
+       a binary, an error is produced.
+
+    The first problem is circumvented by statically checking if the jaxpr exceeds
+    a certain number of equations. This is not a guarantee that the decoder would
+    infact be trivial because the equations could also contain sub-jaxprs, but
+    it serves as a cheap and powerfull guestimate.
+
+    The second problem is solved by replacing all occurences of AbstractQubitArrays
+    simply with their actual length (i.e. the corresponding arguments are no longer
+    quantum but a simple, classical integer) and also modifying the behavior of the
+    jasp.get_size primitive to simply return that integer.
+
+    """
+
+    # Modify the interpretation behavior of the jasp.get_size primitive to simply
+    # return it's input
+    def new_eqn_evaluator(eqn, context_dic):
+        if eqn.primitive.name == "jasp.get_size":
+            context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
+        else:
+            return eqn_evaluator(eqn, context_dic)
+
+    # Decide, whether to compile the evaluator
+    if len(jaxpr.eqns) > 10:
+        compiled_evaluator = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=new_eqn_evaluator))
+    else:
+        compiled_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=new_eqn_evaluator)
+
+    # This function wraps the compiled_evaluator by replacing all parameters that
+    # are of type AbstractQubitArray by the actual length.
+    def decoder(*args):
+
+        new_args = []
+
+        for i in range(len(args)):
+            if isinstance(jaxpr.jaxpr.invars[i].aval, AbstractQubitArray):
+                new_args.append(len(args[i]))
+            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumState)):
+                raise Exception(f"Found quantum type {jaxpr.jaxpr.invars[i].aval} in decoder implementation")
+            else:
+                new_args.append(args[i])
+
+        return compiled_evaluator(*new_args)
+
+    return decoder

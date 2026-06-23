@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -25,3 +25,6 @@ from qrisp.circuit.compilation_acceleration import *
 from qrisp.circuit.transpiler import *
 from qrisp.circuit.standard_operations import *
 from qrisp.circuit.controlled_operations import *
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.pass_management.pass_manager import PassManager
+from qrisp.circuit.pass_management.passes import *

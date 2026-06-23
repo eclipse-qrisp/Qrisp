@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul  3 17:37:05 2023
+"""Created on Mon Jul  3 17:37:05 2023
 
 @author: sea
 """
 
-from qrisp.environments import QuantumEnvironment, GateWrapEnvironment
-from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.circuit import QubitAlloc
 from qrisp.core.compilation import qompiler
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.environments import QuantumEnvironment
 from qrisp.misc.utility import retarget_instructions
-from qrisp.circuit import QubitAlloc, transpile
 
 
 class IterationEnvironment(QuantumEnvironment):
-    """
-    This QuantumEnvironment can be used for reducing bottlenecks in compilation time.
+    """This QuantumEnvironment can be used for reducing bottlenecks in compilation time.
     Many algorithms such as Grover or QPE require repeated execution of the same
     quantum circuit. When scaling up complex algorithms that perform a lot of
     non-trivial logic many iterations can significantly slow down the compilation
@@ -40,7 +38,6 @@ class IterationEnvironment(QuantumEnvironment):
 
     Parameters
     ----------
-
     qs : QuantumSession
         The ``QuantumSession`` in which the iterated code should be performed.
         QuantumVariables that have been created outside this ``QuantumEnvironment``
@@ -55,7 +52,6 @@ class IterationEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We perform a simple addition circuit multiple times:
 
     ::
@@ -147,11 +143,8 @@ class IterationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if set(self.env_qs.qv_list) != self.inital_qvs and self.iteration_amount > 1:
-
             if exception_value is None:
-                raise Exception(
-                    "Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables"
-                )
+                raise Exception("Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables")
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
@@ -170,7 +163,6 @@ class IterationEnvironment(QuantumEnvironment):
         # This comes at the cost that the allocation algorithm might find better
         # ways if it has insight into the internal allocation structure.
         if self.precompile:
-
             # Compile the quantum environment to retrieve the compiled data
             QuantumEnvironment.compile(self)
 
@@ -185,9 +177,7 @@ class IterationEnvironment(QuantumEnvironment):
 
             anc_qv = QuantumVariable(len(self.env_qs.qubits))
 
-            translation_dic = {
-                self.env_qs.qubits[i]: anc_qv[i] for i in range(len(anc_qv))
-            }
+            translation_dic = {self.env_qs.qubits[i]: anc_qv[i] for i in range(len(anc_qv))}
 
             anc_qv.qs.data = []
             # We append the previously executed allocation calls such that
@@ -203,9 +193,7 @@ class IterationEnvironment(QuantumEnvironment):
             # Append the data to the new QuantumSession
             anc_qv.qs.data.extend(compiled_data)
 
-            compiled_qc = qompiler(
-                anc_qv.qs, cancel_qfts=False, use_dirty_anc_for_mcx_recomp=False
-            )
+            compiled_qc = qompiler(anc_qv.qs, cancel_qfts=False, use_dirty_anc_for_mcx_recomp=False)
 
             # Remove previously added allocation calls from the compiled quantum circuit
             compiled_data = []
@@ -225,11 +213,9 @@ class IterationEnvironment(QuantumEnvironment):
             # Determine the workspace qubits from the compiled qc
             workspace_qubits = list(set(compiled_qc.qubits) - set(anc_qv.reg))
 
-            if len(workspace_qubits):
+            if workspace_qubits:
                 # Allocate a QuantumVariable that will hold the workspace
-                workspace_var = QuantumVariable(
-                    len(workspace_qubits), qs=self.env_qs, name="workspace_var*"
-                )
+                workspace_var = QuantumVariable(len(workspace_qubits), qs=self.env_qs, name="workspace_var*")
             else:
                 workspace_var = []
 
@@ -252,7 +238,6 @@ class IterationEnvironment(QuantumEnvironment):
 
         # The non-precompiled case is much simpler
         else:
-
             QuantumEnvironment.compile(self)
 
             compiled_data = list(self.env_qs.data)

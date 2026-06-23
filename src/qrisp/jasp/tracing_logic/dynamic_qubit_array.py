@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,35 +15,42 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.primitives import get_qubit, slice_qb_array, get_size, fuse_qb_array
+from builtins import id
+
+from jax import tree_util
+
+from qrisp.jasp.primitives import (
+    AbstractQubit,
+    fuse_qb_array,
+    get_qubit,
+    get_size,
+    slice_qb_array,
+)
 
 
 class DynamicQubitArray:
+    """A Jasp-compatible dynamic array of qubits."""
 
     def __init__(self, tracer):
         self.tracer = tracer
 
     def __getitem__(self, key):
-        tracer = self.tracer
         if isinstance(key, slice):
-            start = key.start
-            if key.start is None:
-                start = 0
-            stop = key.stop
-            if key.stop is None:
-                stop = get_size(tracer)
+            if key.step is not None and key.step != 1:
+                raise NotImplementedError("Slicing with DynamicQubitArray only supports step=1")
+            start = key.start if key.start is not None else 0
+            stop = key.stop if key.stop is not None else get_size(self.tracer)
+            return DynamicQubitArray(slice_qb_array(self.tracer, start, stop))
 
-            return DynamicQubitArray(slice_qb_array(tracer, start, stop))
-        else:
-            from qrisp.jasp.tracing_logic.tracing_quantum_session import (
-                TracingQuantumSession,
-            )
+        from qrisp.jasp.tracing_logic.tracing_quantum_session import (
+            TracingQuantumSession,
+        )
 
-            qs = TracingQuantumSession.get_instance()
-            id_tuple = (id(tracer), id(key))
-            if not id_tuple in qs.qubit_cache:
-                qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
-            return qs.qubit_cache[id_tuple]
+        qs = TracingQuantumSession.get_instance()
+        id_tuple = (id(self.tracer), id(key))
+        if id_tuple not in qs.qubit_cache:
+            qs.qubit_cache[id_tuple] = get_qubit(self.tracer, key)
+        return qs.qubit_cache[id_tuple]
 
     @property
     def size(self):
@@ -53,29 +59,49 @@ class DynamicQubitArray:
     def __add__(self, other):
         if isinstance(other, DynamicQubitArray):
             other = other.tracer
+        if isinstance(other, list):
+            temp = self
+            for x in other:
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
+                    raise ValueError(
+                        "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
+                    )
+                temp += x
+            return temp
         return DynamicQubitArray(fuse_qb_array(self.tracer, other))
+
+    def __radd__(self, other):
+        if isinstance(other, DynamicQubitArray):
+            other = other.tracer
+        if isinstance(other, list):
+            for x in other:
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
+                    raise ValueError(
+                        "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
+                    )
+            for x in reversed(other):
+                self = DynamicQubitArray(fuse_qb_array(x, self.tracer))
+            return self
+
+        return DynamicQubitArray(fuse_qb_array(other, self.tracer))
 
     @property
     def reg(self):
         return self
 
     def measure(self):
-        from qrisp.jasp import TracingQuantumSession, Measurement_p
+        from qrisp.jasp import Measurement_p, TracingQuantumSession
 
         qs = TracingQuantumSession.get_instance()
-        res, qs.abs_qc = Measurement_p.bind(self.tracer, qs.abs_qc)
+        res, qs.abs_qst = Measurement_p.bind(self.tracer, qs.abs_qst)
         return res
-
-
-from jax import tree_util
-from builtins import id
 
 
 def flatten_dqa(dqa):
     return (dqa.tracer,), None
 
 
-def unflatten_dqa(aux_data, children):
+def unflatten_dqa(_, children):
     return DynamicQubitArray(children[0])
 
 

@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,9 +17,9 @@
 
 import numpy as np
 
-from qrisp import QuantumVariable, QFT, cp, h, p, x
-from qrisp.environments import GMSEnvironment
+from qrisp import QFT, QuantumVariable, cp, h, p, x
 from qrisp.alg_primitives.arithmetic import QuantumFloat
+from qrisp.environments import GMSEnvironment
 
 qv1 = QuantumVariable(1)
 qv2 = QuantumVariable(1)

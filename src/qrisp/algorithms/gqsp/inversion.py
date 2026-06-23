@@ -1,0 +1,208 @@
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
+
+from typing import Literal
+
+import numpy as np
+import numpy.typing as npt
+
+from qrisp.algorithms.cks import cks_coeffs, cks_params
+from qrisp.algorithms.gqsp.gqsvt import GQSVT
+from qrisp.algorithms.gqsp.qet import QET
+from qrisp.algorithms.gqsp.qsvt import QSVT
+from qrisp.block_encodings import BlockEncoding
+
+
+def inversion(
+    A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT"
+) -> BlockEncoding:
+    r"""Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
+    Returns a BlockEncoding approximating the matrix inversion of the operator.
+
+    For a block-encoded not necessarily Hermitian matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+    operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
+
+    The inversion is implemented via
+
+    - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+    - Quantum Singular Value Transformation (QSVT)
+
+    - Generalized Quantum Singular Value Transform (GQSVT)
+
+    using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
+
+    .. image:: /_static/chebyshev_inversion.png
+       :align: center
+
+    Parameters
+    ----------
+    A : BlockEncoding
+        The block-encoded matrix to be inverted. It is assumed that
+        the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
+    eps : float
+        The target precision $\epsilon$.
+    kappa : float
+        An upper bound for the condition number $\kappa$ of $A$.
+        This value defines the "gap" around zero where the function $1/x$ is not approximated.
+    method : {"QET", "QSVT", "GQSVT"}
+        The method for implementing the inversion.
+
+        - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
+
+        - ``"QSVT"``: Quantum Singular Value Transform
+
+        - ``"GQSVT"``: Generalized Quantum Singular Value Transform
+
+        Default is ``"QSVT"``.
+
+    Returns
+    -------
+    BlockEncoding
+        A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
+
+    Notes
+    -----
+    - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
+      Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
+      and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
+
+    References
+    ----------
+    - Childs et al. (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
+
+    Examples
+    --------
+    Define a QSLP and solve it using :meth:`inversion`.
+
+    First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
+
+    ::
+
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                    [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                    [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                    [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+        kappa = np.linalg.cond(A)
+        print("Condition number of A: ", kappa)
+        # Condition number of A:  1.8448536035491883
+
+    Generate a block-encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
+
+    ::
+
+        from qrisp import *
+        from qrisp.algorithms.gqsp import inversion
+        from qrisp.operators import QubitOperator
+
+        H = QubitOperator.from_matrix(A, reverse_endianness=True)
+        BA = H.pauli_block_encoding()
+
+        BA_inv = inversion(BA, 0.01, 2)
+
+        # Prepares operand variable in state |b>
+        def prep_b():
+            operand = QuantumVariable(2)
+            prepare(operand, b)
+            return operand
+
+        @terminal_sampling
+        def main():
+            operand = BA_inv.apply_rus(prep_b)()
+            return operand
+
+        res_dict = main()
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+
+    Finally, compare the quantum simulation result with the classical solution:
+
+    ::
+
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
+        # QUANTUM SIMULATION
+        # [0.02844496 0.55538449 0.53010186 0.64010231]
+        # CLASSICAL SOLUTION
+        # [0.02944539 0.55423278 0.53013239 0.64102936]
+
+    """
+    ALLOWED_METHODS = {"QET", "GQSVT", "QSVT"}
+    if method not in ALLOWED_METHODS:
+        raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
+
+    p = _inversion_cheb(1.0 / kappa, eps)
+
+    if method == "QET":
+        # Set _rescale=False to apply p(A/α) instead of p(A).
+        A_inv = QET(A, p, kind="Chebyshev", rescale=False)
+    elif method == "QSVT":
+        # For SDV A = U @ S @ V_dg, the singular value transformation applies p(S) to the singular values,
+        # resulting in U @ p(S) @ V_dg.
+        # We apply QSVT to A_dg to get V @ p(S) @ U_dg.
+        A_dg = A.dagger()
+        A_inv = QSVT(A_dg, p, kind="Chebyshev", parity="odd", rescale=False)
+    if method == "GQSVT":
+        # For SDV A = U @ S @ V_dg, the generalized singular value transformation applies p(S) to the singular values,
+        # resulting in V @ p(S) @ U_dg.
+        A_inv = GQSVT(A, p, kind="Chebyshev", parity="odd", rescale=False)
+
+    # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
+    A_inv.alpha = A_inv.alpha / A.alpha
+    return A_inv
+
+
+def _inversion_cheb(
+    theta: float,
+    eps: float = 1e-3,
+) -> npt.NDArray[np.float64]:
+    r"""Constructs a Chebyshev polynomial approximation of the inversion.
+
+    This function creates a polynomial that approximates $1/x$ over the domain
+    $[-1, \theta] \cup [\theta, 1]$ (https://arxiv.org/pdf/1511.02306, Lemma 14).
+
+    Parameters
+    ----------
+    theta : float
+        This threshold value defines the boundaries of the "gap" around zero
+        $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.
+    eps : float, optional
+        The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
+
+    Returns
+    -------
+    ndarray
+        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
+        approximation of the inverse, ordered from lowest order term to highest.
+
+    """
+    # The inversion polynomial is constructed using cks_params and cks_coeffs.
+    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
+    # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
+    # This array is expanded into a full Chebyshev series by padding even-degree terms with zeros.
+    j_0, beta = cks_params(eps, 1.0 / theta)
+    coeffs_odd = cks_coeffs(j_0, beta)
+    coeffs_odd = coeffs_odd * (-1) ** np.arange(len(coeffs_odd))
+    coeffs = np.zeros(2 * len(coeffs_odd))
+    coeffs[1::2] = coeffs_odd
+
+    return coeffs

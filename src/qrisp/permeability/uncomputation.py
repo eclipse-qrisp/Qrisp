@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,22 +16,22 @@
 """
 
 import numpy as np
+
 from qrisp.circuit import fast_append
 
 
 def auto_uncompute(*args, recompute=False):
-    if len(args):
+    if args:
         return auto_uncompute_inner(args[0])
+    elif recompute:
+        from qrisp import gate_wrap
+
+        def auto_uncompute_helper(function):
+            return gate_wrap(auto_uncompute_inner(function))
+
+        return auto_uncompute_helper
     else:
-        if recompute:
-            from qrisp import gate_wrap
-
-            def auto_uncompute_helper(function):
-                return gate_wrap(auto_uncompute_inner(function))
-
-            return auto_uncompute_helper
-        else:
-            return auto_uncompute_inner(args[0])
+        return auto_uncompute_inner(args[0])
 
 
 # Decorator for auto uncomputed function
@@ -69,7 +68,7 @@ def auto_uncompute_inner(function):
         uncomp_vars = []
 
         for qv in qs.qv_list:
-            if not hash(qv) in initial_qvs.union(result_vars):
+            if hash(qv) not in initial_qvs.union(result_vars):
                 uncomp_vars.append(qv)
 
         uncompute(qs, uncomp_vars)
@@ -119,7 +118,7 @@ def uncompute(qs, uncomp_vars, recompute=False):
         if instr.op.name == "qb_alloc" and instr.qubits[0] in alloc_gates_remaining:
             alloc_gates_remaining.remove(instr.qubits[0])
 
-    if len(alloc_gates_remaining):
+    if alloc_gates_remaining:
         incorrectly_allocated_qvs = []
 
         for qv in uncomp_vars:

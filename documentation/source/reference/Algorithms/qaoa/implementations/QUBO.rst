@@ -1,9 +1,9 @@
-.. _QUBOQAOAdoc:
+.. _QUBOQAOA:
 
 QAOA QUBO
 =========
 
-The QUBO problem and its QAOA implementation is discussed in plenty of detail in the :ref:`QUBO tutorial <QUBOQAOA>`.
+The QUBO problem and its QAOA implementation is discussed in plenty of detail in the :ref:`QAOA tutorial <QAOA101>`.
 All the necessary ingredients and required steps to run QAOA are elaborated on in an easy to grasp manner.
 
 Here, we provide a condensed implementation of QAOA for QUBO using all of the predefined functions.

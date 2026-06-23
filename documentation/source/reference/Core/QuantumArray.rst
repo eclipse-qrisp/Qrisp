@@ -35,7 +35,28 @@ Array Restructuring
    QuantumArray.reshape
    QuantumArray.swapaxes
    QuantumArray.transpose
-   
-   
-   
-   
+
+Arithmetic
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   QuantumArray.__add__
+   QuantumArray.__sub__
+   QuantumArray.__matmul__
+   QuantumArray.__mul__
+   QuantumArray.__eq__
+   QuantumArray.__ne__
+   QuantumArray.__gt__
+   QuantumArray.__ge__
+   QuantumArray.__lt__
+   QuantumArray.__le__
+   QuantumArray.__and__
+   QuantumArray.__or__
+   QuantumArray.__xor__
+   QuantumArray.__iadd__
+   QuantumArray.__isub__
+   QuantumArray.__imul__
+   QuantumArray.all
+   QuantumArray.any

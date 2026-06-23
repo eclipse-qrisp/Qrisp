@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,10 +16,12 @@
 """
 
 import random
-import numpy as np
 import time
-from qrisp import QuantumCircuit
+
+import numpy as np
 from qrisp.quantum_network import QuantumNetworkClient, QuantumNetworkServer
+
+from qrisp import QuantumCircuit
 
 # In this example we will demonstrate Qrisps quantum network simulator
 # by performing a teleportation

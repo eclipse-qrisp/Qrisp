@@ -90,7 +90,7 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
      - XY mixer
      -    ✅ 
 
-Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`, showcasing multiple unique features of Qrisp, including the functionality of creating custom QuantumVariable types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.
+Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: `MaxCut <https://www.qrisp.eu/general/tutorial/QAOAtutorial/MaxCut.html>`_ and `Max-$\\kappa$-Colorable Subgraph <https://www.qrisp.eu/general/tutorial/QAOAtutorial/MkCS.html>`_, showcasing multiple unique features of Qrisp, including the functionality of creating custom QuantumVariable types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.
 
 .. currentmodule:: qrisp
 
@@ -99,8 +99,8 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    :hidden:
    
    Theoretical
-   MaxCut
-   MkCS
-   QUBO
-   ConstrainedMixers
-   PortfolioRebalancing
+   MaxCut.ipynb
+   MkCS.ipynb
+   ConstrainedMixers.ipynb
+   QUBO.ipynb
+   PortfolioRebalancing.ipynb

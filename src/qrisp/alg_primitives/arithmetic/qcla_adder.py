@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -282,9 +281,7 @@ def anc_gate(method="gray"):
 def qcla(a, b, radix_base=2, radix_exponent=0, reduce_t_depth=True):
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
     R = radix_base**radix_exponent
 
@@ -317,7 +314,6 @@ def sum_path(a, b, c, R):
         i = 0
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -335,14 +331,10 @@ def sum_path(a, b, c, R):
             if not len(a_block) == len(b_block):
                 padding_var = QuantumVariable(len(b_block) - len(a_block))
                 a_block = a_block + list(padding_var)
-            # Perform Cuccarro addition
+            # Perform Gidney addition
             if i == 0:
-                # cuccaro_procedure(a.qs, a_block, b_block)
-
                 gidney_adder(a_block, b_block)
             else:
-
-                # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
                 gidney_adder(a_block, b_block, c[i - 1])
 
             # Delete carry var
@@ -421,7 +413,6 @@ def sum_path_gidney(a, b, c, R):
         # print("R: ", R)
         # print("len(a)//R: ", len(a)//R)
         for j in range(int(np.ceil(len(a) / R)), len(b) // R + 2)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
             # print(j)
 
@@ -432,11 +423,10 @@ def sum_path_gidney(a, b, c, R):
             # Perform incrementation function
             if R * j == 0:
                 lin_incr(b_block, c_out=c[j])
+            elif j < len(c):
+                lin_incr(b_block, c[j - 1], c_out=c[j])
             else:
-                if j < len(c):
-                    lin_incr(b_block, c[j - 1], c_out=c[j])
-                else:
-                    lin_incr(b_block, c[j - 1])
+                lin_incr(b_block, c[j - 1])
 
     # Execute addition using the corresponding carry values
     for i in range(len(a) // R + 1)[::-1]:
@@ -458,15 +448,13 @@ def sum_path_gidney(a, b, c, R):
             padding_var = QuantumVariable(len(b_block) - len(a_block))
             a_block = a_block + list(padding_var)
 
-        # Perform Cuccarro addition
+        # Perform Gidney addition
         if i == 0:
-            # cuccaro_procedure(a.qs, a_block, b_block)
             if len(c):
                 gidney_adder(a_block, b_block, c_out=c[i])
             else:
                 gidney_adder(a_block, b_block)
         elif i < len(c):
-            # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
             gidney_adder(a_block, b_block, c_in=c[i - 1], c_out=c[i])
         else:
             gidney_adder(a_block, b_block, c_in=c[i - 1])
@@ -548,7 +536,6 @@ c = calc_carry(a, b, radix_base, radix_exponent)
 # gidney_adder(a, b)
 
 print(c)
-from qrisp.interface import QiskitBackend
 
 # print(multi_measurement([a,d,b]))
 # print(b.get_measurement(compilation_kwargs = {"compile_mcm" : True}))
@@ -621,7 +608,6 @@ for radix_base in [2, 3]:
     for radix_exponent in [1, 0, 2]:
         for m in range(1, 7):
             for n in range(1, m):
-
                 a = QuantumFloat(n)
                 b = QuantumFloat(m)
                 c = QuantumFloat(m)
@@ -644,11 +630,7 @@ for radix_base in [2, 3]:
                         assert False
 
                 statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(
-                    statevector_arr[
-                        np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
-                    ]
-                )
+                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
 
                 # Test correct phase behavior
                 assert np.sum(np.abs(angles)) < 0.1

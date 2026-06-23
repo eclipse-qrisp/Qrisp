@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,6 +16,7 @@
 """
 
 import sympy as sp
+
 from qrisp.alg_primitives.logic_synthesis.truth_tables import TruthTable, synth_poly
 from qrisp.misc.utility import gate_wrap
 
@@ -58,15 +58,14 @@ def pprm_synth(input_var, output_var, tt, qb_nr, phase_tolerant=False):
                     qs.cx(input_qubits[0], output_qubit)
                 else:
                     qs.x(output_qubit)
+            elif phase_tolerant:
+                qs.append(
+                    mul_tt.gate_synth(method="gray_pt"),
+                    input_qubits + [output_qubit],
+                )
             else:
-                if phase_tolerant:
-                    qs.append(
-                        mul_tt.gate_synth(method="gray_pt"),
-                        input_qubits + [output_qubit],
-                    )
-                else:
-                    mcx(input_qubits, output_qubit, method="gray")
-                    # qs.append(mul_tt.gate_synth(method = "gray"),input_qubits+[output_qubit])  # noqa
+                mcx(input_qubits, output_qubit, method="gray")
+                # qs.append(mul_tt.gate_synth(method = "gray"),input_qubits+[output_qubit])  # noqa
         else:
             if isinstance(args[element][0], sp.core.symbol.Symbol):
                 arg_qubit = (-int(args[element][0].name[1:]) - 1) % input_var.size

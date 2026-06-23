@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.core import h
 from qrisp.alg_primitives import QPE
+from qrisp.core import h
 
 
 def quantum_counting(qv, oracle, precision):
-    """
-    This algorithm estimates the amount of solutions for a given Grover oracle.
+    """This algorithm estimates the amount of solutions for a given Grover oracle.
 
     Parameters
     ----------
@@ -40,7 +38,6 @@ def quantum_counting(qv, oracle, precision):
 
     Examples
     --------
-
     We create an oracle, which performs a simple phase flip on the last qubit. ::
 
         from qrisp import quantum_counting, z, QuantumVariable
@@ -63,7 +60,6 @@ def quantum_counting(qv, oracle, precision):
 
 
     """
-
     from qrisp import gate_wrap, measure
     from qrisp.grover import diffuser
     from qrisp.jasp import check_for_tracing_mode

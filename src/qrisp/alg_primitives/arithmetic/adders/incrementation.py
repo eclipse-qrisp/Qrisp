@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,7 +16,7 @@
 """
 
 from qrisp.core import QuantumVariable
-from qrisp.core.gate_application_functions import x, cx, mcx
+from qrisp.core.gate_application_functions import cx, mcx, x
 from qrisp.misc import gate_wrap
 
 
@@ -26,7 +25,7 @@ def increment(qf, amount):
     if amount == 0:
         return
 
-    if not abs(amount) in [qf.decoder(i) for i in range(2**qf.size)]:
+    if abs(amount) not in [qf.decoder(i) for i in range(2**qf.size)]:
         raise Exception("Tried to increment with invalid value")
 
     # Convert amount to integer reesentation

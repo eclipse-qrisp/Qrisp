@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,20 +17,17 @@
 
 import networkx as nx
 
-from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperation
-from qrisp.permeability.type_checker import is_qfree
-
+from qrisp.circuit import ControlledOperation, PTControlledOperation, fast_append
 from qrisp.permeability.permeability_dag import (
-    PermeabilityGraph,
     InstructionNode,
+    PermeabilityGraph,
     TerminatorNode,
-    AllocNode,
 )
+from qrisp.permeability.type_checker import is_qfree
 
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
-    """
-    This function applies the Unqomp algorithm to the QuantumCircuit qc, uncomputing
+    """This function applies the Unqomp algorithm to the QuantumCircuit qc, uncomputing
     the qubits uncomp_qbs. It is possible to specify a set of qubits that has been
     uncomputed earlier, which is allowed to be recomputed.
 
@@ -59,9 +55,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
         The result of the Unqomp algorithm.
 
     """
-
     with fast_append():
-
         # To speed up the uncomputation, the first step is to filter
         # out instruction that are guaranteed that they don't need to be uncomputed.
 
@@ -98,7 +92,6 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
         lin.reverse()
 
         for i in range(len(lin)):
-
             # Set an alias
             node = lin[i]
 
@@ -124,7 +117,6 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
 
             # This case represents the neccesity to uncompute
             if set(target_qubits).issubset(uncomp_qbs) and node.instr and target_qubits:
-
                 # The uncompute node function inserts an uncomputation node into the pdag
                 # If a recomputation is required, no nodes are inserted and it returns True
                 recompute = uncompute_node(pdag, node, uncomp_qbs, recompute_qubits)
@@ -135,12 +127,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
                 if recompute:
                     return uncompute_qc(
                         qc,
-                        uncomp_qbs
-                        + list(
-                            set(pdag.get_control_qubits(node)).intersection(
-                                recompute_qubits
-                            )
-                        ),
+                        uncomp_qbs + list(set(pdag.get_control_qubits(node)).intersection(recompute_qubits)),
                         recompute_qubits,
                     )
                 continue
@@ -155,7 +142,6 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
             off_target_qubits = list(set(target_qubits) - set(uncomp_qbs))
 
             if off_target_qubits:
-
                 non_uncomputable_qubits = []
                 for qb in off_target_qubits:
                     if qb.allocated:
@@ -180,17 +166,14 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
             raise Exception("Cyclic dependency detected in DAG during uncomputation")
 
         # Insert the previous and follow_up instructions
-        uncomputed_qc.data = (
-            previous_instructions + uncomputed_qc.data + follow_up_instructions
-        )
+        uncomputed_qc.data = previous_instructions + uncomputed_qc.data + follow_up_instructions
 
         # Return the uncomputed QuantumCircuit
         return uncomputed_qc
 
 
 def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
-    """
-    Uncomputes a node in a given PermeabilityGraph (in-place) according to the
+    """Uncomputes a node in a given PermeabilityGraph (in-place) according to the
     Unqomp algorithm.
 
     Parameters
@@ -215,7 +198,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         A bool indicating whether a recomputation is required.
 
     """
-
     # Get the target qubits
     target_qubits = pdag.get_target_qubits(node)
 
@@ -302,7 +284,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         ctrl_qubit_dic[c] = pdag.get_edge_qubits(c, node)
 
     while len(ctrls):
-
         # Set alias
         c = ctrls.pop(0)
 
@@ -314,7 +295,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         # This treats the case that the control edge is among the recomputable qubits
         # implying this node needs to be recomputed.
         if recomputation_required and pdag.has_edge(c, node):
-
             # If the required qubits for recomputation are not among the uncomputation
             # qubits, we cancel the function by returning True
             # The parent function will then start a new uncomputation attempt,
@@ -335,15 +315,12 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         # For this we iterate over the control qubits and check the streak
         # associated to that qubit
         for qb in control_edge_qubits:
-
             streak_children = pdag.get_streak_children(c, qb)
 
             # Iterate over the streak
             for streak_child in streak_children:
-
                 # The streak is cancelled by the streak children of the streak_child
                 for cancellation_node in pdag.get_streak_children(streak_child, qb):
-
                     pdag.add_edge(
                         reversed_node,
                         cancellation_node,
@@ -351,9 +328,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                         qubits=[qb],
                     )
 
-                    cancellation_node.value_layer = max(
-                        cancellation_node.value_layer, reversed_node.value_layer + 1
-                    )
+                    cancellation_node.value_layer = max(cancellation_node.value_layer, reversed_node.value_layer + 1)
 
         # Add the edge from the control node of the original node to the reversed node.
         pdag.add_edge(c, reversed_node, edge_type="Z", qubits=control_edge_qubits)
@@ -362,7 +337,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
     # For that we use the a_star_n_list which represents all the nodes, that are
     # targetted by the operation
     for a_star_n in a_star_n_list:
-
         # We first add the edge to the qubits targetted by a_star_n
 
         # The qubits of this edge are the qubits which are:
@@ -377,7 +351,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
 
         # We now iterate over the targets of the node to connect the edges
         for qb in target_qubits:
-
             # These are the nodes which form a streak on that qubit
             streak_children = pdag.get_streak_children(a_star_n, qb)
             # Depending on how long the streak is, we have ton insert a TerminatorNode
@@ -387,9 +360,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
 
             # If there is only one control, we can safely append a neutral edge to that control node
             elif len(streak_children) == 1:
-                pdag.add_edge(
-                    streak_children[0], reversed_node, edge_type="neutral", qubits=[qb]
-                )
+                pdag.add_edge(streak_children[0], reversed_node, edge_type="neutral", qubits=[qb])
 
             # If there is a streak, we need to insert a terminator edge
             else:

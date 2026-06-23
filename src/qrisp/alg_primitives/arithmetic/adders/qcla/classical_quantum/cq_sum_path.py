@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -22,10 +21,10 @@
 # For this we implement the Brent-Kung-Tree in a recursive manner. See:
 # https://web.stanford.edu/class/archive/ee/ee371/ee371.1066/lectures/lect_04.pdf Page 13
 
-from qrisp.core.gate_application_functions import x, cx
-from qrisp.misc.utility import check_if_fresh
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder, cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.misc.utility import check_if_fresh
 
 # Both of these functions are the semi-classical versions of the ones found in
 # qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path
@@ -49,7 +48,6 @@ def cq_sum_path(a, b, c, R, ctrl=None):
     else:
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -84,7 +82,6 @@ def cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=None):
     else:
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1)[::-1]:
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -102,6 +99,6 @@ def cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=None):
                 c_out = c[i]
 
             if a_block != len(a_block) * "0":
-                cq_gidney_adder(a_block, b_block, c_in=c_in, ctrl=ctrl, c_out=c_out)
+                gidney_adder(a_block, b_block, c_in=c_in, ctrl=ctrl, c_out=c_out)
             else:
                 lin_incr(b_block, c_in=c_in, c_out=c_out)

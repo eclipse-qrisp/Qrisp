@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -28,9 +27,7 @@ class qRange:
             raise Exception("Can only create quantum iterators from quantum variables")
 
         if max_index_qf.exponent != 0:
-            raise Exception(
-                "qRange can only be intialized with integer quantum indices"
-            )
+            raise Exception("qRange can only be intialized with integer quantum indices")
 
         self.create_index_qf = create_index_qf
         self.max_index_qf = max_index_qf
@@ -40,9 +37,7 @@ class qRange:
         from qrisp import control, perm_lock, x
 
         if self.create_index_qf:
-            self.index_qf = self.max_index_qf.duplicate(
-                qs=self.max_index_qf.qs, name="index_qf"
-            )
+            self.index_qf = self.max_index_qf.duplicate(qs=self.max_index_qf.qs, name="index_qf")
             self.index_qf.init_from(self.max_index_qf)
 
         else:

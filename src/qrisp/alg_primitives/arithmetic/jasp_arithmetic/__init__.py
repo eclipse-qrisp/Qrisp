@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,12 +19,8 @@
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import (
     jasp_fourier_adder,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_cq_gidney_adder import (
-    jasp_cq_gidney_adder,
-)
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_qq_gidney_adder import (
-    jasp_qq_gidney_adder,
-)
+
+
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import (
     jasp_mod_adder,
 )
@@ -32,4 +28,20 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
     jasp_controlling_multiplyer,
     jasp_squaring,
     jasp_multiplyer,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+    q_montgomery_reduction,
+    qq_montgomery_multiply,
+    cq_montgomery_multiply,
+    cq_montgomery_multiply_inplace,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    BigInteger,
+    bi_modinv,
+    bi_montgomery_encode,
+    bi_montgomery_decode,
+    bi_extended_euclidean,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+    best_montgomery_shift,
 )

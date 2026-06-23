@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,14 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.optimization_tools.spsa import spsa
 from qrisp.jasp.optimization_tools.cobyla import cobyla
+from qrisp.jasp.optimization_tools.spsa import spsa
 
 
-def minimize(fun, x0, args=(), method='COBYLA', options={}):
-    r"""
-
-    Minimization of scalar functions of one ore more variables via gradient-free solvers.
+def minimize(fun, x0, args=(), method="COBYLA", options={}):
+    r"""Minimization of scalar functions of one ore more variables via gradient-free solvers.
 
     The API for this function matches SciPy with some minor deviations.
 
@@ -55,7 +52,6 @@ def minimize(fun, x0, args=(), method='COBYLA', options={}):
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -96,12 +92,9 @@ def minimize(fun, x0, args=(), method='COBYLA', options={}):
         print(results.fun)
 
     """
-
     if method == "SPSA":
         return spsa(fun, x0, args, **options)
     elif method == "COBYLA":
         return cobyla(fun, x0, args, **options)
     else:
-        raise Exception(
-            f"Optimization method {method} is not available in tracing mode."
-        )
+        raise Exception(f"Optimization method {method} is not available in tracing mode.")

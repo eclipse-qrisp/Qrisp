@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,15 +17,17 @@
 
 
 def test_IQPE_integration():
-    from qrisp import QuantumVariable, h, x, rx, IQPE
-    from qrisp.jasp import make_jaspr
     import numpy as np
+
+    from qrisp import IQPE, QuantumVariable, h, rx, x
+    from qrisp.jasp import make_jaspr
+
     def f():
         def U(qv):
-            x = 1/2**3
-            y = 1/2**2
-            rx(x*2*np.pi, qv[0])
-            rx(y*2*np.pi, qv[1])
+            x = 1 / 2**3
+            y = 1 / 2**2
+            rx(x * 2 * np.pi, qv[0])
+            rx(y * 2 * np.pi, qv[1])
 
         qv = QuantumVariable(2)
 
@@ -34,5 +35,6 @@ def test_IQPE_integration():
         h(qv)
 
         return IQPE(qv, U, precision=4)
+
     jaspr = make_jaspr(f)()
-    assert(np.abs(jaspr() - 1/2**3 - 1/2**2) < 0.001)
+    assert np.abs(jaspr() - 1 / 2**3 - 1 / 2**2) < 0.001

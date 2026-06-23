@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,14 +16,15 @@
 """
 
 import copy
-from jax import tree_util
+
 import jax.numpy as jnp
+from jax import tree_util
+
 from qrisp.jasp.tracing_logic import (
-    TracingQuantumSession,
     DynamicQubitArray,
+    TracingQuantumSession,
     check_for_tracing_mode,
 )
-
 
 # This class has two purposes
 
@@ -42,7 +42,6 @@ from qrisp.jasp.tracing_logic import (
 # The QuantumVariable template doesn't carry the register information (only the
 # size) and can therefore be passed around like a classical value.
 class QuantumVariableTemplate:
-
     def __init__(self, qv, size_tracked=True):
         self.duplication_counter = 0
         self.qv = copy.copy(qv)
@@ -67,9 +66,7 @@ class QuantumVariableTemplate:
         res.qs = qs
         if reg is None:
             if not self.size_tracked:
-                raise Exception(
-                    "Tried to construct QuantumVariable from template lacking a size specification"
-                )
+                raise Exception("Tried to construct QuantumVariable from template lacking a size specification")
 
             qs.register_qv(res, self.qv_size)
         else:
@@ -96,7 +93,13 @@ def flatten_qv(qv):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
 
-    return tuple(children), QuantumVariableTemplate(qv, False)
+    aux_values = (QuantumVariableTemplate(qv, False),)
+
+    for static_attribute in qv.static_attributes:
+        attr = getattr(qv, static_attribute)
+        aux_values += (attr,)
+
+    return tuple(children), aux_values
 
 
 def unflatten_qv(aux_data, children):
@@ -105,15 +108,19 @@ def unflatten_qv(aux_data, children):
     # the user has to make sure that the result of this function is
     # registered in a QuantumSession.
 
-    qv_container = aux_data
+    qv_container = aux_data[0]
     reg = DynamicQubitArray(children[0])
     qv = qv_container.construct(reg)
-    # qv = copy.copy(qv_container.qv)
-    # qv.reg = reg
+
+    # We set the QuantumSession to None because the QuantumVariable needs
+    # to be registered into the TracingQuantumSession of the new tracing
+    # context manually.
     qv.qs = None
 
     for i in range(len(qv.traced_attributes)):
         setattr(qv, qv.traced_attributes[i], children[i + 1])
+    for i in range(len(qv.static_attributes)):
+        setattr(qv, qv.static_attributes[i], aux_data[i + 1])
     return qv
 
 
@@ -148,6 +155,4 @@ def unflatten_template(aux_data, children):
     return res
 
 
-tree_util.register_pytree_node(
-    QuantumVariableTemplate, flatten_template, unflatten_template
-)
+tree_util.register_pytree_node(QuantumVariableTemplate, flatten_template, unflatten_template)

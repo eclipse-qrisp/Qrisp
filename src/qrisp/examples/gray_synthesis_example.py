@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,10 +18,10 @@
 # This example displays the logic synthesis capabilities of Qrisp
 # The user-interface for this feautre is the QuantumDictionary
 
-from qrisp.core import QuantumVariable
-from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth  # , pprm
-from qrisp.misc import int_encoder
 from qrisp import h
+from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth  # , pprm
+from qrisp.core import QuantumVariable
+from qrisp.misc import int_encoder
 
 # Create a testing truth table
 tt = TruthTable(["00010101", "01001101", "01011100"])

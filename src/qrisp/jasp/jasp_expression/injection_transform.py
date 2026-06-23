@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,14 +15,10 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
+from jax.extend.core import JaxprEqn
 
-from jax import make_jaxpr
-from jax.core import JaxprEqn, ClosedJaxpr
-from jax.lax import add_p, sub_p, while_loop
-
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-from qrisp.jasp.jasp_expression.centerclass import Jaspr
+from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -34,14 +29,15 @@ def copy_jaxpr_eqn(eqn):
         params=dict(eqn.params),
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 
-@lru_cache(int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def injection_transform(jaspr, qubit_array_outvar):
-    """
-    This function takes in a Jaspr that returns a QubitArray, which has been
-    created in it's body. The function then transforms it to a Jaspr, which
+    """This function takes in a Jaspr that returns a QubitArray, which has been
+    created in its body. The function then transforms it to a Jaspr, which
     DOESN'T create this QubitArray but instead receives it as a parameter.
     This functionality is required to realize the redirect_qfunction decorator,
     which turns out-of-place functions into in-place functions.
@@ -66,8 +62,7 @@ def injection_transform(jaspr, qubit_array_outvar):
         The transformed jaspr.
 
     """
-
-    if not qubit_array_outvar in jaspr.outvars:
+    if qubit_array_outvar not in jaspr.outvars:
         raise Exception("Specified ")
 
     # We will now iterate through the function body to find the equation that
@@ -79,7 +74,7 @@ def injection_transform(jaspr, qubit_array_outvar):
     # 3. slice
 
     # For the first case we delete the equation. Since the create qubits
-    # primitive also returns a new QuantumCircuit object, we need to replace
+    # primitive also returns a new QuantumState object, we need to replace
     # the invar of the following equation to use the invar of the deleted
     # equation instead.
 
@@ -96,7 +91,6 @@ def injection_transform(jaspr, qubit_array_outvar):
     deleted_quantum_circuit_variable = None
 
     for i in range(len(jaspr.eqns)):
-
         eqn = jaspr.eqns[i]
 
         # Delete the equation by skipping the last line of the loop
@@ -106,40 +100,33 @@ def injection_transform(jaspr, qubit_array_outvar):
                 continue
 
         # Recursively apply the injection transform
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             if qubit_array_outvar in eqn.outvars:
-
                 # Retrieve the Jaspr to be transformed
-                sub_jaspr = eqn.params["jaxpr"].jaxpr
+                sub_jaspr = eqn.params["jaxpr"]
 
                 # Retrieve the QubitArray to be injected
-                sub_qubit_array_outvar = sub_jaspr.outvars[
-                    eqn.outvars.index(qubit_array_outvar)
-                ]
+                sub_qubit_array_outvar = sub_jaspr.outvars[eqn.outvars.index(qubit_array_outvar)]
 
                 # Copy the equation to prevent in-place modification errors
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = ClosedJaxpr(
-                    injection_transform(sub_jaspr, sub_qubit_array_outvar), []
-                )
+                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 
         # Raise exception for the illegal case
         elif eqn.primitive.name == "jasp.slice":
             if eqn.outvars[0] is qubit_array_outvar:
-                raise Exception(
-                    "Tried to redirect quantum function returning a sliced qubit array"
-                )
+                raise Exception("Tried to redirect quantum function returning a sliced qubit array")
 
-        # Replace the QuantumCircuit invar
-        if not deleted_quantum_circuit_variable is None:
+        # Replace the QuantumState invar
+        if deleted_quantum_circuit_variable is not None:
             eqn = copy_jaxpr_eqn(eqn)
             for j in range(len(eqn.invars)):
                 invar = eqn.invars[j]
-                if isinstance(invar.aval, AbstractQuantumCircuit):
+                if isinstance(invar.aval, AbstractQuantumState):
                     eqn.invars[j] = deleted_quantum_circuit_variable
                     deleted_quantum_circuit_variable = None
                     break
@@ -157,9 +144,9 @@ def injection_transform(jaspr, qubit_array_outvar):
     new_jaspr.eqns.clear()
     new_jaspr.eqns.extend(new_eqns)
 
-    # If the QuantumCircuit invar was never replaced, the QuantumCircuit is
+    # If the QuantumState invar was never replaced, the QuantumState is
     # is returned by the Jaspr
-    if not deleted_quantum_circuit_variable is None:
+    if deleted_quantum_circuit_variable is not None:
         new_jaspr.outvars[-1] = deleted_quantum_circuit_variable
 
     return new_jaspr

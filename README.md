@@ -1,11 +1,11 @@
-<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/logo_with_contour.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://raw.githubusercontent.com/eclipse-qrisp/Qrisp/main/logo/logo_with_contour.png" width=30%></p>
 
 </h1><br>
 <div align="center">
 
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
 ![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)
-[![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat&logo=slack&logoColor=white)](https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
+[![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord)](https://discord.gg/v5np7DeBaq)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
 [![CodeFactor](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
@@ -37,11 +37,15 @@ You can install Qrisp using pip:
 pip install qrisp
 ```
 
-Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
+Qrisp has been confirmed to work with Python version 3.11 & 3.12.
 
-Qrisp is compatible with any QASM-capable quantum backend! If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
+
+Additional backends require extra dependencies:
 ```bash
-pip install qrisp[iqm]
+pip install qrisp[aqt]     # AQT quantum hardware
+pip install qrisp[iqm]     # IQM quantum hardware
+pip install qrisp[qiskit]  # Qiskit Aer simulator + IBM Quantum Runtime
 ```
 
 ## Documentation
@@ -65,25 +69,27 @@ def find_order(a, N):
     for i in range(len(qpe_res)):
         with control(qpe_res[i]):
             qg *= a
-            a = (a*a)%N
+        a = (a*a)%N
     QFT(qpe_res, inv = True)
     return qpe_res.get_measurement()
 ```
 
-To find out how this can be used to break encryption be sure to check the [tutorial](https://www.qrisp.eu/general/tutorial.html).
+To find out how this can be used to break encryption be sure to check the [tutorial](https://qrisp.eu/general/tutorial/Shor.html).
 
-Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://www.qrisp.eu/general/tutorial.html).
+Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
+
+## Feedback and Contact
+If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
+
+- Join the Discussions on [Discord](https://discord.gg/v5np7DeBaq).
+- Join the bi-weekly [Developer Call](https://github.com/eclipse-qrisp/Qrisp/wiki/Eclipse-Qrisp-Developer-Meetings).
+- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-qrisp/qrisp/issues/new/choose).
+- Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!
+- Star the repository to show your support.
+
 
 ## Authors and Citation
-Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
-
-If you have comments, questions or love letters, feel free to reach out to us:
-
-raphael.seidel@fokus.fraunhofer.de
-
-sebastian.bock@fokus.fraunhofer.de
-
-nikolay.tcholtchev@fokus.fraunhofer.de
+Qrisp is the work of [many people](https://projects.eclipse.org/projects/technology.qrisp/who).
 
 If you want to cite Qrisp in your work, please use:
 

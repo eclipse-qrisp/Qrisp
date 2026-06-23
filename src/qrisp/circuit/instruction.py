@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,9 +17,8 @@
 
 
 class Instruction:
-    """
-    This class combines Operation objects with their operands (ie. qubits and classical
-    bits). The data attribut of the QuantumCircuit class consists of a list of
+    """This class combines Operation objects with their operands (ie. qubits and classical
+    bits). The data attribute of the QuantumCircuit class consists of a list of
     Instructions.
 
     Instructions can be added to QuantumCircuits using the
@@ -39,7 +37,6 @@ class Instruction:
 
     Examples
     --------
-
     We create two Instruction objects, merge them and append the result to a
     QuantumCircuit.
 
@@ -54,7 +51,7 @@ class Instruction:
     {'1': 10000}
     >>> print(qc.transpile())
 
-    ::
+    .. code-block:: none
 
               ┌───┐
         qb_0: ┤ X ├──■─────
@@ -71,8 +68,7 @@ class Instruction:
         self.clbits = clbits
 
     def merge(self, other):
-        """
-        Merges two instructions into one.
+        """Merges two instructions into one.
 
         Parameters
         ----------
@@ -85,7 +81,6 @@ class Instruction:
             The merged instruction (self is executed first).
 
         """
-
         from qrisp.circuit import QuantumCircuit
 
         qubit_list = list(set(self.qubits + other.qubits))
@@ -107,8 +102,7 @@ class Instruction:
         return res
 
     def copy(self):
-        """
-        Returns a copy of the Instruction.
+        """Returns a copy of the Instruction.
 
         Returns
         -------
@@ -126,14 +120,7 @@ class Instruction:
 
     def __str__(self):
         if len(self.clbits):
-            return (
-                self.op.name
-                + "("
-                + str(self.qubits)[1:-1]
-                + ", "
-                + str(self.clbits)[1:-1]
-                + ")"
-            )
+            return self.op.name + "(" + str(self.qubits)[1:-1] + ", " + str(self.clbits)[1:-1] + ")"
         else:
             return self.op.name + "(" + str(self.qubits)[1:-1] + ")"
 

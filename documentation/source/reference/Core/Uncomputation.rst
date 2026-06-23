@@ -70,7 +70,7 @@ To demonstrate the functionality, we create a function which returns a :ref:`Qua
    
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -115,7 +115,7 @@ We will now redefine this function with the *auto_uncompute* decorator ::
    
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -161,7 +161,7 @@ The second way of calling uncomputation is the :meth:`uncompute<qrisp.QuantumVar
    
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -203,7 +203,7 @@ In some cases, the entanglement structure of a set of QuantumVariables only allo
 
 >>> print(a.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -236,7 +236,7 @@ We now queue *b* for uncomputation and perform the algorithm once *c* is also up
 >>> b.uncompute(do_it = False)
 >>> c.uncompute()
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -330,7 +330,7 @@ Recomputation is a phenomenon that can happen if a function ``f`` that uncompute
 
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -352,7 +352,7 @@ Recomputation is a phenomenon that can happen if a function ``f`` that uncompute
     QuantumBool c
       
 We see that the uncomputation of ``u`` is awaited until the uncomputation of ``result`` finished, even though within the code, the :meth:`uncompute<qrisp.QuantumVariable.uncompute>` call of ``u`` came before the one of ``result``. In many situations this is a really efficient and helpfull feature of the algorithm, since there is less overhead in gates because ``u`` doesn't need to be recomputed.
-There are however situations, where this can yield to a :ref:`significant qubit overhead<tsp>`. To understand how this happens, consider the following simplified situation:
+There are however situations, where this can yield to a significant qubit overhead. To understand how this happens, consider the following simplified situation:
 
 ::
    
@@ -387,7 +387,7 @@ There are however situations, where this can yield to a :ref:`significant qubit 
 
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -448,7 +448,7 @@ In the above code snippet, ``result`` only holds a value at times, where ``u`` i
 
 >>> print(result.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------
@@ -494,7 +494,7 @@ We see that the uncomputation of ``u`` is no longer delayed but performed instan
 >>> compiled_qc = result.qs.compile()
 >>> print(compiled_qc)
 
-::
+.. code-block:: none
 
                  ┌────────┐          ┌────────┐                         ┌────────┐»
             a.0: ┤0       ├──────────┤0       ├─────────────────────────┤0       ├»

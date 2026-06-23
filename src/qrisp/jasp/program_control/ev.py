@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -47,8 +46,7 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 
 def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
-    r"""
-    The ``expectation_value`` function allows to estimate the expectation value
+    r"""The ``expectation_value`` function allows to estimate the expectation value
     from a state that is specified by a preparation procedure. This preparation
     procedure can be supplied via a Python function that returns one or
     more :ref:`QuantumVariables <QuantumVariable>`.
@@ -79,7 +77,6 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -152,9 +149,8 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
 
     """
-
-    from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import make_tracer, qache
 
     if isinstance(shots, int):
         shots = make_tracer(shots)
@@ -176,9 +172,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception(
-                    "Tried to sample from state preparation function taking a quantum value"
-                )
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.
@@ -196,9 +190,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             # Ensure all results are QuantumVariables
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
-                    raise Exception(
-                        "Tried to sample from function not returning a QuantumVariable"
-                    )
+                    raise Exception("Tried to sample from function not returning a QuantumVariable")
 
             # Trace the DynamicQubitArray measurements
             # Since we execute the measurements on the .reg attribute, no decoding
@@ -249,14 +241,10 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
         try:
             # loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))
-            loop_res = jax.lax.fori_loop(
-                0, shots, sampling_body_func, (jnp.zeros(1), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
             return loop_res[0][0] / shots
         except AuxException:
-            loop_res = jax.lax.fori_loop(
-                0, shots, sampling_body_func, (jnp.zeros(return_amount), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
             return loop_res[0] / shots
 
     if return_dict:

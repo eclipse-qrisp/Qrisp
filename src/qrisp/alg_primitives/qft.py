@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,8 +17,8 @@
 
 import numpy as np
 
-from qrisp.core import p, h, cp, cx, x, s, swap
-from qrisp.jasp import qache, jrange, check_for_tracing_mode
+from qrisp.core import cp, cx, h, p, s, swap, x
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 def QFT_inner(
@@ -49,10 +48,7 @@ def QFT_inner(
         env = GMSEnvironment
 
     if not is_inv(inplace_mult, n):
-        raise Exception(
-            "Tried to perform non-invertible inplace multiplication"
-            "during Fourier-Transform"
-        )
+        raise Exception("Tried to perform non-invertible inplace multiplication during Fourier-Transform")
 
     if inpl_adder is None:
         accumulated_phases = np.zeros(n)
@@ -96,7 +92,6 @@ def QFT_inner(
                 accumulated_phases[i] = 0
 
     else:
-
         from qrisp import QuantumFloat, conjugate
 
         reservoir = QuantumFloat(n + 1)
@@ -108,9 +103,7 @@ def QFT_inner(
                 p(np.pi * 2 ** (i - n + 1), reservoir[i])
 
         with conjugate(prepare_reservoir)(reservoir):
-
             for i in range(n):
-
                 h(qv[i])
 
                 if i == n - 1:
@@ -151,8 +144,7 @@ def QFT(
     use_gms=False,
     inpl_adder=None,
 ):
-    """
-    Performs the quantum fourier transform on the input.
+    """Performs the quantum fourier transform on the input.
 
     Parameters
     ----------
@@ -174,7 +166,7 @@ def QFT(
         gates. The default is False.
     inpl_adder : callable, optional
         Uses an adder and a reservoir state to perform the QFT. Read more about
-        it :ref:`here <adder_based_qft>`. The default is None
+        it in the `tutorial on fault-tolerant compilation <https://www.qrisp.eu/general/tutorial/FT_compilation.html>`_. The default is None
 
 
     """
@@ -202,18 +194,17 @@ def QFT(
                     inpl_adder=inpl_adder,
                 )
 
+    elif check_for_tracing_mode():
+        jasp_qft(qv, exec_swap)
     else:
-        if check_for_tracing_mode():
-            jasp_qft(qv, exec_swap)
-        else:
-            gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
-                qv,
-                exec_swap=exec_swap,
-                qiskit_endian=qiskit_endian,
-                inplace_mult=inplace_mult,
-                use_gms=use_gms,
-                inpl_adder=inpl_adder,
-            )
+        gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
+            qv,
+            exec_swap=exec_swap,
+            qiskit_endian=qiskit_endian,
+            inplace_mult=inplace_mult,
+            use_gms=use_gms,
+            inpl_adder=inpl_adder,
+        )
 
     return qv
 

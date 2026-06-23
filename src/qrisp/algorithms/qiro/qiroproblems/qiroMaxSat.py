@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,20 +17,15 @@
 
 # just write a replacement_routine and throw out not relevant sets
 
-from qrisp import rz, x, cx
-from qrisp.alg_primitives import app_sb_phase_polynomial
-
-import numpy as np
-import math
 import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import *
-
 from itertools import combinations
+
+from qrisp.alg_primitives import app_sb_phase_polynomial
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import *
 
 
 def create_maxsat_replacement_routine(res, problem_updated):
-    """
-    Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
+    """Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
 
     Parameters
@@ -54,7 +48,6 @@ def create_maxsat_replacement_routine(res, problem_updated):
         Updated set of exclusions to the problem.
 
     """
-
     problem = problem_updated[0]
     solutions = problem_updated[1]
     exclusions = problem_updated[2]
@@ -64,7 +57,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
     # FOR SINGLE QUBIT CORRELATIONS
     # make -1 here for consistency in the find max
-    orig_nodes = [i - 1 for i in list(range(1, numVars + 1)) if not i in exclusions]
+    orig_nodes = [i - 1 for i in list(range(1, numVars + 1)) if i not in exclusions]
     combinations_list = list(combinations(orig_nodes, 2))
 
     max_item, sign = find_max(orig_nodes, combinations_list, res, solutions)
@@ -73,7 +66,6 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
     # we just directly remove clauses from the problem, or literals from the clause.
     if isinstance(max_item, int):
-
         max_item += 1
 
         for sgl_clause in clauses:
@@ -134,8 +126,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
 
 def create_maxsat_cost_operator_reduced(problem_updated):
-    """
-    Creates the ``cost_operator`` for the problem instance.
+    r"""Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
 
     Parameters
@@ -150,7 +141,6 @@ def create_maxsat_cost_operator_reduced(problem_updated):
         A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
 
     """
-
     from qrisp.algorithms.qaoa import create_maxsat_cost_polynomials
 
     problem = problem_updated[0]

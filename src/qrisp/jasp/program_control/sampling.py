@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,7 +18,7 @@
 import jax
 import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 # The following function implements the sample feature.
 
@@ -48,8 +47,7 @@ from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 
 
 def sample(state_prep=None, shots=0, post_processor=None):
-    r"""
-    The ``sample`` function allows to take samples from a state that is specified
+    r"""The ``sample`` function allows to take samples from a state that is specified
     by a preparation procedure. This preparation procedure can be supplied via
     a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
 
@@ -88,7 +86,6 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -163,9 +160,8 @@ def sample(state_prep=None, shots=0, post_processor=None):
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
 
     """
-
-    from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import qache
 
     if isinstance(state_prep, int):
         shots = state_prep
@@ -184,13 +180,9 @@ def sample(state_prep=None, shots=0, post_processor=None):
         post_processor = identity
 
     if isinstance(shots, jax.core.Tracer):
-        raise Exception(
-            "Tried to sample with dynamic shots value (static integer required)"
-        )
+        raise Exception("Tried to sample with dynamic shots value (static integer required)")
     elif not isinstance(shots, int):
-        raise Exception(
-            f"Tried to sample with shots value of non-integer type {type(shots)}"
-        )
+        raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
 
     # Qache the user function
     @qache
@@ -203,9 +195,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception(
-                    "Tried to sample from state preparation function taking a quantum value"
-                )
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
 
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
@@ -223,9 +213,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
-                    raise Exception(
-                        "Tried to sample from function not returning a QuantumVariable"
-                    )
+                    raise Exception("Tried to sample from function not returning a QuantumVariable")
 
             # Trace the DynamicQubitArray measurements
             # Since we execute the measurements on the .reg attribute, no decoding
@@ -241,7 +229,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
             # Trace the decoding
             @jax.jit
-            def sampling_helper_2(acc, i, *meas_ints):
+            def sampling_helper_2(*meas_ints):
                 decoded_values = []
                 for j in range(len(qv_tuple)):
                     decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
@@ -258,12 +246,12 @@ def sample(state_prep=None, shots=0, post_processor=None):
                     if len(acc.shape) == 1:
                         raise AuxException()
 
-                # Insert into the accumulating array
-                acc = acc.at[i].set(decoded_values)
+                return decoded_values
 
-                return acc
+            decoded_values = sampling_helper_2(*measurement_ints)
 
-            acc = sampling_helper_2(acc, i, *measurement_ints)
+            # Insert into the accumulating array
+            acc = acc.at[i].set(decoded_values)
 
             return (acc, *args[1:])
 
@@ -277,9 +265,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         return_amount = []
 
         try:
-            loop_res = jax.lax.fori_loop(
-                0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
         except AuxException:
             loop_res = jax.lax.fori_loop(

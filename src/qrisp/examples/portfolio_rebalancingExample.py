@@ -71,10 +71,11 @@ norm_mu = list(norm_mu_full[0][:n_assets])
 norm_sigma = norm_sigma_full[0:n_assets, 0:n_assets]
 problem = [old_pos, risk_return, norm_sigma, norm_mu, T]
 
-from qrisp import QuantumVariable, QuantumArray
+from qrisp.qaoa import QAOAProblem
 from qrisp.qaoa.mixers import portfolio_mixer
 from qrisp.qaoa.problems.portfolio_rebalancing import *
-from qrisp.qaoa import QAOAProblem
+
+from qrisp import QuantumArray, QuantumVariable
 
 # assign operators
 cost_op = portfolio_cost_operator(problem=problem)
@@ -86,13 +87,7 @@ mixer_op = portfolio_mixer()
 def a_cost_fct(key):
     half = len(key[0])
     new_key = [int(key[0][i]) - int(key[1][i]) for i in range(half)]
-    rr1 = sum(
-        [
-            risk_return * norm_sigma[i][j] * new_key[i] * new_key[j]
-            for i in range(half)
-            for j in range(half)
-        ]
-    )
+    rr1 = sum([risk_return * norm_sigma[i][j] * new_key[i] * new_key[j] for i in range(half) for j in range(half)])
     rr2 = sum([(1 - risk_return) * norm_mu[j] * new_key[j] for j in range(half)])
     c_tc = sum([T for i in range(half) if new_key[i] != old_pos[i]])
     energy = -(rr1 + rr2 + c_tc)
@@ -140,9 +135,7 @@ mixer_op(q_array,np.pi/2) """
 
 
 # run the problem!
-theproblem = QAOAProblem(
-    cost_operator=cost_op, mixer=mixer_op, cl_cost_function=cl_cost
-)
+theproblem = QAOAProblem(cost_operator=cost_op, mixer=mixer_op, cl_cost_function=cl_cost)
 theproblem.set_init_function(init_fun)
 theNiceQAOA = theproblem.run(q_array, depth=3)
 # print the results
@@ -157,7 +150,6 @@ for (
     val,
 ) in theNiceQAOA.items():  # for name, age in dictionary.iteritems():  (for Python 2.x)
     if key in maxfive:
-
         print((key, val))
         print(a_cost_fct(key))
 

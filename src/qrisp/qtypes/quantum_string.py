@@ -1,6 +1,5 @@
-"""
-********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -26,8 +25,7 @@ init_quantum_char = QuantumChar(nisq_char=False, name="q_char")
 
 
 class QuantumString(QuantumArray):
-    """
-    The QuantumString is the quantum equivalent of a string. It is implemented as a
+    """The QuantumString is the quantum equivalent of a string. It is implemented as a
     :ref:`QuantumArray` of :ref:`QuantumChars <QuantumChar>`.
 
     >>> from qrisp import QuantumString
@@ -50,23 +48,15 @@ class QuantumString(QuantumArray):
     >>> print(len(q_str_nn.qs.qubits))
     88
 
-    Similar to its parent class, the size of a QuantumString does not have to be
-    specified at creation
-
-    >>> q_str = QuantumString()
-    >>> q_str[:] = "hello world"
-    >>> print(q_str)
-    {'hello world': 1.0}
-
     **Concatenation**
 
     QuantumStrings provide a number of methods to concatenate:
 
-    >>> q_str_0 = QuantumString()
-    >>> q_str_1 = QuantumString()
-    >>> q_str_2 = QuantumString()
+    >>> q_str_0 = QuantumString(size = len("hello"))
+    >>> q_str_1 = QuantumString(size = 1)
+    >>> q_str_2 = QuantumString(size = len("world"))
     >>> q_str_0[:] = "hello"
-    >>> q_str_1 += " "
+    >>> q_str_1[:] = " "
     >>> q_str_2[:] = "world"
     >>> q_str_3 = q_str_1 + q_str_2
     >>> q_str_0 += q_str_3
