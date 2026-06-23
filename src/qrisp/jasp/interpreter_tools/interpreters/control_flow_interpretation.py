@@ -205,15 +205,14 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
             # Result is empty along scanned dimension (length=0) plus element shape
             shape = (length,) + v.aval.shape
             ys.append(jnp.zeros(shape, dtype=v.aval.dtype))
+    # Stack the results into arrays.
+    # If reverse=True, we iterated backwards, so ys_collection contains: [y[N-1], y[N-2], ... y[0]]
+    # To match JAX scan semantics (output array index matches input array index),
+    # we need to reverse the collection before stacking -> [y[0], ... y[N-1]]
+    elif reverse:
+        ys = [jnp.stack(col[::-1]) for col in ys_collection]
     else:
-        # Stack the results into arrays.
-        # If reverse=True, we iterated backwards, so ys_collection contains: [y[N-1], y[N-2], ... y[0]]
-        # To match JAX scan semantics (output array index matches input array index),
-        # we need to reverse the collection before stacking -> [y[0], ... y[N-1]]
-        if reverse:
-            ys = [jnp.stack(col[::-1]) for col in ys_collection]
-        else:
-            ys = [jnp.stack(col) for col in ys_collection]
+        ys = [jnp.stack(col) for col in ys_collection]
 
     outvalues = list(carry) + ys
 
