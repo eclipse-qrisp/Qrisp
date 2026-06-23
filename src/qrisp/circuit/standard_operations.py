@@ -139,6 +139,11 @@ def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     """
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
+def MCZGate(control_amount=1, ctrl_state=-1, method="gray"):
+    res = ZGate().control(control_amount, method=method, ctrl_state=ctrl_state)
+    res.name = "mcz"
+    return res
+
 
 def PGate(phi: FloatLike = 0):
     """Return a phase gate.
@@ -185,6 +190,11 @@ def CPGate(phi: FloatLike = 0):
             return res
         return PGate(phi).control()
     return PGate(phi).control()
+
+def MCPGate(phi=0, control_amount=1, ctrl_state=-1, method="gray"):
+    res = PGate(phi).control(control_amount, method=method, ctrl_state=ctrl_state)
+    res.name = "mcp"
+    return res
 
 
 def HGate():
@@ -313,6 +323,10 @@ def MCRXGate(phi: FloatLike = 0, control_amount: int = 0):
     res.name = "mcrx"
     return res
 
+def MCRZGate(phi=0, control_amount=0):
+    res = RZGate(phi).control(control_amount)
+    res.name = "mcrz"
+    return res
 
 def SGate():
     """Return the S gate.
@@ -646,6 +660,8 @@ op_list = [
     CYGate,
     CZGate,
     MCXGate,
+    MCZGate,
+    MCPGate,
     PGate,
     CPGate,
     u3Gate,
@@ -654,6 +670,7 @@ op_list = [
     RYGate,
     RZGate,
     MCRXGate,
+    MCRZGate,
     SGate,
     TGate,
     RXXGate,
