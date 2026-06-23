@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.1"
+version = "0.9.2"
 authors = [
     {name = "The Qrisp authors"},
 ]
