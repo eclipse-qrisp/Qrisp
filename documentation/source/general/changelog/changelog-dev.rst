@@ -15,6 +15,11 @@ Other New Features
   release and a generic template (``changelog-template.rst``) for future releases.
   (`PR #658 <https://github.com/eclipse-qrisp/Qrisp/pull/658>`_)
 
+Bug Fixes
+---------
+
+.. Add bug fixes above this line
+
 Compatibility
 -------------
 
