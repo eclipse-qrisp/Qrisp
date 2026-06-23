@@ -19,6 +19,7 @@ re-running.
 
 import shutil
 from pathlib import Path
+
 # toml file parser
 try:
     import tomllib
@@ -51,8 +52,7 @@ def rename_dev_changelog(version):
         print(f"ERROR: {release} already exists (restore from git before re-running)")
         return False
 
-    # shutil.move is used instead of os.rename so the operation works across
-    # filesystems (though in practice both paths are under the repo tree).
+    # Rename changelog-dev.rst -> <version>.rst within the changelog directory.
     shutil.move(str(dev), str(release))
     print(f"  Renamed: changelog-dev.rst -> {version}.rst")
     return True
