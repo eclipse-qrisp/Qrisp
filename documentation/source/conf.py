@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Configuration file for the Sphinx documentation builder.
@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.abspath('../../src/qrisp'))
 # -- Project information -----------------------------------------------------
 
 project = ""
-copyright = '2023, Qrisp developers'
+copyright = '2025, Qrisp developers'
 
 
 # -- General configuration ---------------------------------------------------
@@ -72,7 +72,7 @@ imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
-    "repository_branch": "main",
+    "repository_branch": "thebe_branch",
     "selector": "div.highlight",
     "selector_output": "span.go",
 }
@@ -133,7 +133,7 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
 }
 html_sidebars = {
-    "**": ["search-field", "sidebar-nav-bs"],
+    "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
     "tutorial": [],
@@ -167,7 +167,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom03.css',
+    'css/custom05.css',
 ]
 
 source_suffix = ['.rst', '.md']

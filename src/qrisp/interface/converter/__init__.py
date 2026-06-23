@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,17 +13,10 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
-
-interface = "thrift"
-
-
-if interface == "thrift":
-    from qrisp.interface.thrift_interface import *
-else:
-    from qrisp.interface.openapi_interface import *
-
-from qrisp.interface.backends import *
-from qrisp.interface.circuit_converter import *
+from qrisp.interface.converter.qiskit_converter import *
+from qrisp.interface.converter.pytket_converter import *
+from qrisp.interface.converter.pennylane_converter import *
+from qrisp.interface.converter.qulacs_converter import *

@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.circuit import QubitAlloc, QubitDealloc
 from qrisp.environments.quantum_environments import QuantumEnvironment
@@ -47,9 +46,9 @@ class InversionEnvironment(QuantumEnvironment):
     >>> print(qf)
     {0: 1.0}
     >>> print(qf.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌───────────┐┌──────────────┐
@@ -347,6 +346,22 @@ class InversionEnvironment(QuantumEnvironment):
 
         # Reinstate the resulting circuit in the quantum session circuit
         self.env_qs.data = original_circuit.data
+
+    def jcompile(self, eqn, context_dic):
+
+        from qrisp.jasp import extract_invalues, insert_outvalues
+
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+
+        inverted_jaspr = body_jaspr.flatten_environments().inverse()
+
+        res = inverted_jaspr.eval(*args)
+
+        if not isinstance(res, tuple):
+            res = (res,)
+
+        insert_outvalues(eqn, context_dic, res)
 
 
 # Shortcut to quickly initiate inversion environments

@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 def test_QAE():
@@ -55,6 +55,7 @@ def test_QAE_integration():
 
     prec = 3 # precision
     res = QAE(input_list, state_function, oracle_function, precision=prec)
+    print(res)
     assert res.get_measurement() == {0.125: 0.31334, 0.875: 0.31334, 0.25: 0.12557, 0.75: 0.12557, 0.0: 0.05096, 0.375: 0.02632, 0.625: 0.02632, 0.5: 0.01858}
 
 

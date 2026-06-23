@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by nik40643 at 23.06.2023
@@ -28,7 +28,7 @@ import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit.circuit import Parameter, QuantumCircuit, ParameterExpression
 #from qrisp.circuit.quantum_circuit import rxx, ryy, rzz
 from sympy import Symbol, simplify, symbols
-from qrisp.interface import circuit_converter, convert_from_qiskit
+from qrisp.interface import convert_to_qiskit, convert_from_qiskit
 
 def test_abstract_params_printing():
     qiskit_qc = QuantumCircuit(5)
@@ -54,7 +54,7 @@ def test_abstract_params_printing():
     p(params[3], qv[3])
     #print(str(qv.qs))
     #print(qv.qs)
-    qisk = circuit_converter.convert_to_qiskit(qv.qs)
+    qisk = convert_to_qiskit(qv.qs)
     #print(qisk)
     
     #assert str(qisk) == str(qiskit_qc)

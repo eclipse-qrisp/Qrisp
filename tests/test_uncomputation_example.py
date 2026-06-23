@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 07.05.2022
@@ -72,16 +72,14 @@ def test_uncomputation_example():
         diffuser(qf)
         print(qf)
     
-    print(qf)
-    assert qf.get_measurement() == {0.5: 0.94531, 
-                                    0.0: 0.00781, 
-                                    1.0: 0.00781, 
-                                    1.5: 0.00781, 
-                                    2.0: 0.00781, 
-                                    2.5: 0.00781, 
-                                    3.0: 0.00781, 
-                                    3.5: 0.00781}
-
+    
+    meas_dic = qf.get_measurement()
+    print(meas_dic)
+    expect_dic = {0.5: 0.9453124945312494, 0.0: 0.007812500781250079, 1.0: 0.007812500781250079, 1.5: 0.007812500781250079, 2.0: 0.007812500781250079, 2.5: 0.007812500781250079, 3.0: 0.007812500781250079, 3.5: 0.007812500781250079}
+    
+    for k in meas_dic.keys():
+        assert abs(meas_dic[k] - expect_dic[k]) < 1E-3
+    
     # ---------
     print("Test 2 passed")
 
@@ -119,11 +117,11 @@ def test_uncomputation_example():
 
         return res
 
-    perm = QuantumArray(QuantumFloat(2))
+    perm = QuantumArray(QuantumFloat(2), shape = 4)
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)
-
+    
     assert res.get_measurement() == {0.53125: 1.0}
     
     assert len(res.qs.compile().qubits) == 18
@@ -240,5 +238,25 @@ def test_uncomputation_example():
     qv_2.uncompute()
     qv_3.uncompute()
     assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 6 passed")
+    
+    qv_0 = QuantumVariable(1)
+    qv_1 = QuantumVariable(1)
+    qv_2 = QuantumVariable(1)
+    qv_3 = QuantumVariable(1)
+
+    cy(qv_0, qv_1)
+    cx(qv_1, qv_2)
+    cx(qv_1, qv_3)
+    x(qv_2)
+
+    qv_1.uncompute(recompute=True)
+    qv_2.uncompute()
+    qv_3.uncompute()
+
+    assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 7 passed")
 
     verify[0] = 0

@@ -30,6 +30,7 @@ before_script:
   - pip install pennylane
   - pip install pytket
   - pip install pytket-qiskit
+  - pip install jax
 
 
 # isort:

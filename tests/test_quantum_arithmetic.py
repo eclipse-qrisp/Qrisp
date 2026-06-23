@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
@@ -105,8 +105,8 @@ def test_quantum_arithmetic():
     target_qubit = 3
     new_statevector = tensordot(z_gate, statevector, (1, target_qubit))
     new_statevector = new_statevector.reshape(2**num_qubits)
-    # assert new_statevector.get_measurement() == {OutcomeArray([ 0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,
-    #               -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25]): 1.0}
+    assert new_statevector.get_measurement() == {OutcomeArray([ 0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,
+                  -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25]): 1.0}
     
 
     # Test inplace multiplication
@@ -132,4 +132,64 @@ def test_quantum_arithmetic():
     qf = QuantumFloat(4)
     h(qf)
     assert qf.get_ev() == 7.5
-            
+    
+    # Test q_int_mult function    
+    n = 5
+
+    a = QuantumFloat(n)
+    b = QuantumFloat(n)
+
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder)
+
+    meas_res = multi_measurement([a,b,c])
+
+    for a, b, c in meas_res.keys():
+        assert a*b == c
+
+    a = QuantumFloat(n)
+    b = QuantumFloat(n)
+    s = QuantumFloat(2*n+1)
+    s[:] = 15
+    
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder, target_qf = s)
+    
+    meas_res = multi_measurement([a,b,c])
+    
+    for a, b, c in meas_res.keys():
+        assert a*b + 15 == c
+    
+    a = QuantumFloat(n)
+    b = QuantumFloat(n + 4)
+
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder)
+
+    meas_res = multi_measurement([a,b,c])
+
+    for a, b, c in meas_res.keys():
+        assert a*b == c
+    
+    # Test in-place multiplication
+    from qrisp.alg_primitives.arithmetic import inpl_q_int_mult
+    n = 7
+    a = QuantumFloat(n)
+    h(a)
+    b = QuantumFloat(n)
+    b[:] = a
+    inpl_q_int_mult(a, 5, inpl_adder = gidney_adder)
+    
+    meas_res = multi_measurement([a,b])
+
+    for a, b in meas_res.keys():
+        assert (b*5)%(2**n) == a

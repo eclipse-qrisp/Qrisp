@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,16 +13,14 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 import sympy
-from numba import njit
 
 import qrisp.circuit.standard_operations as ops
-from qrisp.circuit import Clbit, Instruction, Operation, Qubit, ClControlledOperation
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 
 # Class to describe quantum circuits
 # The naming of the attributes is rather similar to the qiskit equivalent
@@ -68,10 +66,10 @@ class QuantumCircuit:
     >>> qc_0 = QuantumCircuit(4, name = "fan out")
     >>> qc_0.cx(0, range(1,4))
     >>> print(qc_0)
-    
-    
+
+
     ::
-    
+
         qb_0: ──■────■────■──
               ┌─┴─┐  │    │
         qb_1: ┤ X ├──┼────┼──
@@ -92,9 +90,9 @@ class QuantumCircuit:
     >>> qc_1.h(0)
     >>> qc_1.append(qc_0.to_gate(), qc_1.qubits)
     >>> print(qc_1)
-    
+
     ::
-        
+
               ┌───┐┌──────────┐
         qb_4: ┤ H ├┤0         ├
               └───┘│          │
@@ -109,9 +107,9 @@ class QuantumCircuit:
 
     >>> qc_1.measure(qc_1.qubits)
     >>> print(qc_1)
-        
+
     ::
-        
+
               ┌───┐┌──────────┐┌─┐
         qb_4: ┤ H ├┤0         ├┤M├─────────
               └───┘│          │└╥┘┌─┐
@@ -128,7 +126,7 @@ class QuantumCircuit:
         cb_2: ════════════════════════╩══╬═
                                          ║
         cb_3: ═══════════════════════════╩═
-        
+
     >>> qc_1.run(shots = 1000)
     {'0000': 500, '1111': 500}
 
@@ -140,9 +138,9 @@ class QuantumCircuit:
     >>> qc_2 = QiskitQuantumCircuit(4)
     >>> qc_2.cx(0, range(1,4))
     >>> print(qc_2)
-    
+
     ::
-        
+
         q_0: ──■────■────■──
              ┌─┴─┐  │    │
         q_1: ┤ X ├──┼────┼──
@@ -158,9 +156,9 @@ class QuantumCircuit:
 
     >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
     >>> print(qrisp_qc_2)
-    
+
     ::
-        
+
          qb_8: ──■────■────■──
                ┌─┴─┐  │    │
          qb_9: ┤ X ├──┼────┼──
@@ -192,9 +190,9 @@ class QuantumCircuit:
     >>> subs_dic = {abstract_parameters[i] : i for i in range(3)}
     >>> bound_qc = qc.bind_parameters(subs_dic)
     >>> print(bound_qc)
-    
+
     ::
-        
+
               ┌──────┐
         qb_0: ┤ P(0) ├
               ├──────┤
@@ -206,6 +204,7 @@ class QuantumCircuit:
     """
 
     qubit_index_counter = np.zeros(1, dtype=int)
+    clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
     def __init__(self, num_qubits=0, num_clbits=0, name=None):
@@ -217,7 +216,7 @@ class QuantumCircuit:
 
         if isinstance(num_qubits, int):
             for i in range(num_qubits):
-                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0]+i)))
+                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0] + i)))
             self.qubit_index_counter[0] += num_qubits
         else:
             raise Exception(
@@ -226,7 +225,8 @@ class QuantumCircuit:
 
         if isinstance(num_clbits, int):
             for i in range(num_clbits):
-                self.add_clbit()
+                self.clbits.append(Clbit("cb_" + str(self.clbit_index_counter[0] + i)))
+            self.clbit_index_counter[0] += num_clbits
         else:
             raise Exception(
                 f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"
@@ -259,15 +259,14 @@ class QuantumCircuit:
         """
 
         self.qubit_index_counter += 1
-        
+
         if qubit is None:
             qubit = Qubit("qb_" + str(self.qubit_index_counter[0]))
-            
+
         if self.xla_mode < 2:
             for qb in self.qubits:
                 if qb.identifier == qubit.identifier:
                     raise Exception(f"Qubit name {qubit.identifier} already exists")
-        
 
         if not isinstance(qubit, Qubit):
             raise Exception(f"Tried to add type {type(qubit)} as a qubit")
@@ -421,9 +420,9 @@ class QuantumCircuit:
         >>> extension_qc.cy(0, 2)
         >>> extension_qc.cz(0, 3)
         >>> print(extension_qc)
-        
+
         ::
-            
+
             qb_0: ──■────■────■──
                   ┌─┴─┐  │    │
             qb_1: ┤ X ├──┼────┼──
@@ -432,13 +431,14 @@ class QuantumCircuit:
                        └───┘┌─┴─┐
             qb_3: ──────────┤ Z ├
                             └───┘
+
         >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]
         >>> for i in range(4)}
         >>> qc_to_extend.extend(extension_qc, translation_dic)
         >>> print(qc_to_extend)
-        
+
         ::
-            
+
                             ┌───┐
             qb_4: ──────────┤ Z ├
                        ┌───┐└─┬─┘
@@ -529,12 +529,12 @@ class QuantumCircuit:
 
         from qiskit.visualization.circuit_visualization import circuit_drawer
 
-        from qrisp.interface.circuit_converter import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
         try:
             res_str = str(
                 circuit_drawer(
-                    convert_circuit(self, target_api="qiskit", transpile=False),
+                    convert_to_qiskit(self, transpile=False),
                     output="text",
                     cregbundle=False,
                 )
@@ -581,26 +581,27 @@ class QuantumCircuit:
         >>> qc_0.z(0)
         >>> qc_0.cx(0,1)
         >>> print(qc_0)
-        
+
         ::
-            
+
                   ┌───┐
             qb_0: ┤ Z ├──■──
                   └───┘┌─┴─┐
             qb_1: ─────┤ X ├
                        └───┘
+
         >>> qc_1.cx(0,1)
         >>> qc_1.z(0)
         >>> print(qc_1)
-        
+
         ::
-                
+
                        ┌───┐
             qb_2: ──■──┤ Z ├
                   ┌─┴─┐└───┘
             qb_3: ┤ X ├─────
                   └───┘
-                  
+
         >>> qc_0.compare_unitary(qc_1)
         True
 
@@ -708,9 +709,9 @@ class QuantumCircuit:
         >>> qc.p(np.pi/2, 0)
         >>> qc.y(0)
         >>> print(qc.inverse())
-        
+
         ::
-              
+
                   ┌───┐┌─────────┐┌───┐
             qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├
                   └───┘└─────────┘└───┘
@@ -795,7 +796,7 @@ class QuantumCircuit:
                     for a in sympy.preorder_traversal(expression):
                         if isinstance(a, sympy.Float):
                             rounded_float = round(a, decimals)
-                            if abs(float(a) - 1) < 10**-(decimals):
+                            if abs(float(a) - 1) < 10 ** -(decimals):
                                 expression = expression.subs(a, 1)
                             else:
                                 expression = expression.subs(a, rounded_float)
@@ -855,19 +856,20 @@ class QuantumCircuit:
         >>> qc = QuantumCircuit(3)
         >>> qc.mcx([0,1], 2)
         >>> print(qc)
-        
+
         ::
-            
+
             qb_0: ──■──
                     │
             qb_1: ──■──
                   ┌─┴─┐
             qb_2: ┤ X ├
                   └───┘
+
         >>> print(qc.transpile(basis_gates = ["cx", "rz", "sx"]))
-        
+
         ::
-            
+
             global phase: 9π/8
                   ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»
             qb_1: ┤ Rz(-π/4) ├─────────────────┤ X ├┤ Rz(π/4) ├───┤ X ├───┤ Rz(-π/4) ├┤ X ├»
@@ -883,6 +885,7 @@ class QuantumCircuit:
             «      ┌─────────┐┌────┐┌─────────┐
             «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├
             «      └─────────┘└────┘└─────────┘
+
 
         """
         from qrisp.circuit import transpile
@@ -982,9 +985,9 @@ class QuantumCircuit:
         >>> subs_dic = {abstract_parameters[i] : i for i in range(3)}
         >>> bound_qc = qc.bind_parameters(subs_dic)
         >>> print(bound_qc)
-        
+
         ::
-                
+
                   ┌──────┐
             qb_0: ┤ P(0) ├
                   ├──────┤
@@ -1005,9 +1008,12 @@ class QuantumCircuit:
             )
 
         for ins in self.data:
-            subs_circ.data.append(
-                Instruction(ins.op.bind_parameters(subs_dic), ins.qubits, ins.clbits)
-            )
+            if len(ins.op.abstract_params):
+                op = ins.op.bind_parameters(subs_dic)
+            else:
+                op = ins.op.copy()
+
+            subs_circ.data.append(Instruction(op, ins.qubits, ins.clbits))
 
         subs_circ.abstract_params = {}
         return subs_circ
@@ -1029,15 +1035,15 @@ class QuantumCircuit:
             A string containing the latex code.
 
         """
-        from qrisp.interface import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
-        qiskit_qc = convert_circuit(self, "qiskit", transpile=False)
+        qiskit_qc = convert_to_qiskit(self, transpile=False)
 
         from qiskit.visualization import circuit_drawer
 
         return circuit_drawer(qiskit_qc, output="latex_source", **kwargs)
 
-    def qasm(self, formatted=False, filename=None, encoding=None):
+    def to_qasm2(self, formatted=False, filename=None, encoding=None):
         """
         Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
 
@@ -1060,18 +1066,66 @@ class QuantumCircuit:
 
         """
         qiskit_qc = self.to_qiskit()
-        if hasattr(qiskit_qc, "qasm"):
-            qasm_str = qiskit_qc.qasm(formatted, filename, encoding)
-        else:
-            from qiskit.qasm2 import dump, dumps
-            if filename:
-                qasm_str = dump(qiskit_qc, filename)
-            else:
-                qasm_str = dumps(qiskit_qc)
-        
-        return qasm_str
+        try:
+            return qiskit_qc.qasm(formatted, filename, encoding)
+        except:
+            from qiskit.qasm2 import dumps, QASM2ExportError
 
-    def depth(self, depth_indicator = lambda x : 1, transpile=True):
+            try:
+                return dumps(qiskit_qc)
+            except (QASM2ExportError, TypeError):
+                from qiskit.qasm3 import dumps
+                from qiskit import transpile
+
+                transpiled_qiskit_qc = transpile(
+                    qiskit_qc,
+                    basis_gates=[
+                        "x",
+                        "y",
+                        "z",
+                        "h",
+                        "s",
+                        "t",
+                        "s_dg",
+                        "t_dg",
+                        "cx",
+                        "cz",
+                        "rz",
+                    ],
+                )
+                return dumps(qiskit_qc)
+
+    def to_qasm3(self, formatted=False, filename=None, encoding=None):
+        """
+        Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
+
+        Parameters
+        ----------
+        formatted : bool, optional
+            Return formatted Qasm string. The default is False.
+        filename : string, optional
+            Save Qasm to file with name ‘filename’. The default is None.
+        encoding : TYPE, optional
+            Optionally specify the encoding to use for the output file if filename is
+            specified. By default, this is set to the system’s default encoding
+            (i.e. whatever locale.getpreferredencoding() returns) and can be set to any
+            valid codec or alias from stdlib’s codec module.
+
+        Returns
+        -------
+        string
+            The OPENQASM string.
+
+        """
+        qiskit_qc = self.to_qiskit()
+        from qiskit.qasm3 import dumps
+
+        return dumps(qiskit_qc)
+
+    def qasm(self, **kwargs):
+        return self.to_qasm2(**kwargs)
+
+    def depth(self, depth_indicator=lambda x: 1, transpile=True):
         """
         Returns the depth of the QuantumCircuit. Note that the depth on QuantumCircuit
         which are not transpiled, might have very little correlation with the runtime.
@@ -1094,14 +1148,17 @@ class QuantumCircuit:
         """
 
         from qrisp.misc import get_depth_dic
+
         if len(self.data) == 0:
             return 0
 
-        depth_dic = get_depth_dic(self, transpile_qc=transpile, depth_indicator = depth_indicator)
+        depth_dic = get_depth_dic(
+            self, transpile_qc=transpile, depth_indicator=depth_indicator
+        )
 
         return max(depth_dic.values())
-    
-    def t_depth(self, epsilon = None):
+
+    def t_depth(self, epsilon=None):
         r"""
         Estimates the T-depth of self. T-depth is an important metric for fault tolerant
         quantum computing, because T gates are expected to be the bottleneck in fault tolerant
@@ -1180,51 +1237,50 @@ class QuantumCircuit:
         
         In this circuit $k_{max} = 4$ therefore, $\epsilon = 2^{-7}$ implying the T-depth is 22.
         """
-        
+
         if epsilon is None:
             transpiled_qc = self.transpile()
-            
-            
+
             max_circuit_prec = 15
             for instr in transpiled_qc.data:
                 op = instr.op
-                
+
                 for par in op.params:
-                    
-                    par = int(np.round((par%(2*np.pi))/(2*np.pi)*2**15))
-                    
+
+                    par = int(np.round((par % (2 * np.pi)) / (2 * np.pi) * 2**15))
+
                     for i in range(max_circuit_prec):
-                        if par%(2**i):
+                        if par % (2**i):
                             max_circuit_prec = i
                             break
-        
+
             max_circuit_prec = 16 - max_circuit_prec
-            
-            epsilon = 2**(-max_circuit_prec - 3)
-                
+
+            epsilon = 2 ** (-max_circuit_prec - 3)
+
         from qrisp.misc.utility import t_depth_indicator
-        
-        return self.depth(depth_indicator = lambda x : t_depth_indicator(x, epsilon))
-    
+
+        return self.depth(depth_indicator=lambda x: t_depth_indicator(x, epsilon))
+
     def cnot_depth(self):
         """
         This function returns the CNOT-depth of an self.
-        
-        In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
+
+        In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
         circuit execution. This function can be used as a gate-speed specifier for
-        the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+        the :meth:`compile <qrisp.QuantumSession.compile>` method.
 
 
         Returns
         -------
         int
             The CNOT depth of self.
-            
+
         Examples
         --------
-        
+
         We create a QuantumCircuit and evaluate it's CNOT depth.
-        
+
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit(4)
         >>> qc.cx(0,1)
@@ -1234,23 +1290,23 @@ class QuantumCircuit:
         >>> qc.cx(2,3)
         >>> qc.cx(1,0)
         >>> print(qc)
-                              ┌───┐     
+                              ┌───┐
         qb_59: ──■────────────┤ X ├─────
-               ┌─┴─┐┌───┐     └─┬─┘     
+               ┌─┴─┐┌───┐     └─┬─┘
         qb_60: ┤ X ├┤ X ├──■────■───────
-               └───┘└───┘┌─┴─┐┌───┐     
+               └───┘└───┘┌─┴─┐┌───┐
         qb_61: ──────────┤ X ├┤ Y ├──■──
                          └───┘└───┘┌─┴─┐
         qb_62: ────────────────────┤ X ├
                                    └───┘
-                                   
+
         >>> qc.cnot_depth()
         3
-        
+
         """
         from qrisp.misc.utility import cnot_depth_indicator
 
-        return self.depth(depth_indicator = cnot_depth_indicator)
+        return self.depth(depth_indicator=cnot_depth_indicator)
 
     def num_qubits(self):
         """
@@ -1306,9 +1362,9 @@ class QuantumCircuit:
         >>> qc = QuantumCircuit(8)
         >>> qc.append(multi_h, [2*i for i in range(4)])
         >>> print(qc)
-        
+
         ::
-                
+
                    ┌──────────┐
              qb_4: ┤0         ├
                    │          │
@@ -1337,15 +1393,17 @@ class QuantumCircuit:
             else:
                 if self.xla_mode <= 1:
                     if not isinstance(qubits, list):
-                        raise Exception(f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit]).")
+                        raise Exception(
+                            f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit])."
+                        )
                     for qb in qubits:
                         if not isinstance(qb, Qubit):
-                            raise Exception(f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit]).")
+                            raise Exception(
+                                f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit])."
+                            )
                 self.data.append(Instruction(operation_or_instruction, qubits, clbits))
             return
 
-            
-            
         if isinstance(operation_or_instruction, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
@@ -1432,7 +1490,9 @@ class QuantumCircuit:
 
                 # Append instruction (qubit_constellation and clbit_constellation) now
                 # contains no lists but only qubit/clbit arguments
-                QuantumCircuit.append(self, operation, qubit_constellation, clbit_constellation)
+                QuantumCircuit.append(
+                    self, operation, qubit_constellation, clbit_constellation
+                )
 
             return
 
@@ -1510,7 +1570,7 @@ class QuantumCircuit:
         critical_qubits = [qb for qb in qubits if qb.perm_lock]
 
         if critical_qubits:
-            from qrisp.uncomputation import is_permeable
+            from qrisp.permeability import is_permeable
 
             critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
             if not is_permeable(operation, critical_qubit_indices):
@@ -1524,7 +1584,7 @@ class QuantumCircuit:
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    def run(self, shots=10000, backend=None):
+    def run(self, shots=None, backend=None):
         """
         Runs a QuantumCircuit on a given backend.
 
@@ -1675,15 +1735,15 @@ class QuantumCircuit:
             The corresponding QuantumCircuit.
 
         """
-        
+
         from qiskit import QuantumCircuit
-        
+
         qiskit_qc = QuantumCircuit().from_qasm_str(qasm_string)
-        
+
         from qrisp import QuantumCircuit
-        
+
         return QuantumCircuit.from_qiskit(qiskit_qc)
-    
+
     @classmethod
     def from_qasm_file(self, filename):
         """
@@ -1701,13 +1761,12 @@ class QuantumCircuit:
 
         """
         from qiskit import QuantumCircuit
-        
+
         qiskit_qc = QuantumCircuit().from_qasm_file(filename)
-        
+
         from qrisp import QuantumCircuit
-        
+
         return QuantumCircuit.from_qiskit(qiskit_qc)
-    
 
     @classmethod
     def from_qiskit(self, qiskit_qc):
@@ -1733,9 +1792,9 @@ class QuantumCircuit:
         >>> qc_2 = QiskitQuantumCircuit(4)
         >>> qc_2.cx(0, range(1,4))
         >>> print(qc_2)
-        
+
         ::
-                
+
             q_0: ──■────■────■──
                  ┌─┴─┐  │    │
             q_1: ┤ X ├──┼────┼──
@@ -1750,9 +1809,9 @@ class QuantumCircuit:
 
         >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
         >>> print(qrisp_qc_2)
-        
+
         ::
-            
+
              qb_8: ──■────■────■──
                    ┌─┴─┐  │    │
              qb_9: ┤ X ├──┼────┼──
@@ -1777,10 +1836,10 @@ class QuantumCircuit:
             The converted circuit.
 
         """
-        from qrisp.interface.circuit_converter import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
-        return convert_circuit(self, target_api="qiskit", transpile=False)
-    
+        return convert_to_qiskit(self, transpile=False)
+
     def to_pennylane(self):
         """
         Method to convert the given QuantumCircuit to a `Pennylane <https://pennylane.ai/>`_ Circuit.
@@ -1791,11 +1850,11 @@ class QuantumCircuit:
             A function representing a pennylane QuantumCircuit.
 
         """
-        
-        from qrisp.interface.converter.convert_to_qml import qml_converter
-        
+
+        from qrisp.interface import qml_converter
+
         return qml_converter(self)
-    
+
     def to_pytket(self):
         """
         Method to convert the given QuantumCircuit to a `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
@@ -1806,8 +1865,8 @@ class QuantumCircuit:
             A function representing a pennylane QuantumCircuit.
 
         """
-        from qrisp.interface.converter.convert_to_pytket import pytket_converter
-        
+        from qrisp.interface import pytket_converter
+
         return pytket_converter(self)
 
     # Several methods to apply the standard operation defined in standard_operations.py
@@ -1825,9 +1884,10 @@ class QuantumCircuit:
             The Clbit to store the measurement result. The default is None.
 
         """
-        
+
         if clbits is None:
             from qrisp import QuantumVariable
+
             if isinstance(qubits, (list, QuantumVariable)):
                 clbits = []
                 for i in range(len(qubits)):
@@ -2331,12 +2391,17 @@ class QuantumCircuit:
 
         self.append(ops.IDGate(), [qubits])
 
+    def to_pdag(self, remove_artificials=False):
+        from qrisp.permeability import PermeabilityGraph
+
+        return PermeabilityGraph(self, remove_artificials=remove_artificials)
+
 
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit
 # used in the append method of QuantumCircuit and QuantumSession
 def convert_to_qb_list(input, circuit=None, top_level=True):
     from qrisp import QuantumArray
-    
+
     if issubclass(input.__class__, Qubit):
         if top_level:
             result = [input]
@@ -2344,7 +2409,7 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
             result = input
     elif isinstance(input, QuantumArray):
         result = sum([qv.reg for qv in input.flatten()], [])
-        
+
     elif hasattr(input, "__iter__"):
         result = []
         for i in range(len(input)):
@@ -2357,6 +2422,11 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
         if isinstance(circuit, type(None)):
             raise Exception(
                 "Tried to convert integer argument to qubit without given circuit"
+            )
+
+        if input >= len(circuit.qubits):
+            raise Exception(
+                f"Tried to adress qubit with index {input} in a circuit with {len(circuit.qubits)} qubits"
             )
 
         result = convert_to_qb_list(circuit.qubits[input], top_level=top_level)
@@ -2390,4 +2460,3 @@ def convert_to_cb_list(input, circuit=None, top_level=True):
             result = input
 
     return result
-

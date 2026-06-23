@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,11 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
-from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus
+from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus, gphase
 import numpy as np
 
 
@@ -105,6 +105,33 @@ def test_quantum_modulus_comparison():
     
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
+        
+    
+    # Test comparisons as ConditionalEnvironments
+    
+    qf1 = QuantumFloat(2)
+    qf2 = QuantumFloat(2)
+
+    h(qf1)
+    h(qf2)
+
+    with qf1==qf2:
+        gphase(np.pi,qf1[0])
+
+    qf1.qs.statevector()
+    
+    qf1 = QuantumFloat(2)
+    qf2 = QuantumFloat(2)
+
+    h(qf1)
+    h(qf2)
+
+    with qf1<qf2:
+        gphase(np.pi,qf1[0])
+
+    qf1.qs.statevector()
+
+    
 
 def comparison_helper(qf_0, qf_1, comp):
     qf_0 = qf_0.duplicate()

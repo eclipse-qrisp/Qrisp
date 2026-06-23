@@ -22,7 +22,9 @@ As we found out, implementations of Shor's algorithm that are able to return a Q
 * `An implementation found in a public repository on GitHub <https://github.com/RevanthK/ShorsAlgorithmIBMQiskit>`_.
 
 .. _shor_benchmark_plot:
-|
+
+| 
+
 
 .. image:: 04_shor_plot.svg
     

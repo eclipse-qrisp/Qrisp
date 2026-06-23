@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,18 +13,18 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
 def test_mcx():
-    from qrisp import h, mcx, QuantumVariable, multi_measurement, bin_rep
+    from qrisp import h, mcx, QuantumVariable, multi_measurement, bin_rep, QuantumBool
     import numpy as np
 
     def test_mcx_inner(n, ctrl_state, method, test_phase=True, num_ancilla=0):
         ctrl = QuantumVariable(n)
 
-        target = QuantumVariable(1)
+        target = QuantumBool()
 
         h(ctrl)
 
@@ -45,9 +45,9 @@ def test_mcx():
         for i in range(2**n):
             ctrl_var = bin_rep(i, n)
             if ctrl_var != ctrl_state:
-                assert (ctrl_var, "0") in mes_res
+                assert (ctrl_var, False) in mes_res
             else:
-                assert (ctrl_var, "1") in mes_res
+                assert (ctrl_var, True) in mes_res
 
         if not test_phase:
             return

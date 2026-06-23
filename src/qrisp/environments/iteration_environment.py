@@ -14,26 +14,26 @@ from qrisp.circuit import QubitAlloc, transpile
 
 class IterationEnvironment(QuantumEnvironment):
     """
-    This QuantumEnvironment can be used for reducing bottlenecks in compilation time. 
+    This QuantumEnvironment can be used for reducing bottlenecks in compilation time.
     Many algorithms such as Grover or QPE require repeated execution of the same
-    quantum circuit. When scaling up complex algorithms that perform a lot of 
+    quantum circuit. When scaling up complex algorithms that perform a lot of
     non-trivial logic many iterations can significantly slow down the compilation
     speed. The ``IterationEnvironment`` remedies this flaw by recording the circuit
-    of a single iteration and then duplicating the instructions the required 
+    of a single iteration and then duplicating the instructions the required
     amount of times.
 
-    Another bottleneck that can appear is the :meth:`compile <qrisp.QuantumSession.compile>` 
+    Another bottleneck that can appear is the :meth:`compile <qrisp.QuantumSession.compile>`
     method as the qubit allocation algorithm can also scale bad for really large
     algorithms. For this problem the ``IterationEnvironment`` exposes the ``precompile``
     keyword. Setting this keyword to ``True`` will perform the Qubit allocation algorithm
     on the QuantumEnvironments content and then (if necessary) allocate another
-    :ref:`QuantumVariable` to accomodate the workspace qubits of the compilation 
-    result. This way there is only a single (de)allocation per 
+    :ref:`QuantumVariable` to accomodate the workspace qubits of the compilation
+    result. This way there is only a single (de)allocation per
     ``IterationEnvironment``.
 
     .. note::
 
-        Code that is executed within a ``IterationEnvironment`` may not 
+        Code that is executed within a ``IterationEnvironment`` may not
         :meth:`delete <qrisp.QuantumVariable.delete>`
         previously created ``QuantumVariable`` and every created ``QuantumVariable``
         inside this :ref:`QuantumEnvironment` has to be deleted before exit.
@@ -121,8 +121,7 @@ class IterationEnvironment(QuantumEnvironment):
     def __init__(self, qs, iteration_amount, precompile=False):
 
         if iteration_amount < 1:
-            raise Exception(
-                "Tried to create IterationEnvironment with < 1 iterations")
+            raise Exception("Tried to create IterationEnvironment with < 1 iterations")
 
         self.iteration_amount = iteration_amount
         self.precompile = precompile
@@ -151,10 +150,10 @@ class IterationEnvironment(QuantumEnvironment):
 
             if exception_value is None:
                 raise Exception(
-                    "Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables")
+                    "Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables"
+                )
 
-        QuantumEnvironment.__exit__(
-            self, exception_type, exception_value, traceback)
+        QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
     def compile(self):
 
@@ -174,19 +173,21 @@ class IterationEnvironment(QuantumEnvironment):
 
             # Compile the quantum environment to retrieve the compiled data
             QuantumEnvironment.compile(self)
-            
+
             compiled_data = list(self.env_qs.data)
-            
+
             self.env_qs.data = []
-            
+
             # The idea is now to create a new quantum session, convert the collected
             # data to this quantum session and compile this quantum session.
             # This gives us a quantum circuit whose data we again convert to the
             # original QuantumSession.
-            
+
             anc_qv = QuantumVariable(len(self.env_qs.qubits))
-            
-            translation_dic = {self.env_qs.qubits[i] : anc_qv[i] for i in range(len(anc_qv))}
+
+            translation_dic = {
+                self.env_qs.qubits[i]: anc_qv[i] for i in range(len(anc_qv))
+            }
 
             anc_qv.qs.data = []
             # We append the previously executed allocation calls such that
@@ -194,16 +195,18 @@ class IterationEnvironment(QuantumEnvironment):
             for qb in self.env_qs.qubits:
                 if qb.allocated:
                     anc_qv.qs.append(QubitAlloc(), [translation_dic[qb]])
-            
+
             anc_qv.qs.barrier()
             # Convert the compiled data to the new quantum session
             retarget_instructions(compiled_data, self.env_qs.qubits, anc_qv.reg)
-            
+
             # Append the data to the new QuantumSession
             anc_qv.qs.data.extend(compiled_data)
-            
-            compiled_qc = qompiler(anc_qv.qs, cancel_qfts = False, use_dirty_anc_for_mcx_recomp = False)
-            
+
+            compiled_qc = qompiler(
+                anc_qv.qs, cancel_qfts=False, use_dirty_anc_for_mcx_recomp=False
+            )
+
             # Remove previously added allocation calls from the compiled quantum circuit
             compiled_data = []
             for instr in compiled_qc.data:
@@ -215,18 +218,18 @@ class IterationEnvironment(QuantumEnvironment):
 
             # Reinstate the original data
             self.env_qs.data = temp_qs_data
-            
+
             # We now need to locate ancilla qubits of the compilation result and
             # create a new ancilla variable to hold these qubits
-            
+
             # Determine the workspace qubits from the compiled qc
-            workspace_qubits = list(
-                set(compiled_qc.qubits) - set(anc_qv.reg))
-            
+            workspace_qubits = list(set(compiled_qc.qubits) - set(anc_qv.reg))
+
             if len(workspace_qubits):
                 # Allocate a QuantumVariable that will hold the workspace
                 workspace_var = QuantumVariable(
-                    len(workspace_qubits), qs=self.env_qs, name="workspace_var*")
+                    len(workspace_qubits), qs=self.env_qs, name="workspace_var*"
+                )
             else:
                 workspace_var = []
 

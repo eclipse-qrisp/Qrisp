@@ -14,8 +14,9 @@ From ``qrisp.interface`` is it possible to import the following kind of backends
    :header: "Option", "Description"
    :widths: 20, 60
 
-   ":ref:`VirtualQiskitBackend`", "Allows to use a Qiskit Aer backend."
+   ":ref:`QiskitBackend`", "Allows to use a Qiskit Aer backend."
    ":ref:`QiskitRuntimeBackend`", "Allows to use a Qiskit Runtime backend, exploiting the Qiskit's Sampler primitive."
+   ":ref:`IQMBackend`", "Allows to use an IQM quantum computer as a backend via IQM Resonance."
 
 
 .. autoclass:: VirtualBackend

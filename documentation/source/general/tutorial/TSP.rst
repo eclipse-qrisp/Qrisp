@@ -1,11 +1,11 @@
-Solving the Traveling Salesman Problem (TSP)
-============================================
+Solving the Traveling Salesman Problem
+======================================
 .. _tsp:
 
 While the previous examples contained a complexity, that could in principle still be managed with a low level QuantumCircuit creation framework, our next problem contains much more conceptual complexity. We believe that this example clearly displays the neccessity of a higher-level language like Qrisp in order to tackle problems of similar or even higher complexity.
 
 The `traveling salesman problem <https://en.wikipedia.org/wiki/Travelling_salesman_problem>`_ is a common example of an NP-hard problem. The task is to find the shortest round trip through a set of cities, which are described by a weighted graph. As shown in `this tutorial <https://qiskit.org/documentation/optimization/tutorials/06_examples_max_cut_and_tsp.html>`_ the traveling salesman problem can be reformulated in terms of a `QUBO problem <https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization>`_ instance and then solved using either VQE or QAOA. A certain disadvantage of this approach is that the amount of binary variables grows as $\mathcal{O}(n^2)$ where $n$ is the amount of cities.
-Another approach has been demonstrated `in this paper <https://arxiv.org/pdf/1805.10928.pdf>`_ (which has also been implemented in a `Qiskit tutorial <https://qiskit.org/textbook/ch-paper-implementations/tsp.html>`_). The idea is to use quantum phase estimation on successive diagonal operators to retrieve the route distance. The amount of qubits here grows as $\mathcal{O}(n log(n))$. Unfortunately the paper provides no details on how to perform the actual quantum search.
+Another approach has been demonstrated `in this paper <https://arxiv.org/pdf/1805.10928.pdf>`__ (which has also been implemented in a `Qiskit tutorial <https://qiskit.org/textbook/ch-paper-implementations/tsp.html>`_). The idea is to use quantum phase estimation on successive diagonal operators to retrieve the route distance. The amount of qubits here grows as $\mathcal{O}(n log(n))$. Unfortunately the paper provides no details on how to perform the actual quantum search.
 
 We will now introduce a solution that resembles the second method including the quantum search. This involves creating a superposition of all possible routes (excluding those that repeat cities), assessing the distance of the routes, and determining whether the distance is below a certain threshold. The use of Qrisp's high-level language features simplifies many of these steps. Moreover, employing Qrisp not only streamlines the process, but also greatly improves resource efficiency: The presented code includes more than 10 distinct QuantumVariables distributed across 41 qubits which compiles into a QuantumCircuit that uses only 23 qubits.
 

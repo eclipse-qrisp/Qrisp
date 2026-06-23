@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.circuit import QuantumCircuit, Qubit, XGate
 
@@ -54,8 +53,8 @@ def multi_controlled_circuit(
 
 # This function takes an U3Gate object and turns it into it's controlled version
 def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
-    from qrisp.mcx_algs import multi_cx
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp.alg_primitives.mcx_algs import multi_cx
+    from qrisp.alg_primitives.logic_synthesis import gray_phase_synth_qb_list
 
     qc = QuantumCircuit(control_amount + 1)
     target_qubit = qc.qubits[-1]
@@ -71,12 +70,12 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
     if u3_gate.name in ["p"]:
         # Synthesize phases using gray synthesis
         gray_phase_synth_qb_list(
-                                 qc, 
-                                 qc.qubits, 
-                                 (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.params[0]],
-                                 phase_tolerant = method in ["gray_pt", "gray_pt_inv"]
+            qc,
+            qc.qubits,
+            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.params[0]],
+            phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
-        
+
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
@@ -87,9 +86,9 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
             qc.qubits,
             (2 ** (control_amount + 1) - 2) * [0]
             + [-u3_gate.params[0] / 2, u3_gate.params[0] / 2],
-            phase_tolerant = method in ["gray_pt", "gray_pt_inv"]
+            phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
-        
+
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
@@ -101,10 +100,10 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
             qc.qubits,
             (2 ** (control_amount + 1) - 2) * [0]
             + [-u3_gate.theta / 2, u3_gate.theta / 2],
-            phase_tolerant = method in ["gray_pt", "gray_pt_inv"]
+            phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
         qc.h(target_qubit)
-        
+
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
@@ -117,11 +116,11 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
             qc.qubits,
             (2 ** (control_amount + 1) - 2) * [0]
             + [u3_gate.theta / 2, -u3_gate.theta / 2],
-            phase_tolerant = method in ["gray_pt", "gray_pt_inv"]
+            phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
         qc.h(target_qubit)
         qc.s_dg(target_qubit)
-        
+
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
@@ -141,7 +140,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
     elif u3_gate.name == "x":
         qc.append(multi_cx(control_amount, method), qc.qubits)
-        
+
     elif u3_gate.name == "h":
         qc.s(target_qubit)
         qc.h(target_qubit)
@@ -150,7 +149,6 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         qc.t_dg(target_qubit)
         qc.h(target_qubit)
         qc.s_dg(target_qubit)
-
 
     # Treat general U3Gates
     else:
@@ -185,12 +183,13 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         qc.append(A.to_gate("A"), [qc.qubits[-1]])
 
         # To perform the controlled x gate, we can use the phase tolerant algorithm
-        
+
         if control_amount == 2:
-            from qrisp.misc.multi_cx import gray_pt_mcx
+            from qrisp.alg_primitives import gray_pt_mcx
+
             mcx_gate = gray_pt_mcx(2, "11")
         else:
-            mcx_gate = XGate().control(control_amount, method = "gray_pt")
+            mcx_gate = XGate().control(control_amount, method="gray_pt")
 
         qc.append(mcx_gate, qc.qubits)
 
@@ -209,7 +208,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
 
 def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
-    from qrisp.logic_synthesis.gray_synthesis import gray_synth_gate
+    from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_synth_gate
 
     target_phases_old = gray_gate.target_phases
 
@@ -226,3 +225,16 @@ def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
     new_gray_gate = gray_synth_gate(target_phases_new)
     print(new_gray_gate.definition)
     return new_gray_gate.definition, target_phases_new
+
+
+def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
+    from qrisp import QuantumCircuit, XGate
+
+    mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
+
+    qc = QuantumCircuit(num_ctrl_qubits + 2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+    qc.append(mcx_gate, qc.qubits)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+
+    return qc

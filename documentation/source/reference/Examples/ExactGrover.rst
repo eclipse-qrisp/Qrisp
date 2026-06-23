@@ -3,7 +3,7 @@
 Exact Grover's Algorithm
 ========================
 
-In this example we will showcase how the ``exact`` keyword for :meth:`grovers_alg <qrisp.grover.grovers_alg>` can be applied. This keyword allows to produce states, which are exact solutions to the given oracle (ie. they have 0% theoretical failure rate). This feature is based on `this paper <https://arxiv.org/abs/quant-ph/0106071>`_. For this to work the amount of solutions to the oracle has to be known beforehand. Furthermore the oracle has to support the ``phase`` keyword which indicates how much of a phaseshift the winner states receive. For standard Grover oracles, this phaseshift is always $\pi$.
+In this example we will showcase how the ``exact`` keyword for :meth:`grovers_alg <qrisp.grover.grovers_alg>` can be applied. This keyword allows to produce states, which are exact solutions to the given oracle (ie. they have 0% theoretical failure rate). This feature is based on `this paper <https://arxiv.org/abs/quant-ph/0106071>`__. For this to work the amount of solutions to the oracle has to be known beforehand. Furthermore the oracle has to support the ``phase`` keyword which indicates how much of a phaseshift the winner states receive. For standard Grover oracles, this phaseshift is always $\pi$.
 
 We demonstrate this functionality by preparing a state which is a superposition of all states that contain a fixed number of "ones":
 

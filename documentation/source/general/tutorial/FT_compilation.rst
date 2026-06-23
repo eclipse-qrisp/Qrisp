@@ -50,7 +50,7 @@ We now count the amount of T-gates using the :meth:`count_ops <qrisp.QuantumCirc
 2
 
 For the T-depth we get the value 2 because the qubit ``b.0`` has to wait until ``a.0`` is finished.
-Many applications require more than the Clifford + T gate set. Especially parametrized Pauli-rotations are used often in variational algorithms or hamiltonian simulations. To execute the parametrized Pauli-rotations a `synthesis algorithm <https://arxiv.org/abs/1403.2975>`_ needs to be called, which approximates the required rotation using only Clifford + T gates. According to the linked paper, this requires $3\log_2(\frac{1}{\epsilon})$ T-gates, where $\epsilon$ is the desired precision. Qrisp accounts for this effort if given the desired precision $\epsilon$.
+Many applications require more than the Clifford + T gate set. Especially parametrized Pauli-rotations are used often in variational algorithms or hamiltonian simulations. To execute the parametrized Pauli-rotations a `synthesis algorithm <https://arxiv.org/abs/1403.2975>`__ needs to be called, which approximates the required rotation using only Clifford + T gates. According to the linked paper, this requires $3\log_2(\frac{1}{\epsilon})$ T-gates, where $\epsilon$ is the desired precision. Qrisp accounts for this effort if given the desired precision $\epsilon$.
 
 >>> rz(np.pi/8, b[0])
 >>> qc = a.qs.compile()
@@ -88,7 +88,9 @@ For instance:
       
             
 This gate-speed function describes a rather exotic backend where the X-gate takes 1 time unit (for instance nanoseconds), the Y-gate 10 time units and every other gate is executed instantaneously. To specify the T-gate speed you can use the built-in function: :meth:`t_depth_indicator <qrisp.t_depth_indicator>`. This function assigns $T$, $T^\dagger$ and $P(\pm \frac{\pi}{4})$ gates a speed of 1, parametrized gates (such as the above) a gate-speed of $3\log_2(\frac{1}{\epsilon})$ and every clifford gate a time of 0.
+
 ::
+
     from qrisp import t_depth_indicator
 
     def gate_speed(op):
@@ -184,13 +186,13 @@ Selecting a suited adder
 
 The Qrisp implementation of Shor's algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. We provide some pre-implemented adders notably:
 
-* The :meth:`fourier_adder <qrisp.fourier_adder>` (`paper <https://arxiv.org/abs/quant-ph/0008033>`_) requires minimal qubit overhead and has a very efficient :meth:`custom_control <qrisp.custom_control>` but uses a lot of parametized phase gates, which increases the T-depth. The low qubit count makes it suitable for simulation, which is why it is the default adder.
+* The :meth:`fourier_adder <qrisp.fourier_adder>` (`paper <https://arxiv.org/abs/quant-ph/0008033>`__) requires minimal qubit overhead and has a very efficient :meth:`custom_control <qrisp.custom_control>` but uses a lot of parametized phase gates, which increases the T-depth. The low qubit count makes it suitable for simulation, which is why it is the default adder.
 
-* The :meth:`cucarro_adder <qrisp.cuccaro_adder>` (`paper <https://arxiv.org/abs/quant-ph/0410184>`_) also requires minimal qubits but no parametrized phase gates. It doesn't have a custom controlled version.
+* The :meth:`cucarro_adder <qrisp.cuccaro_adder>` (`paper <https://arxiv.org/abs/quant-ph/0410184>`__) also requires minimal qubits but no parametrized phase gates. It doesn't have a custom controlled version.
 
-* The :meth:`gidney_adder <qrisp.gidney_adder>` (`paper <https://arxiv.org/abs/1709.06648>`_) requires $n$ ancillae but uses the ``gidney`` Toffoli method described above, making it very fast in terms of T-depth but also economical in terms of T-count.
+* The :meth:`gidney_adder <qrisp.gidney_adder>` (`paper <https://arxiv.org/abs/1709.06648>`__) requires $n$ ancillae but uses the ``gidney`` Toffoli method described above, making it very fast in terms of T-depth but also economical in terms of T-count.
 
-* The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`_) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
+* The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`__) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
 
 In general you can also write your own adder and try it out! Feel free to use the :meth:`inpl_adder_test <qrisp.inpl_adder_test>` function to verify your adder works.
 
@@ -241,7 +243,7 @@ We see that the T-depth is reduced by $\approx 20 \%$. Due to the logarithmic sc
 Addition based QFT
 ^^^^^^^^^^^^^^^^^^
 
-If you made it this far, you probably heard about the :ref:`quantum fourier transform <QFT>` algorithm and it's circuit. This circuit contains a variety of parametrized phase gates, which can throttle the efficiency of a fault-tolerant backend as they have to be synthesized using T-gates. Fortunately a lot of this overhead can be remedied with a trick introduced in `this paper <https://arxiv.org/abs/2203.07739>`_. The observation here is that the QFT circuit contains repeated blocks of phase gates of the following structure.
+If you made it this far, you probably heard about the :ref:`quantum fourier transform <QFT>` algorithm and it's circuit. This circuit contains a variety of parametrized phase gates, which can throttle the efficiency of a fault-tolerant backend as they have to be synthesized using T-gates. Fortunately a lot of this overhead can be remedied with a trick introduced in `this paper <https://arxiv.org/abs/2203.07739>`__. The observation here is that the QFT circuit contains repeated blocks of phase gates of the following structure.
 
 ::
                 

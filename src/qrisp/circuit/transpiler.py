@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
@@ -88,11 +88,11 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
 
 
 def transpile_inner(
-        transpilation_qc,
-        target_qc,
-        translation_dic,
-        transpile_predicate,
-        transpilation_level=0,
+    transpilation_qc,
+    target_qc,
+    translation_dic,
+    transpile_predicate,
+    transpilation_level=0,
 ):
     for i in range(len(transpilation_qc.data)):
         instr = transpilation_qc.data[i]
