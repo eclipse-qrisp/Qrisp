@@ -30,7 +30,7 @@ license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 dependencies = [
     "numpy>=2.0,<2.3", # tqecd requires numpy<2.3
     "sympy<=1.13", # https://github.com/sympy/sympy/issues/28039 - fix on dev branch, not released
-    "qiskit==2.4.0",
+    "qiskit==1.4.6",
     "matplotlib==3.10.9",
     "scipy==1.17.1",
     "numba==0.65.1",
@@ -45,15 +45,15 @@ dependencies = [
 
 [project.optional-dependencies]
 aqt = ["qiskit-aqt-provider==1.15.0"]
-qiskit = ["qiskit-aer==0.17.2", "qiskit-ibm-runtime==0.37.0"]
-iqm = ["iqm-client[qiskit]==22.4"]
+qiskit = ["qiskit-aer==0.17.2", "qiskit-ibm-runtime==0.44.1"]
+iqm = ["iqm-client[qiskit]>=33.0.3", "iqm-pulse<13.0"]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane==0.45.0"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
     "nbsphinx==0.9.8",
-    "ipykernel==7.2.0",
+    "ipykernel==7.3.0",
     "myst-parser==5.0.0",
     "texext==0.6.8",
     "numpydoc==1.10.0",
@@ -68,7 +68,11 @@ dev = [
     "pytest==9.1.0",
     "qiskit-aer==0.17.2",
     "pyscf==2.13.1",
-    "cirq==1.6.1",
+    "cirq-core==1.6.1",
+    "cirq-aqt==1.6.1",
+    "cirq-ionq==1.6.1",
+    "cirq-pasqal==1.6.1",
+    "cirq-web==1.6.1",
     "tqecd==0.2.0",
     "ruff==0.15.16",
 ]
