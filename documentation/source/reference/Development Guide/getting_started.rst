@@ -39,6 +39,8 @@ For development you will also want the test and documentation dependencies:
      - Sphinx and related extensions for building the documentation
    * - ``aqt``
      - Client for AQT quantum hardware
+   * - ``cirq``
+     - Cirq simulator and conversion support
    * - ``qiskit``
      - Qiskit Aer simulator and IBM Quantum Runtime hardware
    * - ``iqm``

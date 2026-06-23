@@ -44,7 +44,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-aqt = ["qiskit-aqt-provider>=1.15.0"]
+aqt = ["qiskit-aqt-provider>=1.15.0", "pytest-httpx>=0.21.0"]
+cirq = ["cirq>=1.3"]
 qiskit = ["qiskit-aer>=0.16,<0.18", "qiskit-ibm-runtime>=0.20"]
 iqm = [
     "iqm-client[qiskit]>=33.0.3,<34.0.0",
@@ -78,7 +79,6 @@ dev-testing = [
     "pytest==9.1.0",
     "qiskit-aer>=0.16,<0.18",
     "pyscf>=2.13",
-    "cirq>=1.3",
     "tqecd>=0.1.3",
 ]
 dev = [
