@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,8 +25,7 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 class PassManager:
-    """
-    A manager for organizing and applying quantum circuit transformation passes.
+    """A manager for organizing and applying quantum circuit transformation passes.
 
     The PassManager maintains an ordered list of :class:`CircuitPass` instances
     and applies them sequentially to quantum circuits.
@@ -36,8 +34,8 @@ class PassManager:
     wrapped first, for example with the ``@CircuitPass`` decorator or by calling
     ``CircuitPass(my_func)``.
 
-    Example
-    -------
+    Example:
+    --------
     Build a pipeline with ``+=``, then inspect, insert, and remove passes::
 
         >>> from qrisp import PassManager
@@ -63,16 +61,17 @@ class PassManager:
         PassManager(['convert_to_cz', 'decompose', 'fuse_adjacents'])
         >>>
         >>> transpiled_qc = pm.run(qc)
+
     """
 
     def __init__(self, passes: list[CircuitPass] | None = None) -> None:
-        """
-        Initialize a PassManager.
+        """Initialize a PassManager.
 
         Parameters
         ----------
         passes : list[CircuitPass], optional
             Initial list of :class:`CircuitPass` instances.
+
         """
         self._passes: list[CircuitPass] = []
         if passes is not None:
@@ -91,8 +90,7 @@ class PassManager:
             )
 
     def add_pass(self, pass_obj: CircuitPass) -> PassManager:
-        """
-        Add a transformation pass to the manager.
+        """Add a transformation pass to the manager.
 
         Parameters
         ----------
@@ -104,14 +102,14 @@ class PassManager:
         -------
         PassManager
             Returns self for method chaining.
+
         """
         self._validate_pass(pass_obj)
         self._passes.append(pass_obj)
         return self
 
     def insert_pass(self, index: int, pass_obj: CircuitPass) -> PassManager:
-        """
-        Insert a pass at a specific position.
+        """Insert a pass at a specific position.
 
         Parameters
         ----------
@@ -124,14 +122,14 @@ class PassManager:
         -------
         PassManager
             Returns self for method chaining.
+
         """
         self._validate_pass(pass_obj)
         self._passes.insert(index, pass_obj)
         return self
 
     def remove_pass(self, index: int) -> PassManager:
-        """
-        Remove a pass at the specified index.
+        """Remove a pass at the specified index.
 
         Parameters
         ----------
@@ -142,25 +140,25 @@ class PassManager:
         -------
         PassManager
             Returns self for method chaining.
+
         """
         del self._passes[index]
         return self
 
     def clear(self) -> PassManager:
-        """
-        Remove all passes from the manager.
+        """Remove all passes from the manager.
 
         Returns
         -------
         PassManager
             Returns self for method chaining.
+
         """
         self._passes.clear()
         return self
 
     def run(self, qc: QuantumCircuit) -> QuantumCircuit:
-        """
-        Apply all passes in sequence to the quantum circuit.
+        """Apply all passes in sequence to the quantum circuit.
 
         Parameters
         ----------
@@ -171,6 +169,7 @@ class PassManager:
         -------
         QuantumCircuit
             The transformed quantum circuit after all passes have been applied.
+
         """
         result = qc
         for circuit_pass in self._passes:
@@ -184,8 +183,7 @@ class PassManager:
         visualize_failures: bool = False,
         **verification_kwargs: Any,
     ) -> list[tuple[str, bool]]:
-        """
-        Verify every pass in the manager against *qc* one by one.
+        """Verify every pass in the manager against *qc* one by one.
 
         For each pass, the method captures the circuit state before
         applying the pass and then verifies that the pass preserves it
@@ -217,24 +215,18 @@ class PassManager:
         ValueError
             If *verification_type* is not ``"unitary"`` or
             ``"measurements"``.
+
         """
         if verification_type not in ("unitary", "measurements"):
-            raise ValueError(
-                f"Unknown verification_type {verification_type!r}. "
-                f"Expected 'unitary' or 'measurements'."
-            )
+            raise ValueError(f"Unknown verification_type {verification_type!r}. Expected 'unitary' or 'measurements'.")
 
         results: list[tuple[str, bool]] = []
         current = qc
         for circuit_pass in self._passes:
             if verification_type == "unitary":
-                passed = circuit_pass.compare_unitary(
-                    current, **verification_kwargs
-                )
+                passed = circuit_pass.compare_unitary(current, **verification_kwargs)
             else:
-                passed = circuit_pass.compare_measurement(
-                    current, **verification_kwargs
-                )
+                passed = circuit_pass.compare_measurement(current, **verification_kwargs)
 
             results.append((circuit_pass.__name__, passed))
 
@@ -248,8 +240,7 @@ class PassManager:
         return results
 
     def __iadd__(self, other: CircuitPass | PassManager) -> PassManager:
-        """
-        Add a pass or extend with the passes of another PassManager in-place.
+        """Add a pass or extend with the passes of another PassManager in-place.
 
         Usage: ``pm += circuit_pass`` or ``pm += other_pass_manager``.
 
@@ -262,6 +253,7 @@ class PassManager:
         -------
         PassManager
             Returns self after modification.
+
         """
         if isinstance(other, CircuitPass):
             self._passes.append(other)
@@ -269,8 +261,7 @@ class PassManager:
             self._passes.extend(other._passes)
         else:
             raise TypeError(
-                f"PassManager only accepts CircuitPass or PassManager instances, "
-                f"got {type(other).__name__}."
+                f"PassManager only accepts CircuitPass or PassManager instances, got {type(other).__name__}."
             )
         return self
 
@@ -288,8 +279,7 @@ class PassManager:
 
     @classmethod
     def from_list(cls, pass_list: list[CircuitPass]) -> PassManager:
-        """
-        Create a PassManager from a list of passes.
+        """Create a PassManager from a list of passes.
 
         Parameters
         ----------
@@ -300,5 +290,6 @@ class PassManager:
         -------
         PassManager
             A new PassManager instance.
+
         """
         return cls(pass_list)

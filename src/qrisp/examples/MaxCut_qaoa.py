@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,17 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import (
-    create_maxcut_cost_operator,
-    RX_mixer,
-    QAOAProblem,
-    create_maxcut_cl_cost_function,
-)
-from qrisp import QuantumVariable, QuantumArray, h
-import networkx as nx
 from operator import itemgetter
-import numpy as np
+
+import networkx as nx
+from qrisp.qaoa import (
+    QAOAProblem,
+    RX_mixer,
+    create_maxcut_cl_cost_function,
+    create_maxcut_cost_operator,
+)
+
+from qrisp import QuantumArray, QuantumVariable, h
 
 # Create an empty graph
 G = nx.Graph()
@@ -39,8 +39,7 @@ G = nx.random_regular_graph(4, n, seed=None)
 
 
 def cl_cost_function(counts):
-    """
-    The cl_cost_function provides the definition of the classical cost function for
+    """The cl_cost_function provides the definition of the classical cost function for
     the MaxCut problem instance and calculates the relative energy in respect
     to the amount of counts for each sample.
 
@@ -55,15 +54,14 @@ def cl_cost_function(counts):
         The classical cost functions returns the ratio between the energy calculated
         using the maxcut_obj objective funcion and the amount of counts used in the
         experiment.
-    """
 
+    """
     # Set energy and total_counts to 0
     energy = 0
     total_counts = 0
 
     # Iterate over all items in counts
     for meas, meas_count in counts.items():
-
         # Calculate objective function for current measurement
         obj_for_meas = maxcut_obj(meas, G)
 
@@ -76,8 +74,7 @@ def cl_cost_function(counts):
 
 
 def maxcut_obj(x, G):
-    """
-    The maxcut_obj is the objective function for the MaxCut problem
+    """The maxcut_obj is the objective function for the MaxCut problem
     instance. As the name suggests, it calculates the value of the objective function
     using which one can compare results and pinpoint the optimal result with the
     lowest free energy value.
@@ -100,13 +97,11 @@ def maxcut_obj(x, G):
         objective function which correcsponds to the amount of edges that were cut
 
     """
-
     # Set value of cut integer to 0
     cut = 0
 
     # Iterate over all edges in graph G
     for i, j in G.edges():
-
         # If the nodes are not the same, the edge is cut
         if x[i] != x[j]:  # the edge is cut
             cut -= 1
@@ -131,8 +126,7 @@ else:
 
 
 def initial_state_maxcut(qarg):
-    """
-    The initial_state_maxcut function provides the correct initial state of qubits in
+    """The initial_state_maxcut function provides the correct initial state of qubits in
     the system on which we run the optimization. In the case of the MaxCut problem,
     the initial state of the system is a superposition we obtain by applying the Hadamard
     gate for every qubit.
@@ -179,9 +173,7 @@ print(maxcut_instance.compile_circuit(qarg, depth=5)[0].depth())
 start_time = time.time()
 
 # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-res = maxcut_instance.run(
-    qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=50
-)  # runs the simulation
+res = maxcut_instance.run(qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=50)  # runs the simulation
 
 # Print runtime of QAOA
 print(time.time() - start_time)
@@ -189,9 +181,7 @@ print(time.time() - start_time)
 # qaoa_backend.close_session()
 
 # Get the best solution and print it
-best_cut, best_solution = min(
-    [(maxcut_obj(x, G), x) for x in res.keys()], key=itemgetter(0)
-)
+best_cut, best_solution = min([(maxcut_obj(x, G), x) for x in res.keys()], key=itemgetter(0))
 print(f"Best string: {best_solution} with cut: {-best_cut}")
 
 # Get final solution with optimized gamma and beta angle parameter values and print it

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp import check_for_tracing_mode
 import jax.numpy as jnp
-import jax.lax as lax
+from jax import lax
+
+from qrisp import check_for_tracing_mode
 
 
 def montgomery_decoder(y, R, N):

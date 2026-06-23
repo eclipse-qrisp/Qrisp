@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,15 +17,16 @@
 
 import numpy as np
 import pytest
+
 from qrisp import (
+    QAE,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
-    QuantumArray,
     control,
+    h,
     ry,
     z,
-    h,
-    QAE,
 )
 
 
@@ -193,6 +193,6 @@ def test_QAE_numerical_integration():
 
     # Verify each state matches the expected probability within a safe tolerance
     for state, expected_prob in expected_results.items():
-        assert np.isclose(
-            mes_res.get(state, 0.0), expected_prob, atol=1e-4
-        ), f"Failed on state {state}: expected {expected_prob}, got {mes_res.get(state, 0.0)}"
+        assert np.isclose(mes_res.get(state, 0.0), expected_prob, atol=1e-4), (
+            f"Failed on state {state}: expected {expected_prob}, got {mes_res.get(state, 0.0)}"
+        )

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -28,8 +27,7 @@ from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class VirtualJob(Job):
-    """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`VirtualBackend`.
+    """A synchronous :class:`~qrisp.interface.Job` produced by :class:`VirtualBackend`.
 
     Execution is performed inline inside :meth:`submit` by calling the
     user-provided ``run_func`` once per circuit with the circuit's QASM
@@ -66,14 +64,10 @@ class VirtualJob(Job):
             run_func = self._backend.run_func
             if isinstance(self._shots, list):
                 counts_list = [
-                    run_func(circuit.qasm(), s, self._token)
-                    for circuit, s in zip(self._circuits, self._shots)
+                    run_func(circuit.qasm(), s, self._token) for circuit, s in zip(self._circuits, self._shots)
                 ]
             else:
-                counts_list = [
-                    run_func(circuit.qasm(), self._shots, self._token)
-                    for circuit in self._circuits
-                ]
+                counts_list = [run_func(circuit.qasm(), self._shots, self._token) for circuit in self._circuits]
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
@@ -95,6 +89,7 @@ class VirtualJob(Job):
         ------
         JobFailureError
             If the user-provided ``run_func`` raised an exception.
+
         """
         self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
@@ -109,8 +104,7 @@ class VirtualJob(Job):
 
 
 class VirtualBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` that wraps a user-provided circuit
+    """A :class:`~qrisp.interface.Backend` that wraps a user-provided circuit
     execution function.
 
     This class replaces the legacy ``VirtualBackend`` (which depended on the
@@ -140,7 +134,6 @@ class VirtualBackend(Backend):
 
     Examples
     --------
-
     We set up a ``VirtualBackend`` that prints the received circuit and
     returns the results of the QASM simulator.  It is recommended that
     ``run_func`` provides a default value of ``None`` for the ``shots``
@@ -179,6 +172,7 @@ class VirtualBackend(Backend):
                      0  ║
     cb_2: 1/════════════╩═
     {4: 1.0}
+
     """
 
     def __init__(self, run_func, name=None):
@@ -227,6 +221,7 @@ class VirtualBackend(Backend):
         Returns
         -------
         VirtualJob
+
         """
         self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):

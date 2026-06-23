@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp.core import QuantumVariable, x, cx, mcx
-from qrisp.circuit import Qubit
-from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.environments import conjugate, custom_control
-from qrisp.misc import int_encoder
-from qrisp.jasp import jrange, jlen, check_for_tracing_mode
 import jax.numpy as jnp
+
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, cx, mcx, x
+from qrisp.environments import conjugate, custom_control
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.misc import int_encoder
+from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 @custom_control
@@ -83,8 +83,8 @@ def cuccaro_adder(
     >>> cuccaro_adder(a,b)
     >>> print(b)
     {9: 1.0}
-    """
 
+    """
     # convert the classical input to a quantum input
     if not isinstance(a, QuantumVariable):
         # create a QuantumFloat of the same size as the other quantum input
@@ -127,18 +127,14 @@ def cuccaro_adder(
         if isinstance(c_in, QuantumBool):
             c_in = c_in[0]
         elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-            raise TypeError(
-                f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}"
-            )
+            raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
         cx(c_in, ancilla[0])
 
     if c_out is not None:
         if isinstance(c_out, QuantumBool):
             ancilla2 = c_out[0]
         elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-            raise TypeError(
-                f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}"
-            )
+            raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
         else:
             ancilla2 = c_out
 

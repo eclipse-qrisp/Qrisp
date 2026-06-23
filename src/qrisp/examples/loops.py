@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, h, qRange
 import time
+
+from qrisp import QuantumFloat, h, qRange
 
 # Create some QuantumFloats
 n = QuantumFloat(3, signed=False)

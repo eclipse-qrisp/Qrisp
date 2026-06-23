@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,13 +19,11 @@ import numpy as np
 
 
 class Clbit:
-    """
-    This class represents classical bits. Classical bits are created by supplying the
+    """This class represents classical bits. Classical bits are created by supplying the
     identifier string.
 
     Examples
     --------
-
     We create a Clbit and add it to a QuantumCircuit. After applying an Hadamard-Gate,
     we measure into the Clbit.
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,8 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 @CircuitPass
@@ -59,12 +58,12 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.swap(0, 1)
         >>> qc.cx(0, 1)
         >>> print(qc)
-                ┌───┐        
+                ┌───┐
         qb_126: ┤ H ├─X───■──
                 └───┘ │ ┌─┴─┐
         qb_127: ──────X─┤ X ├
                         └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += resolve_swaps
         >>> routable_qc = pm.run(qc)
@@ -73,7 +72,7 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         qb_126: ┤ H ├┤ X ├
                 └───┘└─┬─┘
         qb_127: ───────■──
-                        
+
     """
     n = qc.num_qubits()
     qubits = qc.qubits

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,22 +15,22 @@
 ********************************************************************************
 """
 
-import jax.numpy as jnp
 import numpy as np
-from qrisp import *
 from qrisp.gqsp import convolve
 from scipy.ndimage import convolve as scipy_convolve
 
+from qrisp import *
+
+
 def test_gqsp_convolution():
     """Test GQSP convolution on a simple 8-point signal and a 3-point filter."""
-
     # A simple square wave signal
     psi = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
     # A simple 3-point smoothing filter {a_{-1}, a_0, a_1} = {0.25, 0.5, 0.25}
     f = np.array([0.25, 0.5, 0.25])
 
     # Mode 'wrap' performs cyclic convolution
-    convolved_signal_target = scipy_convolve(psi, f, mode='wrap')
+    convolved_signal_target = scipy_convolve(psi, f, mode="wrap")
     # [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
 
     def psi_prep():
@@ -59,8 +58,8 @@ def test_gqsp_convolution():
     # Convert the resulting measurement probabilities to amplitudes by appling the square root.
     res_dict = main()
     max_ = max(res_dict.values())
-    for k,v in res_dict.items():
-        res_dict[k] = (v / max_) ** 0.5 
+    for k, v in res_dict.items():
+        res_dict[k] = (v / max_) ** 0.5
     convolved_signal = np.array([res_dict.get(key, 0) for key in range(8)])
-    #array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
+    # array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
     assert np.linalg.norm(convolved_signal_target - convolved_signal) < 1e-4

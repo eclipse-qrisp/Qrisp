@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-import matplotlib.pyplot as plt
 import dill as pickle
+import matplotlib.pyplot as plt
 
 
 class VQEBenchmark:
-    """
-    This class is a wrapper for representing and evaluating the data collected in the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method.
+    """This class is a wrapper for representing and evaluating the data collected in the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method.
 
     Attributes
     ----------
@@ -60,8 +58,7 @@ class VQEBenchmark:
         self.hamiltonian = hamiltonian
 
     def evaluate(self, cost_metric="oqv", gain_metric="approx_ratio"):
-        r"""
-        Evaluates the data in terms of a cost and a gain metric.
+        r"""Evaluates the data in terms of a cost and a gain metric.
 
         **Cost metric**
 
@@ -102,7 +99,6 @@ class VQEBenchmark:
 
         Examples
         --------
-
         We set up a Heisenberg problem instance and perform some benchmarking.
 
         ::
@@ -158,20 +154,15 @@ class VQEBenchmark:
         * ``optimal_energy``: The exact ground state energy of the problem Hamiltonian.
 
         """
-
         if isinstance(cost_metric, str):
-
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
             else:
                 raise Exception(f"Cost metric {cost_metric} is unknown")
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
-                gain_metric = lambda x: approximation_ratio(
-                    x["energy"], self.optimal_energy
-                )
+                gain_metric = lambda x: approximation_ratio(x["energy"], self.optimal_energy)
             else:
                 raise Exception(f"Gain metric {gain_metric} is unknown")
 
@@ -179,7 +170,6 @@ class VQEBenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -197,8 +187,7 @@ class VQEBenchmark:
         return cost_data, gain_data
 
     def visualize(self, cost_metric="oqv", gain_metric="approx_ratio"):
-        """
-        Plots the results of :meth:`.evaluate <qrisp.vqe.VQEBenchmark.evaluate>`.
+        """Plots the results of :meth:`.evaluate <qrisp.vqe.VQEBenchmark.evaluate>`.
 
         Parameters
         ----------
@@ -209,7 +198,6 @@ class VQEBenchmark:
 
         Examples
         --------
-
         We create a Heisenberg problem instance and benchmark several parameters:
 
         ::
@@ -242,7 +230,6 @@ class VQEBenchmark:
 
 
         """
-
         cost_data, gain_data = self.evaluate(cost_metric, gain_metric)
 
         plt.plot(cost_data, gain_data, "x")
@@ -265,8 +252,7 @@ class VQEBenchmark:
         plt.show()
 
     def rank(self, metric="approx_ratio", print_res=False, average_repetitions=False):
-        """
-        Ranks the runs of the benchmark according to a given metric.
+        """Ranks the runs of the benchmark according to a given metric.
 
         The default metric is approximation ratio. Similar to :meth:`.evaluate <qrisp.vqe.VQEBenchmark.evaluate>`,
         the metric can be user specified.
@@ -283,7 +269,6 @@ class VQEBenchmark:
 
         Examples
         --------
-
         We create a Heisenberg problem instance and benchmark several parameters:
 
         ::
@@ -314,9 +299,7 @@ class VQEBenchmark:
             #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'precision': 0.01, 'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988, 'energy': -7.572235160661036, 'metric': 0.9819348973038227}
 
         """
-
         if isinstance(metric, str):
-
             if metric == "approx_ratio":
 
                 def approx_ratio(x):
@@ -331,7 +314,6 @@ class VQEBenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -372,12 +354,10 @@ class VQEBenchmark:
                     run_data["iterations"],
                 )
 
-                if not key in average_dict:
+                if key not in average_dict:
                     continue
 
-                run_data["metric"] = (
-                    average_dict[key]["total_metric"] / average_dict[key]["count"]
-                )
+                run_data["metric"] = average_dict[key]["total_metric"] / average_dict[key]["count"]
                 del run_data["energy"]
                 del run_data["runtime"]
                 run_data_list.append(run_data)
@@ -392,8 +372,7 @@ class VQEBenchmark:
         return run_data_list
 
     def print_rank_table(self, run_data_list, metric_name):
-        """
-        Prints a nicely formatted table of the ranked runs.
+        """Prints a nicely formatted table of the ranked runs.
 
         Parameters
         ----------
@@ -416,12 +395,9 @@ class VQEBenchmark:
 
         # Print the header row
         print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*header))
-        print(
-            "============================================================================"
-        )
+        print("============================================================================")
 
         for i, run_data in enumerate(run_data_list):
-
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
 
@@ -440,8 +416,7 @@ class VQEBenchmark:
             print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*row))
 
     def save(self, filename):
-        """
-        Saves the data to the harddrive for later use.
+        """Saves the data to the harddrive for later use.
 
         Parameters
         ----------
@@ -450,7 +425,6 @@ class VQEBenchmark:
 
         Examples
         --------
-
         We create a Heisenberg problem and benchmark several parameters:
 
         ::
@@ -490,8 +464,7 @@ class VQEBenchmark:
 
     @classmethod
     def load(cls, filename):
-        """
-        Loads benchmark data from the harddrive that has been saved by
+        """Loads benchmark data from the harddrive that has been saved by
         :meth:`.save <qrisp.vqe.VQEBenchmark.save>`.
 
         Parameters
@@ -506,7 +479,6 @@ class VQEBenchmark:
 
         Examples
         --------
-
         We assume that the code from the example in :meth:`.save <qrisp.vqe.VQEBenchmark.save>`
         has been executed and load the corresponding data:
 
@@ -532,17 +504,12 @@ class VQEBenchmark:
 
 def overall_quantum_volume(run_data):
     return (
-        run_data["circuit_depth"]
-        * run_data["qubit_amount"]
-        * 1
-        / (run_data["precision"]) ** 2
-        * run_data["iterations"]
+        run_data["circuit_depth"] * run_data["qubit_amount"] * 1 / (run_data["precision"]) ** 2 * run_data["iterations"]
     )
 
 
 def approximation_ratio(energy, optimal_energy):
-    """
-    Parameters
+    """Parameters
     ----------
     energy : float
         The energy of the problem Hamiltonian for the optimized ciruit.
@@ -559,15 +526,13 @@ def approximation_ratio(energy, optimal_energy):
 
 
 def ilog(n, base):
-    """
-    Find the integer log of n with respect to the base.
+    """Find the integer log of n with respect to the base.
 
     >>> import math
     >>> for base in range(2, 16 + 1):
     ...     for n in range(1, 1000):
     ...         assert ilog(n, base) == int(math.log(n, base) + 1e-10), '%s %s' % (n, base)
     """
-
     if abs(n) < 1:
         n = 1 / n
 
@@ -579,8 +544,7 @@ def ilog(n, base):
 
 
 def sci_notation(n, prec=3):
-    """
-    Represent n in scientific notation, with the specified precision.
+    """Represent n in scientific notation, with the specified precision.
 
     >>> sci_notation(1234 * 10**1000)
     '1.234e+1003'

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import pytest
+
 from qrisp import QuantumCircuit, Qubit
 from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 
@@ -83,6 +83,7 @@ class TestConvertToCZPreservation:
 
     def test_unknown_two_qubit_gate_passes_through_by_default(self):
         from qrisp.circuit import Operation
+
         qc, qubits = _make_circuit(2)
         op = Operation(name="mystery_gate", num_qubits=2)
         qc.append(op, qubits)
@@ -94,6 +95,7 @@ class TestConvertToCZPreservation:
 class TestConvertToCZStrict:
     def test_unknown_two_qubit_gate_raises_in_strict_mode(self):
         from qrisp.circuit import Operation
+
         qc, qubits = _make_circuit(2)
         op = Operation(name="mystery_gate", num_qubits=2)
         qc.append(op, qubits)

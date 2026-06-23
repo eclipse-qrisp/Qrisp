@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,14 @@
 ********************************************************************************
 """
 
-import numpy as np
 import time
-from qrisp import QuantumFloat, auto_uncompute
-from qrisp.grover import grovers_alg, tag_state
-from qrisp.misc import multi_measurement
-from qrisp.interface import QiskitBackend
 
+import numpy as np
+from qrisp.grover import grovers_alg, tag_state
+
+from qrisp import QuantumFloat, auto_uncompute
+from qrisp.interface import QiskitBackend
+from qrisp.misc import multi_measurement
 
 # Create two quantum variables
 

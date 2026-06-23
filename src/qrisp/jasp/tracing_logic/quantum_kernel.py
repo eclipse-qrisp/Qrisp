@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,20 +15,17 @@
 ********************************************************************************
 """
 
-from jax.extend.core import ClosedJaxpr
-
 from qrisp.jasp.primitives import (
-    create_quantum_kernel_p,
-    consume_quantum_kernel_p,
     AbstractQubit,
     AbstractQubitArray,
+    consume_quantum_kernel_p,
+    create_quantum_kernel_p,
 )
-from qrisp.jasp.tracing_logic import TracingQuantumSession, qache, get_last_equation
+from qrisp.jasp.tracing_logic import TracingQuantumSession, get_last_equation, qache
 
 
 def quantum_kernel(func):
-    """
-    This decorator allows you to annotate a subroutine as a "quantum kernel".
+    """This decorator allows you to annotate a subroutine as a "quantum kernel".
     Quantum kernels are functions that are restricted in the sense that they
     can not have quantum inputs or outputs, yet their inner working can be quantum.
     What is the benefit in that? The underlying idea why this
@@ -69,7 +65,6 @@ def quantum_kernel(func):
 
     Examples
     --------
-
     We demonstrate a naive implementation of an expectation value please use
     :ref:`expectation_value` if you required this functionality. For this
     we define a state preparation procedure and call it from a kernelized
@@ -121,7 +116,6 @@ def quantum_kernel(func):
         # Expected: 2**4/2 = 8
 
     """
-
     func = qache(
         func,
     )
@@ -142,9 +136,7 @@ def quantum_kernel(func):
 
         eqn = get_last_equation()
 
-        flattened_jaspr = Jaspr.from_cache(
-            collect_environments(eqn.params["jaxpr"])
-        ).flatten_environments()
+        flattened_jaspr = Jaspr.from_cache(collect_environments(eqn.params["jaxpr"])).flatten_environments()
         for var in flattened_jaspr.invars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum input")

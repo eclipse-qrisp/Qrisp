@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ def apply_pseudo_inv(
     theta: float,
     delta: float | None = None,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
+    r"""Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
 
     Approximates the pseudoinverse of a matrix by ignoring singular values below a specified threshold.
     This regularizes ill-conditioned linear systems where tiny singular values would otherwise amplify noise and cause large numerical errors.
@@ -93,7 +91,6 @@ def apply_pseudo_inv(
 
     Examples
     --------
-
     First, define a matrix $A$ and a right-hand side vector $\vec{b}$.
 
     ::
@@ -179,7 +176,6 @@ def apply_pseudo_inv(
         # [0.63245553 0.31622777 0.63245553 0.31622777]
 
     """
-
     from qrisp.algorithms.gqsp import pseudo_inversion
 
     return pseudo_inversion(self, eps, theta, delta)

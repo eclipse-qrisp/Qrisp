@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,19 +21,16 @@ from io import StringIO
 from jax._src import core
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir, passmanager
-from jaxlib.mlir._mlir_libs import _stablehlo, _mlirHlo, _chlo, _jax_mlir_ext
-
+from jaxlib.mlir._mlir_libs import _chlo, _mlirHlo, _stablehlo
 from xdsl.context import Context
 from xdsl.dialects import builtin, func
 from xdsl.parser import Parser
 
 from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
-from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 
 
 def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
-    """
-    Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
+    """Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
 
     Parameters
     ----------
@@ -73,7 +69,6 @@ def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
 
     # Lower JAXPR to MLIR using Catalyst's method
     with ctx.context, ir.Location.unknown(ctx.context):
-
         ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
 
         try:
@@ -83,10 +78,7 @@ def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
                 num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
-                in_avals=[
-                    var.aval
-                    for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars
-                ],
+                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars],
                 main_function=True,
             )
 
@@ -122,11 +114,11 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     builtin.ModuleOp
         The parsed xDSL module operation. Unregistered ops are allowed so that
         custom JASP ops survive the round-trip.
+
     """
     # Create context with unregistered operations allowed so our custom ops
     # remain intact when parsed by xDSL.
-    from xdsl.dialects import builtin, func, linalg, arith, tensor, scf, math
-    from xdsl.parser import Parser
+    from xdsl.dialects import arith, builtin, linalg, math, scf, tensor
 
     ctx = Context()
     ctx.allow_unregistered = True
@@ -146,11 +138,11 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     return ctx, parser.parse_module()
 
 
-def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
+def jaxpr_to_xdsl(jaxpr, lower_stableHLO=False, lowering_rules=tuple([])):
     """Lower a JAXPR to an xDSL module.
 
     This function performs three steps:
-    
+
     1. Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
     2. (Optional) Lower StableHLO to linalg and other lower-level dialects.
     3. Print the module in MLIR's generic form and re-parse it with xDSL to
@@ -174,8 +166,8 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
         The xDSL context in which the module resides.
     builtin.ModuleOp
         The xDSL module containing the lowered program.
-    """
 
+    """
     # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
     if lower_stableHLO:
         mlir_module = lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules=lowering_rules)
@@ -197,8 +189,9 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
 
     # Parse to xDSL.
     xdsl_ctx, xdsl_module = MLIR_str_to_xdsl(generic_mlir_string)
-    
+
     return xdsl_ctx, xdsl_module
+
 
 def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     """Lower a Jaxpr to an MLIR module with StableHLO ops lowered to linalg.
@@ -210,14 +203,14 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     subsequently rewritten to SCF by xDSL.
 
     .. note::
-    
-        Not all StableHLO operations are lowered. Operations like 
+
+        Not all StableHLO operations are lowered. Operations like
         ``stablehlo.scatter`` (used for indexed array updates) remain as-is
         because they require specialized lowering not covered by the standard
         ``stablehlo-legalize-to-linalg`` pass.
 
     The pipeline applied:
-    
+
     1. symbol-dce: removes unused private shadow functions that JAX emits
     2. stablehlo-convert-to-signless: converts to signless integers
     3. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
@@ -234,6 +227,7 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     MLIRModule
         An MLIR module object in JAX's MLIR infrastructure with StableHLO
         arithmetic lowered to linalg.
+
     """
     # --- Step 1: Lower Jaxpr to a JAX MLIR module ---------------------------
     mlir_module = lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=lowering_rules)
@@ -252,11 +246,7 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         # symbol-dce removes unused private shadow functions that JAX emits.
         # stablehlo-legalize-to-linalg converts arithmetic/data ops to linalg.
         # stablehlo control-flow ops (case, while) are left untouched here.
-        pipeline = "builtin.module(" \
-                   "symbol-dce," \
-                   "stablehlo-convert-to-signless," \
-                   "stablehlo-legalize-to-linalg" \
-                   ")"
+        pipeline = "builtin.module(symbol-dce,stablehlo-convert-to-signless,stablehlo-legalize-to-linalg)"
 
         pm = passmanager.PassManager.parse(pipeline)
         # Disable verifier: stablehlo.case carries !jasp.QuantumState which
@@ -267,9 +257,6 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         pm.run(mlir_module.operation)
 
         # --- Step 3: Print to generic MLIR text ------------------------------
-        generic_mlir = mlir_module.operation.get_asm(
-            print_generic_op_form=True
-        )
+        generic_mlir = mlir_module.operation.get_asm(print_generic_op_form=True)
 
-    
     return mlir_module

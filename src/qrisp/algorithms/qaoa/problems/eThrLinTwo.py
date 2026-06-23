@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,7 @@
 ********************************************************************************
 """
 
-from qrisp import cx, rz, conjugate
+from qrisp import conjugate, cx, rz
 
 
 def parity(qarg, indices):
@@ -26,8 +25,7 @@ def parity(qarg, indices):
 
 
 def create_e3lin2_cost_operator(clauses):
-    r"""
-    Creates the cost operator for an instance of the E3Lin2 problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the cost operator for an instance of the E3Lin2 problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
     The cost operator is given by $e^{-i\gamma H}$ where
 
     .. math::
@@ -56,8 +54,7 @@ def create_e3lin2_cost_operator(clauses):
 
 
 def create_e3lin2_cl_cost_function(clauses):
-    """
-    Creates the cost operator for an instance of the E3Lin2 problem.
+    """Creates the cost operator for an instance of the E3Lin2 problem.
 
     Parameters
     ----------
@@ -84,8 +81,7 @@ def create_e3lin2_cl_cost_function(clauses):
 
 
 def e3lin2_problem(clauses):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

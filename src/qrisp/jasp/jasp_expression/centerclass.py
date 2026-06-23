@@ -18,7 +18,6 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from functools import lru_cache
 from typing import Any
 
 import jax
@@ -28,6 +27,7 @@ from jax._src.util import split_list
 from jax.core import DropVar
 from jax.extend.core import ClosedJaxpr, Jaxpr, Literal
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import (
     eval_jaxpr,
     flatten_environments,
@@ -756,7 +756,7 @@ class Jaspr(ClosedJaxpr):
             return res
 
     @classmethod
-    @lru_cache(maxsize=int(1e5))
+    @qrisp_lru_compilation_cache
     def from_cache(cls, closed_jaxpr: ClosedJaxpr) -> "Jaspr":
         """
         Construct a :class:`Jaspr` from a :class:`~jax.extend.core.ClosedJaxpr`,

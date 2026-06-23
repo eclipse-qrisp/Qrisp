@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,7 @@ from abc import ABC, abstractmethod
 
 
 class Hamiltonian(ABC):
-    r"""
-    Central structure to facilitate treatment of quantum Hamiltonians.
+    r"""Central structure to facilitate treatment of quantum Hamiltonians.
 
     For example, Hamiltonians of the form
 
@@ -35,7 +33,6 @@ class Hamiltonian(ABC):
 
     Examples
     --------
-
     We define a Hamiltonian:
 
     ::
@@ -72,8 +69,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __str__(self):
-        """
-        Returns a string representing the Hamiltonian.
+        """Returns a string representing the Hamiltonian.
 
         Returns
         -------
@@ -85,8 +81,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __add__(self, other):
-        """
-        Returns the sum of the operator self and other.
+        """Returns the sum of the operator self and other.
 
         Parameters
         ----------
@@ -103,8 +98,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __sub__(self, other):
-        """
-        Returns the difference of the operator self and other.
+        """Returns the difference of the operator self and other.
 
         Parameters
         ----------
@@ -121,8 +115,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __rsub__(self, other):
-        """
-        Returns the difference of the operator other and self.
+        """Returns the difference of the operator other and self.
 
         Parameters
         ----------
@@ -139,8 +132,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __mul__(self, other):
-        """
-        Returns the product of the operator self and other.
+        """Returns the product of the operator self and other.
 
         Parameters
         ----------
@@ -157,8 +149,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __iadd__(self, other):
-        """
-        Adds other to the operator self.
+        """Adds other to the operator self.
 
         Parameters
         ----------
@@ -170,8 +161,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __isub__(self, other):
-        """
-        Substracts other from the operator self.
+        """Substracts other from the operator self.
 
         Parameters
         ----------
@@ -183,8 +173,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __imul__(self, other):
-        """
-        Multiplys other to the operator self.
+        """Multiplys other to the operator self.
 
         Parameters
         ----------
@@ -196,8 +185,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def apply_threshold(self, threshold):
-        """
-        Removes all terms with coefficient absolute value below the specified threshold.
+        """Removes all terms with coefficient absolute value below the specified threshold.
 
         Parameters
         ----------
@@ -209,8 +197,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def ground_state_energy(self):
-        """
-        Calculates the ground state energy (i.e., the minimum eigenvalue) of the Hamiltonian classically.
+        """Calculates the ground state energy (i.e., the minimum eigenvalue) of the Hamiltonian classically.
 
         Returns
         -------
