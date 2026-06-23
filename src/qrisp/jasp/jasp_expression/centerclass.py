@@ -18,7 +18,7 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, cast
+from typing import Any
 
 import jax
 from jax import make_jaxpr
@@ -192,9 +192,7 @@ class Jaspr(ClosedJaxpr):
 
     @property
     def eqns(self):
-        # Return type deliberately left unannotated: ClosedJaxpr.eqns is also
-        # unannotated, and adding -> list would widen the inferred list[JaxprEqn]
-        # return type, causing an incompatible-override Pylance warning.
+        """Equations of the underlying Jaxpr."""
         return self.jaxpr.eqns
 
     @property
@@ -613,9 +611,7 @@ class Jaspr(ClosedJaxpr):
         """Inline this Jaspr into the current tracing context without JIT-wrapping."""
         from qrisp.jasp import TracingQuantumSession
 
-        # get_instance() is typed as | None because tr_qs_container starts as [None];
-        # the module-level singleton guarantees it is always non-None here.
-        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
+        qs = TracingQuantumSession.get_instance()
         abs_qst = qs.abs_qst
 
         amended_args = list(args) + [abs_qst]
@@ -681,7 +677,7 @@ class Jaspr(ClosedJaxpr):
         """Embed this Jaspr into the current tracing context, optionally JIT-wrapping it."""
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
-        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
+        qs = TracingQuantumSession.get_instance()
         abs_qst = qs.abs_qst
 
         amended_args = list(args) + [abs_qst]
@@ -742,6 +738,7 @@ class Jaspr(ClosedJaxpr):
             return res[0]
         return res
 
+    # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
     @classmethod
     @qrisp_lru_compilation_cache
     def from_cache(cls, closed_jaxpr: ClosedJaxpr) -> "Jaspr":
@@ -1603,7 +1600,7 @@ def make_jaspr(
             adjusted_jax_kwargs["static_argnums"] = type(sa)(x + 1 for x in sa)
 
     def jaspr_creator(*args, **kwargs):
-        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
+        qs = TracingQuantumSession.get_instance()
 
         # Close any tracing quantum sessions not properly closed due to prior errors.
         if not check_for_tracing_mode():
