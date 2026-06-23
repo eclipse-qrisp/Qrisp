@@ -858,11 +858,11 @@ class BlockEncoding:
         # We construct a strictly Hermitian block-encoding of A = (A + A†)/2.
         # To guarantee Hermiticity, we use an off-diagonal control structure:
         # S = (|0><1| ⊗ U) + (|1><0| ⊗ U†)
-        # S is strictly Hermitian (S = S†). We implement S by applying an X gate 
+        # S is strictly Hermitian (S = S†). We implement S by applying an X gate
         # to the control ancilla before the controlled-U and controlled-U† operations.
         #
         # We then conjugate S by (H ⊗ I) to form U_tilde = (H ⊗ I) S (H ⊗ I).
-        # This unitary is still strictly Hermitian, and the Hadamard sandwich 
+        # This unitary is still strictly Hermitian, and the Hadamard sandwich
         # rotates the basis so that the new ancilla is initialized and projected in |0>.
         # Therefore, A cleanly sits in the upper-left block because:
         # <0| U_tilde |0> = <+| S |+> = (U + U†)/2.
@@ -870,7 +870,6 @@ class BlockEncoding:
         # The qubitization walk operator is W = (2*|0><0| - I) U_tilde.
         def new_unitary(*args):
             with conjugate(h)(args[0]):
-
                 # (|0><1| + |1><0|) = X
                 x(args[0])
 

@@ -25,8 +25,7 @@ from qrisp.operators import X, Y, Z
 
 
 def post_selection(res_dict, N):
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
     amps = np.sqrt([filtered_dict.get(k, 0) for k in range(N)])
@@ -40,16 +39,16 @@ def test_non_hermitian_block_encoding(alg, mode):
     """The test constructs a non-Hermitian block-encoding of a Hermitian matrix A and applies a polynomial transformation to it using the specified algorithm (QET, GQET, QSVT, and GQSVT).
     The resulting amplitudes are compared against the expected target amplitudes calculated using NumPy.
     Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
-    Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary (Issue #681). 
+    Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary (Issue #681).
     The test verifies that GQET produces the same results as the other three algorithms when applied to a non-Hermitian block-encoding of a Hermitian matrix.
     """
 
     N = 8
     I = np.eye(N)
-    A = 2*I + np.eye(N, k=1) + np.eye(N, k=-1)
-    A[0, N-1] = 1
-    A[N-1, 0] = 1
-    #[[2. 1. 0. 0. 0. 0. 0. 1.]
+    A = 2 * I + np.eye(N, k=1) + np.eye(N, k=-1)
+    A[0, N - 1] = 1
+    A[N - 1, 0] = 1
+    # [[2. 1. 0. 0. 0. 0. 0. 1.]
     # [1. 2. 1. 0. 0. 0. 0. 0.]
     # [0. 1. 2. 1. 0. 0. 0. 0.]
     # [0. 0. 1. 2. 1. 0. 0. 0.]
@@ -84,7 +83,7 @@ def test_non_hermitian_block_encoding(alg, mode):
     # Calculate target amplitudes for comparison
     def main():
         operand = operand_prep()
-        ancillas = BE_poly.apply(operand) 
+        ancillas = BE_poly.apply(operand)
         return operand, *ancillas
 
     if mode == "static":
@@ -104,15 +103,14 @@ def test_nested_polynomial_application(alg, mode):
     """The test constructs a Hermitian block-encoding of an Ising Hamiltonian and applies nested polynomial transformations to it using the specified algorithm (QET, GQET, QSVT, and GQSVT).
     The resulting amplitudes are compared against the expected target amplitudes calculated using NumPy.
     Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
-    Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary in the second application (Issue #681). 
+    Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary in the second application (Issue #681).
     """
 
     if alg == QET and mode == "static":
         pytest.skip("(Issue #680).")
 
     def create_ising_hamiltonian(L, J, B):
-        H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
-            + sum(B * X(i) for i in range(L))
+        H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
         return H
 
     L = 4
@@ -134,7 +132,7 @@ def test_nested_polynomial_application(alg, mode):
     # Calculate target amplitudes for comparison
     def main():
         operand = operand_prep()
-        ancillas = BE3.apply(operand) 
+        ancillas = BE3.apply(operand)
         return operand, *ancillas
 
     if mode == "static":
@@ -150,7 +148,7 @@ def test_nested_polynomial_application(alg, mode):
     # Nested polynomial application
     def main():
         operand = operand_prep()
-        ancillas = BE_poly_poly.apply(operand) 
+        ancillas = BE_poly_poly.apply(operand)
         return operand, *ancillas
 
     if mode == "static":

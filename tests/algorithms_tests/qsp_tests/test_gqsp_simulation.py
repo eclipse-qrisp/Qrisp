@@ -23,8 +23,7 @@ from qrisp.operators import X, Y, Z, QubitOperator
 
 
 def post_selection(res_dict, N):
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
     amps = np.sqrt([filtered_dict.get(k, 0) for k in range(N)])
@@ -33,7 +32,7 @@ def post_selection(res_dict, N):
 
 # Issue #681
 def test_gqsp_hamiltonian_simulation_nested_block_encoding():
-    """Test the GQSP Hamiltonian simulation via qubitization with nested block encoding. 
+    """Test the GQSP Hamiltonian simulation via qubitization with nested block encoding.
     Defines a 4-qubit Ising Hamiltonian H and its polynomial transformation H2, constructs block encodings for both (BE and BE2).
     Applies the polynomial transformation to the block encoding of the original Ising Hamiltonian (BE_poly).
     Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
@@ -41,8 +40,7 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     """
 
     def create_ising_hamiltonian(L, J, B):
-        H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
-            + sum(B * X(i) for i in range(L))
+        H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
         return H
 
     L = 4
@@ -61,14 +59,14 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     def psi(t, BE):
         BE_sim = BE.sim(t=t, N=10)
         operand = operand_prep()
-        ancillas = BE_sim.apply(operand) 
+        ancillas = BE_sim.apply(operand)
         return operand, *ancillas
 
     @terminal_sampling
     def main(t, BE):
         return psi(t, BE)
 
-    target_amps, success_prob = post_selection(res_dict = main(0.1, BE2), N=2**L)
+    target_amps, success_prob = post_selection(res_dict=main(0.1, BE2), N=2**L)
     assert success_prob > 0.98
 
     amps, success_prob = post_selection(main(0.1, BE_poly), N=2**L)
