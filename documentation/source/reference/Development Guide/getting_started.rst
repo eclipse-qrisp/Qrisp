@@ -25,7 +25,7 @@ For development you will also want the test and documentation dependencies:
 
 .. code-block:: bash
 
-    pip install -e ".[test,docs]"
+    pip install -e ".[dev,docs]"
 
 .. list-table:: Optional dependency groups
    :header-rows: 1
@@ -33,7 +33,7 @@ For development you will also want the test and documentation dependencies:
 
    * - Group
      - What it installs
-   * - ``test``
+   * - ``dev``
      - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
    * - ``docs``
      - Sphinx and related extensions for building the documentation
@@ -53,10 +53,10 @@ Include the groups you need in brackets, either at install time or later:
 .. code-block:: bash
 
     # All at once
-    pip install -e ".[test,docs,iqm,catalyst,xdsl,aqt,qiskit]"
+    pip install -e ".[dev,docs,iqm,catalyst,xdsl,aqt,qiskit]"
 
     # Or individual groups after the base install
-    pip install -e ".[test]"
+    pip install -e ".[dev]"
     pip install -e ".[iqm]"
 
 .. note::
