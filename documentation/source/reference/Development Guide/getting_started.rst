@@ -55,7 +55,7 @@ Include the groups you need in brackets, either at install time or later:
 .. code-block:: bash
 
     # All at once
-    pip install -e ".[dev,docs,iqm,catalyst,xdsl,aqt,qiskit]"
+    pip install -e ".[dev,docs,iqm,catalyst,xdsl,aqt,cirq,qiskit]"
 
     # Or individual groups after the base install
     pip install -e ".[dev]"

@@ -29,8 +29,8 @@ classifiers = [
 license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 
 dependencies = [
-    "numpy>=2.0,<2.5",
-    "sympy<=1.13",
+    "numpy>=2.0,<2.5", # tqecd caps numpy to <2.3 when installed
+    "sympy<=1.13", # https://github.com/sympy/sympy/issues/28039 - fix on dev branch, not released
     "qiskit>=0.44.0",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
@@ -39,8 +39,8 @@ dependencies = [
     "tqdm>=4.67,<5",
     "dill>=0.4.0,<0.5",
     "psutil>=7.0.0,<8",
-    "jax==0.7.1",
-    "jaxlib==0.7.1"
+    "jax==0.7.1", # pinned to match pennylane-catalyst==0.15.0
+    "jaxlib==0.7.1" # pinned to match pennylane-catalyst==0.15.0
 ]
 
 [project.optional-dependencies]
@@ -55,8 +55,8 @@ iqm = [
     "opentelemetry-exporter-otlp==1.27.0",
     "iqm-data-definitions==2.22",
 ]
-catalyst = ["pennylane-catalyst==0.15.0", "pennylane>=0.45,<0.46"]
-xdsl = ["xdsl==0.59.0"]
+catalyst = ["pennylane-catalyst==0.15.0", "pennylane>=0.45,<0.46"] # pennylane-catalyst requires pennylane>=0.45
+xdsl = ["xdsl==0.59.0"] # pinned to match pennylane-catalyst==0.15.0
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
@@ -116,5 +116,3 @@ ignore = [
     "D415",  # ends-in-punctuation
 ]
 
-[tool.pylint. messages_control]
-disable = ["import-error"]
