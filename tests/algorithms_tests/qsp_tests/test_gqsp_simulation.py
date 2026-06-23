@@ -15,6 +15,67 @@
 ********************************************************************************
 """
 
+import numpy as np
+
+from qrisp import QuantumFloat, multi_measurement, terminal_sampling
+from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import X, Y, Z, QubitOperator
+
+
+def post_selection(res_dict, N):
+    filtered_dict = {k[0]: p for k, p in res_dict.items() \
+                    if all(x == 0 for x in k[1:])}
+    success_prob = sum(filtered_dict.values())
+    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+    amps = np.sqrt([filtered_dict.get(k, 0) for k in range(N)])
+    return amps, success_prob
+
+
+# Issue #681
+def test_gqsp_hamiltonian_simulation_nested_block_encoding():
+    """Test the GQSP Hamiltonian simulation via qubitization with nested block encoding. 
+    Defines a 4-qubit Ising Hamiltonian H and its polynomial transformation H2, constructs block encodings for both (BE and BE2).
+    Applies the polynomial transformation to the block encoding of the original Ising Hamiltonian (BE_poly).
+    Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
+    Ensures that the amplitudes are consistent and the success probability is high.
+    """
+
+    def create_ising_hamiltonian(L, J, B):
+        H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
+            + sum(B * X(i) for i in range(L))
+        return H
+
+    L = 4
+    H = create_ising_hamiltonian(L, 0.25, 0.5)
+    H2 = 0.9 * H + 0.8 * H * H * H
+
+    BE = BlockEncoding.from_operator(H)
+    BE2 = BlockEncoding.from_operator(H2)
+    BE_poly = BE.poly(np.array([0.0, 0.9, 0.0, 0.8]))
+
+    # Prepare inital system state |psi> = |0>
+    def operand_prep():
+        return QuantumFloat(L)
+
+    # Prepare state|psi(t)> = e^{itH} |psi>
+    def psi(t, BE):
+        BE_sim = BE.sim(t=t, N=10)
+        operand = operand_prep()
+        ancillas = BE_sim.apply(operand) 
+        return operand, *ancillas
+
+    @terminal_sampling
+    def main(t, BE):
+        return psi(t, BE)
+
+    target_amps, success_prob = post_selection(res_dict = main(0.1, BE2), N=2**L)
+    assert success_prob > 0.98
+
+    amps, success_prob = post_selection(main(0.1, BE_poly), N=2**L)
+    assert success_prob > 0.98
+    assert np.linalg.norm(target_amps - amps) < 1e-3
+
+
 # Disabled due to long runtime
 # hamiltonian_simulation is tested in block encoding sim test
 """

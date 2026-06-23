@@ -24,12 +24,12 @@ from qrisp.gqsp import GQET, QET, QSVT, GQSVT
 from qrisp.operators import X, Y, Z
 
 
-def post_selection(res_dict):
+def post_selection(res_dict, N):
     filtered_dict = {k[0]: p for k, p in res_dict.items() \
                     if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
-    amps = np.sqrt([filtered_dict.get(k, 0) for k in range(2**3)])
+    amps = np.sqrt([filtered_dict.get(k, 0) for k in range(N)])
     return amps
 
 
@@ -90,10 +90,10 @@ def test_non_hermitian_block_encoding(alg, mode):
     if mode == "static":
         operand, *ancillas = main()
         res_dict = multi_measurement([operand] + ancillas)
-        amps = post_selection(res_dict)
+        amps = post_selection(res_dict, N)
         assert np.allclose(amps, target_amps, atol=1e-4)
     elif mode == "dynamic":
-        amps_jasp = post_selection(terminal_sampling(main)())
+        amps_jasp = post_selection(terminal_sampling(main)(), N)
         assert np.allclose(amps_jasp, target_amps, atol=1e-4)
 
 
@@ -140,9 +140,9 @@ def test_nested_polynomial_application(alg, mode):
     if mode == "static":
         operand, *ancillas = main()
         res_dict = multi_measurement([operand] + ancillas)
-        target_amps = post_selection(res_dict)
+        target_amps = post_selection(res_dict, 2**L)
     elif mode == "dynamic":
-        target_amps = post_selection(terminal_sampling(main)())
+        target_amps = post_selection(terminal_sampling(main)(), 2**L)
 
     BE_poly = alg(BE, np.array([0.0, 0.9, 0.0, 0.8]), kind="Polynomial")
     BE_poly_poly = alg(BE_poly, np.array([0.0, 0.9, 0.0, 0.8]), kind="Polynomial")
@@ -156,8 +156,8 @@ def test_nested_polynomial_application(alg, mode):
     if mode == "static":
         operand, *ancillas = main()
         res_dict = multi_measurement([operand] + ancillas)
-        amps = post_selection(res_dict)
+        amps = post_selection(res_dict, 2**L)
         assert np.allclose(amps, target_amps, atol=1e-3)
     elif mode == "dynamic":
-        amps_jasp = post_selection(terminal_sampling(main)())
+        amps_jasp = post_selection(terminal_sampling(main)(), 2**L)
         assert np.allclose(amps_jasp, target_amps, atol=1e-4)
