@@ -72,11 +72,11 @@ docs = [
 ]
 dev = [
     "pytest==9.1.0",
-    "qiskit-aer==0.17.2",
-    "pyscf==2.13.1",
-    "cirq==1.6.1",
-    "tqecd==0.2.0",
-    "ruff==0.15.16",
+    "qiskit-aer",
+    "pyscf",
+    "cirq",
+    "tqecd",
+    "ruff",
 ]
 
 [project.urls]
