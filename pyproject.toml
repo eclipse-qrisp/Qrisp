@@ -44,9 +44,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-aqt = ["qiskit-aqt-provider>=1.15.0", "pytest-httpx>=0.21.0"]
-cirq = ["cirq>=1.3"]
-qiskit = ["qiskit-aer>=0.16,<0.18", "qiskit-ibm-runtime>=0.20"]
+aqt = ["qiskit-aqt-provider>=1.15.0", "pytest-httpx>=0.36.0,<0.37"]
+cirq = ["cirq>=1.3,<1.6"]
+qiskit = ["qiskit-aer>=0.16,<0.18", "qiskit-ibm-runtime>=0.44,<0.45"]
 iqm = [
     "iqm-client[qiskit]>=33.0.3,<34.0.0",
     "iqm-pulse<13.0",
@@ -55,7 +55,7 @@ iqm = [
     "opentelemetry-exporter-otlp==1.27.0",
     "iqm-data-definitions==2.22",
 ]
-catalyst = ["pennylane-catalyst==0.15.0", "pennylane>=0.40"]
+catalyst = ["pennylane-catalyst==0.15.0", "pennylane>=0.45,<0.46"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
@@ -78,11 +78,11 @@ dev-code-style = [
 dev-testing = [
     "pytest==9.1.0",
     "qiskit-aer>=0.16,<0.18",
-    "pyscf>=2.13",
-    "tqecd>=0.1.3",
+    "pyscf>=2.13,<2.14",
+    "tqecd>=0.2.0,<0.3",
 ]
 dev = [
-    "qrisp[dev-code-style,dev-testing]>=0.15.0",
+    "qrisp[dev-code-style,dev-testing]>=0.15.0,<0.16",
 ]
 
 [project.urls]
