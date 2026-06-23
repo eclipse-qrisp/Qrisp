@@ -1,4 +1,5 @@
-"""Prepare changelog for a new Qrisp release.
+"""This script is intended for a person doing the new Qrisp release.
+Only the release manager needs to run this script.
 
 Workflow
 --------
@@ -177,10 +178,10 @@ Compatibility
 
 .. Add compatibility notes above this line
 
-New Tutorials
--------------
+New Tutorials / Updated Documentation
+--------------------------------------
 
-.. Add new tutorials above this line
+.. Add new tutorials / updated documentation above this line
 
 UI Changes
 ----------
