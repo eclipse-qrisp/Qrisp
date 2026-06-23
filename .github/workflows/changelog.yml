@@ -1,4 +1,4 @@
-name: Changelog Reminder
+name: Changelog Check
 
 # Trigger on PR events targeting main
 on:
