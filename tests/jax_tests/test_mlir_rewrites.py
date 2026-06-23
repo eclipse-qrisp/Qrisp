@@ -346,3 +346,6 @@ class TestCmpiExtUIFolding:
         ops = list(block.ops)
         # The rewrite should have aborted, leaving the CmpiOp untouched
         assert any(isinstance(op, arith.CmpiOp) for op in ops), f"Failed on: {reason}"
+
+
+# Classical lowering to LLVM dialect unit tests go here
