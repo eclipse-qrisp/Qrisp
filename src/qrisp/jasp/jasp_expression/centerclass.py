@@ -18,7 +18,7 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 import jax
 from jax import make_jaxpr
@@ -38,7 +38,7 @@ from qrisp.jasp.primitives import AbstractQuantumState
 
 class Jaspr(ClosedJaxpr):
     """
-    The ``Jaspr`` class enables an efficient representations of a wide variety
+    The ``Jaspr`` class enables an efficient representation of a wide variety
     of (hybrid) algorithms. For many applications, the representation is agnostic
     to the scale of the problem, implying function calls with 10 or 10000 qubits
     can be represented by the same object. The actual unfolding to a circuit-level
@@ -52,7 +52,7 @@ class Jaspr(ClosedJaxpr):
     using some of the most advanced libraries in the world such as
     `CUDA <https://jax.readthedocs.io/en/latest/Custom_Operation_for_GPUs.html>`_.
     Especially `machine learning <https://ai.google.dev/gemma/docs/jax_inference>`_
-    and other scientific computations tasks are particularly well supported.
+    and other scientific computation tasks are particularly well supported.
 
     To get a better understanding of the syntax and semantics of Jaxpr (and with
     that also Jaspr) please check `this link <https://jax.readthedocs.io/en/latest/jaxpr.html>`__.
@@ -91,18 +91,19 @@ class Jaspr(ClosedJaxpr):
 
     .. code-block::
 
-        { lambda ; a:QuantumState b:i32[]. let
-            c:QuantumState d:QubitArray = create_qubits a b
-            e:Qubit = get_qubit d 0
-            f:QuantumState = x c e
-            g:i32[] = sub b 1
-            h:Qubit = get_qubit d g
-            i:QuantumState = cx f e h
-            j:QuantumState k:i32[] = measure i d
-            l:f32[] = convert_element_type[new_dtype=float64 weak_type=True] k
-            m:f32[] = mul l 0.5
-            n:f32[] = add m 1.0
-          in (j, n) }
+        { lambda ; a:i64[] b:QuantumState. let
+            c:QubitArray d:QuantumState = jasp.create_qubits a b
+            e:Qubit = jasp.get_qubit c 0:i64[]
+            f:QuantumState = jasp.quantum_gate[gate=x] e d
+            g:i64[] = sub a 1:i64[]
+            h:Qubit = jasp.get_qubit c g
+            i:QuantumState = jasp.quantum_gate[gate=cx] e h f
+            j:i64[] k:QuantumState = jasp.measure c i
+            l:f64[] = integer_pow[y=-1] 2.0:f64[]
+            m:f64[] = convert_element_type[new_dtype=float64 weak_type=False] j
+            n:f64[] = mul m l
+            o:f64[] = add n 1.0:f64[]
+          in (o, k) }
 
 
     A defining feature of the Jaspr class is that the first input and the
@@ -158,7 +159,7 @@ class Jaspr(ClosedJaxpr):
             if "consts" in kwargs:
                 consts = kwargs.pop("consts")
             else:
-                if len(kwargs["constvars"]):
+                if kwargs["constvars"]:
                     raise ValueError("Tried to create Jaspr with constvars but no constants")
                 consts = []
 
@@ -171,7 +172,7 @@ class Jaspr(ClosedJaxpr):
         for var in self.constvars + self.invars + self.outvars:
             if isinstance(var, Literal):
                 continue
-            self.permeability[var] = permeability.get(var, None)
+            self.permeability[var] = permeability.get(var)
 
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
@@ -191,6 +192,9 @@ class Jaspr(ClosedJaxpr):
 
     @property
     def eqns(self):
+        # Return type deliberately left unannotated: ClosedJaxpr.eqns is also
+        # unannotated, and adding -> list would widen the inferred list[JaxprEqn]
+        # return type, causing an incompatible-override Pylance warning.
         return self.jaxpr.eqns
 
     @property
@@ -274,13 +278,13 @@ class Jaspr(ClosedJaxpr):
 
             print(jaspr.inverse())
             # Yields
-            # { lambda ; a:QuantumState b:i32[]. let
-            #     c:QuantumState d:QubitArray = create_qubits a b
-            #     e:Qubit = get_qubit d 0
-            #     f:Qubit = get_qubit d 1
-            #     g:QuantumState = t_dg c f
-            #     h:QuantumState = cx g e f
-            #   in (h, d) }
+            # { lambda ; a:i64[] b:QuantumState. let
+            #     c:QubitArray d:QuantumState = jasp.create_qubits a b
+            #     e:Qubit = jasp.get_qubit c 0:i64[]
+            #     f:Qubit = jasp.get_qubit c 1:i64[]
+            #     g:QuantumState = jasp.quantum_gate[gate=t_dg] f d
+            #     h:QuantumState = jasp.quantum_gate[gate=cx] e f g
+            #   in (c, h) }
         """
         return invert_jaspr(self)
 
@@ -322,20 +326,21 @@ class Jaspr(ClosedJaxpr):
 
             print(jaspr.control(2))
             # Yields
-            # { lambda ; a:QuantumState b:Qubit c:Qubit d:i32[]. let
-            #     e:QuantumState f:QubitArray = create_qubits a 1
-            #     g:Qubit = get_qubit f 0
-            #     h:QuantumState = ccx e b c g
-            #     i:QuantumState j:QubitArray = create_qubits h d
-            #     k:Qubit = get_qubit j 0
-            #     l:Qubit = get_qubit j 1
-            #     m:QuantumState = ccx i g k l
-            #     n:QuantumState = ct m g l
-            #     o:QuantumState = ccx n b c g
-            #   in (o, j) }
+            # { lambda ; a:Qubit b:Qubit c:i64[] d:QuantumState. let
+            #     e:QubitArray f:QuantumState = jasp.create_qubits 1:i64[] d
+            #     g:Qubit = jasp.get_qubit e 0:i64[]
+            #     h:QuantumState = jasp.quantum_gate[gate=2cx] a b g f
+            #     i:QubitArray j:QuantumState = jasp.create_qubits c h
+            #     k:Qubit = jasp.get_qubit i 0:i64[]
+            #     l:Qubit = jasp.get_qubit i 1:i64[]
+            #     m:QuantumState = jasp.quantum_gate[gate=ccx] g k l j
+            #     n:QuantumState = jasp.quantum_gate[gate=ct] g l m
+            #     o:QuantumState = jasp.quantum_gate[gate=2cx] a b g n
+            #     p:QuantumState = jasp.delete_qubits e o
+            #   in (i, p) }
 
         We see that the control qubits are part of the function signature
-        (``a`` and ``b``)
+        (``a`` and ``b``).
 
         """
         if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
@@ -428,8 +433,6 @@ class Jaspr(ClosedJaxpr):
             print(isinstance(meas_res, ProcessedMeasurement))
             # True
 
-
-
         """
         from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
 
@@ -506,7 +509,6 @@ class Jaspr(ClosedJaxpr):
             # 01 -> (Array(2, dtype=int64), Array(True, dtype=bool))
 
             # Can also use with array input (useful for JAX jitting):
-            import jax.numpy as jnp
             meas_array = jnp.array([False, True])
             processed = post_proc(meas_array)
 
@@ -611,12 +613,10 @@ class Jaspr(ClosedJaxpr):
         """Inline this Jaspr into the current tracing context without JIT-wrapping."""
         from qrisp.jasp import TracingQuantumSession
 
-        # get_instance() is typed as returning TracingQuantumSession | None
-        # because tr_qs_container is initialised as [None].  In practice the
-        # module-level singleton ensures it is never None at call time.
-        # Fixing this properly requires redesigning TracingQuantumSession.get_instance().
-        qs = TracingQuantumSession.get_instance()
-        abs_qst = qs.abs_qst  # type: ignore[union-attr]
+        # get_instance() is typed as | None because tr_qs_container starts as [None];
+        # the module-level singleton guarantees it is always non-None here.
+        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
+        abs_qst = qs.abs_qst
 
         amended_args = list(args) + [abs_qst]
         res = eval_jaxpr(self)(*amended_args)
@@ -627,7 +627,7 @@ class Jaspr(ClosedJaxpr):
         else:
             new_abs_qst = res
             res = None
-        qs.abs_qst = new_abs_qst  # type: ignore[union-attr]
+        qs.abs_qst = new_abs_qst
         return res
 
     def count_ops(
@@ -681,9 +681,8 @@ class Jaspr(ClosedJaxpr):
         """Embed this Jaspr into the current tracing context, optionally JIT-wrapping it."""
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
-        # See inline() for why type: ignore is used here.
-        qs = TracingQuantumSession.get_instance()
-        abs_qst = qs.abs_qst  # type: ignore[union-attr]
+        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
+        abs_qst = qs.abs_qst
 
         amended_args = list(args) + [abs_qst]
         if not inline:
@@ -703,7 +702,7 @@ class Jaspr(ClosedJaxpr):
         else:
             new_abs_qst = res
             res = None
-        qs.abs_qst = new_abs_qst  # type: ignore[union-attr]
+        qs.abs_qst = new_abs_qst
         return res
 
     def qjit(self, *args: Any, function_name: str = "jaspr_function", device: Any = None) -> Any:
@@ -716,6 +715,9 @@ class Jaspr(ClosedJaxpr):
         ----------
         *args : iterable
             The arguments to call the function with.
+        function_name : str, optional
+            The name given to the compiled function in the QIR module.
+            The default is ``"jaspr_function"``.
         device : object
             The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function.
             The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_,
@@ -726,13 +728,11 @@ class Jaspr(ClosedJaxpr):
             The values returned by the compiled, executed function.
 
         """
-        flattened_jaspr = self
-
         from qrisp.jasp.evaluation_tools.catalyst_interface import (
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
+        qjit_obj = jaspr_to_catalyst_qjit(self, function_name=function_name, device=device)
         if qjit_obj.compiled_function is None:
             raise RuntimeError("Catalyst compilation produced no compiled function")
         res = qjit_obj.compiled_function(*args)
@@ -1603,16 +1603,12 @@ def make_jaspr(
             adjusted_jax_kwargs["static_argnums"] = type(sa)(x + 1 for x in sa)
 
     def jaspr_creator(*args, **kwargs):
-        # get_instance() is typed as returning TracingQuantumSession | None because
-        # tr_qs_container starts as [None].  The module-level singleton ensures it is
-        # always non-None in practice.  Fixing this properly requires redesigning
-        # TracingQuantumSession.get_instance() — deferred.
-        qs = TracingQuantumSession.get_instance()
+        qs = cast(TracingQuantumSession, TracingQuantumSession.get_instance())
 
         # Close any tracing quantum sessions not properly closed due to prior errors.
         if not check_for_tracing_mode():
-            while qs.abs_qst is not None:  # type: ignore[union-attr]
-                qs.conclude_tracing()  # type: ignore[union-attr]
+            while qs.abs_qst is not None:
+                qs.conclude_tracing()
 
         # This function will be traced by JAX. The abstract quantum state is passed
         # as an extra keyword argument so JAX can track it through the trace.
@@ -1620,22 +1616,22 @@ def make_jaspr(
             abs_qst = kwargs[10 * "~"]
             del kwargs[10 * "~"]
 
-            qs.start_tracing(abs_qst)  # type: ignore[union-attr]
+            qs.start_tracing(abs_qst)
 
             # QuantumVariables in the signature went through JAX's
             # flatten/unflatten procedure, so their copies are not registered in any
             # QuantumSession yet — register them now.
             arg_qvs = recursive_qv_search(args)
             for qv in arg_qvs:
-                qs.register_qv(qv, None)  # type: ignore[union-attr]
+                qs.register_qv(qv, None)
 
             try:
                 res = fun(*args, **kwargs)
             except Exception:
-                qs.conclude_tracing()  # type: ignore[union-attr]
+                qs.conclude_tracing()
                 raise
 
-            res_qc = qs.conclude_tracing()  # type: ignore[union-attr]
+            res_qc = qs.conclude_tracing()
             return res, res_qc
 
         amended_kwargs = dict(kwargs)
