@@ -137,7 +137,6 @@ class Jaspr(ClosedJaxpr):
         inv_jaspr: "Jaspr | None" = None,
         **kwargs: Any,
     ) -> None:
-
         if len(args) == 2:
             if not isinstance(args[0], Jaxpr) or not isinstance(args[1], list):
                 raise TypeError(
@@ -149,10 +148,7 @@ class Jaspr(ClosedJaxpr):
 
         elif len(args) == 1:
             if not isinstance(args[0], ClosedJaxpr):
-                raise TypeError(
-                    f"One-argument Jaspr constructor expects ClosedJaxpr, "
-                    f"got {type(args[0]).__name__}"
-                )
+                raise TypeError(f"One-argument Jaspr constructor expects ClosedJaxpr, got {type(args[0]).__name__}")
             kwargs["jaxpr"] = args[0].jaxpr
             kwargs["consts"] = args[0].consts
 
@@ -163,9 +159,7 @@ class Jaspr(ClosedJaxpr):
                 consts = kwargs.pop("consts")
             else:
                 if len(kwargs["constvars"]):
-                    raise ValueError(
-                        "Tried to create Jaspr with constvars but no constants"
-                    )
+                    raise ValueError("Tried to create Jaspr with constvars but no constants")
                 consts = []
 
             ClosedJaxpr.__init__(self, jaxpr=Jaxpr(**kwargs), consts=consts)
@@ -185,38 +179,33 @@ class Jaspr(ClosedJaxpr):
         self.envs_flattened = False
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumState):
-            raise ValueError(
-                f"Last invar must be QuantumState, "
-                f"got {type(self.invars[-1].aval).__name__}"
-            )
+            raise ValueError(f"Last invar must be QuantumState, got {type(self.invars[-1].aval).__name__}")
 
         if not isinstance(self.outvars[-1].aval, AbstractQuantumState):
-            raise ValueError(
-                f"Last outvar must be QuantumState, "
-                f"got {type(self.outvars[-1].aval).__name__}"
-            )
+            raise ValueError(f"Last outvar must be QuantumState, got {type(self.outvars[-1].aval).__name__}")
 
     @property
     def constvars(self) -> list:
+        """Constant variables of the underlying Jaxpr."""
         return self.jaxpr.constvars
 
     @property
     def eqns(self):
-        # Return type deliberately left unannotated: ClosedJaxpr.eqns is also
-        # unannotated, and adding -> list would widen the inferred list[JaxprEqn]
-        # return type, causing an incompatible-override Pylance warning.
         return self.jaxpr.eqns
 
     @property
     def invars(self) -> list:
+        """Input variables of the underlying Jaxpr."""
         return self.jaxpr.invars
 
     @property
     def outvars(self) -> list:
+        """Output variables of the underlying Jaxpr."""
         return self.jaxpr.outvars
 
     @property
     def debug_info(self) -> Any:
+        """Debug info attached to the underlying Jaxpr, or None."""
         return self.jaxpr.debug_info
 
     def __hash__(self) -> int:
@@ -228,23 +217,23 @@ class Jaspr(ClosedJaxpr):
         return id(self) == id(other)
 
     def copy(self) -> "Jaspr":
-
+        """Return a shallow copy of this Jaspr with copied list attributes."""
         if self.ctrl_jaspr is None:
             ctrl_jaspr = None
         else:
             ctrl_jaspr = self.ctrl_jaspr.copy()
 
-        kwargs = dict(
-            permeability=self.permeability,
-            isqfree=self.isqfree,
-            ctrl_jaspr=ctrl_jaspr,
-            constvars=list(self.constvars),
-            invars=list(self.invars),
-            outvars=list(self.outvars),
-            eqns=list(self.eqns),
-            effects=self.effects,
-            debug_info=self.debug_info,
-        )
+        kwargs = {
+            "permeability": self.permeability,
+            "isqfree": self.isqfree,
+            "ctrl_jaspr": ctrl_jaspr,
+            "constvars": list(self.constvars),
+            "invars": list(self.invars),
+            "outvars": list(self.outvars),
+            "eqns": list(self.eqns),
+            "effects": self.effects,
+            "debug_info": self.debug_info,
+        }
         if self.consts:
             kwargs["consts"] = list(self.consts)
 
@@ -530,6 +519,7 @@ class Jaspr(ClosedJaxpr):
         return extract_post_processing(self, *args)
 
     def eval(self, *args: Any, eqn_evaluator: Callable = lambda x, y: True) -> Any:
+        """Evaluate this Jaspr with a custom per-equation evaluator hook."""
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
 
     def flatten_environments(self) -> "Jaspr":
@@ -618,7 +608,7 @@ class Jaspr(ClosedJaxpr):
         return simulate_jaspr(self, *args)
 
     def inline(self, *args: Any) -> Any:
-
+        """Inline this Jaspr into the current tracing context without JIT-wrapping."""
         from qrisp.jasp import TracingQuantumSession
 
         # get_instance() is typed as returning TracingQuantumSession | None
@@ -646,11 +636,10 @@ class Jaspr(ClosedJaxpr):
         meas_behavior: str,
         callback_threshold: int | None = None,
     ) -> Any:
+        """Return an operation count dict for this Jaspr evaluated on *args*."""
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(
-            self, "count_ops", meas_behavior, callback_threshold=callback_threshold
-        )(*args)
+        return profile_jaspr(self, "count_ops", meas_behavior, callback_threshold=callback_threshold)(*args)
 
     def depth(
         self,
@@ -659,6 +648,7 @@ class Jaspr(ClosedJaxpr):
         max_qubits: int = 1024,
         callback_threshold: int | None = None,
     ) -> Any:
+        """Return the circuit depth of this Jaspr evaluated on *args*."""
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(
@@ -676,6 +666,7 @@ class Jaspr(ClosedJaxpr):
         max_allocations: int = 1000,
         callback_threshold: int | None = None,
     ) -> Any:
+        """Return the peak qubit count of this Jaspr evaluated on *args*."""
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(
@@ -687,6 +678,7 @@ class Jaspr(ClosedJaxpr):
         )(*args)
 
     def embedd(self, *args: Any, name: str | None = None, inline: bool = False) -> Any:
+        """Embed this Jaspr into the current tracing context, optionally JIT-wrapping it."""
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
         # See inline() for why type: ignore is used here.
@@ -714,9 +706,7 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qst = new_abs_qst  # type: ignore[union-attr]
         return res
 
-    def qjit(
-        self, *args: Any, function_name: str = "jaspr_function", device: Any = None
-    ) -> Any:
+    def qjit(self, *args: Any, function_name: str = "jaspr_function", device: Any = None) -> Any:
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
@@ -742,18 +732,15 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(
-            flattened_jaspr, function_name=function_name, device=device
-        )
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         if qjit_obj.compiled_function is None:
             raise RuntimeError("Catalyst compilation produced no compiled function")
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
-        elif len(res) == 1:
+        if len(res) == 1:
             return res[0]
-        else:
-            return res
+        return res
 
     @classmethod
     @qrisp_lru_compilation_cache
@@ -1476,23 +1463,17 @@ def make_jaxpr_mod(
 
     def jaxpr_creator(*args, **kwargs):
         if not return_shape:
-            return make_jaxpr(
-                fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-            )(*args, **kwargs)
+            return make_jaxpr(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes)(*args, **kwargs)
 
         # Use jit(...).trace() directly to get access to _out_tree.
         # This avoids JAX's make_jaxpr return_shape logic which fails on
         # custom abstract types that don't have shape/dtype attributes.
-        traced = jax.jit(
-            fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-        ).trace(*args, **kwargs)
+        traced = jax.jit(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes).trace(*args, **kwargs)
 
         # Extract the jaxpr, handling constants if needed (same logic as JAX's make_jaxpr).
         if traced._num_consts:
             consts, _ = split_list(traced._args_flat, [traced._num_consts])
-            jaxpr_ = part_eval.convert_invars_to_constvars(
-                traced.jaxpr.jaxpr, traced._num_consts
-            )
+            jaxpr_ = part_eval.convert_invars_to_constvars(traced.jaxpr.jaxpr, traced._num_consts)
             closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
         else:
             closed_jaxpr = traced.jaxpr
@@ -1693,6 +1674,7 @@ def make_jaspr(
 
 
 def check_aval_equivalence(invars_1, invars_2) -> bool:
+    """Return True if every paired invar has the same abstract-value type."""
     return all(type(v1.aval) is type(v2.aval) for v1, v2 in zip(invars_1, invars_2))
 
 
@@ -1733,9 +1715,7 @@ def remove_redundant_allocations(closed_jaxpr: ClosedJaxpr) -> None:
                 usages[var].append(eqn)
 
     # Variables appearing in the function's outputs cannot be optimised away.
-    returned_vars = {
-        var for var in jaxpr.outvars if not isinstance(var, (DropVar, Literal))
-    }
+    returned_vars = {var for var in jaxpr.outvars if not isinstance(var, (DropVar, Literal))}
 
     replacements: dict = {}
     eqns_to_remove: set = set()

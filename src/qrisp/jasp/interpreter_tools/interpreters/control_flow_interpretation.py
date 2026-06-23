@@ -55,9 +55,7 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     # Iterate through branches to find the one matching the condition index (invalues[0])
     for i in range(len(cond_eqn.params["branches"])):
         if int(invalues[0]) == i:
-            res = eval_jaxpr(
-                cond_eqn.params["branches"][i], eqn_evaluator=eqn_evaluator
-            )(*invalues[1:])
+            res = eval_jaxpr(cond_eqn.params["branches"][i], eqn_evaluator=eqn_evaluator)(*invalues[1:])
             break
 
     if not isinstance(res, tuple):
@@ -66,9 +64,7 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     insert_outvalues(cond_eqn, context_dic, res)
 
 
-def evaluate_while_loop(
-    while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False
-):
+def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False):
     """
     Evaluates a JAX while loop equation within the context of the JASP interpreter.
 
@@ -99,9 +95,7 @@ def evaluate_while_loop(
 
         new_invalues = constants + carries
 
-        res = eval_jaxpr(
-            while_loop_eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
-        )(*new_invalues)
+        res = eval_jaxpr(while_loop_eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator)(*new_invalues)
 
         if isinstance(res, ProcessedMeasurement):
             raise Exception("Tried to convert real-time feedback into QuantumCircuit")
@@ -113,15 +107,12 @@ def evaluate_while_loop(
     outvalues = invalues[overall_constant_amount:]
 
     while break_condition(invalues):
-
         constants = invalues[num_const_cond_args:overall_constant_amount]
         carries = invalues[overall_constant_amount:]
 
         new_invalues = constants + carries
 
-        outvalues = eval_jaxpr(
-            while_loop_eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator
-        )(*new_invalues)
+        outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator)(*new_invalues)
 
         # Update the non-const invalues for the next iteration
 
