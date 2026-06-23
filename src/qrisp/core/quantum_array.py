@@ -2134,6 +2134,9 @@ class QuantumArrayIterator:
         self.qa = qa
         self.counter = -1
 
+    def __iter__(self):
+        return self
+
     def __next__(self):
         self.counter += 1
         if self.counter >= self.qa.size:
