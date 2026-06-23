@@ -34,5 +34,5 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.11",
+    python_requires=">=3.11, <3.14",
 )
