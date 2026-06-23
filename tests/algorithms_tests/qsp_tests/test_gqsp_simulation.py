@@ -16,10 +16,11 @@
 """
 
 import numpy as np
+import scipy
 
-from qrisp import QuantumFloat, multi_measurement, terminal_sampling
+from qrisp import QuantumFloat, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import X, Y, Z, QubitOperator
+from qrisp.operators import X, Z
 
 
 def post_selection(res_dict, N):
@@ -30,6 +31,11 @@ def post_selection(res_dict, N):
     return amps, success_prob
 
 
+def create_ising_hamiltonian(L, J, B):
+    H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
+    return H
+
+
 # Issue #681
 def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     """Test the GQSP Hamiltonian simulation via qubitization with nested block encoding.
@@ -38,10 +44,6 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
     Ensures that the amplitudes are consistent and the success probability is high.
     """
-
-    def create_ising_hamiltonian(L, J, B):
-        H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
-        return H
 
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
@@ -72,6 +74,40 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     amps, success_prob = post_selection(main(0.1, BE_poly), N=2**L)
     assert success_prob > 0.98
     assert np.linalg.norm(target_amps - amps) < 1e-3
+
+
+def test_gqsp_hamiltonian_simulation_long_time():
+    """Test the GQSP Hamiltonian simulation via qubitization with long time evolution.
+    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable."""
+
+    L = 4
+    H = create_ising_hamiltonian(L, 0.25, 0.5)
+    BE = BlockEncoding.from_operator(H)
+
+    # Prepare inital system state |psi> = |0>
+    def operand_prep():
+        return QuantumFloat(L)
+
+    # Prepare state|psi(t)> = e^{itH} |psi>
+    def psi(t, BE):
+        BE_sim = BE.sim(t=t, N=80)
+        operand = operand_prep()
+        ancillas = BE_sim.apply(operand)
+        return operand, *ancillas
+
+    @terminal_sampling
+    def main(t, BE):
+        return psi(t, BE)
+
+    H_arr = H.to_array()
+    b = np.zeros(2**L)
+    b[0] = 1.0
+
+    target_amps = np.abs(scipy.linalg.expm(-1j * 20.0 * H_arr) @ b)
+
+    amps, success_prob = post_selection(main(20.0, BE), N=2**L)
+    assert success_prob > 0.98
+    assert np.linalg.norm(target_amps - amps) < 1e-5
 
 
 # Disabled due to long runtime

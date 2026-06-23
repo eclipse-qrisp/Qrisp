@@ -205,12 +205,15 @@ def hamiltonian_simulation(
     alpha = H.alpha
     t = t * alpha
 
+    # Bessel multiplication is not numerically stable unless lambda = t / t0 is approximately 1.0. Use jax_jv with callback instead.
     # Calculate coefficients of truncated Jacobi-Anger expansion
     # jax.scipy.jv is currently not implemented
     # To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
     # and use the Bessel multiplication theorem to evaluate jv(m,s)
-    j_val_at_1 = jv(np.arange(0, 2 * N + 1, 1), 1.0)
-    j_val_at_t = bessel_multiplication(np.arange(0, N + 1), t, j_val_at_1)
+    # j_val_at_1 = jv(np.arange(0, 2 * N + 1, 1), 1.0)
+    # j_val_at_t = _bessel_multiplication(np.arange(0, N + 1), t, j_val_at_1)
+
+    j_val_at_t = jax_jv(np.arange(0, N + 1), t)
     # J_{-n}(t) = (-1)^nJ_n(t)
     j_values = jnp.concatenate(((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:]))
     factors = (-1.0j) ** jnp.arange(-N, N + 1)
@@ -233,22 +236,37 @@ def hamiltonian_simulation(
     )
 
 
-# Apply the wache decorator with the workaround in order to show in documentation
+# Apply the qache decorator with the workaround in order to show in documentation
 # temp_docstring = hamiltonian_simulation.__doc__
 # hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
 # hamiltonian_simulation.__doc__ = temp_docstring
 
 
+def jax_jv(m, s):
+    """
+    Evaluates scipy.special.jv inside JAX.
+    """
+    # Define the output shape and dtype for the compiler
+    result_shape = jax.ShapeDtypeStruct(
+        jnp.broadcast_shapes(jnp.shape(m), jnp.shape(s)),
+        jnp.float64,  # Use float64 for better precision
+    )
+
+    # pure_callback tells JIT to call standard Python/SciPy code safely
+    return jax.pure_callback(lambda m_val, s_val: jv(m_val, s_val).astype(np.float64), result_shape, m, s)
+
+
+# Bessel multiplication is not numerically stable unless lambda = t / t0 is approximately 1.0. Use jax_jv with callback instead.
 # jax.scipy.jv is currently not implemented
 # To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
 # and use the Bessel multiplication theorem to evaluate jv(m,s)
 @jax.jit
-def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
+def _bessel_multiplication(m, s, jv_values_at_t, t=1.0):
     """Computes ``jv(m, s)`` using the Bessel Multiplication Theorem.
 
     .. math::
 
-        J_{m}(\\lambda t) = \\lambda^m \\sum_{k=0}^{\\intfy}\frac{(1-\\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
+        J_{m}(\\lambda t) = \\lambda^m \\sum_{k=0}^{\\infty}\frac{(1-\\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
 
     Parameters
     ----------
@@ -272,10 +290,10 @@ def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
 
     """
     # Use jax.vmap to map the single-m logic over an array of m values
-    return jax.vmap(lambda m_val: _bessel_multiplication(m_val, s, jv_values_at_t, t))(m)
+    return jax.vmap(lambda m_val: _bessel_multiplication_helper(m_val, s, jv_values_at_t, t))(m)
 
 
-def _bessel_multiplication(m, s, jv_values_at_t, t=1.0):
+def _bessel_multiplication_helper(m, s, jv_values_at_t, t=1.0):
     lam = s / t
     lam_sq_diff = 1.0 - lam**2
     t_half = t / 2.0
