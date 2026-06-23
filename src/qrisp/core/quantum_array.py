@@ -745,8 +745,13 @@ class QuantumArray:
         flattened_array = self.flatten()
 
         from qrisp.qtypes.quantum_float import QuantumFloat
+        from qrisp.qtypes.quantum_modulus import QuantumModulus
 
-        if isinstance(self.qtype, QuantumFloat):
+        is_numeric_qfloat = isinstance(self.qtype, QuantumFloat) and not isinstance(
+            self.qtype, QuantumModulus
+        )
+
+        if is_numeric_qfloat:
             if self.qtype.exponent >= 0:
                 res = np.zeros(len(flattened_array), dtype=np.int32)
             else:
@@ -759,7 +764,7 @@ class QuantumArray:
         bin_string = bin_rep(code_int, len(flattened_array) * n)
 
         for i in range(len(flattened_array)):
-            if isinstance(self.qtype, QuantumFloat):
+            if is_numeric_qfloat:
                 res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
             else:
                 res = res.astype("object")
