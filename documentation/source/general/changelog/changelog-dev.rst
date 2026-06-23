@@ -25,7 +25,7 @@ Compatibility
 
 .. Add compatibility notes above this line
 
-New Tutorials
+New Tutorials/ Updated Documentation
 -------------
 
 .. Add new tutorials above this line
