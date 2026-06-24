@@ -806,8 +806,9 @@ class BlockEncoding:
 
         If the block-encoding unitary $U$ is Hermitian (i.e., $U^2=\mathbb I$), then $W=R U$ where $R = (2\ket{0}_a\bra{0}_a - \mathbb I)$
         is the reflection around the state $\ket{0}_a$ of the ancilla variables.
-        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (H \otimes \mathbb I)(\ket{0}\bra{0} \otimes U) + (\ket{1}\bra{1} \otimes U^{\dagger})(H \otimes \mathbb I)$
-        is a Hermitian block-encoding of $A$ requiring one additional ancilla qubit.
+        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (H \otimes \mathbb I)(\ket{0}\bra{1} \otimes U) + (\ket{1}\bra{0} \otimes U^{\dagger})(H \otimes \mathbb I)$
+        is a Hermitian block-encoding of $A=(A+A^{\dagger})/2$ requiring one additional ancilla qubit.
+        Conjugation by $(H \otimes \mathbb I)$ rotates the basis so that the new ancilla is initialized and projected in $\ket{0}$, ensuring that $A$ sits in the upper-left block.
 
         Returns
         -------
