@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -33,7 +32,7 @@ from qrisp import (
     rz,
     u3,
 )
-from qrisp.jasp import jrange, qache, q_cond
+from qrisp.jasp import jrange, q_cond, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -139,9 +138,7 @@ class TestDepthSingleQubit:
             ([0, 1], [1, 0], 1),
         ],
     )
-    def test_multiple_create_qubits(
-        self, qubit_indices_1, qubit_indices_2, expected_depth
-    ):
+    def test_multiple_create_qubits(self, qubit_indices_1, qubit_indices_2, expected_depth):
         """Test depth computation with multiple create_qubits calls."""
 
         @depth(meas_behavior="0")
@@ -223,9 +220,7 @@ class TestDepthMultiQubit:
             (2, 1, 1, 0, 4),
         ],
     )
-    def test_parametrized_gates(
-        self, control_qubit, target_qubit_1, target_qubit_2, param_qubit, expected_depth
-    ):
+    def test_parametrized_gates(self, control_qubit, target_qubit_1, target_qubit_2, param_qubit, expected_depth):
         """Test depth of a combination of gates including a parametrized gate, with different qubit configurations."""
 
         @depth(meas_behavior="1")
@@ -271,7 +266,6 @@ class TestDepthMultiQubit:
     )
     def test_op_with_definition(self, x_target, expected_depth):
         """Test depth computation for an operation with definition."""
-
         qc = QuantumCircuit(2)
         for _ in range(3):
             qc.x(x_target)
@@ -290,7 +284,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition2(self):
         """Test depth computation for an operation with definition."""
-
         qc_2 = QuantumCircuit(3)
         for _ in range(3):
             qc_2.x(0)
@@ -310,7 +303,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition3(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.rx(3.1415, 0)
@@ -333,7 +325,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition4(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(0)
@@ -356,7 +347,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition5(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(1)
@@ -521,9 +511,7 @@ class TestDepthMeasurementBehavior:
             qf = QuantumFloat(1)
             return measure(qf[0])
 
-        with pytest.raises(
-            ValueError, match="Measurement behavior must return a boolean, got 42"
-        ):
+        with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
     def test_no_measurements(self):
@@ -975,9 +963,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(11)
 
@@ -992,9 +978,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(1023)
 
@@ -1009,9 +993,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(300, 301)
 
@@ -1062,21 +1044,15 @@ def test_callback_threshold_depth():
 
     # callback_threshold=0: wrap every reused sub-jaxpr
     result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
-    assert result_0 == baseline, (
-        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
-    )
+    assert result_0 == baseline, f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
 
     # callback_threshold=500: middle ground
     result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
-    assert result_500 == baseline, (
-        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
-    )
+    assert result_500 == baseline, f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
 
     # Callback threshold with very large value
     result_large = depth(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
-    assert result_large == baseline, (
-        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
-    )
+    assert result_large == baseline, f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
 
     # Also test with meas_behavior="1"
     baseline_1 = depth(meas_behavior="1")(make_circuit)()
@@ -1126,21 +1102,18 @@ def test_callback_threshold_depth_nested_qache():
     baseline = depth(meas_behavior="0")(make_circuit)()
     result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
-        f"Nested qache depth with callback_threshold=0 diverged:\n"
-        f"  baseline={baseline}\n  got={result_0}"
+        f"Nested qache depth with callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
     )
 
     result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
     assert result_500 == baseline, (
-        f"Nested qache depth with callback_threshold=500 diverged:\n"
-        f"  baseline={baseline}\n  got={result_500}"
+        f"Nested qache depth with callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
     )
 
     # Also test with threshold=1
     result_1 = depth(meas_behavior="0", callback_threshold=1)(make_circuit)()
     assert result_1 == baseline, (
-        f"Nested qache depth with callback_threshold=1 diverged:\n"
-        f"  baseline={baseline}\n  got={result_1}"
+        f"Nested qache depth with callback_threshold=1 diverged:\n  baseline={baseline}\n  got={result_1}"
     )
 
 
@@ -1171,14 +1144,12 @@ def test_callback_threshold_depth_with_jrange():
     baseline = depth(meas_behavior="0")(make_circuit)()
     result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
-        f"jrange depth with callback_threshold=0 diverged:\n"
-        f"  baseline={baseline}\n  got={result_0}"
+        f"jrange depth with callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
     )
 
     result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
     assert result_500 == baseline, (
-        f"jrange depth with callback_threshold=500 diverged:\n"
-        f"  baseline={baseline}\n  got={result_500}"
+        f"jrange depth with callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
     )
 
     assert baseline > 0, f"Depth should be positive, got {baseline}"

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,16 +16,16 @@
 """
 
 import numpy as np
-from scipy.optimize import minimize, Bounds
 import sympy as sp
-from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from scipy.optimize import Bounds, minimize
+
 from qrisp import h, z
+from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
 from qrisp.operators import QubitOperator
 
 
 class DCQOProblem:
-    """
-    General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
+    r"""General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
     This class is used to solve |dcqo_link|
     problems with the algorithms `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_
     (counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
@@ -50,10 +49,6 @@ class DCQOProblem:
     lam_func : callable
         A function $\lambda(t, T)$ mapping $t \in [0, T]$ to $\lambda \in [0, 1]$. This function needs to return
         a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-    g_func : callable, optional
-        The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression
-        with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-        Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
     qarg_prep : callable, optional
@@ -127,6 +122,7 @@ class DCQOProblem:
     .. |dcqo_link| raw:: html
 
        <a href="https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030" target="_blank">DCQO</a>
+
     """
 
     def __init__(
@@ -137,14 +133,12 @@ class DCQOProblem:
         A_lam,
         agp_coeffs,
         lam_func,
-        g_func=None,
         H_control=None,
         qarg_prep=None,
     ):
 
         # Scheduling function
         self.lam_func = lam_func
-        self.g_func = g_func
 
         # Operators
         self.agp_coeffs = agp_coeffs
@@ -164,8 +158,7 @@ class DCQOProblem:
         self.lamdot = None
 
     def _precompute_timegrid(self, N_steps, T, method):
-        """
-        Compute lambda(t, T) and the time-derivative lambdadot(t, T)
+        """Compute lambda(t, T) and the time-derivative lambdadot(t, T)
         for each timestep.
 
         Parameters
@@ -183,8 +176,8 @@ class DCQOProblem:
             The parametrized timefunction, specified by ``lam_func`` for t in [0, T].
         lamdot : array
             The time derivative of ``lam_func`` for t in [0, T].
-        """
 
+        """
         # Sympy symbols for t and T
         t_sym, T_sym = sp.symbols("t T", real=True)
         # Array for t values
@@ -201,7 +194,9 @@ class DCQOProblem:
         lamdot = lamdot_func(t_list, T)
         # Convert lamdot to a constant list to make it subscriptable by timestep
         if isinstance(lamdot, float):
-            lamdot = [lamdot] * N_steps
+            lamdot = np.full(N_steps, lamdot)
+        else:
+            lamdot = np.array(lamdot)
 
         self.lam = lam
         self.lamdot = lamdot
@@ -209,18 +204,14 @@ class DCQOProblem:
         # Functions for t = g(lam) and derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            lam_sym = sp.Symbol("lam")
-            g_func = sp.lambdify((lam_sym, T_sym), self.g_func(), "numpy")
-            g_deriv_expr = sp.diff(self.g_func(), lam_sym)
-            g_deriv_func = sp.lambdify((lam_sym, T_sym), g_deriv_expr, "numpy")
-            g_deriv = g_deriv_func(self.lam, T)
+            g = t_list  # g(lam[s]) = t[s] by definition
+            g_deriv = 1.0 / lamdot  # dt/dlambda = 1 / (dlambda/dt)
 
-            self.g = g_func(self.lam, T)
+            self.g = g
             self.g_deriv = g_deriv
 
     def _precompute_opt_pulses(self, N_steps, T, t_list, N_opt, CRAB=False):
-        """
-        Precompute optimization pulses for COLD routine that will be scaled by optimized paramters.
+        """Precompute optimization pulses for COLD routine that will be scaled by optimized paramters.
 
         Parameters
         ----------
@@ -241,8 +232,8 @@ class DCQOProblem:
             Numpy or sympy (if CRAB) array holding the opt pulse for each timestep.
         cos_matrix :
             Numpy or sympy (if CRAB) array holding the derivative of the opt pulse for each timestep.
-        """
 
+        """
         # Precompute f (sine) and f_deriv (cosine) for each timestep as numpy arrays
         sin_matrix = np.zeros((N_steps, N_opt))
         cos_matrix = np.zeros((N_steps, N_opt))
@@ -257,16 +248,13 @@ class DCQOProblem:
         for k in range(N_opt):
             sin_matrix[:, k] = np.sin(np.pi * (k + 1 + r_params[k]) * t_list / T)
             cos_matrix[:, k] = (
-                (np.pi * (k + 1 + r_params[k]))
-                * np.cos(np.pi * (k + 1 + r_params[k]) * self.g)
-                * self.g_deriv
+                (np.pi * (k + 1 + r_params[k])) * np.cos(np.pi * (k + 1 + r_params[k]) * self.g) * self.g_deriv
             )
 
         return sin_matrix, cos_matrix
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
-        """
-        Simulate the local counterdiabatic driving (LCD) Hamiltonian on a
+        """Simulate the local counterdiabatic driving (LCD) Hamiltonian on a
         quantum argument via trotterization. The LCD Hamiltonian consists
         of the system Hamiltonian and the adiabatic gauge potential (AGP).
 
@@ -278,8 +266,8 @@ class DCQOProblem:
             Number of steps in which the timefunction ``lambda`` is split up.
         T : float
             Evolution time for the simulation.
-        """
 
+        """
         self.qarg_prep(qarg)
         dt = T / N_steps
 
@@ -298,9 +286,9 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
+            # print(f"Alpha = {coeffs}")
 
             # H_0 contribution scaled by dt
             U1(qarg, t=dt * (1 - self.lam[s]))
@@ -314,8 +302,7 @@ class DCQOProblem:
                 U3(qarg, t=dt * self.lamdot[s] * coeffs[0])
 
     def apply_cold_hamiltonian(self, qarg, N_steps, T, opt_params, CRAB=False):
-        """
-        Simulate counterdiabatic optimized local driving (COLD) Hamiltonian
+        """Simulate counterdiabatic optimized local driving (COLD) Hamiltonian
         on a quantumvariable via trotterization. The COLD Hamiltonian consists
         of the system Hamiltonian, the adiabatic gauge potential (AGP) and
         local pulses (given by ``H_control``) with optimized parameters.
@@ -332,8 +319,8 @@ class DCQOProblem:
             Either the optimized parameters or the corresponding `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
         CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
-        """
 
+        """
         # Initialize qarg
         self.qarg_prep(qarg)
 
@@ -343,9 +330,7 @@ class DCQOProblem:
         # Precompute opt pulses
         dt = T / N_steps
         t_list = np.linspace(dt, T, int(N_steps))
-        sin_matrix, cos_matrix = self._precompute_opt_pulses(
-            N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB
-        )
+        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
         # Trotterize Hamiltonian in different parts with each one needing different coefficients
@@ -361,7 +346,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
@@ -385,8 +369,7 @@ class DCQOProblem:
             U4(qarg, t=dt * f)
 
     def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
-        """
-        Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
+        """Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
 
         Parameters
         ----------
@@ -407,7 +390,6 @@ class DCQOProblem:
             The compiled quantum circuit.
 
         """
-
         temp = list(qarg.qs.data)
         # Initzialize parameters as symbols
         params = [sp.Symbol("par_" + str(i)) for i in range(N_opt)]
@@ -419,10 +401,21 @@ class DCQOProblem:
         return compiled_qc
 
     def optimization_routine(
-        self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, options, objective, bounds
+        self,
+        qarg,
+        N_opt,
+        N_steps,
+        T,
+        qc,
+        CRAB,
+        optimizer,
+        options,
+        objective,
+        bounds,
+        precision=0.01,
+        exp_value_backend=None,
     ):
-        """
-        Subroutine for the optimization method used in COLD.
+        """Subroutine for the optimization method used in COLD.
         The initial values are set and the optimization via is conducted here.
 
         Parameters
@@ -447,36 +440,68 @@ class DCQOProblem:
             The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_backend : BackendLike, optional
+            Backend for expectation value calculations, if ``exp_value`` is used as objective function.
+            If provided, uses measurement-based expectation value with this backend.
+            If not provided, tries statevector first and falls back to measurement. Default is None.
 
         Returns
         -------
         res.x: array
             The optimized parameters of the problem instance.
-        """
 
+        """
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
+
+        # Precompute costs for statevector method
+        n_qubits = len(qarg)
+        num_states = 1 << n_qubits
+        bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
+        state_indices = np.arange(num_states, dtype=np.uint64)
+        basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
+        costs = np.einsum("bi,ij,bj->b", basis, self.Q, basis)
 
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
-            subs_dic = {
-                sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
-            }
+            subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
-            cost = self.H_prob.expectation_value(
-                qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc
-            )()
+            if exp_value_backend is not None:
+                # Use provided backend
+                exp_val = self.H_prob.expectation_value(
+                    qarg,
+                    precision=precision,
+                    compile=False,
+                    subs_dic=subs_dic,
+                    precompiled_qc=qc,
+                    backend=exp_value_backend,
+                )()
+            else:
+                # Try statevector first, fallback to measurement
+                try:
+                    bound_qc = qc.bind_parameters(subs_dic)
+                    sv = bound_qc.statevector_array()
+                    probs = np.abs(sv) ** 2
+                    exp_val = float(np.dot(probs, costs))
+                except (MemoryError, ValueError, RuntimeError):
+                    exp_val = self.H_prob.expectation_value(
+                        qarg,
+                        precision=precision,
+                        compile=False,
+                        subs_dic=subs_dic,
+                        precompiled_qc=qc,
+                    )()
 
-            return cost
+            return exp_val
 
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
         def objective_mag(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params
             t_list = np.linspace(T / N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(
-                N_steps, T, t_list, N_opt=len(params), CRAB=CRAB
-            )
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
             # Iterate through lambda(t)
@@ -484,9 +509,7 @@ class DCQOProblem:
                 # Get alpha, f and f_deriv for the timestep
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(
-                    self.h, self.J, self.lam[s], f, f_deriv, uniform=True
-                )
+                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
                 magnitude += np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0])
 
             return magnitude
@@ -515,8 +538,7 @@ class DCQOProblem:
         return res.x, objective(res.x, CRAB)
 
     def QUBO_cost(self, res):
-        """
-        Returns the cost y = x^T Q x for a given binary array x.
+        """Returns the cost y = x^T Q x for a given binary array x.
 
         Parameters
         ----------
@@ -545,10 +567,14 @@ class DCQOProblem:
         bounds=(),
         options={},
         mes_kwargs={},
+        precision=0.01,
+        exp_value_backend=None,
     ):
-        """
-        Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
-        evolution time.
+        """Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
+        evolution time and method.
+
+        There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
+        If the user chooses a quantum backend this iterative optimization can potentially use a lot of computing time.
 
         Parameters
         ----------
@@ -577,11 +603,11 @@ class DCQOProblem:
             Additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-        backend : BackendLike, optional
-            The backend to be used for the quantum simulation.
-            By default, the Qrisp simulator is used.
-        shots: : int
-            The number of shots. The default is 5000.
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_backend : BackendLike, optional
+            Backend for expectation value calculations, if ``exp_value`` is used as objective function.
+            If provided, uses measurement-based expectation value with this backend. Default is the Qrisp statevector simulator.
 
         Returns
         -------
@@ -589,7 +615,6 @@ class DCQOProblem:
             The optimal result after running DCQO problem for a specific problem instance. It contains the measurement results after applying the optimal DCQO circuit to the quantum argument.
 
         """
-
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
 
@@ -627,6 +652,8 @@ class DCQOProblem:
                     options,
                     objective=objective,
                     bounds=bounds,
+                    precision=precision,
+                    exp_value_backend=exp_value_backend,
                 )
                 if cost is None or cost_temp < cost:
                     opt_params = opt_params_temp
@@ -641,12 +668,10 @@ class DCQOProblem:
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
 
         else:
-            raise ValueError(
-                f'"{method}" is not an option for method. Choose "LCD" or "COLD".'
-            )
+            raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
-        if not "shots" in mes_kwargs:
+        if "shots" not in mes_kwargs:
             mes_kwargs["shots"] = 5000
         res_dict = dict(qarg.get_measurement(**mes_kwargs))
 

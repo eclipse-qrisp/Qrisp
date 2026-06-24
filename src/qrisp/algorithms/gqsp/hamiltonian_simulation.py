@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,15 +16,15 @@
 """
 
 from typing import TYPE_CHECKING
+
 import jax
 import jax.numpy as jnp
 import numpy as np
-from scipy.special import jv
 
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
@@ -36,8 +35,7 @@ if TYPE_CHECKING:
 def hamiltonian_simulation(
     H: BlockEncoding | FermionicOperator | QubitOperator, t: "ArrayLike" = 1, N: int = 1
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+    r"""Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
     For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
     the unitary evolution operator $e^{-itH}$ for a given time $t$.
@@ -79,7 +77,6 @@ def hamiltonian_simulation(
 
     Examples
     --------
-
     Below is an example of using the :func:`hamiltonian_simulation` function to simulate a quantum system governed by an Ising Hamiltonian on a 1D chain graph.
     In this example, we construct a chain graph, define an Ising Hamiltonian with specific coupling and magnetic field strengths,
     and compute the system's energy and magnetization over various evolution times using the QSP-based simulation algorithm.
@@ -200,7 +197,6 @@ def hamiltonian_simulation(
     - Mitigation: This divergence is attributed to an insufficient truncation order $N$ used in the QSP polynomial expansion. The simulation error accumulates over time when the truncation order is too low for the required evolution time $T$. Increasing the truncation order $N$ can mitigate this effect and maintain accuracy at larger $T$ values, but this comes at the expense of a higher computational runtime or circuit depth.
 
     """
-
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)
 
@@ -209,15 +205,9 @@ def hamiltonian_simulation(
     t = t * alpha
 
     # Calculate coefficients of truncated Jacobi-Anger expansion
-    # jax.scipy.jv is currently not implemented
-    # To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
-    # and use the Bessel multiplication theorem to evaluate jv(m,s)
-    j_val_at_1 = jv(np.arange(0, 2 * N + 1, 1), 1.0)
-    j_val_at_t = bessel_multiplication(np.arange(0, N + 1), t, j_val_at_1)
+    j_val_at_t = jax_jv(np.arange(0, N + 1), t)
     # J_{-n}(t) = (-1)^nJ_n(t)
-    j_values = jnp.concatenate(
-        ((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:])
-    )
+    j_values = jnp.concatenate(((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:]))
     factors = (-1.0j) ** jnp.arange(-N, N + 1)
     coeffs = factors * j_values
 
@@ -238,75 +228,48 @@ def hamiltonian_simulation(
     )
 
 
-# Apply the wache decorator with the workaround in order to show in documentation
+# Apply the qache decorator with the workaround in order to show in documentation
 # temp_docstring = hamiltonian_simulation.__doc__
 # hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
 # hamiltonian_simulation.__doc__ = temp_docstring
 
 
-# jax.scipy.jv is currently not implemented
-# To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
-# and use the Bessel multiplication theorem to evaluate jv(m,s)
 @jax.jit
-def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
-    """
-    Computes ``jv(m, s)`` using the Bessel Multiplication Theorem.
+def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
+    r"""
+    Pure JAX implementation of the Bessel function of the first kind, J_m(x),
+    for integer orders m.
+
+    This function evaluates the integral representation of the Bessel function
+    using the numerical Midpoint rule, which is highly stable and avoids
+    catastrophic cancellation:
 
     .. math::
 
-        J_{m}(\lambda t) = \lambda^m \sum_{k=0}^{\intfy}\frac{(1-\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
+        J_m(x) = \frac{1}{\pi} \int_0^\pi \cos(m \tau - x \sin \tau) d\tau
 
     Parameters
     ----------
-    m : ndarray
-        Order of the Bessel function $J_m(s)$.
-    s : float
-        New argument to evaluate.
-    j_values_at_t: ndarray
-        Array of values $J_k(t)$ for $k=0,\dotsc,N$.
-    t : float
-        Fixed argument where values are known (default 1.0).
-
-    Returns
-    -------
-    float
-        Approximation of $J_m(s)$, the Bessel function evaluated at order $m$ and value $s$.
-
-    Notes
-    -----
-    - Vectorized version of Bessel multiplication for m as an array.
-
+    m : ArrayLike
+        Integer order(s) of the Bessel function.
+    x : ArrayLike
+        Argument to evaluate.
+    M : int, optional
+        Number of integration steps. M=250 is perfectly accurate up to x ≈ 100.
     """
-    # Use jax.vmap to map the single-m logic over an array of m values
-    return jax.vmap(lambda m_val: _bessel_multiplication(m_val, s, jv_values_at_t, t))(
-        m
-    )
+    m = jnp.asarray(m)
+    x = jnp.asarray(x)
 
+    # Create the integration grid over [0, pi] using the Midpoint rule
+    # dtau = pi / M. Because we use jnp.mean later, the dt factor is handled automatically.
+    tau = (jnp.arange(M) + 0.5) * (jnp.pi / M)
 
-def _bessel_multiplication(m, s, jv_values_at_t, t=1.0):
-    lam = s / t
-    lam_sq_diff = 1.0 - lam**2
-    t_half = t / 2.0
+    # Expand dimensions to allow broadcasting of m and x against the tau grid
+    m_ext = jnp.expand_dims(m, axis=-1)
+    x_ext = jnp.expand_dims(x, axis=-1)
 
-    max_k = jv_values_at_t.shape[0]
+    # Evaluate the integrand: cos(m*tau - x*sin(tau))
+    integrand = jnp.cos(m_ext * tau - x_ext * jnp.sin(tau))
 
-    def body_fun(k, val):
-        coeff, total_sum = val
-        idx = m + k
-
-        # Guard the index to stay within bounds for the array access
-        # Values outside the valid range for a specific 'm' are effectively ignored
-        valid_mask = idx < max_k
-        safe_idx = jnp.where(valid_mask, idx, 0)
-
-        term = coeff * jv_values_at_t[safe_idx]
-        total_sum += jnp.where(valid_mask, term, 0.0)
-
-        new_coeff = coeff * lam_sq_diff * t_half / (k + 1)
-        return (new_coeff, total_sum)
-
-    init_state = (1.0, 0.0)
-    # Loop over the maximum possible number of terms to keep loop bounds static
-    _, final_sum = jax.lax.fori_loop(0, max_k, body_fun, init_state)
-
-    return (lam**m) * final_sum
+    # Integrate by taking the mean over the tau axis
+    return jnp.mean(integrand, axis=-1)

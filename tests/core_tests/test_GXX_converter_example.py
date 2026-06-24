@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,9 +16,11 @@
 """
 
 # Created by ann81984 at 29.04.2022
-import numpy as np
 import random
-from qrisp import QuantumSession, QuantumVariable, p, cp
+
+import numpy as np
+
+from qrisp import QuantumVariable, cp, p
 from qrisp.misc.GMS_tools import GXX_converter
 
 
@@ -46,9 +47,7 @@ def test_GMS_converter_example():
 
     unitary = qc.get_unitary()
 
-    print(
-        "Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3
-    )
+    print("Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3)
     # print(np.round(np.angle(np.diagonal(qv.qs.get_unitary()))%(2*np.pi)/(2*np.pi), 3))
     assert qv.qs.compare_unitary(qc, precision=4)
     assert np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3

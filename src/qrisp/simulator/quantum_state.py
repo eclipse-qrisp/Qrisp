@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,15 +15,11 @@
 ********************************************************************************
 """
 
-from itertools import product
-
-from qrisp.simulator.numerics_config import xp
-from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
-from qrisp.simulator.bi_array_helper import permute_axes, invert_permutation
 import numpy as np
 
-from qrisp.misc.utility import bin_rep
-
+from qrisp.simulator.bi_array_helper import invert_permutation, permute_axes
+from qrisp.simulator.numerics_config import xp
+from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
 
 # This class describes a quantum state
 # This is achieved by another class, the TensorFactor.
@@ -45,9 +40,7 @@ class QuantumState:
     # This functions applies a (unitary) operation onto the tensor factor
     def apply_operation(self, operation, qubits):
         # Determine the involved tensor factors and the involved qubits
-        involved_factors = list(
-            set(sum([[self.tensor_factors[qubits[i]]] for i in range(len(qubits))], []))
-        )
+        involved_factors = list(set(sum([[self.tensor_factors[qubits[i]]] for i in range(len(qubits))], [])))
         involved_qubits = list(set(sum([tf.qubits for tf in involved_factors], [])))
 
         # If the combined tensor factor has more than 63 qubits,
@@ -84,14 +77,10 @@ class QuantumState:
         # Apply the matrix
         entangled_factor.apply_matrix(unitary, qubits)
 
-        if len(
-            entangled_factor.qubits
-        ) < 25 or entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
+        if len(entangled_factor.qubits) < 25 or entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
             return
 
-        p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(
-            qubits[::-1], False
-        )
+        p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(qubits[::-1], False)
 
         disentangling_qubits = []
 
@@ -176,9 +165,7 @@ class QuantumState:
         if keep_res and meas_res:
             # This sets the measured qubit to the |1> state (described by the
             # array [0,1] instead of [1,0] which descibes the |0> state)
-            outcome_state.tensor_factors[i] = TensorFactor(
-                [i], xp.array([0, 1], dtype=xp.complex64)
-            )
+            outcome_state.tensor_factors[i] = TensorFactor([i], xp.array([0, 1], dtype=xp.complex64))
         else:
             outcome_state.tensor_factors[i] = TensorFactor([i])
 
@@ -203,16 +190,13 @@ class QuantumState:
         ind_array = np.zeros(1, dtype=np.int64)
 
         for tf in involved_factors:
-
             tf_mes_qubits = []
             for qb in mes_qubits:
                 if hash(involved_factors_dic[qb]) == hash(tf):
                     tf_mes_qubits.append(qb)
 
             tf.unravel()
-            p_list, tf_list, outcome_list = tf.multi_measure(
-                tf_mes_qubits, return_res_tf=False
-            )
+            p_list, tf_list, outcome_list = tf.multi_measure(tf_mes_qubits, return_res_tf=False)
 
             prob_array = np.tensordot(prob_array, np.array(p_list), ((), ())).ravel()
             grouped_qubits.extend(tf_mes_qubits)
@@ -227,9 +211,7 @@ class QuantumState:
                 if not isinstance(ind_array, list):
                     ind_array = [int(i) for i in ind_array]
 
-                ind_array = tensorize_indices(
-                    [int(i) for i in outcome_list], ind_array, len(tf_mes_qubits)
-                )
+                ind_array = tensorize_indices([int(i) for i in outcome_list], ind_array, len(tf_mes_qubits))
 
         index_permutation = [mes_qubits.index(i) for i in grouped_qubits]
         index_permutation = invert_permutation(np.array(index_permutation))[::-1]

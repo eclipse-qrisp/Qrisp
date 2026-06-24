@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ if TYPE_CHECKING:
 
 
 def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+    r"""Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
     For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
     the unitary evolution operator $e^{-itH}$ for a given time $t$.
@@ -66,7 +64,6 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
 
     Examples
     --------
-
     Generate an Ising Hamiltonian $H$ and apply Hamiltonian simulation $e^{-itH}$ to the inital system state $\ket{0}$.
 
     ::

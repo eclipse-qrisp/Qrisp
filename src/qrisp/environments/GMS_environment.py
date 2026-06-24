@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,8 +22,7 @@ from qrisp.misc.GMS_tools import GXX_converter
 # Environments that allows quick and easy access to the GMS_converter
 # To use it make sure every gate that happens inside is either phase or cphase
 class GMSEnvironment(QuantumEnvironment):
-    """
-    This environment provides a convenient interface for constructing quantum algorithms
+    """This environment provides a convenient interface for constructing quantum algorithms
     using the Ion-trap native GMS gates. GMS gates allow entangling more than 2 qubits
     in a single step and can therefore boost performance in many situations. For more
     information on GMS gates consult https://arxiv.org/abs/quant-ph/9810040 . The
@@ -36,8 +34,6 @@ class GMSEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
-
     We create a function performing the quantum Fourier-transform using GMS gates: ::
 
         from qrisp import QuantumEnvironment, GMSEnvironment, h, cp, swap

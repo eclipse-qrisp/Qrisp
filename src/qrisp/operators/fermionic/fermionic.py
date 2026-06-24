@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,6 @@
 ********************************************************************************
 """
 
-from qrisp.circuit.qubit import Qubit
 from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 

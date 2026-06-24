@@ -1,12 +1,12 @@
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
 
 # ----- Pauli algebra (bitwise) -----
 
 
 def pauli_mul(p1, p2):
-    """
-    Multiply two Pauli strings encoded as (X_mask, Z_mask).
+    """Multiply two Pauli strings encoded as (X_mask, Z_mask).
     Returns (result_pauli, phase).
     """
     X1, Z1 = p1
@@ -22,8 +22,7 @@ def pauli_mul(p1, p2):
 
 
 def commutator_dict(A, B):
-    """
-    Compute commutator of A and B.
+    """Compute commutator of A and B.
     A, B are dicts: { (X,Z) : coeff }
     where (X, Z) denote the pauli and coeff is a factor of the pauli.
     """
@@ -42,8 +41,7 @@ def commutator_dict(A, B):
 
 
 def trace(O1, O2):
-    """
-    Compute trace of D1*D2 (both pauli operators).
+    """Compute trace of D1*D2 (both pauli operators).
     Tr( O1 O2 ) = 2^N * sum_k coeff1(k) * coeff2(k), Pauli strings orthogonal.
     """
     tr = 0 + 0j
@@ -62,8 +60,7 @@ def trace(O1, O2):
 
 
 def pauli_from_ops(ops):
-    """
-    Create pauli dict from operator string dict.
+    """Create pauli dict from operator string dict.
     ops: dict {index: pauli_int}
     to: (X, Z) where (X_i, Z_i) denote the pauli on qubit i by binaries.
     """
@@ -84,8 +81,7 @@ def pauli_from_ops(ops):
 
 
 def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
-    """
-    Create Hamiltonian H and derivative dH/dlam from model
+    """Create Hamiltonian H and derivative dH/dlam from model
     values h, J, lam. B_val and Bp_val . The last two are
     only necessary for the quantum control pulse in COLD.
     """
@@ -127,8 +123,7 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
 
 
 def build_AGP_templates_NC(h, J):
-    """
-    Build AGP ansatz from nested commutators 1st order.
+    """Build AGP ansatz from nested commutators 1st order.
     A_i = -2 [ h_i Y_i + sum_{j<i} J_ij ( Z_i Y_j + Y_i Z_j ) ]
     """
     N = len(h)
@@ -160,9 +155,7 @@ def build_AGP_templates_NC(h, J):
 
 
 def build_AGP_templates(N, uniform=False):
-    """
-    Build AGP ansatz for 2nd order with uniform or non-uniform parameters
-    """
+    """Build AGP ansatz for 2nd order with uniform or non-uniform parameters"""
     A = []
 
     # Non-uniform case
@@ -216,11 +209,10 @@ def build_AGP_templates(N, uniform=False):
 
 
 def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):
-    """
-    Given templates A_lam (dict operators), build:
-      C = [A_lam, H(lam)]
-      Hmat_ij = Re Tr(C_i C_j)
-      gvec = Re Tr(i dH/dlam * C)
+    """Given templates A_lam (dict operators), build:
+    C = [A_lam, H(lam)]
+    Hmat_ij = Re Tr(C_i C_j)
+    gvec = Re Tr(i dH/dlam * C)
     """
     H, dH = build_H_and_dH(h, J, lam, B_val=B_val, Bp_val=Bp_val)
     C = [commutator_dict(A, H) for A in A_lam]
@@ -243,9 +235,7 @@ def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):
 
 # ----- Solvers -----
 def solve_params(Hmat, gvec):
-    """
-    Solve Hmat x = gvec.
-    """
+    """Solve Hmat x = gvec."""
     try:
         x = np.linalg.solve(Hmat, gvec)
     except np.linalg.LinAlgError:
@@ -254,8 +244,7 @@ def solve_params(Hmat, gvec):
 
 
 def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
-    """
-    Solve minimal action for first order AGP.
+    """Solve minimal action for first order AGP.
     Returns alpha array of length N (non-uniform).
     """
     N = len(h)
@@ -288,11 +277,10 @@ def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
 
 
 def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):
-    """
-    Solve minimal action for 2nd order AGP (leading two three parameters alpha, gamma, chi).
+    """Solve minimal action for 2nd order AGP (leading two three parameters alpha, gamma, chi).
 
-      - uniform=False: each is length N
-      - uniform=True: each is length N with identical entries
+    - uniform=False: each is length N
+    - uniform=True: each is length N with identical entries
 
     """
     N = len(h)

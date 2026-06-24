@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,7 +16,7 @@
 """
 
 from qrisp import *
-from jax import make_jaxpr
+
 
 def test_qasm_converter():
 
@@ -34,11 +33,11 @@ def test_qasm_converter():
 
         inner_function(qf)
         inner_function(qbl)
-        
-        with invert():    
+
+        with invert():
             inner_function(qf)
             inner_function(qbl)
-            
+
         inner_function(qf)
         inner_function(qbl)
 
@@ -46,13 +45,11 @@ def test_qasm_converter():
 
     t0 = time.time()
     jaspr = make_jaspr(main)(1)
-    
+
     qasm_str = jaspr.to_qasm(3)
     qc = QuantumCircuit.from_qasm_str(qasm_str)
-    assert qc.run() == {'1110': 1.0}
-    
+    assert qc.run() == {"1110": 1.0}
+
     qasm_str = jaspr.to_qasm(5)
     qc = QuantumCircuit.from_qasm_str(qasm_str)
-    assert qc.run() == {'111110': 1.0}
-
-    
+    assert qc.run() == {"111110": 1.0}

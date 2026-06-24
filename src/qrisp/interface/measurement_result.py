@@ -198,6 +198,7 @@ class MeasurementResult(LazyDict):
 
         batched_backend.dispatch()
         print(result)   # {5: 1.0}
+
     """
 
     def __init__(self) -> None:
@@ -214,9 +215,7 @@ class MeasurementResult(LazyDict):
         """
         if self._error is not None:
             raise self._error
-        raise RuntimeError(
-            "MeasurementResult not yet populated. Call dispatch() first."
-        )
+        raise RuntimeError("MeasurementResult not yet populated. Call dispatch() first.")
 
     def _inject(self, counts: dict) -> None:
         """Populate with raw backend results.
@@ -229,6 +228,7 @@ class MeasurementResult(LazyDict):
         ----------
         counts : dict
             Raw bitstring-to-count mapping produced by the backend.
+
         """
         self._data = counts
         self._populated = True
@@ -245,6 +245,7 @@ class MeasurementResult(LazyDict):
         ----------
         exc : Exception
             The exception to store and re-raise on access.
+
         """
         self._error = exc
 
@@ -330,6 +331,7 @@ class DecodedMeasurementResult(LazyDict):
 
         print(res_a)        # {3: 1.0}  decoded on first access
         print(res_b)        # {5: 1.0}
+
     """
 
     def __init__(self, raw: LazyDict, decoder: Callable[[int], object]) -> None:
@@ -372,11 +374,10 @@ class MultiMeasurementResult(LazyDict):
         Classical-bit sub-registers, one per variable in *qv_list* (reversed),
         produced by the circuit construction inside
         :func:`~qrisp.multi_measurement`.
+
     """
 
-    def __init__(
-        self, raw: MeasurementResult, qv_list: list, cl_reg_list: list
-    ) -> None:
+    def __init__(self, raw: MeasurementResult, qv_list: list, cl_reg_list: list) -> None:
         super().__init__()
         self._raw = raw
         self._qv_list = qv_list
@@ -431,8 +432,7 @@ class MultiMeasurementResult(LazyDict):
                 new_counts[outcome] = count / total
             except TypeError as exc:
                 raise TypeError(
-                    "Tried to create measurement outcome dic for QuantumVariable "
-                    "with unhashable labels"
+                    "Tried to create measurement outcome dic for QuantumVariable with unhashable labels"
                 ) from exc
 
         # Sort descending by probability, matching the convention used by

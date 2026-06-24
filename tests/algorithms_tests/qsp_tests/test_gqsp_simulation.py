@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -15,6 +14,123 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
+import jax.numpy as jnp
+import numpy as np
+import pytest
+import scipy
+from scipy.special import jv
+
+from qrisp import QuantumFloat, terminal_sampling
+from qrisp.algorithms.gqsp import jax_jv
+from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import X, Z
+
+
+def post_selection(res_dict, N):
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
+    success_prob = sum(filtered_dict.values())
+    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+    amps = np.sqrt([filtered_dict.get(k, 0) for k in range(N)])
+    return amps, success_prob
+
+
+def create_ising_hamiltonian(L, J, B):
+    H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
+    return H
+
+
+# Issue #681
+def test_gqsp_hamiltonian_simulation_nested_block_encoding():
+    """Test the GQSP Hamiltonian simulation via qubitization with nested block encoding.
+    Defines a 4-qubit Ising Hamiltonian H and its polynomial transformation H2, constructs block encodings for both (BE and BE2).
+    Applies the polynomial transformation to the block encoding of the original Ising Hamiltonian (BE_poly).
+    Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
+    Ensures that the amplitudes are consistent and the success probability is high.
+    """
+
+    L = 4
+    H = create_ising_hamiltonian(L, 0.25, 0.5)
+    H2 = 0.9 * H + 0.8 * H * H * H
+
+    BE = BlockEncoding.from_operator(H)
+    BE2 = BlockEncoding.from_operator(H2)
+    BE_poly = BE.poly(np.array([0.0, 0.9, 0.0, 0.8]))
+
+    # Prepare inital system state |psi> = |0>
+    def operand_prep():
+        return QuantumFloat(L)
+
+    # Prepare state|psi(t)> = e^{itH} |psi>
+    def psi(t, BE):
+        BE_sim = BE.sim(t=t, N=10)
+        operand = operand_prep()
+        ancillas = BE_sim.apply(operand)
+        return operand, *ancillas
+
+    @terminal_sampling
+    def main(t, BE):
+        return psi(t, BE)
+
+    target_amps, success_prob = post_selection(res_dict=main(0.1, BE2), N=2**L)
+    assert success_prob > 0.98
+
+    amps, success_prob = post_selection(main(0.1, BE_poly), N=2**L)
+    assert success_prob > 0.98
+    assert np.linalg.norm(target_amps - amps) < 1e-3
+
+
+def test_gqsp_hamiltonian_simulation_long_time():
+    """Test the GQSP Hamiltonian simulation via qubitization with long time evolution.
+    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable."""
+
+    L = 4
+    H = create_ising_hamiltonian(L, 0.25, 0.5)
+    BE = BlockEncoding.from_operator(H)
+
+    # Prepare inital system state |psi> = |0>
+    def operand_prep():
+        return QuantumFloat(L)
+
+    # Prepare state|psi(t)> = e^{itH} |psi>
+    def psi(t, BE):
+        BE_sim = BE.sim(t=t, N=80)
+        operand = operand_prep()
+        ancillas = BE_sim.apply(operand)
+        return operand, *ancillas
+
+    @terminal_sampling
+    def main(t, BE):
+        return psi(t, BE)
+
+    H_arr = H.to_array()
+    b = np.zeros(2**L)
+    b[0] = 1.0
+
+    target_amps = np.abs(scipy.linalg.expm(-1j * 20.0 * H_arr) @ b)
+
+    amps, success_prob = post_selection(main(20.0, BE), N=2**L)
+    assert success_prob > 0.98
+    assert np.linalg.norm(target_amps - amps) < 1e-5
+
+
+@pytest.mark.parametrize("N_terms", [10, 20, 30])
+@pytest.mark.parametrize("t", [1.0, 5.0, 10.0])
+def test_jax_jv(N_terms, t):
+    """Test the JAX implementation of the Bessel function of the first kind (jv) against SciPy's implementation."""
+
+    m_array = jnp.arange(0, N_terms + 1)
+
+    # Run the pure JAX version
+    j_val_jax = jax_jv(m_array, t)
+
+    # Run SciPy baseline for comparison
+    j_val_scipy = jv(np.arange(0, N_terms + 1), t)
+
+    # Check max absolute error
+    diff = jnp.max(jnp.abs(j_val_jax - j_val_scipy))
+    assert diff < 1e-6
+
 
 # Disabled due to long runtime
 # hamiltonian_simulation is tested in block encoding sim test

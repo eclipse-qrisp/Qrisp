@@ -29,6 +29,8 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Convert two-qubit gates (CZ, CY, SWAP) to CX-based form
    * - :doc:`convert_to_cz <convert_to_cz>`
      - Convert two-qubit gates (CX, CY, SWAP) to CZ-based form
+   * - :doc:`convert_to_prx <convert_to_prx>`
+     - Convert single-qubit gates to native PRX (Phased-RX) gates
    * - :doc:`decompose <decompose>`
      - Recursively dissolve synthesized gates into elementary gates
    * - :doc:`gray_synth_toffoli <gray_synth_toffoli>`
@@ -55,6 +57,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    commute_swaps
    convert_to_cx
    convert_to_cz
+   convert_to_prx
    decompose
    gray_synth_toffoli
    manual_layout

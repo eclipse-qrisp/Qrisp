@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import ControlledOperation
 import numpy as np
+
+from qrisp.circuit import ControlledOperation
 
 
 def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
@@ -49,33 +49,32 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
     The converter transpiles all unknown gates together, then checks if any
     new unknown gates appeared.  This repeats until all gates are known
     or transpilation makes no progress.
+
     """
     try:
         from cirq import Circuit, LineQubit
     except (ModuleNotFoundError, ImportError) as exc:
-        raise ImportError(
-            "Cirq must be installed to be able to use the Qrisp to Cirq converter."
-        ) from exc
+        raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.") from exc
 
     from cirq import (
         CNOT,
-        H,
-        X,
-        Y,
-        Z,
-        S,
-        T,
+        CZ,
         SWAP,
-        rx,
-        ry,
-        rz,
+        GlobalPhaseGate,
+        H,
         I,
         M,
         R,
-        CZ,
-        ZPowGate,
+        S,
+        T,
+        X,
         XPowGate,
-        GlobalPhaseGate,
+        Y,
+        Z,
+        ZPowGate,
+        rx,
+        ry,
+        rz,
     )
 
     # known gate mapping
@@ -122,13 +121,10 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             return op.name in _unknown
 
         try:
-            transpiled = qrisp_circuit.transpile(
-                transpile_predicate=_transpile_predicate
-            )
+            transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
         except Exception as exc:
             raise ValueError(
-                f"Gates {unknown} could not be transpiled and are not supported "
-                "by the Qrisp to Cirq converter."
+                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to Cirq converter."
             ) from exc
 
         new_unknown = _unknown_names(transpiled)
@@ -175,10 +171,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                 continue
             # qb_alloc/qb_dealloc are bookkeeping ops with no circuit effect
             if name not in ("qb_alloc", "qb_dealloc"):
-                raise ValueError(
-                    f"{name} gate has no Cirq equivalent and "
-                    "no definition to decompose."
-                )
+                raise ValueError(f"{name} gate has no Cirq equivalent and no definition to decompose.")
             continue
 
         # controlled operations (multi-qubit)
@@ -262,13 +255,12 @@ def convert_from_cirq(cirq_circuit):
     during conversion.  Cirq's automatic key generation is used instead, so
     a round-trip (Qrisp -> Cirq -> Qrisp) will lose the original
     classical-bit associations.
+
     """
     try:
         import cirq
     except (ModuleNotFoundError, ImportError) as exc:
-        raise ImportError(
-            "Cirq must be installed to be able to use the Cirq to Qrisp converter."
-        ) from exc
+        raise ImportError("Cirq must be installed to be able to use the Cirq to Qrisp converter.") from exc
     from qrisp import QuantumCircuit
     from qrisp.circuit import standard_operations as ops
 
@@ -308,17 +300,13 @@ def convert_from_cirq(cirq_circuit):
             sub_op = op.sub_operation
             gate = getattr(sub_op, "gate", None)
             if gate is None:
-                raise ValueError(
-                    f"Controlled sub-operation {sub_op} is not supported "
-                    "by the Cirq to Qrisp converter."
-                )
+                raise ValueError(f"Controlled sub-operation {sub_op} is not supported by the Cirq to Qrisp converter.")
             extra_controls = (list(op.controls), list(sub_op.qubits))
         else:
             gate = getattr(op, "gate", None)
             if gate is None:
                 raise ValueError(
-                    f"Operation {op} without gate attribute is not supported "
-                    "by the Cirq to Qrisp converter."
+                    f"Operation {op} without gate attribute is not supported by the Cirq to Qrisp converter."
                 )
 
         # Global phase in Cirq acts on 0 qubits; Qrisp requires a qubit
@@ -350,14 +338,10 @@ def convert_from_cirq(cirq_circuit):
             ctrl_state = ""
             for v in cv:
                 if len(v) != 1:
-                    raise ValueError(
-                        f"Multi-valued control {v} in {inner_gate} not supported."
-                    )
+                    raise ValueError(f"Multi-valued control {v} in {inner_gate} not supported.")
                 val = v[0]
                 if val not in (0, 1):
-                    raise ValueError(
-                        f"Unsupported control value {val} in {inner_gate}."
-                    )
+                    raise ValueError(f"Unsupported control value {val} in {inner_gate}.")
                 ctrl_state += str(val)
             ctrl_layers.append((inner_gate.num_controls(), ctrl_state))
             inner_gate = inner_gate.sub_gate
@@ -424,9 +408,7 @@ def convert_from_cirq(cirq_circuit):
                 qrisp_op = ops.PGate(exp * np.pi)
 
         else:
-            raise ValueError(
-                f"Gate {gate} is not supported by the Cirq to Qrisp converter."
-            )
+            raise ValueError(f"Gate {gate} is not supported by the Cirq to Qrisp converter.")
 
         # Wrap any ControlledGate layers (inside-out)
         for num_ctrl, ctrl_state in reversed(ctrl_layers):

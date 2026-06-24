@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,14 @@
 """
 
 from jax.tree_util import tree_unflatten
+
 from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def qjit(function=None, device=None):
-    """
-    Decorator to leverage the jasp + Catalyst infrastructure to compile the given
+    """Decorator to leverage the jasp + Catalyst infrastructure to compile the given
     function to QIR and run it on the Catalyst QIR runtime.
+    Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
     Parameters
     ----------
@@ -41,7 +41,6 @@ def qjit(function=None, device=None):
 
     Notes
     -----
-
     Lightning-GPU is compatible with systems featuring NVIDIA Volta (SM 7.0) GPUs or newer.
     It is specifically optimized for Linux environments on X86-64 or ARM64 architectures running CUDA-12.
 
@@ -65,7 +64,6 @@ def qjit(function=None, device=None):
 
     Examples
     --------
-
     We write a simple function using the QuantumFloat quantum type and execute
     via ``qjit``:
 
@@ -114,7 +112,6 @@ def qjit(function=None, device=None):
             return meas_res + 3
 
     """
-
     if function is None:
         return lambda x: qjit(x, device=device)
 
@@ -126,7 +123,7 @@ def qjit(function=None, device=None):
         args = list(args)
 
         signature = tuple([type(arg) for arg in args])
-        if not signature in function.jaspr_dict:
+        if signature not in function.jaspr_dict:
             # Use return_shape=True to capture the output PyTree structure
             jaspr, out_tree = make_jaspr(function, return_shape=True)(*args)
             function.jaspr_dict[signature] = (jaspr, out_tree)

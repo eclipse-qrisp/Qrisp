@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -47,16 +46,15 @@ Example usage::
               f"{sub_stats.inlined_eqn_count} eqns inlined")
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Optional
+from dataclasses import dataclass
+from typing import Dict
 
-from jax.extend.core import ClosedJaxpr, Jaxpr
+from jax.extend.core import ClosedJaxpr
 
 
 @dataclass
 class JaxprStats:
-    """
-    Analysis results for a single Jaxpr node.
+    """Analysis results for a single Jaxpr node.
 
     Attributes
     ----------
@@ -70,6 +68,7 @@ class JaxprStats:
     call_count : int
         Number of times this jaxpr is referenced as a sub-jaxpr across the
         entire expression tree. A value > 1 indicates reuse.
+
     """
 
     jaxpr: object
@@ -87,8 +86,7 @@ def _get_jaxpr_core(jaxpr):
 
 
 def _iter_sub_jaxprs(eqn):
-    """
-    Yield all sub-jaxprs referenced by an equation.
+    """Yield all sub-jaxprs referenced by an equation.
 
     Handles the known equation types that contain sub-jaxprs:
     - ``pjit`` / ``jit``: ``eqn.params["jaxpr"]``
@@ -105,6 +103,7 @@ def _iter_sub_jaxprs(eqn):
     ------
     Jaxpr | ClosedJaxpr
         Each sub-jaxpr referenced by this equation.
+
     """
     name = eqn.primitive.name
 
@@ -132,8 +131,7 @@ def _iter_sub_jaxprs(eqn):
 
 
 def analyze_call_graph(jaxpr):
-    """
-    Recursively analyze the call graph of a Jaxpr expression tree.
+    """Recursively analyze the call graph of a Jaxpr expression tree.
 
     Computes the **inlined equation count** and **call/reuse count** for
     every sub-jaxpr in the call graph. Results are cached by jaxpr identity
@@ -151,8 +149,8 @@ def analyze_call_graph(jaxpr):
     Returns
     -------
     JaxprStats
-        The analysis results for the root jaxpr. 
-        
+        The analysis results for the root jaxpr.
+
     dict[int, JaxprStats]
         A dictionary mapping ``id(sub_jaxpr)`` to ``JaxprStats`` for every unique
         sub-jaxpr encountered in the call graph (including the root).
@@ -173,6 +171,7 @@ def analyze_call_graph(jaxpr):
                 print(f"  jaxpr id={jid}: {stats.call_count}x reused, "
                       f"{stats.inlined_eqn_count} inlined eqns, "
                       f"inflation={inflation}")
+
     """
     # Cache: id(jaxpr) -> JaxprStats
     stats_cache: Dict[int, JaxprStats] = {}

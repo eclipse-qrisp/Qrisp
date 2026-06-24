@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,8 +25,7 @@ init_quantum_char = QuantumChar(nisq_char=False, name="q_char")
 
 
 class QuantumString(QuantumArray):
-    """
-    The QuantumString is the quantum equivalent of a string. It is implemented as a
+    """The QuantumString is the quantum equivalent of a string. It is implemented as a
     :ref:`QuantumArray` of :ref:`QuantumChars <QuantumChar>`.
 
     >>> from qrisp import QuantumString
