@@ -1,10 +1,12 @@
 # from qrisp.circuit.standard_operations import op_list
 import numpy as np
+import pytest
 
 np.random.seed(42)  # Deterministic for reproducible test results
 
-from qrisp import QuantumVariable
+from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.circuit.standard_operations import (
+    CPGate,
     CXGate,
     CYGate,
     CZGate,
@@ -20,6 +22,7 @@ from qrisp.circuit.standard_operations import (
     SGate,
     SwapGate,
     SXGate,
+    U1Gate,
     XGate,
     YGate,
     ZGate,
@@ -124,3 +127,56 @@ def pytket_rand_test():
             print(d[index4])
         if not d[index4] < 0.05:
             assert theRes[index4] * 0.6 <= d[index4] <= theRes[index4] * 1.4
+
+
+def _matches_up_to_global_phase(actual, expected, atol=1e-6):
+    """Return True if two unitaries are equal up to a global phase factor."""
+    actual = np.asarray(actual)
+    expected = np.asarray(expected)
+
+    def _strip_phase(unitary):
+        flat = unitary.flatten()
+        pivot = flat[np.argmax(np.abs(flat))]
+        return unitary * np.exp(-1j * np.angle(pivot))
+
+    return np.allclose(_strip_phase(actual), _strip_phase(expected), atol=atol)
+
+
+def test_to_pytket_u1_angle():
+    """Regression for #631: the u1 angle must not be divided by pi twice.
+
+    u1(theta) = diag(1, e^{i*theta}). It maps to a pytket Rz, which differs
+    only by a global phase, so the converted unitary must equal diag(1,
+    e^{i*theta}) up to a global phase. Before the fix the angle was divided by
+    pi a second time, producing the wrong rotation.
+    """
+    pytest.importorskip("pytket")
+
+    theta = 0.7
+    qc = QuantumCircuit(1)
+    qc.append(U1Gate(theta), [0])
+
+    unitary = qc.to_pytket().get_unitary()
+    expected = np.diag([1, np.exp(1j * theta)])
+
+    assert _matches_up_to_global_phase(unitary, expected)
+
+
+def test_to_pytket_cp_controlled_phase():
+    """Regression for #630: cp must map to controlled-phase, not CRz.
+
+    cp(theta) = diag(1, 1, 1, e^{i*theta}). Before the fix it was emitted as a
+    CRz, which splits the phase across the two target states and is a different
+    gate. The converted unitary must equal the controlled-phase matrix up to a
+    global phase.
+    """
+    pytest.importorskip("pytket")
+
+    theta = 0.7
+    qc = QuantumCircuit(2)
+    qc.append(CPGate(theta), [0, 1])
+
+    unitary = qc.to_pytket().get_unitary()
+    expected = np.diag([1, 1, 1, np.exp(1j * theta)])
+
+    assert _matches_up_to_global_phase(unitary, expected)
