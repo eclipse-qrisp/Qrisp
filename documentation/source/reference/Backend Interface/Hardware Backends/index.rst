@@ -31,4 +31,8 @@ uniform :ref:`Backend` interface.
    * - :ref:`QiskitRuntimeBackend`
      - IBM Quantum runtime services via Qiskit Runtime
    * - :ref:`KipuBackends`
+<<<<<<< HEAD
      - Kipu Quantum Cloud backends from multiple providers
+=======
+     - Kipu Quantum Cloud backend providers continuously expanding
+>>>>>>> 49d80204 (feature: Kipu Quantum Cloud doc .rst files added)
