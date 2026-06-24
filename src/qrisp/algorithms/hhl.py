@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,7 @@ from qrisp.alg_primitives.qpe import QPE
 
 
 def HHL(qv, hamiltonian_evolution, ev_inversion, precision):
-    """
-    Evaluates the HHL algorithm.
+    """Evaluates the HHL algorithm.
 
     Parameters
     ----------

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,8 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 @CircuitPass
@@ -47,22 +46,22 @@ def remove_barriers(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.barrier()
         >>> qc.cx(0, 1)
         >>> print(qc)
-                ┌───┐ ░      
+                ┌───┐ ░
         qb_124: ┤ H ├─░───■──
                 └───┘ ░ ┌─┴─┐
         qb_125: ──────░─┤ X ├
                       ░ └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += remove_barriers
         >>> clean_qc = pm.run(qc)
         >>> print(clean_qc)
-                ┌───┐     
+                ┌───┐
         qb_124: ┤ H ├──■──
                 └───┘┌─┴─┐
         qb_125: ─────┤ X ├
                      └───┘
-                     
+
     """
     qc_new = qc.clearcopy()
     for instr in qc.data:

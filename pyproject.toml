@@ -5,33 +5,110 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = "black"
+[project]
+name = "qrisp"
+version = "0.9.4"
+authors = [
+    {name = "The Qrisp authors"},
+]
+description = "A high-level quantum programming language"
+readme = "README.md"
+requires-python = ">=3.11, <3.13"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Quantum Computing",
+    "Topic :: Software Development :: Compilers",
+]
+license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
+
+dependencies = [
+    "numpy>=2.0,<2.5",
+    "sympy<=1.13",
+    "qiskit>=0.44.0",
+    "matplotlib>=3.5.1",
+    "scipy>=1.10.0",
+    "numba",
+    "networkx",
+    "tqdm",
+    "dill",
+    "psutil",
+    "jax==0.7.1",
+    "jaxlib==0.7.1"
+]
+
+[project.optional-dependencies]
+aqt = ["qiskit-aqt-provider>=1.15.0"]
+qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
+iqm = [
+    "iqm-client[qiskit]>=33.0.3,<34.0.0",
+    "iqm-pulse<13.0",
+    "iqm-station-control-client==12.0.5",
+    "iqm-exa-common==27.5.4",
+    "opentelemetry-exporter-otlp==1.27.0",
+    "iqm-data-definitions==2.22",
+]
+catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
+xdsl = ["xdsl==0.59.0"]
+docs = [
+    "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
+    "sphinx-toolbox==4.1.2",
+    "nbsphinx==0.9.8",
+    "ipykernel==7.2.0",
+    "myst-parser==5.0.0",
+    "texext==0.6.8",
+    "numpydoc==1.10.0",
+    "sphinx-sitemap==2.9.0",
+    "sphinx-copybutton==0.5.2",
+    "sphinx-design==0.7.0",
+    "sphinx-thebe==0.3.1",
+    "sphinx-new-tab-link==0.8.1",
+    "pydata-sphinx-theme==0.17.1",
+]
+dev = [
+    "pytest==9.1.0",
+    "qiskit-aer",
+    "pyscf",
+    "cirq",
+    "tqecd",
+    "ruff",
+]
+
+[project.urls]
+Homepage = "https://github.com/eclipse-qrisp/Qrisp"
+"Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.ruff]
+exclude = ["__init__.py", "*.ipynb"]
+line-length = 120
+target-version = "py312" # will be changed to consider other python versions as well
+force-exclude = true
+
+
+[tool.ruff.lint]
+select = ["I", "E", "W", "D", "PL", "F"]
+# ruff configuration
+# E, W -- pycodestyle
+# D -- pydocstyle
+# I -- isort
+# PL -- pylint
+# F -- pyflakes
+
+
+# Rules considered over other incompatible ones
+exclude = ["*.ipynb"]
+
+ignore = [
+    "D203",  # inconsistent with D211 (no-blank-line-before-class)
+    "D213",  # inconsistent with D212 (multi-line-summary-first-line)
+    "D400",  # first-line-should-end-with-period
+    "D415",  # ends-in-punctuation
+]
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
-
-[tool.black]
-line-length = 88
-target-version = ["py311", "py312", "py313"]
-
-[dependency-groups]
-#pip install --group test
-test = [
-"pytest<=9.0.3",
-"pytest-xdist<=3.8.0",
-"qiskit-aer<=0.17.2",
-"qiskit-iqm<=18.2",
-"pyscf<=2.13.0",
-"stim<=1.15.0",
-"cirq<=1.6.1",
-"xdsl<=0.62.1",
-"pennylane-catalyst<=0.15.0",
-"gast<=0.7.0",
-"tqecd @ git+https://github.com/tqec/tqecd.git"
-]
-
-dev = [
-{include-group= "test"}
-#{include-group= "lint"}
-]

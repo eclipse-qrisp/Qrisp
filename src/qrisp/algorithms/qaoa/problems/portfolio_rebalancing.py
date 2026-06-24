@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,14 @@
 """
 
 import math
-from qrisp import cx, RYGate, ry, x, rzz, rz
+
 import numpy as np
+
+from qrisp import RYGate, cx, ry, rz, rzz, x
 
 
 def portfolio_cost_operator(problem):
-    """
-    | Quantum cost operator for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
+    """| Quantum cost operator for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
     | It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting.
 
     Parameters
@@ -37,7 +37,6 @@ def portfolio_cost_operator(problem):
         A function to be applied to a QuantumArray for solving the problem instance.
 
     """
-
     old_pos = problem[0]
     risk_return = problem[1]
     covar_matrix = problem[2]
@@ -56,7 +55,6 @@ def portfolio_cost_operator(problem):
         for i in range(len(s)):
             prefac = 0
             for j in range(len(s)):
-
                 prefac = gamma * covar_matrix[i][j] / 4 * risk_return
                 rzz(-prefac, l[i], s[j])
                 rzz(-prefac, s[i], l[j])
@@ -86,8 +84,7 @@ def portfolio_cost_operator(problem):
 
 
 def portfolio_cl_cost_function(problem):
-    """
-    | Classical cost function for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
+    """| Classical cost function for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
     | It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting.
 
     Parameters
@@ -101,7 +98,6 @@ def portfolio_cl_cost_function(problem):
         A function to calculate the cost value of the problem solution.
 
     """
-
     old_pos = problem[0]
     risk_return = problem[1]
     covar_matrix = problem[2]
@@ -117,21 +113,14 @@ def portfolio_cl_cost_function(problem):
 
         key_list = []
         for key, val in res.items():
-
             # half = len(key)/2
             # new_key = [int(key[i])-int(key[i+half]) for i in range(half)]
             new_key = [int(key[0][i]) - int(key[1][i]) for i in range(half)]  # ??????
             key_list.append(new_key)
             rr1 = sum(
-                [
-                    risk_return * covar_matrix[i][j] * new_key[i] * new_key[j]
-                    for i in range(half)
-                    for j in range(half)
-                ]
+                [risk_return * covar_matrix[i][j] * new_key[i] * new_key[j] for i in range(half) for j in range(half)]
             )
-            rr2 = sum(
-                [(1 - risk_return) * asset_return[j] * new_key[j] for j in range(half)]
-            )
+            rr2 = sum([(1 - risk_return) * asset_return[j] * new_key[j] for j in range(half)])
             c_tc = sum([tc for i in range(half) if new_key[i] != old_pos[i]])
             energy -= (rr1 + rr2 + c_tc) * val
             counts += val
@@ -143,8 +132,7 @@ def portfolio_cl_cost_function(problem):
 
 
 def portfolio_init(lots):
-    """
-    | Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
+    """| Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
     | Depending on the number of lots a QuantumArray is prepared, where the first index describes the short positions held and the second index describes the long postions held.
 
     Parameters

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,9 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
+from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -112,14 +110,14 @@ class TestParameterisedCancellation:
 
     def test_rz_cancelation_preserves_gphase(self):
         qc = QuantumCircuit(1)
-        qc.rz(np.pi/2, 0)
-        qc.rz(-np.pi/4, 0)
+        qc.rz(np.pi / 2, 0)
+        qc.rz(-np.pi / 4, 0)
         result = fuse_adjacents(qc)
-        assert result.compare_unitary(qc, ignore_gphase = False)
+        assert result.compare_unitary(qc, ignore_gphase=False)
 
     def test_controlled_preserves_gphase(self):
         from qrisp import QuantumVariable, control
-        from qrisp.core import h, rz, p
+        from qrisp.core import h, p, rz
         from qrisp.simulator import statevector_sim
 
         theta = 0.73
@@ -372,14 +370,14 @@ class TestControlledOperations:
 
     def test_non_trivial_control_state(self):
         """Tests that XGates with differing control state
-        are not canceling"""
-
+        are not canceling
+        """
         from qrisp.circuit import XGate
 
         qc = QuantumCircuit(2)
 
-        gate_a = XGate().control(ctrl_state = "0")
-        gate_b = XGate().control(ctrl_state = "1")
+        gate_a = XGate().control(ctrl_state="0")
+        gate_b = XGate().control(ctrl_state="1")
 
         qc.append(gate_a, qc.qubits)
         qc.append(gate_b, qc.qubits)
@@ -387,6 +385,7 @@ class TestControlledOperations:
         result = fuse_adjacents(qc)
 
         assert _num_gates(result) == 2
+
 
 # ---------------------------------------------------------------------------
 # Tests: circuit identity preservation

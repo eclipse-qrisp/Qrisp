@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp import h, control, rz, measure, QuantumFloat
-from qrisp.jasp import jrange, q_fori_loop
 import numpy as np
+
+from qrisp import QuantumFloat, control, h, measure, rz
+from qrisp.jasp import jrange, q_fori_loop
 
 
 def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
-    r"""
-    Evaluates the `iterative quantum phase estimation algorithm
+    r"""Evaluates the `iterative quantum phase estimation algorithm
     <https://arxiv.org/pdf/quant-ph/0610214>`_.
 
     The unitary to estimate is expected to be given as Python function, which is called
@@ -57,7 +56,6 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
 
     Examples
     --------
-
     We define a function that applies two rotations onto its input and estimate the
     applied phase. ::
 

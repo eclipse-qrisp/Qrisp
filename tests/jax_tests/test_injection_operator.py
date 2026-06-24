@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,29 +17,29 @@
 
 from qrisp import *
 from qrisp.jasp import *
-from jax import make_jaxpr
+
 
 def test_injection_operator():
-    
+
     @jaspify
     def main(i):
-        
+
         a = QuantumFloat(i)
         b = QuantumFloat(i)
-        
+
         h(a)
         h(b)
-        
-        s = a*b
-        
+
+        s = a * b
+
         with invert():
-            (s << (lambda a, b : a*b))(a,b)
-        
+            (s << (lambda a, b: a * b))(a, b)
+
         return measure(s)
-    
+
     for i in range(2, 6):
         assert main(i) == 0
-        
+
     def AND(a, b):
         res = QuantumBool()
         mcx([a, b], res)
@@ -53,7 +52,7 @@ def test_injection_operator():
 
         tar = QuantumBool()
 
-        (tar << AND)(a,b)
+        (tar << AND)(a, b)
 
         res = measure(tar)
         return res
@@ -77,6 +76,7 @@ def test_injection_operator():
 
 def test_injection_and():
     """Inject AND gate onto a pre-flipped target."""
+
     def AND(a, b):
         res = QuantumBool()
         mcx([a, b], res)
@@ -96,6 +96,7 @@ def test_injection_and():
 
 def test_injection_uncomputation():
     """Uncomputation via injection + invert."""
+
     @jaspify
     def main(n):
         a = QuantumFloat(n)
@@ -116,6 +117,7 @@ def test_injection_uncomputation():
 
 def test_injection_state_prep():
     """Inject a state-prep function onto an existing variable."""
+
     def init_state():
         qv = QuantumFloat(4)
         x(qv[0])
@@ -133,6 +135,7 @@ def test_injection_state_prep():
 
 def test_injection_superposition_uncompute():
     """Uncompute addition from superposition."""
+
     @jaspify
     def main():
         a = QuantumFloat(3)
@@ -153,6 +156,7 @@ def test_injection_superposition_uncompute():
 
 def test_injection_chained():
     """Two sequential injections onto the same target."""
+
     def set_bit0():
         qv = QuantumFloat(3)
         x(qv[0])

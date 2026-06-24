@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,7 @@
 ********************************************************************************
 """
 
-import numpy as np
-
-from qrisp import QuantumCircuit, CZGate, XGate, Instruction
+from qrisp import CZGate, Instruction, QuantumCircuit, XGate
 
 
 def ctrl_state_wrap(qc, ctrl_state):
@@ -147,9 +144,7 @@ selinger_toffoli_qc.h(2)
 
 # Implementation of the T-Depth 1 Toffoli found in https://arxiv.org/pdf/1212.5069.pdf
 jones_toffoli_qc = QuantumCircuit(5, 1)
-jones_toffoli_qc.append(
-    selinger_toffoli_qc.to_gate("selinger_quasi_toffoli"), [0, 1, 3, 4]
-)
+jones_toffoli_qc.append(selinger_toffoli_qc.to_gate("selinger_quasi_toffoli"), [0, 1, 3, 4])
 jones_toffoli_qc.s(3)
 jones_toffoli_qc.cx(3, 2)
 jones_toffoli_qc.h(3)
