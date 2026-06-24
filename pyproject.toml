@@ -82,7 +82,7 @@ dev-testing = [
     "tqecd>=0.2.0,<0.3",
 ]
 dev = [
-    "qrisp[dev-code-style,dev-testing]>=0.15.0,<0.16",
+    "qrisp[dev-code-style,dev-testing]",
 ]
 
 [project.urls]
