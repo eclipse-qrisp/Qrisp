@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Quantum Computing",
     "Topic :: Software Development :: Compilers",
@@ -70,13 +71,18 @@ docs = [
     "sphinx-new-tab-link==0.8.1",
     "pydata-sphinx-theme==0.17.1",
 ]
-dev = [
+dev-code-style = [
+    "ruff",
+]
+dev-testing = [
     "pytest==9.1.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
     "tqecd",
-    "ruff",
+]
+dev = [
+    "qrisp[dev-code-style,dev-testing]",
 ]
 
 [project.urls]
