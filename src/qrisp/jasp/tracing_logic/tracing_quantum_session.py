@@ -43,8 +43,11 @@ _LOST_TRACK_MSG = (
 class TracingQuantumSession:
     """Manage tracing-time state for building quantum circuits in Jasp mode.
 
-    This class acts as the central recording context while JAX is tracing a Python
-    function that constructs a quantum program. In particular, it maintains:
+    A single shared instance is created at module import time (``_instance``)
+    and returned by :meth:`get_instance`.
+
+    The session acts as the central recording context while JAX is tracing a
+    Python function that constructs a quantum program. In particular, it maintains:
 
     - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
       being built (``self.abs_qst``),
@@ -60,13 +63,12 @@ class TracingQuantumSession:
     nested scope.
     """
 
-    tr_qs_container: list = [None]
-
     def __init__(self) -> None:
-        """Construct a new tracing quantum session and make it the current session.
+        """Initialise the session state.
 
         The session starts with no active circuit.
-        Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
+        Use :meth:`start_tracing` to begin recording into a provided abstract
+        quantum state object.
         """
         self.abs_qst: Any = None
         self.qv_list: list = []
@@ -75,7 +77,6 @@ class TracingQuantumSession:
         self.abs_qst_stack: list = []
         self.qubit_cache_stack: list = []
         self.qv_stack: list = []
-        TracingQuantumSession.tr_qs_container.insert(0, self)
 
     def start_tracing(self, abs_qst: Any) -> None:
         """Push the current tracing state and begin recording into *abs_qst*.
@@ -144,10 +145,10 @@ class TracingQuantumSession:
             bits are provided, or if mixed qubit types or incompatible shapes are used.
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+            raise RuntimeError(_LOST_TRACK_MSG)
 
         if clbits:
-            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
+            raise ValueError("Tried to append Operation with non-zero classical bits in JAX mode.")
 
         if qubits is None:
             qubits = ()
@@ -176,12 +177,12 @@ class TracingQuantumSession:
         if isinstance(qubits[0], QuantumArray):
             for other in qubits[1:]:
                 if not isinstance(other, QuantumArray):
-                    raise Exception(
+                    raise TypeError(
                         f"Tried to apply multi-qubit gate to mixed qubit argument"
                         f" types (QuantumArray + {type(other).__name__})"
                     )
                 if other.shape != qubits[0].shape:
-                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
+                    raise ValueError("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
 
             flattened_qubits = [q.flatten() for q in qubits]
             for i in jrange(flattened_qubits[0].size):
@@ -206,7 +207,7 @@ class TracingQuantumSession:
             (the variable already has qubits assigned).
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+            raise RuntimeError(_LOST_TRACK_MSG)
 
         if size is not None:
             qv.reg = self.request_qubits(size)
@@ -252,15 +253,15 @@ class TracingQuantumSession:
             or if *qv* is not registered in this session.
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+            raise RuntimeError(_LOST_TRACK_MSG)
 
         if verify:
-            raise Exception("Tried to verify deletion in tracing mode.")
+            raise NotImplementedError("Tried to verify deletion in tracing mode.")
 
         try:
             idx = next(i for i, existing_qv in enumerate(self.qv_list) if existing_qv.name == qv.name)
         except StopIteration:
-            raise Exception("Tried to remove a non existent quantum variable from quantum session") from None
+            raise ValueError("Tried to remove a non existent quantum variable from quantum session") from None
 
         self.clear_qubits(qv.reg, verify)
         self.qv_list.pop(idx)
@@ -280,20 +281,18 @@ class TracingQuantumSession:
 
     @classmethod
     def release(cls) -> None:
-        """Remove the most recently created session from the active-session stack."""
-        cls.tr_qs_container.pop(0)
+        """No-op retained for backwards compatibility."""
 
     @classmethod
-    def get_instance(cls) -> "TracingQuantumSession | None":
-        """Return the currently active :class:`TracingQuantumSession`, or ``None``.
+    def get_instance(cls) -> "TracingQuantumSession":
+        """Return the module-level singleton :class:`TracingQuantumSession`.
 
-        ``None`` is only returned before the module-level singleton is created.
-        In all normal usage the return value is a :class:`TracingQuantumSession`.
+        The instance is created at import time and is always available.
         """
-        return cls.tr_qs_container[0]
+        return _instance
 
 
-tracing_qs_singleton = TracingQuantumSession()
+_instance = TracingQuantumSession()
 
 
 def check_for_tracing_mode() -> bool:
