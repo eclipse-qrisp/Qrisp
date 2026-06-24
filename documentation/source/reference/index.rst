@@ -330,6 +330,7 @@ These implementations benefit directly from Qrisp's compilation infrastructure: 
    Operators/index
    Block Encodings/index
    Jasp/index
+   Static vs. Dynamic <Jasp/Static_vs_Dynamic>
    Circuit Manipulation/index
    Backend Interface/index
    Utilities/index
