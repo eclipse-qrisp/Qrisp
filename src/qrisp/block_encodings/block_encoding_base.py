@@ -855,19 +855,24 @@ class BlockEncoding:
                 is_hermitian=True,
             )
 
-        # W = (2*|0><0| - I) U_tilde, U_tilde = (H ⊗ I)(|0><0| ⊗ U) + (|1><1| ⊗ U†)(H ⊗ I) is Hermitian
-        # block-encoding of A=(A+A†)/2 if A is Hermitian.
-        # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
-        # i.e., A is in the upper left block.
-        # A more general Hermitization is:
-        # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde
-        # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
-        # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
-        # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian
-        # In this case, the new ancilla is initialized and projected in |1>,
-        # i.e., A is not in the upper left block.
+        # We construct a strictly Hermitian block-encoding of A = (A + A†)/2.
+        # To guarantee Hermiticity, we use an off-diagonal control structure:
+        # S = (|0><1| ⊗ U) + (|1><0| ⊗ U†)
+        # S is strictly Hermitian (S = S†). We implement S by applying an X gate
+        # to the control ancilla before the controlled-U and controlled-U† operations.
+        #
+        # We then conjugate S by (H ⊗ I) to form U_tilde = (H ⊗ I) S (H ⊗ I).
+        # This unitary is still strictly Hermitian, and the Hadamard sandwich
+        # rotates the basis so that the new ancilla is initialized and projected in |0>.
+        # Therefore, A cleanly sits in the upper-left block because:
+        # <0| U_tilde |0> = <+| S |+> = (U + U†)/2.
+        #
+        # The qubitization walk operator is W = (2*|0><0| - I) U_tilde.
         def new_unitary(*args):
             with conjugate(h)(args[0]):
+                # (|0><1| + |1><0|) = X
+                x(args[0])
+
                 # (|0><0| ⊗ U)
                 with control(args[0], ctrl_state=0):
                     self.unitary(*args[1:])
