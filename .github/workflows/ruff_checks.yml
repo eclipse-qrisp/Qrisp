@@ -1,4 +1,4 @@
-name: Ruff checks
+name: Code style checks
 
 on:
   pull_request:
@@ -20,12 +20,15 @@ concurrency:
 jobs:
   ruff:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11.*", "3.12.*"]
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12.*"
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
