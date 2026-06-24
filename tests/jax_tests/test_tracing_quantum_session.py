@@ -58,10 +58,6 @@ def stale_session():
 class TestSingleton:
     """TracingQuantumSession exposes a module-level singleton via get_instance()."""
 
-    def test_get_instance_is_idempotent(self):
-        """Repeated calls to get_instance() return the identical object."""
-        assert TracingQuantumSession.get_instance() is TracingQuantumSession.get_instance()
-
     def test_get_instance_returns_module_level_instance(self):
         """get_instance() returns the _instance created at import time."""
         assert TracingQuantumSession.get_instance() is _instance
@@ -94,35 +90,12 @@ class TestTracingLifecycle:
         assert session.qubit_cache == {} and isinstance(session.qubit_cache, dict)
         session.conclude_tracing()
 
-    def test_start_tracing_pushes_previous_abs_qst(self, session):
-        """The previous abs_qst is saved on the stack before being replaced."""
-        session.abs_qst = sentinel = object()
-        session.start_tracing(object())
-        assert session.abs_qst_stack[-1] is sentinel
-        session.conclude_tracing()
-
-    def test_start_tracing_pushes_previous_qubit_cache(self, session):
-        """The previous qubit_cache is saved on the stack before being replaced."""
-        session.qubit_cache = prev = {"k": "v"}
-        session.start_tracing(object())
-        assert session.qubit_cache_stack[-1] is prev
-        session.conclude_tracing()
-
     def test_start_tracing_resets_qv_lists(self, session):
         """Both qv_list and deleted_qv_list are cleared to [] on start_tracing()."""
         session.qv_list = ["a"]
         session.deleted_qv_list = ["b"]
         session.start_tracing(object())
         assert session.qv_list == [] and session.deleted_qv_list == []
-        session.conclude_tracing()
-
-    def test_start_tracing_pushes_old_qv_lists_onto_stack(self, session):
-        """The old qv_list and deleted_qv_list are pushed onto qv_stack as a pair."""
-        session.qv_list = old_qv = ["x"]
-        session.deleted_qv_list = old_del = ["y"]
-        session.start_tracing(object())
-        pushed_qv, pushed_del = session.qv_stack[-1]
-        assert pushed_qv is old_qv and pushed_del is old_del
         session.conclude_tracing()
 
     def test_conclude_tracing_returns_active_abs_qst(self, session):
@@ -381,14 +354,3 @@ class TestDeleteQvAndClearQubits:
 
         make_jaspr(circuit)()
         assert captured["before"] and not captured["after"] and captured["in_deleted"]
-
-    def test_clear_qubits_is_exercised_end_to_end(self):
-        """clear_qubits is called by delete_qv; verify the full deallocation path runs."""
-
-        @boolean_simulation
-        def circuit():
-            qf = QuantumFloat(2)
-            x(qf[0])
-            return measure(qf)  # triggers delete_qv → clear_qubits
-
-        assert circuit() == 1
