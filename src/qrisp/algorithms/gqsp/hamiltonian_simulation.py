@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING
 import jax
 import jax.numpy as jnp
 import numpy as np
-from scipy.special import jv
 
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
@@ -205,14 +204,7 @@ def hamiltonian_simulation(
     alpha = H.alpha
     t = t * alpha
 
-    # Bessel multiplication is not numerically stable unless lambda = t / t0 is approximately 1.0. Use jax_jv with callback instead.
     # Calculate coefficients of truncated Jacobi-Anger expansion
-    # jax.scipy.jv is currently not implemented
-    # To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
-    # and use the Bessel multiplication theorem to evaluate jv(m,s)
-    # j_val_at_1 = jv(np.arange(0, 2 * N + 1, 1), 1.0)
-    # j_val_at_t = _bessel_multiplication(np.arange(0, N + 1), t, j_val_at_1)
-
     j_val_at_t = jax_jv(np.arange(0, N + 1), t)
     # J_{-n}(t) = (-1)^nJ_n(t)
     j_values = jnp.concatenate(((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:]))
@@ -242,81 +234,42 @@ def hamiltonian_simulation(
 # hamiltonian_simulation.__doc__ = temp_docstring
 
 
-def jax_jv(m, s):
-    """
-    Evaluates scipy.special.jv inside JAX.
-    """
-    # Define the output shape and dtype for the compiler
-    result_shape = jax.ShapeDtypeStruct(
-        jnp.broadcast_shapes(jnp.shape(m), jnp.shape(s)),
-        jnp.float64,  # Use float64 for better precision
-    )
-
-    # pure_callback tells JIT to call standard Python/SciPy code safely
-    return jax.pure_callback(lambda m_val, s_val: jv(m_val, s_val).astype(np.float64), result_shape, m, s)
-
-
-# Bessel multiplication is not numerically stable unless lambda = t / t0 is approximately 1.0. Use jax_jv with callback instead.
-# jax.scipy.jv is currently not implemented
-# To evaluate jv(m,s) for dynamic s, we evaluate scipy.jv at t=1.0
-# and use the Bessel multiplication theorem to evaluate jv(m,s)
 @jax.jit
-def _bessel_multiplication(m, s, jv_values_at_t, t=1.0):
-    """Computes ``jv(m, s)`` using the Bessel Multiplication Theorem.
+def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
+    r"""
+    Pure JAX implementation of the Bessel function of the first kind, J_m(x),
+    for integer orders m.
+
+    This function evaluates the integral representation of the Bessel function
+    using the numerical Midpoint rule, which is highly stable and avoids
+    catastrophic cancellation:
 
     .. math::
 
-        J_{m}(\\lambda t) = \\lambda^m \\sum_{k=0}^{\\infty}\frac{(1-\\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
+        J_m(x) = \frac{1}{\pi} \int_0^\pi \cos(m \tau - x \sin \tau) d\tau
 
     Parameters
     ----------
-    m : ndarray
-        Order of the Bessel function $J_m(s)$.
-    s : float
-        New argument to evaluate.
-    j_values_at_t: ndarray
-        Array of values $J_k(t)$ for $k=0,\\dotsc,N$.
-    t : float
-        Fixed argument where values are known (default 1.0).
-
-    Returns
-    -------
-    float
-        Approximation of $J_m(s)$, the Bessel function evaluated at order $m$ and value $s$.
-
-    Notes
-    -----
-    - Vectorized version of Bessel multiplication for m as an array.
-
+    m : ArrayLike
+        Integer order(s) of the Bessel function.
+    x : ArrayLike
+        Argument to evaluate.
+    M : int, optional
+        Number of integration steps. M=250 is perfectly accurate up to x ≈ 100.
     """
-    # Use jax.vmap to map the single-m logic over an array of m values
-    return jax.vmap(lambda m_val: _bessel_multiplication_helper(m_val, s, jv_values_at_t, t))(m)
+    m = jnp.asarray(m)
+    x = jnp.asarray(x)
 
+    # Create the integration grid over [0, pi] using the Midpoint rule
+    # dtau = pi / M. Because we use jnp.mean later, the dt factor is handled automatically.
+    tau = (jnp.arange(M) + 0.5) * (jnp.pi / M)
 
-def _bessel_multiplication_helper(m, s, jv_values_at_t, t=1.0):
-    lam = s / t
-    lam_sq_diff = 1.0 - lam**2
-    t_half = t / 2.0
+    # Expand dimensions to allow broadcasting of m and x against the tau grid
+    m_ext = jnp.expand_dims(m, axis=-1)
+    x_ext = jnp.expand_dims(x, axis=-1)
 
-    max_k = jv_values_at_t.shape[0]
+    # Evaluate the integrand: cos(m*tau - x*sin(tau))
+    integrand = jnp.cos(m_ext * tau - x_ext * jnp.sin(tau))
 
-    def body_fun(k, val):
-        coeff, total_sum = val
-        idx = m + k
-
-        # Guard the index to stay within bounds for the array access
-        # Values outside the valid range for a specific 'm' are effectively ignored
-        valid_mask = idx < max_k
-        safe_idx = jnp.where(valid_mask, idx, 0)
-
-        term = coeff * jv_values_at_t[safe_idx]
-        total_sum += jnp.where(valid_mask, term, 0.0)
-
-        new_coeff = coeff * lam_sq_diff * t_half / (k + 1)
-        return (new_coeff, total_sum)
-
-    init_state = (1.0, 0.0)
-    # Loop over the maximum possible number of terms to keep loop bounds static
-    _, final_sum = jax.lax.fori_loop(0, max_k, body_fun, init_state)
-
-    return (lam**m) * final_sum
+    # Integrate by taking the mean over the tau axis
+    return jnp.mean(integrand, axis=-1)

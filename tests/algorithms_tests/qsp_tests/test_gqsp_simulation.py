@@ -15,10 +15,14 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
+import pytest
 import scipy
+from scipy.special import jv
 
 from qrisp import QuantumFloat, terminal_sampling
+from qrisp.algorithms.gqsp import jax_jv
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Z
 
@@ -108,6 +112,24 @@ def test_gqsp_hamiltonian_simulation_long_time():
     amps, success_prob = post_selection(main(20.0, BE), N=2**L)
     assert success_prob > 0.98
     assert np.linalg.norm(target_amps - amps) < 1e-5
+
+
+@pytest.mark.parametrize("N_terms", [10, 20, 30])
+@pytest.mark.parametrize("t", [1.0, 5.0, 10.0])
+def test_jax_jv(N_terms, t):
+    """Test the JAX implementation of the Bessel function of the first kind (jv) against SciPy's implementation."""
+
+    m_array = jnp.arange(0, N_terms + 1)
+
+    # Run the pure JAX version
+    j_val_jax = jax_jv(m_array, t)
+
+    # Run SciPy baseline for comparison
+    j_val_scipy = jv(np.arange(0, N_terms + 1), t)
+
+    # Check max absolute error
+    diff = jnp.max(jnp.abs(j_val_jax - j_val_scipy))
+    assert diff < 1e-6
 
 
 # Disabled due to long runtime
