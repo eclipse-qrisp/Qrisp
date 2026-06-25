@@ -11,15 +11,6 @@ updates:
       - "dependabot-dependency-upgrade"
     allow:
       - dependency-type: "all"
-    groups:
-      actions:
-        patterns:
-          - "*"
-        applies-to: "version-updates"
-      actions-security:
-        patterns:
-          - "*"
-        applies-to: "security-updates"
 
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
@@ -31,12 +22,3 @@ updates:
       - "dependabot-dependency-upgrade"
     allow:
       - dependency-type: "all"
-    groups:
-      pip-dependencies:
-        patterns:
-          - "*"
-        applies-to: "version-updates"
-      pip-security:
-        patterns:
-          - "*"
-        applies-to: "security-updates"
