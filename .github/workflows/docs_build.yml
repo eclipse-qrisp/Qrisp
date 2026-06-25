@@ -6,7 +6,7 @@ on:
       - 'documentation/**'
       - 'src/qrisp/**'
       - 'pyproject.toml'
-      - '.readthedocs.yaml'
+
 
 jobs:
   build:
