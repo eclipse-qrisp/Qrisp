@@ -15,17 +15,25 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
+
 import weakref
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import jax
+from jax.core import Tracer
 from sympy import symbols
 
+from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
-from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
+from qrisp.jasp.primitives import AbstractQuantumState, create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.typing import ClbitLike, FloatLike
+
+if TYPE_CHECKING:
+    from jax._src.core import JaxprEqn
+    from qrisp.core import QuantumArray
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa"
@@ -70,38 +78,41 @@ class TracingQuantumSession:
         Use :meth:`start_tracing` to begin recording into a provided abstract
         quantum state object.
         """
-        self.abs_qst: Any = None
-        self.qv_list: list = []
-        self.deleted_qv_list: list = []
+        self.abs_qst: AbstractQuantumState | None = None
+        self.qv_list: list[QuantumVariable] = []
+        self.deleted_qv_list: list[QuantumVariable] = []
         self.qubit_cache: dict | None = None
-        self.abs_qst_stack: list = []
-        self.qubit_cache_stack: list = []
-        self.qv_stack: list = []
+        self.abs_qst_stack: list[AbstractQuantumState | None] = []
+        self.qubit_cache_stack: list[dict | None] = []
+        self.qv_stack: list[tuple[list[QuantumVariable], list[QuantumVariable]]] = []
 
-    def start_tracing(self, abs_qst: Any) -> None:
+    def _check_in_scope(self) -> None:
+        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
+            raise Exception(_LOST_TRACK_MSG)
+
+    def start_tracing(self, abs_qst: AbstractQuantumState) -> None:
         """Push the current tracing state and begin recording into *abs_qst*.
 
         Parameters
         ----------
         abs_qst : AbstractQuantumState
-            The abstract quantum state to record into.
+            The abstract quantum state to start recording into.
         """
         self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
+        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
 
         self.abs_qst = abs_qst
         self.qubit_cache = {}
-
-        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
         self.qv_list = []
         self.deleted_qv_list = []
 
-    def conclude_tracing(self) -> Any:
+    def conclude_tracing(self) -> AbstractQuantumState | None:
         """Pop the current tracing state and return the recorded abstract quantum state.
 
         Returns
         -------
-        Any
+        AbstractQuantumState or None
             The abstract quantum state that was active in the concluded scope.
         """
         temp = self.abs_qst
@@ -112,7 +123,7 @@ class TracingQuantumSession:
 
     def append(
         self,
-        operation: Any,
+        operation: Operation,
         qubits: Any = None,
         clbits: Sequence[ClbitLike] = (),
         param_tracers: Sequence[FloatLike] = (),
@@ -144,8 +155,7 @@ class TracingQuantumSession:
             If the abstract quantum state has gone out of scope, or if classical
             bits are provided, or if mixed qubit types or incompatible shapes are used.
         """
-        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+        self._check_in_scope()
 
         if clbits:
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
@@ -195,19 +205,18 @@ class TracingQuantumSession:
 
         self.abs_qst = quantum_gate_p.bind(*qubits, *param_tracers, self.abs_qst, gate=operation)
 
-    def register_qv(self, qv: QuantumVariable, size: Any) -> None:
+    def register_qv(self, qv: QuantumVariable, size: int | Tracer | None) -> None:
         """Register a quantum variable in this session and optionally allocate qubits.
 
         Parameters
         ----------
         qv : QuantumVariable
             The quantum variable to register.
-        size : int or None
+        size : int or jax.core.Tracer or None
             Number of qubits to allocate. If ``None``, no allocation is performed
             (the variable already has qubits assigned).
         """
-        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+        self._check_in_scope()
 
         if size is not None:
             qv.reg = self.request_qubits(size)
@@ -219,12 +228,12 @@ class TracingQuantumSession:
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
 
-    def request_qubits(self, amount: Any) -> DynamicQubitArray:
+    def request_qubits(self, amount: int | Tracer) -> DynamicQubitArray:
         """Allocate *amount* qubits and return a :class:`~qrisp.jasp.DynamicQubitArray`.
 
         Parameters
         ----------
-        amount : int or JAX tracer
+        amount : int or jax.core.Tracer
             Number of qubits to allocate.
 
         Returns
@@ -252,8 +261,7 @@ class TracingQuantumSession:
             If *verify* is ``True``, if the abstract quantum state is out of scope,
             or if *qv* is not registered in this session.
         """
-        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(_LOST_TRACK_MSG)
+        self._check_in_scope()
 
         if verify:
             raise Exception("Tried to verify deletion in tracing mode.")
@@ -267,7 +275,7 @@ class TracingQuantumSession:
         self.qv_list.pop(idx)
         self.deleted_qv_list.append(qv)
 
-    def clear_qubits(self, qubits: Any, verify: bool = False) -> None:
+    def clear_qubits(self, qubits: DynamicQubitArray, verify: bool = False) -> None:
         """Free *qubits* from the abstract quantum state.
 
         Parameters
@@ -300,7 +308,7 @@ def check_for_tracing_mode() -> bool:
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
 
-def get_last_equation(i: int = -1) -> Any:
+def get_last_equation(i: int = -1) -> JaxprEqn:
     """Return the *i*-th equation recorded in the current JAX tracing frame.
 
     Parameters
@@ -312,7 +320,7 @@ def get_last_equation(i: int = -1) -> Any:
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
 
 
-def check_live(tracer: Any) -> bool:
+def check_live(tracer: Tracer | None) -> bool:
     """Return ``True`` if *tracer* is still live in the current JAX tracing context.
 
     Parameters
