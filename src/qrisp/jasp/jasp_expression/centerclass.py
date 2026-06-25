@@ -18,14 +18,14 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 import jax
 from jax import make_jaxpr
 from jax._src.interpreters import partial_eval as part_eval
 from jax._src.util import split_list
-from jax.core import DropVar
-from jax.extend.core import ClosedJaxpr, Jaxpr, Literal
+from jax.core import DebugInfo, DropVar
+from jax.extend.core import ClosedJaxpr, Jaxpr, Literal, Var
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import (
@@ -131,12 +131,12 @@ class Jaspr(ClosedJaxpr):
 
     def __init__(
         self,
-        *args: Any,
+        *args,
         permeability: dict | None = None,
         isqfree: bool | None = None,
         ctrl_jaspr: "Jaspr | None" = None,
         inv_jaspr: "Jaspr | None" = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         if len(args) == 2:
             if not isinstance(args[0], Jaxpr) or not isinstance(args[1], list):
@@ -186,7 +186,7 @@ class Jaspr(ClosedJaxpr):
             raise ValueError(f"Last outvar must be QuantumState, got {type(self.outvars[-1].aval).__name__}")
 
     @property
-    def constvars(self) -> list:
+    def constvars(self) -> list[Var]:
         """Constant variables of the underlying Jaxpr."""
         return self.jaxpr.constvars
 
@@ -196,17 +196,17 @@ class Jaspr(ClosedJaxpr):
         return self.jaxpr.eqns
 
     @property
-    def invars(self) -> list:
+    def invars(self) -> list[Var]:
         """Input variables of the underlying Jaxpr."""
         return self.jaxpr.invars
 
     @property
-    def outvars(self) -> list:
+    def outvars(self) -> list[Var | Literal]:
         """Output variables of the underlying Jaxpr."""
         return self.jaxpr.outvars
 
     @property
-    def debug_info(self) -> Any:
+    def debug_info(self) -> DebugInfo | None:
         """Debug info attached to the underlying Jaxpr, or None."""
         return self.jaxpr.debug_info
 
@@ -347,10 +347,10 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp import ControlledJaspr
 
         if isinstance(ctrl_state, int):
-            if ctrl_state < 0:
-                ctrl_state += 2**num_ctrl
-
-            ctrl_state = bin(ctrl_state)[2:].zfill(num_ctrl)
+            ctrl_int: int = ctrl_state
+            if ctrl_int < 0:
+                ctrl_int += 2**num_ctrl
+            ctrl_state = bin(ctrl_int)[2:].zfill(num_ctrl)
         else:
             ctrl_state = str(ctrl_state)
 
@@ -436,7 +436,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qc(self, *args)
 
-    def extract_post_processing(self, *args: Any) -> Any:
+    def extract_post_processing(self, *args: Any) -> Callable:
         """
         Extracts the post-processing logic from this Jaspr and returns a function
         that performs the post-processing on measurement results.
@@ -1133,7 +1133,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_mlir(self, lower_stablehlo)
 
-    def to_catalyst_mlir(self) -> str:
+    def to_catalyst_mlir(self) -> str | None:
         """
         Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
@@ -1469,7 +1469,7 @@ def make_jaxpr_mod(
 
         # Extract the jaxpr, handling constants if needed (same logic as JAX's make_jaxpr).
         if traced._num_consts:
-            consts, _ = split_list(traced._args_flat, [traced._num_consts])
+            consts, _ = split_list(cast(list, traced._args_flat), [traced._num_consts])
             jaxpr_ = part_eval.convert_invars_to_constvars(traced.jaxpr.jaxpr, traced._num_consts)
             closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
         else:
