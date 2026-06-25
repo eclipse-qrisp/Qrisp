@@ -239,8 +239,7 @@ def carry_venting_adder(
     Instead of propagating carries across all bits with many Toffoli gates,
     each carry is measured in the X-basis (vented) as soon as it is no longer
     needed.  Measurement results are packed into an integer bitmask (ventmask)
-    and used later for phase correction.  This reduces Toffoli depth from O(n)
-    to O(1).
+    and used later for phase correction.
 
     Two provided clean ancillae alternate roles: one holds the current carry,
     the other receives the next carry.  After each bit the current carry
