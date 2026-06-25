@@ -23,7 +23,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - uses: reviewdog/action-setup@v1.5.0
+      # Pinned to a full commit SHA instead of a mutable version tag.
+      # In March 2025, attackers moved the v1 tag of this action to a malicious
+      # commit that exfiltrated CI secrets from runner memory. Pinning to a SHA
+      # ensures we always run the exact audited version, immune to tag rewrites.
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
 
       - name: Install ruff
         run: pip install ruff
