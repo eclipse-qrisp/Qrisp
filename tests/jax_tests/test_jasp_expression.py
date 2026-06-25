@@ -21,9 +21,7 @@ from qrisp.jasp import *
 import pytest
 
 
-@pytest.mark.parametrize(
-    "static_argnums", [(0, 1), [0, 1], (0,), [0], (1,), [1], (), [], 0, 1]
-)
+@pytest.mark.parametrize("static_argnums", [(0, 1), [0, 1], (0,), [0], (1,), [1], (), [], 0, 1])
 def test_jasp_static_argnums(static_argnums):
     """Test that the static_argnums argument of make_jaspr works correctly."""
 
