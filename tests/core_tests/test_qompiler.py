@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,7 +20,7 @@
 
 
 def test_qompiler():
-    from qrisp import QuantumSession, QuantumVariable, x, cx
+    from qrisp import QuantumSession, QuantumVariable, x
 
     qs = QuantumSession()
 

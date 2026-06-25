@@ -17,7 +17,7 @@
 """
 
 from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps
-from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 from qrisp.circuit.pass_management.passes.commute_swaps import commute_swaps
@@ -30,11 +30,11 @@ from qrisp.circuit.pass_management.passes.remove_barriers import remove_barriers
 from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.pass_management.passes.reverse_parallelize import reverse_parallelize
 from qrisp.circuit.pass_management.passes.visualize import visualize
-from qrisp.circuit.pass_management.passes.convert_to_pry import convert_to_pry, PRYGate
+from qrisp.circuit.pass_management.passes.convert_to_prx import PRXGate, convert_to_prx
 
 __all__ = [
     "arrange_swaps",
-    "cancel_inverses",
+    "fuse_adjacents",
     "cancel_zero_controls",
     "combine_single_qubit_gates",
     "commute_swaps",
@@ -48,6 +48,6 @@ __all__ = [
     "resolve_swaps",
     "reverse_parallelize",
     "visualize",
-    "convert_to_pry",
-    "PRYGate"
+    "convert_to_prx",
+    "PRXGate"
 ]

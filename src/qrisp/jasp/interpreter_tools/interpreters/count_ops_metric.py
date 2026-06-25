@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,18 +16,19 @@
 """
 
 import types
-from functools import lru_cache
 from typing import Callable, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
 from jax.random import key
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     get_quantum_operations,
 )
@@ -39,8 +39,7 @@ from qrisp.jasp.primitives import (
 
 
 class CountOpsMetric(BaseMetric):
-    """
-    A metric implementation that counts quantum operations in a Jaspr.
+    """A metric implementation that counts quantum operations in a Jaspr.
 
     Parameters
     ----------
@@ -54,7 +53,6 @@ class CountOpsMetric(BaseMetric):
 
     def __init__(self, meas_behavior: Callable, profiling_dic: Dict[str, int]) -> None:
         """Initialize the CountOpsMetric."""
-
         super().__init__(meas_behavior=meas_behavior)
 
         self._profiling_dic: Dict[str, int] = profiling_dic
@@ -109,7 +107,6 @@ class CountOpsMetric(BaseMetric):
             counting_array[counting_index] += invalues[0]
 
         else:
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             counting_array[counting_index] += incrementation_constants[0]
@@ -185,9 +182,7 @@ class CountOpsMetric(BaseMetric):
             while count:
                 incrementor = min(count, len(incrementation_constants))
                 count -= incrementor
-                counting_array[counting_index] += incrementation_constants[
-                    incrementor - 1
-                ]
+                counting_array[counting_index] += incrementation_constants[incrementor - 1]
 
         return (counting_array, incrementation_constants)
 
@@ -213,7 +208,6 @@ class CountOpsMetric(BaseMetric):
 
 def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
     """Extract depth from the profiling result."""
-
     if len(jaspr.outvars) > 1:
         profiling_array = res[-1][0]
     else:
@@ -228,12 +222,10 @@ def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
     return res_dic
 
 
-@lru_cache(int(1e5))
-def get_count_ops_profiler(
-    jaspr: Jaspr, meas_behavior: Callable
-) -> Tuple[Callable, dict]:
-    """
-    Build a count operations profiling computer for a given Jaspr.
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
+def get_count_ops_profiler(jaspr: Jaspr, meas_behavior: Callable, callback_threshold=None) -> Tuple[Callable, dict]:
+    """Build a count operations profiling computer for a given Jaspr.
 
     Parameters
     ----------
@@ -243,13 +235,18 @@ def get_count_ops_profiler(
     meas_behavior : Callable
         The measurement behavior function.
 
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger ``jax.pure_callback`` wrapping.  ``None`` (default)
+        disables callbacks entirely (fastest execution).  ``0`` wraps
+        every reused sub-jaxpr (fastest compilation).
+
     Returns
     -------
     Tuple[Callable, dict]
         A count operations profiler function and the profiling dictionary.
 
     """
-
     quantum_operations = get_quantum_operations(jaspr)
     profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
 
@@ -257,7 +254,13 @@ def get_count_ops_profiler(
         profiling_dic["measure"] = -1
 
     count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
+
+    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
+    # stats are threaded into the profiling evaluator so that frequently
+    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
+    # to avoid XLA compilation blowup (see profiling_interpreter.py).
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats, callback_threshold)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):
@@ -270,9 +273,7 @@ def get_count_ops_profiler(
 
         initial_metric = count_ops_metric.initial_metric()
 
-        filtered_args = [
-            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
-        ]
+        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
 
         return jitted_evaluator(*filtered_args)
 

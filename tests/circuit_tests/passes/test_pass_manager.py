@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,10 +16,10 @@
 """
 
 import pytest
-from qrisp import PassManager, CircuitPass
+
+from qrisp import CircuitPass, PassManager
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management import PassManager as PassManagerFromCircuit
-
 
 # ---------------------------------------------------------------------------
 # Simple pass helpers used across tests
@@ -43,10 +42,12 @@ add_cx_pass.__doc__ = "Pass that appends a CX gate on qubits 0 and 1."
 # Import tests
 # ---------------------------------------------------------------------------
 
+
 class TestPassManagerImports:
     def test_import_from_qrisp_top_level(self):
         """PassManager must be importable directly from qrisp."""
         from qrisp import PassManager as PM
+
         assert PM is PassManager
 
     def test_import_from_qrisp_circuit_passes(self):
@@ -56,12 +57,14 @@ class TestPassManagerImports:
     def test_import_from_qrisp_circuit_passes_pass_manager(self):
         """PassManager must be importable from the leaf module."""
         from qrisp.circuit.pass_management.pass_manager import PassManager as PM
+
         assert PM is PassManager
 
 
 # ---------------------------------------------------------------------------
 # Construction
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerConstruction:
     def test_default_construction(self):
@@ -86,6 +89,7 @@ class TestPassManagerConstruction:
 # ---------------------------------------------------------------------------
 # Mutation methods
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerMutation:
     def test_add_pass_appends(self):
@@ -151,6 +155,7 @@ class TestPassManagerMutation:
 # Run
 # ---------------------------------------------------------------------------
 
+
 class TestPassManagerRun:
     def _make_circuit(self):
         qc = QuantumCircuit(2)
@@ -197,6 +202,7 @@ class TestPassManagerRun:
 # ---------------------------------------------------------------------------
 # Dunder methods
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerDunder:
     def test_len(self):
@@ -333,24 +339,24 @@ class TestPassManagerVerify:
     # --- Unitary verification ---
 
     def test_unitary_all_pass(self):
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
-        pm = PassManager([cancel_inverses, identity_pass])
+        pm = PassManager([fuse_adjacents, identity_pass])
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
         results = pm.verify(qc, "unitary")
-        assert results == [("cancel_inverses", True), ("identity_pass", True)]
+        assert results == [("fuse_adjacents", True), ("identity_pass", True)]
 
     def test_unitary_one_fails(self):
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
-        pm = PassManager([cancel_inverses, self._bad_unitary_pass()])
+        pm = PassManager([fuse_adjacents, self._bad_unitary_pass()])
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
         results = pm.verify(qc, "unitary")
-        assert results == [("cancel_inverses", True), ("bad_unitary", False)]
+        assert results == [("fuse_adjacents", True), ("bad_unitary", False)]
 
     def test_unitary_first_fails(self):
         pm = PassManager([self._bad_unitary_pass(), identity_pass])
@@ -372,7 +378,7 @@ class TestPassManagerVerify:
         assert results == []
 
     def test_unitary_passes_kwargs(self):
-        """verify forwards kwargs like precision to compare_unitary."""
+        """Verify forwards kwargs like precision to compare_unitary."""
         bad = self._bad_unitary_pass()
         pm = PassManager([bad])
         qc = QuantumCircuit(2)
@@ -382,10 +388,10 @@ class TestPassManagerVerify:
         assert results == [("bad_unitary", True)]
 
     def test_unitary_returns_correct_length(self):
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
         from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
-        pm = PassManager([cancel_inverses, combine_single_qubit_gates, identity_pass])
+        pm = PassManager([fuse_adjacents, combine_single_qubit_gates, identity_pass])
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
@@ -431,7 +437,8 @@ class TestPassManagerVerify:
 
     def test_visualize_failures_does_not_crash(self, capsys):
         """visualize_failures calls visualize on failing passes
-        without raising exceptions."""
+        without raising exceptions.
+        """
         pm = PassManager([self._bad_unitary_pass(), identity_pass])
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -445,14 +452,14 @@ class TestPassManagerVerify:
 
     def test_visualize_failures_only_bad_passes(self, capsys):
         """Only failing passes should be visualized."""
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
-        pm = PassManager([cancel_inverses, self._bad_unitary_pass()])
+        pm = PassManager([fuse_adjacents, self._bad_unitary_pass()])
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
         results = pm.verify(qc, "unitary", visualize_failures=True)
-        assert results == [("cancel_inverses", True), ("bad_unitary", False)]
+        assert results == [("fuse_adjacents", True), ("bad_unitary", False)]
         captured = capsys.readouterr()
-        assert "cancel_inverses" not in captured.out
+        assert "fuse_adjacents" not in captured.out
         assert "bad_unitary" in captured.out

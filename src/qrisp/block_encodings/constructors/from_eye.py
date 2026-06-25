@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -24,8 +23,7 @@ def build_from_eye(
     cls: BlockEncoding,
     diagonal_index: int = 0,
 ) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
+    r"""Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
 
     Parameters
     ----------
@@ -36,12 +34,11 @@ def build_from_eye(
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing an array where all elements are equal to zero,
+        A BlockEncoding representing an array where all elements are equal to zero,
         except for the $k$-th diagonal, whose values are equal to one.
 
     Examples
     --------
-
     ::
 
         from qrisp import *
@@ -77,7 +74,6 @@ def build_from_eye(
         # (5.0, 7.0): 0.16666666666666666}
 
     """
-
     if diagonal_index == 0:
         return cls(1, [], lambda operand: None, is_hermitian=True)
 

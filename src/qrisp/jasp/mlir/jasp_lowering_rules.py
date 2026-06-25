@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,29 +15,27 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.primitives import (
-    create_qubits_p,
-    get_qubit_p,
-    get_size_p,
-    slice_p,
-    fuse_p,
-    reset_p,
-    Measurement_p,
-    delete_qubits_p,
-    create_quantum_kernel_p,
-    consume_quantum_kernel_p,
-    quantum_gate_p,
-    parity_p,
-    AbstractQuantumState,
-    AbstractQubitArray,
-    AbstractQubit,
-)
-
-
-import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
-
 from jax.interpreters.mlir import ir_type_handlers
 from jaxlib.mlir import ir
+
+import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
+from qrisp.jasp.primitives import (
+    AbstractQuantumState,
+    AbstractQubit,
+    AbstractQubitArray,
+    Measurement_p,
+    consume_quantum_kernel_p,
+    create_quantum_kernel_p,
+    create_qubits_p,
+    delete_qubits_p,
+    fuse_p,
+    get_qubit_p,
+    get_size_p,
+    parity_p,
+    quantum_gate_p,
+    reset_p,
+    slice_p,
+)
 
 ##########################
 # Register type lowering #
@@ -101,13 +98,9 @@ lowering_rules = []
 
 
 def create_qubits_lowering(ctx, amount, qst_in):
-    """
-    Lowering rule that emits our CreateQubits dialect operation.
-    """
+    """Lowering rule that emits our CreateQubits dialect operation."""
     # Create our create_qubits operation using the generated class
-    create_qubits_op = jasp_dialect.CreateQubitsOp(
-        get_ir_qa_type(), get_ir_qst_type(), amount, qst_in
-    )
+    create_qubits_op = jasp_dialect.CreateQubitsOp(get_ir_qa_type(), get_ir_qst_type(), amount, qst_in)
     # Return both results: QubitArray and QuantumState as list
     return [create_qubits_op.results[0], create_qubits_op.results[1]]
 
@@ -116,9 +109,7 @@ lowering_rules.append((create_qubits_p, create_qubits_lowering))
 
 
 def get_qubit_lowering(ctx, qb_array, position):
-    """
-    Lowering rule that emits our GetQubit dialect operation.
-    """
+    """Lowering rule that emits our GetQubit dialect operation."""
     # Create our get_qubit operation using the generated class
     get_qubit_op = jasp_dialect.GetQubitOp(get_ir_qb_type(), qb_array, position)
     # Return the result of our operation
@@ -129,13 +120,9 @@ lowering_rules.append((get_qubit_p, get_qubit_lowering))
 
 
 def get_size_lowering(ctx, qb_array):
-    """
-    Lowering rule that emits our GetSize dialect operation.
-    """
+    """Lowering rule that emits our GetSize dialect operation."""
     # Create scalar tensor type for i64 result
-    i64_result_type = ir.RankedTensorType.get(
-        [], get_i64_type()
-    )  # scalar tensor of i64
+    i64_result_type = ir.RankedTensorType.get([], get_i64_type())  # scalar tensor of i64
 
     # Create our get_size operation using the generated class
     get_size_op = jasp_dialect.GetSizeOp(i64_result_type, qb_array)
@@ -147,9 +134,7 @@ lowering_rules.append((get_size_p, get_size_lowering))
 
 
 def slice_lowering(ctx, qb_array, start, end):
-    """
-    Lowering rule that emits our Slice dialect operation.
-    """
+    """Lowering rule that emits our Slice dialect operation."""
     # Create our slice operation using the generated class
     slice_op = jasp_dialect.SliceOp(get_ir_qa_type(), qb_array, start, end)
     # Return the result QubitArray
@@ -160,9 +145,7 @@ lowering_rules.append((slice_p, slice_lowering))
 
 
 def fuse_lowering(ctx, operand1, operand2):
-    """
-    Lowering rule that emits our Fuse dialect operation.
-    """
+    """Lowering rule that emits our Fuse dialect operation."""
     # Create our fuse operation using the generated class
     fuse_op = jasp_dialect.FuseOp(get_ir_qa_type(), operand1, operand2)
     # Return the result QubitArray
@@ -173,9 +156,7 @@ lowering_rules.append((fuse_p, fuse_lowering))
 
 
 def reset_lowering(ctx, qubits, in_qst):
-    """
-    Lowering rule that emits our Reset dialect operation.
-    """
+    """Lowering rule that emits our Reset dialect operation."""
     # Create our reset operation using the generated class
     reset_op = jasp_dialect.ResetOp(get_ir_qst_type(), qubits, in_qst)
     # Return the result quantum state
@@ -186,9 +167,7 @@ lowering_rules.append((reset_p, reset_lowering))
 
 
 def measure_lowering(ctx, meas_q, in_qst):
-    """
-    Lowering rule that emits our Measure dialect operation.
-    """
+    """Lowering rule that emits our Measure dialect operation."""
     if meas_q.type == get_ir_qa_type():
         # For QubitArray measurement, result is tensor<i64>
         res_type = ir.RankedTensorType.get([], get_i64_type())  # scalar tensor of i64
@@ -208,9 +187,7 @@ lowering_rules.append((Measurement_p, measure_lowering))
 
 
 def delete_qubits_lowering(ctx, qubits, in_qst):
-    """
-    Lowering rule that emits our DeleteQubits dialect operation.
-    """
+    """Lowering rule that emits our DeleteQubits dialect operation."""
     # Create our delete_qubits operation using the generated class
     delete_qubits_op = jasp_dialect.DeleteQubitsOp(get_ir_qst_type(), qubits, in_qst)
     # Return the result quantum state
@@ -221,9 +198,7 @@ lowering_rules.append((delete_qubits_p, delete_qubits_lowering))
 
 
 def create_quantum_kernel_lowering(ctx):
-    """
-    Lowering rule that emits our CreateQuantumKernel dialect operation.
-    """
+    """Lowering rule that emits our CreateQuantumKernel dialect operation."""
     # Create our create_quantum_kernel operation using the generated class
     create_quantum_kernel_op = jasp_dialect.CreateQuantumKernelOp(get_ir_qst_type())
     # Return the result quantum state
@@ -234,16 +209,12 @@ lowering_rules.append((create_quantum_kernel_p, create_quantum_kernel_lowering))
 
 
 def consume_quantum_kernel_lowering(ctx, qst):
-    """
-    Lowering rule that emits our ConsumeQuantumKernel dialect operation.
-    """
+    """Lowering rule that emits our ConsumeQuantumKernel dialect operation."""
     # Create scalar tensor type for boolean result
     bool_result_type = ir.RankedTensorType.get([], get_i1_type())  # scalar tensor of i1
 
     # Create our consume_quantum_kernel operation using the generated class
-    consume_quantum_kernel_op = jasp_dialect.ConsumeQuantumKernelOp(
-        bool_result_type, qst
-    )
+    consume_quantum_kernel_op = jasp_dialect.ConsumeQuantumKernelOp(bool_result_type, qst)
     # Return the boolean result indicating success
     return [consume_quantum_kernel_op.results[0]]
 
@@ -252,10 +223,7 @@ lowering_rules.append((consume_quantum_kernel_p, consume_quantum_kernel_lowering
 
 
 def quantum_gate_lowering(ctx, *args, **params):
-    """
-    Lowering rule that emits our QuantumGate dialect operation.
-    """
-
+    """Lowering rule that emits our QuantumGate dialect operation."""
     # Extract gate type from params (JAX primitive parameters)
     op = params.get("gate", None)
 
@@ -282,9 +250,7 @@ lowering_rules.append((quantum_gate_p, quantum_gate_lowering))
 
 
 def parity_lowering(ctx, *measurements, expectation, observable):
-    """
-    Lowering rule that emits our Parity dialect operation.
-    """
+    """Lowering rule that emits our Parity dialect operation."""
     # Measurements is a list of booleans, we pass them as variadic arguments
     # Expectation is an integer attribute, observable is an integer attribute (0 or 1)
 
@@ -292,9 +258,7 @@ def parity_lowering(ctx, *measurements, expectation, observable):
     result_type = ir.RankedTensorType.get([], get_i1_type())
 
     # Create our parity operation using the generated class
-    parity_op = jasp_dialect.ParityOp(
-        result_type, list(measurements), expectation, observable
-    )
+    parity_op = jasp_dialect.ParityOp(result_type, list(measurements), expectation, observable)
     # Return the boolean result
     return [parity_op.results[0]]
 

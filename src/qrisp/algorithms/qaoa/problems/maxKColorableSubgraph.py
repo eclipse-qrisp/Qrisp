@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp import p, cp, cx, mcp, QuantumVariable
 import numpy as np
+
+from qrisp import QuantumVariable, cp, cx, mcp
 
 
 class QuantumColor(QuantumVariable):
-    """
-    The QuantumColor is a custom QuantumVariable implemented with tackling the Max-k-Colorable-Subgraph problem
+    """The QuantumColor is a custom QuantumVariable implemented with tackling the Max-k-Colorable-Subgraph problem
     and other coloring optimization problems in mind. It provides flexibility in choosing encoding methods and
     leverages efficient data structures like QuantumArrays to enhance computational performance.
 
@@ -59,11 +58,11 @@ class QuantumColor(QuantumVariable):
     -------
     decoder(i)
         Decode the color from the given index for both binary and one-hot encoding.
+
     """
 
     def __init__(self, list_of_colors, one_hot_enc=True):
-        """
-        Initialize the QuantumColor with a list of colors and a flag indicating whether to use one-hot encoding.
+        """Initialize the QuantumColor with a list of colors and a flag indicating whether to use one-hot encoding.
 
         Parameters
         ----------
@@ -82,13 +81,10 @@ class QuantumColor(QuantumVariable):
 
         # If binary encoding is used, the size of QuantumVariable is the maximal value of log2 for the number of colors
         else:
-            QuantumVariable.__init__(
-                self, size=int(np.ceil(np.log2(len(list_of_colors))))
-            )
+            QuantumVariable.__init__(self, size=int(np.ceil(np.log2(len(list_of_colors)))))
 
     def decoder(self, i):
-        """
-        Decode the color from the given index i.
+        """Decode the color from the given index i.
 
         Parameters
         ----------
@@ -130,8 +126,7 @@ class QuantumColor(QuantumVariable):
 
 
 def initial_state_mkcs(qarg):
-    """
-    The initial_state_mkcs function provides the correct initial state of qubits in
+    """The initial_state_mkcs function provides the correct initial state of qubits in
     the system on which we run the optimization. In the case of the Max-k-Colorable
     Subgraph problem, the initial state of the systemis simply any random coloring
     of nodes of the graph.
@@ -149,7 +144,6 @@ def initial_state_mkcs(qarg):
         the information of the initial state of the system.
 
     """
-
     # Set all elements in qarg to initial state
     qarg[:] = init_state
 
@@ -158,8 +152,7 @@ def initial_state_mkcs(qarg):
 
 
 def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
-    """
-    Applies a phase if the colors of the two arguments are matching.
+    """Applies a phase if the colors of the two arguments are matching.
 
     Parameters
     ----------
@@ -193,8 +186,7 @@ def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
 
 
 def create_coloring_operator(G):
-    r"""
-    Generates the cost operator for an instance of the coloring problem for a given graph ``G``.
+    r"""Generates the cost operator for an instance of the coloring problem for a given graph ``G``.
 
     The coloring operator and applies a phase if two neighboring nodes in the graph have the same color.
 
@@ -213,9 +205,7 @@ def create_coloring_operator(G):
 
     def coloring_operator(quantumcolor_array, gamma):
         for pair in list(G.edges()):
-            apply_phase_if_eq(
-                quantumcolor_array[pair[0]], quantumcolor_array[pair[1]], gamma
-            )
+            apply_phase_if_eq(quantumcolor_array[pair[0]], quantumcolor_array[pair[1]], gamma)
 
     return coloring_operator
 
@@ -226,7 +216,6 @@ def mkcs_obj(quantumcolor_array, G):
 
     # Iterate over all edges in graph G
     for pair in list(G.edges()):
-
         # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
             cost *= 4
@@ -236,8 +225,7 @@ def mkcs_obj(quantumcolor_array, G):
 
 
 def create_coloring_cl_cost_function(G):
-    """
-    Creates the classical cost function for an instance of the coloring problem for a given graph ``G``.
+    """Creates the classical cost function for an instance of the coloring problem for a given graph ``G``.
 
     Parameters
     ----------
@@ -270,8 +258,7 @@ def create_coloring_cl_cost_function(G):
 
 
 def graph_coloring_problem(G):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters
@@ -287,6 +274,4 @@ def graph_coloring_problem(G):
     """
     from qrisp.qaoa import QAOAProblem, apply_XY_mixer
 
-    return QAOAProblem(
-        create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G)
-    )
+    return QAOAProblem(create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G))

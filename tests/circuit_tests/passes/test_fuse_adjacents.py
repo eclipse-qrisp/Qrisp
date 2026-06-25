@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,9 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
+from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -51,7 +49,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_x_x_cancels(self):
@@ -59,7 +57,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(1)
         qc.x(0)
         qc.x(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_h_h_cancels(self):
@@ -67,7 +65,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.h(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_z_z_cancels(self):
@@ -75,7 +73,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(1)
         qc.z(0)
         qc.z(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_cz_cz_cancels(self):
@@ -83,7 +81,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(2)
         qc.cz(0, 1)
         qc.cz(0, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_swap_swap_cancels(self):
@@ -91,7 +89,7 @@ class TestSelfInverseCancellation:
         qc = QuantumCircuit(2)
         qc.swap(0, 1)
         qc.swap(0, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
 
@@ -107,19 +105,19 @@ class TestParameterisedCancellation:
         qc = QuantumCircuit(1)
         qc.rz(np.pi / 3, 0)
         qc.rz(-np.pi / 3, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_rz_cancelation_preserves_gphase(self):
         qc = QuantumCircuit(1)
-        qc.rz(np.pi/2, 0)
-        qc.rz(-np.pi/4, 0)
-        result = cancel_inverses(qc)
-        assert result.compare_unitary(qc, ignore_gphase = False)
+        qc.rz(np.pi / 2, 0)
+        qc.rz(-np.pi / 4, 0)
+        result = fuse_adjacents(qc)
+        assert result.compare_unitary(qc, ignore_gphase=False)
 
     def test_controlled_preserves_gphase(self):
         from qrisp import QuantumVariable, control
-        from qrisp.core import h, rz, p
+        from qrisp.core import h, p, rz
         from qrisp.simulator import statevector_sim
 
         theta = 0.73
@@ -161,21 +159,21 @@ class TestParameterisedCancellation:
         qc = QuantumCircuit(1)
         qc.rx(1.2, 0)
         qc.rx(-1.2, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_ry_positive_then_negative_cancels(self):
         qc = QuantumCircuit(1)
         qc.ry(0.7, 0)
         qc.ry(-0.7, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_p_theta_then_p_minus_theta_cancels(self):
         qc = QuantumCircuit(1)
         qc.p(np.pi / 2, 0)
         qc.p(-np.pi / 2, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_rz_plus_p_cross_fusion(self):
@@ -183,7 +181,7 @@ class TestParameterisedCancellation:
         qc = QuantumCircuit(1)
         qc.rz(np.pi / 4, 0)
         qc.p(-np.pi / 4, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 1
 
     def test_different_qubits_no_cancel(self):
@@ -191,7 +189,7 @@ class TestParameterisedCancellation:
         qc = QuantumCircuit(2)
         qc.rz(np.pi / 3, 0)
         qc.rz(-np.pi / 3, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 2
 
 
@@ -212,7 +210,7 @@ class TestSeparationPreventsCancellation:
         qc.x(0)
         qc.barrier()
         qc.x(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         # First two X cancel.  The barrier blocks the last two from fusing.
         # So we get: cx, x, barrier, x = 4 instructions.
         names = _gate_names(result)
@@ -224,7 +222,7 @@ class TestSeparationPreventsCancellation:
         qc.x(0)
         qc.cx(0, 1)
         qc.x(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         names = _gate_names(result)
         assert names.count("x") == 2
         assert names.count("cx") == 1
@@ -235,7 +233,7 @@ class TestSeparationPreventsCancellation:
         qc.x(0)
         qc.z(0)
         qc.x(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         names = _gate_names(result)
         assert names == ["x", "z", "x"]
 
@@ -253,7 +251,7 @@ class TestSymmetricGates:
         qc = QuantumCircuit(2)
         qc.cz(0, 1)
         qc.cz(1, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_swap_different_order_cancels(self):
@@ -261,7 +259,7 @@ class TestSymmetricGates:
         qc = QuantumCircuit(2)
         qc.swap(0, 1)
         qc.swap(1, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_cp_different_order_cancels(self):
@@ -269,7 +267,7 @@ class TestSymmetricGates:
         qc = QuantumCircuit(2)
         qc.cp(np.pi / 3, 0, 1)
         qc.cp(-np.pi / 3, 0, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         # Qrisp represents CP as a ControlledOperation(PGate),
         # so the pass reduces the pair to at most 1 gate.
         assert _num_gates(result) <= 1
@@ -290,7 +288,7 @@ class TestGlobalPhase:
         qc = QuantumCircuit(1)
         qc.append(GPhaseGate(np.pi), [0])
         qc.append(GPhaseGate(np.pi), [0])
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         # They should be fused into a single gphase of 2π.
         names = _gate_names(result)
         assert names.count("gphase") <= 1
@@ -300,7 +298,7 @@ class TestGlobalPhase:
         qc = QuantumCircuit(1)
         qc.rz(np.pi, 0)
         qc.rz(-np.pi, 0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         # Cancelled → no gates remain (global phase may be dropped).
         assert _num_gates(result) == 0
 
@@ -313,7 +311,7 @@ class TestGlobalPhase:
 class TestEmptyAndNoOp:
     def test_empty_circuit_passes_through(self):
         qc = QuantumCircuit(3)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_no_cancelable_gates(self):
@@ -322,13 +320,13 @@ class TestEmptyAndNoOp:
         qc.cx(0, 1)
         qc.rx(0.3, 0)
         qc.rz(0.7, 1)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 3
 
     def test_single_gate_passes_through(self):
         qc = QuantumCircuit(1)
         qc.x(0)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 1
         assert _gate_names(result) == ["x"]
 
@@ -350,7 +348,7 @@ class TestControlledOperations:
         qc = QuantumCircuit(2)
         qc.append(ctrl_x, [0, 1])
         qc.append(ctrl_x, [0, 1])
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_controlled_x_then_controlled_x_cancels(self):
@@ -366,27 +364,28 @@ class TestControlledOperations:
         qc_b.append(controlled_gate, qc_b.qubits)
         qc_b.append(controlled_gate, qc_b.qubits)
 
-        result = cancel_inverses(qc_b)
+        result = fuse_adjacents(qc_b)
 
         assert _num_gates(result) == 0
 
     def test_non_trivial_control_state(self):
         """Tests that XGates with differing control state
-        are not canceling"""
-
+        are not canceling
+        """
         from qrisp.circuit import XGate
 
         qc = QuantumCircuit(2)
 
-        gate_a = XGate().control(ctrl_state = "0")
-        gate_b = XGate().control(ctrl_state = "1")
+        gate_a = XGate().control(ctrl_state="0")
+        gate_b = XGate().control(ctrl_state="1")
 
         qc.append(gate_a, qc.qubits)
         qc.append(gate_b, qc.qubits)
 
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
 
         assert _num_gates(result) == 2
+
 
 # ---------------------------------------------------------------------------
 # Tests: circuit identity preservation
@@ -409,7 +408,7 @@ class TestIdentityPreservation:
         qc.cz(1, 2)
         qc.measure(0, 0)
 
-        qc_opt = cancel_inverses(qc)
+        qc_opt = fuse_adjacents(qc)
 
         # Both should yield the same measurement distribution.
         counts_orig = run(qc, shots=2000)
@@ -433,7 +432,7 @@ class TestGidneyLogicalAND:
         qc = QuantumCircuit(3)
         qc.append(compute, qc.qubits)
         qc.append(uncompute, qc.qubits)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
     def test_same_direction_cancels_via_transpile(self):
@@ -445,5 +444,5 @@ class TestGidneyLogicalAND:
         qc = QuantumCircuit(3)
         qc.append(compute, qc.qubits)
         qc.append(compute, qc.qubits)
-        result = cancel_inverses(qc)
+        result = fuse_adjacents(qc)
         assert _num_gates(result) == 0

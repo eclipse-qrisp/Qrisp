@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumBool, x, mcx
-from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 import itertools
+
+from qrisp import QuantumBool, mcx, x
+from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 
 def create_max_indep_set_mixer(G):
-    r"""
-    Creates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
@@ -39,7 +38,6 @@ def create_max_indep_set_mixer(G):
         This function performs the application of the mixer associated to the graph ``G``.
 
     """
-
     neighbors_dict = {node: list(G.adj[node]) for node in G.nodes()}
 
     def predicate(qv, i):
@@ -60,8 +58,7 @@ def create_max_indep_set_mixer(G):
 
 
 def create_max_indep_set_cl_cost_function(G):
-    """
-    Creates the classical cost function for an instance of the maximal independet set problem for a given graph ``G``.
+    """Creates the classical cost function for an instance of the maximal independet set problem for a given graph ``G``.
 
     Parameters
     ----------
@@ -94,8 +91,7 @@ def create_max_indep_set_cl_cost_function(G):
 
 
 def max_indep_set_init_function(qv):
-    r"""
-    Prepares the initial state $\ket{0}^{\otimes n}$.
+    r"""Prepares the initial state $\ket{0}^{\otimes n}$.
 
     Parameters
     ----------
@@ -107,8 +103,7 @@ def max_indep_set_init_function(qv):
 
 
 def max_indep_set_problem(G):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

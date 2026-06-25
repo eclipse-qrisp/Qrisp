@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,21 +17,22 @@
 
 from collections.abc import Callable, Sequence
 from typing import Any
+
 import numpy as np
 
 from qrisp import (
     QuantumArray,
     QuantumVariable,
+    conjugate,
+    control,
     gate_wrap,
     gphase,
     h,
-    mcx,
+    invert,
     mcp,
+    mcx,
     x,
     z,
-    conjugate,
-    invert,
-    control,
 )
 from qrisp.jasp import jlen
 from qrisp.typing import FloatLike
@@ -47,8 +47,7 @@ def reflection(
     phase: FloatLike = np.pi,
     reflection_indices: list[int] | None = None,
 ):
-    r"""
-    Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
+    r"""Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
 
     .. math::
 
@@ -79,7 +78,6 @@ def reflection(
 
     Examples
     --------
-
     We prepare a QuantumVariable in state $\ket{1}^{\otimes n}$, and reflect around the GHZ state $\frac{1}{\sqrt{2}}(\ket{0}^{\otimes n} + \ket{1}^{\otimes n})$.
     The resulting state is $\ket{0}^{\otimes n}$.
 
@@ -161,7 +159,6 @@ def reflection(
         # {'00000': 0.9900599999999998,'01000': 0.0024799999999999996,'00100': 0.0024799999999999996,'11011': 0.0024799999999999996,'10111': 0.0024799999999999996,'11111': 1.9999999999999998e-05}
 
     """
-
     if args is None:
         args = []
 
@@ -195,7 +192,6 @@ def reflection(
     def inner_reflection(qubits, phase):
 
         with control(phase == np.pi):
-
             x(qubits[-1])
 
             with control(jlen(qubits) == 1):

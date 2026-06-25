@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,19 +16,18 @@
 """
 
 import jax
-from jax.extend.core import ClosedJaxpr, JaxprEqn
+from jax.extend.core import JaxprEqn
 
+from qrisp.circuit import Operation
+from qrisp.core.session_merging_tools import merge, recursive_qs_search
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
-from qrisp.circuit import Operation
-from qrisp.core.session_merging_tools import recursive_qs_search, merge
-from qrisp.misc import get_depth_dic
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import get_depth_dic
 
 
 class ConjugationEnvironment(QuantumEnvironment):
-    r"""
-    This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for perfoming conjugated operations.
+    r"""This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for perfoming conjugated operations.
     An arbitrary unitary :math:`U \in SU(2^n)` can be conjugated by another unitary
     :math:`V \in SU(2^n)`:
 
@@ -66,7 +64,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     Parameters
     ----------
-
     conjugation_function : function
         The function performing the operation :math:`V`.
     args : iterable
@@ -76,7 +73,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We perform Fourier addition on a :ref:`QuantumFloat`
 
     ::
@@ -183,9 +179,7 @@ class ConjugationEnvironment(QuantumEnvironment):
                 creation_dic[instr.qubits[0]] = 1
             elif instr.op.name == "qb_dealloc":
                 if instr.qubits[0] not in creation_dic:
-                    raise Exception(
-                        f"Tried to destroy qubit {instr.qubits[0]} within a conjugator."
-                    )
+                    raise Exception(f"Tried to destroy qubit {instr.qubits[0]} within a conjugator.")
                 else:
                     creation_dic[instr.qubits[0]] -= 1
 
@@ -202,9 +196,7 @@ class ConjugationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if exception_value:
-            QuantumEnvironment.__exit__(
-                self, exception_type, exception_value, traceback
-            )
+            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
         if not check_for_tracing_mode():
             conjugation_center_data = list(self.env_qs.data)
@@ -291,9 +283,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         new_params["donated_invars"] = new_params["donated_invars"][1:]
 
         # Set the ctrl_jaspr attribute to use enable custom control behavior
-        flattened_jaspr.ctrl_jaspr = controlled_flattened_jaspr.update_eqns(
-            controlled_eqn_list
-        )
+        flattened_jaspr.ctrl_jaspr = controlled_flattened_jaspr.update_eqns(controlled_eqn_list)
 
         # Trace the jaxpr and subsequently update the equation (so it contains
         # the controlled version)
@@ -331,16 +321,12 @@ class ConjugationEnvironment(QuantumEnvironment):
         conjugation_depth_dic = get_depth_dic(self.conjugation_circ)
         content_depth_dic = get_depth_dic(content_circ)
 
-        added_depth_dic = {
-            qb: conjugation_depth_dic[qb] + content_depth_dic[qb]
-            for qb in content_circ.qubits
-        }
+        added_depth_dic = {qb: conjugation_depth_dic[qb] + content_depth_dic[qb] for qb in content_circ.qubits}
 
         instruction_qubits = []
 
         i = 0
         while i < len(content_circ.qubits):
-
             qb = content_circ.qubits[i]
 
             if added_depth_dic[qb]:
@@ -354,11 +340,7 @@ class ConjugationEnvironment(QuantumEnvironment):
 
         conj_op = ConjugatedOperation(self.conjugation_circ, content_circ)
 
-        alloc_instr = [
-            instr
-            for instr in self.conjugation_circ.data + content_circ.data
-            if instr.op.name == "qb_alloc"
-        ]
+        alloc_instr = [instr for instr in self.conjugation_circ.data + content_circ.data if instr.op.name == "qb_alloc"]
 
         for instr in alloc_instr:
             self.env_qs.append(instr)
@@ -366,9 +348,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         self.env_qs.append(conj_op, content_circ.qubits)
 
         dealloc_instr = [
-            instr
-            for instr in self.conjugation_circ.data + content_circ.data
-            if instr.op.name == "qb_dealloc"
+            instr for instr in self.conjugation_circ.data + content_circ.data if instr.op.name == "qb_dealloc"
         ]
 
         for instr in dealloc_instr:
@@ -376,7 +356,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
 
 class ConjugatedOperation(Operation):
-
     def __init__(self, conjugation_circ, content_circ):
 
         self.conjugation_gate = conjugation_circ.to_gate(name="conjugator")
@@ -401,9 +380,7 @@ class ConjugatedOperation(Operation):
             num_ctrl_qubits=num_ctrl_qubits, ctrl_state=ctrl_state, method=None
         )
 
-        res = type(controlled_conjugand)(
-            self, num_ctrl_qubits=num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-        )
+        res = type(controlled_conjugand)(self, num_ctrl_qubits=num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
 
         res.definition.data = []
 
@@ -417,9 +394,7 @@ class ConjugatedOperation(Operation):
         return res
 
     def inverse(self):
-        return ConjugatedOperation(
-            self.conjugation_gate.definition, self.content_gate.inverse().definition
-        )
+        return ConjugatedOperation(self.conjugation_gate.definition, self.content_gate.inverse().definition)
 
 
 def conjugate(conjugation_function, allocation_management=True):
@@ -437,10 +412,9 @@ def conjugate(conjugation_function, allocation_management=True):
 
 
 class PJITEnvironment(QuantumEnvironment):
-
     def jcompile(self, eqn, context_dic):
 
-        from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr
+        from qrisp.jasp import Jaspr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ from qrisp.jasp import (
 
 
 def RUS(*trial_function, **jit_kwargs):
-    r"""
-    Decorator to deploy repeat-until-success (RUS) components. At the core,
+    r"""Decorator to deploy repeat-until-success (RUS) components. At the core,
     RUS repeats a given quantum subroutine followed by a qubit measurement until
     the measurement returns the value ``1``. This step is prevalent
     in many important algorithms, among them the
@@ -76,7 +74,6 @@ def RUS(*trial_function, **jit_kwargs):
 
     Examples
     --------
-
     To demonstrate the RUS behavior, we initialize a GHZ state
 
     .. math::
@@ -290,8 +287,8 @@ def RUS(*trial_function, **jit_kwargs):
             jit_kwargs["static_argnums"] = static_argnums
             del jit_kwargs["static_argnames"]
 
-        from qrisp.jasp import q_while_loop, q_cond
         from qrisp.core import recursive_qv_search, reset
+        from qrisp.jasp import q_cond, q_while_loop
 
         # Execute the function
         qached_function = qache(trial_function, **jit_kwargs)

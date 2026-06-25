@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,20 +17,35 @@
 
 import numpy as np
 import pytest
-from qrisp import *
-from qrisp.block_encodings import BlockEncoding
 from qrisp.gqsp import GQSVT, inversion
 
+from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 
-@pytest.mark.parametrize("poly, parity", [
-    (np.array([1., 1.]), "odd"),
-    (np.array([1., 2., 1.]), "even"),
-    (np.array([0.,1.,0.,1.]), "odd"),
-    (np.array([2.,1.,0.,1.,2.,3.]), "odd"),
-])
+
+def evaluate_parity_polynomial(poly, S, parity):
+    """Evaluate the fixed parity polynomial on the singular values."""
+    start = 0 if parity == "even" else 1
+    coeffs = poly[start::2][::-1]
+
+    S_poly = np.polyval(coeffs, S**2)
+    if parity == "odd":
+        S_poly *= S
+
+    return S_poly
+
+
+@pytest.mark.parametrize(
+    "poly, parity",
+    [
+        (np.array([1.0, 1.0]), "odd"),
+        (np.array([1.0, 2.0, 1.0]), "even"),
+        (np.array([0.0, 1.0, 0.0, 1.0]), "odd"),
+        (np.array([2.0, 1.0, 0.0, 1.0, 2.0, 3.0]), "odd"),
+    ],
+)
 def test_gqsvt(poly, parity):
     """Test GQSVT on a small 4x4 matrix with a simple polynomial transformation."""
-
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
     # [0. 3. 1. 0.]
@@ -39,14 +53,18 @@ def test_gqsvt(poly, parity):
     # [1. 0. 0. 3.]]
     N = 4
     A = np.eye(N, k=1) + 3 * np.eye(N)
-    A[N-1,0] = 1
+    A[N - 1, 0] = 1
 
-    b = np.array([1,0,0,0])
+    b = np.array([1, 0, 0, 0])
 
     # Define BlockEncoding for A
-    def U0(qv): pass
-    def U1(qv): qv-=1
-    BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
+    def U0(qv):
+        pass
+
+    def U1(qv):
+        qv -= 1
+
+    BE = BlockEncoding.from_lcu(np.array([3, 1]), [U0, U1])
 
     # Apply polynomial via GQSVT
     BE_poly = GQSVT(BE, poly, parity=parity)
@@ -69,9 +87,7 @@ def test_gqsvt(poly, parity):
     # Compute the SVD
     U, S, Vh = np.linalg.svd(A)
 
-    # Apply polynomial z + z^3 to singular values
-    start = 0 if parity == "even" else 1
-    S_poly = sum(c * S ** (i * 2 + start) for i, c in enumerate(list(poly)[start::2]))
+    S_poly = evaluate_parity_polynomial(poly, S, parity)
 
     # Reconstruct transformed matrix
     if parity == "even":
@@ -85,7 +101,6 @@ def test_gqsvt(poly, parity):
 
 def test_gqsvt_inversion():
     """Test GQSVT-based inversion on a small 4x4 matrix."""
-
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
     # [0. 3. 1. 0.]
@@ -93,14 +108,18 @@ def test_gqsvt_inversion():
     # [1. 0. 0. 3.]]
     N = 4
     A = np.eye(N, k=1) + 3 * np.eye(N)
-    A[N-1,0] = 1
+    A[N - 1, 0] = 1
 
-    b = np.array([1,0,0,0])
+    b = np.array([1, 0, 0, 0])
 
     # Define BlockEncoding for A
-    def U0(qv): pass
-    def U1(qv): qv-=1
-    BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
+    def U0(qv):
+        pass
+
+    def U1(qv):
+        qv -= 1
+
+    BE = BlockEncoding.from_lcu(np.array([3, 1]), [U0, U1])
 
     # Apply inversion via GQSVT
     BE_inv = inversion(BE, 0.01, np.linalg.cond(A), method="GQSVT")

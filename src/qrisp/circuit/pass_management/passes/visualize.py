@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,14 +17,13 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 @CircuitPass
 def visualize(qc: QuantumCircuit) -> QuantumCircuit:
-    """
-    Print the current circuit to ``stdout`` for debugging purposes.
+    """Print the current circuit to ``stdout`` for debugging purposes.
 
     A no-op pass that prints the circuit as it is when encountered in a
     :class:`~qrisp.PassManager` pipeline.  Useful for inspecting the
@@ -35,7 +33,6 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-
     We showcase how a Toffoli gate is decomposed step by step, inserting
     a visualization pass after each pass to show the progression.
 
@@ -49,9 +46,9 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
     >>> pm += decompose(1)
     >>> pm += visualize
     >>> pm.run(qc)
-    <BLANKLINE>                    
+    <BLANKLINE>
     qb_82: ──■──
-             │  
+             │
     qb_83: ──■──
            ┌─┴─┐
     qb_84: ┤ X ├
@@ -63,13 +60,14 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
            │                │
     qb_84: ┤2               ├
            └────────────────┘
-           ┌─────┐                                                 
+           ┌─────┐
     qb_82: ┤ Tdg ├───────■─────────■────■───────────────────────■──
            ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
     qb_83: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
            └┬───┬┘└─┬─┘┌─┴─┐├───┤└───┘┌─┴─┐└─────┘└─┬─┘┌┴───┴┐├───┤
     qb_84: ─┤ H ├───■──┤ X ├┤ T ├─────┤ X ├─────────■──┤ Tdg ├┤ H ├
             └───┘      └───┘└───┘     └───┘            └─────┘└───┘
+
     """
     print(qc)
     return qc

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -93,9 +92,7 @@ def test_qache():
                     assert False
 
             invalues = extract_invalues(eqn, context_dic)
-            outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(
-                *invalues
-            )
+            outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)

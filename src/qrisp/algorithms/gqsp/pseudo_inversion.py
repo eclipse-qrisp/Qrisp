@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,21 +18,21 @@
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
-from qrisp.algorithms.cks import cks_coeffs, cks_params
-from qrisp.algorithms.gqsp.gqsvt import GQSVT
-from qrisp.algorithms.gqsp.helper_functions import chebyshev_approx
-from qrisp.block_encodings import BlockEncoding
 from scipy.special import erf
+
+from qrisp.algorithms.cks import cks_coeffs, cks_params
+from qrisp.algorithms.gqsp.helper_functions import chebyshev_approx
+from qrisp.algorithms.gqsp.qsvt import QSVT
+from qrisp.block_encodings import BlockEncoding
 
 
 def pseudo_inversion(
     A: BlockEncoding,
     eps: float,
     theta: float,
-    delta: float = None,
+    delta: float | None = None,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
+    r"""Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
 
     Let $A$ be a matrix with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_
 
@@ -51,7 +50,7 @@ def pseudo_inversion(
 
         f_{\theta}(\sigma)=\begin{cases} \frac{1}{\sigma} & \sigma\geq\theta \\ 0 & \sigma<\theta \end{cases}
 
-    The threshold pseudo inverse $A_{\theta}^{+}$ is construncted by applying this function to the singular values and recombinng the matrix:
+    The threshold pseudo inverse $A_{\theta}^{+}$ is constructed by applying this function to the singular values and recombining the matrix:
 
     .. math::
 
@@ -60,7 +59,7 @@ def pseudo_inversion(
     For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an operator 
     $\tilde{A}_{\alpha\cdot\theta}^{+}$ such that $\|\tilde{A}_{\alpha\cdot\theta}^{+} - A_{\alpha\cdot\theta}^{+}\| \leq \epsilon$.
 
-    The pseudo inverse is implemented via Generalized Quantum Singular Value Transform (GQSVT)
+    The pseudo inverse is implemented via Quantum Singular Value Transform (QSVT)
     using a polynomial approximation of $1/x$ over the domain $D_{\theta} = [-1, -\theta] \cup [\theta, 1]$, 
     and a smoothed rectangle filter over the domain $D_{\theta}' = [-\theta, \theta]$.
 
@@ -98,7 +97,6 @@ def pseudo_inversion(
 
     Examples
     --------
-
     First, define a matrix $A$ and a right-hand side vector $\vec{b}$.
 
     ::
@@ -185,11 +183,10 @@ def pseudo_inversion(
         # [0.63245553 0.31622777 0.63245553 0.31622777]
 
     """
-
     p = _pseudo_inversion_cheb(theta, delta, eps)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
-    A_pseudo_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
+    A_pseudo_inv = QSVT(A, p, kind="Chebyshev", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_pseudo_inv.alpha = A_pseudo_inv.alpha / A.alpha
@@ -197,17 +194,16 @@ def pseudo_inversion(
 
 
 def _smooth_rectangle(
-    x: npt.NDArray[np.float64], 
-    t: float, 
+    x: npt.NDArray[np.float64],
+    t: float,
     delta: float,
 ) -> npt.NDArray[np.float64]:
-    """
-    Computes a smoothed rectangle (indicator) function using the error function.
+    r"""Computes a smoothed rectangle (indicator) function using the error function.
 
-    This function acts as a continuous, differentiable stand-in for 
-    a harsh discontinuous step function. It evaluates to approximately 1 inside 
-    the interval [-t, t] and transitions to 0 over a specified width. 
-    Smoothing the jump prevents the Gibbs phenomenon (wild oscillations) when 
+    This function acts as a continuous, differentiable stand-in for
+    a harsh discontinuous step function. It evaluates to approximately 1 inside
+    the interval [-t, t] and transitions to 0 over a specified width.
+    Smoothing the jump prevents the Gibbs phenomenon (wild oscillations) when
     subsequently fitting this target with a Chebyshev polynomial.
 
     Parameters
@@ -217,22 +213,23 @@ def _smooth_rectangle(
     t : float
         The half-width of the inner interval. The function will be approximately 1 for x in [-t, t].
     delta :float
-        The width of the transition region. The function will smoothly decay from 1 to 0 over the intervals 
+        The width of the transition region. The function will smoothly decay from 1 to 0 over the intervals
         $[-t - \delta, -t + \delta]$ and $[t - \delta, t + \delta]$.
 
     Returns
     -------
     ndarray
         An array of evaluated function values, bounded between 0 and 1, with the same shape as the input array ``x``.
+
     """
-    # kappa dictates the steepness of the transition. 
-    # The factor of 2.0 is an empirical choice to ensure the curve settles 
+    # kappa dictates the steepness of the transition.
+    # The factor of 2.0 is an empirical choice to ensure the curve settles
     # completely to 0 or 1 within the delta region.
-    kappa = 2.0 / delta 
-    
+    kappa = 2.0 / delta
+
     erf_plus = erf(kappa * (x + t))
     erf_minus = erf(kappa * (x - t))
-    
+
     return 0.5 * (erf_plus - erf_minus)
 
 
@@ -242,36 +239,35 @@ def _pseudo_inversion_cheb(
     eps: float = 1e-3,
     max_N: int = 2024,
 ) -> npt.NDArray[np.float64]:
-    r"""
-    Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
+    r"""Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
 
-    This function creates a polynomial that approximates $1/x$ over the domain 
-    $[-1, \theta] \cup [\theta, 1]$ while smoothly dropping to zero around the 
-    origin. It achieves this by multiplying an odd Chebyshev approximation of $1/x$ 
-    (https://arxiv.org/pdf/1511.02306, Lemma 14) with an even, smooth "inverted rectangle" 
+    This function creates a polynomial that approximates $1/x$ over the domain
+    $[-1, \theta] \cup [\theta, 1]$ while smoothly dropping to zero around the
+    origin. It achieves this by multiplying an odd Chebyshev approximation of $1/x$
+    (https://arxiv.org/pdf/1511.02306, Lemma 14) with an even, smooth "inverted rectangle"
     filter that cuts off the region close to zero (https://arxiv.org/pdf/1806.01838, Lemma 29).
 
     Parameters
     ----------
     theta : float
-        This threshold value defines the boundaries of the "gap" around zero 
+        This threshold value defines the boundaries of the "gap" around zero
         $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.
     delta : float, optional
-        The width of the transition region for the smooth origin cutoff. 
+        The width of the transition region for the smooth origin cutoff.
         If None, it defaults to $\theta / 4$.
     eps : float, optional
         The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
     max_N : int, optional
-        The maximum polynomial degree to evaluate when interpolating the 
+        The maximum polynomial degree to evaluate when interpolating the
         even cutoff polynomial (the smooth rectangle). Defaults to 2048.
 
     Returns
     -------
     ndarray
-        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded 
+        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the pseudo-inverse, ordered from lowest order term to highest.
-    """
 
+    """
     if delta is None:
         delta = theta / 4
 
@@ -280,7 +276,7 @@ def _pseudo_inversion_cheb(
     # Define the target function for Chebyshev interpolation.
     target_func = lambda x: _smooth_rectangle(x, t, delta)
     cheb_even = 1 - chebyshev_approx(target_func, eps=eps, max_N=max_N)
-    
+
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
     # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,7 +20,6 @@ import numpy as np
 import numpy.polynomial.chebyshev as cheb
 import numpy.polynomial.polynomial as poly
 import numpy.typing as npt
-from typing import Union
 
 
 def plot_reconstruction_vs_target(
@@ -31,12 +29,11 @@ def plot_reconstruction_vs_target(
     domain_label: str = "Singular Value (x)",
     title: str = "Input Target vs. Reconstructed Polynomial",
 ):
-    """
-    Plots the target polynomial against the reconstructed QSP/GQSP response,
+    r"""Plots the target polynomial against the reconstructed QSP/GQSP response,
     along with a subplot showing the absolute residual error.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     domain : numpy.ndarray
         The x-axis values (e.g., x in [-1, 1] for QSP, or omega in [0, pi] for GQSP).
     target_values : numpy.ndarray
@@ -80,6 +77,7 @@ def plot_reconstruction_vs_target(
             domain_label=r"Angle $\omega$ (where $z = e^{i\omega}$)",
             title="GQSP Reconstruction (Magnitude on Unit Circle)"
         )
+
     """
     # Calculate absolute error
     residuals = np.abs(reconstructed_values - target_values)
@@ -128,7 +126,7 @@ def plot_reconstruction_vs_target(
     ax2.fill_between(domain, 0, residuals, color="blue", alpha=0.1)
 
     ax2.set_xlabel(domain_label, fontsize=12)
-    ax2.set_ylabel("Error $\Delta$", fontsize=12)
+    ax2.set_ylabel(r"Error $\Delta$", fontsize=12)
     ax2.set_yscale("log")  # Log scale is best for viewing numerical precision errors
     ax2.grid(True, linestyle=":", alpha=0.6)
     ax2.legend(loc="upper right", fontsize=10)
@@ -139,10 +137,9 @@ def plot_reconstruction_vs_target(
 
 def evaluate_nlft_sequence(
     F_sequence: npt.NDArray[np.complex128],
-    z_values: Union[npt.NDArray[np.complex128], npt.NDArray[np.float64]],
+    z_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
-    """
-    Evaluates the Non-Linear Fourier Transform (NLFT) sequence by classically
+    """Evaluates the Non-Linear Fourier Transform (NLFT) sequence by classically
     reconstructing the matrix response using forward synthesis on the unit circle.
 
     This function simulates the layer-by-layer mixing of the NLFT. Note that
@@ -163,6 +160,7 @@ def evaluate_nlft_sequence(
     numpy.ndarray
         A 1D complex128 array containing the evaluated complementary response
         U_{01}(z) for each input z in `z_values`.
+
     """
     z = np.asarray(z_values, dtype=complex)
     num_z = len(z)
@@ -203,8 +201,7 @@ def assert_nlft_sequence_match_target(
     atol: float = 1e-6,
     check_magnitude_only: bool = True,
 ) -> None:
-    """
-    Tests if a Non-Linear Fourier Transform (NLFT) sequence accurately reconstructs
+    """Tests if a Non-Linear Fourier Transform (NLFT) sequence accurately reconstructs
     the target polynomial on the complex unit circle.
 
     Parameters
@@ -229,6 +226,7 @@ def assert_nlft_sequence_match_target(
     AssertionError
         If the maximum absolute error between the target and the reconstructed
         response exceeds `atol`.
+
     """
     # Evaluate over the full unit circle
     omegas = np.linspace(0, 2 * np.pi, num_test_points)
@@ -270,10 +268,9 @@ def evaluate_gqsp_polynomial(
     theta_angles: npt.NDArray[np.float64],
     phi_angles: npt.NDArray[np.float64],
     lambd: float,
-    z_values: Union[npt.NDArray[np.complex128], npt.NDArray[np.float64]],
+    z_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
-    """
-    Evaluates the Generalized Quantum Signal Processing (GQSP) polynomial response
+    """Evaluates the Generalized Quantum Signal Processing (GQSP) polynomial response
     in the complex unit circle basis.
 
     This function simulates the GQSP unitary sequence as defined in Theorem 9
@@ -312,12 +309,10 @@ def evaluate_gqsp_polynomial(
     ------
     ValueError
         If `theta_angles` and `phi_angles` do not have the same length.
-    """
 
+    """
     if len(theta_angles) != len(phi_angles):
-        raise ValueError(
-            "theta_angles and phi_angles must have the same length (d + 1)."
-        )
+        raise ValueError("theta_angles and phi_angles must have the same length (d + 1).")
 
     z = np.asarray(z_values, dtype=complex)
     num_z = len(z)
@@ -339,9 +334,7 @@ def evaluate_gqsp_polynomial(
         return mat
 
     # A_0 = exp(i * lambd * Z) * exp(i * phi_0 * X) * exp(i * theta_0 * Z)
-    U = np.matmul(
-        exp_iZ(lambd), np.matmul(exp_iX(phi_angles[0]), exp_iZ(theta_angles[0]))
-    )
+    U = np.matmul(exp_iZ(lambd), np.matmul(exp_iX(phi_angles[0]), exp_iZ(theta_angles[0])))
 
     # Iteratively apply W(z) and A_k
     for k in range(1, d + 1):
@@ -365,8 +358,7 @@ def assert_gqsp_angles_match_target(
     atol: float = 1e-6,
     check_magnitude_only: bool = False,
 ):
-    """
-    Tests if a set of GQSP angles accurately reconstructs the standard target polynomial.
+    """Tests if a set of GQSP angles accurately reconstructs the standard target polynomial.
 
     Parameters
     ----------
@@ -393,6 +385,7 @@ def assert_gqsp_angles_match_target(
     AssertionError
         If the maximum absolute error between the target and the reconstructed
         response exceeds `atol`.
+
     """
     # Evaluate over the full unit circle
     omegas = np.linspace(0, 2 * np.pi, num_test_points)
@@ -432,12 +425,11 @@ def assert_gqsp_angles_match_target(
 
 def evaluate_qsp_polynomial(
     angles: npt.NDArray[np.float64],
-    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]],
+    x_values: npt.NDArray[np.complex128],
     signal_basis: str = "X",
     phase_basis: str = "Z",
 ) -> npt.NDArray[np.complex128]:
-    """
-    Evaluates the classical Quantum Signal Processing (QSP) / QSVT matrix response
+    """Evaluates the classical Quantum Signal Processing (QSP) / QSVT matrix response
     with customizable bases for the signal and phase operators.
 
     This function simulates the QSP unitary sequence and returns the
@@ -473,6 +465,7 @@ def evaluate_qsp_polynomial(
     ------
     ValueError
         If an invalid `signal_basis` or `phase_basis` is provided.
+
     """
     x = np.asarray(x_values, dtype=complex)
     num_x = len(x)
@@ -538,8 +531,7 @@ def assert_qsp_angles_match_target(
     signal_basis: str = "X",
     phase_basis: str = "Z",
 ) -> None:
-    """
-    Tests if a set of QSP angles accurately reconstructs the target Chebyshev polynomial.
+    """Tests if a set of QSP angles accurately reconstructs the target Chebyshev polynomial.
 
     Automatically searches the 4 standard complex axes (Re, Im, -Re, -Im) of U_{00}
     to account for the arbitrary global phase rotations introduced by switching
@@ -567,15 +559,14 @@ def assert_qsp_angles_match_target(
     AssertionError
         If the maximum absolute error between the target and the closest QSP axis
         mapping exceeds `atol`.
+
     """
     # 1. Generate Domain & Evaluate Target
     x_range = np.linspace(-1, 1, num_test_points)
     expected_values = cheb.chebval(x_range, target_cheb_coeffs)
 
     # 2. Evaluate classical matrix reconstruction (using the universal helper)
-    u00_response = evaluate_qsp_polynomial(
-        angles, x_range, signal_basis=signal_basis, phase_basis=phase_basis
-    )
+    u00_response = evaluate_qsp_polynomial(angles, x_range, signal_basis=signal_basis, phase_basis=phase_basis)
 
     # 3. Scale back by alpha
     reconstructed_real = u00_response.real * alpha
@@ -613,10 +604,9 @@ def assert_qsp_angles_match_target(
 
 def evaluate_qsvt_polynomial(
     angles: npt.NDArray[np.float64],
-    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]],
+    x_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
-    """
-    Evaluates the classical Quantum Singular Value Transformation (QSVT) matrix response.
+    """Evaluates the classical Quantum Singular Value Transformation (QSVT) matrix response.
 
     This function simulates the standard QSVT unitary sequence in the 2x2 subspace
     and returns the top-left matrix element U_{00}(x).
@@ -632,6 +622,7 @@ def evaluate_qsvt_polynomial(
     -------
     numpy.ndarray
         A 1D complex128 array containing the evaluated response U_{00}(x).
+
     """
     x = np.asarray(x_values, dtype=complex)
     num_x = len(x)
@@ -672,8 +663,7 @@ def assert_qsvt_angles_match_target(
     num_test_points: int = 500,
     atol: float = 1e-6,
 ) -> None:
-    """
-    Tests if a set of QSVT angles accurately reconstructs the target Chebyshev polynomial.
+    """Tests if a set of QSVT angles accurately reconstructs the target Chebyshev polynomial.
 
     Automatically searches the 4 standard complex axes (Re, Im, -Re, -Im) of U_{00}
     to account for the arbitrary global phase rotations introduced by switching
@@ -697,6 +687,7 @@ def assert_qsvt_angles_match_target(
     AssertionError
         If the maximum absolute error between the target and the closest QSP axis
         mapping exceeds `atol`.
+
     """
     x_range = np.linspace(-1, 1, num_test_points)
     expected_values = cheb.chebval(x_range, target_cheb_coeffs)
@@ -713,9 +704,7 @@ def assert_qsvt_angles_match_target(
         "Real (+1)": np.max(np.abs(reconstructed_real - expected_values)),
         "Imaginary (+i)": np.max(np.abs(reconstructed_imag - expected_values)),
         "Negative Real (-1)": np.max(np.abs(-reconstructed_real - expected_values)),
-        "Negative Imaginary (-i)": np.max(
-            np.abs(-reconstructed_imag - expected_values)
-        ),
+        "Negative Imaginary (-i)": np.max(np.abs(-reconstructed_imag - expected_values)),
     }
 
     best_match_component = min(errors, key=errors.get)

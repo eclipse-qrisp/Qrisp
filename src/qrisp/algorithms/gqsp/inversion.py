@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,26 +15,32 @@
 ********************************************************************************
 """
 
+from typing import Literal
+
 import numpy as np
 import numpy.typing as npt
+
 from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.gqsvt import GQSVT
 from qrisp.algorithms.gqsp.qet import QET
+from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
-from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
-    r"""
-    Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
+def inversion(
+    A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT"
+) -> BlockEncoding:
+    r"""Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
     For a block-encoded not necessarily Hermitian matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
     operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
-    
+
     The inversion is implemented via
 
     - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+    - Quantum Singular Value Transformation (QSVT)
 
     - Generalized Quantum Singular Value Transform (GQSVT)
 
@@ -54,14 +59,16 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
-    method : {"QET", "GQSVT"}
+    method : {"QET", "QSVT", "GQSVT"}
         The method for implementing the inversion.
 
         - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
 
+        - ``"QSVT"``: Quantum Singular Value Transform
+
         - ``"GQSVT"``: Generalized Quantum Singular Value Transform
 
-        Default is ``"QET"``.
+        Default is ``"QSVT"``.
 
     Returns
     -------
@@ -80,7 +87,6 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     Examples
     --------
-
     Define a QSLP and solve it using :meth:`inversion`.
 
     First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
@@ -140,21 +146,25 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
     """
-
-    ALLOWED_METHODS = {"QET", "GQSVT"}
+    ALLOWED_METHODS = {"QET", "GQSVT", "QSVT"}
     if method not in ALLOWED_METHODS:
-        raise ValueError(
-            f"Invalid method specified: '{method}'. "
-            f"Allowed methods are: {', '.join(ALLOWED_METHODS)}"
-        )
+        raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
 
     p = _inversion_cheb(1.0 / kappa, eps)
 
-    if method == "GQSVT":
+    if method == "QET":
         # Set _rescale=False to apply p(A/α) instead of p(A).
-        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
-    else:
         A_inv = QET(A, p, kind="Chebyshev", rescale=False)
+    elif method == "QSVT":
+        # For SDV A = U @ S @ V_dg, the singular value transformation applies p(S) to the singular values,
+        # resulting in U @ p(S) @ V_dg.
+        # We apply QSVT to A_dg to get V @ p(S) @ U_dg.
+        A_dg = A.dagger()
+        A_inv = QSVT(A_dg, p, kind="Chebyshev", parity="odd", rescale=False)
+    if method == "GQSVT":
+        # For SDV A = U @ S @ V_dg, the generalized singular value transformation applies p(S) to the singular values,
+        # resulting in V @ p(S) @ U_dg.
+        A_inv = GQSVT(A, p, kind="Chebyshev", parity="odd", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha
@@ -165,16 +175,15 @@ def _inversion_cheb(
     theta: float,
     eps: float = 1e-3,
 ) -> npt.NDArray[np.float64]:
-    r"""
-    Constructs a Chebyshev polynomial approximation of the inversion.
+    r"""Constructs a Chebyshev polynomial approximation of the inversion.
 
-    This function creates a polynomial that approximates $1/x$ over the domain 
-    $[-1, \theta] \cup [\theta, 1]$ (https://arxiv.org/pdf/1511.02306, Lemma 14). 
+    This function creates a polynomial that approximates $1/x$ over the domain
+    $[-1, \theta] \cup [\theta, 1]$ (https://arxiv.org/pdf/1511.02306, Lemma 14).
 
     Parameters
     ----------
     theta : float
-        This threshold value defines the boundaries of the "gap" around zero 
+        This threshold value defines the boundaries of the "gap" around zero
         $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.
     eps : float, optional
         The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
@@ -182,10 +191,10 @@ def _inversion_cheb(
     Returns
     -------
     ndarray
-        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded 
+        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the inverse, ordered from lowest order term to highest.
-    """
 
+    """
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
     # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -31,8 +30,7 @@ def build_from_projector(
     kernel: bool = False,
     num_ops: int = 1,
 ) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding of a projector.
+    r"""Constructs a BlockEncoding of a projector.
 
     Parameters
     ----------
@@ -44,8 +42,8 @@ def build_from_projector(
         or a function ``right(*operands)`` preparing a state $\ket{\psi}$ from $\ket{0}$.
         Defaults to ``left``.
     kernel : bool
-        If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
-        If False the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defauts to False.
+        If `True`, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
+        If `False`, the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defaults to `False`.
     num_ops : int
         The number of operand quantum variables.
         Automatically inferred when ``left`` or ``right`` is an integer or tuple of integers.
@@ -54,11 +52,11 @@ def build_from_projector(
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing the projector $\ket{\phi}\bra{\psi}$.
+        A BlockEncoding representing either the projector $\ket{\phi}\bra{\psi}$
+        or the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$, depending on the value of ``kernel``.
 
     Examples
     --------
-
     **Example 1: Computational basis states**
 
     Define a block-encoding for the projector $P=\ket{1}\bra{3}$.
@@ -114,7 +112,6 @@ def build_from_projector(
         # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
     """
-
     if kernel or (right == None):
         right = left
 
@@ -158,9 +155,7 @@ def build_from_projector(
 
     if not (isinstance(left, Callable) or isinstance(right, Callable)):
         if num_left != num_right:
-            raise ValueError(
-                f"Size mismatch: left has {num_left} elements, but right has {num_right}."
-            )
+            raise ValueError(f"Size mismatch: left has {num_left} elements, but right has {num_right}.")
     num_ops = max(num_left, num_right, num_ops)
 
     def unitary(*args):
