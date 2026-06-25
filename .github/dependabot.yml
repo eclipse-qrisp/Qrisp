@@ -3,7 +3,6 @@ updates:
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
-    # Workflow files stored in the default location of `.github/workflows`. (You don't need to specify `/.github/workflows` for `directory`. You can use `directory: "/"`.)
     directory: "/"
     schedule:
       interval: "weekly"
@@ -11,11 +10,16 @@ updates:
     labels:
       - "dependabot-dependency-upgrade"
     allow:
-      # Allow both direct and indirect updates for all packages
-      - dependency-type: "direct"
-    ignore:
-    - dependency-name: "*"
-      update-types: ["version-update:semver-patch"]
+      - dependency-type: "all"
+    groups:
+      actions:
+        patterns:
+          - "*"
+        applies-to: "version-updates"
+      actions-security:
+        patterns:
+          - "*"
+        applies-to: "security-updates"
 
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
@@ -26,8 +30,13 @@ updates:
     labels:
       - "dependabot-dependency-upgrade"
     allow:
-      # Allow both direct and indirect updates for all packages
-      - dependency-type: "direct"
-    ignore:
-    - dependency-name: "*"
-      update-types: ["version-update:semver-patch"]
+      - dependency-type: "all"
+    groups:
+      pip-dependencies:
+        patterns:
+          - "*"
+        applies-to: "version-updates"
+      pip-security:
+        patterns:
+          - "*"
+        applies-to: "security-updates"
