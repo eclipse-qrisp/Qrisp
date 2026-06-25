@@ -9,10 +9,10 @@ on:
       - ready_for_review
     branches:
       - main
-      - xdist
   push:
     branches:
       - main
+      - xdist
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
