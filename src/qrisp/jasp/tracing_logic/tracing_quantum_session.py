@@ -145,10 +145,10 @@ class TracingQuantumSession:
             bits are provided, or if mixed qubit types or incompatible shapes are used.
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise RuntimeError(_LOST_TRACK_MSG)
+            raise Exception(_LOST_TRACK_MSG)
 
         if clbits:
-            raise ValueError("Tried to append Operation with non-zero classical bits in JAX mode.")
+            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
 
         if qubits is None:
             qubits = ()
@@ -177,12 +177,12 @@ class TracingQuantumSession:
         if isinstance(qubits[0], QuantumArray):
             for other in qubits[1:]:
                 if not isinstance(other, QuantumArray):
-                    raise TypeError(
+                    raise Exception(
                         f"Tried to apply multi-qubit gate to mixed qubit argument"
                         f" types (QuantumArray + {type(other).__name__})"
                     )
                 if other.shape != qubits[0].shape:
-                    raise ValueError("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
+                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
 
             flattened_qubits = [q.flatten() for q in qubits]
             for i in jrange(flattened_qubits[0].size):
@@ -207,7 +207,7 @@ class TracingQuantumSession:
             (the variable already has qubits assigned).
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise RuntimeError(_LOST_TRACK_MSG)
+            raise Exception(_LOST_TRACK_MSG)
 
         if size is not None:
             qv.reg = self.request_qubits(size)
@@ -253,15 +253,15 @@ class TracingQuantumSession:
             or if *qv* is not registered in this session.
         """
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise RuntimeError(_LOST_TRACK_MSG)
+            raise Exception(_LOST_TRACK_MSG)
 
         if verify:
-            raise NotImplementedError("Tried to verify deletion in tracing mode.")
+            raise Exception("Tried to verify deletion in tracing mode.")
 
         try:
             idx = next(i for i, existing_qv in enumerate(self.qv_list) if existing_qv.name == qv.name)
         except StopIteration:
-            raise ValueError("Tried to remove a non existent quantum variable from quantum session") from None
+            raise Exception("Tried to remove a non existent quantum variable from quantum session") from None
 
         self.clear_qubits(qv.reg, verify)
         self.qv_list.pop(idx)
