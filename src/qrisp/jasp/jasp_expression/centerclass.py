@@ -356,7 +356,7 @@ class Jaspr(ClosedJaxpr):
 
         return ControlledJaspr.from_cache(self, ctrl_state)
 
-    def to_qc(self, *args: Any) -> Any:
+    def to_qc(self, *args):
         """
         Converts the Jaspr into a :ref:`QuantumCircuit` if applicable. Circuit
         conversion of algorithms involving realtime computations is not possible.
@@ -436,7 +436,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qc(self, *args)
 
-    def extract_post_processing(self, *args: Any) -> Callable:
+    def extract_post_processing(self, *args) -> Callable:
         """
         Extracts the post-processing logic from this Jaspr and returns a function
         that performs the post-processing on measurement results.
@@ -518,7 +518,7 @@ class Jaspr(ClosedJaxpr):
 
         return extract_post_processing(self, *args)
 
-    def eval(self, *args: Any, eqn_evaluator: Callable = lambda x, y: True) -> Any:
+    def eval(self, *args, eqn_evaluator: Callable = lambda x, y: True) -> Any:
         """Evaluate this Jaspr with a custom per-equation evaluator hook."""
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
 
@@ -602,12 +602,12 @@ class Jaspr(ClosedJaxpr):
             res.inv_jaspr.inv_jaspr = res
         return res
 
-    def __call__(self, *args: Any) -> Any:
+    def __call__(self, *args) -> Any:
         from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
 
         return simulate_jaspr(self, *args)
 
-    def inline(self, *args: Any) -> Any:
+    def inline(self, *args) -> Any:
         """Inline this Jaspr into the current tracing context without JIT-wrapping."""
         from qrisp.jasp import TracingQuantumSession
 
@@ -628,7 +628,7 @@ class Jaspr(ClosedJaxpr):
 
     def count_ops(
         self,
-        *args: Any,
+        *args,
         meas_behavior: str,
         callback_threshold: int | None = None,
     ) -> Any:
@@ -639,7 +639,7 @@ class Jaspr(ClosedJaxpr):
 
     def depth(
         self,
-        *args: Any,
+        *args,
         meas_behavior: str,
         max_qubits: int = 1024,
         callback_threshold: int | None = None,
@@ -657,7 +657,7 @@ class Jaspr(ClosedJaxpr):
 
     def num_qubits(
         self,
-        *args: Any,
+        *args,
         meas_behavior: str,
         max_allocations: int = 1000,
         callback_threshold: int | None = None,
@@ -673,7 +673,7 @@ class Jaspr(ClosedJaxpr):
             callback_threshold=callback_threshold,
         )(*args)
 
-    def embedd(self, *args: Any, name: str | None = None, inline: bool = False) -> Any:
+    def embedd(self, *args, name: str | None = None, inline: bool = False) -> Any:
         """Embed this Jaspr into the current tracing context, optionally JIT-wrapping it."""
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
@@ -701,7 +701,7 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qst = new_abs_qst
         return res
 
-    def qjit(self, *args: Any, function_name: str = "jaspr_function", device: Any = None) -> Any:
+    def qjit(self, *args, function_name: str = "jaspr_function", device=None) -> Any:
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
@@ -1224,7 +1224,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_mlir(self.flatten_environments())
 
-    def to_qasm(self, *args: Any) -> str:
+    def to_qasm(self, *args) -> str:
         """
         Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
         as long as no computations on the measurement results are performed.
@@ -1484,7 +1484,7 @@ def make_jaspr(
     fun: Callable,
     flatten_envs: bool = True,
     return_shape: bool = False,
-    **jax_kwargs: Any,
+    **jax_kwargs,
 ) -> Callable:
     """
     Creates a function that returns the Jaspr representation of a quantum function.
