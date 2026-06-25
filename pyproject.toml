@@ -76,6 +76,7 @@ dev-code-style = [
 ]
 dev-testing = [
     "pytest==9.1.0",
+    "pytest-xdist<=3.8.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
