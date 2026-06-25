@@ -6,6 +6,7 @@ on:
       - 'documentation/**'
       - 'src/qrisp/**'
       - 'pyproject.toml'
+      - '.github/workflows/**'
 
 
 jobs:
@@ -37,6 +38,7 @@ jobs:
           publish_dir: documentation/build/html
           destination_dir: pr-${{ github.event.number }}
       - name: Enable GitHub Pages (if not already)
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -55,14 +57,17 @@ jobs:
         with:
           script: |
             const pr = context.issue.number;
-            const { data: pages } = await github.rest.repos.getPages({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            const url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}/`;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            let url;
+            try {
+              const { data: pages } = await github.rest.repos.getPages({ owner, repo });
+              url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}/`;
+            } catch {
+              url = `https://cdn.statically.io/gh/${owner}/${repo}/gh-pages/pr-${pr}/index.html`;
+            }
             github.rest.issues.createComment({
               issue_number: pr,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner, repo,
               body: `📄 Docs preview: ${url}`
             });
