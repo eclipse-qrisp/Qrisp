@@ -19,3 +19,4 @@
 from qrisp.interface.provider_backends.aqt_backend import *
 from qrisp.interface.provider_backends.iqm_backend import *
 from qrisp.interface.provider_backends.qiskit_backend import *
+from qrisp.interface.provider_backends.kipu_qhub_api_backend import *
