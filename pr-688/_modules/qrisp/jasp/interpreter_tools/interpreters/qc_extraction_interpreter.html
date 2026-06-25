@@ -1,0 +1,1667 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/interpreter_tools/interpreters/qc_extraction_interpreter';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/interpreter_tools/interpreters/qc_extraction_interpreter.html" />
+    <link rel="icon" href="../../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+
+<span class="sd">QuantumCircuit Extraction Interpreter</span>
+<span class="sd">=====================================</span>
+
+<span class="sd">This module implements the interpreter for converting Jaspr (JAX-based quantum</span>
+<span class="sd">intermediate representation) into static QuantumCircuit objects.</span>
+
+<span class="sd">Overview</span>
+<span class="sd">--------</span>
+<span class="sd">Jaspr represents hybrid quantum-classical algorithms using JAX&#39;s tracing</span>
+<span class="sd">infrastructure. While this representation is powerful for optimization and</span>
+<span class="sd">compilation, it needs to be &quot;lowered&quot; to a QuantumCircuit for execution on</span>
+<span class="sd">current quantum hardware or simulators that expect circuit-based input.</span>
+
+<span class="sd">The Challenge</span>
+<span class="sd">-------------</span>
+<span class="sd">The main challenge in this conversion is handling **measurement results**:</span>
+
+<span class="sd">1. **In Jaspr**: Measurement results are represented as JAX booleans.</span>
+<span class="sd">   These can be manipulated using standard JAX/NumPy operations like array</span>
+<span class="sd">   construction, indexing, arithmetic, etc.</span>
+
+<span class="sd">2. **In QuantumCircuit**: Measurement results are represented as `Clbit` objects.</span>
+<span class="sd">   These are non-JAX types that cannot be processed by JAX primitives.</span>
+
+<span class="sd">When we encounter classical post-processing of measurement results (e.g.,</span>
+<span class="sd">`meas_res * 2` or `parity(m1, m2)`), we cannot represent this computation</span>
+<span class="sd">in the QuantumCircuit itself. Instead, we use placeholder objects.</span>
+
+<span class="sd">Solution Architecture</span>
+<span class="sd">---------------------</span>
+<span class="sd">This module provides three key classes/concepts:</span>
+
+<span class="sd">1. **ProcessedMeasurement**: A placeholder for measurement results that have</span>
+<span class="sd">   undergone classical post-processing. Since QuantumCircuit cannot represent</span>
+<span class="sd">   classical computation, this placeholder indicates &quot;some classical processing</span>
+<span class="sd">   happened here.&quot;</span>
+
+<span class="sd">2. **MeasurementArray**: Handles the specific problem of measurement results</span>
+<span class="sd">   being inserted into or extracted from JAX arrays. See detailed explanation</span>
+<span class="sd">   in the MeasurementArray class documentation.</span>
+
+<span class="sd">3. **qc_extraction_eqn_evaluator**: The equation evaluator that intercepts</span>
+<span class="sd">   JAX primitives and either:</span>
+<span class="sd">   - Executes quantum primitives directly (building the circuit)</span>
+<span class="sd">   - Handles array operations on measurements (using MeasurementArray)</span>
+<span class="sd">   - Creates ProcessedMeasurement placeholders for classical post-processing</span>
+<span class="sd">   - Delegates to default JAX evaluation for pure classical operations</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SECTION 1: Placeholder Classes for Classical Post-Processing</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessedMeasurement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Placeholder for measurement results that have undergone classical post-processing.</span>
+
+<span class="sd">    Problem Being Solved</span>
+<span class="sd">    --------------------</span>
+<span class="sd">    QuantumCircuit objects represent quantum operations and measurements, but they</span>
+<span class="sd">    cannot represent classical computation on measurement results. When a Jaspr</span>
+<span class="sd">    contains code like:</span>
+
+<span class="sd">        meas_res = measure(qv)</span>
+<span class="sd">        processed = meas_res * 2 + 1  # Classical post-processing</span>
+
+<span class="sd">    We cannot encode the `* 2 + 1` operation in the QuantumCircuit. In many</span>
+<span class="sd">    cases the post-processing can however be achieved through the</span>
+<span class="sd">    Jaspr.extract_post_processing feature, so instead of raising</span>
+<span class="sd">    an error, we continue with the circuit extraction. Instead, we</span>
+<span class="sd">    use this placeholder to indicate that classical processing occurred.</span>
+<span class="sd">    An error is raised if a placeholder needs to decide over</span>
+<span class="sd">    further construction steps of the circuit.</span>
+
+<span class="sd">    Usage</span>
+<span class="sd">    -----</span>
+<span class="sd">    When the interpreter encounters an operation that:</span>
+<span class="sd">    1. Takes measurement results (Clbit) as input</span>
+<span class="sd">    2. Is not a quantum operation</span>
+<span class="sd">    3. Produces output that depends on the measurement</span>
+
+<span class="sd">    It creates a ProcessedMeasurement as the output, signaling that the actual</span>
+<span class="sd">    value cannot be determined until runtime execution with real measurement data.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; result, qc = jaspr.to_qc()</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(result, ProcessedMeasurement)</span>
+<span class="sd">    True  # The result involves classical post-processing</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ParityHandle">
+<a class="viewcode-back" href="../../../../../reference/Circuit%20Manipulation/ParityHandle.html#qrisp.jasp.ParityHandle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParityHandle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A lightweight handle representing the result of a parity computation in quantum circuits.</span>
+
+<span class="sd">    ParityHandle objects are returned by :meth:`qrisp.QuantumCircuit.parity` and serve as</span>
+<span class="sd">    keys in the detector and observable maps produced by :meth:`~qrisp.QuantumCircuit.to_stim`.</span>
+<span class="sd">    They enable tracking of parity check results throughout circuit manipulation pipelines.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    instruction : Instruction</span>
+<span class="sd">        The :class:`~qrisp.Instruction` object containing the ``ParityOperation`` that</span>
+<span class="sd">        sits in the circuit&#39;s data list (``qc.data``).</span>
+
+<span class="sd">    Properties</span>
+<span class="sd">    ----------</span>
+<span class="sd">    clbits : list[Clbit]</span>
+<span class="sd">        The list of :class:`~qrisp.Clbit` objects involved in this parity computation.</span>
+<span class="sd">        Retrieved from ``instruction.clbits``. These are the measurement results being</span>
+<span class="sd">        XORed together.</span>
+<span class="sd">    expectation : int</span>
+<span class="sd">        The expected parity value (0 or 1). Retrieved from ``instruction.op.expectation``.</span>
+<span class="sd">        In Stim detector mode, deviations from this expectation indicate errors.</span>
+<span class="sd">    observable : bool</span>
+<span class="sd">        Whether this parity represents a Stim observable (``True``) or detector (``False``).</span>
+<span class="sd">        Retrieved from ``instruction.op.observable``. Observables track logical information</span>
+<span class="sd">        while detectors assert deterministic parities for error detection.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    ParityHandles are typically created via :meth:`qrisp.QuantumCircuit.parity`:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">    &gt;&gt;&gt; qc = QuantumCircuit(2, 2)</span>
+<span class="sd">    &gt;&gt;&gt; qc.h(0)</span>
+<span class="sd">    &gt;&gt;&gt; qc.cx(0, 1)</span>
+<span class="sd">    &gt;&gt;&gt; qc.measure([0, 1], [0, 1])</span>
+<span class="sd">    &gt;&gt;&gt; handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)</span>
+<span class="sd">    &gt;&gt;&gt; handle.clbits</span>
+<span class="sd">    [Clbit(cb_2), Clbit(cb_3)]</span>
+<span class="sd">    &gt;&gt;&gt; handle.expectation</span>
+<span class="sd">    0</span>
+
+<span class="sd">    Use handles as keys in Stim conversion maps:</span>
+
+<span class="sd">    &gt;&gt;&gt; stim_circuit, meas_map, det_map = qc.to_stim(</span>
+<span class="sd">    ...     return_measurement_map=True,</span>
+<span class="sd">    ...     return_detector_map=True</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; det_map[handle]  # Get the Stim detector index</span>
+<span class="sd">    0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Design Rationale</span>
+    <span class="c1"># ----------------</span>
+    <span class="c1"># In quantum error correction and Stim workflows, parity operations compute the XOR of</span>
+    <span class="c1"># multiple measurement results. Unlike measurements (which are quantum operations producing</span>
+    <span class="c1"># new classical bits), parity is a purely classical computation operating on existing</span>
+    <span class="c1"># measurement results.</span>
+
+    <span class="c1"># **Why Not Use Clbits for Parity Results?**</span>
+
+    <span class="c1"># A naive approach might create a new ``Clbit`` to represent each parity result. However,</span>
+    <span class="c1"># this breaks the fundamental semantic property that classical bits in a QuantumCircuit</span>
+    <span class="c1"># have a 1:1 correspondence with actual quantum measurements. Parity operations don&#39;t</span>
+    <span class="c1"># perform measurements—they compute classical functions of existing measurement outcomes.</span>
+
+    <span class="c1"># Creating &quot;fake&quot; Clbits for parity results would:</span>
+
+    <span class="c1"># * Violate the semantic contract that each Clbit corresponds to a physical measurement</span>
+    <span class="c1"># * Complicate measurement record management and classical bit indexing</span>
+    <span class="c1"># * Make it ambiguous which Clbits represent actual measurement results vs. computed parities</span>
+    <span class="c1"># * Interfere with transpilation and other circuit transformations that assume Clbit semantics</span>
+
+    <span class="c1"># **The ParityHandle Solution**</span>
+
+    <span class="c1"># Instead, ParityHandle provides a distinct type for parity results that:</span>
+
+    <span class="c1"># * Maintains the 1:1 mapping between Clbits and quantum measurements</span>
+    <span class="c1"># * Clearly distinguishes computed parities from measurement results</span>
+    <span class="c1"># * Enables efficient lookup in Stim detector/observable maps</span>
+    <span class="c1"># * Works correctly across circuit transpilation (via content-based equality)</span>
+    <span class="c1"># * Provides access to the underlying measurement Clbits via the ``clbits`` property</span>
+
+    <span class="c1"># When converting to Stim format, ParityHandles map to ``DETECTOR`` or ``OBSERVABLE_INCLUDE``</span>
+    <span class="c1"># instructions, which is their natural representation in the Stim model.</span>
+
+    <span class="c1"># Content-Based Equality</span>
+    <span class="c1"># ----------------------</span>
+    <span class="c1"># ParityHandle uses content-based equality (rather than object identity) for hashing and</span>
+    <span class="c1"># comparison. Two ParityHandles are considered equal if they have:</span>
+
+    <span class="c1"># * The same set of input Clbits (order-independent)</span>
+    <span class="c1"># * The same expectation value</span>
+    <span class="c1"># * The same observable flag</span>
+
+    <span class="c1"># This design choice ensures ParityHandles work correctly across transpilation passes,</span>
+    <span class="c1"># where :class:`~qrisp.Instruction` objects may be copied but their semantic content</span>
+    <span class="c1"># (the clbits and parameters they operate on) remains the same.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instruction</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instruction</span> <span class="o">=</span> <span class="n">instruction</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clbits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the clbits involved in this parity from the underlying instruction.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">clbits</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the expected parity value from the underlying instruction.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">expectation</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">observable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get whether this parity is an observable from the underlying instruction.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">observable</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ParityHandle</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Hash by clbits (as frozenset), expectation, and observable for content-based comparison</span>
+        <span class="c1"># This allows matching across transpile calls where instruction objects are copied</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clbits</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">expectation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">observable</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">):</span>
+            <span class="c1"># Compare by content: same clbits, same expectation, and same observable</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">expectation</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">expectation</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">observable</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">observable</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SECTION 2: MeasurementArray - Handling Arrays of Measurement Results</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MeasurementArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A numpy ndarray subclass for measurement-related values during QuantumCircuit extraction.</span>
+
+<span class="sd">    Problem Being Solved</span>
+<span class="sd">    --------------------</span>
+<span class="sd">    In Jaspr, measurement results are JAX boolean values that can be freely</span>
+<span class="sd">    combined into arrays. When lowering to QuantumCircuit, measurements return</span>
+<span class="sd">    `Clbit` objects instead of JAX booleans. JAX array operations cannot handle</span>
+<span class="sd">    Clbit objects directly.</span>
+
+<span class="sd">    Solution</span>
+<span class="sd">    --------</span>
+<span class="sd">    MeasurementArray is a numpy ndarray subclass with dtype=object that stores:</span>
+
+<span class="sd">    - Clbit objects: Measurement results that can be used in circuit operations</span>
+<span class="sd">    - ParityHandle objects: Parity computation results</span>
+<span class="sd">    - ProcessedMeasurement: Marker for classical post-processing results</span>
+<span class="sd">    - bool: Known boolean values (True/False)</span>
+
+<span class="sd">    Being a numpy subclass means reshape, slice, concatenate, etc. work natively.</span>
+<span class="sd">    The subclass provides type identification via isinstance() and helper methods.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new MeasurementArray from data.&quot;&quot;&quot;</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">arr</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__array_finalize__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called after array construction to finalize the object.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_as_processed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new MeasurementArray with all entries marked as processed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MeasurementArray</span>
+<span class="sd">            New array with all entries set to ProcessedMeasurement().</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processed_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ProcessedMeasurement</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flat</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">MeasurementArray</span><span class="p">(</span><span class="n">processed_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SECTION 3: Helper Functions</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">contains_measurement_data</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a value contains measurement-related data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    val : any</span>
+<span class="sd">        Value to check.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if the value is or contains Clbit, MeasurementArray,</span>
+<span class="sd">        ParityHandle, or ProcessedMeasurement data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Clbit</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="n">Clbit</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">to_object_array</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a measurement-related value to an object numpy array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    val : any</span>
+<span class="sd">        Value to convert. Can be:</span>
+<span class="sd">        - MeasurementArray: returned as-is (already an ndarray subclass)</span>
+<span class="sd">        - Clbit, ParityHandle, ProcessedMeasurement, bool: wrapped in 0-d array</span>
+<span class="sd">        - numpy array: converted to object dtype</span>
+<span class="sd">        - Other: returned unchanged</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray or original value</span>
+<span class="sd">        Object array with the value(s).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Clbit</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">):</span>
+        <span class="c1"># MeasurementArray is already an ndarray subclass</span>
+        <span class="k">return</span> <span class="n">val</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="n">Clbit</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">val</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="nb">object</span> <span class="k">else</span> <span class="n">val</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_array_primitive</span><span class="p">(</span><span class="n">prim_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">invalues</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a JAX array primitive to measurement data using numpy equivalents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prim_name : str</span>
+<span class="sd">        Name of the JAX primitive (e.g., &#39;broadcast_in_dim&#39;, &#39;concatenate&#39;).</span>
+<span class="sd">    params : dict</span>
+<span class="sd">        Parameters of the JAX primitive.</span>
+<span class="sd">    invalues : list</span>
+<span class="sd">        Input values to the primitive.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    MeasurementArray, scalar, or None</span>
+<span class="sd">        - MeasurementArray for array results</span>
+<span class="sd">        - Scalar (Clbit, bool, ProcessedMeasurement, ParityHandle) for 0-d results</span>
+<span class="sd">        - None if this primitive is not handled</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert all inputs to object arrays</span>
+    <span class="n">encoded</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_object_array</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">]</span>
+
+    <span class="c1"># Apply the numpy equivalent based on primitive name</span>
+    <span class="k">if</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;broadcast_in_dim&quot;</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;concatenate&quot;</span><span class="p">:</span>
+        <span class="n">dimension</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimension&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dimension</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;squeeze&quot;</span><span class="p">:</span>
+        <span class="n">dimensions</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">dimensions</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;slice&quot;</span><span class="p">:</span>
+        <span class="n">start_indices</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;start_indices&quot;</span><span class="p">]</span>
+        <span class="n">limit_indices</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;limit_indices&quot;</span><span class="p">]</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">start_indices</span><span class="p">,</span> <span class="n">limit_indices</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">slices</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;dynamic_slice&quot;</span><span class="p">:</span>
+        <span class="c1"># Start indices come from invalues[1:]</span>
+        <span class="n">start_indices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">encoded</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="n">slice_sizes</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;slice_sizes&quot;</span><span class="p">]</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span> <span class="o">+</span> <span class="n">sz</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">sz</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">start_indices</span><span class="p">,</span> <span class="n">slice_sizes</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">slices</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;gather&quot;</span><span class="p">:</span>
+        <span class="c1"># Simple indexing case</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="k">else</span> <span class="n">indices</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">indices</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;reshape&quot;</span><span class="p">:</span>
+        <span class="n">new_sizes</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_sizes&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">new_sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_sizes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;transpose&quot;</span><span class="p">:</span>
+        <span class="n">permutation</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;permutation&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">permutation</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;rev&quot;</span><span class="p">:</span>
+        <span class="c1"># Reverse array along specified dimensions</span>
+        <span class="n">dimensions</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="p">())</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;dynamic_update_slice&quot;</span><span class="p">:</span>
+        <span class="c1"># dynamic_update_slice(operand, update, start_indices)</span>
+        <span class="c1"># Updates a slice of operand starting at start_indices with the values from update</span>
+        <span class="n">operand</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">update</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Start indices come from remaining invalues (already encoded)</span>
+        <span class="n">start_indices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">encoded</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a copy and update the slice</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">operand</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span> <span class="o">+</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">start_indices</span><span class="p">,</span> <span class="n">update</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">slices</span><span class="p">]</span> <span class="o">=</span> <span class="n">update</span>
+
+    <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;select_n&quot;</span><span class="p">:</span>
+        <span class="c1"># select_n(cond, *cases) - selects from cases based on cond values</span>
+        <span class="c1"># cond[i] == j means select cases[j][i]</span>
+        <span class="n">cond</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cases</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="c1"># For boolean/binary condition (most common case)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># np.where with object arrays</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cond</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span> <span class="n">cases</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cases</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># General case: build result by indexing</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">cases</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cases</span><span class="p">)):</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">cond</span> <span class="o">==</span> <span class="n">i</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">cases</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Handle result</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Scalar result - return the object directly</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Array result</span>
+        <span class="k">return</span> <span class="n">MeasurementArray</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_measurement_arrays</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively resolve MeasurementArrays to numpy arrays with dtype=object.</span>
+
+<span class="sd">    This function is called at the end of jaspr_to_qc to convert the internal</span>
+<span class="sd">    MeasurementArray representation to a standard numpy array that users can</span>
+<span class="sd">    work with directly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : any</span>
+<span class="sd">        The value to resolve. Can be:</span>
+<span class="sd">        - MeasurementArray: viewed as plain numpy array with dtype=object</span>
+<span class="sd">        - tuple/list: each element is recursively resolved</span>
+<span class="sd">        - Other types: returned unchanged</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    any</span>
+<span class="sd">        The resolved value with MeasurementArrays converted to numpy arrays.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">):</span>
+        <span class="c1"># View as plain numpy array (MeasurementArray is already an ndarray subclass)</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">resolve_measurement_arrays</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">resolve_measurement_arrays</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_classical_processing</span><span class="p">(</span><span class="n">invalues</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle operations that represent classical post-processing on measurement data.</span>
+
+<span class="sd">    Many operations (arithmetic, comparisons, reductions, bitwise ops) represent</span>
+<span class="sd">    classical computation that cannot be performed during circuit construction.</span>
+<span class="sd">    This function provides a unified way to handle all such operations.</span>
+
+<span class="sd">    The strategy is:</span>
+<span class="sd">    1. If any input is a MeasurementArray, return a MeasurementArray of the same</span>
+<span class="sd">       size with all entries marked as &quot;processed&quot;.</span>
+<span class="sd">    2. If inputs contain scalar measurement data (Clbit, ProcessedMeasurement,</span>
+<span class="sd">       ParityHandle), return a scalar ProcessedMeasurement.</span>
+<span class="sd">    3. If no measurement data is involved, return None to indicate default</span>
+<span class="sd">       JAX evaluation should be used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    invalues : list</span>
+<span class="sd">        Input values to the operation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    MeasurementArray, ProcessedMeasurement, or None</span>
+<span class="sd">        - MeasurementArray with processed entries if input was an array</span>
+<span class="sd">        - ProcessedMeasurement for scalar measurement inputs</span>
+<span class="sd">        - None if no measurement data (use default JAX evaluation)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Clbit</span>
+
+    <span class="c1"># Check for MeasurementArray inputs first (preserves array structure)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">mark_as_processed</span><span class="p">()</span>
+
+    <span class="c1"># Check for scalar measurement data</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">Clbit</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+
+    <span class="c1"># Check for lists containing measurement data</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+
+    <span class="c1"># No measurement data - use default evaluation</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="c1"># List of primitives that represent classical processing on measurement data.</span>
+<span class="c1"># These operations cannot be performed during circuit construction because</span>
+<span class="c1"># measurement results are not known until runtime.</span>
+<span class="n">CLASSICAL_PROCESSING_PRIMITIVES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Arithmetic operations</span>
+    <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sub&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mul&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;div&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rem&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pow&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;neg&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;integer_pow&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;floor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ceil&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;round&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;abs&quot;</span><span class="p">,</span>
+    <span class="c1"># Comparison operations</span>
+    <span class="s2">&quot;eq&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ne&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;lt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;gt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;le&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ge&quot;</span><span class="p">,</span>
+    <span class="c1"># Reduction operations</span>
+    <span class="s2">&quot;reduce_sum&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_prod&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_max&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_min&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_or&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_and&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reduce_xor&quot;</span><span class="p">,</span>
+    <span class="c1"># Bitwise operations</span>
+    <span class="s2">&quot;not&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;and&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;or&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shift_left&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shift_right_arithmetic&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shift_right_logical&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SECTION 4: Equation Evaluator Factory</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_qc_extraction_eqn_evaluator</span><span class="p">(</span><span class="n">qc</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an equation evaluator for extracting a QuantumCircuit from a Jaspr.</span>
+
+<span class="sd">    This factory function creates a closure over the QuantumCircuit being built,</span>
+<span class="sd">    returning an evaluator function that can be passed to eval_jaxpr.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qc : QuantumCircuit</span>
+<span class="sd">        The quantum circuit to build. Operations will be appended to this circuit.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        An equation evaluator function with signature (eqn, context_dic) -&gt; bool|None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">qc_extraction_eqn_evaluator</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate a single Jaxpr equation during QuantumCircuit extraction.</span>
+
+<span class="sd">        This function is called for each equation in the Jaspr. It determines</span>
+<span class="sd">        how to handle the equation based on its primitive type:</span>
+
+<span class="sd">        1. **Quantum Primitives** (jasp.*): Execute directly using their</span>
+<span class="sd">           implementation, which appends operations to the QuantumCircuit.</span>
+
+<span class="sd">        2. **Array Operations on Measurements**: Handle specially using</span>
+<span class="sd">           MeasurementArray to maintain Clbit references through array ops.</span>
+
+<span class="sd">        3. **Classical Operations on Measurements**: Create ProcessedMeasurement</span>
+<span class="sd">           placeholders since we can&#39;t represent classical computation in QC.</span>
+
+<span class="sd">        4. **Pure Classical Operations**: Delegate to default JAX evaluation</span>
+<span class="sd">           by returning True.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        eqn : JaxprEqn</span>
+<span class="sd">            The equation to evaluate.</span>
+<span class="sd">        context_dic : dict</span>
+<span class="sd">            Dictionary mapping Jaxpr variables to their current values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool or None</span>
+<span class="sd">            - True: Use default JAX evaluation for this equation</span>
+<span class="sd">            - None/False: Equation was fully handled, skip default evaluation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Import here to avoid circular imports</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Clbit</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">Jaspr</span><span class="p">,</span>
+            <span class="n">ParityOperation</span><span class="p">,</span>
+            <span class="n">QuantumPrimitive</span><span class="p">,</span>
+            <span class="n">extract_invalues</span><span class="p">,</span>
+            <span class="n">insert_outvalues</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters</span><span class="w"> </span><span class="kn">import</span> <span class="n">cond_to_cl_control</span>
+
+        <span class="n">invalues</span> <span class="o">=</span> <span class="n">extract_invalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">)</span>
+        <span class="n">prim_name</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.1: Control Flow and Structural Primitives</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+
+        <span class="k">if</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;jit&quot;</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">],</span> <span class="n">Jaspr</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="c1"># Nested Jaspr (from @qache or similar) - evaluate with our interpreter</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_jaxpr</span>
+
+            <span class="n">definition_jaxpr</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="n">definition_jaxpr</span><span class="o">.</span><span class="n">jaxpr</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">qc_extraction_eqn_evaluator</span><span class="p">)(</span>
+                <span class="o">*</span><span class="p">(</span><span class="n">definition_jaxpr</span><span class="o">.</span><span class="n">consts</span> <span class="o">+</span> <span class="n">invalues</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">definition_jaxpr</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="p">]</span>
+
+            <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;jit&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;cond&quot;</span><span class="p">:</span>
+            <span class="c1"># Conditional branching - may become classically controlled operation</span>
+            <span class="k">return</span> <span class="n">cond_to_cl_control</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">qc_extraction_eqn_evaluator</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;while&quot;</span><span class="p">:</span>
+            <span class="c1"># While loops need special handling - delegate to default for now</span>
+            <span class="c1"># (the loop will be unrolled during evaluation)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.2: Quantum Primitives with Special Handling</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;jasp.parity&quot;</span><span class="p">:</span>
+            <span class="c1"># Parity operation: XOR of multiple classical bits</span>
+            <span class="c1"># Note: Parity on arrays is dissolved into loops during tracing,</span>
+            <span class="c1"># so invalues are always scalars (Clbit, ParityHandle, or ProcessedMeasurement)</span>
+
+            <span class="c1"># Check for ProcessedMeasurement - return ProcessedMeasurement</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">):</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">())</span>
+                <span class="k">return</span>
+
+            <span class="c1"># Expand all inputs to clbits using symmetric difference (XOR semantics)</span>
+            <span class="c1"># This means duplicate clbits cancel out (a XOR a = 0)</span>
+            <span class="n">clbit_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">):</span>
+                    <span class="n">clbit_set</span><span class="o">.</span><span class="n">symmetric_difference_update</span><span class="p">({</span><span class="n">inp</span><span class="p">})</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">):</span>
+                    <span class="c1"># ParityHandle stores expanded clbits</span>
+                    <span class="n">clbit_set</span><span class="o">.</span><span class="n">symmetric_difference_update</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">inp</span><span class="p">):</span>
+                    <span class="c1"># List-wrapped Clbits (e.g. from measuring a single-qubit QuantumBool)</span>
+                    <span class="n">clbit_set</span><span class="o">.</span><span class="n">symmetric_difference_update</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+
+            <span class="c1"># Convert set to sorted list for deterministic ordering</span>
+            <span class="n">expanded_clbits</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">clbit_set</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cb</span><span class="p">:</span> <span class="n">qc</span><span class="o">.</span><span class="n">clbits</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">cb</span><span class="p">))</span>
+
+            <span class="c1"># Add parity operation to the circuit (for stim conversion)</span>
+            <span class="n">qc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ParityOperation</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">expanded_clbits</span><span class="p">),</span>
+                    <span class="n">expectation</span><span class="o">=</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;expectation&quot;</span><span class="p">],</span>
+                    <span class="n">observable</span><span class="o">=</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;observable&quot;</span><span class="p">],</span>
+                <span class="p">),</span>
+                <span class="n">clbits</span><span class="o">=</span><span class="n">expanded_clbits</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Get the instruction we just appended</span>
+            <span class="n">parity_instr</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># Create a parity handle with the instruction</span>
+            <span class="n">handle</span> <span class="o">=</span> <span class="n">ParityHandle</span><span class="p">(</span><span class="n">parity_instr</span><span class="p">)</span>
+            <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.3: Type Conversion (convert_element_type)</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># JAX often inserts type conversions. For measurement data:</span>
+        <span class="c1"># - bool-&gt;bool conversions pass through unchanged</span>
+        <span class="c1"># - bool-&gt;int conversions for Clbit pass through (used by cond primitive)</span>
+        <span class="c1"># - Conversions to float types mark as processed since we can&#39;t</span>
+        <span class="c1">#   actually compute with measurement values</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;convert_element_type&quot;</span><span class="p">:</span>
+            <span class="n">inval</span> <span class="o">=</span> <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_dtype&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inval</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">):</span>
+                <span class="c1"># Check if converting to a non-boolean/non-integer type</span>
+                <span class="k">if</span> <span class="n">new_dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="c1"># Converting to float type - mark as processed</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">inval</span><span class="o">.</span><span class="n">mark_as_processed</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Bool-to-bool, bool-to-int, or unknown conversion - pass through</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">inval</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inval</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">):</span>
+                <span class="c1"># Clbit should pass through for bool-&gt;int conversions (used by cond)</span>
+                <span class="c1"># Only mark as processed for float conversions</span>
+                <span class="k">if</span> <span class="n">new_dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">inval</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inval</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">):</span>
+                <span class="c1"># ProcessedMeasurement stays processed</span>
+                <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inval</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">inval</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">ProcessedMeasurement</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">)):</span>
+                <span class="c1"># List of measurement data</span>
+                <span class="k">if</span> <span class="n">new_dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">context_dic</span><span class="p">[</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">inval</span>
+                <span class="k">return</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.4: Array Operations on Measurement Data</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># These primitives handle JAX array operations when the arrays contain</span>
+        <span class="c1"># measurement results. We use a generic handler that converts to object</span>
+        <span class="c1"># arrays, applies the numpy equivalent, and wraps back into MeasurementArray.</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="s2">&quot;broadcast_in_dim&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;concatenate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;squeeze&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;slice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dynamic_slice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gather&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reshape&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;transpose&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;rev&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dynamic_update_slice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;select_n&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="c1"># Check if any input contains measurement data</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">apply_array_primitive</span><span class="p">(</span><span class="n">prim_name</span><span class="p">,</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">invalues</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+                    <span class="k">return</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;split&quot;</span><span class="p">:</span>
+            <span class="c1"># split: Split an array into multiple sub-arrays</span>
+            <span class="c1"># This is a multiple-result primitive, so we need to handle it specially</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">):</span>
+                <span class="n">encoded</span> <span class="o">=</span> <span class="n">to_object_array</span><span class="p">(</span><span class="n">invalues</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">axis</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;axis&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">sizes</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sizes&quot;</span><span class="p">,</span> <span class="p">())</span>
+
+                <span class="c1"># numpy.split expects indices, but JAX gives us sizes</span>
+                <span class="c1"># Convert sizes to split indices</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+                <span class="c1"># Perform the split</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+                <span class="c1"># Wrap each result as MeasurementArray</span>
+                <span class="n">wrapped_results</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">wrapped_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">wrapped_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MeasurementArray</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">wrapped_results</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="o">==</span> <span class="s2">&quot;scatter&quot;</span><span class="p">:</span>
+            <span class="c1"># scatter: Update array elements at specified indices</span>
+            <span class="c1"># Used in array assignment operations (e.g., building arrays in loops)</span>
+            <span class="c1">#</span>
+            <span class="c1"># Scatter has the form: scatter(operand, indices, updates)</span>
+            <span class="c1"># - operand: The array being updated</span>
+            <span class="c1"># - indices: Where to place the updates</span>
+            <span class="c1"># - updates: The values to insert</span>
+
+            <span class="n">operand</span> <span class="o">=</span> <span class="n">invalues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">invalues</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">updates</span> <span class="o">=</span> <span class="n">invalues</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalues</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="c1"># Unwrap updates if it&#39;s a single-element list</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">updates</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">updates</span> <span class="o">=</span> <span class="n">updates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Helper to get index from various index formats</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">get_scatter_index</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+            <span class="c1"># Check if we&#39;re working with measurement data</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">MeasurementArray</span><span class="p">):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">get_scatter_index</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+                <span class="c1"># Create a copy and update directly (object array)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">operand</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">updates</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">elif</span> <span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">updates</span><span class="p">):</span>
+                <span class="c1"># Operand is not a MeasurementArray but updates contains measurement data</span>
+                <span class="c1"># This happens when building an array from measurements in a loop</span>
+
+                <span class="c1"># Get the shape of the operand</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">):</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">operand</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">):</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operand</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span>
+
+                <span class="c1"># Initialize MeasurementArray with False values</span>
+                <span class="n">new_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+                <span class="c1"># Set the update at the given index</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">get_scatter_index</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+                <span class="n">new_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">updates</span>
+
+                <span class="n">result</span> <span class="o">=</span> <span class="n">MeasurementArray</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">):</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">ProcessedMeasurement</span><span class="p">())</span>
+                <span class="k">return</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># No measurement data involved</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.5: Classical Processing Operations</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># This section handles all operations that represent classical</span>
+        <span class="c1"># computation on measurement data. These operations cannot be</span>
+        <span class="c1"># performed during circuit construction because measurement results</span>
+        <span class="c1"># are not known until runtime.</span>
+        <span class="c1">#</span>
+        <span class="c1"># We use a unified approach:</span>
+        <span class="c1"># 1. Check if the primitive is in CLASSICAL_PROCESSING_PRIMITIVES</span>
+        <span class="c1"># 2. Use handle_classical_processing() to create appropriate output</span>
+        <span class="c1"># 3. This preserves array structure (MeasurementArray with processed</span>
+        <span class="c1">#    entries) while marking the data as &quot;processed&quot;</span>
+
+        <span class="k">elif</span> <span class="n">prim_name</span> <span class="ow">in</span> <span class="n">CLASSICAL_PROCESSING_PRIMITIVES</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">handle_classical_processing</span><span class="p">(</span><span class="n">invalues</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.6: Default Handling</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Check if any input contains measurement data</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">invalues</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">contains_measurement_data</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># No measurement data - check if it&#39;s a quantum primitive</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="p">,</span> <span class="n">QuantumPrimitive</span><span class="p">):</span>
+                    <span class="c1"># Execute quantum primitive directly</span>
+                    <span class="n">outvalues</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">impl</span><span class="p">(</span><span class="o">*</span><span class="n">invalues</span><span class="p">,</span> <span class="o">**</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+                    <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">outvalues</span><span class="p">)</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Pure classical operation - use default JAX evaluation</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># SECTION 4.7: Fallback for Unhandled Measurement Operations</span>
+        <span class="c1"># -----------------------------------------------------------------</span>
+        <span class="c1"># If we reach here, the operation involves measurement data but isn&#39;t</span>
+        <span class="c1"># one of the specifically handled cases above. We create</span>
+        <span class="c1"># ProcessedMeasurement placeholders for the outputs.</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">multiple_results</span><span class="p">:</span>
+            <span class="n">outvalues</span> <span class="o">=</span> <span class="n">ProcessedMeasurement</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">outvalues</span> <span class="o">=</span> <span class="p">[</span><span class="n">ProcessedMeasurement</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">))]</span>
+
+        <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">outvalues</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">qc_extraction_eqn_evaluator</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SECTION 5: Public API - jaspr_to_qc Function</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">jaspr_to_qc</span><span class="p">(</span><span class="n">jaspr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Jaspr into a QuantumCircuit.</span>
+
+<span class="sd">    This is the main entry point for converting Jaspr intermediate representation</span>
+<span class="sd">    into a static QuantumCircuit that can be executed on quantum hardware or</span>
+<span class="sd">    simulators.</span>
+
+<span class="sd">    Limitations</span>
+<span class="sd">    -----------</span>
+<span class="sd">    - **Real-time feedback**: Algorithms that use measurement results to control</span>
+<span class="sd">      subsequent quantum operations (true real-time feedback) cannot be fully</span>
+<span class="sd">      represented. The control flow will be evaluated with placeholder values.</span>
+
+<span class="sd">    - **Classical post-processing**: Any classical computation on measurement</span>
+<span class="sd">      results (arithmetic, comparisons, etc.) cannot be represented in the</span>
+<span class="sd">      QuantumCircuit. These are replaced with ProcessedMeasurement placeholders.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    jaspr : Jaspr</span>
+<span class="sd">        The Jaspr object to convert.</span>
+<span class="sd">    *args : tuple</span>
+<span class="sd">        Arguments to call the Jaspr with. These should NOT include the</span>
+<span class="sd">        QuantumCircuit argument (it&#39;s added automatically). Exclude any</span>
+<span class="sd">        static arguments like callables.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        A tuple containing:</span>
+<span class="sd">        - Return values from the Jaspr (QuantumVariable returns become qubit lists,</span>
+<span class="sd">          measurement results become Clbit or ProcessedMeasurement objects)</span>
+<span class="sd">        - The constructed QuantumCircuit (always the last element)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Basic circuit extraction:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">        def example_function(i):</span>
+<span class="sd">            qv = QuantumVariable(i)</span>
+<span class="sd">            cx(qv[0], qv[1])</span>
+<span class="sd">            t(qv[1])</span>
+<span class="sd">            return qv</span>
+
+<span class="sd">        jaspr = make_jaspr(example_function)(2)</span>
+<span class="sd">        qb_list, qc = jaspr_to_qc(jaspr, 2)</span>
+
+<span class="sd">        print(qc)</span>
+<span class="sd">        # qb_0: ──■───────</span>
+<span class="sd">        #       ┌─┴─┐┌───┐</span>
+<span class="sd">        # qb_1: ┤ X ├┤ T ├</span>
+<span class="sd">        #       └───┘└───┘</span>
+
+<span class="sd">    With measurement post-processing (returns ProcessedMeasurement):</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement</span>
+
+<span class="sd">        def example_function(i):</span>
+<span class="sd">            qf = QuantumFloat(i)</span>
+<span class="sd">            cx(qf[0], qf[1])</span>
+<span class="sd">            t(qf[1])</span>
+
+<span class="sd">            meas_res = measure(qf)</span>
+<span class="sd">            meas_res *= 2  # Classical post-processing</span>
+<span class="sd">            return meas_res</span>
+
+<span class="sd">        jaspr = make_jaspr(example_function)(2)</span>
+<span class="sd">        meas_res, qc = jaspr_to_qc(jaspr, 2)</span>
+
+<span class="sd">        print(isinstance(meas_res, ProcessedMeasurement))</span>
+<span class="sd">        # True</span>
+
+<span class="sd">    With array operations on measurements:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        import jax.numpy as jnp</span>
+
+<span class="sd">        def array_example():</span>
+<span class="sd">            qv = QuantumVariable(3)</span>
+<span class="sd">            m0 = measure(qv[0])</span>
+<span class="sd">            m1 = measure(qv[1])</span>
+<span class="sd">            m2 = measure(qv[2])</span>
+
+<span class="sd">            # Create array of measurements</span>
+<span class="sd">            arr = jnp.array([m0, m1, m2])</span>
+
+<span class="sd">            # Extract first measurement</span>
+<span class="sd">            return arr[0]</span>
+
+<span class="sd">        jaspr = make_jaspr(array_example)()</span>
+<span class="sd">        result, qc = jaspr_to_qc(jaspr)</span>
+
+<span class="sd">        # result is the Clbit corresponding to m0&#39;s measurement</span>
+<span class="sd">        print(type(result))  # &lt;class &#39;qrisp.circuit.clbit.Clbit&#39;&gt;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax._src.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_context</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qubit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_jaxpr</span>
+
+    <span class="n">qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">()</span>
+
+    <span class="n">ammended_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">qc</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ammended_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">jaspr</span><span class="o">.</span><span class="n">invars</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Supplied invalid number of arguments to Jaspr.to_qc &quot;</span>
+            <span class="s2">&quot;(please exclude any static arguments, in particular callables)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Pre-register any Qubit objects passed as arguments into the</span>
+    <span class="c1"># internal QuantumCircuit. This is needed when the Jaspr receives</span>
+    <span class="c1"># qubits directly (e.g. from a QuantumVariable or QuantumArray traced</span>
+    <span class="c1"># inside make_jaspr) rather than creating them via create_qubits.</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Qubit</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">qb</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">:</span>
+                    <span class="n">qc</span><span class="o">.</span><span class="n">add_qubit</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
+
+    <span class="c1"># Use eval_context to temporarily exit any outer JAX trace.</span>
+    <span class="c1"># This ensures that primitive .bind() calls for classical operations</span>
+    <span class="c1"># evaluate concretely rather than being captured by an outer trace,</span>
+    <span class="c1"># allowing jaspr_to_qc to be called from within a make_jaspr or</span>
+    <span class="c1"># jit tracing context without TracerIntegerConversionError.</span>
+    <span class="k">with</span> <span class="n">eval_context</span><span class="p">():</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="n">jaspr</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">make_qc_extraction_eqn_evaluator</span><span class="p">(</span><span class="n">qc</span><span class="p">))(</span><span class="o">*</span><span class="n">ammended_args</span><span class="p">)</span>
+
+    <span class="c1"># Resolve MeasurementArrays to numpy arrays with dtype=object</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">resolve_measurement_arrays</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

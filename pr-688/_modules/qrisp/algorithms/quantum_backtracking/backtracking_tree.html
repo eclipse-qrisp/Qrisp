@@ -1,0 +1,2452 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.quantum_backtracking.backtracking_tree &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/quantum_backtracking/backtracking_tree';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/quantum_backtracking/backtracking_tree.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.quantum_backtracking.backtracking_tree</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.quantum_backtracking.backtracking_tree</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics.quantum</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrthogonalKet</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HGate</span><span class="p">,</span>
+    <span class="n">IterationEnvironment</span><span class="p">,</span>
+    <span class="n">QuantumArray</span><span class="p">,</span>
+    <span class="n">QuantumBool</span><span class="p">,</span>
+    <span class="n">QuantumFloat</span><span class="p">,</span>
+    <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">RYGate</span><span class="p">,</span>
+    <span class="n">auto_uncompute</span><span class="p">,</span>
+    <span class="n">control</span><span class="p">,</span>
+    <span class="n">cx</span><span class="p">,</span>
+    <span class="n">h</span><span class="p">,</span>
+    <span class="n">invert</span><span class="p">,</span>
+    <span class="n">mcx</span><span class="p">,</span>
+    <span class="n">mcz</span><span class="p">,</span>
+    <span class="n">multi_measurement</span><span class="p">,</span>
+    <span class="n">ry</span><span class="p">,</span>
+    <span class="n">s</span><span class="p">,</span>
+    <span class="n">s_dg</span><span class="p">,</span>
+    <span class="n">swap</span><span class="p">,</span>
+    <span class="n">t</span><span class="p">,</span>
+    <span class="n">t_dg</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">QFT</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge</span>
+<span class="sd">in implementing the quantum backtracking algorithm is the realization of the operators</span>
+<span class="sd">R_A and R_B. These operators consists of the direct sum of diffuser operators D_x,</span>
+<span class="sd">where x is an arbitrary node of the backtracking graph.</span>
+<span class="sd">R_A and R_B are defined as the direct sum of these</span>
+
+<span class="sd">R_A = [direct sum] D_x  [summed over all nodes x with even depth]</span>
+<span class="sd">R_B = |r&gt;&lt;r| [direct sum] D_x [summed over all nodes x with even depth]</span>
+
+<span class="sd">Or in words: Each node x together with it&#39;s children {y : x-&gt;y}</span>
+<span class="sd">defines a subspace H_x = span(|x&gt;, {|y&gt;, x-&gt;y}) on which the operator D_x is acting</span>
+<span class="sd">in-place.</span>
+
+<span class="sd">The definition of the D_x operators consists of multiple conditions:</span>
+
+<span class="sd">    1. If x is an &quot;accept&quot; node, D_x = 1 (ie. the identity)</span>
+<span class="sd">    2. If x is the root D_x = 1 - 2|psi_r&gt;&lt;psi_r|</span>
+<span class="sd">        Where |psi_r&gt; = (1+d_r*n)**-0.5 * (|r&gt; + n**0.5 * [sum] |y&gt;)</span>
+<span class="sd">        Where d_r is  the degree of the root, n is the maximum depth of the tree</span>
+<span class="sd">        and the sum iterates over all children of r</span>
+<span class="sd">    3. Otherwise: D_x = 1 - 2 |psi_x&gt;&lt;psi_x|</span>
+<span class="sd">        Where |psi_x&gt; = (d_x)**-0.5 (|x&gt; + [sum] |y&gt;)</span>
+<span class="sd">        Where d_x is the degree of x and the sum iterates over all children of x</span>
+
+<span class="sd">To implement this operator, we will rewrite it a bit:</span>
+
+<span class="sd">D_x = 1 - (1+(-1)**accept(x)) * |psi_r&gt;&lt;psi_r|</span>
+
+<span class="sd">The next step is to assume an operator U_x, which prepares |psi_x&gt; from x</span>
+
+<span class="sd">|psi_x&gt; = U_x |x&gt;</span>
+
+<span class="sd">We can then write</span>
+
+<span class="sd">D_x = D_x = 1 - (1+(-1)**accept(x)) * |psi_r&gt;&lt;psi_r|</span>
+<span class="sd">    = U_x (1 - (1+(-1)**accept(x))*|x&gt;&lt;x|) U_x^(-1)</span>
+
+<span class="sd">If we pick an encoding, where each node state |x&gt; is a computational basis state,</span>
+<span class="sd">the center bracket (1 - (1+(-1)**accept(x))*|x&gt;&lt;x|) can be realized as a</span>
+<span class="sd">Z-gate on the bitstring on the</span>
+<span class="sd">result of accept(x).</span>
+
+<span class="sd">Furthermore we need to make sure that only the phase of |x&gt; is flipped. If we simply</span>
+<span class="sd">apply a Z-gate onto the result of accept, we could also flip the phase of a </span>
+<span class="sd">child node y with accept(y) = True. We remedy this problem by determining wether</span>
+<span class="sd">|x&gt; is odd into a qubit called oddity. For the even diffusing function, this qubit</span>
+<span class="sd">needs to be in the False state, for the odd function this qubit needs to be in the</span>
+<span class="sd">True state.</span>
+
+<span class="sd">This qubit is then used in a CZ gate.</span>
+
+<span class="sd">D_x = U_x CZ(accept(x), oddity(x)) U_x^(-1)</span>
+
+<span class="sd">The operator U_x is implemented as the function psi_prep below.</span>
+
+<span class="sd">The operator D_x is implemented as the method qstep_diffuser of the</span>
+<span class="sd">QuantumBacktrackingTree class.</span>
+
+<span class="sd">The next layer of complexity is the reject function.</span>
+<span class="sd">If a node is rejected, it has no children, ie. |psi_x&gt; = |x&gt;.</span>
+
+<span class="sd">This could be realized by modifiying the operator U_x but as it turns out there is</span>
+<span class="sd">a more efficient possibility.</span>
+
+<span class="sd">For this consider the fact that for a rejected node</span>
+
+<span class="sd">D_x = 1 - 2 |psi_x&gt;&lt;psi_x| = 1 - 2 |x&gt;&lt;x|</span>
+
+<span class="sd">The algorithm will however never evaluate this operator on any of the children of x</span>
+<span class="sd">so restricted on H_x we can assume</span>
+
+<span class="sd">D_x = -1</span>
+
+<span class="sd">We therfore now need to modify D_x such that D_x = -1 when reject(x) is True.</span>
+
+<span class="sd">To achieve this we deploy a circuit that integrates with our previous construction</span>
+<span class="sd">but instead performs </span>
+
+<span class="sd">D_x = U_x (-1) U_x^(-1)</span>
+
+<span class="sd">if reject(x) = True.</span>
+
+<span class="sd">Our goal is therefore now to find some operator O such that</span>
+
+<span class="sd">CZ(accept(x), oddity(x)) O(x) = [-1 if reject(x) is True] </span>
+<span class="sd">                                        [CZ(accept(x), oddity(x)) if reject(x) is False]</span>
+<span class="sd">                                        </span>
+<span class="sd">We conclude that O(reject(x)) needs to flip the phases of all the (pseudo) child states.</span>
+<span class="sd">(because H_x = span(|x&gt;, {|y&gt;, x-&gt;y})).</span>
+
+<span class="sd">Similar to the above approach we reuse the oddity qubit to make sure we only operate</span>
+<span class="sd">on the child states.</span>
+
+<span class="sd">Unfortunately we can&#39;t assume that the reject function also returns True on the children,</span>
+<span class="sd">therefore we &quot;lift&quot; the state. This means that we evaluate the reject function on the </span>
+<span class="sd">parent. We denote this with the symbol ^.</span>
+
+<span class="sd">We conclude:</span>
+<span class="sd">    </span>
+<span class="sd">O(x) = CZ(reject(x^), not oddity(x))</span>
+
+<span class="sd">To understand how the lifting works, please check the implementation of qstep_diffuser.</span>
+
+
+<span class="sd">This brings us to another important point in the implementation of the algorithm:</span>
+<span class="sd">The encoding of the node states.</span>
+
+<span class="sd">In principle, the paper makes no statement how such an encoding could be realized.</span>
+<span class="sd">The approach we took here is the following:</span>
+
+<span class="sd">A node state |x&gt; is specified by:</span>
+<span class="sd">    1. A one-hot encoded integer h (for height), which specifies the distance of </span>
+<span class="sd">        x from the the steepest leaf.</span>
+<span class="sd">    2. A QuantumArray branch_qa, which specifies the path to take to reach x.</span>
+
+<span class="sd">A few things have to be said about this encoding:</span>
+
+<span class="sd">We choose to encoded the height instead of the distance of the root </span>
+<span class="sd">(as described in the paper), as this allows straight forward generation of subtrees. </span>
+<span class="sd">A node which has height 4 in a some tree T, still has height 4 in a subtree of T.</span>
+
+<span class="sd">The initial state of branch_qa is |0&gt;|0&gt;|0&gt;...</span>
+
+<span class="sd">Because we use the height instead of the path length, the path to the node is </span>
+<span class="sd">specified by the reveresed array. Ie. the path [1,1,0,1]  in a depth 7 tree is </span>
+<span class="sd">specified by the branch_qa state</span>
+
+<span class="sd">|0&gt;|0&gt;|0&gt;|1&gt;|0&gt;|1&gt;|1&gt;</span>
+
+<span class="sd">Any state where there is a non-zero state at an index lower than h is considered</span>
+<span class="sd">&quot;non-algorithmic&quot;, ie. the state does not represent a node. An example could be</span>
+
+<span class="sd">h = |4&gt;</span>
+<span class="sd">branch_qa = |0&gt;|0&gt;|1&gt;|0&gt;|0&gt;|0&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree">
+<a class="viewcode-back" href="../../../../reference/Algorithms/QuantumBacktrackingTree.html#qrisp.quantum_backtracking.QuantumBacktrackingTree">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantumBacktrackingTree</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This class describes the central data structure to run backtracking algorithms in</span>
+<span class="sd">    a quantum setting. `Backtracking algorithms &lt;https://en.wikipedia.org/wiki/Backtracking&gt;`_</span>
+<span class="sd">    are a very general class of algorithms which cover many problems of combinatorial</span>
+<span class="sd">    optimization such as 3-SAT or TSP.</span>
+
+<span class="sd">    Backtracking algorithms can be put into a very general form. Given is a maximum</span>
+<span class="sd">    recursion depth, two functions called ``accept``/``reject`` and the set of</span>
+<span class="sd">    possible assignments for an iterable x.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from problem import accept, reject, max_depth, assignments</span>
+
+<span class="sd">        def backtracking(x):</span>
+
+<span class="sd">            if accept(x):</span>
+<span class="sd">                return x</span>
+
+<span class="sd">            if reject(x) or len(x) == max_depth:</span>
+<span class="sd">                return None</span>
+
+<span class="sd">            for j in assigments:</span>
+<span class="sd">                y = list(x)</span>
+<span class="sd">                y.append(j)</span>
+<span class="sd">                res = backtracking(y)</span>
+<span class="sd">                if res is not None:</span>
+<span class="sd">                    return res</span>
+
+
+<span class="sd">    The power of these algorithms lies in the fact that they can quickly discard</span>
+<span class="sd">    large parts of the potential solution space by using the reject function to</span>
+<span class="sd">    cancel the recursion. Compared to an unstructured search, where only the</span>
+<span class="sd">    accept function is available, this can significantly cut the required resources.</span>
+
+<span class="sd">    The quantum algorithm for solving these problems has been</span>
+<span class="sd">    `proposed by Ashley Montanaro &lt;https://arxiv.org/abs/1509.02374&gt;`_ and yields</span>
+<span class="sd">    a 1 to 1 correspondence between an arbitrary classical backtracking algorithm</span>
+<span class="sd">    and it&#39;s quantum equivalent. The quantum version achieves a quadratic speed up</span>
+<span class="sd">    over the classical one.</span>
+
+<span class="sd">    The algorithm is based on performing quantum phase estimation on a quantum walk</span>
+<span class="sd">    operator, which traverses the backtracking tree. The core algorithm returns</span>
+<span class="sd">    &quot;Node exists&quot; if the 0 component of the quantum phase estimation result</span>
+<span class="sd">    has a higher probability then 3/8 = 0.375.</span>
+
+<span class="sd">    Similar to the classical version, for the Qrisp implementation of this quantum</span>
+<span class="sd">    algorithm, a backtracking problem is specified by a maximum recursion depth</span>
+<span class="sd">    and two functions, each returning a :ref:`QuantumBool` respectively:</span>
+
+<span class="sd">    **accept**: Is the function that returns True, if called on a node, satisfying the</span>
+<span class="sd">    specifications.</span>
+
+<span class="sd">    **reject**: Is the function that returns True, if called on a node, representing a</span>
+<span class="sd">    branch that should no longer be considered.</span>
+
+<span class="sd">    Furthermore required is a :ref:`QuantumVariable` that specifies the branches</span>
+<span class="sd">    that can be taken by the algorithm at each node.</span>
+
+
+<span class="sd">    **Node encoding**</span>
+<span class="sd">    </span>
+<span class="sd">    An important aspect of this algorithm is the node encoding. In Montanaros</span>
+<span class="sd">    paper a central quantity is the distance from the root $l(x)$. This however</span>
+<span class="sd">    doesn&#39;t generalize well to the specification of subtrees, which is why</span>
+<span class="sd">    we encode the height of a node. For example in a tree with maximum depth $n$</span>
+<span class="sd">    a leaf has height 0 and the root has height $n$.</span>
+<span class="sd">    </span>
+<span class="sd">    This quantity is encoded as a one-hot integer QuantumVariable, which can be</span>
+<span class="sd">    found under the attribute ``h``.</span>
+<span class="sd">    </span>
+<span class="sd">    To fully identify a node, we also need to specify the path to take starting</span>
+<span class="sd">    at the root. This path is encoded in a :ref:`QuantumArray`, which can be found</span>
+<span class="sd">    under the attribute ``branch_qa``. To fit into the setting of height encoding,</span>
+<span class="sd">    this array contains the reversed path.</span>
+<span class="sd">    </span>
+<span class="sd">    We summarize the encoding by giving an example:</span>
+<span class="sd">        </span>
+<span class="sd">    In a binary tree with depth 5, the node that has the path from the root [1,1]</span>
+<span class="sd">    is encoded by</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        \begin{align}</span>
+<span class="sd">        \ket{\text{branch_qa}} &amp;= \ket{0}\ket{0}\ket{0}\ket{1}\ket{1}\\</span>
+<span class="sd">        \ket{\text{h}} &amp;= \ket{3} = \ket{00010}\\</span>
+<span class="sd">        \ket{x} &amp;= \ket{\text{branch_qa}}\ket{\text{h}}</span>
+<span class="sd">        \end{align}</span>
+<span class="sd">    </span>
+
+<span class="sd">    **Details on the predicate functions**</span>
+<span class="sd">    </span>
+<span class="sd">    The predicate functions ``accept`` and ``reject`` must meet certain conditions</span>
+<span class="sd">    for the algorithm to function properly:</span>
+<span class="sd">        </span>
+<span class="sd">    * Both functions have to return a :ref:`QuantumBool`.</span>
+<span class="sd">    * Both functions must not change the state of the tree.</span>
+<span class="sd">    * Both functions must delete/uncompute all temporarily created QuantumVariables.</span>
+<span class="sd">    * ``accept`` and ``reject`` must never return ``True`` on the same node.</span>
+<span class="sd">    </span>
+<span class="sd">    The ``subspace_optimization`` keyword enables a significant optimization of</span>
+<span class="sd">    the ``quantum_step`` function. This keyword can be set to True if the ``reject``</span>
+<span class="sd">    function is guaranteed to return the value ``reject(x)`` also on the non-algorithmic</span>
+<span class="sd">    subspace of x. For instance, if x = [0,0,1] in a depth 4 tree, the encoded state is</span>
+<span class="sd">    </span>
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        \begin{align}</span>
+<span class="sd">        \ket{\text{branch_qa}} &amp;= \ket{0}\ket{1}\ket{0}\ket{0}\\</span>
+<span class="sd">        \ket{\text{h}} &amp;= \ket{1}\\</span>
+<span class="sd">        \ket{x} &amp;= \ket{\text{branch_qa}}\ket{\text{h}}</span>
+<span class="sd">        \end{align}</span>
+<span class="sd">    </span>
+<span class="sd">    A state from the non-algorithmic subspace of x is now a state that has non-zero</span>
+<span class="sd">    entries in ``branch_qa`` at indices less than ``h`` ie.</span>
+<span class="sd">    </span>
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        \begin{align}</span>
+<span class="sd">        \ket{\text{branch_qa}_{NA}} &amp;= \ket{1}\ket{1}\ket{0}\ket{0}\\</span>
+<span class="sd">        \ket{\text{h}} &amp;= \ket{1}\\</span>
+<span class="sd">        \ket{\tilde{x}} &amp;= \ket{\text{branch_qa}_{NA}}\ket{\text{h}}</span>
+<span class="sd">        \end{align}</span>
+<span class="sd">        </span>
+<span class="sd">    For the ``subspace_optimization`` to return proper results, the ``reject``</span>
+<span class="sd">    function must therefore satisfy:</span>
+<span class="sd">        </span>
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        \text{reject}(\ket{x}) = \text{reject}(\ket{\tilde{x}})</span>
+
+
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Many implementations of backtracking also include the possibility for</span>
+<span class="sd">        deciding which entries of x to assign based on some user provided heuristic.</span>
+<span class="sd">        The quantum version also supports this feature, however it is not yet</span>
+<span class="sd">        implemented in Qrisp.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    max_depth : integer</span>
+<span class="sd">        The depth of the backtracking tree.</span>
+<span class="sd">    branch_qv : QuantumVariable</span>
+<span class="sd">        A QuantumVariable representing the possible branches of each node.</span>
+<span class="sd">    accept : function</span>
+<span class="sd">        A function taking an instance of QuantumBacktrackingTree and returning</span>
+<span class="sd">        a QuantumBool, which is ``True``, if called on a satisfying node.</span>
+<span class="sd">    reject : function</span>
+<span class="sd">        A function taking an instance of QuantumBacktrackingTree and returning</span>
+<span class="sd">        a QuantumBool, which is ``True``, if a called on a node where the corresponding</span>
+<span class="sd">        branch should no longer be investigated.</span>
+<span class="sd">    subspace_optimization : bool, optional</span>
+<span class="sd">        If set to ``True``, a significant optimization of the ``quantum_step`` function </span>
+<span class="sd">        will be applied. The reject function has to fullfil a certain property</span>
+<span class="sd">        for this to yield the correct results. Please check the &quot;Details on the</span>
+<span class="sd">        predicate functions&quot; section for more information. The default is ``False``.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h : :ref:`QuantumFloat`</span>
+<span class="sd">        A one hot encoded integer representing the height of the node. The root</span>
+<span class="sd">        has ``h = max_depth``, it&#39;s children have ``h = max_depth-1`` etc.</span>
+<span class="sd">    branch_qa : :ref:`QuantumArray`</span>
+<span class="sd">        A QuantumArray representing the path from the root to the current node.</span>
+<span class="sd">        The qtype of this QuantumArray is what is been provided as ``branch_qv``.</span>
+<span class="sd">        Note that the state of this array is the reversed path, ie. a the node</span>
+<span class="sd">        with path ``[1,1,0,1]`` in a depth 7 tree has the state:</span>
+<span class="sd">        $\ket{0}\ket{0}\ket{0}\ket{1}\ket{0}\ket{1}\ket{1}$</span>
+<span class="sd">        States that have a non-zero value at entries indexed smaller than ``h``,</span>
+<span class="sd">        are considered non-algorithmic and will never be visited</span>
+<span class="sd">        (eg. h=3, branch_qa = $\ket{1}\ket{1}\ket{1}\ket{1}$).</span>
+<span class="sd">    qs : :ref:`QuantumSession`</span>
+<span class="sd">        The QuantumSession of the backtracking tree.</span>
+<span class="sd">    max_depth : int</span>
+<span class="sd">        An integer specifying the maximum depth of each node.</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    **Checking for the existence of a solution**</span>
+
+<span class="sd">    Even though primary purpose of backtracking algorithms is to find a solution,</span>
+<span class="sd">    at the core, Montanaros algorithm only determines solution existence. This can</span>
+<span class="sd">    however still be leveraged into a solution finding algorithm.</span>
+
+<span class="sd">    To demonstrate the solution existence functionality, we search the binary</span>
+<span class="sd">    tree that consists only of nodes with alternating branching.</span>
+<span class="sd">    We accept if we find the node ``[0,0,1]`` (doesn&#39;t exist in this tree).</span>
+
+<span class="sd">    For this we first set up the reject condition.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+
+<span class="sd">        @auto_uncompute</span>
+<span class="sd">        def reject(tree):</span>
+<span class="sd">            </span>
+<span class="sd">            oddity = QuantumBool()</span>
+<span class="sd">            for i in range(tree.h.size):</span>
+<span class="sd">                if i%2:</span>
+<span class="sd">                    cx(tree.h[i], oddity)</span>
+<span class="sd">            </span>
+<span class="sd">            parity = QuantumBool()</span>
+<span class="sd">            </span>
+<span class="sd">            for i in range(tree.branch_qa.size):</span>
+<span class="sd">                cx(tree.branch_qa[i], parity)</span>
+<span class="sd">            </span>
+<span class="sd">            exclude_init = (tree.h &lt; tree.max_depth-1)</span>
+<span class="sd">                </span>
+<span class="sd">            return exclude_init &amp; (oddity != parity)</span>
+
+<span class="sd">    This function determines first determines the oddity of the height parameter</span>
+<span class="sd">    (remember ``tree.h`` has one-hot encoding!). Next the parity of the branching </span>
+<span class="sd">    path is evaluated. Parity means &quot;is the amount of ones in the path even or odd&quot;.</span>
+<span class="sd">    </span>
+<span class="sd">    We will reject the node if the oddity of is unequal to the parity and therefore</span>
+<span class="sd">    reject any path that took a 1 after it already took a 1 (same for 0).</span>
+<span class="sd">    </span>
+<span class="sd">    On the root and it&#39;s children there will be rejection to allow for two different</span>
+<span class="sd">    paths.</span>
+
+<span class="sd">    We now implement the accept condition:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @auto_uncompute</span>
+<span class="sd">        def accept(tree):</span>
+<span class="sd">            </span>
+<span class="sd">            height_condition = (tree.h == 0)</span>
+<span class="sd">            </span>
+<span class="sd">            path_condition = QuantumBool()</span>
+<span class="sd">            mcx(tree.branch_qa[::-1], path_condition, ctrl_state = &quot;001&quot;)</span>
+<span class="sd">        </span>
+<span class="sd">            return height_condition &amp; path_condition</span>
+
+
+<span class="sd">    Subsequently we set up the class instance:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">        tree = QuantumBacktrackingTree(max_depth = 3,</span>
+<span class="sd">                                       branch_qv = QuantumFloat(1),</span>
+<span class="sd">                                       accept = accept,</span>
+<span class="sd">                                       reject = reject)</span>
+
+<span class="sd">        tree.init_node([])</span>
+
+<span class="sd">    We can evaluate the statevector:</span>
+
+<span class="sd">    &gt;&gt;&gt; tree.statevector()</span>
+<span class="sd">    1.0*|[]&gt;</span>
+
+<span class="sd">    The ``[]`` indicates that this is the root state. If the tree was in the state</span>
+<span class="sd">    of a child of the root (say the one connected to the 1 branch) it would be ``[1]``.</span>
+
+<span class="sd">    Note that the ``statevector`` method decodes the QuantumVariables holding the</span>
+<span class="sd">    node state for convenient readibility. If you want to see the encoded variables</span>
+<span class="sd">    you can take a look at the :ref:`QuantumSession` s :meth:`statevector method&lt;qrisp.QuantumSession.statevector&gt;`:</span>
+
+<span class="sd">    &gt;&gt;&gt; tree.qs.statevector()</span>
+<span class="sd">    |0&gt;**3*|3&gt;</span>
+
+<span class="sd">    We can also visualize the statevector of the tree:</span>
+
+<span class="sd">    &gt;&gt;&gt; import matplotlib.pyplot as plt</span>
+<span class="sd">    &gt;&gt;&gt; tree.visualize_statevector()</span>
+<span class="sd">    &gt;&gt;&gt; plt.show()</span>
+
+<span class="sd">    .. image:: ./root_state_plot.png</span>
+<span class="sd">        :width: 200</span>
+<span class="sd">        :alt: Root statevector plot</span>
+<span class="sd">        :align: left</span>
+
+<span class="sd">    |</span>
+<span class="sd">    |</span>
+<span class="sd">    |</span>
+<span class="sd">    |</span>
+<span class="sd">    |</span>
+
+<span class="sd">    And finally evaluate the algorithm:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        qpe_res = tree.estimate_phase(precision = 4)</span>
+
+<span class="sd">    Perform a measurement</span>
+
+<span class="sd">    &gt;&gt;&gt; mes_res = qpe_res.get_measurement()</span>
+<span class="sd">    &gt;&gt;&gt; mes_res[0]</span>
+<span class="sd">    0.1036</span>
+
+<span class="sd">    The 0 component has only 10.36% probability of appearing, therefore we can conclude,</span>
+<span class="sd">    that in the specified tree no such node exists.</span>
+
+<span class="sd">    We now perform the same process but with a trivial reject function:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def reject(tree):</span>
+<span class="sd">            return QuantumBool()</span>
+
+<span class="sd">        tree = QuantumBacktrackingTree(max_depth = 3,</span>
+<span class="sd">                                       branch_qv = QuantumFloat(1),</span>
+<span class="sd">                                       accept = accept,</span>
+<span class="sd">                                       reject = reject)</span>
+
+<span class="sd">        tree.init_node([])</span>
+
+<span class="sd">        qpe_res = tree.estimate_phase(precision = 4)</span>
+
+
+<span class="sd">    &gt;&gt;&gt; mes_res = qpe_res.get_measurement()</span>
+<span class="sd">    &gt;&gt;&gt; mes_res[0]</span>
+<span class="sd">    0.5039</span>
+
+<span class="sd">    We see a probability of more than 50%, implying a solution exists in</span>
+<span class="sd">    this tree.</span>
+
+<span class="sd">    **Finding a solution**</span>
+
+<span class="sd">    Montanaros approach to determine a solution is to classically traverse the tree,</span>
+<span class="sd">    by always picking the child node where the quantum algorithm returns &quot;Node exists&quot;.</span>
+<span class="sd">    Finding a solution can therefore be considered a hybrid algorithm.</span>
+
+<span class="sd">    To demonstrate, we search for the node ``[1,1,1]`` with a trivial reject function.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @auto_uncompute</span>
+<span class="sd">        def accept(tree):</span>
+<span class="sd">            height_condition = (tree.h == tree.max_depth - 3)</span>
+<span class="sd">            path_condition = QuantumBool()</span>
+<span class="sd">            mcx(tree.branch_qa[-3:], path_condition)</span>
+
+<span class="sd">            return height_condition &amp; path_condition</span>
+
+<span class="sd">        def reject(tree):</span>
+<span class="sd">            return QuantumBool()</span>
+
+
+<span class="sd">    Set up the QuantumBacktrackingTree instance:</span>
+
+
+<span class="sd">    &gt;&gt;&gt; max_depth = 4</span>
+<span class="sd">    &gt;&gt;&gt; tree = QuantumBacktrackingTree(max_depth,</span>
+<span class="sd">                                       branch_qv = QuantumFloat(1),</span>
+<span class="sd">                                       accept = accept,</span>
+<span class="sd">                                       reject = reject)</span>
+
+<span class="sd">    And call the solution finding algorithm:</span>
+
+<span class="sd">    &gt;&gt;&gt; tree.find_solution(precision = 5)</span>
+<span class="sd">    [1, 1, 1]</span>
+<span class="sd">    </span>
+<span class="sd">    **Using the subspace_optimization keyword**</span>
+<span class="sd">    </span>
+<span class="sd">    To demonstrate the usage of this feature, we create two tree instances - one</span>
+<span class="sd">    with and one without the optimization.</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">        def accept(tree):</span>
+<span class="sd">            return QuantumBool()</span>
+<span class="sd">        </span>
+<span class="sd">        def reject(tree):</span>
+<span class="sd">            return QuantumBool()</span>
+
+<span class="sd">    &gt;&gt;&gt; opt_tree = QuantumBacktrackingTree(3, branch_qv = QuantumFloat(1), accept = accept, reject = reject, subspace_optimization = True)</span>
+<span class="sd">    &gt;&gt;&gt; no_opt_tree = QuantumBacktrackingTree(3, branch_qv = QuantumFloat(1), accept = accept, reject = reject, subspace_optimization = False)</span>
+
+<span class="sd">    Perform a ``quantum_step`` on both of them:</span>
+<span class="sd">        </span>
+<span class="sd">    &gt;&gt;&gt; opt_tree.quantum_step()</span>
+<span class="sd">    &gt;&gt;&gt; no_opt_tree.quantum_step()</span>
+<span class="sd">    </span>
+<span class="sd">    And evaluate some benchmarks:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; no_opt_tree.qs.compile().depth()</span>
+<span class="sd">    89</span>
+<span class="sd">    &gt;&gt;&gt; no_opt_tree.qs.compile().cnot_count()</span>
+<span class="sd">    68</span>
+<span class="sd">    </span>
+<span class="sd">    With the optimization these values are much better:</span>
+<span class="sd">        </span>
+<span class="sd">    &gt;&gt;&gt; opt_tree.qs.compile().depth()</span>
+<span class="sd">    48</span>
+<span class="sd">    &gt;&gt;&gt; opt_tree.qs.compile().cnot_count()</span>
+<span class="sd">    38</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">,</span> <span class="n">branch_qv</span><span class="p">,</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span><span class="p">,</span> <span class="n">subspace_optimization</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">=</span> <span class="n">max_depth</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">branch_qv</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">branch_qv</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">max_depth</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OHQInt</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;h*&quot;</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">qs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept_function</span> <span class="o">=</span> <span class="n">accept</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reject_function</span> <span class="o">=</span> <span class="n">reject</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">subspace_optimization</span> <span class="o">=</span> <span class="n">subspace_optimization</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reject_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@auto_uncompute</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">qstep_diffuser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">even</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="p">[],</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs the operators :math:`R_A` or :math:`R_B`. For more information on these operators check `the paper &lt;https://arxiv.org/abs/1509.02374&gt;`_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        even : bool</span>
+<span class="sd">            Depending on the parameter, the diffuser acts on the subspaces $\\mathcal H_x=\\{\\ket{x}\\}\\cup\\{\\ket{y}\\,|\\,x\\rightarrow y\\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.</span>
+<span class="sd">            Note that &quot;even&quot; refers to the parity of the ``h`` attribute instead of the distance from the root.</span>
+<span class="sd">            If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even.</span>
+
+<span class="sd">        ctrl : List[Qubit], optional</span>
+<span class="sd">            A list of qubits that allows performant controlling. The default is [].</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We set up a QuantumBackTrackingTree and perform the diffuser on a marked node</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return (tree.h == 1)</span>
+
+
+<span class="sd">            tree = QuantumBacktrackingTree(3, QuantumFloat(</span>
+<span class="sd">                1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+
+<span class="sd">            tree.init_node([1,1])</span>
+
+<span class="sd">        &gt;&gt;&gt; print(tree.qs.statevector())</span>
+<span class="sd">        |0&gt;*|1&gt;**3</span>
+<span class="sd">        &gt;&gt;&gt; tree.qstep_diffuser(even = False)</span>
+<span class="sd">        &gt;&gt;&gt; print(tree.qs.statevector())</span>
+<span class="sd">        |0&gt;*|1&gt;**3</span>
+
+<span class="sd">        We see that the node (as expected) is invariant under :math:`R_A`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This function performs the operation</span>
+        <span class="c1"># D_x = U_x (1 - (1+(-1)**accept(x))*|x&gt;&lt;x|) U_x^(-1)</span>
+        <span class="c1"># For more information, check the beginning of this file</span>
+
+        <span class="c1"># Perform U_x^(-1)</span>
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="n">psi_prep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">even</span><span class="o">=</span><span class="n">even</span><span class="p">,</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="n">min_height_assumption</span><span class="p">)</span>
+
+        <span class="c1"># We now perform the operation</span>
+        <span class="c1"># 1 - (1+(-1)**accept(x))*|x&gt;&lt;x|</span>
+        <span class="c1"># by executing an appropriate mcz gate</span>
+
+        <span class="c1"># An additional detail to consider:</span>
+        <span class="c1">#   We allow for additional control qubits. This is important because</span>
+        <span class="c1">#   this operator will undergo phase estimation and we want to prevent</span>
+        <span class="c1">#   performing automatic synthesis of the controlled operation,</span>
+        <span class="c1">#   as this would imply controlling EVERY gate. Instead we can just</span>
+        <span class="c1">#   control the mcz gate.</span>
+
+        <span class="c1"># Prepare control state specificator</span>
+        <span class="n">ctrl_state</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">mcz_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># D_x operates on the space span(|x&gt;, {|y&gt;, x-&gt;y})</span>
+        <span class="c1"># In order to make sure our mcz gate only marks |x&gt;, we can use the</span>
+        <span class="c1"># oddity of h, because if h(x) is odd, then h(y) is not.</span>
+
+        <span class="n">oddity_qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">min_height_assumption</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="n">even</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">oddity_qbl</span><span class="p">)</span>
+
+        <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="s2">&quot;1&quot;</span>
+        <span class="n">mcz_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">oddity_qbl</span><span class="p">)</span>
+
+        <span class="c1"># Determine accept value</span>
+        <span class="n">accept_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="n">mcz_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">accept_value</span><span class="p">)</span>
+        <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="s2">&quot;0&quot;</span>
+
+        <span class="c1"># Add additional control qubits</span>
+        <span class="n">mcz_list</span> <span class="o">+=</span> <span class="n">ctrl</span>
+        <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="s2">&quot;1&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+
+        <span class="c1"># Perform mcz gate</span>
+        <span class="n">mcz</span><span class="p">(</span><span class="n">mcz_list</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span><span class="p">)</span>
+
+        <span class="c1"># We now perform the phase-flip on the child states.</span>
+        <span class="c1"># For more details why this yields the correct behavior please consult</span>
+        <span class="c1"># the text at the beginning of this file.</span>
+
+        <span class="c1"># For this we first have to perform the lifting operation.</span>
+        <span class="c1"># Lifting means, that the child states |y&gt; are mapped to their parent.</span>
+
+        <span class="c1"># The first step to achieve this is to swap the branch information</span>
+        <span class="c1"># into a temporary container. This way the branching information is 0.</span>
+
+        <span class="c1"># Check if |x&gt; is root.</span>
+
+        <span class="c1"># This</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="n">even</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">],</span> <span class="n">oddity_qbl</span><span class="p">)</span>
+
+        <span class="c1"># Instead of this</span>
+
+        <span class="c1"># is_root = QuantumBool()</span>
+        <span class="c1"># cx(self.h[self.max_depth],is_root)</span>
+
+        <span class="n">temporary_container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">min_height_assumption</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">subspace_optimization</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="n">even</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="s2">&quot;gray_pt&quot;</span><span class="p">):</span>
+                    <span class="n">swap</span><span class="p">(</span><span class="n">temporary_container</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># The second step is to increment h. Due to the one-hot encoding of h,</span>
+        <span class="c1"># we can do this for free with a compiler swap.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Determine reject value</span>
+        <span class="n">reject_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reject_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">mcz_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">reject_value</span><span class="p">]</span>
+        <span class="n">ctrl_state</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+
+        <span class="c1"># Make sure we only apply the phase to the child states (parent states</span>
+        <span class="c1"># have oddity 1)</span>
+        <span class="n">mcz_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">oddity_qbl</span><span class="p">)</span>
+        <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="s2">&quot;0&quot;</span>
+
+        <span class="c1"># Check if |x&gt; is root. Otherwise, if the reject funtions returns &quot;True&quot; on the lift of the root a wrong phase (-1) may be applied to the root.</span>
+        <span class="c1"># mcz_list.append(is_root)</span>
+        <span class="c1"># ctrl_state += &quot;0&quot;</span>
+
+        <span class="c1"># Add extra controls</span>
+        <span class="n">mcz_list</span> <span class="o">+=</span> <span class="n">ctrl</span>
+        <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="s2">&quot;1&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+
+        <span class="c1"># Perform MCZ gate</span>
+        <span class="n">mcz</span><span class="p">(</span><span class="n">mcz_list</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span><span class="p">)</span>
+
+        <span class="c1"># Reverse compiler swap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># Reintroduce branching information</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">min_height_assumption</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">subspace_optimization</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="n">even</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="s2">&quot;gray_pt_inv&quot;</span><span class="p">):</span>
+                    <span class="n">swap</span><span class="p">(</span><span class="n">temporary_container</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># Delete temporary container.</span>
+        <span class="n">temporary_container</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="c1"># Perform U_x</span>
+        <span class="n">psi_prep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">even</span><span class="o">=</span><span class="n">even</span><span class="p">,</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="n">min_height_assumption</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.quantum_step">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">quantum_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="p">[],</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs the quantum step operator $R_BR_A$.</span>
+<span class="sd">        For more information check the :meth:`diffuser method &lt;qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser&gt;`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ctrl : List[Qubit], optional</span>
+<span class="sd">            A list of qubits, the step operator should be controlled on. The default is [].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qstep_diffuser</span><span class="p">(</span>
+            <span class="n">even</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">%</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">,</span>
+            <span class="n">min_height_assumption</span><span class="o">=</span><span class="n">min_height_assumption</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qstep_diffuser</span><span class="p">(</span>
+            <span class="n">even</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">%</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">,</span>
+            <span class="n">min_height_assumption</span><span class="o">=</span><span class="n">min_height_assumption</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.estimate_phase">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs :meth:`quantum phase estimation &lt;qrisp.QPE&gt;` on the :meth:`quantum step operator &lt;qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step&gt;`.</span>
+
+<span class="sd">        If executed with sufficient precision, the phase estimation will yield a QuantumFloat, where the probability of the 0 component indicates the presence of a node where the ``accept`` function yielded ``True``.</span>
+
+<span class="sd">        If the probability is higher than 3/8 :math:`\Rightarrow` A solution exists.</span>
+
+<span class="sd">        If the probability is less than 1/4 :math:`\Rightarrow` No solution exists.</span>
+
+<span class="sd">        Otherwise :math:`\Rightarrow` Increase precision.</span>
+
+<span class="sd">        In general, the required precision is proportional to</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \frac{\text{log}_2(Tn)}{2} + \beta</span>
+
+<span class="sd">        Where :math:`T` is the amount of nodes, that would be visited by a classical algorithm, :math:`n` is the maximum depth and :math:`\beta` is a universal constant.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        precision : int</span>
+<span class="sd">            The precision to perform the quantum phase estimation with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        qpe_res : :ref:`QuantumFloat`</span>
+<span class="sd">            The QuantumFloat containing the result of the phase estimation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+        <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_fresh</span>
+
+        <span class="k">if</span> <span class="n">check_if_fresh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">reg</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">):</span>
+            <span class="n">height_tracker</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">height_tracker</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qpe_res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">height_tracker</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">quantum_step</span><span class="p">(</span><span class="n">ctrl</span><span class="o">=</span><span class="p">[</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="n">height_tracker</span><span class="p">)</span>
+                    <span class="n">height_tracker</span> <span class="o">-=</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">IterationEnvironment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">,</span> <span class="n">precompile</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">quantum_step</span><span class="p">(</span><span class="n">ctrl</span><span class="o">=</span><span class="p">[</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+
+        <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">qpe_res</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.init_phi">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.init_phi.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.init_phi">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_phi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes the normalized version of the state :math:`\ket{\phi}`.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\phi} = \sqrt{n}\ket{r} + \sum_{x \neq r, \\ x \rightsquigarrow x_0} (-1)^{l(x)} \ket{x}</span>
+
+<span class="sd">        Where :math:`x \rightsquigarrow x_0` means that :math:`x` is on the path from :math:`r` to :math:`x_0` (including :math:`x_0`).</span>
+
+<span class="sd">        If :math:`x_0` is a marked node, this state is invariant under the quantum step operator.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : List</span>
+<span class="sd">            The list of branches specifying the path from the root to :math:`x_0`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We set up a backtracking tree of depth 3, where the marked element is the 111 node.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return (tree.branch_qa[0] == 1) &amp; (tree.branch_qa[1] == 1) &amp; (tree.branch_qa[2] == 1)</span>
+
+
+<span class="sd">            tree = QuantumBacktrackingTree(3, QuantumFloat(</span>
+<span class="sd">                1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+
+<span class="sd">        Initialize :math:`\ket{\phi}` and evaluate the statevector:</span>
+
+<span class="sd">        &gt;&gt;&gt; tree.init_phi([1,1,1])</span>
+<span class="sd">        &gt;&gt;&gt; print(tree.qs.statevector())</span>
+<span class="sd">        (0.816496014595032*|0&gt;*|1&gt;**3 - 0.816496014595032*|0&gt;**2*|1&gt;*|2&gt; + 1.0*sqrt(2)*|0&gt;**3*|3&gt; - 0.816496014595032*|1&gt;**3*|0&gt;)/2</span>
+
+<span class="sd">        Perform the quantum step and evaluate the statevector again:</span>
+
+<span class="sd">        &gt;&gt;&gt; tree.quantum_step()</span>
+<span class="sd">        &gt;&gt;&gt; print(tree.qs.statevector())</span>
+<span class="sd">        (0.816496014595032*|0&gt;*|1&gt;**3 - 0.816496014595032*|0&gt;**2*|1&gt;*|2&gt; + 1.0*sqrt(2)*|0&gt;**3*|3&gt; - 0.816496014595032*|1&gt;**3*|0&gt;)/2</span>
+
+<span class="sd">        We see that the node (as expected) is invariant under the quantum step operator.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h_state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">h_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">h_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">h_state</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="n">i</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">permit_dirtyness</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.init_node">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.init_node.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.init_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the state of a given node.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : List</span>
+<span class="sd">            List of the branch labels indicating the path from the root to the node.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We initialize a backtracking tree in the 101 node.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            tree = QuantumBacktrackingTree(3, QuantumFloat(</span>
+<span class="sd">                1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+
+<span class="sd">            tree.init_node([1,0,1])</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">path</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.subtree">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.subtree.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.subtree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_root</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the subtree of a given node.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        new_root : list</span>
+<span class="sd">            The path from the root of self to the root of the subtree.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumBacktrackingTree</span>
+<span class="sd">            The subtree starting at the specified root.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We initiate a QuantumBacktrackingTree with trivial reject</span>
+<span class="sd">        function and create a subtree starting at an accepted node-</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                height_cond = (tree.h == 2)</span>
+<span class="sd">                return height_cond</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+
+<span class="sd">        Create and initiate the parent tree.</span>
+
+<span class="sd">        &gt;&gt;&gt; depth = 5</span>
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(depth, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([])</span>
+<span class="sd">        &gt;&gt;&gt; print(accept(tree))</span>
+<span class="sd">        {False: 1.0}</span>
+
+<span class="sd">        We now create the subtree, where the new root has height two, ie. the accept</span>
+<span class="sd">        function returns ``True``.</span>
+
+<span class="sd">        &gt;&gt;&gt; subtree = tree.subtree([0,1,0])</span>
+<span class="sd">        &gt;&gt;&gt; subtree.init_node([])</span>
+<span class="sd">        &gt;&gt;&gt; print(accept(subtree))</span>
+<span class="sd">        {True: 1.0}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_root</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.copy">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.copy.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a copy of self. Copy means a QuantumBacktrackingTree with identical</span>
+<span class="sd">        depth, accept/reject functions etc. but with freshly allocated QuantumVariables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumBacktrackingTree</span>
+<span class="sd">            Another instance with the same depth/accept/reject etc.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[])</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.find_solution">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">cl_accept</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">measurement_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determines a path to a solution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        precision : integer</span>
+<span class="sd">            The precision to perform the quantum phase estimation(s) with.</span>
+<span class="sd">        cl_accept : function, optional</span>
+<span class="sd">            A classical version of the accept function of self. Needs to</span>
+<span class="sd">            receive a list to indicate a path and returns a bool wether the</span>
+<span class="sd">            node is accepted. By default, the accept function of self will be</span>
+<span class="sd">            evaluated on a simulator.</span>
+<span class="sd">        measurement_kwargs : dictionary</span>
+<span class="sd">            A dictionary to give keyword arguments that specify how measurements</span>
+<span class="sd">            are evaluated. The default is {}.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List</span>
+<span class="sd">            A list indicating the path to a node where the accept function</span>
+<span class="sd">            returns True.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a accept function that marks the node [0,1] and a trivial</span>
+<span class="sd">        reject function.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat, mcx</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                height_cond = (tree.h == 1) # The [0,1] node has height 1</span>
+<span class="sd">                path_cond = QuantumBool()</span>
+<span class="sd">                mcx(list(tree.branch_qa)[1:], path_cond, ctrl_state=&quot;10&quot;)</span>
+<span class="sd">                return path_cond &amp; height_cond</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+
+<span class="sd">        Create backtracking tree object:</span>
+
+<span class="sd">        &gt;&gt;&gt; depth = 3</span>
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(depth, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+
+<span class="sd">        Find solution</span>
+
+<span class="sd">        &gt;&gt;&gt; res = tree.find_solution(4)</span>
+<span class="sd">        &gt;&gt;&gt; print(res)</span>
+<span class="sd">        [0, 1]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">find_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">cl_accept</span><span class="p">,</span> <span class="n">measurement_kwargs</span><span class="o">=</span><span class="n">measurement_kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.path_decoder">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.path_decoder.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.path_decoder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">path_decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">branch_qa</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the path representation for a given constellation of the</span>
+<span class="sd">        ``h`` and ``branch_qa`` variables. The path representation is a list</span>
+<span class="sd">        indicating which branches to take starting from the root.</span>
+<span class="sd">        This function exists because the encoding of the nodes is hardware</span>
+<span class="sd">        efficient but inconvenient for humans to read.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        h : integer</span>
+<span class="sd">            The integer describing the height of the node.</span>
+<span class="sd">        branch_qa : list</span>
+<span class="sd">            The list of branches to take to reach the root, starting from the node.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The list of path variables to take to reach the node, starting</span>
+<span class="sd">            from the root.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumBacktrackingTree, initiate a node and retrieve the path.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat, multi_measurement</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">        &gt;&gt;&gt; depth = 5</span>
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(depth, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([1,0])</span>
+<span class="sd">        &gt;&gt;&gt; multi_measurement([tree.h, tree.branch_qa])</span>
+<span class="sd">        {(3, OutcomeArray([0, 0, 0, 0, 1])): 1.0}</span>
+
+<span class="sd">        Retrieve the path</span>
+
+<span class="sd">        &gt;&gt;&gt; tree.path_decoder(3, [0, 0, 0, 0, 1])</span>
+<span class="sd">        [1, 0]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="n">h</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">branch_qa</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">l</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.statevector_graph">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector_graph.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector_graph">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">statevector_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_root</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a NetworkX Graph representing the quantum state of the backtracking tree.</span>
+<span class="sd">        The nodes have an ``amplitude`` attribute, indicating the complex amplitude of that node.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        return_root : bool, optional</span>
+<span class="sd">            If set to ``True``, this method will also return the root node. The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        networkx.DiGraph</span>
+<span class="sd">            A graph representing the statevector.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We initialize a backtracking tree, initialize a :math:`\ket{\phi}` state and retrieve</span>
+<span class="sd">        the statevector graph.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return (tree.branch_qa[0] == 1) &amp; (tree.branch_qa[1] == 1) &amp; (tree.branch_qa[2] == 1)</span>
+
+
+<span class="sd">        Create backtracking tree and initialize :math:`\ket{\phi}`.</span>
+
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_phi([1,1,1])</span>
+<span class="sd">        &gt;&gt;&gt; statevector_graph = tree.statevector_graph()</span>
+<span class="sd">        &gt;&gt;&gt; print(statevector_graph.nodes())</span>
+<span class="sd">        [QBTNode(path = [], amplitude = (0.7071066+0j)), QBTNode(path = [0], amplitude = 0j), QBTNode(path = [1], amplitude = (-0.408248-4.4703484e-08j)), QBTNode(path = [0, 0], amplitude = 0j), QBTNode(path = [0, 1], amplitude = 0j), QBTNode(path = [1, 0], amplitude = 0j), QBTNode(path = [1, 1], amplitude = (0.4082481+1.4901161e-08j)), QBTNode(path = [0, 0, 0], amplitude = 0j), QBTNode(path = [0, 0, 1], amplitude = 0j), QBTNode(path = [0, 1, 0], amplitude = 0j), QBTNode(path = [0, 1, 1], amplitude = 0j), QBTNode(path = [1, 0, 0], amplitude = 0j), QBTNode(path = [1, 0, 1], amplitude = 0j), QBTNode(path = [1, 1, 0], amplitude = 0j), QBTNode(path = [1, 1, 1], amplitude = (-0.40824816+5.9604645e-08j))]</span>
+<span class="sd">        &gt;&gt;&gt; statevector_graph, root = tree.statevector_graph(return_root = True)</span>
+<span class="sd">        &gt;&gt;&gt; print(root)</span>
+<span class="sd">        QBTNode(path = [], amplitude = (0.7071066+0j))</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiGraph</span>
+
+        <span class="n">sv_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">(</span><span class="s2">&quot;function&quot;</span><span class="p">)</span>
+
+        <span class="n">res_graph</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">()</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">QBTNode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="n">root</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">sv_function</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">sv_specifier</span><span class="p">())</span>
+
+        <span class="n">res_graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+        <span class="n">last_layer</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">):</span>
+            <span class="n">next_layer</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">parent_node</span> <span class="ow">in</span> <span class="n">last_layer</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="n">child_node_path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parent_node</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span>
+
+                    <span class="n">child_node</span> <span class="o">=</span> <span class="n">QBTNode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child_node_path</span><span class="p">)</span>
+
+                    <span class="n">child_node</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">sv_function</span><span class="p">(</span><span class="n">child_node</span><span class="o">.</span><span class="n">sv_specifier</span><span class="p">())</span>
+
+                    <span class="n">res_graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">child_node</span><span class="p">)</span>
+                    <span class="n">res_graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">child_node</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">child_node_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+                    <span class="n">next_layer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_node</span><span class="p">)</span>
+
+            <span class="n">last_layer</span> <span class="o">=</span> <span class="n">next_layer</span>
+
+        <span class="k">if</span> <span class="n">return_root</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res_graph</span><span class="p">,</span> <span class="n">root</span>
+        <span class="k">return</span> <span class="n">res_graph</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.visualize_statevector">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">visualize_statevector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualizes the statevector graph.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pos : dict, optional</span>
+<span class="sd">            A dictionary indicating the positional layout of the nodes. For more information visit</span>
+<span class="sd">            `this page &lt;https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw.html&gt;`_</span>
+<span class="sd">            By default is suitable will be generated.</span>
+<span class="sd">        ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">            The axes object to draw the plot onto. If None, the current active axes is used.</span>
+<span class="sd">            This is useful for creating grids of plots using `plt.subplots`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We initialize a backtracking tree and visualize:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+<span class="sd">            import matplotlib.pyplot as plt</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                return QuantumBool()</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                return (tree.branch_qa[0] == 1) &amp; (tree.branch_qa[1] == 1) &amp; (tree.branch_qa[2] == 1)</span>
+
+
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([])</span>
+<span class="sd">        &gt;&gt;&gt; tree.visualize_statevector()</span>
+<span class="sd">        &gt;&gt;&gt; plt.show()</span>
+
+<span class="sd">        .. image:: ./root_state_plot.png</span>
+<span class="sd">            :width: 200</span>
+<span class="sd">            :alt: Root statevector plot</span>
+<span class="sd">            :align: left</span>
+
+<span class="sd">        &gt;&gt;&gt; tree = tree.copy()</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_phi([1,1,1])</span>
+<span class="sd">        &gt;&gt;&gt; tree.visualize_statevector()</span>
+
+<span class="sd">        .. image:: ./phi_state_plot.png</span>
+<span class="sd">            :width: 200</span>
+<span class="sd">            :alt: Root statevector plot</span>
+<span class="sd">            :align: left</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">G</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevector_graph</span><span class="p">(</span><span class="n">return_root</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">tree_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">theta_parent</span><span class="p">,</span> <span class="n">res_dic</span><span class="o">=</span><span class="p">{}):</span>
+
+            <span class="n">r</span> <span class="o">=</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">delta_theta</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">**</span> <span class="p">(</span><span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">theta_start</span> <span class="o">=</span> <span class="n">theta_parent</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">**</span> <span class="p">(</span><span class="n">depth</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>
+
+            <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)):</span>
+                <span class="n">theta</span> <span class="o">=</span> <span class="n">theta_start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta_theta</span>
+
+                <span class="n">res_dic</span><span class="p">[</span><span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span>
+
+                <span class="n">tree_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">res_dic</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">res_dic</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">tree_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">pos</span><span class="p">[</span><span class="n">root</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">colorsys</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">complex_to_color</span><span class="p">(</span><span class="n">cnumber</span><span class="p">):</span>
+
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">cnumber</span><span class="p">)</span>
+            <span class="n">radius</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">cnumber</span><span class="p">)</span>
+
+            <span class="c1"># Normalize the angle to the range [0, 2*pi)</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="p">(</span><span class="n">angle</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+            <span class="c1"># Map the angle to the hue component of the color</span>
+            <span class="n">hue</span> <span class="o">=</span> <span class="n">angle</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+            <span class="c1"># Map the radius to the saturation and value components of the color</span>
+            <span class="n">saturation</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="c1"># Convert the HSV components to RGB</span>
+            <span class="n">hsv_color</span> <span class="o">=</span> <span class="p">(</span><span class="n">hue</span><span class="p">,</span> <span class="n">saturation</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">rgb_color</span> <span class="o">=</span> <span class="n">colorsys</span><span class="o">.</span><span class="n">hsv_to_rgb</span><span class="p">(</span><span class="o">*</span><span class="n">hsv_color</span><span class="p">)</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">expit</span>
+
+            <span class="n">intensity</span> <span class="o">=</span> <span class="n">expit</span><span class="p">((</span><span class="n">radius</span> <span class="o">-</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
+
+            <span class="c1"># Convert the RGB components to hexadecimal format</span>
+            <span class="n">hex_color</span> <span class="o">=</span> <span class="s2">&quot;#</span><span class="si">{:02x}{:02x}{:02x}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">rgb_color</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">intensity</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">rgb_color</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">intensity</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">rgb_color</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">intensity</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">hex_color</span>
+
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">complex_to_color</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+
+        <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+        <span class="n">edge_labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([((</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">),</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;label&quot;</span><span class="p">)])</span>
+
+        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edge_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">edge_labels</span><span class="o">=</span><span class="n">edge_labels</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumBacktrackingTree.statevector">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">statevector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a SymPy statevector object representing the state of the tree</span>
+<span class="sd">        with decoded node labels.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state : sympy.Expr</span>
+<span class="sd">            A SymPy quantum state representing the statevector of the tree.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumBacktrackingTree with and investigate the action of the</span>
+<span class="sd">        :meth:`quantum step diffuser &lt;qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser&gt;`</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import auto_uncompute, mcx, QuantumBool, QuantumFloat</span>
+<span class="sd">            from qrisp.quantum_backtracking import QuantumBacktrackingTree</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def accept(tree):</span>
+<span class="sd">                height_cond = (tree.h == 1) # The [0,1] node has height 1</span>
+<span class="sd">                path_cond = QuantumBool()</span>
+<span class="sd">                mcx(list(tree.branch_qa)[1:], path_cond, ctrl_state=&quot;10&quot;)</span>
+<span class="sd">                return path_cond &amp; height_cond</span>
+
+<span class="sd">            @auto_uncompute</span>
+<span class="sd">            def reject(tree):</span>
+<span class="sd">                height_cond = (tree.h == 2) # The [1] node has height 2</span>
+<span class="sd">                path_cond = QuantumBool()</span>
+<span class="sd">                mcx(list(tree.branch_qa)[-1], path_cond, ctrl_state=&quot;1&quot;)</span>
+<span class="sd">                return path_cond &amp; height_cond</span>
+
+
+<span class="sd">        Create tree and initialize a node where neither accept nor reject are True.</span>
+
+<span class="sd">        &gt;&gt;&gt; tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = &quot;branch_qf*&quot;), accept, reject)</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([0,0])</span>
+
+<span class="sd">        Evaluate statevector</span>
+
+<span class="sd">        &gt;&gt;&gt; print(tree.statevector())</span>
+<span class="sd">        1.0*|[0, 0]&gt;</span>
+<span class="sd">        &gt;&gt;&gt; tree.qstep_diffuser(even = False)</span>
+<span class="sd">        &gt;&gt;&gt; print(tree.statevector())</span>
+<span class="sd">        -0.666660010814667*|[0, 0, 0]&gt; - 0.666660010814667*|[0, 0, 1]&gt; + 0.333330005407333*|[0, 0]&gt;</span>
+
+<span class="sd">        We see that the :meth:`quantum step diffuser &lt;qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser&gt;`</span>
+<span class="sd">        moves the state to the children of the [0,0] node (ie. [0,0,0] and [0,0,1]).</span>
+
+<span class="sd">        We now investigate how it behaves on nodes that are accepted/rejected:</span>
+
+<span class="sd">        Initiate a new tree</span>
+
+<span class="sd">        &gt;&gt;&gt; tree = tree.copy()</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([0,1])</span>
+<span class="sd">        &gt;&gt;&gt; tree.qstep_diffuser(even = False)</span>
+<span class="sd">        &gt;&gt;&gt; tree.statevector()</span>
+<span class="sd">        1.0*|[0, 1]&gt;</span>
+
+<span class="sd">        As expected, the accepted node is invariant.</span>
+
+<span class="sd">        To investigate the rejected node, we create another copy:</span>
+
+<span class="sd">        &gt;&gt;&gt; tree = tree.copy()</span>
+<span class="sd">        &gt;&gt;&gt; tree.init_node([1])</span>
+<span class="sd">        &gt;&gt;&gt; tree.qstep_diffuser(even = True)</span>
+<span class="sd">        &gt;&gt;&gt; tree.statevector()</span>
+<span class="sd">        -1*|[1]&gt;</span>
+
+<span class="sd">        As expected, the node has eigenvalue -1.</span>
+
+<span class="sd">        If you are unsure why these statevectors are eigenvector please check</span>
+<span class="sd">        `the paper &lt;https://arxiv.org/abs/1509.02374&gt;`_.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sv_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">(</span><span class="s2">&quot;function&quot;</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+        <span class="c1"># Internal qvs are the quantum variables that specify a backtrackingtree node</span>
+        <span class="c1"># internal_qvs = [self.h, self.branch_workspace] + list(self.branch_qa)</span>
+        <span class="n">internal_qvs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">)</span>
+        <span class="c1"># External qvs are any quantum variables that are also registered in the QuantumSession</span>
+        <span class="c1"># but don&#39;t specify a node</span>
+        <span class="n">external_qvs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qv_list</span><span class="p">)</span>
+
+        <span class="c1"># Remove the internal qvs from the external qv_list</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">internal_qvs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">external_qvs</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">hash</span><span class="p">(</span><span class="n">external_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="nb">hash</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+                    <span class="n">external_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="c1"># Get a list of possible labels for each qv</span>
+
+        <span class="n">internal_qv_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">internal_qvs</span><span class="p">:</span>
+            <span class="n">label_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">label_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">internal_qv_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label_list</span><span class="p">)</span>
+
+        <span class="n">external_qv_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">external_qvs</span><span class="p">:</span>
+            <span class="n">label_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">label_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">external_qv_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label_list</span><span class="p">)</span>
+
+        <span class="c1"># This retrieves a list of all possible constellations of labels</span>
+        <span class="n">internal_label_product</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">internal_qv_labels</span><span class="p">))</span>
+        <span class="n">external_label_product</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">external_qv_labels</span><span class="p">))</span>
+
+        <span class="c1"># This will be the sympy object that is returned</span>
+        <span class="n">res_state</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Go through all internal label consteallations (ie. node states)</span>
+        <span class="k">for</span> <span class="n">internal_label_const</span> <span class="ow">in</span> <span class="n">internal_label_product</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="c1"># print(internal_label_const)</span>
+            <span class="c1"># Get the path to that node state</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_decoder</span><span class="p">(</span><span class="n">internal_label_const</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">internal_label_const</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="c1"># print(path)</span>
+
+            <span class="c1"># Create a label dic for the sv_function</span>
+            <span class="n">internal_label_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">internal_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">internal_label_const</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">internal_qvs</span><span class="p">))}</span>
+
+            <span class="c1"># If there are no external qvs, we can simply call the sv_function</span>
+            <span class="c1"># with the label dic</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">external_qvs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">amplitude</span> <span class="o">=</span> <span class="n">sv_function</span><span class="p">(</span><span class="n">internal_label_dic</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># print(res_state)</span>
+                <span class="c1"># Add the corresponding ket</span>
+                <span class="n">res_state</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="n">OrthogonalKet</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+                <span class="c1"># print(res_state)</span>
+
+            <span class="c1"># If there are external qvs we do a similar procedure to go through</span>
+            <span class="c1"># all label constellations</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">external_label_const</span> <span class="ow">in</span> <span class="n">external_label_product</span><span class="p">:</span>
+                    <span class="c1"># Set up the external label dic</span>
+                    <span class="n">external_label_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">external_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">external_label_const</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">external_qvs</span><span class="p">))}</span>
+
+                    <span class="c1"># Integrate the internal label dic</span>
+                    <span class="n">external_label_dic</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">internal_label_dic</span><span class="p">)</span>
+
+                    <span class="c1"># Retrieve the amplitude</span>
+                    <span class="n">amplitude</span> <span class="o">=</span> <span class="n">sv_function</span><span class="p">(</span><span class="n">external_label_dic</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">external_ket_expr</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="c1"># Generate the ket expression for the external qvs</span>
+                    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">external_label_const</span><span class="p">:</span>
+                        <span class="n">external_ket_expr</span> <span class="o">*=</span> <span class="n">OrthogonalKet</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+
+                    <span class="c1"># Add the corresponding state</span>
+                    <span class="n">res_state</span> <span class="o">+=</span> <span class="n">amplitude</span> <span class="o">*</span> <span class="n">OrthogonalKet</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="o">*</span> <span class="n">external_ket_expr</span>
+
+        <span class="k">return</span> <span class="n">res_state</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OHQInt</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="c1"># One hot encoding:</span>
+        <span class="c1"># Red:   [1,0,0,0]</span>
+        <span class="c1"># Green: [0,1,0,0]</span>
+        <span class="c1"># Yellow:[0,0,1,0]</span>
+        <span class="c1"># Blue:  [0,0,0,1]</span>
+
+        <span class="c1"># [0,0,0,1][0,0,1,0]</span>
+
+        <span class="c1"># [0,0,0,0][1,0,0,1]</span>
+        <span class="n">is_power_of_two</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">is_power_of_two</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">3</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+            <span class="n">eq_qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+            <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">other</span><span class="p">],</span> <span class="n">eq_qbl</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">eq_qbl</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+    <span class="fm">__hash__</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="o">.</span><span class="fm">__hash__</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_even</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">is_even</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">is_even</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">is_even</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_odd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">is_odd</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">is_odd</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">is_odd</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">less_than</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">other</span><span class="p">:</span>
+                    <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">less_than</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">less_than</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison for type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fan_in</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">control</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+
+<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This function realizes the operator U_x, which has the property</span>
+
+<span class="sd">U_x |x&gt; = |psi_x&gt;</span>
+
+<span class="sd">For more details on these objects, check the details of the</span>
+<span class="sd">paper (https://arxiv.org/abs/1509.02374)or the beginning of this file.</span>
+
+<span class="sd">The general idea to implement this operator are the following two steps:</span>
+
+<span class="sd">    1. Manipulatre h such that |h&gt; -&gt; 1/N(|h&gt; + c*|h-1&gt;) with suitable N,c \in R</span>
+<span class="sd">    2. Manipulate branch_qa controlled on h-1 to bring the new branches into</span>
+<span class="sd">        into superposition.</span>
+
+<span class="sd">The value of the constant c depends on wether x is the root or a terminal node.</span>
+
+<span class="sd">For the root c = n**0.5*d_x**0.5</span>
+<span class="sd">Otherwise c = d_x**0.5</span>
+
+<span class="sd">Where d_x is the degree of the node.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">psi_prep</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">even</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_height_assumption</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+    <span class="c1"># Determine c</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">degree</span><span class="o">**</span><span class="mf">0.5</span>
+
+    <span class="c1"># The step |h&gt; -&gt; 1/N(|h&gt; + c*|h-1&gt;) will be performed by a ry gate</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="n">root_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">((</span><span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">max_depth</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="n">rev_branch_qa</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">branch_qa</span>
+    <span class="c1"># N = x.max_depth+1</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">max_depth</span>
+
+    <span class="c1"># To achieve the first step, we use a circuit, that performs a similar function</span>
+    <span class="c1"># as a parametrized swap. That means:</span>
+    <span class="c1"># |00&gt; ==&gt; |00&gt;</span>
+    <span class="c1"># |01&gt; ==&gt; sin(theta)*|01&gt; + cos(theta)*|10&gt;</span>
+    <span class="c1"># |10&gt; ==&gt; cos(theta)*|10&gt; + sin(theta)*|01&gt;</span>
+    <span class="c1"># |11&gt; ==&gt; |11&gt;</span>
+
+    <span class="c1"># This way we can &quot;move&quot; the 1 of the one hot encoding up and down.</span>
+
+    <span class="c1"># After we moved the one, we apply an H-gate controlled on the target of the</span>
+    <span class="c1"># moevement, to set up the super position in the branch_qa</span>
+
+    <span class="c1"># Furthermore we also need to make sure that non-algorithmic states stay</span>
+    <span class="c1"># invariant under the U_x (otherwise they will also get tagged in qstep_diffuser).</span>
+
+    <span class="c1"># We achieve this by controlling the parameterized swap on the QuantumVariable</span>
+    <span class="c1"># which would be set to super position by the controlled H-gate.</span>
+    <span class="c1"># This QuantumVariable represents the branch information of the child states</span>
+    <span class="c1"># of H_x = &lt;{|y&gt; | |x&gt; -&gt; |y&gt;} U {|x&gt;} &gt;.</span>
+    <span class="c1"># If it is in a non-zero state but the height variable indicates the parent</span>
+    <span class="c1"># state, the state is invariant.</span>
+
+    <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">N</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="n">even</span><span class="p">:</span>
+        <span class="n">c_iswap_reduced</span><span class="p">(</span><span class="n">root_phase</span><span class="p">,</span> <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">N</span><span class="p">])</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch_gate</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">even</span><span class="p">),</span> <span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">min_height_assumption</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">c_iswap_reduced</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch_gate</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+
+
+<span class="n">ch_gate</span> <span class="o">=</span> <span class="n">HGate</span><span class="p">()</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+
+
+<span class="c1"># This circuit is a slightly modified (and controlled) version of the XXPlusYY gate</span>
+<span class="c1"># https://qiskit.org/documentation/stubs/qiskit.circuit.library.XXPlusYYGate.html</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">c_iswap</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">ctrl</span><span class="p">,</span> <span class="n">target_1</span><span class="p">,</span> <span class="n">target_0</span><span class="p">):</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">target_1</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">target_1</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RYGate</span><span class="p">(</span><span class="o">-</span><span class="n">phi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">control</span><span class="p">(),</span> <span class="p">[</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target_0</span><span class="p">])</span>
+    <span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RYGate</span><span class="p">(</span><span class="o">-</span><span class="n">phi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">control</span><span class="p">(),</span> <span class="p">[</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">target_1</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">target_1</span><span class="p">)</span>
+
+
+<span class="c1"># This circuit performs a similar function as the previous one but has a different</span>
+<span class="c1"># behavior on |11&gt; and also requires less resources.</span>
+<span class="c1"># Since the |11&gt; behavior is irrelevant we can also use this circuit.</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">c_iswap_reduced</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">ctrl</span><span class="p">,</span> <span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">):</span>
+
+    <span class="n">phi</span> <span class="o">=</span> <span class="o">-</span><span class="n">phi</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">target_1</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">target_1</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="n">ry</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">ry</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">target_1</span><span class="p">)</span>
+
+    <span class="c1"># Usually we would now execute two controlled H-gates</span>
+    <span class="c1"># If there are multiple controls, we&#39;d have to perform</span>
+    <span class="c1"># the corresponding mcx gate twice (to have two multi controlled H gates)</span>
+
+    <span class="c1"># ctrl.qs().append(ch_gate, [ctrl, target_0])</span>
+    <span class="c1"># ctrl.qs().append(ch_gate, [ctrl, target_1])</span>
+
+    <span class="c1"># Two prevent this situation we execute a circuit with the same semantics but</span>
+    <span class="c1"># only a single mcx gate</span>
+
+    <span class="c1"># --------------------------</span>
+
+    <span class="c1"># These one qubit gates make sure that the cx gates are acting as a controlled</span>
+    <span class="c1"># H-Gate</span>
+    <span class="n">s</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+    <span class="n">h</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+    <span class="n">t</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target_1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">)</span>
+        <span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">)</span>
+
+    <span class="n">t_dg</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+    <span class="n">h</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+    <span class="n">s_dg</span><span class="p">([</span><span class="n">target_0</span><span class="p">,</span> <span class="n">target_1</span><span class="p">])</span>
+
+    <span class="c1"># ----------------------------</span>
+    <span class="n">ry</span><span class="p">(</span><span class="o">-</span><span class="n">phi</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">ry</span><span class="p">(</span><span class="o">-</span><span class="n">phi</span><span class="p">,</span> <span class="n">target_1</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">target_1</span><span class="p">,</span> <span class="n">target_0</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">target_1</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Subtree</span><span class="p">(</span><span class="n">QuantumBacktrackingTree</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_tree</span><span class="p">,</span> <span class="n">root_path</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">root_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">parent_tree</span><span class="o">.</span><span class="n">max_depth</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialise subtree with root path longer than maximum depth&quot;</span><span class="p">)</span>
+
+        <span class="n">QuantumBacktrackingTree</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">parent_tree</span><span class="o">.</span><span class="n">max_depth</span><span class="p">,</span>
+            <span class="n">parent_tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">parent_tree</span><span class="o">.</span><span class="n">accept_function</span><span class="p">,</span>
+            <span class="n">parent_tree</span><span class="o">.</span><span class="n">reject_function</span><span class="p">,</span>
+            <span class="n">parent_tree</span><span class="o">.</span><span class="n">subspace_optimization</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">=</span> <span class="n">parent_tree</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">root_path</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_path</span> <span class="o">=</span> <span class="n">root_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_tree</span> <span class="o">=</span> <span class="n">parent_tree</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_path</span> <span class="o">+</span> <span class="n">path</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">path</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_phi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+
+        <span class="n">h_state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">h_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">h_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">h_state</span>
+
+        <span class="n">rev_branch_qa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_path</span><span class="p">)):</span>
+                <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">k</span><span class="p">][:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_path</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="n">i</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                    <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">permit_dirtyness</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_path</span><span class="p">)):</span>
+                    <span class="n">rev_branch_qa</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">i</span><span class="p">][:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_path</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_tree</span><span class="o">.</span><span class="n">subtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_solution</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">cl_accept</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traversed_nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">measurement_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="c1"># The idea of this function is to use the quantum algorithm to check wether</span>
+    <span class="c1"># a the subtree of a given node contains a solution and then recursively call</span>
+    <span class="c1"># this function on that subtree.</span>
+
+    <span class="c1"># If there is no classical accept function given, we create a copy of the original</span>
+    <span class="c1"># tree and evaluate the quantum accept function on that node via the simulator</span>
+    <span class="k">if</span> <span class="n">cl_accept</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">cl_accept</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">Subtree</span><span class="p">):</span>
+                <span class="n">copied_tree</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">original_tree</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">copied_tree</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">copied_tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">accept_qbl</span> <span class="o">=</span> <span class="n">copied_tree</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+            <span class="n">mes_res</span> <span class="o">=</span> <span class="n">accept_qbl</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">mes_res</span> <span class="o">==</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+    <span class="c1"># The first step is to check wether the current root is a solution</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">Subtree</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root_path</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">cl_accept</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">path</span>
+    <span class="k">elif</span> <span class="n">tree</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># This list keeps track of which nodes have already been checked for solutions</span>
+    <span class="k">if</span> <span class="n">traversed_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">traversed_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Initialize the root node</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">([])</span>
+
+    <span class="c1"># Perform quantum phase estimation</span>
+    <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">estimate_phase</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="c1"># Retrieve the measurement results</span>
+    <span class="n">mes_res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">],</span> <span class="o">**</span><span class="n">measurement_kwargs</span><span class="p">)</span>
+
+    <span class="c1"># We will first check wether there is a solution</span>
+    <span class="c1"># The s variable will contain the probability to measure</span>
+    <span class="c1"># the qpe_res == 0 branch.</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># This list will contain the possible branches</span>
+    <span class="n">new_branches</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># k[0] is the value of qpe_res</span>
+        <span class="k">if</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If the measurement result is part of the qpe == 0 branch, add the</span>
+            <span class="c1"># probability to s</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="n">v</span>
+
+            <span class="n">new_branches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="c1"># If the probability is less then 0.25, there is no solution</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mf">0.25</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># If the probability is between 0.25 and 0.375, the qpe needs more precision</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mf">0.375</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Executed find solution method of quantum backtracking algorithm with insufficient precision&quot;</span><span class="p">)</span>
+
+    <span class="c1"># To find the next node to check we will use a heuristic.</span>
+    <span class="c1"># After measurement of the 0 branch, the tree is collapsed to a state which</span>
+    <span class="c1"># also contains the |phi&gt; state. The phi state is a superposition of nodes</span>
+    <span class="c1"># leading to the desired solution.</span>
+    <span class="c1"># We assume that the outcome with the smallest tree.h value is the state</span>
+    <span class="c1"># corresponding to |phi&gt;. This proved to be the case in every situation we tested.</span>
+    <span class="c1"># If this assumption for whichever reason is not correct, the solution will still</span>
+    <span class="c1"># be found because of the recursive nature of this algorithm.</span>
+
+    <span class="c1"># Sort for the value of tree.h</span>
+    <span class="n">new_branches</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">new_branches</span><span class="p">:</span>
+        <span class="c1"># Get the path to the new node</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">Subtree</span><span class="p">):</span>
+            <span class="n">new_path</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">original_tree</span><span class="o">.</span><span class="n">path_decoder</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_path</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">path_decoder</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># Continue if new_path was already explored</span>
+        <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_path</span><span class="p">)</span> <span class="ow">in</span> <span class="n">traversed_nodes</span> <span class="ow">or</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Generate the subtree</span>
+        <span class="n">subtree</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">subtree</span><span class="p">(</span><span class="n">new_path</span><span class="p">)</span>
+
+        <span class="c1"># Recursive call</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="n">find_solution</span><span class="p">(</span>
+            <span class="n">subtree</span><span class="p">,</span>
+            <span class="n">precision</span><span class="p">,</span>
+            <span class="n">cl_accept</span><span class="p">,</span>
+            <span class="n">traversed_nodes</span><span class="p">,</span>
+            <span class="n">measurement_kwargs</span><span class="o">=</span><span class="n">measurement_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Leave loop if solution was found</span>
+        <span class="k">if</span> <span class="n">solution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">traversed_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_path</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Executed find solution method of quantum backtracking algorithm with insufficient precision&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">solution</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QBTNode</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sv_specifier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">amplitude_state_specifyer</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)}</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">,</span> <span class="n">Subtree</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">root_path</span> <span class="o">+</span> <span class="n">path</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="n">amplitude_state_specifyer</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">k</span><span class="p">]]</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">amplitude_state_specifyer</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">k</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">amplitude_state_specifyer</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;QBTNode(path = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;, amplitude = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

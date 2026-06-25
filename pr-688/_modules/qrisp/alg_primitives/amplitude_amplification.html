@@ -1,0 +1,671 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.alg_primitives.amplitude_amplification &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/alg_primitives/amplitude_amplification';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/alg_primitives/amplitude_amplification.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.alg_primitives.amplitude_amplification</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.alg_primitives.amplitude_amplification</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.reflection</span><span class="w"> </span><span class="kn">import</span> <span class="n">reflection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">recursive_qs_search</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">IterationEnvironment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span><span class="p">,</span> <span class="n">jrange</span>
+
+
+<div class="viewcode-block" id="amplitude_amplification">
+<a class="viewcode-back" href="../../../reference/Primitives/amplitude_amplification.html#qrisp.amplitude_amplification">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">amplitude_amplification</span><span class="p">(</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span><span class="p">],</span>
+    <span class="n">state_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">oracle_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">kwargs_oracle</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="nb">iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">reflection_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This method performs `quantum amplitude amplification &lt;https://arxiv.org/abs/quant-ph/0005055&gt;`_.</span>
+
+<span class="sd">    The problem of quantum amplitude amplification is described as follows:</span>
+
+<span class="sd">    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.</span>
+<span class="sd">    * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.</span>
+<span class="sd">    * Enhance the probability :math:`a=\langle\Psi_1|\Psi_1\rangle` that a measurement of :math:`\ket{\Psi}` yields a good state.</span>
+
+<span class="sd">    Let :math:`\theta_a\in [0,\pi/2]` such that :math:`\sin^2(\theta_a)=a`. Then the amplitude amplification operator :math:`\mathcal Q` acts as</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathcal Q^j\ket{\Psi}=\frac{1}{\sqrt{a}}\sin((2j+1)\theta_a)\ket{\Psi_1}+\frac{1}{\sqrt{1-a}}\cos((2j+1)\theta_a)\ket{\Psi_0}.</span>
+
+<span class="sd">    Therefore, after :math:`m` iterations the probability of measuring a good state is :math:`\sin^2((2m+1)\theta_a)`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]</span>
+<span class="sd">        The quantum variable, array, or collection thereof on which amplitude amplification</span>
+<span class="sd">        is performed. These variables must already be prepared in the initial state</span>
+<span class="sd">        :math:`\ket{\Psi}` before calling this method (i.e., the user is responsible</span>
+<span class="sd">        for applying the ``state_function`` to the zero state prior to execution).</span>
+<span class="sd">    state_function : Callable</span>
+<span class="sd">        A Python function preparing the state :math:`\ket{\Psi}` from the zero state.</span>
+<span class="sd">        The required signature of this function depends on the input ``args``:</span>
+
+<span class="sd">        - if ``args`` is a single variable or array, it receives that single object.</span>
+<span class="sd">        - if ``args`` is a list, the elements are unpacked and passed as separate</span>
+<span class="sd">          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature</span>
+<span class="sd">          must be ``state_function(qv1, qv2)``).</span>
+
+<span class="sd">        Although ``args`` must already be in the state :math:`\ket{\Psi}` upon input,</span>
+<span class="sd">        this function is strictly required internally to construct the amplitude</span>
+<span class="sd">        amplification operator :math:`\mathcal{Q}` (specifically to perform the</span>
+<span class="sd">        reflection about the initial state).</span>
+<span class="sd">    oracle_function : Callable</span>
+<span class="sd">        A Python function tagging the good state :math:`\ket{\Psi_1}`.</span>
+<span class="sd">        Like ``state_function``, its required signature matches the structure of ``args``:</span>
+<span class="sd">        it takes a single argument if ``args`` is a single object, or unpacked</span>
+<span class="sd">        positional arguments if ``args`` is a list.</span>
+<span class="sd">    kwargs_oracle : dict, optional</span>
+<span class="sd">        A dictionary containing keyword arguments for the oracle. The default is None.</span>
+<span class="sd">    iter : int, optional</span>
+<span class="sd">        The exact amount of amplitude amplification iterations to perform. The default is 1.</span>
+<span class="sd">    reflection_indices : list[int], optional</span>
+<span class="sd">        A list of indices indicating with respect to which variables the reflection is performed, i.e.,</span>
+<span class="sd">        `oblivious amplitude amplification &lt;https://arxiv.org/pdf/1312.1414&gt;`_ is performed.</span>
+<span class="sd">        Indices correspond to the flattened ``args`` (e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,</span>
+<span class="sd">        ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array).</span>
+<span class="sd">        By default, the reflection is performed with respect to all variables in ``args``</span>
+<span class="sd">        (standard amplitude amplification).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{16})\ket{0}+\sin(\frac{\pi}{16})\ket{1}`</span>
+<span class="sd">    and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{16})\approx 0.19509`.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import z, ry, QuantumBool, amplitude_amplification</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        def state_function(qb):</span>
+<span class="sd">            ry(np.pi/8,qb)</span>
+
+<span class="sd">        def oracle_function(qb):</span>
+<span class="sd">            z(qb)</span>
+
+<span class="sd">        qb = QuantumBool()</span>
+
+<span class="sd">        state_function(qb)</span>
+
+<span class="sd">    &gt;&gt;&gt; qb.qs.statevector(decimals=5)</span>
+<span class="sd">    0.98079∣False⟩+0.19509∣True⟩</span>
+
+<span class="sd">    We can enhance the probability of measuring the good state with amplitude amplification:</span>
+
+<span class="sd">    &gt;&gt;&gt; amplitude_amplification([qb], state_function, oracle_function)</span>
+<span class="sd">    &gt;&gt;&gt; qb.qs.statevector(decimals=5)</span>
+<span class="sd">    0.83147*|False&gt; + 0.55557*|True&gt;</span>
+
+<span class="sd">    &gt;&gt;&gt; amplitude_amplification([qb], state_function, oracle_function)</span>
+<span class="sd">    &gt;&gt;&gt; qb.qs.statevector(decimals=5)</span>
+<span class="sd">    0.55557*|False&gt; + 0.83147*|True&gt;</span>
+
+<span class="sd">    &gt;&gt;&gt; amplitude_amplification([qb], state_function, oracle_function)</span>
+<span class="sd">    &gt;&gt;&gt; qb.qs.statevector(decimals=5)</span>
+<span class="sd">    0.19509*|False&gt; + 0.98079*|True&gt;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwargs_oracle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs_oracle</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">)):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
+            <span class="n">oracle_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_oracle</span><span class="p">)</span>
+            <span class="n">reflection</span><span class="p">(</span>
+                <span class="n">args</span><span class="p">,</span>
+                <span class="n">state_function</span><span class="o">=</span><span class="n">state_function</span><span class="p">,</span>
+                <span class="n">reflection_indices</span><span class="o">=</span><span class="n">reflection_indices</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">merge</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">recursive_qs_search</span><span class="p">(</span><span class="n">args</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">iter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">IterationEnvironment</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="nb">iter</span><span class="p">):</span>
+                <span class="n">oracle_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_oracle</span><span class="p">)</span>
+                <span class="n">reflection</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">,</span>
+                    <span class="n">state_function</span><span class="o">=</span><span class="n">state_function</span><span class="p">,</span>
+                    <span class="n">reflection_indices</span><span class="o">=</span><span class="n">reflection_indices</span><span class="p">,</span>
+                <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

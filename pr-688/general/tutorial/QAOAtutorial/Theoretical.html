@@ -1,0 +1,681 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Theoretical Overview &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QAOAtutorial/Theoretical';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QAOAtutorial/Theoretical.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="MaxCut QAOA Implementation" href="MaxCut.html" />
+    <link rel="prev" title="Solving combinatorial optimization problems with QAOA" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Solving combinatorial optimization problems with QAOA</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Theoretical Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxCut.html">MaxCut QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MkCS.html">Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ConstrainedMixers.html">Channelled Constrained Mixers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QUBO.html">QUBO as a QAOAProblem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PortfolioRebalancing.html">Portfolio rebalancing with constrained mixers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Solving combinatorial optimization problems with QAOA</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Theoretical Overview</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="theoretical-overview">
+<span id="theoryqaoa"></span><h1>Theoretical Overview<a class="headerlink" href="#theoretical-overview" title="Link to this heading">#</a></h1>
+<p>In this tutoral we will take a peek into the inner workings of the Qrisp QAOA module. From learning the main concepts of the algorithm we’ll take a deep dive into the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html#qaoaproblem"><span class="std std-ref">QAOAProblem</span></a> class, exploring its various components and how they come together to implement the algorithm. From defining quantum parameters to optimizing and measuring the final state, we’ll really get to see how this class functions under the hood.</p>
+<section id="qaoa-in-a-nutshell">
+<h2>QAOA in a nutshell<a class="headerlink" href="#qaoa-in-a-nutshell" title="Link to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://arxiv.org/abs/1411.4028" rel="noreferrer" target="_blank">Quantum Approximate Optimization Algorithm (QAOA)</a> is a hybrid quantum-classical variational algorithm designed for solving combinatorial optimization problems.</p>
+<p>The quantum and classical part work together iteratively: the quantum computer prepares a quantum state and measures it, producing a classical output; this output is then fed into a classical optimization routine which produces new parameters for the quantum part. This process is repeated until the algorithm converges to an optimal or near-optimal solution.</p>
+<p>Before even running the algorithm there is a need to define some initial state <span class="math notranslate nohighlight">\(|\psi_0\rangle\)</span>, often chosen to be equal superposition state
+$$|s\rangle=\frac{1}{\sqrt{2^n}}\sum_z|z\rangle, $$ where <span class="math notranslate nohighlight">\(n\)</span> is the number of qubits.</p>
+<p>The QAOA operates in a sequence of layers, each consisting of a problem-specific operator and a mixing operator. To be a little more exact, the state <span class="math notranslate nohighlight">\(|\psi_0\rangle\)</span> is then evolved under the action of <span class="math notranslate nohighlight">\(p\)</span> layers of QAOA, where one layer consists of applying the unitary phase separating operator
+$$U_P(C,\gamma)=e^{-i\gamma C}=\prod_{\alpha=1}^me^{-i\gamma C _{\alpha}}, $$ which applies phase to each computational basis state based on its cost function value;
+and the unitary mixer operator
+$$U_M(B,\beta)=e^{-i\beta B}, $$
+where <span class="math notranslate nohighlight">\(B\)</span> represents a specific mixer operator that drives the transitions between different states. Because of properties of the unitaries’ eigenvalues, the QAOA parameters are bound to hold values <span class="math notranslate nohighlight">\(\gamma\in\{0, 2\pi\},\)</span> and <span class="math notranslate nohighlight">\(\beta\in\{0,\pi\}\)</span> which are then optimized classically.</p>
+<p>After <span class="math notranslate nohighlight">\(p\)</span> layers of QAOA, we can define the angle dependent quantum state
+$$|\psi_p\rangle=|\boldsymbol\gamma,\boldsymbol\beta\rangle=U_M(B,\beta_p)U_P(C,\gamma_p)\cdots U_M(B,\beta_1)U_P(C,\gamma_1)|s\rangle.$$</p>
+<p>The end goal in QAOA is now to optimize the variational parameters <span class="math notranslate nohighlight">\(\gamma_p\)</span> and <span class="math notranslate nohighlight">\(\beta_p\)</span> in order to minimize the expectation value of the cost function with respect to the final state <span class="math notranslate nohighlight">\(\ket{\psi_p}\)</span>. This is done using classical optimization techniques.</p>
+<p>It’s important to remember that QAOA provides an approximate solution, and its performance depends on factors like problem size and structure, choice of initial state, and number of layers <span class="math notranslate nohighlight">\(p\)</span>. Increasing <span class="math notranslate nohighlight">\(p\)</span> generally leads to better solutions but also increases computational cost.</p>
+</section>
+<section id="alternating-operator-ansatz">
+<span id="aoa"></span><h2>Alternating Operator Ansatz<a class="headerlink" href="#alternating-operator-ansatz" title="Link to this heading">#</a></h2>
+<p>QAOA on its own is an efficient tool for exploring complex combinatorial optimization problems. However, as with any tool, there is always room for improvement and expansion. Its potential can be further expanded by introducing a broader range of operators, not just those derived from the time evolution under a fixed local Hamiltonian proposed in the original paper.</p>
+<p>Exactly this concept is well illustrated in the paper <a class="reference external" href="https://arxiv.org/abs/1709.03489" rel="noreferrer" target="_blank">“From the Quantum Approximate Optimization Algorithm to a Quantum Alternating Operator Ansatz”</a> by Stuart Hadfield and his team. They have taken the foundational principles of the QAOA and extended them, creating an upgraded version that is both more adaptable and easier to implement. The main ideas we use in our implementations are inspired by this work.</p>
+<p>Similarly to the original QAOA, we have several key components when implementing the Quantum Alternating Operator Ansatz:</p>
+<ul class="simple">
+<li><p><strong>COST FUNCTION:</strong> the cost function is problem-specific and defines the optimization landscape. In the Quantum Alternating Operator Ansatz, cost functions can be represented by more general families of operators.</p></li>
+<li><p><strong>INITIAL STATE:</strong> initial state can be any state over all computational basis states. It is in most cases chosen to be a uniform superposition.</p></li>
+<li><p><strong>PHASE SEPARATOR:</strong> this applies a phase to each computational basis state based on its cost function value. In the Quantum Alternating Operator Ansatz, we can use a wider range of operators tailored to each problem instance.</p></li>
+<li><p><strong>MIXER:</strong> drives transitions between different states. In the Quantum Alternating Operator Ansatz, mixers can be chosen from a broader set of unitaries, which allows for more efficient implementation and potentially better exploration of the solution space.</p></li>
+</ul>
+<p>In their paper, Hadfield and his colleagues give us some really useful examples of how to formulate different problem instances using these building blocks. The appendix section, in particular, stands out as it provides detailed problem formulations, most of which are now implemented in Qrisp using the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html#qaoaproblem"><span class="std std-ref">QAOAProblem class</span></a>. The following table provides a detailed overview of the problem instances already implemented within our framework, along with their <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOA.html#mixers"><span class="std std-ref">corresponding mixer type</span></a>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 45.0%" />
+<col style="width: 10.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>PROBLEM INSTANCE</p></th>
+<th class="head"><p>MIXER TYPE</p></th>
+<th class="head"><p>IMPLEMENTED IN QRISP</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxCut.html#maxcutqaoa"><span class="std std-ref">MaxCut</span></a></p></td>
+<td><p>X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxSat.html#maxsatqaoa"><span class="std std-ref">Max-$\ell$-SAT</span></a></p></td>
+<td><p>X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/eThrLinTwo.html#ethrlintwoqaoa"><span class="std std-ref">E3Lin2</span></a></p></td>
+<td><p>X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/QUBO.html#quboqaoa"><span class="std std-ref">QUBO</span></a></p></td>
+<td><p>X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxIndepSet.html#maxindepsetqaoa"><span class="std std-ref">MaxIndependentSet</span></a></p></td>
+<td><p>Controlled X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxClique.html#maxcliqueqaoa"><span class="std std-ref">MaxClique</span></a></p></td>
+<td><p>Controlled X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxSetPack.html#maxsetpackingqaoa"><span class="std std-ref">MaxSetPacking</span></a></p></td>
+<td><p>Controlled X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/minSetCover.html#minsetcoverqaoa"><span class="std std-ref">MinSetCover</span></a></p></td>
+<td><p>Controlled X mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxKColorableSubgraph.html#mkcsqaoa"><span class="std std-ref">Max-$\kappa$-Colorable Subgraph</span></a></p></td>
+<td><p>XY mixer</p></td>
+<td><p>✅</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: <a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxCut.html#maxcutqaoa"><span class="std std-ref">MaxCut</span></a> and <a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/maxKColorableSubgraph.html#mkcsqaoa"><span class="std std-ref">Max-$\kappa$-Colorable Subgraph</span></a>, showcasing multiple unique features of Qrisp, including the functionality of creating custom <a class="reference internal" href="../../../reference/Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> types - get ready to add a splash of <span class="red">Q</span><span class="orange">u</span><span class="yellow">a</span><span class="green">n</span><span class="blue">t</span><span class="indigo">u</span><span class="violet">m</span><span class="red">C</span><span class="orange">o</span><span class="yellow">l</span><span class="green">o</span><span class="blue">r</span> to your code.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/QAOAtutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qaoa-in-a-nutshell">QAOA in a nutshell</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#alternating-operator-ansatz">Alternating Operator Ansatz</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

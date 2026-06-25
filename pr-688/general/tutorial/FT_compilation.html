@@ -1,0 +1,1070 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Fault-Tolerant compilation &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/FT_compilation';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/FT_compilation.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Using BigInteger to compile Shor’s algorithm at 2048 bit" href="BigInteger.html" />
+    <link rel="prev" title="Building a QAOA implementation in Jasp" href="JaspQAOAtutorial.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Fault-Tolerant compilation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Fault-Tolerant-compilation">
+<h1>Fault-Tolerant compilation<a class="headerlink" href="#Fault-Tolerant-compilation" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>As quantum computing <a class="reference external" href="https://www.quera.com/press-releases/harvard-quera-mit-and-the-nist-university-of-maryland-usher-in-new-era-of-quantum-computing-by-performing-complex-error-corrected-quantum-algorithms-on-48-logical-qubits" rel="noreferrer" target="_blank">steadily progresses towards the era of fault-tolerant quantum processors</a>, the landscape of compilation techniques undergoes a profound transformation. While Noisy Intermediate-Scale Quantum (NISQ) devices have been the pioneers in demonstrating quantum computational
+capabilities, the vision for practical quantum computing hinges on fault-tolerant architectures capable of handling errors that naturally arise in quantum systems.</p>
+<p>This tutorial delves into the realm of compiling for fault-tolerant quantum devices, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. In the quest for fault tolerance, quantum error correction becomes a paramount concern, demanding innovative strategies to mitigate errors and maintain the integrity of quantum computations over extended periods.</p>
+<p>At the end of the tutorial we will demonstrate how the previously coded Shor algorithm can be compiled to peak performance, so stay tuned!</p>
+<section id="T-Gates">
+<h2>T-Gates<a class="headerlink" href="#T-Gates" title="Link to this heading">#</a></h2>
+<p>One of the major differences in compiling for FT devices is the fact that CNOT gates are no longer the bottleneck they used to be for NISQ devices. The new bottleneck is the execution of <span class="math notranslate nohighlight">\(T\)</span>-gates since these gates require <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.2.020341" rel="noreferrer" target="_blank">distillation of magic states</a> and subsequent teleportation into the quantum computer. Qrisp provides a variety of tools to optimize the amount of T-gates as well as their depth.</p>
+</section>
+<section id="Evaluating-performance">
+<h2>Evaluating performance<a class="headerlink" href="#Evaluating-performance" title="Link to this heading">#</a></h2>
+<p>The first thing you need to know is how to <em>measure</em> these quantities for your Qrisp algorithms.</p>
+<p>For the T-gate count this is relatively similar to the way it is done for the NISQ case. To demonstrate, we compile a QuantumCircuit and measure the T-count.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">rz</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">x</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">t</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">qc</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+     ┌───┐┌───┐
+a.0: ┤ X ├┤ T ├──■───────
+     ├───┤└───┘  │
+a.1: ┤ T ├───────┼───────
+     └───┘     ┌─┴─┐┌───┐
+b.0: ──────────┤ X ├┤ T ├
+               └───┘└───┘
+b.1: ────────────────────
+
+</pre></div></div>
+</div>
+<p>We now count the amount of T-gates using the <a class="reference internal" href="../../reference/Circuit%20Manipulation/generated/qrisp.QuantumCircuit.count_ops.html"><span class="doc">count_ops</span></a> method and measure the T-depth using the <a class="reference internal" href="../../reference/Circuit%20Manipulation/generated/qrisp.QuantumCircuit.t_depth.html"><span class="doc">t_depth</span></a> method.</p>
+<blockquote>
+<div><p><strong>Note:</strong> As you might have noticed, T-depth and T-count are two different things. The former is approximately proportional to the <strong>maximum speed</strong> the algorithm can be executed with. The latter is the amount of T-gates. Please note that as of right now it’s unclear how efficient magic-state destillation will happen. Therefore, a future quantum computer, that can create magic states efficiently will be bottlenecked by the T-depth but a device where this process takes a lot of time will be
+bottlenecked by that T-count.</p>
+</div></blockquote>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qc</span><span class="o">.</span><span class="n">count_ops</span><span class="p">()</span>
+<span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<p>For the T-depth we get the value 2 because the qubit <code class="docutils literal notranslate"><span class="pre">b.0</span></code> has to wait until <code class="docutils literal notranslate"><span class="pre">a.0</span></code> is finished. Many applications require more than the Clifford + T gate set. Especially parametrized Pauli-rotations are used often in variational algorithms or hamiltonian simulations. To execute the parametrized Pauli-rotations a <a class="reference external" href="https://arxiv.org/abs/1403.2975" rel="noreferrer" target="_blank">synthesis algorithm</a> needs to be called, which approximates the required rotation using only Clifford + T gates. According to the linked paper,
+this requires <span class="math notranslate nohighlight">\(3\log_2(\frac{1}{\epsilon})\)</span> T-gates, where <span class="math notranslate nohighlight">\(\epsilon\)</span> is the desired precision. Qrisp accounts for this effort if given the desired precision <span class="math notranslate nohighlight">\(\epsilon\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">rz</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">qc</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">(</span><span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+     ┌───┐┌───┐
+a.0: ┤ X ├┤ T ├──■──────────────────
+     ├───┤└───┘  │
+a.1: ┤ T ├───────┼──────────────────
+     └───┘     ┌─┴─┐┌───┐┌─────────┐
+b.0: ──────────┤ X ├┤ T ├┤ Rz(π/8) ├
+               └───┘└───┘└─────────┘
+b.1: ───────────────────────────────
+
+</pre></div></div>
+</div>
+<p>If no <span class="math notranslate nohighlight">\(\epsilon\)</span> is given, Qrisp will search for the smallest angle <span class="math notranslate nohighlight">\(\phi_{min}\)</span> in the circuit and set <span class="math notranslate nohighlight">\(\epsilon = \phi_{min}/8\)</span>. Please note that we could find close to no research on how to automatically determine a reasonable value for <span class="math notranslate nohighlight">\(\epsilon\)</span> so this is a tentative solution.</p>
+</section>
+<section id="Improving-performance">
+<h2>Improving performance<a class="headerlink" href="#Improving-performance" title="Link to this heading">#</a></h2>
+<p>The first and foremost performance enhancement that Qrisp achieves is gate-speed aware compilation. For a detailed description please read the corresponding section for <a class="reference internal" href="../../reference/Core/generated/qrisp.QuantumSession.compile.html"><span class="doc">compile</span></a>. This feature allows the Qrisp compiler to modify the order of gates and improve the allocation mechanism under the consideration that certain gates take more time than others. The result is that in a physical circuit execution, the overal run-time is
+significantly enhanced. To specify the gate-speed of the backend you are targeting, you can write your own gate-speed function. This function should take an Operation object and return the corresponding speed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">toy_gate_speed</span><span class="p">(</span><span class="n">op</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">10</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+<p>This gate-speed function describes a rather exotic backend where the X-gate takes 1 time unit (for instance nanoseconds), the Y-gate 10 time units and every other gate is executed instantaneously. To specify the T-gate speed you can use the built-in function: <a class="reference internal" href="../../reference/Utilities/t_depth_indicator.html"><span class="doc">t_depth_indicator</span></a>. This function assigns <span class="math notranslate nohighlight">\(T\)</span>, <span class="math notranslate nohighlight">\(T^\dagger\)</span> and <span class="math notranslate nohighlight">\(P(\pm \frac{\pi}{4})\)</span> gates a speed of 1, parametrized gates (such as the above) a gate-speed of
+<span class="math notranslate nohighlight">\(3\log_2(\frac{1}{\epsilon})\)</span> and every clifford gate a time of 0.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">t_depth_indicator</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gate_speed</span><span class="p">(</span><span class="n">op</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">t_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can now use this function to inform the compiler about the gate-speed:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qc</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">gate_speed</span><span class="o">=</span><span class="n">gate_speed</span><span class="p">)</span>
+<span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">(</span><span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+     ┌───┐     ┌───┐
+a.0: ┤ X ├──■──┤ T ├───────────
+     ├───┤  │  └───┘
+a.1: ┤ T ├──┼──────────────────
+     └───┘┌─┴─┐┌───┐┌─────────┐
+b.0: ─────┤ X ├┤ T ├┤ Rz(π/8) ├
+          └───┘└───┘└─────────┘
+b.1: ──────────────────────────
+
+</pre></div></div>
+</div>
+<p>We see how the compiler moved the T-gate on <code class="docutils literal notranslate"><span class="pre">a.0</span></code> after the CNOT gate, so the follow up on <code class="docutils literal notranslate"><span class="pre">b.0</span></code> can be executed in parallel with <code class="docutils literal notranslate"><span class="pre">a.0</span></code>, thereby reducing the required T-depth.</p>
+</section>
+<section id="Fault-Tolerant-Toffolis">
+<h2>Fault-Tolerant Toffolis<a class="headerlink" href="#Fault-Tolerant-Toffolis" title="Link to this heading">#</a></h2>
+<p>Another important important leverage Qrisp offers for fault-tolerant compilation is the use of specialized <a class="reference internal" href="../../reference/Primitives/generated/qrisp.mcx.html"><span class="doc">mcx</span></a> implementations. The most relevant methods here are <code class="docutils literal notranslate"><span class="pre">jones</span></code> and <code class="docutils literal notranslate"><span class="pre">gidney</span></code>. The default Toffoli implementation (requiring no ancillae) requires a T-depth of 4.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">mcx</span>
+
+<span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">t_depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+4
+</pre></div></div>
+</div>
+<p>With the <code class="docutils literal notranslate"><span class="pre">jones</span></code> method this is reduced significantly:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;jones&quot;</span><span class="p">)</span>
+<span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compile_mcm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">t_depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>How is this possible?! Well first of all, the <code class="docutils literal notranslate"><span class="pre">jones</span></code> method requires two ancilla qubits - this news isn’t as bad as it seems, because the Qrisp compiler automatically reuses the qubits from previously deallocated variables, so in many practical situations the qubit overhead is 0. The other important point is that this Toffoli technique uses a mid-circuit measurement with a subsequent classically controlled CZ-gate. For more details, visit the <a class="reference external" href="https://arxiv.org/abs/1212.5069" rel="noreferrer" target="_blank">publication</a>.
+Note that the measurement is not inserted until the <code class="docutils literal notranslate"><span class="pre">compile</span></code> method is called - before that, a representative is used. This allows to still query the <code class="docutils literal notranslate"><span class="pre">statevector</span></code> simulator (even though the final circuit contains a measurement) and thus significantly simplifies debugging. Note that you can activate/deactivate the compilation of mid-circuit measurements using the <code class="docutils literal notranslate"><span class="pre">compile_mcm</span></code> keyword.</p>
+<p>The second relevant Toffoli method is <code class="docutils literal notranslate"><span class="pre">gidney</span></code>. <a class="reference external" href="https://arxiv.org/abs/1709.06648" rel="noreferrer" target="_blank">Gidney’s temporary logical AND</a> always comes im pairs - one computation and one uncomputation. If you know that your algorithm contains a pattern like this, the <code class="docutils literal notranslate"><span class="pre">gidney</span></code> method is a very good option for you. This is because the computation part (similar to <code class="docutils literal notranslate"><span class="pre">jones</span></code>) has a T-depth of 1 (asterisk!) but the uncomputation part has a T-depth of 0! Basically this implies <strong>another</strong> <span class="math notranslate nohighlight">\(\times 2\)</span> speed-up for
+cases where this structure is applicable.</p>
+<p>In Qrisp, you can perform the computation as you normally would.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gidney&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;QuantumVariable &#39;ctrl&#39;&gt;, Qubit(target.0))
+</pre></div></div>
+</div>
+<p>To call the uncomputation part, you can use the <a class="reference internal" href="../../reference/Core/generated/qrisp.QuantumVariable.uncompute.html"><span class="doc">uncompute</span></a> method or call it within an <a class="reference internal" href="../../reference/Quantum%20Environments/InversionEnvironment.html"><span class="doc">InversionEnvironment</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target</span><span class="o">.</span><span class="n">uncompute</span><span class="p">()</span>
+
+<span class="c1"># or</span>
+<span class="c1"># from qrisp import invert</span>
+<span class="c1"># with invert(): mcx(ctrl, target, method = &quot;gidney&quot;)</span>
+<span class="c1"># ctrl.qs.compile(compile_mcm = True).t_depth()</span>
+</pre></div>
+</div>
+</div>
+<p>Note that the T-depth yields 2 here, but the delay in many applications will still be 1. To understand why, consider that the control qubits most likely will already have gone through some non-clifford gates, while the target is usually freshly allocated. To demonstrate we execute some T-gates on <code class="docutils literal notranslate"><span class="pre">ctrl</span></code> before the Toffoli gate is applied:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">t</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+<span class="n">t</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gidney&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compile_mcm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">transpile</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+          ┌───┐┌───┐          ┌───┐┌─────┐       ┌───┐
+  ctrl.0: ┤ T ├┤ T ├──■───────┤ X ├┤ Tdg ├───────┤ X ├───────────────
+          ├───┤├───┤  │       └─┬─┘└┬───┬┘┌─────┐└─┬─┘┌───┐
+  ctrl.1: ┤ T ├┤ T ├──┼────■────┼───┤ X ├─┤ Tdg ├──┼──┤ X ├──────────
+          ├───┤├───┤┌─┴─┐┌─┴─┐  │   └─┬─┘ └┬───┬┘  │  └─┬─┘┌───┐┌───┐
+target.0: ┤ H ├┤ T ├┤ X ├┤ X ├──■─────■────┤ T ├───■────■──┤ H ├┤ S ├
+          └───┘└───┘└───┘└───┘             └───┘           └───┘└───┘
+</pre></div></div>
+</div>
+<p>As we see, the first T-gate on <code class="docutils literal notranslate"><span class="pre">target.0</span></code> can be executed while the T-gates of <code class="docutils literal notranslate"><span class="pre">ctrl</span></code> are still running.</p>
+</section>
+<section id="Fault-tolerant-compilation-of-Shor's-algorithm">
+<h2>Fault tolerant compilation of Shor’s algorithm<a class="headerlink" href="#Fault-tolerant-compilation-of-Shor's-algorithm" title="Link to this heading">#</a></h2>
+<p>In the previous tutorial, you learned how to implement Shor’s algorithm. Obviously the things you learned in the above section all apply to compile it for fault-tolerant backends, but the most powerfull optimization still awaits!</p>
+<section id="Selecting-a-suited-adder">
+<h3>Selecting a suited adder<a class="headerlink" href="#Selecting-a-suited-adder" title="Link to this heading">#</a></h3>
+<p>The Qrisp implementation of Shor’s algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. We provide some pre-implemented adders notably:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../../reference/Primitives/generated/qrisp.fourier_adder.html"><span class="doc">fourier_adder</span></a> (<a class="reference external" href="https://arxiv.org/abs/quant-ph/0008033" rel="noreferrer" target="_blank">paper</a>) requires minimal qubit overhead and has a very efficient <a class="reference internal" href="../../reference/Utilities/custom_control.html"><span class="doc">custom_control</span></a> but uses a lot of parametized phase gates, which increases the T-depth. The low qubit count makes it suitable for simulation, which is why it is the default adder.</p></li>
+<li><p>The <a class="reference internal" href="../../reference/Primitives/generated/qrisp.cuccaro_adder.html"><span class="doc">cucarro_adder</span></a> (<a class="reference external" href="https://arxiv.org/abs/quant-ph/0410184" rel="noreferrer" target="_blank">paper</a>) also requires minimal qubits but no parametrized phase gates. It doesn’t have a custom controlled version.</p></li>
+<li><p>The <a class="reference internal" href="../../reference/Primitives/generated/qrisp.gidney_adder.html"><span class="doc">gidney_adder</span></a> (<a class="reference external" href="https://arxiv.org/abs/1709.06648" rel="noreferrer" target="_blank">paper</a>) requires <span class="math notranslate nohighlight">\(n\)</span> ancillae but uses the <code class="docutils literal notranslate"><span class="pre">gidney</span></code> Toffoli method described above, making it very fast in terms of T-depth but also economical in terms of T-count.</p></li>
+<li><p>The <a class="reference internal" href="../../reference/Primitives/generated/qrisp.qcla.html"><span class="doc">qcla</span></a> (<a class="reference external" href="https://arxiv.org/abs/2304.02921" rel="noreferrer" target="_blank">paper</a>) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.</p></li>
+</ul>
+<p>In general you can also write your own adder and try it out! Feel free to use the <a class="reference internal" href="../../reference/Utilities/inpl_adder_test.html"><span class="doc">inpl_adder_test</span></a> function to verify your adder works.</p>
+<p>To illustrate the difference, we benchmark the <code class="docutils literal notranslate"><span class="pre">gidney_adder</span></code> vs. the <code class="docutils literal notranslate"><span class="pre">qcla</span></code> on the operation that is most relevant for Shor’s algorithm: Controlled modular in-place multiplication.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">3295</span>
+<span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">gidney_adder</span><span class="p">)</span>
+
+<span class="n">ctrl_qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">ctrl_qbl</span><span class="p">):</span>
+    <span class="n">qg</span> <span class="o">*=</span> <span class="mi">953</span>
+
+<span class="n">gate_speed</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">op</span><span class="p">:</span> <span class="n">t_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">qc</span> <span class="o">=</span> <span class="n">qg</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">gate_speed</span><span class="o">=</span><span class="n">gate_speed</span><span class="p">,</span> <span class="n">compile_mcm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+581
+68
+</pre></div></div>
+</div>
+<p>Now the <code class="docutils literal notranslate"><span class="pre">qcla</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">qcla</span><span class="p">)</span>
+
+<span class="n">ctrl_qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">ctrl_qbl</span><span class="p">):</span>
+    <span class="n">qg</span> <span class="o">*=</span> <span class="mi">953</span>
+
+<span class="n">qc</span> <span class="o">=</span> <span class="n">qg</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">workspace</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">gate_speed</span><span class="o">=</span><span class="n">gate_speed</span><span class="p">,</span> <span class="n">compile_mcm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+854
+66
+</pre></div></div>
+</div>
+<p>We see that the T-depth is reduced by <span class="math notranslate nohighlight">\(\approx 20 \%\)</span>. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of workspace, as this adder can profit a lot from this resource.</p>
+</section>
+<section id="Addition-based-QFT">
+<h3>Addition based QFT<a class="headerlink" href="#Addition-based-QFT" title="Link to this heading">#</a></h3>
+<p>If you made it this far, you probably heard about the quantum fourier transform algorithm and it’s circuit. This circuit contains a variety of parametrized phase gates, which can throttle the efficiency of a fault-tolerant backend as they have to be synthesized using T-gates. Fortunately a lot of this overhead can be remedied with a trick introduced in <a class="reference external" href="https://arxiv.org/abs/2203.07739" rel="noreferrer" target="_blank">this paper</a>. The observation here is that the QFT circuit contains repeated blocks of phase gates of the
+following structure.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">          ┌─────────┐</span>
+<span class="sd">    qb_0: ┤ P(π/16) ├</span>
+<span class="sd">          └┬────────┤</span>
+<span class="sd">    qb_1: ─┤ P(π/8) ├</span>
+<span class="sd">           ├────────┤</span>
+<span class="sd">    qb_2: ─┤ P(π/4) ├</span>
+<span class="sd">           ├────────┤</span>
+<span class="sd">    qb_3: ─┤ P(π/2) ├</span>
+<span class="sd">           └────────┘</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;\n          ┌─────────┐\n    qb_0: ┤ P(π/16) ├\n          └┬────────┤\n    qb_1: ─┤ P(π/8) ├\n           ├────────┤\n    qb_2: ─┤ P(π/4) ├\n           ├────────┤\n    qb_3: ─┤ P(π/2) ├\n           └────────┘\n&#39;
+</pre></div></div>
+</div>
+<p>Acting on a quantum state <span class="math notranslate nohighlight">\(\ket{x}\)</span> this produces the phase-shift</p>
+<div class="math notranslate nohighlight">
+\[\ket{x} \rightarrow \text{exp}\left(\frac{i\pi x}{16}\right)\ket{x}\]</div>
+<p>The idea is now to realize this kind of transformation using an adder, acting on a “reservoir” state. The reservoir is initialized once and can be used throughout all of the algorithm. This is because it is constructed such that it is an eigenstate under (modular) addition and produces the desired phase.</p>
+<div class="math notranslate nohighlight">
+\[\ket{R} = \frac{1}{\sqrt{2^n}} \sum_{k=0}^{2^n-1} \text{exp}\left(\frac{-i \pi k}{2^n}\right) \ket{k}\]</div>
+<p>If we now perform an addition on this state we get</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+U_{add}\ket{x}\ket{R} &amp;= \frac{1}{\sqrt{2^n}} \sum_{k=0}^{2^n-1} \text{exp}\left(\frac{-i \pi k}{2^n}\right) U_{add} \ket{x} \ket{k}\\
+&amp;= \frac{1}{\sqrt{2^n}} \sum_{k=0}^{2^n-1} \text{exp}\left(\frac{-i \pi k}{2^n}\right) \ket{x}\ket{k + x}\\
+&amp;= \frac{1}{\sqrt{2^n}} \sum_{k=0}^{2^n-1} \text{exp}\left(\frac{-i \pi (k-x)}{2^n} \right)\ket{x} \ket{k}\\
+&amp;= \text{exp}\left(\frac{i \pi x}{2^n}\right)\ket{x}\ket{R}
+\end{align}\end{split}\]</div>
+<p>In the third line we used a relabeling of the summation indices to move <span class="math notranslate nohighlight">\(x\)</span> into the exponent. We can therefore produce the above phase-shift using an adder of our choice. We spare you the details implementing this in the QFT algorithm (if you are interested please check the paper) and just tell you how you can use it:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">qf</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">QFT</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">gidney_adder</span><span class="p">)</span>
+<span class="n">qc</span> <span class="o">=</span> <span class="n">qf</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">gate_speed</span><span class="o">=</span><span class="n">gate_speed</span><span class="p">,</span> <span class="n">compile_mcm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+157.0
+</pre></div></div>
+</div>
+<p>To verify that our construction is correct, we perform the inverse (regular) QFT:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">QFT</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{4: 1.0}
+</pre></div></div>
+</div>
+<p>This concludes our tutorial on fault-tolerant compilation. We hope you could gain some insights on what is possible with Qrisp and look forward to see your algorithms built with these tools! 🛠️</p>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#T-Gates">T-Gates</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Evaluating-performance">Evaluating performance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Improving-performance">Improving performance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Fault-Tolerant-Toffolis">Fault-Tolerant Toffolis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Fault-tolerant-compilation-of-Shor's-algorithm">Fault tolerant compilation of Shor’s algorithm</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Selecting-a-suited-adder">Selecting a suited adder</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Addition-based-QFT">Addition based QFT</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/FT_compilation.ipynb" download="FT_compilation.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

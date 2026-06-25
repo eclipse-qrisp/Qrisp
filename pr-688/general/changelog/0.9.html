@@ -1,0 +1,792 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Qrisp 0.9 &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/changelog/0.9';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/changelog/0.9.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Qrisp 0.8" href="0.8.html" />
+    <link rel="prev" title="Changelog" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Qrisp 0.9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.8.html">Qrisp 0.8</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.7.html">Qrisp 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.6.html">Qrisp 0.6</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5.html">Qrisp 0.5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.4.html">Qrisp 0.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.3.html">Qrisp 0.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.2.html">Qrisp 0.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.1.html">Qrisp 0.1</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Changelog</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Qrisp 0.9</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="qrisp-0-9">
+<span id="v0-9"></span><h1>Qrisp 0.9<a class="headerlink" href="#qrisp-0-9" title="Link to this heading">#</a></h1>
+<p>A redesigned <strong>backend interface</strong> anchors Qrisp 0.9, alongside the <strong>Quantum
+Singular Value Transform (QSVT)</strong> at the heart of a new suite of
+<cite>BlockEncoding</cite> transformations, including the new <strong>FOQCS-LCU (Fast
+One-Qubit-Controlled Select Linear Combination of Unitaries)</strong> block encoding method
+and <strong>Dalzell’s optimal Quantum Linear System Solver</strong>.
+Complementing these core advancements are a full <strong>circuit optimization pass manager</strong>,
+and new state preparation primitives.
+Richer <strong>QuantumArray</strong> arithmetic and meaningful upgrades to arithmetic subroutines,
+including a new <strong>Gidney adder</strong> based on venting carries via mid-circuit measurements,
+round things out.</p>
+<section id="qsvt-and-singular-value-transformations">
+<h2>QSVT and Singular Value Transformations<a class="headerlink" href="#qsvt-and-singular-value-transformations" title="Link to this heading">#</a></h2>
+<p>With Qrisp 0.9, the Quantum Singular Value Transform (QSVT) framework
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a>) is now available
+as the primary tool for matrix inversion and singular value processing to operators that
+aren’t necessarily Hermitian. The <a class="reference internal" href="../../reference/Block%20Encodings/BlockEncoding.html#blockencoding"><span class="std std-ref">BlockEncoding</span></a> class gains the
+following new methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/svt.html#qrisp.block_encodings.BlockEncoding.svt" title="qrisp.block_encodings.BlockEncoding.svt"><code class="xref py py-func docutils literal notranslate"><span class="pre">svt</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a>): Applies a polynomial to the
+singular values of a block-encoded operator, supporting both even and odd parity
+polynomials in either the Chebyshev or Polynomial basis.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/pseudo_inv.html#qrisp.block_encodings.BlockEncoding.pseudo_inv" title="qrisp.block_encodings.BlockEncoding.pseudo_inv"><code class="xref py py-func docutils literal notranslate"><span class="pre">pseudo_inv</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a>): Using Quantum
+Singular Value Transform, this function returns a block encoding that approximates
+the threshold pseudoinverse by ignoring singular values below a specific limit to
+regularize ill-conditioned linear systems.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/inv.html#qrisp.block_encodings.BlockEncoding.inv" title="qrisp.block_encodings.BlockEncoding.inv"><code class="xref py py-func docutils literal notranslate"><span class="pre">inv</span></code></a> now uses QSVT by default
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a>),
+succeeding the previous QET approach which was limited to Hermitian operators.
+A <code class="docutils literal notranslate"><span class="pre">method</span></code> keyword lets you switch between QSVT, GQSVT, or
+QET (Quantum Eigenvalue Transform) as needed.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/dagger.html#qrisp.block_encodings.BlockEncoding.dagger" title="qrisp.block_encodings.BlockEncoding.dagger"><code class="xref py py-func docutils literal notranslate"><span class="pre">dagger</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a>): Returns the adjoint of a
+block-encoded operator.</p></li>
+</ul>
+<p>The <a class="reference internal" href="../../reference/Block%20Encodings/BlockEncoding.html#blockencoding"><span class="std std-ref">BlockEncoding</span></a> class gains the following new constructors:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/from_eye.html#qrisp.block_encodings.BlockEncoding.from_eye" title="qrisp.block_encodings.BlockEncoding.from_eye"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_eye</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/479" rel="noreferrer" target="_blank">PR #479</a>): Constructs a
+BlockEncoding of a 2-D array with ones on a specified diagonal and zeros elsewhere.
+A positive <code class="docutils literal notranslate"><span class="pre">diagonal_index</span></code> selects an upper subdiagonal, a negative value a lower
+subdiagonal, and 0 (the default) the main diagonal.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/from_projector.html#qrisp.block_encodings.BlockEncoding.from_projector" title="qrisp.block_encodings.BlockEncoding.from_projector"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_projector</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/479" rel="noreferrer" target="_blank">PR #479</a>):
+Constructs a BlockEncoding of the projector <span class="math notranslate nohighlight">\(|\phi\rangle\langle\psi|\)</span>, or,
+when <code class="docutils literal notranslate"><span class="pre">kernel=True</span></code>, of the kernel projector <span class="math notranslate nohighlight">\(\mathbb{I} - |\phi\rangle\langle\phi|\)</span>.
+Both left and right states may be specified as integers (computational basis states)
+or as arbitrary state-preparation callables.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/from_foqcs_lcu_operator.html#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator" title="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_foqcs_lcu_operator</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/597" rel="noreferrer" target="_blank">PR #597</a>):
+Constructs a BlockEncoding from a <code class="xref py py-class docutils literal notranslate"><span class="pre">QubitOperator</span></code> using the
+Fast One-Qubit-Controlled Select LCU (FOQCS-LCU) algorithm. The operator is
+analyzed automatically and the appropriate PREP subroutine — Heisenberg or
+spin-glass — is selected. Supported operators include arbitrary one-body fields
+and same-axis two-body couplings of the form <span class="math notranslate nohighlight">\(P_i P_j\)</span> with
+<span class="math notranslate nohighlight">\(P \in \{X, Y, Z\}\)</span>.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/from_foqcs_lcu_prep.html#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep" title="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_foqcs_lcu_prep</span></code></a>:
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/597" rel="noreferrer" target="_blank">PR #597</a>):
+Experimental FOQCS-LCU constructor for users who supply their own right and left
+PREP subroutines (<span class="math notranslate nohighlight">\(P_R\)</span> and <span class="math notranslate nohighlight">\(P_L\)</span>), enabling custom FOQCS-LCU
+block encodings beyond the built-in Heisenberg and spin-glass models.</p></li>
+<li><p><a class="reference internal" href="../../reference/Block%20Encodings/methods/from_lcu.html#qrisp.block_encodings.BlockEncoding.from_lcu" title="qrisp.block_encodings.BlockEncoding.from_lcu"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_lcu</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/647" rel="noreferrer" target="_blank">PR #647</a>): now supports general
+complex coefficients (previously, only real non-negative coefficients were supported).</p></li>
+<li><p><a class="reference internal" href="../../reference/Algorithms/generated/qrisp.gqsp.QSVT.html#qrisp.gqsp.QSVT" title="qrisp.gqsp.QSVT"><code class="xref py py-func docutils literal notranslate"><span class="pre">QSVT</span></code></a> and <a class="reference internal" href="../../reference/Algorithms/generated/qrisp.gqsp.GQSVT.html#qrisp.gqsp.GQSVT" title="qrisp.gqsp.GQSVT"><code class="xref py py-func docutils literal notranslate"><span class="pre">GQSVT</span></code></a>
+(introduced in <a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/607" rel="noreferrer" target="_blank">PR #607</a> and <a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/479" rel="noreferrer" target="_blank">PR #479</a>)
+perform (Generalized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.</p></li>
+</ul>
+<p>Two further standalone functions round out the <code class="docutils literal notranslate"><span class="pre">qrisp.gqsp</span></code> module
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/479" rel="noreferrer" target="_blank">PR #479</a>):
+<a class="reference internal" href="../../reference/Algorithms/generated/qrisp.gqsp.dalzell_inversion.html#qrisp.gqsp.dalzell_inversion" title="qrisp.gqsp.dalzell_inversion"><code class="xref py py-func docutils literal notranslate"><span class="pre">dalzell_inversion</span></code></a>, Qrisp’s implementation of
+the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
+<a class="reference internal" href="../../reference/Algorithms/generated/qrisp.gqsp.pseudo_inversion.html#qrisp.gqsp.pseudo_inversion" title="qrisp.gqsp.pseudo_inversion"><code class="xref py py-func docutils literal notranslate"><span class="pre">pseudo_inversion</span></code></a>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/479" rel="noreferrer" target="_blank">PR #479</a>):
+for QSVT-based threshold pseudoinversion
+(also reachable as <a class="reference internal" href="../../reference/Block%20Encodings/methods/pseudo_inv.html#qrisp.block_encodings.BlockEncoding.pseudo_inv" title="qrisp.block_encodings.BlockEncoding.pseudo_inv"><code class="xref py py-func docutils literal notranslate"><span class="pre">BlockEncoding.pseudo_inv</span></code></a>).</p>
+</section>
+<section id="backend-interface-redesign">
+<h2>Backend Interface Redesign<a class="headerlink" href="#backend-interface-redesign" title="Link to this heading">#</a></h2>
+<p>The backend interface has been redesigned from the ground up for a cleaner, more
+modular abstraction (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/331" rel="noreferrer" target="_blank">PR #331</a> and its follow-ups).
+The new <cite>Backend</cite> class provides a consistent interface for both simulators and hardware backends, abstracting away the
+differences and allowing users to switch between them seamlessly.</p>
+<ul class="simple">
+<li><p><strong>Improved error handling</strong>: The backend interface now includes more robust error handling and
+clearer error messages, making it easier to diagnose and fix issues when running circuits.</p></li>
+<li><p><strong>New abstract</strong> <code class="xref py py-class docutils literal notranslate"><span class="pre">Backend</span></code> <strong>class</strong>: The new base
+abstraction for all backends, offering <code class="docutils literal notranslate"><span class="pre">run_async(circuits,</span> <span class="pre">shots)</span></code> for an
+immediate <code class="docutils literal notranslate"><span class="pre">Job</span></code> (Future-style) alongside a synchronous <code class="docutils literal notranslate"><span class="pre">run(circuits,</span> <span class="pre">shots)</span></code>
+wrapper for convenience, plus <code class="docutils literal notranslate"><span class="pre">batched()</span></code> to obtain a <code class="docutils literal notranslate"><span class="pre">BatchedBackend</span></code> and
+<code class="docutils literal notranslate"><span class="pre">retrieve_job(job_id)</span></code> to look up a previously submitted job.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">BackendLike</span></code> <strong>protocol</strong>: A structural typing
+protocol that both <code class="docutils literal notranslate"><span class="pre">Backend</span></code> and <code class="docutils literal notranslate"><span class="pre">BatchedBackend</span></code> satisfy, so type hints stay
+flexible.</p></li>
+<li><p><a class="reference internal" href="../../reference/Backend%20Interface/Abstract%20Backend%20Interface/Job.html#qrisp.interface.Job" title="qrisp.interface.Job"><code class="xref py py-class docutils literal notranslate"><span class="pre">Job</span></code></a> <strong>class</strong>: Tracks the lifecycle of a single
+execution with <code class="docutils literal notranslate"><span class="pre">submit()</span></code>, <code class="docutils literal notranslate"><span class="pre">result()</span></code>, <code class="docutils literal notranslate"><span class="pre">cancel()</span></code>, and <code class="docutils literal notranslate"><span class="pre">status()</span></code>.</p></li>
+<li><p><a class="reference internal" href="../../reference/Backend%20Interface/BatchedBackend.html#qrisp.interface.BatchedBackend" title="qrisp.interface.BatchedBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchedBackend</span></code></a> <strong>reworked</strong>: Does not inherit
+from <code class="docutils literal notranslate"><span class="pre">Backend</span></code>. Circuits queued via <code class="docutils literal notranslate"><span class="pre">run()</span></code> are executed once <code class="docutils literal notranslate"><span class="pre">dispatch()</span></code> is called.
+<code class="docutils literal notranslate"><span class="pre">batched_measurement</span></code> is deprecated in favor of <code class="docutils literal notranslate"><span class="pre">get_measurement()</span></code> with a
+<code class="docutils literal notranslate"><span class="pre">BatchedBackend</span></code> directly.</p></li>
+<li><p><strong>Backend migrations</strong>: <code class="docutils literal notranslate"><span class="pre">DefaultBackend</span></code> is now <code class="xref py py-class docutils literal notranslate"><span class="pre">QrispSimulatorBackend</span></code>. <code class="docutils literal notranslate"><span class="pre">QiskitBackend</span></code>, <code class="docutils literal notranslate"><span class="pre">QiskitRuntimeBackend</span></code>,
+<code class="docutils literal notranslate"><span class="pre">AQTBackend</span></code>, and <code class="docutils literal notranslate"><span class="pre">IQMBackend</span></code> have all been brought up to the new API.
+<code class="docutils literal notranslate"><span class="pre">VirtualBackend</span></code> is kept as a deprecated drop-in subclass.</p></li>
+<li><p><strong>A leaner core</strong>: The old <code class="docutils literal notranslate"><span class="pre">BackendClient</span></code>/<code class="docutils literal notranslate"><span class="pre">BackendServer</span></code> (qunicorn) network
+infrastructure and the Docker-based backends have been removed entirely.</p></li>
+</ul>
+</section>
+<section id="circuit-optimization-pass-manager">
+<h2>Circuit Optimization Pass Manager<a class="headerlink" href="#circuit-optimization-pass-manager" title="Link to this heading">#</a></h2>
+<p>Qrisp 0.9 ships a complete <strong>circuit optimization pass management system</strong>
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/564" rel="noreferrer" target="_blank">PR #564</a>).
+<code class="xref py py-class docutils literal notranslate"><span class="pre">PassManager</span></code> keeps an ordered list of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CircuitPass</span></code> instances, runs them via
+<code class="docutils literal notranslate"><span class="pre">.run(qc)</span></code>, and verifies correctness with <code class="docutils literal notranslate"><span class="pre">.verify(qc)</span></code>. Built-in passes handle
+canceling adjacent gate-inverse pairs, fusing consecutive single-qubit gates,
+commuting and resolving SWAP networks, removing barriers, reverse-parallelization,
+manual qubit layout, gate basis conversion (to CX/CZ/PRY), decomposition,
+Gray-synth Toffoli synthesis, canceling zero-controlled gates, arranging SWAPs for
+smarter routing, and visualizing optimization culprits.</p>
+</section>
+<section id="additional-updates">
+<h2>Additional Updates<a class="headerlink" href="#additional-updates" title="Link to this heading">#</a></h2>
+<p><strong>BlockEncoding refactored</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/628" rel="noreferrer" target="_blank">PR #628</a>):
+Rebuilt around a Base Class + Facade pattern.
+The old monolith is now split across <code class="docutils literal notranslate"><span class="pre">block_encoding_base.py</span></code> (abstract base),
+<code class="docutils literal notranslate"><span class="pre">block_encoding.py</span></code> (facade), <code class="docutils literal notranslate"><span class="pre">constructors/</span></code>, and <code class="docutils literal notranslate"><span class="pre">transformations/</span></code>, making
+extensions easier.</p>
+<p><strong>COLD improvements</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/614" rel="noreferrer" target="_blank">PR #614</a>):
+The <a class="reference internal" href="../../reference/Algorithms/dcqo/DCQO.html#dcqo"><span class="std std-ref">DCQOProblem</span></a> class gets a smoother
+scheduling function, automatic <code class="docutils literal notranslate"><span class="pre">g</span></code>/<code class="docutils literal notranslate"><span class="pre">g_deriv</span></code> computation, a <code class="docutils literal notranslate"><span class="pre">precision</span></code> parameter
+for expectation-value accuracy, and <code class="docutils literal notranslate"><span class="pre">exp_value_backend</span></code> for hardware-based optimization.</p>
+<p><strong>Dicke state and unbalanced W state</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/572" rel="noreferrer" target="_blank">PR #572</a>):
+New <a class="reference internal" href="../../reference/Primitives/DickeStates.html#qrisp.dicke_state" title="qrisp.dicke_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">dicke_state</span></code></a> and
+<a class="reference internal" href="../../reference/Primitives/unbalanced_w_states.html#qrisp.unbalanced_w_state" title="qrisp.unbalanced_w_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">unbalanced_w_state</span></code></a> deterministic state preparation routines,
+based on the algorithm in <a class="reference external" href="https://arxiv.org/abs/1904.07358" rel="noreferrer" target="_blank">arXiv:1904.07358</a>.</p>
+<p><strong>QuantumArray upgrades</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/519" rel="noreferrer" target="_blank">PR #519</a>):
+In-place arithmetic (<code class="docutils literal notranslate"><span class="pre">iadd</span></code>, <code class="docutils literal notranslate"><span class="pre">isub</span></code>, <code class="docutils literal notranslate"><span class="pre">imul</span></code>),
+element-wise logical operations (<code class="docutils literal notranslate"><span class="pre">and</span></code>, <code class="docutils literal notranslate"><span class="pre">or</span></code>, <code class="docutils literal notranslate"><span class="pre">xor</span></code>), and reductions via
+<a class="reference internal" href="../../reference/Core/generated/qrisp.QuantumArray.all.html#qrisp.QuantumArray.all" title="qrisp.QuantumArray.all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">all()</span></code></a> / <a class="reference internal" href="../../reference/Core/generated/qrisp.QuantumArray.any.html#qrisp.QuantumArray.any" title="qrisp.QuantumArray.any"><code class="xref py py-meth docutils literal notranslate"><span class="pre">any()</span></code></a>.</p>
+<p><strong>Gidney carry-venting adder</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/537" rel="noreferrer" target="_blank">PR #537</a>):
+New <a class="reference internal" href="../../reference/Primitives/generated/qrisp.gidney_cq_venting_adder.html#qrisp.gidney_cq_venting_adder" title="qrisp.gidney_cq_venting_adder"><code class="xref py py-func docutils literal notranslate"><span class="pre">gidney_cq_venting_adder</span></code></a> implements
+the classical-quantum in-place adder from <a class="reference external" href="https://arxiv.org/abs/2507.23079" rel="noreferrer" target="_blank">arXiv:2507.23079</a>.
+Instead of propagating carries through the full register, each carry is measured in the
+X-basis (“vented”) as soon as it is no longer needed, reducing space-overhead from
+<span class="math notranslate nohighlight">\(\mathcal{O}(n)\)</span> to <span class="math notranslate nohighlight">\(\mathcal{O}(1)\)</span>. A split-half design uses the
+target register itself as dirty workspace, keeping the total qubit overhead to
+just 3 clean ancillae. The adder requires dynamic (JASP) mode and supports
+<code class="docutils literal notranslate"><span class="pre">c_in</span></code>, <code class="docutils literal notranslate"><span class="pre">c_out</span></code>, and zero-overhead <code class="xref py py-func docutils literal notranslate"><span class="pre">control</span></code>
+via the <a class="reference internal" href="../../reference/Utilities/custom_control.html#qrisp.custom_control" title="qrisp.custom_control"><code class="xref py py-func docutils literal notranslate"><span class="pre">custom_control</span></code></a> decorator.</p>
+<p><strong>Arithmetic enhancements</strong>: Gidney adder refactored
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/473" rel="noreferrer" target="_blank">PR #473</a>) with <code class="docutils literal notranslate"><span class="pre">c_in</span></code>/<code class="docutils literal notranslate"><span class="pre">c_out</span></code>
+support; Cuccaro adder gains matching <code class="docutils literal notranslate"><span class="pre">c_in</span></code>/<code class="docutils literal notranslate"><span class="pre">c_out</span></code> interface
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/615" rel="noreferrer" target="_blank">PR #615</a>);
+BigInteger Montgomery arithmetic fixes and rebuilt QuantumModulus constructor
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/495" rel="noreferrer" target="_blank">PR #495</a>).</p>
+<p><strong>Typing module</strong> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/543" rel="noreferrer" target="_blank">PR #543</a>):
+New <code class="xref py py-mod docutils literal notranslate"><span class="pre">qrisp.typing</span></code> module with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">QubitLike</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ClbitLike</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">FloatLike</span></code>,
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ScalarLike</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">NDArrayLike</span></code>, and <code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayLike</span></code>.</p>
+<p><strong>Other improvements</strong>: <code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code> class refactored
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/461" rel="noreferrer" target="_blank">PR #461</a>,
+<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/486" rel="noreferrer" target="_blank">#486</a>,
+<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/489" rel="noreferrer" target="_blank">#489</a>,
+<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/526" rel="noreferrer" target="_blank">#526</a>);
+Polished <a class="reference internal" href="../../reference/Primitives/reflection.html#qrisp.reflection" title="qrisp.reflection"><code class="xref py py-func docutils literal notranslate"><span class="pre">reflection</span></code></a> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/627" rel="noreferrer" target="_blank">PR #627</a>),
+<a class="reference internal" href="../../reference/Primitives/amplitude_amplification.html#qrisp.amplitude_amplification" title="qrisp.amplitude_amplification"><code class="xref py py-func docutils literal notranslate"><span class="pre">amplitude_amplification</span></code></a> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/588" rel="noreferrer" target="_blank">PR #588</a>),
+<a class="reference internal" href="../../reference/Primitives/QAE.html#qrisp.QAE" title="qrisp.QAE"><code class="xref py py-func docutils literal notranslate"><span class="pre">QAE</span></code></a> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/589" rel="noreferrer" target="_blank">PR #589</a>),
+and <a class="reference internal" href="../../reference/Algorithms/Grover.html#qrisp.grover.grovers_alg" title="qrisp.grover.grovers_alg"><code class="xref py py-func docutils literal notranslate"><span class="pre">grovers_alg</span></code></a> (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/587" rel="noreferrer" target="_blank">PR #587</a>) functions;
+MLIR / xDSL dialect
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/465" rel="noreferrer" target="_blank">PR #465</a>);
+StableHLO lowering (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/577" rel="noreferrer" target="_blank">PR #577</a>);
+composite gate interpreter (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/593" rel="noreferrer" target="_blank">PR #593</a>);
+<code class="docutils literal notranslate"><span class="pre">BoundQubitTerm</span></code>/<code class="docutils literal notranslate"><span class="pre">BoundQubitOperator</span></code> removed
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/559" rel="noreferrer" target="_blank">PR #559</a>);
+<code class="docutils literal notranslate"><span class="pre">QubitOperator._to_pauli_dict()</span></code> and zero-multiplication fix
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/612" rel="noreferrer" target="_blank">PR #612</a>);
+MaxCut module refactored (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/542" rel="noreferrer" target="_blank">PR #542</a>);
+benchmarking callback threshold (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/505" rel="noreferrer" target="_blank">PR #505</a>);
+depth metric negative slicing (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/451" rel="noreferrer" target="_blank">PR #451</a>);
+controlled-U3 compilation fixes (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/551" rel="noreferrer" target="_blank">PR #551</a>);
+Catalyst 0.15 compatibility (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/568" rel="noreferrer" target="_blank">PR #568</a>).</p>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Backend API breaking change</strong>: <code class="docutils literal notranslate"><span class="pre">Backend</span></code> is now the base abstraction for all
+backends. <code class="docutils literal notranslate"><span class="pre">VirtualBackend</span></code> still works, but only as a deprecated drop-in
+subclass. <code class="docutils literal notranslate"><span class="pre">DefaultBackend</span></code> is now <code class="docutils literal notranslate"><span class="pre">QrispSimulatorBackend</span></code>. <code class="docutils literal notranslate"><span class="pre">batched_measurement</span></code>
+is deprecated in favor of <code class="docutils literal notranslate"><span class="pre">BatchedBackend.dispatch()</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BoundQubitTerm</span></code> and <code class="docutils literal notranslate"><span class="pre">BoundQubitOperator</span></code> removed; use <code class="docutils literal notranslate"><span class="pre">QubitTerm</span></code> /
+<code class="docutils literal notranslate"><span class="pre">QubitOperator</span></code> instead.</p></li>
+<li><p>The old <code class="docutils literal notranslate"><span class="pre">qunicorn</span></code>-based <code class="docutils literal notranslate"><span class="pre">BackendClient</span></code>/<code class="docutils literal notranslate"><span class="pre">BackendServer</span></code> network
+infrastructure and the Docker-based backends have been removed.</p></li>
+<li><p>New <code class="xref py py-func docutils literal notranslate"><span class="pre">convert_to_cirq</span></code> and
+<code class="xref py py-func docutils literal notranslate"><span class="pre">convert_from_cirq</span></code> functions for
+bidirectional Qrisp-Cirq conversion (<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/610" rel="noreferrer" target="_blank">PR #610</a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jrange</span></code> <code class="docutils literal notranslate"><span class="pre">step</span></code> argument removed
+(<a class="reference external" href="https://github.com/eclipse-qrisp/Qrisp/pull/652" rel="noreferrer" target="_blank">PR #652</a>): Passing three arguments to
+<a class="reference internal" href="../../reference/Jasp/Control%20Flow/jrange.html#qrisp.jasp.jrange" title="qrisp.jasp.jrange"><code class="xref py py-func docutils literal notranslate"><span class="pre">jrange</span></code></a> now raises a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.
+Use a step-1 loop and multiply the loop variable by the desired step.</p></li>
+</ul>
+</section>
+<section id="first-time-contributors">
+<h2>First Time Contributors 🎉<a class="headerlink" href="#first-time-contributors" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/Redperij" rel="noreferrer" target="_blank">Redperij</a></p></li>
+<li><p><a class="reference external" href="https://github.com/MSY2K" rel="noreferrer" target="_blank">MSY2K</a></p></li>
+<li><p><a class="reference external" href="https://github.com/bruno-ah-um" rel="noreferrer" target="_blank">bruno-ah-um</a></p></li>
+<li><p><a class="reference external" href="https://github.com/Jfilz001" rel="noreferrer" target="_blank">Jfilz001</a></p></li>
+</ul>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/changelog"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qsvt-and-singular-value-transformations">QSVT and Singular Value Transformations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backend-interface-redesign">Backend Interface Redesign</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#circuit-optimization-pass-manager">Circuit Optimization Pass Manager</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-updates">Additional Updates</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#compatibility">Compatibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#first-time-contributors">First Time Contributors 🎉</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,765 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quantum Monte Carlo Integration &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QMCItutorial';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QMCItutorial.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How to think in Jasp" href="Jasp.html" />
+    <link rel="prev" title="Solving Sudoku using Quantum Backtracking" href="Sudoku.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Quantum Monte Carlo Integration</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Quantum-Monte-Carlo-Integration">
+<h1>Quantum Monte Carlo Integration<a class="headerlink" href="#Quantum-Monte-Carlo-Integration" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Niklas Steinmann</span>, <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>This tutorial will provide you with an introduction to Quantum Monte Carlo (QMCI) Integration within Qrisp.</p>
+<p>For this purpose, we will first give you a theoretical overview of what this technique is about and where it is used. Then we will dive into the practical implementation within Qrisp. This also includes the usage of Iterative Quantum Amplitude Estimation (IQAE). To finish of this tutorial, we investigate the full implementation of a simple example by integrating <span class="math notranslate nohighlight">\(f(x)=x^2\)</span> w.r.t. the uniform distribution over the interval <span class="math notranslate nohighlight">\([0,1]\)</span>.</p>
+<p>The relevant literature can be found in the following papers: <a class="reference external" href="https://www.nature.com/articles/s41598-024-61010-9" rel="noreferrer" target="_blank">A general quantum algorithm for numerical integration</a> and <a class="reference external" href="https://arxiv.org/pdf/1905.02666" rel="noreferrer" target="_blank">Option pricing using Quantum computers</a> for QMCI and <a class="reference external" href="https://arxiv.org/pdf/2407.16795" rel="noreferrer" target="_blank">Accelerated Quantum Amplitude Estimation without QFT</a> for IQAE.</p>
+<section id="Theoretical-Overview">
+<h2>Theoretical Overview<a class="headerlink" href="#Theoretical-Overview" title="Link to this heading">#</a></h2>
+<p>QMCI tackles the same problems as its classical counterpart: Numerical integration of high-dimensional functions w.r.t. probability distributions.</p>
+<p>Mathematically speaking, we want to find an approximation for the following (general) integral</p>
+<div class="math notranslate nohighlight">
+\[\int_{ { [0,1] }^n } f(x_1 , \dotsc , x_n) \text{d} \mu (x_1 , \dotsc , x_n)\]</div>
+<p>Numerical integration approximates an integral which cannot be solved analytically as a bunch of sums.</p>
+<p>Integrals like these may appear in many different places, from chemistry, through many-body physics, to mathematical finance.</p>
+</section>
+<section id="Theory-&amp;-Implementation-in-Qrisp">
+<h2>Theory &amp; Implementation in Qrisp<a class="headerlink" href="#Theory-&-Implementation-in-Qrisp" title="Link to this heading">#</a></h2>
+<p>The implementation in Qrisp requires the implementation of the function acting on a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a>. We will see how this can be done later in the example.</p>
+<p>There is multiple ways to implement Monte Carlo integration in a quantum fashion. In this tutorial, we use an approach based on quantum counting. The idea is to discretize not only the <span class="math notranslate nohighlight">\(x\)</span>-axis but the <span class="math notranslate nohighlight">\(y\)</span>-axis as well. We use two QuantumFloats for this. One QuantumFloat will hold the discretized values of the <span class="math notranslate nohighlight">\(x\)</span>-axis, while the other one will hold the discretized values of the <span class="math notranslate nohighlight">\(y\)</span>-axis. We can then simply count, in quantum fashion, the number of points under the
+function curve, and divide it by the number of total points. This is enabled by a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a> which for each state <span class="math notranslate nohighlight">\(\ket{x}\ket{y}\)</span> indicates whether the condition <span class="math notranslate nohighlight">\(y&lt;f(x)\)</span> is satisfied.</p>
+<p>Don’t give up just yet, the mathematical description will bring you more clarity!</p>
+<p>For simplicity, we consider the situation where <span class="math notranslate nohighlight">\(f\colon [0,1]\rightarrow[0,C]\)</span> is a bounded continuous function of one variable. The strategy presented below can straightforwardly be generalized to the higher-dimensional case. We wish to evaluate:</p>
+<div class="math notranslate nohighlight">
+\[\int_{0}^{1}f(x)\mathrm dx\]</div>
+<p>This integral is approximated as <a class="reference external" href="https://en.wikipedia.org/wiki/Riemann_integral" rel="noreferrer" target="_blank">Riemann sum</a>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{N}\sum\limits_{i=0}^{N-1}f(i/N)\]</div>
+<p>As a first step, we prepare a uniform superposition state in the QuantumFloats (or any other distribution for the variable discretizing the <span class="math notranslate nohighlight">\(x\)</span>-axis):</p>
+<div class="math notranslate nohighlight">
+\[\ket{0} \ket{0} \rightarrow \frac{1}{\sqrt{M \cdot N}} \sum^{N-1}_{i=0} \sum^{M-1}_{j=0} \ket{x_i} \ket{y_j}\]</div>
+<p>where <span class="math notranslate nohighlight">\(x_i=i/N\)</span> and <span class="math notranslate nohighlight">\(y=j\cdot C/M\)</span>.</p>
+<p>As a second step, we apply the oracle that evaluates the “points under the curve” condition:</p>
+<div class="math notranslate nohighlight">
+\[\ket{x_i} \ket{y_j} \ket{\text{False}} \rightarrow \mathbb{1}_{y_j \geq f(x_i)} \ket{x_i} \ket{y_j} \ket{\text{False}} + \mathbb{1}_{y_j &lt; f(x_i)} \ket{x_i} \ket{y_j} \ket{\text{True}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbb{1}_{y_j &lt; f(x_i)}\)</span> is <span class="math notranslate nohighlight">\(1\)</span> if <span class="math notranslate nohighlight">\(y_j &lt; f(x_i)\)</span> and <span class="math notranslate nohighlight">\(0\)</span> otherwise, and similarly for <span class="math notranslate nohighlight">\(\mathbb{1}_{y_j\geq f(x_i)}\)</span>.</p>
+<p>We now arrive at the central step of this algorithm, which is <a class="reference internal" href="../../reference/Primitives/QAE.html"><span class="doc">Quantum Amplitude Estimation</span></a>. We use it to find the probability of measuring a good state <span class="math notranslate nohighlight">\(\ket{x_i}\ket{y_j}\ket{\text{True}}\)</span>, i.e.</p>
+<div class="math notranslate nohighlight">
+\[p(\{ (x_i,y_j) \mid y_j &lt; f(x_i) \}) = \frac{1}{N} \sum^{N-1}_{i=0} \frac{1}{M} \sum^{M-1}_{j=0}  \mathbb{1}_{y_j &lt; f(x_i)} \approx \frac{1}{N} \sum^{N-1}_{x=0} \frac{f(x_i)}{C}\]</div>
+<p>In the last step, we calculate the ratio between the number of points under the curve and the total number of points <span class="math notranslate nohighlight">\(M\)</span> in the interval <span class="math notranslate nohighlight">\([0,C]\)</span>. This serves as an approximation for <span class="math notranslate nohighlight">\(f(x)/C\)</span>. The last expression is then (up to the scaling factor <span class="math notranslate nohighlight">\(C\)</span>) an approximation for the integral in question. (For more information on why this is the case check out this <a class="reference external" href="https://en.wikipedia.org/wiki/Riemann_integral" rel="noreferrer" target="_blank">link</a>.)</p>
+</section>
+<section id="Iterative-Quantum-Amplitude-Estimation">
+<h2>Iterative Quantum Amplitude Estimation<a class="headerlink" href="#Iterative-Quantum-Amplitude-Estimation" title="Link to this heading">#</a></h2>
+<p>In Qrisp we have the option of using a resource efficient amplitude estimation algorithm, namely <a class="reference external" href="https://arxiv.org/pdf/2407.16795" rel="noreferrer" target="_blank">Accelerated Quantum Amplitude Estimation, see Algorithm 1</a>, which iteratively applies <a class="reference internal" href="../../reference/Primitives/amplitude_amplification.html"><span class="doc">amplitude amplification</span></a> to find an estimation for the probability of measuring a good state. The goal of the algorithm is as follows:</p>
+<p>We start with a unitary operator <span class="math notranslate nohighlight">\(\mathcal{A}\)</span>, which acts on the input quantum variables as</p>
+<div class="math notranslate nohighlight">
+\[\textbf{A} \ket{0}\ket{\text{False}} = \sqrt{1-a} \ket{\Psi_0} \ket{\text{False}} + \sqrt{a} \ket{\Psi_1} \ket{\text{True}}\]</div>
+<p>producing a superposition of orthogonal good and bad components where <span class="math notranslate nohighlight">\(a \in [0,1]\)</span> is unknown.</p>
+<p>The algorithm in question allows for us to establish an estimate <span class="math notranslate nohighlight">\(\hat{a}\)</span> of the unknown <span class="math notranslate nohighlight">\(a\)</span>.</p>
+<p>Mathematically speaking this means, given an error <span class="math notranslate nohighlight">\(\epsilon\)</span> and a confidence level <span class="math notranslate nohighlight">\(\alpha\)</span>, the Accelerated Quantum Amplitude Estimation finds an estimate <span class="math notranslate nohighlight">\(\hat{a}\)</span> such that</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{P}\{|\hat{a} - a|\leq\epsilon\}\geq 1-\alpha\]</div>
+<p>A documentation explaining how to use the Qrisp implementation of this algorithm can found in the <a class="reference internal" href="../../reference/Primitives/IQAE.html"><span class="doc">IQAE</span></a> reference.</p>
+</section>
+<section id="Example-implementation">
+<h2>Example implementation<a class="headerlink" href="#Example-implementation" title="Link to this heading">#</a></h2>
+<p>Next up, we will step-by-step go through a example implementation of QMCI tailored to the example of integrating the function <span class="math notranslate nohighlight">\(f(x)=x^2\)</span> w.r.t. the uniform distribution over the interval <span class="math notranslate nohighlight">\([0,1]\)</span>, i.e.,</p>
+<div class="math notranslate nohighlight">
+\[\int_0^1x^2\mathrm dx\]</div>
+<p>A general implementation for integration of multidimensional functions w.r.t. arbitrary probability distributions is provided by the <a class="reference internal" href="../../reference/Algorithms/QMCI.html"><span class="doc">QMCI</span></a> method.</p>
+<p>First, we define the <code class="docutils literal notranslate"><span class="pre">function</span></code> that we want to integrate, and a function for preparing the uniform distribution. Additionally, we define the variables representing the <span class="math notranslate nohighlight">\(x\)</span>-axis (<code class="docutils literal notranslate"><span class="pre">qf_x</span></code>) and <span class="math notranslate nohighlight">\(y\)</span>-axis (<code class="docutils literal notranslate"><span class="pre">qf_y</span></code>). Thereby, the QuantumFloat representing the <span class="math notranslate nohighlight">\(y\)</span>-axis must be chosen appropriately with respect to the values that <code class="docutils literal notranslate"><span class="pre">function(qf_x)</span></code> assumes.</p>
+<p>In this example, we evaluate the function <span class="math notranslate nohighlight">\(f(x)\)</span> at <span class="math notranslate nohighlight">\(2^3=8\)</span> sampling points as specified by <code class="docutils literal notranslate"><span class="pre">QuantumFloat(3,-3)</span></code>. The resulting values that the function assumes are represented by <code class="docutils literal notranslate"><span class="pre">QuantumFloat(6,-6)</span></code>. We also define a <code class="docutils literal notranslate"><span class="pre">QuantumBool</span></code>, which will indicate the “points under the curve”.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">function</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">qf</span> <span class="o">*</span> <span class="n">qf</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">distribution</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+
+<span class="n">qf_x</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">qf_y</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">)</span>
+
+<span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Now, we arrive at the heart of the algorithm, the definition of the <code class="docutils literal notranslate"><span class="pre">state_function</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">state_function</span><span class="p">(</span><span class="n">qf_x</span><span class="p">,</span> <span class="n">qf_y</span><span class="p">,</span> <span class="n">qbl</span><span class="p">):</span>
+
+    <span class="n">distribution</span><span class="p">(</span><span class="n">qf_x</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf_y</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">qf_y</span> <span class="o">&lt;</span> <span class="n">function</span><span class="p">(</span><span class="n">qf_x</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>It receives the <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator ensuring that all intermediate variables are properly uncomputed. We apply the chosen distribution to <code class="docutils literal notranslate"><span class="pre">qf_x</span></code>, which represents the <span class="math notranslate nohighlight">\(x\)</span>-axis. As explained earlier, we also discretize the <span class="math notranslate nohighlight">\(y\)</span>-axis by applying an <code class="docutils literal notranslate"><span class="pre">h</span></code> gate to <code class="docutils literal notranslate"><span class="pre">qf_y</span></code>.</p>
+<p>Within a <a class="reference internal" href="../../reference/Quantum%20Environments/ConditionEnvironment.html"><span class="doc">ConditionEnvironment</span></a>, we then evaluate in superposition which states in <code class="docutils literal notranslate"><span class="pre">qf_y</span></code> are smaller than the chosen function evaluated on <code class="docutils literal notranslate"><span class="pre">qf_x</span></code>. We store the result of the comparison in the QuantumBool <code class="docutils literal notranslate"><span class="pre">qbl</span></code>, by applying an <code class="docutils literal notranslate"><span class="pre">x</span></code> gate on the previously mentioned QuantumBool if said condition is satisfied.</p>
+<p>With everything in place, we can now execute the <a class="reference internal" href="../../reference/Primitives/IQAE.html"><span class="doc">IQAE</span></a> method, with a chosen error tolerance <code class="docutils literal notranslate"><span class="pre">eps</span></code> and a confidence level <code class="docutils literal notranslate"><span class="pre">alpha</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">IQAE</span><span class="p">([</span><span class="n">qf_x</span><span class="p">,</span> <span class="n">qf_y</span><span class="p">,</span> <span class="n">qbl</span><span class="p">],</span> <span class="n">state_function</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>Aaaand that’s it! The QMCI is complete!</p>
+<p>Let us now have a look at the result, and compare it to the expected result:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">sum</span><span class="p">((</span><span class="n">i</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.273169047720647
+0.2734375
+</pre></div></div>
+</div>
+<p>Congratulations, in this tutorial you learned about the basic theory behind Quantum Monte Carlo Integration, as well as, how to implement it using the high-level concepts that Qrisp offers. You witnessed the power of quantum computing that allows for evaluation of functions at exponentially many points all at once, but also experienced the intricacies of making the quantum computer reveal the solution by using Quantum Amplitude Estimation. By doing so, you’re diving a step further into the world
+of quantum algorithms.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Theoretical-Overview">Theoretical Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Theory-&amp;-Implementation-in-Qrisp">Theory &amp; Implementation in Qrisp</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Iterative-Quantum-Amplitude-Estimation">Iterative Quantum Amplitude Estimation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-implementation">Example implementation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/QMCItutorial.ipynb" download="QMCItutorial.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

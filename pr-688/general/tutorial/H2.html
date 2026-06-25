@@ -1,0 +1,950 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Simulating the dynamics of the $H_2$ molecule &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/H2';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/H2.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Quantum Linear Algebra with Qrisp" href="BE_tutorial/index.html" />
+    <link rel="prev" title="Using BigInteger to compile Shor’s algorithm at 2048 bit" href="BigInteger.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Simulating the dynamics of the $H_2$ molecule</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Simulating-the-dynamics-of-the-$H_2$-molecule">
+<h1>Simulating the dynamics of the $H_2$ molecule<a class="headerlink" href="#Simulating-the-dynamics-of-the-$H_2$-molecule" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <div class="math notranslate nohighlight">
+\[\def\CC{\bf C}
+\def\QQ{\bf Q}
+\def\RR{\bf R}
+\def\ZZ{\bf Z}
+\def\NN{\bf N}\]</div>
+<p>Quantum computing offers a promising avenue for simulating complex molecular systems, potentially revolutionizing fields like drug discovery, materials science, and chemical engineering. At the heart of this capability lies Hamiltonian simulation, a powerful technique that allows us to model the quantum behavior of molecules with exponentially less resources compared to classical computers. In this tutorial, we’ll explore how to simulate molecules using Hamiltonian simulation techniques
+implemented in Qrisp. Qrisp provides a user-friendly interface for simulating quantum many body systems, making it a suitable tool for tackling complex quantum chemistry problems. We’ll cover the following key aspects:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#Performing-Hamiltonian-simulation"><span class="std std-ref">The fundamentals of Hamiltonian simulation and the second quantization</span></a></p></li>
+<li><p><a class="reference internal" href="#Loading-molecular-data-into-Qrisp"><span class="std std-ref">Loading molecular data into Qrisp</span></a></p></li>
+<li><p><a class="reference internal" href="#Performing-Hamiltonian-simulation"><span class="std std-ref">Performing Hamiltonian simulation</span></a></p></li>
+</ul>
+<p>By the end of this tutorial, you’ll have a solid understanding of how to leverage Qrisp’s capabilities to perform molecular simulations on quantum computers. Let’s dive in and discover how Qrisp can help us unlock the quantum secrets of molecules!</p>
+<section id="The-fundamentals-of-Hamiltonian-simulation-and-the-second-quantization">
+<h2>The fundamentals of Hamiltonian simulation and the second quantization<a class="headerlink" href="#The-fundamentals-of-Hamiltonian-simulation-and-the-second-quantization" title="Link to this heading">#</a></h2>
+<p>To understand what “second quantization” means it might be helpful to start with the <strong>first quantization</strong>. The idea behind this is that physical systems containing only a single particale are described by a Hilbert space <span class="math notranslate nohighlight">\(\mathcal{H}\)</span>, which consits of a set of basis vectors:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{H} = \text{span}(\ket{\psi_i} \mid i \in \mathcal{N})\]</div>
+<p>An arbitrary state <span class="math notranslate nohighlight">\(\ket{\phi}\)</span> can therefore be represented by a linear combination of these basis vectors:</p>
+<div class="math notranslate nohighlight">
+\[\ket{\phi} = \sum_{i = 0}^\infty a_i \ket{\psi_i},\quad a_i \in \mathbb{C}\]</div>
+<p>What these particular <span class="math notranslate nohighlight">\(\ket{\psi_i}\)</span> represent depends on the system. For instance for the Hydrogen atom these basis vectors represent the <a class="reference external" href="https://en.wikipedia.org/wiki/Atomic_orbital" rel="noreferrer" target="_blank">atomic orbitals</a>. If you participated in a course for atomic physics before, you might have seen pictures like this:</p>
+<p><img alt="Hydrogen atom" class="align-center no-scaled-link" src="../../_images/hydrogen_with_axes.png" style="width: 400px;" /></p>
+<p>This plot represents the real part of the amplitude of one of the basis vectors (the one with <span class="math notranslate nohighlight">\(n = 4, k = 3, l = 1\)</span> to be precise).</p>
+<p>The <strong>second quantization</strong> now describes how systems including <em>multiple particles</em> are treated. For this the so called ladder operators are introduced, that is, for each basis state <span class="math notranslate nohighlight">\(\ket{\psi_i}\)</span> there is an operator <span class="math notranslate nohighlight">\(a_i^\dagger\)</span>, which creates a particle in state <span class="math notranslate nohighlight">\(\ket{\psi_i}\)</span>. A creative notation for this might be:</p>
+<div class="math notranslate nohighlight">
+\[a_i^\dagger \ket{\phi} = \ket{\phi \text{ + a particle in state i}}\]</div>
+<p>For this reason, this operator is called the “creator”. Similarly there is also the “annihilator” <span class="math notranslate nohighlight">\(a_i\)</span>, which destroys the particle.</p>
+<p>The ladder operators therefore determine the intrinsic interaction behavior of the particles. Observations from experiments show that there are two types of particles whose ladder operators follow different sets of laws.</p>
+<p>For <strong>Bosons</strong> the ladder operators obey <a class="reference external" href="https://en.wikipedia.org/wiki/Commutator" rel="noreferrer" target="_blank">commutator</a> laws:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\;[a_i, a^\dagger_j] = a_i a^\dagger_j - a_j a^\dagger_i = \delta_{ij}\\
+[a^\dagger_i, a^\dagger_j] = [a_i, a_j] = 0
+\end{aligned}\end{split}\]</div>
+<p>For <strong>Fermions</strong> the ladder operators obey anti-commutator laws:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\;\{a_i, a^\dagger_j\} = a_i a^\dagger_j + a_j^\dagger a_i = \delta_{ij}\\
+\{a^\dagger_i, a^\dagger_j\} = \{a_i, a_j\} = 0
+\end{aligned}\end{split}\]</div>
+<p>Note that the fermionic laws imply <span class="math notranslate nohighlight">\(a_i^\dagger a_i^\dagger = 0\)</span>. This means that an operator, which tries to insert two particles in the same state will immidiately become 0 and therefore not contribute. This is known as <a class="reference external" href="https://en.wikipedia.org/wiki/Pauli_exclusion_principle" rel="noreferrer" target="_blank">Pauli exclusion principle</a>.</p>
+<p>Within Qrisp it is currently only possible to model <strong>fermions</strong>, which is for many applications in chemistry the more important case. A modelling framework for bosons will follow in a future release. To start building a fermionic operator, we import the functions <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">a</span></code> for creators and annihilators.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">a</span>
+
+<span class="n">O</span> <span class="o">=</span> <span class="n">a</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">a</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+a0*c1 + a1*a2
+</pre></div></div>
+</div>
+<p>To learn more how to build and manipulate these expressions, please look at the documentation page of <a class="reference internal" href="../../reference/Operators/FermionicOperator.html"><span class="doc">FermionicOperator</span></a>. For instance, the hermitian conjugate can be computed using the <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.dagger.html"><span class="doc">.dagger</span></a> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">dagger</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+a1*c0 + c2*c1
+</pre></div></div>
+</div>
+<p>To apply the Pauli exclusion principle but also other anti-commutation laws for simplifaction, you can call the <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.reduce.html"><span class="doc">.reduce</span></a> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">O</span> <span class="o">=</span> <span class="n">a</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">a</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">a</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">reduce</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2*a1*a2
+</pre></div></div>
+</div>
+<section id="The-Jordan-Wigner-embedding">
+<h3>The Jordan-Wigner embedding<a class="headerlink" href="#The-Jordan-Wigner-embedding" title="Link to this heading">#</a></h3>
+<p>A natural question that comes up is how to represent the ladder operators and the corresponding states on a quantum computer. The most established way to do this is to use the <a class="reference external" href="https://en.wikipedia.org/wiki/Jordan%E2%80%93Wigner_transformation" rel="noreferrer" target="_blank">Jordan-Wigner embedding</a> (even though there are several <a class="reference external" href="https://arxiv.org/abs/2212.09731" rel="noreferrer" target="_blank">interesting alternatives</a>). The Jordan-Wigner embedding identifies each ladder term with an operator that acts on a qubit space:</p>
+<div class="math notranslate nohighlight">
+\[a_k = A_k \prod_{i = 0}^{k-1} Z_i\]</div>
+<p>Where <span class="math notranslate nohighlight">\(A_k = \ket{0}\bra{1}\)</span> and <span class="math notranslate nohighlight">\(Z_i\)</span> are the Pauli-Z Operators. Feel free to verify that this indeed satisfies the anti-commutator relations! We can apply the Jordan-Wigner embedding with the corresponding method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">O_fermionic</span> <span class="o">=</span> <span class="n">a</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">O_qubit</span> <span class="o">=</span> <span class="n">O_fermionic</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">(</span><span class="n">mapping_type</span><span class="o">=</span><span class="s2">&quot;jordan_wigner&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">O_qubit</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Z(0)*Z(1)*Z(2)*Z(3)*A(4)
+</pre></div></div>
+</div>
+<p>This gives us an instance of the <a class="reference internal" href="../../reference/Operators/QubitOperator.html"><span class="doc">QubitOperator</span></a> class. What is the difference to a <a class="reference internal" href="../../reference/Operators/FermionicOperator.html"><span class="doc">FermionicOperator</span></a>? While FermionicOperators model the more abstract fermion space, qubit operators represent operators on the qubit space <span class="math notranslate nohighlight">\((\mathbb{C}^2)^{\otimes n}\)</span> and can be simulated and evaluated efficiently using a quantum computer. In particular, QubitOperators can represent tensor products of the
+following operators <span class="math notranslate nohighlight">\(X,Y,Z,A,C,P^0,P^1,I\)</span>. Make sure to read the <a class="reference internal" href="../../reference/Operators/QubitOperator.html"><span class="doc">documentation</span></a> to learn about their definition!</p>
+</section>
+<section id="Dynamics">
+<h3>Dynamics<a class="headerlink" href="#Dynamics" title="Link to this heading">#</a></h3>
+<p>Both boson and fermion systems evolve under the Schrödinger equation:</p>
+<div class="math notranslate nohighlight">
+\[i \hbar \frac{d}{dt}\ket{\phi} = H \ket{\phi}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(H\)</span> is a hermitian operator called Hamiltonian. <em>Hamiltonian simulation</em> is the procedure of mimicing the dynamics of a physical system described by a Hamiltonian <span class="math notranslate nohighlight">\(H\)</span> using a quantum computer. In other words: creating the state <span class="math notranslate nohighlight">\(\ket{\phi, t} = \text{exp}(iHt)\ket{\phi, 0}\)</span> artificially to evaluate some of its properties.</p>
+<p>For bosonic systems, the Hamiltonian can only be a linear combination of products of the bosonic ladder operators. The equivalent holds for fermionic systems.</p>
+<div class="math notranslate nohighlight">
+\[H = \sum_{n=0}^{\infty} \sum_{i_1, \ldots, i_n} \sum_{j_1, \ldots, j_n} h_{i_1 \ldots i_n, j_1 \ldots j_n} a_{i_1}^{\dagger} \ldots a_{i_n}^{\dagger} a_{j_1} \ldots a_{j_n}\]</div>
+<p>Where all <span class="math notranslate nohighlight">\(h \in \mathbb{R}\)</span>. An example Hamiltonian could therefore look like this</p>
+<div class="math notranslate nohighlight">
+\[H = h_{01}(a_0a^\dagger_1 + a_1a^\dagger_0) + h_{00}a_0a^\dagger_0\]</div>
+<p>The particular values of the coefficients (like <span class="math notranslate nohighlight">\(h_{01}\)</span> and <span class="math notranslate nohighlight">\(h_{00}\)</span>) are determined by the specifics of the system. For many systems of interest these numbers involve the computation of some integrals - a task that can be efficiently performed on the classical computer.</p>
+</section>
+</section>
+<section id="Loading-molecular-data-into-Qrisp">
+<h2>Loading molecular data into Qrisp<a class="headerlink" href="#Loading-molecular-data-into-Qrisp" title="Link to this heading">#</a></h2>
+<p>If you don’t feel like solving integrals right now, we’ve got you covered! Qrisp has a convenient interface to <a class="reference external" href="https://pyscf.org/" rel="noreferrer" target="_blank">PySCF</a>, which loads the molecular data directly as <a class="reference internal" href="../../reference/Operators/FermionicOperator.html"><span class="doc">FermionicOperator</span></a>. For that you need PySCF installed (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pyscf</span></code>). If you’re on Windows you might need to do some <a class="reference external" href="https://harshityadav95.medium.com/jupyter-notebook-in-windows-subsystem-for-linux-wsl-8b46fdf0a536%3E" rel="noreferrer" target="_blank">WSL gymnastics</a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyscf</span><span class="w"> </span><span class="kn">import</span> <span class="n">gto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">FermionicOperator</span>
+
+<span class="n">mol</span> <span class="o">=</span> <span class="n">gto</span><span class="o">.</span><span class="n">M</span><span class="p">(</span><span class="n">atom</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;H 0 0 0; H 0 0 0.74&quot;&quot;&quot;</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;sto-3g&quot;</span><span class="p">)</span>
+<span class="n">H_ferm</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="o">.</span><span class="n">from_pyscf</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">H_ferm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-0.181210462015197*a0*a1*c2*c3 + 0.181210462015197*a0*c1*c2*a3 - 1.25330978664598*c0*a0 + 0.674755926814448*c0*a0*c1*a1 + 0.482500939335617*c0*a0*c2*a2 + 0.663711401350814*c0*a0*c3*a3 + 0.181210462015197*c0*a1*a2*c3 - 0.181210462015197*c0*c1*a2*a3 - 1.25330978664598*c1*a1 + 0.663711401350814*c1*a1*c2*a2 + 0.482500939335617*c1*a1*c3*a3 - 0.475068848772179*c2*a2 + 0.697651504490461*c2*a2*c3*a3 - 0.475068848772179*c3*a3
+</pre></div></div>
+</div>
+<p>This snippet uses the <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.from_pyscf.html"><span class="doc">.from_pyscf</span></a> method to load the FermionicOperator representing the orbitals of the Dihydrogen molecule <span class="math notranslate nohighlight">\(H_2\)</span>. Or to be more precise, two hydrogen nuclei seperated by <span class="math notranslate nohighlight">\(0.74\)</span> Angstrom.</p>
+<p>Or if preferred, the Jordan-Wigner embedding:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">H_qubit</span> <span class="o">=</span> <span class="n">H_ferm</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">H_qubit</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.181210462015197*A(0)*A(1)*C(2)*C(3) - 0.181210462015197*A(0)*C(1)*C(2)*A(3) - 0.181210462015197*C(0)*A(1)*A(2)*C(3) + 0.181210462015197*C(0)*C(1)*A(2)*A(3) - 1.25330978664598*P1(0) + 0.674755926814448*P1(0)*P1(1) + 0.482500939335617*P1(0)*P1(2) + 0.663711401350814*P1(0)*P1(3) - 1.25330978664598*P1(1) + 0.663711401350814*P1(1)*P1(2) + 0.482500939335617*P1(1)*P1(3) - 0.475068848772179*P1(2) + 0.697651504490461*P1(2)*P1(3) - 0.475068848772179*P1(3)
+</pre></div></div>
+</div>
+</section>
+<section id="Performing-Hamiltonian-simulation">
+<h2>Performing Hamiltonian simulation<a class="headerlink" href="#Performing-Hamiltonian-simulation" title="Link to this heading">#</a></h2>
+<p>To perform Hamiltonian simulation, we use the <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.trotterization.html"><span class="doc">.trotterization</span></a> method, which gives us a Python function that performs a simulation of the Hamiltonian on a <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="n">U</span> <span class="o">=</span> <span class="n">H_ferm</span><span class="o">.</span><span class="n">trotterization</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">state_prep</span><span class="p">():</span>
+    <span class="n">electron_state</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">electron_state</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;1100&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="o">**-</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;0001&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="o">**-</span><span class="mf">0.5</span><span class="p">}</span>
+
+    <span class="n">U</span><span class="p">(</span><span class="n">electron_state</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">electron_state</span>
+</pre></div>
+</div>
+</div>
+<p>This snippet defines a function <code class="docutils literal notranslate"><span class="pre">state_prep</span></code> that first initializes the state <span class="math notranslate nohighlight">\(\ket{\phi, t = 0}\)</span>, which is a superposition of 2 electrons in the lower two orbitals and a state of 1 electron in the highest orbital. Second, we perform the Hamiltonian simulation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">electron_state</span> <span class="o">=</span> <span class="n">state_prep</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>This snippets simulates the Dihydrogen molecule for <span class="math notranslate nohighlight">\(t = 100\)</span> <a class="reference external" href="https://physics.nist.gov/cgi-bin/cuu/Value?aut" rel="noreferrer" target="_blank">atomic units of time</a>, i.e.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\begin{align}
+\ket{\phi, t = 100} &amp;= U(t = 100)\ket{\phi, t =0}\\
+&amp;= \text{exp}(100iH)\ket{\phi, t =0}
+\end{align}
+\end{aligned}\end{split}\]</div>
+<p>Finally, we want to extract some physical quantity from our simulation. Our quantity of choice is the particle number operator:</p>
+<div class="math notranslate nohighlight">
+\[N = \sum_{i = 0}^n a^\dagger_i  a_i\]</div>
+<p>In Python code:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>For each state <span class="math notranslate nohighlight">\(i\)</span>, this operator leaves the “electron at <span class="math notranslate nohighlight">\(i\)</span>” state invariant (i.e. a +1 contribution) and maps the “no electron at <span class="math notranslate nohighlight">\(i\)</span>” state to a 0 contribution. Its eigenvalues therefore indicate the number of electrons in the system. To evaluate the expectation value <span class="math notranslate nohighlight">\(\bra{\phi}N \ket{\phi}\)</span>, we call the <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.qubit.QubitOperator.expectation_value.html"><span class="doc">.expectation_value</span></a> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">expectation_value</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">expectation_value</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.4984592498140474
+</pre></div></div>
+</div>
+<p>We see that the expectaction value is (almost) 1.5 because <span class="math notranslate nohighlight">\((2+1)/2 = 1.5\)</span>, which is expected assuming that the dynamics under the given Hamiltonian doesn’t create particles out of nowhere (or destroys them). The value is not exact because of statistical noise - we can increase the precision (which will however require more measurements from the backend!):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">N</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.4999932478124958
+</pre></div></div>
+</div>
+<p>This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and feel motivated to explore more systems and techniques! Make sure to also check out the <a class="reference internal" href="../../reference/Examples/MolecularPotentialEnergyCurve.html"><span class="doc">molecular potential energy curves</span></a> example to learn how to compute the ground state for both types of operators!</p>
+<p>For your reference, we give the full code below:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loading molecular data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">FermionicOperator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyscf</span><span class="w"> </span><span class="kn">import</span> <span class="n">gto</span>
+
+<span class="n">mol</span> <span class="o">=</span> <span class="n">gto</span><span class="o">.</span><span class="n">M</span><span class="p">(</span><span class="n">atom</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;H 0 0 0; H 0 0 0.74&quot;&quot;&quot;</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;sto-3g&quot;</span><span class="p">)</span>
+<span class="n">H_ferm</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="o">.</span><span class="n">from_pyscf</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+
+<span class="c1"># Initializing the quantum state and performing Hamiltonian simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="n">U</span> <span class="o">=</span> <span class="n">H_ferm</span><span class="o">.</span><span class="n">trotterization</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">state_prep</span><span class="p">():</span>
+    <span class="n">electron_state</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">electron_state</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;1100&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="o">**-</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;0001&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="o">**-</span><span class="mf">0.5</span><span class="p">}</span>
+
+    <span class="n">U</span><span class="p">(</span><span class="n">electron_state</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">electron_state</span>
+
+
+<span class="c1"># Evaluating the number operator</span>
+<span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">expectation_value</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">expectation_value</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.4971841462118798
+</pre></div></div>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-fundamentals-of-Hamiltonian-simulation-and-the-second-quantization">The fundamentals of Hamiltonian simulation and the second quantization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Jordan-Wigner-embedding">The Jordan-Wigner embedding</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Dynamics">Dynamics</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Loading-molecular-data-into-Qrisp">Loading molecular data into Qrisp</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Performing-Hamiltonian-simulation">Performing Hamiltonian simulation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/H2.ipynb" download="H2.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

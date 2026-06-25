@@ -1,0 +1,1011 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quantum Backtracking &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Algorithms/QuantumBacktrackingTree';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Algorithms/QuantumBacktrackingTree.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser.html" />
+    <link rel="prev" title="qrisp.cold.DCQOProblem.QUBO_cost" href="dcqo/generated/qrisp.cold.DCQOProblem.QUBO_cost.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Algorithms</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Grover.html">Grover’s Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quantum_counting.html">Quantum Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QMCI.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Shor.html">Shor’s Algorithm</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="qaoa/QAOA.html">Quantum Approximate Optimization Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qiro/QIRO.html">Quantum Informed Recursive Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dcqo/DCQO.html">Digitized Counterdiabatic Quantum Optimization</a></li>
+
+
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Quantum Backtracking</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="vqe/VQE.html">Variational Quantum Eigensolver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QITE.html">Quantum Imaginary-Time Evolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lanczos.html">Lanczos Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CKS.html">CKS Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GQSP.html">Generalized Quantum Signal Processing (GQSP)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Algorithms</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Quantum Backtracking</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="quantum-backtracking">
+<span id="quantumbacktrackingtree"></span><h1>Quantum Backtracking<a class="headerlink" href="#quantum-backtracking" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="qrisp.quantum_backtracking.QuantumBacktrackingTree">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QuantumBacktrackingTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_qv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accept</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subspace_optimization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/algorithms/quantum_backtracking/backtracking_tree.html#QuantumBacktrackingTree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.quantum_backtracking.QuantumBacktrackingTree" title="Link to this definition">#</a></dt>
+<dd><p>This class describes the central data structure to run backtracking algorithms in
+a quantum setting. <a class="reference external" href="https://en.wikipedia.org/wiki/Backtracking" rel="noreferrer" target="_blank">Backtracking algorithms</a>
+are a very general class of algorithms which cover many problems of combinatorial
+optimization such as 3-SAT or TSP.</p>
+<p>Backtracking algorithms can be put into a very general form. Given is a maximum
+recursion depth, two functions called <code class="docutils literal notranslate"><span class="pre">accept</span></code>/<code class="docutils literal notranslate"><span class="pre">reject</span></code> and the set of
+possible assignments for an iterable x.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">,</span> <span class="n">assignments</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">backtracking</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">accept</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">reject</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">max_depth</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">assigments</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">backtracking</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+<p>The power of these algorithms lies in the fact that they can quickly discard
+large parts of the potential solution space by using the reject function to
+cancel the recursion. Compared to an unstructured search, where only the
+accept function is available, this can significantly cut the required resources.</p>
+<p>The quantum algorithm for solving these problems has been
+<a class="reference external" href="https://arxiv.org/abs/1509.02374" rel="noreferrer" target="_blank">proposed by Ashley Montanaro</a> and yields
+a 1 to 1 correspondence between an arbitrary classical backtracking algorithm
+and it’s quantum equivalent. The quantum version achieves a quadratic speed up
+over the classical one.</p>
+<p>The algorithm is based on performing quantum phase estimation on a quantum walk
+operator, which traverses the backtracking tree. The core algorithm returns
+“Node exists” if the 0 component of the quantum phase estimation result
+has a higher probability then 3/8 = 0.375.</p>
+<p>Similar to the classical version, for the Qrisp implementation of this quantum
+algorithm, a backtracking problem is specified by a maximum recursion depth
+and two functions, each returning a <a class="reference internal" href="../Quantum%20Types/QuantumBool.html#quantumbool"><span class="std std-ref">QuantumBool</span></a> respectively:</p>
+<p><strong>accept</strong>: Is the function that returns True, if called on a node, satisfying the
+specifications.</p>
+<p><strong>reject</strong>: Is the function that returns True, if called on a node, representing a
+branch that should no longer be considered.</p>
+<p>Furthermore required is a <a class="reference internal" href="../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> that specifies the branches
+that can be taken by the algorithm at each node.</p>
+<p><strong>Node encoding</strong></p>
+<p>An important aspect of this algorithm is the node encoding. In Montanaros
+paper a central quantity is the distance from the root <span class="math notranslate nohighlight">\(l(x)\)</span>. This however
+doesn’t generalize well to the specification of subtrees, which is why
+we encode the height of a node. For example in a tree with maximum depth <span class="math notranslate nohighlight">\(n\)</span>
+a leaf has height 0 and the root has height <span class="math notranslate nohighlight">\(n\)</span>.</p>
+<p>This quantity is encoded as a one-hot integer QuantumVariable, which can be
+found under the attribute <code class="docutils literal notranslate"><span class="pre">h</span></code>.</p>
+<p>To fully identify a node, we also need to specify the path to take starting
+at the root. This path is encoded in a <a class="reference internal" href="../Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a>, which can be found
+under the attribute <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code>. To fit into the setting of height encoding,
+this array contains the reversed path.</p>
+<p>We summarize the encoding by giving an example:</p>
+<p>In a binary tree with depth 5, the node that has the path from the root [1,1]
+is encoded by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\ket{\text{branch_qa}} &amp;= \ket{0}\ket{0}\ket{0}\ket{1}\ket{1}\\
+\ket{\text{h}} &amp;= \ket{3} = \ket{00010}\\
+\ket{x} &amp;= \ket{\text{branch_qa}}\ket{\text{h}}
+\end{align}\end{split}\]</div>
+<p><strong>Details on the predicate functions</strong></p>
+<p>The predicate functions <code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> must meet certain conditions
+for the algorithm to function properly:</p>
+<ul class="simple">
+<li><p>Both functions have to return a <a class="reference internal" href="../Quantum%20Types/QuantumBool.html#quantumbool"><span class="std std-ref">QuantumBool</span></a>.</p></li>
+<li><p>Both functions must not change the state of the tree.</p></li>
+<li><p>Both functions must delete/uncompute all temporarily created QuantumVariables.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> must never return <code class="docutils literal notranslate"><span class="pre">True</span></code> on the same node.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">subspace_optimization</span></code> keyword enables a significant optimization of
+the <code class="docutils literal notranslate"><span class="pre">quantum_step</span></code> function. This keyword can be set to True if the <code class="docutils literal notranslate"><span class="pre">reject</span></code>
+function is guaranteed to return the value <code class="docutils literal notranslate"><span class="pre">reject(x)</span></code> also on the non-algorithmic
+subspace of x. For instance, if x = [0,0,1] in a depth 4 tree, the encoded state is</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\ket{\text{branch_qa}} &amp;= \ket{0}\ket{1}\ket{0}\ket{0}\\
+\ket{\text{h}} &amp;= \ket{1}\\
+\ket{x} &amp;= \ket{\text{branch_qa}}\ket{\text{h}}
+\end{align}\end{split}\]</div>
+<p>A state from the non-algorithmic subspace of x is now a state that has non-zero
+entries in <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code> at indices less than <code class="docutils literal notranslate"><span class="pre">h</span></code> ie.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\ket{\text{branch_qa}_{NA}} &amp;= \ket{1}\ket{1}\ket{0}\ket{0}\\
+\ket{\text{h}} &amp;= \ket{1}\\
+\ket{\tilde{x}} &amp;= \ket{\text{branch_qa}_{NA}}\ket{\text{h}}
+\end{align}\end{split}\]</div>
+<p>For the <code class="docutils literal notranslate"><span class="pre">subspace_optimization</span></code> to return proper results, the <code class="docutils literal notranslate"><span class="pre">reject</span></code>
+function must therefore satisfy:</p>
+<div class="math notranslate nohighlight">
+\[\text{reject}(\ket{x}) = \text{reject}(\ket{\tilde{x}})\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Many implementations of backtracking also include the possibility for
+deciding which entries of x to assign based on some user provided heuristic.
+The quantum version also supports this feature, however it is not yet
+implemented in Qrisp.</p>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>max_depth</strong><span class="classifier">integer</span></dt><dd><p>The depth of the backtracking tree.</p>
+</dd>
+<dt><strong>branch_qv</strong><span class="classifier">QuantumVariable</span></dt><dd><p>A QuantumVariable representing the possible branches of each node.</p>
+</dd>
+<dt><strong>accept</strong><span class="classifier">function</span></dt><dd><p>A function taking an instance of QuantumBacktrackingTree and returning
+a QuantumBool, which is <code class="docutils literal notranslate"><span class="pre">True</span></code>, if called on a satisfying node.</p>
+</dd>
+<dt><strong>reject</strong><span class="classifier">function</span></dt><dd><p>A function taking an instance of QuantumBacktrackingTree and returning
+a QuantumBool, which is <code class="docutils literal notranslate"><span class="pre">True</span></code>, if a called on a node where the corresponding
+branch should no longer be investigated.</p>
+</dd>
+<dt><strong>subspace_optimization</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, a significant optimization of the <code class="docutils literal notranslate"><span class="pre">quantum_step</span></code> function 
+will be applied. The reject function has to fullfil a certain property
+for this to yield the correct results. Please check the “Details on the
+predicate functions” section for more information. The default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>h</strong><span class="classifier"><a class="reference internal" href="../Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a></span></dt><dd><p>A one hot encoded integer representing the height of the node. The root
+has <code class="docutils literal notranslate"><span class="pre">h</span> <span class="pre">=</span> <span class="pre">max_depth</span></code>, it’s children have <code class="docutils literal notranslate"><span class="pre">h</span> <span class="pre">=</span> <span class="pre">max_depth-1</span></code> etc.</p>
+</dd>
+<dt><strong>branch_qa</strong><span class="classifier"><a class="reference internal" href="../Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a></span></dt><dd><p>A QuantumArray representing the path from the root to the current node.
+The qtype of this QuantumArray is what is been provided as <code class="docutils literal notranslate"><span class="pre">branch_qv</span></code>.
+Note that the state of this array is the reversed path, ie. a the node
+with path <code class="docutils literal notranslate"><span class="pre">[1,1,0,1]</span></code> in a depth 7 tree has the state:
+<span class="math notranslate nohighlight">\(\ket{0}\ket{0}\ket{0}\ket{1}\ket{0}\ket{1}\ket{1}\)</span>
+States that have a non-zero value at entries indexed smaller than <code class="docutils literal notranslate"><span class="pre">h</span></code>,
+are considered non-algorithmic and will never be visited
+(eg. h=3, branch_qa = <span class="math notranslate nohighlight">\(\ket{1}\ket{1}\ket{1}\ket{1}\)</span>).</p>
+</dd>
+<dt><strong>qs</strong><span class="classifier"><a class="reference internal" href="../Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a></span></dt><dd><p>The QuantumSession of the backtracking tree.</p>
+</dd>
+<dt><strong>max_depth</strong><span class="classifier">int</span></dt><dd><p>An integer specifying the maximum depth of each node.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p><strong>Checking for the existence of a solution</strong></p>
+<p>Even though primary purpose of backtracking algorithms is to find a solution,
+at the core, Montanaros algorithm only determines solution existence. This can
+however still be leveraged into a solution finding algorithm.</p>
+<p>To demonstrate the solution existence functionality, we search the binary
+tree that consists only of nodes with alternating branching.
+We accept if we find the node <code class="docutils literal notranslate"><span class="pre">[0,0,1]</span></code> (doesn’t exist in this tree).</p>
+<p>For this we first set up the reject condition.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+
+    <span class="n">oddity</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">%</span><span class="mi">2</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">oddity</span><span class="p">)</span>
+
+    <span class="n">parity</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">parity</span><span class="p">)</span>
+
+    <span class="n">exclude_init</span> <span class="o">=</span> <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span> <span class="o">&lt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">max_depth</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exclude_init</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">oddity</span> <span class="o">!=</span> <span class="n">parity</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This function determines first determines the oddity of the height parameter
+(remember <code class="docutils literal notranslate"><span class="pre">tree.h</span></code> has one-hot encoding!). Next the parity of the branching 
+path is evaluated. Parity means “is the amount of ones in the path even or odd”.</p>
+<p>We will reject the node if the oddity of is unequal to the parity and therefore
+reject any path that took a 1 after it already took a 1 (same for 0).</p>
+<p>On the root and it’s children there will be rejection to allow for two different
+paths.</p>
+<p>We now implement the accept condition:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+
+    <span class="n">height_condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">path_condition</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">path_condition</span><span class="p">,</span> <span class="n">ctrl_state</span> <span class="o">=</span> <span class="s2">&quot;001&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">height_condition</span> <span class="o">&amp;</span> <span class="n">path_condition</span>
+</pre></div>
+</div>
+<p>Subsequently we set up the class instance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBacktrackingTree</span>
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                               <span class="n">branch_qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                               <span class="n">accept</span> <span class="o">=</span> <span class="n">accept</span><span class="p">,</span>
+                               <span class="n">reject</span> <span class="o">=</span> <span class="n">reject</span><span class="p">)</span>
+
+<span class="n">tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">([])</span>
+</pre></div>
+</div>
+<p>We can evaluate the statevector:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tree</span><span class="o">.</span><span class="n">statevector</span><span class="p">()</span>
+<span class="go">1.0*|[]&gt;</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">[]</span></code> indicates that this is the root state. If the tree was in the state
+of a child of the root (say the one connected to the 1 branch) it would be <code class="docutils literal notranslate"><span class="pre">[1]</span></code>.</p>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">statevector</span></code> method decodes the QuantumVariables holding the
+node state for convenient readibility. If you want to see the encoded variables
+you can take a look at the <a class="reference internal" href="../Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a> s <a class="reference internal" href="../Core/generated/qrisp.QuantumSession.statevector.html#qrisp.QuantumSession.statevector" title="qrisp.QuantumSession.statevector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">statevector</span> <span class="pre">method</span></code></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tree</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">()</span>
+<span class="go">|0&gt;**3*|3&gt;</span>
+</pre></div>
+</div>
+<p>We can also visualize the statevector of the tree:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tree</span><span class="o">.</span><span class="n">visualize_statevector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/root_state_plot.png"><img alt="Root statevector plot" class="align-left" src="../../_images/root_state_plot.png" style="width: 200px;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<p>And finally evaluate the algorithm:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_res</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">estimate_phase</span><span class="p">(</span><span class="n">precision</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Perform a measurement</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mes_res</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mes_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">0.1036</span>
+</pre></div>
+</div>
+<p>The 0 component has only 10.36% probability of appearing, therefore we can conclude,
+that in the specified tree no such node exists.</p>
+<p>We now perform the same process but with a trivial reject function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                               <span class="n">branch_qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                               <span class="n">accept</span> <span class="o">=</span> <span class="n">accept</span><span class="p">,</span>
+                               <span class="n">reject</span> <span class="o">=</span> <span class="n">reject</span><span class="p">)</span>
+
+<span class="n">tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">([])</span>
+
+<span class="n">qpe_res</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">estimate_phase</span><span class="p">(</span><span class="n">precision</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mes_res</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mes_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">0.5039</span>
+</pre></div>
+</div>
+<p>We see a probability of more than 50%, implying a solution exists in
+this tree.</p>
+<p><strong>Finding a solution</strong></p>
+<p>Montanaros approach to determine a solution is to classically traverse the tree,
+by always picking the child node where the quantum algorithm returns “Node exists”.
+Finding a solution can therefore be considered a hybrid algorithm.</p>
+<p>To demonstrate, we search for the node <code class="docutils literal notranslate"><span class="pre">[1,1,1]</span></code> with a trivial reject function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="n">height_condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="n">tree</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">path_condition</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <span class="n">path_condition</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">height_condition</span> <span class="o">&amp;</span> <span class="n">path_condition</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">QuantumBool</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Set up the QuantumBacktrackingTree instance:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">max_depth</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span><span class="n">max_depth</span><span class="p">,</span>
+<span class="go">                                   branch_qv = QuantumFloat(1),</span>
+<span class="go">                                   accept = accept,</span>
+<span class="go">                                   reject = reject)</span>
+</pre></div>
+</div>
+<p>And call the solution finding algorithm:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tree</span><span class="o">.</span><span class="n">find_solution</span><span class="p">(</span><span class="n">precision</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">[1, 1, 1]</span>
+</pre></div>
+</div>
+<p><strong>Using the subspace_optimization keyword</strong></p>
+<p>To demonstrate the usage of this feature, we create two tree instances - one
+with and one without the optimization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">QuantumBool</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">opt_tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">branch_qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">accept</span> <span class="o">=</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span> <span class="o">=</span> <span class="n">reject</span><span class="p">,</span> <span class="n">subspace_optimization</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">no_opt_tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">branch_qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">accept</span> <span class="o">=</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span> <span class="o">=</span> <span class="n">reject</span><span class="p">,</span> <span class="n">subspace_optimization</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Perform a <code class="docutils literal notranslate"><span class="pre">quantum_step</span></code> on both of them:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">opt_tree</span><span class="o">.</span><span class="n">quantum_step</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">no_opt_tree</span><span class="o">.</span><span class="n">quantum_step</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>And evaluate some benchmarks:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">no_opt_tree</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">89</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">no_opt_tree</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">68</span>
+</pre></div>
+</div>
+<p>With the optimization these values are much better:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">opt_tree</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">48</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opt_tree</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">38</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="methods">
+<h1>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h1>
+<section id="tree-quantum-operations">
+<h2>Tree quantum operations<a class="headerlink" href="#tree-quantum-operations" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.qstep_diffuser</span></code></a>(**kwargs)</p></td>
+<td><p>Performs the operators <span class="math notranslate nohighlight">\(R_A\)</span> or <span class="math notranslate nohighlight">\(R_B\)</span>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.quantum_step</span></code></a>([ctrl, ...])</p></td>
+<td><p>Performs the quantum step operator <span class="math notranslate nohighlight">\(R_BR_A\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.estimate_phase</span></code></a>(precision)</p></td>
+<td><p>Performs <a class="reference internal" href="../Primitives/QPE.html#qrisp.QPE" title="qrisp.QPE"><code class="xref py py-meth docutils literal notranslate"><span class="pre">quantum</span> <span class="pre">phase</span> <span class="pre">estimation</span></code></a> on the <a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">quantum</span> <span class="pre">step</span> <span class="pre">operator</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.find_solution</span></code></a>(precision)</p></td>
+<td><p>Determines a path to a solution.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.init_phi.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.init_phi" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.init_phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.init_phi</span></code></a>(path)</p></td>
+<td><p>Initializes the normalized version of the state <span class="math notranslate nohighlight">\(\ket{\phi}\)</span>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.init_node.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.init_node" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.init_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.init_node</span></code></a>(path)</p></td>
+<td><p>Initializes the state of a given node.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="tree-evaluation">
+<h2>Tree evaluation<a class="headerlink" href="#tree-evaluation" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.statevector</span></code></a>()</p></td>
+<td><p>Returns a SymPy statevector object representing the state of the tree with decoded node labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.visualize_statevector</span></code></a>([...])</p></td>
+<td><p>Visualizes the statevector graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector_graph.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector_graph" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.statevector_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.statevector_graph</span></code></a>([...])</p></td>
+<td><p>Returns a NetworkX Graph representing the quantum state of the backtracking tree.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="miscellaneous">
+<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.subtree.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.subtree" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.subtree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.subtree</span></code></a>(new_root)</p></td>
+<td><p>Returns the subtree of a given node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.copy.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.copy" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.copy</span></code></a>()</p></td>
+<td><p>Returns a copy of self.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.path_decoder.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.path_decoder" title="qrisp.quantum_backtracking.QuantumBacktrackingTree.path_decoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumBacktrackingTree.path_decoder</span></code></a>(h, ...)</p></td>
+<td><p>Returns the path representation for a given constellation of the <code class="docutils literal notranslate"><span class="pre">h</span></code> and <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code> variables.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Algorithms"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Quantum Backtracking</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.quantum_backtracking.QuantumBacktrackingTree"><code class="docutils literal notranslate"><span class="pre">QuantumBacktrackingTree</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tree-quantum-operations">Tree quantum operations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tree-evaluation">Tree evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

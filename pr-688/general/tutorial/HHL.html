@@ -1,0 +1,1135 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Solving linear system problems with HHL &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/HHL';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/HHL.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Reference" href="../../reference/index.html" />
+    <link rel="prev" title="Eigenstate filtering using quantum signal processing" href="GQSP_filtering.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Solving linear system problems with HHL</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Solving-linear-system-problems-with-HHL">
+<h1>Solving linear system problems with HHL<a class="headerlink" href="#Solving-linear-system-problems-with-HHL" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>The Harrow-Hassidim-Lloyd (HHL) quantum algorithm offers an exponential speed-up over classical methods for solving linear system problems <span class="math notranslate nohighlight">\(Ax=b\)</span> for certain sparse matrices <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<p>The implementation features hybrid quantum-classical workflows and is compiled using <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst</a>, a quantum just-in-time (QJIT) compiler framework.</p>
+<p>The goal of this demo is to showcase how Qrisp and Catalyst complement each other for implemententing advanced quantum algorithms and compling them for practically relevant problem sizes through the Jasp compilation pipeline.</p>
+<section id="HHL-algorithm-in-theory">
+<h2>HHL algorithm in theory<a class="headerlink" href="#HHL-algorithm-in-theory" title="Link to this heading">#</a></h2>
+<p>Given an <span class="math notranslate nohighlight">\(N\)</span>-by-<span class="math notranslate nohighlight">\(N\)</span> Hermitian matrix <span class="math notranslate nohighlight">\(A\)</span> and an <span class="math notranslate nohighlight">\(N\)</span>-dimensional vector <span class="math notranslate nohighlight">\(b\)</span>, the Quantum Linear Systems Problem (QSLP) consists of preparing a quantum state <span class="math notranslate nohighlight">\(\ket{x}\)</span> with amplitudes proportional to the solution <span class="math notranslate nohighlight">\(x\)</span> of the linear system of equations <span class="math notranslate nohighlight">\(Ax=b\)</span>. Thereby, it can exhibit an exponential speedup over classical methods for certain sparse matrices <span class="math notranslate nohighlight">\(A\)</span>. The HHL quantum algorithm and, more generally, quantum linear systems algorithms, hold
+significant promise for accelerating computations in fields that rely heavily on solving linear systems of equations, such as <a class="reference external" href="https://arxiv.org/abs/2202.01054v4" rel="noreferrer" target="_blank">solving differential equations</a>, or accelerating machine learning.</p>
+<p>In its eigenbasis, the matrix <span class="math notranslate nohighlight">\(A\)</span> can be written as</p>
+<div class="math notranslate nohighlight">
+\[A = \sum_i \lambda_i\ket{u_i}\bra{u_i}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ket{u_i}\)</span> is an eigenvector of <span class="math notranslate nohighlight">\(A\)</span> corresponding to the eigenvalue <span class="math notranslate nohighlight">\(\lambda_i\)</span>.</p>
+<p>We define the quantum states <span class="math notranslate nohighlight">\(\ket{b}\)</span> and <span class="math notranslate nohighlight">\(\ket{x}\)</span> as</p>
+<div class="math notranslate nohighlight">
+\[\ket{b} = \dfrac{\sum_i b_i\ket{i}}{\|\sum_i b_i\ket{i}\|} = \sum_i \beta_i\ket{u_i} \quad\text{and}\quad \ket{x} = \dfrac{\sum_i x_i\ket{i}}{\|\sum_i x_i\ket{i}\|} = \sum_i \gamma_i\ket{u_i}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ket{b}\)</span> and <span class="math notranslate nohighlight">\(\ket{x}\)</span> are expressed in the eigenbasis of <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<p>Solving the linerar system amounts to</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}\ket{x}&amp;=A^{-1}\ket{b}\\&amp;=\bigg(\sum_{i=0}^{N-1}\lambda_i^{-1}\ket{u_i}\bra{u_i}\bigg)\sum_j\beta_j\ket{u_j}\\&amp;=\sum_{i=0}^{N-1}\lambda_i^{-1}\beta_i\ket{u_i}\end{align}\end{split}\]</div>
+<p>You might wonder why we can’t just apply <span class="math notranslate nohighlight">\(A^{-1}\)</span> directly to <span class="math notranslate nohighlight">\(\ket{b}\)</span>? This is because, in general, the matix <span class="math notranslate nohighlight">\(A\)</span> is not unitary. However, we will circumnavigate this by exploiting that the Hamiltonian evolution <span class="math notranslate nohighlight">\(U=e^{itA}\)</span> is unitary for a Hemitian matrix <span class="math notranslate nohighlight">\(A\)</span>. And this brings us to the HHL algorithm.</p>
+<p>In theory, the HHL algorithm can be described as follows:</p>
+<ul>
+<li><p>Step 1: We start by preparing the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_1} = \ket{b} = \sum_i \beta_i\ket{u_i}\]</div>
+</li>
+<li><p>Step 2: Applying quantum phase estimation with respect to the Hamiltonian evolution <span class="math notranslate nohighlight">\(U=e^{itA}\)</span> yields the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_2} = \sum_i \beta_i\ket{u_i}\ket{\lambda_it/2\pi} = \sum_i \beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\]</div>
+<p>To simplify notation, we write <span class="math notranslate nohighlight">\(\widetilde{\lambda}_i=\lambda_it/2\pi\)</span>.</p>
+</li>
+<li><p>Step 3: Performing the inversion of the eigenvalues <span class="math notranslate nohighlight">\(\widetilde{\lambda}_i\rightarrow\widetilde{\lambda}_i^{-1}\)</span> yields the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_3} = \sum_i \beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{\widetilde{\lambda}_i^{-1}}\]</div>
+</li>
+<li><p>Step 4: The amplitudes are multiplied by the inverse eigenvalues <span class="math notranslate nohighlight">\(\widetilde{\lambda}_i^{-1}\)</span> to obtain the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_4} = \sum_i \lambda_i^{-1}\beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{\widetilde{\lambda}_i^{-1}}\]</div>
+<p>This is achieved by means of a repeat-until-success procedure that applies <strong>Steps 1-3</strong> as a subroutine. Stay tuned for more details below!</p>
+</li>
+<li><p>Step 5: As a final step, we uncompute the variables <span class="math notranslate nohighlight">\(\ket{\widetilde{\lambda}^{-1}}\)</span> and <span class="math notranslate nohighlight">\(\ket{\widetilde{\lambda}}\)</span>, and obtain the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_5} = \sum_i \lambda_i^{-1}\beta_i\ket{u_i} = \ket{x}\]</div>
+</li>
+</ul>
+<p>And that’s the HHL algorithm. The variable initialized in state <span class="math notranslate nohighlight">\(\ket{b}\)</span> is now found in state <span class="math notranslate nohighlight">\(\ket{x}\)</span>!</p>
+<p>As shown in the <a class="reference external" href="https://arxiv.org/pdf/0811.3171" rel="noreferrer" target="_blank">original paper</a>, the runtime of this algorithm is <span class="math notranslate nohighlight">\(\mathcal{O}(\log(N)s^2\kappa^2/\epsilon)\)</span> where <span class="math notranslate nohighlight">\(s\)</span> and <span class="math notranslate nohighlight">\(\kappa\)</span> are the sparsity and condition number of the matrix <span class="math notranslate nohighlight">\(A\)</span>, respectively, and <span class="math notranslate nohighlight">\(\epsilon\)</span> is the precison of the solution. The logarithmic dependence on the dimension <span class="math notranslate nohighlight">\(N\)</span> is the source of an exponential advantage over classical methods.</p>
+</section>
+<section id="HHL-implementation-in-practice">
+<h2>HHL implementation in practice<a class="headerlink" href="#HHL-implementation-in-practice" title="Link to this heading">#</a></h2>
+<p>Let’s put theory into practice and dive into an implementation of the HHL algorithm.</p>
+<p>As a first step, we define a function <code class="docutils literal notranslate"><span class="pre">fake_inversion</span></code> that performs the inversion <span class="math notranslate nohighlight">\(\lambda\mapsto\lambda^{-1}\)</span>. In this example, we restrict ourselves to an implementation that works for values <span class="math notranslate nohighlight">\(\lambda=2^{-k}\)</span> for <span class="math notranslate nohighlight">\(k\in\mathbb{N}\)</span>. (A general inversion is available in Qrisp and will soon be updated to be compatible with QJIT compilation!)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fake_inversion</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Note</strong>: Essentially, the controlled-NOT operations in the loop reverse the positions of the bits in input variable and place them in the result variable in the opposite order. For example, for <span class="math notranslate nohighlight">\(\lambda=2^{-3}\)</span>, which is <span class="math notranslate nohighlight">\(0.001\)</span> in binary, the function would produce <span class="math notranslate nohighlight">\(\lambda^{-1}=2^3\)</span>, which in binary is 1000.</p>
+</div></blockquote>
+<p>Let’s see if it works as intended!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">x</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">dicke_state</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">fake_inversion</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">multi_measurement</span><span class="p">([</span><span class="n">qf</span><span class="p">,</span> <span class="n">res</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(0.125, 8): 0.3333333333333333, (0.25, 4): 0.3333333333333333, (0.5, 2): 0.3333333333333333}
+</pre></div></div>
+</div>
+<p>Next, we define the function <code class="docutils literal notranslate"><span class="pre">HHL_encoding</span></code> that performs <strong>Steps 1-4</strong> and prepares the state <span class="math notranslate nohighlight">\(\ket{\Psi_4}\)</span>. But, how do we get the values <span class="math notranslate nohighlight">\(\widetilde{\lambda}^{-1}_i\)</span> into the amplitudes of the states, i.e. how do we go from <span class="math notranslate nohighlight">\(\ket{\Psi_3}\)</span> to <span class="math notranslate nohighlight">\(\ket{\Psi_4}\)</span>?</p>
+<p>Recently, efficient methods for black-box quantum state preparation that avoid arithmetic were proposed, see <a class="reference external" href="https://quantum-journal.org/papers/q-2022-08-04-773/#" rel="noreferrer" target="_blank">Bausch</a>, <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.020502" rel="noreferrer" target="_blank">Sanders et al.</a> In this demo, we use a routine proposed in the latter reference which is based on a comparison between integers. This is implemented via the aforementioned comparisons of QuantumFloats.</p>
+<p>To simplify the notation, we write <span class="math notranslate nohighlight">\(y^{(i)}=\widetilde{\lambda}^{-1}_i\)</span>. Recall that the values <span class="math notranslate nohighlight">\(y^{(i)}\)</span> represent unsigned integers between <span class="math notranslate nohighlight">\(0\)</span> and <span class="math notranslate nohighlight">\(2^n-1\)</span>.</p>
+<p>Starting from the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_3} = \sum_i \beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{y^{(i)}}_{{\text{res}}}\]</div>
+<p>we prepare a uniform superposition of <span class="math notranslate nohighlight">\(2^n\)</span> states in a <code class="docutils literal notranslate"><span class="pre">case_indicator</span></code> QuantumFloat.</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_3'} = \sum_i \beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{y^{(i)}}_{{\text{res}}}\otimes\frac{1}{\sqrt{2^n}}\sum_{x=0}^{2^n-1}\ket{x}_{{\text{case}}}\]</div>
+<p>Next we calculate the comparison <span class="math notranslate nohighlight">\(a\geq b\)</span> between the <code class="docutils literal notranslate"><span class="pre">res</span></code> and the <code class="docutils literal notranslate"><span class="pre">case_indicator</span></code> into a QuantumBool <code class="docutils literal notranslate"><span class="pre">qbl</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_3''} = \sum_i \beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{y^{(i)}}_{{\text{res}}}\otimes\frac{1}{\sqrt{2^n}}\left(\sum_{x=0}^{y^{(i)}-1}\ket{x}_{{\text{case}}}\ket{0}_{{\text{qbl}}} + \sum_{x=y^{(i)}}^{2^n-1}\ket{x}_{{\text{case}}}\ket{1}_{{\text{qbl}}}\right)\]</div>
+<p>Finally, the <code class="docutils literal notranslate"><span class="pre">case_indicator</span></code> is unprepared with <span class="math notranslate nohighlight">\(n\)</span> Hadamards and we obtain the state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_3'''} = \sum_i \dfrac{y^{(i)}}{2^n}\beta_i\ket{u_i}\ket{\widetilde{\lambda}_i}\ket{y^{(i)}}_{{\text{res}}}\ket{0}_{{\text{case}}}\ket{0}_{{\text{qbl}}} + \ket{\Phi}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ket{\Phi}\)</span> is an orthogonal state with the last variables not in <span class="math notranslate nohighlight">\(\ket{0}_{\text{case}}\ket{0}_{\text{qbl}}\)</span>.</p>
+<p>Hence, upon measuring the <code class="docutils literal notranslate"><span class="pre">case_indicator</span></code> in state <span class="math notranslate nohighlight">\(\ket{0}\)</span> and the target <code class="docutils literal notranslate"><span class="pre">qbl</span></code> in state <span class="math notranslate nohighlight">\(\ket{0}\)</span>, the desired state is prepared.</p>
+<p><strong>Steps 1-4</strong> are preformed as a repeat-until-success (RUS) routine. This decorator converts the function to be executed within a repeat-until-success (RUS) procedure. The function must return a boolean value as first return value and is repeatedly executed until the first return value is True.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@RUS</span><span class="p">(</span><span class="n">static_argnums</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">HHL_encoding</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="c1"># Prepare the state |b&gt;. Step 1</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="c1"># Reverse the endianness for compatibility with Hamiltonian simulation.</span>
+    <span class="n">prepare</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="nb">reversed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QPE</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>  <span class="c1"># Step 2</span>
+    <span class="n">inv_res</span> <span class="o">=</span> <span class="n">fake_inversion</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>  <span class="c1"># Step 3</span>
+
+    <span class="n">case_indicator</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">inv_res</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">h</span><span class="p">)(</span><span class="n">case_indicator</span><span class="p">):</span>
+        <span class="n">qbl</span> <span class="o">=</span> <span class="n">case_indicator</span> <span class="o">&gt;=</span> <span class="n">inv_res</span>
+
+    <span class="n">cancellation_bool</span> <span class="o">=</span> <span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="n">case_indicator</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Clean up case-indicator and qbl</span>
+    <span class="c1"># When using the RUS decorator, all local variables of the</span>
+    <span class="c1"># trial function need to be deallocated in order to avoid</span>
+    <span class="c1"># quantum memory leaks.</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">case_indicator</span><span class="p">)</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+    <span class="n">qbl</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="n">case_indicator</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="c1"># The first return value is a boolean.</span>
+    <span class="c1"># Additional return values are QuantumVariables.</span>
+    <span class="k">return</span> <span class="n">cancellation_bool</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span> <span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv_res</span>
+</pre></div>
+</div>
+</div>
+<p>The probability of success could be further increased by oblivious amplitude amplification in order to obain an optimal asymptotic scaling.</p>
+<p>Finally, we put all things together into the <strong>HHL</strong> function.</p>
+<p>This function takes the follwoing arguments:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">b</span></code> The vector <span class="math notranslate nohighlight">\(b\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hamiltonian_evolution</span></code> A function performing hamiltonian_evolution <span class="math notranslate nohighlight">\(e^{itA}\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n</span></code> The number of qubits encoding the state <span class="math notranslate nohighlight">\(\ket{b}\)</span> (<span class="math notranslate nohighlight">\(N=2^n\)</span>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">precision</span></code> The precison of the quantum phase estimation.</p></li>
+</ul>
+<p>The HHL function uses the previously defined subroutine to prepare the state <span class="math notranslate nohighlight">\(\ket{\Psi_4}\)</span> and subsequently uncomputes the <span class="math notranslate nohighlight">\(\ket{\widetilde{\lambda}}\)</span> and <span class="math notranslate nohighlight">\(\ket{\lambda}\)</span> quantum variables leaving the first variable, that was initialized in state <span class="math notranslate nohighlight">\(\ket{b}\)</span>, in the target state <span class="math notranslate nohighlight">\(\ket{x}\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">HHL</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="n">qf</span><span class="p">,</span> <span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv_res</span> <span class="o">=</span> <span class="n">HHL_encoding</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">precision</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+        <span class="n">QPE</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">qpe_res</span><span class="p">)</span>
+        <span class="n">fake_inversion</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="n">inv_res</span><span class="p">)</span>
+
+    <span class="c1"># Reverse the endianness for compatibility with Hamiltonian simulation.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">swap</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qf</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Applying-HHL-to-solve-systems-of-linear-equations">
+<h2>Applying HHL to solve systems of linear equations<a class="headerlink" href="#Applying-HHL-to-solve-systems-of-linear-equations" title="Link to this heading">#</a></h2>
+<p>Let’s try a first simple example. First, the matrix <span class="math notranslate nohighlight">\(A\)</span> is repesented as a Pauli operator <span class="math notranslate nohighlight">\(H\)</span> and the Hamiltonian evolution unitary <span class="math notranslate nohighlight">\(U=e^{itH}\)</span> is obtained by <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.qubit.QubitOperator.trotterization.html"><span class="doc">trotterization</span></a> with 1 step (as the Pauli terms commute in this case). We choose <span class="math notranslate nohighlight">\(t=\pi\)</span> to ensure that <span class="math notranslate nohighlight">\(\widetilde{\lambda}_i=\lambda_i t/2\pi\)</span> are of the form <span class="math notranslate nohighlight">\(2^{-k}\)</span> for a positive integer <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<p>This is enabled by the Qrisp’s <a class="reference internal" href="../../reference/Operators/QubitOperator.html"><span class="doc">QubitOperator</span></a> class providing the tools to describe, optimize and efficiently simulate quantum Hamiltonians.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">QubitOperator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">8</span><span class="p">]])</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">QubitOperator</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">to_pauli</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="c1"># By default e^{-itH} is performed. Therefore, we set t=-pi.</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">trotterization</span><span class="p">()(</span><span class="n">qf</span><span class="p">,</span> <span class="n">t</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <a class="reference internal" href="../../reference/Jasp/Simulation%20Tools/Terminal%20Sampling.html"><span class="doc">terminal_sampling</span></a> decorator performs a hybrid simulation and afterwards samples from the resulting quantum state. We convert the resulting measurement probabilities to amplitudes by applying the square root. Note that, minus signs of amplitudes cannot be recovered from measurement probabilities: The solution is a state <span class="math notranslate nohighlight">\(\ket{x}=\sum_{i=0}^{N-1}x_i\ket{i}\)</span> corresponding to the normalized classical vector
+<span class="math notranslate nohighlight">\((x_0,\dotsc,x_{N-1})\)</span>. Here, we measure probabilites <span class="math notranslate nohighlight">\(p_k=|x_k|^2\)</span>, and reconstruct the solution vector as <span class="math notranslate nohighlight">\((\sqrt{p_0},\dotsc,\sqrt{p_{N-1}})\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">HHL</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">U</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">res_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">**</span><span class="mf">0.5</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.0: 0.7071067811865476, 1.0: 0.7071067811865476}
+</pre></div></div>
+</div>
+<p>Finally, let’s compare to the classical result.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.70710678 0.70710678]
+</pre></div></div>
+</div>
+<p>And voila! Now, let’s tackle some more complicated examples! Next, we try some randomly generated matrices whose eigenvalues are inverse powers of 2, i.e. of the form <span class="math notranslate nohighlight">\(2^{-k}\)</span> for <span class="math notranslate nohighlight">\(k&lt;K\)</span>.</p>
+<p>To facilitate fast simulations, we restrict ourselves to <span class="math notranslate nohighlight">\(K=4\)</span> (required <code class="docutils literal notranslate"><span class="pre">precision</span></code> of QPE) as the runtime of the HHL algorithm scales linearly in the inverse precision <span class="math notranslate nohighlight">\(\epsilon=2^{-K}\)</span> (and therefore exponentially in <span class="math notranslate nohighlight">\(K\)</span>).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">hermitian_matrix_with_power_of_2_eigenvalues</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="c1"># Generate eigenvalues as inverse powers of 2.</span>
+    <span class="n">eigenvalues</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">exp2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">))</span>
+
+    <span class="c1"># Generate a random unitary matrix.</span>
+    <span class="n">Q</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+    <span class="c1"># Construct the Hermitian matrix.</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">)</span> <span class="o">@</span> <span class="n">Q</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span> <span class="n">A</span>
+
+
+<span class="c1"># Example</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">hermitian_matrix_with_power_of_2_eigenvalues</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">)</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">QubitOperator</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">to_pauli</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">trotterization</span><span class="p">()(</span><span class="n">qf</span><span class="p">,</span> <span class="n">t</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hermitian matrix A:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Eigenvalues:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;b:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Hermitian matrix A:
+[[ 0.27161849  0.04084016 -0.02994612 -0.01343795  0.00456208 -0.02389833
+  -0.03865614 -0.01028375]
+ [ 0.04084016  0.35006745 -0.06348883  0.04375543  0.00892184 -0.05256036
+  -0.05969854 -0.03136835]
+ [-0.02994612 -0.06348883  0.39879834  0.02868921 -0.05439778  0.0555282
+  -0.05704449  0.00337529]
+ [-0.01343795  0.04375543  0.02868921  0.47607339 -0.01603151 -0.00157681
+   0.03290459 -0.0338936 ]
+ [ 0.00456208  0.00892184 -0.05439778 -0.01603151  0.27284976 -0.01434681
+   0.04061657  0.00427224]
+ [-0.02389833 -0.05256036  0.0555282  -0.00157681 -0.01434681  0.2826893
+   0.01797763  0.01245469]
+ [-0.03865614 -0.05969854 -0.05704449  0.03290459  0.04061657  0.01797763
+   0.43479804  0.02610161]
+ [-0.01028375 -0.03136835  0.00337529 -0.0338936   0.00427224  0.01245469
+   0.02610161  0.26310524]]
+Eigenvalues:
+[0.25 0.25 0.5  0.5  0.5  0.25 0.25 0.25]
+b:
+[0 0 0 1 0 0 1 1]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">HHL</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">U</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">res_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">**</span><span class="mf">0.5</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">res_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([0.09903807, 0.08063741, 0.03992062, 0.43921894, 0.04622294,
+       0.04614081, 0.40873337, 0.78603666])
+</pre></div></div>
+</div>
+<p>Let’s compare to the classical solution:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[ 0.09933223  0.0753401   0.03977885  0.43778338 -0.04595318 -0.04595032
+  0.40797335  0.7877531 ]
+</pre></div></div>
+</div>
+<p>Yup, close enough… That’s all folks!</p>
+</section>
+<section id="Step-by-step-recap">
+<h2>Step-by-step recap<a class="headerlink" href="#Step-by-step-recap" title="Link to this heading">#</a></h2>
+<p>Let’s rewind for a second, take a deep breath, and go through the steps and concepts you learned so far.</p>
+<p>Equipped with a theoretical introduction to HHL and outlining the steps required to perform this algorithm, you got to see how to first encode the first 4 steps and making use of the repeat until success feature of Jasp. Then, putting everything together, we combined the previously defined building blocks (read: Python functions) - the HHL_encoding and QPE - into a simple function. With a brief feature apperance of Hamiltonian simulation you then successfully managed to solve two systems of
+linear equations.</p>
+<p>In conclusion, let’s take a moment to appreciate one last time how elegantly we can call the HHL algorithm:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>x = HHL(b, hamiltonian_evolution, n, precision)
+</pre></div>
+</div>
+<p>As qrispy as always!</p>
+</section>
+<section id="QJIT-compilation-with-Catalyst">
+<h2>QJIT compilation with Catalyst<a class="headerlink" href="#QJIT-compilation-with-Catalyst" title="Link to this heading">#</a></h2>
+<p>The solution that we saw so far only ran within the Python-based Qrisp internal simulator, which doesn’t have to care about silly things such as coherence time. Unfortunately, this is not (yet) the case for real quantum hardware so it is of paramount importance that the classical real-time computations (such as the while loop within the repeat-until-success steps) are executed as fast as possible. For this reason the QIR specification was created.</p>
+<p>QIR essentially embeds quantum aspects into <a class="reference external" href="https://llvm.org/docs/" rel="noreferrer" target="_blank">LLVM</a>, which is the foundation of a lot of modern compiler infrastructure. This implies QIR based software stacks are able to integrate a large part of established classical software and also express real-time control structures. Read more about QIR at the <a class="reference external" href="https://www.qir-alliance.org/" rel="noreferrer" target="_blank">QIR Alliance website</a> and the <a class="reference external" href="https://www.frontiersin.org/journals/physics/articles/10.3389/fphy.2022.940293/full" rel="noreferrer" target="_blank">Advancing hybrid quantum–classical computation with real-time execution
+paper</a>.</p>
+<p>Jasp has been built with a direct Catalyst integration implying Jasp programs can be converted to QIR via the Catalyst pipeline. This conversion is straightforward: You simply capture the Qrisp computation using the <code class="docutils literal notranslate"><span class="pre">make_jaspr</span></code> function and then call <code class="docutils literal notranslate"><span class="pre">to_qir</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">HHL</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">U</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># Note that we have to return a classical value</span>
+    <span class="c1"># (in this case the measurement result of the</span>
+    <span class="c1"># quantum variable returned by the HHL algorithm)</span>
+    <span class="c1"># Within the above examples, we used the terminal_sampling</span>
+    <span class="c1"># decorator, which is a convenience feature and allows</span>
+    <span class="c1"># a much faster sampling procedure.</span>
+    <span class="c1"># The terminal_sampling decorator expects a function returning</span>
+    <span class="c1"># quantum variables, while most other evaluation modes require</span>
+    <span class="c1"># classical return values.</span>
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">main</span><span class="p">)()</span>
+<span class="n">qir_str</span> <span class="o">=</span> <span class="n">jaspr</span><span class="o">.</span><span class="n">to_qir</span><span class="p">()</span>
+<span class="c1"># Print only the first few lines - the whole string is very long.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qir_str</span><span class="p">[:</span><span class="mi">2000</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+; ModuleID = &#39;LLVMDialectModule&#39;
+source_filename = &#34;LLVMDialectModule&#34;
+target datalayout = &#34;e-m:o-i64:64-i128:128-n32:64-S128-Fn32&#34;
+target triple = &#34;arm64-apple-darwin24.5.0&#34;
+
+@&#34;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&#34; = internal constant [66 x i8] c&#34;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}\00&#34;
+@LightningSimulator = internal constant [19 x i8] c&#34;LightningSimulator\00&#34;
+@&#34;/opt/anaconda3/envs/qrisp/lib/python3.10/site-packages/pennylane_lightning/liblightning_qubit_catalyst.dylib&#34; = internal constant [109 x i8] c&#34;/opt/anaconda3/envs/qrisp/lib/python3.10/site-packages/pennylane_lightning/liblightning_qubit_catalyst.dylib\00&#34;
+@__constant_xi64_3 = private constant i64 1
+@__constant_xi1 = private constant i1 false
+@__constant_xi64_2 = private constant i64 0
+@__constant_1024xi64 = private constant [1024 x i64] zeroinitializer
+@__constant_xi64_1 = private constant i64 30
+@__constant_xi64_0 = private constant i64 4
+@__constant_xi64 = private constant i64 3
+@__constant_30xi64 = private constant [30 x i64] [i64 30, i64 29, i64 28, i64 27, i64 26, i64 25, i64 24, i64 23, i64 22, i64 21, i64 20, i64 19, i64 18, i64 17, i64 16, i64 15, i64 14, i64 13, i64 12, i64 11, i64 10, i64 9, i64 8, i64 7, i64 6, i64 5, i64 4, i64 3, i64 2, i64 1]
+@__constant_xf64_34 = private constant double 0xBF8D02B4A78574FA
+@__constant_xf64_33 = private constant double 0xBFCBA5614317CB35
+@__constant_xf64_32 = private constant double 0x3F998A8430AEF7BA
+@__constant_xf64_31 = private constant double 0x3F9FCFE0804A8850
+@__constant_xf64_30 = private constant double 0x3F807D3742E47A2C
+@__constant_xf64_29 = private constant double 0xBF6B69C1DC783640
+@__constant_xf64_28 = private constant double 0xBF40F04DDF80EBDC
+@__constant_xf64_27 = private constant double 0xBF840EC9BEB08EA8
+@__constant_xf64_26 = private constant double 0xBF80EBD1A8EC99B0
+@__constant_xf64_25 = private constant double 0xBF8296060CFC377A
+@__constant_xf64_24 = private constant double 0x3F7234DFA
+</pre></div></div>
+</div>
+</section>
+<section id="The-Catalyst-runtime">
+<h2>The Catalyst runtime<a class="headerlink" href="#The-Catalyst-runtime" title="Link to this heading">#</a></h2>
+<p>Jasp is also capable of targeting the Catalyst execution runtime (i.e., the Lightning simulator). There are, however, still some simulator features to be implemented on Jasp side, which prevents efficient sampling. We restrict the demonstration to the smaller examples from above to limit the overall execution time required. (Warning: The execution may take more than 15 minutes.)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">8</span><span class="p">]])</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">QubitOperator</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">to_pauli</span><span class="p">()</span>
+
+
+<span class="c1"># By default e^{-itH} is performed. Therefore, we set t=-pi.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">trotterization</span><span class="p">()(</span><span class="n">qf</span><span class="p">,</span> <span class="n">t</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="nd">@qjit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">HHL</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">U</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">main</span><span class="p">()))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.0, 0.0, 1.0, 0.0, 0.0]
+</pre></div></div>
+</div>
+<p>Scrolling back to the <code class="docutils literal notranslate"><span class="pre">terminal_sampling</span></code> cell, we see that the expected distribution is 50/50 between one and zero, which roughly agrees to the result of the previous cell and concludes this demo.</p>
+</section>
+<section id="Conclusion">
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Link to this heading">#</a></h2>
+<p>In this demo, we have shown how to implement the HHL algorithm featuring classical real-time computations in the high-level language Qrisp. This algorithm is important in a variety of use cases such as solving differential equations, accelerating machine learning, and more generally, any task that involves solving linear systems of equations. Along the way, we have dipped into advanced concepts such as Linear Combination of Unitaries and Hamiltonian simulation. Moreover, we have demonstrated how
+Qrisp and Catalyst complement each other for translating a high-level implementation into low-level QIR.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#HHL-algorithm-in-theory">HHL algorithm in theory</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#HHL-implementation-in-practice">HHL implementation in practice</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Applying-HHL-to-solve-systems-of-linear-equations">Applying HHL to solve systems of linear equations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Step-by-step-recap">Step-by-step recap</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#QJIT-compilation-with-Catalyst">QJIT compilation with Catalyst</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Catalyst-runtime">The Catalyst runtime</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/HHL.ipynb" download="HHL.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

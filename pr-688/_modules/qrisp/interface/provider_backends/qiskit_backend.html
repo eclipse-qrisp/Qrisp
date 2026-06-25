@@ -1,0 +1,1035 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.interface.provider_backends.qiskit_backend &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/interface/provider_backends/qiskit_backend';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/interface/provider_backends/qiskit_backend.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.interface.provider_backends.qiskit_backend</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.interface.provider_backends.qiskit_backend</h1><div class="highlight"><pre>
+<span></span><span class="c1"># &quot;&quot;&quot;</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># * Copyright (c) 2026 the Qrisp authors</span>
+<span class="c1"># *</span>
+<span class="c1"># * This program and the accompanying materials are made available under the</span>
+<span class="c1"># * terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="c1"># * http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="c1"># *</span>
+<span class="c1"># * This Source Code may also be made available under the following Secondary</span>
+<span class="c1"># * Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="c1"># * Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="c1"># * with the GNU Classpath Exception which is</span>
+<span class="c1"># * available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="c1"># *</span>
+<span class="c1"># * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># &quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;This module defines :class:`QiskitBackend` and its associated :class:`QiskitJob`.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">transpile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackendSamplerV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit.providers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Backend</span> <span class="k">as</span> <span class="n">QiskitBackendBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit.providers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackendV2</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit.quantum_circuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span> <span class="k">as</span> <span class="n">QrispQuantumCircuit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">Backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.job</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">JOB_FINAL_STATES</span><span class="p">,</span>
+    <span class="n">Job</span><span class="p">,</span>
+    <span class="n">JobCancelledError</span><span class="p">,</span>
+    <span class="n">JobFailureError</span><span class="p">,</span>
+    <span class="n">JobResult</span><span class="p">,</span>
+    <span class="n">JobStatus</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_map_qiskit_status</span><span class="p">(</span><span class="n">qiskit_job</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobStatus</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Translate a Qiskit job&#39;s current status to the equivalent Qrisp JobStatus.</span>
+
+<span class="sd">    Qiskit&#39;s ``VALIDATING`` state has no direct Qrisp equivalent.</span>
+<span class="sd">    Therefore, it is mapped to ``QUEUED`` as the closest approximation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># qiskit-ibm-runtime jobs expose .status() directly</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">qiskit_job</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">RUNNING</span>
+
+    <span class="c1"># status() may return a string (newer runtimes) or a JobStatus enum</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;INITIALIZING&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">INITIALIZING</span><span class="p">,</span>
+        <span class="s2">&quot;QUEUED&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">QUEUED</span><span class="p">,</span>
+        <span class="s2">&quot;VALIDATING&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">QUEUED</span><span class="p">,</span>  <span class="c1"># no direct equivalent</span>
+        <span class="s2">&quot;RUNNING&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
+        <span class="s2">&quot;DONE&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">DONE</span><span class="p">,</span>
+        <span class="s2">&quot;CANCELLED&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">,</span>
+        <span class="s2">&quot;ERROR&quot;</span><span class="p">:</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QiskitJob</span><span class="p">(</span><span class="n">Job</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.</span>
+
+<span class="sd">    One ``QiskitJob`` is created per :meth:`QiskitBackend.run_async` call,</span>
+<span class="sd">    regardless of how many circuits were submitted.  Internally it holds</span>
+<span class="sd">    the underlying Qiskit job object and the number of circuits so it can</span>
+<span class="sd">    extract the right slice of results when :meth:`result` is called.</span>
+
+<span class="sd">    :meth:`result` blocks until the Qiskit job reaches a terminal state,</span>
+<span class="sd">    delegating the actual waiting to Qiskit&#39;s own ``job.result()`` call.</span>
+<span class="sd">    No Qrisp-level threading primitives are required here because Qiskit&#39;s</span>
+<span class="sd">    ``SamplerV2.run()`` is already asynchronous.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="n">QiskitBackend</span><span class="p">,</span>
+        <span class="n">qiskit_job</span><span class="p">,</span>
+        <span class="n">num_circuits</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the wrapper with the Qrisp backend, the Qiskit job, and the circuit count.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">qiskit_job</span><span class="o">.</span><span class="n">job_id</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span> <span class="o">=</span> <span class="n">qiskit_job</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_circuits</span> <span class="o">=</span> <span class="n">num_circuits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_result</span><span class="p">:</span> <span class="n">JobResult</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Abstract interface</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark the job as QUEUED. The Qiskit job is already submitted by the sampler in run_async().&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="o">=</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">QUEUED</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.</span>
+
+<span class="sd">        Waiting is delegated to Qiskit&#39;s own blocking ``job.result()`` call.</span>
+<span class="sd">        If the job is already in a terminal state, this method returns (or</span>
+<span class="sd">        raises) immediately without making a second call to Qiskit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeout : float or None, optional</span>
+<span class="sd">            Maximum number of seconds to wait. Forwarded to the underlying</span>
+<span class="sd">            Qiskit job&#39;s ``result()`` call. ``None`` (the default) waits</span>
+<span class="sd">            indefinitely. Raises :exc:`TimeoutError` if the deadline expires.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        JobResult</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        JobFailureError</span>
+<span class="sd">            If the Qiskit job failed or raised an exception.</span>
+
+<span class="sd">        JobCancelledError</span>
+<span class="sd">            If the Qiskit job was cancelled.</span>
+
+<span class="sd">        TimeoutError</span>
+<span class="sd">            If *timeout* expires before the job completes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="ow">in</span> <span class="n">JOB_FINAL_STATES</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">JobResult</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_result</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Only pass timeout when explicitly requested: local backends such</span>
+            <span class="c1"># as AerSimulator&#39;s PrimitiveJob do not accept a timeout argument.</span>
+            <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">qiskit_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">qiskit_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="o">=</span> <span class="n">_map_qiskit_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">terminal_status</span> <span class="o">=</span> <span class="n">_map_qiskit_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="o">=</span> <span class="n">terminal_status</span>
+            <span class="k">if</span> <span class="n">terminal_status</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">JobCancelledError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Qiskit job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2"> was cancelled.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+            <span class="k">raise</span> <span class="n">JobFailureError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Qiskit job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="o">=</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">DONE</span>
+        <span class="n">counts_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_circuits</span><span class="p">):</span>
+            <span class="n">counts_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">reg_name</span> <span class="ow">in</span> <span class="n">qiskit_result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">reg_data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">qiskit_result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">reg_name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">reg_data</span><span class="o">.</span><span class="n">get_counts</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">clean_key</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\W&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                    <span class="n">counts_dict</span><span class="p">[</span><span class="n">clean_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">clean_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">val</span>
+            <span class="n">counts_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counts_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_result</span> <span class="o">=</span> <span class="n">JobResult</span><span class="p">(</span><span class="n">counts_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attempt to cancel the underlying Qiskit job.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            ``True`` if the cancellation request was accepted by Qiskit;</span>
+<span class="sd">            ``False`` if the job is already in a terminal state or the</span>
+<span class="sd">            backend does not support cancellation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_final_state</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the current :class:`~qrisp.interface.JobStatus` by querying the Qiskit job.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span> <span class="o">=</span> <span class="n">_map_qiskit_status</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_qiskit_job</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span>
+
+
+<div class="viewcode-block" id="QiskitBackend">
+<a class="viewcode-back" href="../../../../reference/Backend%20Interface/Hardware%20Backends/QiskitBackend.html#qrisp.interface.QiskitBackend">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QiskitBackend</span><span class="p">(</span><span class="n">Backend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A :class:`~qrisp.interface.Backend` that wraps a Qiskit backend.</span>
+
+<span class="sd">    This allows easy access to any Qiskit-compatible simulator or real</span>
+<span class="sd">    quantum hardware through the Qrisp backend interface.</span>
+
+<span class="sd">    Circuits are converted from Qrisp&#39;s internal representation to Qiskit</span>
+<span class="sd">    ``QuantumCircuit`` objects, transpiled for the target backend, and</span>
+<span class="sd">    submitted through Qiskit&#39;s ``SamplerV2`` primitive.</span>
+<span class="sd">    A ``QiskitJob`` handle is returned immediately; call</span>
+<span class="sd">    :meth:`Job.result` to block and retrieve the :class:`~qrisp.interface.JobResult`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    backend : Qiskit backend object, optional</span>
+<span class="sd">        A Qiskit backend object that runs ``QuantumCircuit`` objects.</span>
+<span class="sd">        Defaults to ``AerSimulator()`` if not provided.</span>
+
+<span class="sd">    name : str or None, optional</span>
+<span class="sd">        A name for the backend.  Defaults to the Qiskit backend&#39;s own name.</span>
+
+<span class="sd">    options : dict or None, optional</span>
+<span class="sd">        Runtime options.  Defaults to ``{&quot;shots&quot;: 1000}``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    **Simulation on the Aer simulator**</span>
+
+<span class="sd">    We start by creating a ``QiskitBackend`` wrapping the Qiskit Aer simulator,</span>
+<span class="sd">    and then measure a :ref:`QuantumFloat` multiplication:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from qrisp import QuantumFloat</span>
+<span class="sd">        from qrisp.interface import QiskitBackend</span>
+<span class="sd">        from qiskit_aer import AerSimulator</span>
+
+<span class="sd">        qiskit_backend = QiskitBackend(backend=AerSimulator())</span>
+
+<span class="sd">        qf = QuantumFloat(4)</span>
+<span class="sd">        qf[:] = 3</span>
+<span class="sd">        res = qf * qf</span>
+
+<span class="sd">    When ``get_measurement`` is called, Qrisp compiles the computation into a</span>
+<span class="sd">    ``QuantumCircuit``, converts it directly to a Qiskit ``QuantumCircuit``,</span>
+<span class="sd">    transpiles it for the target backend, and submits it through ``SamplerV2``. Internally, ``run_async`` returns a ``QiskitJob``</span>
+<span class="sd">    immediately; :meth:`~qrisp.interface.Backend.run` then blocks on</span>
+<span class="sd">    ``job.result()`` until execution completes and the counts are returned to</span>
+<span class="sd">    ``get_measurement``:</span>
+
+<span class="sd">    &gt;&gt;&gt; res.get_measurement(backend=qiskit_backend)</span>
+<span class="sd">    {9: 1.0}</span>
+
+<span class="sd">    For local simulators the job is already ``DONE`` by the time ``run_async()``</span>
+<span class="sd">    returns. For remote hardware backends the job will initially be</span>
+<span class="sd">    ``QUEUED`` or ``RUNNING``, and ``result()`` will block until execution</span>
+<span class="sd">    completes on the device.</span>
+
+<span class="sd">    **Noisy simulation on a fake hardware backend**</span>
+
+<span class="sd">    The same interface works with Qiskit&#39;s fake hardware backends, which</span>
+<span class="sd">    model real device noise and connectivity constraints:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from qrisp import QuantumFloat</span>
+<span class="sd">        from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2</span>
+<span class="sd">        from qrisp.interface import QiskitBackend</span>
+
+<span class="sd">        qiskit_backend = QiskitBackend(backend=FakeWashingtonV2())</span>
+
+<span class="sd">        qf = QuantumFloat(2)</span>
+<span class="sd">        qf[:] = 2</span>
+<span class="sd">        res = qf * qf</span>
+
+<span class="sd">    Internally, ``run_async()`` transpiles the circuit to the device&#39;s native gate</span>
+<span class="sd">    set and qubit connectivity before submission, so the results reflect</span>
+<span class="sd">    realistic noise characteristics:</span>
+
+<span class="sd">    &gt;&gt;&gt; res.get_measurement(backend=qiskit_backend)</span>
+<span class="sd">    {4: 0.6962, ...}   # Note: actual counts may vary due to noise and randomness</span>
+
+<span class="sd">    The result is no longer a sharp peak at ``{4: 1.0}`` because the noise</span>
+<span class="sd">    model introduces gate errors and readout errors, spreading probability</span>
+<span class="sd">    mass across neighbouring bitstrings.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="n">QiskitBackendBase</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Mapping</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the QiskitBackend, defaulting to AerSimulator if no backend is provided.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_aer</span><span class="w"> </span><span class="kn">import</span> <span class="n">AerSimulator</span>
+
+                <span class="n">backend</span> <span class="o">=</span> <span class="n">AerSimulator</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                    <span class="s2">&quot;Encountered ImportError when trying to import AerSimulator. &quot;</span>
+                    <span class="s2">&quot;Install it with: pip install qiskit-aer&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">BackendSamplerV2</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">BackendV2</span><span class="p">,</span> <span class="n">backend</span><span class="p">))</span>
+
+        <span class="c1"># Fall back to the Qiskit backend&#39;s own name/options when not provided.</span>
+        <span class="c1"># Only use the backend&#39;s options when they are a plain Mapping (e.g. dict).</span>
+        <span class="c1"># Non-Mapping Qiskit Options objects are ignored so that _default_options()</span>
+        <span class="c1"># applies, keeping the Backend contract satisfied.</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">candidate</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_default_options</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the default runtime options (shots=1024).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;shots&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_circuits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Maximum circuits per job, as reported by the underlying Qiskit backend.</span>
+
+<span class="sd">        Delegates to the wrapped backend&#39;s own ``max_circuits`` attribute.</span>
+<span class="sd">        Returns ``None`` if the backend does not expose a limit (e.g. local</span>
+<span class="sd">        simulators such as ``AerSimulator``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span> <span class="s2">&quot;max_circuits&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="QiskitBackend.run_async">
+<a class="viewcode-back" href="../../../../reference/Backend%20Interface/Hardware%20Backends/QiskitBackend.html#qrisp.interface.QiskitBackend.run_async">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuits</span><span class="p">,</span> <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitJob</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transpile and submit one or more circuits to the Qiskit backend.</span>
+
+<span class="sd">        This method returns a :class:`QiskitJob` immediately.  Call</span>
+<span class="sd">        :meth:`Job.result` on the returned object to block and retrieve</span>
+<span class="sd">        the :class:`~qrisp.interface.JobResult`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        circuits : QuantumCircuit or Sequence[QuantumCircuit]</span>
+<span class="sd">            One Qrisp circuit or a sequence of Qrisp circuits to execute.</span>
+
+<span class="sd">        shots : int or list[int] or None, optional</span>
+<span class="sd">            Number of shots.  If ``None``, the backend&#39;s ``shots`` option is</span>
+<span class="sd">            used. If a ``list[int]`` is provided, the Qiskit sampler does not</span>
+<span class="sd">            support per-circuit shot counts, so all circuits are run at</span>
+<span class="sd">            ``max(shots)`` and a ``UserWarning`` is emitted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QiskitJob</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">circuits</span><span class="p">,</span> <span class="n">QrispQuantumCircuit</span><span class="p">):</span>
+            <span class="n">circuits</span> <span class="o">=</span> <span class="p">[</span><span class="n">circuits</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">circuits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shots</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_shots_length</span><span class="p">(</span><span class="n">shots</span><span class="p">,</span> <span class="n">circuits</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;QiskitBackend does not support per-circuit shot counts. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Running all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span><span class="si">}</span><span class="s2"> circuits at max(shots)=</span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">n_shots</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_shots</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+            <span class="n">n_shots</span> <span class="o">=</span> <span class="n">shots</span> <span class="k">if</span> <span class="n">shots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;shots&quot;</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_circuit_limit</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span>
+
+        <span class="c1"># Convert each Qrisp circuit to a Qiskit QuantumCircuit, then rebuild</span>
+        <span class="c1"># with integer-indexed qubits and transpile for the target backend.</span>
+        <span class="n">qiskit_circuits</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">circuit</span> <span class="ow">in</span> <span class="n">circuits</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">to_qiskit</span><span class="p">()</span>
+
+            <span class="c1"># Rebuild with plain integer indices to avoid register-name mismatches.</span>
+            <span class="n">new_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">clbits</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">qc</span><span class="p">:</span>
+                <span class="n">new_qc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">instr</span><span class="o">.</span><span class="n">operation</span><span class="p">,</span>
+                    <span class="p">[</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">qc</span><span class="o">.</span><span class="n">clbits</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">cb</span><span class="p">)</span> <span class="k">for</span> <span class="n">cb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">clbits</span><span class="p">],</span>
+                <span class="p">)</span>
+
+            <span class="n">qiskit_circuits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transpile</span><span class="p">(</span><span class="n">new_qc</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">))</span>
+
+        <span class="c1"># Submit all circuits in a single SamplerV2 call and wrap the result.</span>
+        <span class="n">qiskit_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qiskit_circuits</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">n_shots</span><span class="p">)</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">QiskitJob</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">qiskit_job</span><span class="o">=</span><span class="n">qiskit_job</span><span class="p">,</span> <span class="n">num_circuits</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">))</span>
+        <span class="n">job</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">job</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="QiskitRuntimeBackend">
+<a class="viewcode-back" href="../../../../reference/Backend%20Interface/Hardware%20Backends/QiskitRuntimeBackend.html#qrisp.interface.QiskitRuntimeBackend">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QiskitRuntimeBackend</span><span class="p">(</span><span class="n">QiskitBackend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A :class:`~qrisp.interface.Backend` that wraps an IBM Quantum Runtime backend.</span>
+
+<span class="sd">    This allows easy access to IBM Quantum Runtime backends through the Qrisp</span>
+<span class="sd">    backend interface. Circuits are transpiled and submitted through Qiskit&#39;s</span>
+<span class="sd">    ``SamplerV2`` primitive, using either a direct job or a persistent session.</span>
+
+<span class="sd">    It is important to close the session after execution when using</span>
+<span class="sd">    ``mode=&quot;session&quot;`` (see :meth:`close_session`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    api_token : str</span>
+<span class="sd">        IBM Cloud API token used to authenticate with the Qiskit Runtime service.</span>
+<span class="sd">    backend : str or None, optional</span>
+<span class="sd">        Name of the IBM Quantum backend. If ``None``, the least-busy available</span>
+<span class="sd">        backend is selected automatically.</span>
+<span class="sd">    channel : str, optional</span>
+<span class="sd">        Channel type for the Runtime service. Available: ``&quot;ibm_cloud&quot;`` or</span>
+<span class="sd">        ``&quot;ibm_quantum_platform&quot;``. Defaults to ``&quot;ibm_cloud&quot;``.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Execution mode. ``&quot;job&quot;`` submits each circuit batch as an independent</span>
+<span class="sd">        job; ``&quot;session&quot;`` opens a persistent session for lower latency across</span>
+<span class="sd">        multiple submissions. Defaults to ``&quot;job&quot;``.</span>
+<span class="sd">    instance : str or None, optional</span>
+<span class="sd">        The Cloud Resource Name (CRN) for IBM Cloud. Passed to</span>
+<span class="sd">        ``QiskitRuntimeService``. Defaults to ``None``.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    session : Session</span>
+<span class="sd">        The `Qiskit Runtime session &lt;https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/session&gt;`_.</span>
+<span class="sd">        Only set when ``mode=&quot;session&quot;`` is passed at construction time.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp.interface import QiskitRuntimeBackend</span>
+<span class="sd">    &gt;&gt;&gt; example_backend = QiskitRuntimeBackend(api_token=&quot;YOUR_IBM_CLOUD_TOKEN&quot;, backend=&quot;ibm_brisbane&quot;, channel=&quot;ibm_cloud&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; qf = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; qf[:] = 2</span>
+<span class="sd">    &gt;&gt;&gt; res = qf * qf</span>
+<span class="sd">    &gt;&gt;&gt; result = res.get_measurement(backend=example_backend)</span>
+<span class="sd">    &gt;&gt;&gt; print(result)</span>
+<span class="sd">    &gt;&gt;&gt; # example_backend.close_session()  # Only needed when mode=&quot;session&quot;</span>
+<span class="sd">    {4: 0.6133,</span>
+<span class="sd">    8: 0.1126,</span>
+<span class="sd">    0: 0.0838,</span>
+<span class="sd">    12: 0.0798,</span>
+<span class="sd">    5: 0.0272,</span>
+<span class="sd">    6: 0.016,</span>
+<span class="sd">    9: 0.0125,</span>
+<span class="sd">    1: 0.0117,</span>
+<span class="sd">    13: 0.0081,</span>
+<span class="sd">    14: 0.0073,</span>
+<span class="sd">    3: 0.0071,</span>
+<span class="sd">    2: 0.0062,</span>
+<span class="sd">    10: 0.0051,</span>
+<span class="sd">    7: 0.0044,</span>
+<span class="sd">    11: 0.0035,</span>
+<span class="sd">    15: 0.0014}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_token</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="s2">&quot;ibm_cloud&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;job&quot;</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_ibm_runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">QiskitRuntimeService</span><span class="p">,</span> <span class="n">SamplerV2</span><span class="p">,</span> <span class="n">Session</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Please install qiskit-ibm-runtime to use QiskitRuntimeBackend: pip install qiskit-ibm-runtime&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="n">service</span> <span class="o">=</span> <span class="n">QiskitRuntimeService</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">api_token</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="n">instance</span><span class="p">)</span>
+        <span class="n">ibm_backend</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">least_busy</span><span class="p">()</span> <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">service</span><span class="o">.</span><span class="n">backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+
+        <span class="c1"># Delegate common setup (self.backend, name, options) to QiskitBackend.</span>
+        <span class="c1"># Pass _default_options() explicitly so the IBM hardware backend&#39;s internal</span>
+        <span class="c1"># options (device config, noise model settings, etc.) do not bleed through</span>
+        <span class="c1"># into the runtime options seen by Qrisp callers.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">ibm_backend</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_options</span><span class="p">())</span>
+
+        <span class="c1"># Replace the BackendSamplerV2 created by the parent with the IBM Runtime</span>
+        <span class="c1"># SamplerV2, which is required for actual IBM hardware execution.</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;session&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span><span class="n">ibm_backend</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">SamplerV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;job&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">SamplerV2</span><span class="p">(</span><span class="n">ibm_backend</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Execution mode </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2"> not available. Choose &#39;job&#39; or &#39;session&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_default_options</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the default runtime options (shots=1000).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;shots&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">}</span>
+
+<div class="viewcode-block" id="QiskitRuntimeBackend.close_session">
+<a class="viewcode-back" href="../../../../reference/Backend%20Interface/Hardware%20Backends/generated/qrisp.interface.QiskitRuntimeBackend.close_session.html#qrisp.interface.QiskitRuntimeBackend.close_session">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close_session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the IBM Runtime session opened during construction.</span>
+
+<span class="sd">        Only call this when ``mode=&quot;session&quot;`` was passed at construction time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

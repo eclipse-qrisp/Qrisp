@@ -1,0 +1,1474 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.qaoa.qaoa_problem &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/qaoa/qaoa_problem';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/qaoa/qaoa_problem.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.qaoa.qaoa_problem</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.qaoa.qaoa_problem</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Symbol</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.qaoa.qaoa_benchmark_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAOABenchmark</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span><span class="p">,</span> <span class="n">jrange</span><span class="p">,</span> <span class="n">sample</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.optimization_tools.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span> <span class="k">as</span> <span class="n">jasp_minimize</span>
+
+
+<div class="viewcode-block" id="QAOAProblem">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/QAOAProblem.html#qrisp.qaoa.QAOAProblem">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QAOAProblem</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Central structure to facilitate treatment of QAOA problems.</span>
+
+<span class="sd">    This class encapsulates the cost operator, mixer operator, and classical cost function for a specific QAOA problem instance. It also provides methods to set the initial state preparation function, classical cost post-processing function, and optimizer for the problem.</span>
+
+<span class="sd">    For a quick demonstration, we import the relevant functions from already implemented problem instances:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from networkx import Graph</span>
+
+<span class="sd">        G = Graph()</span>
+
+<span class="sd">        G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])</span>
+
+<span class="sd">        from qrisp.qaoa import (QAOAProblem,</span>
+<span class="sd">                                create_maxcut_cost_operator,</span>
+<span class="sd">                                create_maxcut_cl_cost_function,</span>
+<span class="sd">                                RX_mixer)</span>
+
+<span class="sd">        maxcut_instance = QAOAProblem(cost_operator = create_maxcut_cost_operator(G),</span>
+<span class="sd">                                       mixer = RX_mixer,</span>
+<span class="sd">                                       cl_cost_function = create_maxcut_cl_cost_function(G))</span>
+
+
+<span class="sd">        from qrisp import QuantumVariable</span>
+
+<span class="sd">        res = maxcut_instance.run(QuantumVariable(5),</span>
+<span class="sd">                                  depth = 4,</span>
+<span class="sd">                                  max_iter = 25)</span>
+
+<span class="sd">        print(res)</span>
+<span class="sd">        #Yields: {&#39;11100&#39;: 0.2847, &#39;00011&#39;: 0.2847, &#39;10000&#39;: 0.0219, &#39;01000&#39;: 0.0219, &#39;00100&#39;: 0.0219, &#39;11011&#39;: 0.0219, &#39;10111&#39;: 0.0219, &#39;01111&#39;: 0.0219, &#39;00010&#39;: 0.02, &#39;11110&#39;: 0.02, &#39;00001&#39;: 0.02, &#39;11101&#39;: 0.02, &#39;00000&#39;: 0.0173, &#39;11111&#39;: 0.0173, &#39;10010&#39;: 0.0143, &#39;01010&#39;: 0.0143, &#39;11010&#39;: 0.0143, &#39;00110&#39;: 0.0143, &#39;10110&#39;: 0.0143, &#39;01110&#39;: 0.0143, &#39;10001&#39;: 0.0143, &#39;01001&#39;: 0.0143, &#39;11001&#39;: 0.0143, &#39;00101&#39;: 0.0143, &#39;10101&#39;: 0.0143, &#39;01101&#39;: 0.0143, &#39;11000&#39;: 0.0021, &#39;10100&#39;: 0.0021, &#39;01100&#39;: 0.0021, &#39;10011&#39;: 0.0021, &#39;01011&#39;: 0.0021, &#39;00111&#39;: 0.0021}</span>
+
+<span class="sd">    For an in-depth tutorial, make sure to check out :ref:`MaxCutQAOA`!</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cost_operator : callable</span>
+<span class="sd">        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\gamma$. This function performs the application of the cost operator.</span>
+<span class="sd">    mixer : callable</span>
+<span class="sd">        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\beta$. This function performs the application mixing operator.</span>
+<span class="sd">    cl_cost_function : callable</span>
+<span class="sd">        The classical cost function for the specific QAOA problem instance, which takes a dictionary of measurement results as input.</span>
+<span class="sd">    init_function : callable, optional</span>
+<span class="sd">        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` for preparing the inital state.</span>
+<span class="sd">        By default, the uniform superposition state $\ket{+}^n$ is prepared.</span>
+<span class="sd">    callback : bool, optional</span>
+<span class="sd">        If ``True``, intermediate results are stored. The default is ``False``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cost_operator</span><span class="p">,</span> <span class="n">mixer</span><span class="p">,</span> <span class="n">cl_cost_function</span><span class="p">,</span> <span class="n">init_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_operator</span> <span class="o">=</span> <span class="n">cost_operator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">mixer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cl_cost_function</span> <span class="o">=</span> <span class="n">cl_cost_function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="o">=</span> <span class="n">init_function</span>
+
+        <span class="c1"># parameters for callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_costs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets ``callback=True`` for saving intermediate results.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="QAOAProblem.set_init_function">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.set_init_function.html#qrisp.qaoa.QAOAProblem.set_init_function">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_init_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_function</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the initial state preparation function for the QAOA problem.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        init_function : function</span>
+<span class="sd">            The initial state preparation function for the specific QAOA problem instance.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="o">=</span> <span class="n">init_function</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeParams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the angle parameters gamma and beta based on the given inputs. Used for the TQA warm starting the initial parameters for QAOA.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : int</span>
+<span class="sd">            The number of partitions for the time interval.</span>
+<span class="sd">        dt : float</span>
+<span class="sd">            The time step.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.array</span>
+<span class="sd">            A concatenated numpy array of gamma and beta values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="n">p</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">gamma</span><span class="p">,</span> <span class="n">beta</span><span class="p">))</span>
+
+<div class="viewcode-block" id="QAOAProblem.compile_circuit">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.compile_circuit.html#qrisp.qaoa.QAOAProblem.compile_circuit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compile_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compiles the circuit that is evaluated by the :meth:`run &lt;qrisp.qaoa.QAOAProblem.run&gt;` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`</span>
+<span class="sd">            The argument to which the QAOA circuit is applied.</span>
+<span class="sd">        depth : int</span>
+<span class="sd">            The amount of QAOA layers.</span>
+<span class="sd">        init_type : string, optional</span>
+<span class="sd">            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:</span>
+<span class="sd">            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.</span>
+<span class="sd">            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_ protocol.</span>
+<span class="sd">            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        compiled_qc : :ref:`QuantumCircuit`</span>
+<span class="sd">            The parametrized, compiled quantum circuit without measurements.</span>
+<span class="sd">        list[sympy.Symbol]</span>
+<span class="sd">            A list of the parameters that appear in ``compiled_qc``.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a MaxCut instance and compile the circuit:</span>
+
+
+<span class="sd">        &gt;&gt;&gt; from networkx import Graph</span>
+<span class="sd">        &gt;&gt;&gt; G = Graph([(0,1),(1,2),(2,0)])</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp.qaoa import maxcut_problem</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">        &gt;&gt;&gt; p = 5</span>
+<span class="sd">        &gt;&gt;&gt; qaoa_instance = maxcut_problem(G)</span>
+<span class="sd">        &gt;&gt;&gt; qarg = QuantumVariable(len(G))</span>
+<span class="sd">        &gt;&gt;&gt; qrisp_qc, symbols = qaoa_instance.compile_circuit(qarg, p)</span>
+<span class="sd">        &gt;&gt;&gt; print(qrisp_qc)</span>
+<span class="sd">                     ┌───┐┌────────┐┌────────┐                          »</span>
+<span class="sd">        qarg_dupl.0: ┤ H ├┤ gphase ├┤ gphase ├──■────────────────────■──»</span>
+<span class="sd">                     ├───┤└────────┘└────────┘┌─┴─┐┌──────────────┐  │  »</span>
+<span class="sd">        qarg_dupl.1: ┤ H ├────────────────────┤ X ├┤ P(2*gamma_0) ├──┼──»</span>
+<span class="sd">                     ├───┤                    └───┘└──────────────┘┌─┴─┐»</span>
+<span class="sd">        qarg_dupl.2: ┤ H ├─────────────────────────────────────────┤ X ├»</span>
+<span class="sd">                     └───┘                                         └───┘»</span>
+<span class="sd">        «                                            ┌──────────────┐   ┌────────┐   »</span>
+<span class="sd">        «qarg_dupl.0: ───────■────────────────────■──┤ Rx(2*beta_0) ├───┤ gphase ├───»</span>
+<span class="sd">        «                  ┌─┴─┐      ┌────────┐  │  └──────────────┘   └────────┘   »</span>
+<span class="sd">        «qarg_dupl.1: ─────┤ X ├──────┤ gphase ├──┼─────────■────────────────────────»</span>
+<span class="sd">        «             ┌────┴───┴─────┐└────────┘┌─┴─┐     ┌─┴─┐      ┌──────────────┐»</span>
+<span class="sd">        «qarg_dupl.2: ┤ P(2*gamma_0) ├──────────┤ X ├─────┤ X ├──────┤ P(2*gamma_0) ├»</span>
+<span class="sd">        «             └──────────────┘          └───┘     └───┘      └──────────────┘»</span>
+<span class="sd">        «             ┌────────┐                                          »</span>
+<span class="sd">        «qarg_dupl.0: ┤ gphase ├──────────────────■────────────────────■──»</span>
+<span class="sd">        «             └────────┘┌──────────────┐┌─┴─┐┌──────────────┐  │  »</span>
+<span class="sd">        «qarg_dupl.1: ────■─────┤ Rx(2*beta_0) ├┤ X ├┤ P(2*gamma_1) ├──┼──»</span>
+<span class="sd">        «               ┌─┴─┐   ├──────────────┤└───┘└──────────────┘┌─┴─┐»</span>
+<span class="sd">        «qarg_dupl.2: ──┤ X ├───┤ Rx(2*beta_0) ├─────────────────────┤ X ├»</span>
+<span class="sd">        «               └───┘   └──────────────┘                     └───┘»</span>
+<span class="sd">        «                                            ┌──────────────┐   ┌────────┐   »</span>
+<span class="sd">        «qarg_dupl.0: ───────■────────────────────■──┤ Rx(2*beta_1) ├───┤ gphase ├───»</span>
+<span class="sd">        «                  ┌─┴─┐      ┌────────┐  │  └──────────────┘   └────────┘   »</span>
+<span class="sd">        «qarg_dupl.1: ─────┤ X ├──────┤ gphase ├──┼─────────■────────────────────────»</span>
+<span class="sd">        «             ┌────┴───┴─────┐└────────┘┌─┴─┐     ┌─┴─┐      ┌──────────────┐»</span>
+<span class="sd">        «qarg_dupl.2: ┤ P(2*gamma_1) ├──────────┤ X ├─────┤ X ├──────┤ P(2*gamma_1) ├»</span>
+<span class="sd">        «             └──────────────┘          └───┘     └───┘      └──────────────┘»</span>
+<span class="sd">        «             ┌────────┐                                          »</span>
+<span class="sd">        «qarg_dupl.0: ┤ gphase ├──────────────────■────────────────────■──»</span>
+<span class="sd">        «             └────────┘┌──────────────┐┌─┴─┐┌──────────────┐  │  »</span>
+<span class="sd">        «qarg_dupl.1: ────■─────┤ Rx(2*beta_1) ├┤ X ├┤ P(2*gamma_2) ├──┼──»</span>
+<span class="sd">        «               ┌─┴─┐   ├──────────────┤└───┘└──────────────┘┌─┴─┐»</span>
+<span class="sd">        «qarg_dupl.2: ──┤ X ├───┤ Rx(2*beta_1) ├─────────────────────┤ X ├»</span>
+<span class="sd">        «               └───┘   └──────────────┘                     └───┘»</span>
+<span class="sd">        «                                            ┌──────────────┐   ┌────────┐   »</span>
+<span class="sd">        «qarg_dupl.0: ───────■────────────────────■──┤ Rx(2*beta_2) ├───┤ gphase ├───»</span>
+<span class="sd">        «                  ┌─┴─┐      ┌────────┐  │  └──────────────┘   └────────┘   »</span>
+<span class="sd">        «qarg_dupl.1: ─────┤ X ├──────┤ gphase ├──┼─────────■────────────────────────»</span>
+<span class="sd">        «             ┌────┴───┴─────┐└────────┘┌─┴─┐     ┌─┴─┐      ┌──────────────┐»</span>
+<span class="sd">        «qarg_dupl.2: ┤ P(2*gamma_2) ├──────────┤ X ├─────┤ X ├──────┤ P(2*gamma_2) ├»</span>
+<span class="sd">        «             └──────────────┘          └───┘     └───┘      └──────────────┘»</span>
+<span class="sd">        «             ┌────────┐                                          »</span>
+<span class="sd">        «qarg_dupl.0: ┤ gphase ├──────────────────■────────────────────■──»</span>
+<span class="sd">        «             └────────┘┌──────────────┐┌─┴─┐┌──────────────┐  │  »</span>
+<span class="sd">        «qarg_dupl.1: ────■─────┤ Rx(2*beta_2) ├┤ X ├┤ P(2*gamma_3) ├──┼──»</span>
+<span class="sd">        «               ┌─┴─┐   ├──────────────┤└───┘└──────────────┘┌─┴─┐»</span>
+<span class="sd">        «qarg_dupl.2: ──┤ X ├───┤ Rx(2*beta_2) ├─────────────────────┤ X ├»</span>
+<span class="sd">        «               └───┘   └──────────────┘                     └───┘»</span>
+<span class="sd">        «                                            ┌──────────────┐   ┌────────┐   »</span>
+<span class="sd">        «qarg_dupl.0: ───────■────────────────────■──┤ Rx(2*beta_3) ├───┤ gphase ├───»</span>
+<span class="sd">        «                  ┌─┴─┐      ┌────────┐  │  └──────────────┘   └────────┘   »</span>
+<span class="sd">        «qarg_dupl.1: ─────┤ X ├──────┤ gphase ├──┼─────────■────────────────────────»</span>
+<span class="sd">        «             ┌────┴───┴─────┐└────────┘┌─┴─┐     ┌─┴─┐      ┌──────────────┐»</span>
+<span class="sd">        «qarg_dupl.2: ┤ P(2*gamma_3) ├──────────┤ X ├─────┤ X ├──────┤ P(2*gamma_3) ├»</span>
+<span class="sd">        «             └──────────────┘          └───┘     └───┘      └──────────────┘»</span>
+<span class="sd">        «             ┌────────┐                                          »</span>
+<span class="sd">        «qarg_dupl.0: ┤ gphase ├──────────────────■────────────────────■──»</span>
+<span class="sd">        «             └────────┘┌──────────────┐┌─┴─┐┌──────────────┐  │  »</span>
+<span class="sd">        «qarg_dupl.1: ────■─────┤ Rx(2*beta_3) ├┤ X ├┤ P(2*gamma_4) ├──┼──»</span>
+<span class="sd">        «               ┌─┴─┐   ├──────────────┤└───┘└──────────────┘┌─┴─┐»</span>
+<span class="sd">        «qarg_dupl.2: ──┤ X ├───┤ Rx(2*beta_3) ├─────────────────────┤ X ├»</span>
+<span class="sd">        «               └───┘   └──────────────┘                     └───┘»</span>
+<span class="sd">        «                                            ┌──────────────┐                »</span>
+<span class="sd">        «qarg_dupl.0: ───────■────────────────────■──┤ Rx(2*beta_4) ├────────────────»</span>
+<span class="sd">        «                  ┌─┴─┐      ┌────────┐  │  └──────────────┘                »</span>
+<span class="sd">        «qarg_dupl.1: ─────┤ X ├──────┤ gphase ├──┼─────────■────────────────────────»</span>
+<span class="sd">        «             ┌────┴───┴─────┐└────────┘┌─┴─┐     ┌─┴─┐      ┌──────────────┐»</span>
+<span class="sd">        «qarg_dupl.2: ┤ P(2*gamma_4) ├──────────┤ X ├─────┤ X ├──────┤ P(2*gamma_4) ├»</span>
+<span class="sd">        «             └──────────────┘          └───┘     └───┘      └──────────────┘»</span>
+<span class="sd">        «</span>
+<span class="sd">        «qarg_dupl.0: ─────────────────────</span>
+<span class="sd">        «                  ┌──────────────┐</span>
+<span class="sd">        «qarg_dupl.1: ──■──┤ Rx(2*beta_4) ├</span>
+<span class="sd">        «             ┌─┴─┐├──────────────┤</span>
+<span class="sd">        «qarg_dupl.2: ┤ X ├┤ Rx(2*beta_4) ├</span>
+<span class="sd">        «             └───┘└──────────────┘</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qarg</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Define QAOA angle parameters gamma and beta for QAOA circuit</span>
+
+        <span class="n">gamma</span> <span class="o">=</span> <span class="p">[</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;gamma_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">)]</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="p">[</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;beta_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">)]</span>
+
+        <span class="c1"># Prepare initial state - if no init_function is specified, prepare uniform superposition</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;tqa&quot;</span><span class="p">:</span>  <span class="c1"># Prepare the ground state (eigenvalue -1) of the X mixer</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+
+        <span class="c1"># Apply p layers of phase separators and mixers</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cost_operator</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">beta</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># Compile quantum circuit with intended measurements</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+            <span class="n">intended_measurement_qubits</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qarg</span><span class="o">.</span><span class="n">flatten</span><span class="p">()],</span> <span class="p">[])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">intended_measurement_qubits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+
+        <span class="n">compiled_qc</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">intended_measurements</span><span class="o">=</span><span class="n">intended_measurement_qubits</span><span class="p">)</span>
+
+        <span class="n">qarg</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">temp</span>
+
+        <span class="k">return</span> <span class="n">compiled_qc</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">+</span> <span class="n">beta</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimization_routine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qarg_prep</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">,</span> <span class="n">init_type</span><span class="p">,</span> <span class="n">init_point</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qarg_prep : callable</span>
+<span class="sd">            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.</span>
+<span class="sd">        depth : int</span>
+<span class="sd">            The amont of QAOA layers.</span>
+<span class="sd">        symbols : list</span>
+<span class="sd">            The list of symbols used in the quantum circuit.</span>
+<span class="sd">        mes_kwargs : dict, optional</span>
+<span class="sd">            The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.</span>
+<span class="sd">        init_type : string, optional</span>
+<span class="sd">            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``.</span>
+<span class="sd">        init_point : ndarray, shape (n,), optional</span>
+<span class="sd">            Specifies the initial optimization parameters.</span>
+<span class="sd">        optimizer : str, optional</span>
+<span class="sd">            Specifies the `SciPy optimization routine &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html&gt;`_.</span>
+<span class="sd">            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.</span>
+<span class="sd">            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines &lt;optimization_tools&gt;` must be utilized.</span>
+<span class="sd">            Available are ``SPSA``. The Default is ``SPSA``.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            A dictionary of solver options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray, shape (n,)</span>
+<span class="sd">            The optimized parameters of the problem instance.</span>
+<span class="sd">        float or jax.Array</span>
+<span class="sd">            The expectation value of the classical cost function for the optimized parameters.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="c1"># Define optimization wrapper function to be minimized using QAOA</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">optimization_wrapper</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">state_prep</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Wrapper function for the optimization method used in QAOA.</span>
+
+<span class="sd">                This function calculates the value of the classical cost function.</span>
+
+<span class="sd">                Parameters</span>
+<span class="sd">                ----------</span>
+<span class="sd">                theta : jax.Array</span>
+<span class="sd">                    The array of angle parameters gamma and beta for the QAOA circuit.</span>
+<span class="sd">                state_prep : callable</span>
+<span class="sd">                    A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray`.</span>
+<span class="sd">                    The expectation of the classical cost function from the state of this QuantumVariable will be measured.</span>
+<span class="sd">                    The state preparation function can only take classical values as arguments.</span>
+<span class="sd">                    This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.</span>
+<span class="sd">                mes_kwargs : dict</span>
+<span class="sd">                    The keyword arguments for the sample function.</span>
+
+<span class="sd">                Returns</span>
+<span class="sd">                -------</span>
+<span class="sd">                float</span>
+<span class="sd">                    The expected value of the classical cost function.</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">res_sample</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">])(</span><span class="n">theta</span><span class="p">)</span>
+
+                <span class="n">cl_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cl_cost_function</span><span class="p">(</span><span class="n">res_sample</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">cl_cost</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">tqa_angles</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">state_prep</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_) algorithm.</span>
+
+<span class="sd">                The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps.</span>
+<span class="sd">                Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams`</span>
+<span class="sd">                function and calculates the energy `energy_` using the `optimization_wrapper` function.</span>
+<span class="sd">                The energy values are stored in the `energy` list. The `dt_max` corresponding to the</span>
+<span class="sd">                minimum energy is found and used to compute the optimal parameters which are returned.</span>
+
+<span class="sd">                Parameters</span>
+<span class="sd">                ----------</span>
+<span class="sd">                p : int</span>
+<span class="sd">                    The number of partitions for the time interval.</span>
+<span class="sd">                state_prep : callable</span>
+<span class="sd">                    A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray`.</span>
+<span class="sd">                mes_kwargs : dict</span>
+<span class="sd">                    The measurement keyword arguments.</span>
+<span class="sd">                steps : int, optional</span>
+<span class="sd">                    The number of steps for the linspace function, default is 10.</span>
+
+<span class="sd">                Returns</span>
+<span class="sd">                -------</span>
+<span class="sd">                jax.Array</span>
+<span class="sd">                    A concatenated jax.numpy array of optimal gamma and beta values.</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
+
+                <span class="n">energy</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">steps</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+                    <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeParams</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dt</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">energy_</span> <span class="o">=</span> <span class="n">optimization_wrapper</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">state_prep</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">)</span>
+                    <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">energy_</span><span class="p">)</span>
+
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+                <span class="n">dt_max</span> <span class="o">=</span> <span class="n">dt</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeParams</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dt_max</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Define optimization wrapper function to be minimized using QAOA</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">optimization_wrapper</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">qarg</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Wrapper function for the optimization method used in QAOA.</span>
+
+<span class="sd">                This function calculates the value of the classical cost function.</span>
+
+<span class="sd">                Parameters</span>
+<span class="sd">                ----------</span>
+<span class="sd">                theta : list</span>
+<span class="sd">                    The list of angle parameters gamma and beta for the QAOA circuit.</span>
+<span class="sd">                qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`</span>
+<span class="sd">                    The quantum argument to which the quantum circuit is applied.</span>
+<span class="sd">                qc : :ref:`QuantumCircuit`</span>
+<span class="sd">                    The compiled quantum circuit.</span>
+<span class="sd">                symbols : list</span>
+<span class="sd">                    The list of symbols used in the quantum circuit.</span>
+<span class="sd">                mes_kwargs : dict</span>
+<span class="sd">                    The keyword arguments for the measurement function.</span>
+
+<span class="sd">                Returns</span>
+<span class="sd">                -------</span>
+<span class="sd">                float</span>
+<span class="sd">                    The expected value of the classical cost function.</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">subs_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">theta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">))}</span>
+
+                <span class="n">res_dic</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="n">subs_dic</span><span class="o">=</span><span class="n">subs_dic</span><span class="p">,</span> <span class="n">precompiled_qc</span><span class="o">=</span><span class="n">qc</span><span class="p">,</span> <span class="o">**</span><span class="n">mes_kwargs</span><span class="p">)</span>
+
+                <span class="n">cl_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cl_cost_function</span><span class="p">(</span><span class="n">res_dic</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">optimization_costs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cl_cost</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">cl_cost</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">tqa_angles</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">qarg</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_) algorithm.</span>
+
+<span class="sd">                The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps.</span>
+<span class="sd">                Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams`</span>
+<span class="sd">                function and calculates the energy `energy_` using the `optimization_wrapper` function.</span>
+<span class="sd">                The energy values are stored in the `energy` list. The `dt_max` corresponding to the</span>
+<span class="sd">                minimum energy is found and used to compute the optimal parameters which are returned.</span>
+
+<span class="sd">                Parameters</span>
+<span class="sd">                ----------</span>
+<span class="sd">                p : int</span>
+<span class="sd">                    The number of partitions for the time interval.</span>
+<span class="sd">                qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`</span>
+<span class="sd">                    The quantum argument to which the quantum circuit is applied.</span>
+<span class="sd">                qc : :ref:`QuantumCircuit`</span>
+<span class="sd">                    The quantum circuit for the specific problem instance.</span>
+<span class="sd">                symbols : list</span>
+<span class="sd">                    The list of symbols in the quantum circuit.</span>
+<span class="sd">                mes_kwargs : dict</span>
+<span class="sd">                    The measurement keyword arguments.</span>
+<span class="sd">                steps : int, optional</span>
+<span class="sd">                    The number of steps for the linspace function, default is 10.</span>
+
+<span class="sd">                Returns</span>
+<span class="sd">                -------</span>
+<span class="sd">                np.array</span>
+<span class="sd">                    A concatenated numpy array of optimal gamma and beta values.</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
+
+                <span class="n">energy</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">dt_</span> <span class="ow">in</span> <span class="n">dt</span><span class="p">:</span>
+                    <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeParams</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dt_</span><span class="p">)</span>
+                    <span class="n">energy_</span> <span class="o">=</span> <span class="n">optimization_wrapper</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">qarg</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">)</span>
+                    <span class="n">energy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energy_</span><span class="p">)</span>
+
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+                <span class="n">dt_max</span> <span class="o">=</span> <span class="n">dt</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeParams</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dt_max</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">state_prep</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+
+                <span class="n">qarg</span> <span class="o">=</span> <span class="n">qarg_prep</span><span class="p">()</span>
+
+                <span class="c1"># Prepare initial state - if no init_function is specified, prepare uniform superposition</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;tqa&quot;</span><span class="p">:</span>  <span class="c1"># Prepare the ground state (eigenvalue -1) of the X mixer</span>
+                    <span class="n">x</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+                    <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+
+                <span class="c1"># Apply p layers of phase separators and mixers</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cost_operator</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">theta</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">theta</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">depth</span><span class="p">])</span>
+
+                <span class="k">return</span> <span class="n">qarg</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qarg</span> <span class="o">=</span> <span class="n">qarg_prep</span><span class="p">()</span>
+            <span class="n">compiled_qc</span><span class="p">,</span> <span class="n">symbols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_circuit</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">init_type</span><span class="p">)</span>
+
+        <span class="c1"># Initialization for optimization parameters</span>
+        <span class="k">if</span> <span class="n">init_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
+                <span class="c1"># Random initialization</span>
+                <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                    <span class="n">init_point</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">depth</span><span class="p">,))</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">init_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">depth</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+
+            <span class="k">elif</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;tqa&quot;</span><span class="p">:</span>
+                <span class="c1"># TQA initialization</span>
+                <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+                    <span class="n">init_point</span> <span class="o">=</span> <span class="n">tqa_angles</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">state_prep</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">init_point</span> <span class="o">=</span> <span class="n">tqa_angles</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">qarg</span><span class="p">,</span> <span class="n">compiled_qc</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter initialization method </span><span class="si">{</span><span class="n">init_type</span><span class="si">}</span><span class="s2"> is not available.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="n">res_sample</span> <span class="o">=</span> <span class="n">jasp_minimize</span><span class="p">(</span>
+                <span class="n">optimization_wrapper</span><span class="p">,</span>
+                <span class="n">init_point</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">state_prep</span><span class="p">,</span>
+                    <span class="n">mes_kwargs</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">res_sample</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">res_sample</span><span class="o">.</span><span class="n">fun</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res_sample</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+                <span class="n">optimization_wrapper</span><span class="p">,</span>
+                <span class="n">init_point</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">compiled_qc</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">res_sample</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">res_sample</span><span class="o">.</span><span class="n">fun</span>
+
+<div class="viewcode-block" id="QAOAProblem.run">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.run.html#qrisp.qaoa.QAOAProblem.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">qarg</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">,</span>
+        <span class="n">mes_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,</span>
+<span class="sd">        measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable</span>
+<span class="sd">            The argument to which the QAOA circuit is applied,</span>
+<span class="sd">            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.</span>
+<span class="sd">        depth : int</span>
+<span class="sd">            The amount of QAOA layers.</span>
+<span class="sd">        mes_kwargs : dict, optional</span>
+<span class="sd">            The keyword arguments for the measurement function. Default is an empty dictionary.</span>
+<span class="sd">        max_iter : int, optional</span>
+<span class="sd">            The maximum number of iterations for the optimization method. Default is 50.</span>
+<span class="sd">        init_type : string, optional</span>
+<span class="sd">            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:</span>
+<span class="sd">            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.</span>
+<span class="sd">            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_ protocol.</span>
+<span class="sd">            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).</span>
+<span class="sd">        init_point : ndarray, shape (n,), optional</span>
+<span class="sd">            Specifies the initial optimization parameters.</span>
+<span class="sd">        optimizer : str, optional</span>
+<span class="sd">            Specifies the `SciPy optimization routine &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html&gt;`_.</span>
+<span class="sd">            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.</span>
+<span class="sd">            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines &lt;optimization_tools&gt;` must be utilized.</span>
+<span class="sd">            Available are ``COBYLA``, ``SPSA``.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            A dictionary of solver options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict or jax.Array</span>
+<span class="sd">            The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">qarg</span><span class="p">):</span>
+            <span class="n">qarg_prep</span> <span class="o">=</span> <span class="n">qarg</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">()</span>
+
+        <span class="c1"># Set default options</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;maxiter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_iter</span>
+
+        <span class="k">if</span> <span class="s2">&quot;shots&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mes_kwargs</span><span class="p">:</span>
+            <span class="n">mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5000</span>
+
+        <span class="c1"># Delete callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_costs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">opt_theta</span><span class="p">,</span> <span class="n">opt_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_routine</span><span class="p">(</span>
+            <span class="n">qarg_prep</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">,</span> <span class="n">init_type</span><span class="p">,</span> <span class="n">init_point</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">options</span>
+        <span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">state_prep</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+
+            <span class="n">qarg</span> <span class="o">=</span> <span class="n">qarg_prep</span><span class="p">()</span>
+
+            <span class="c1"># Prepare initial state - if no init_function is specified, prepare uniform superposition</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;tqa&quot;</span><span class="p">:</span>  <span class="c1"># Prepare the ground state (eigenvalue -1) of the X mixer</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">qarg</span><span class="p">)</span>
+
+            <span class="c1"># Apply p layers of phase separators and mixers</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cost_operator</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">theta</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">theta</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">depth</span><span class="p">])</span>
+
+            <span class="k">return</span> <span class="n">qarg</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="n">res_sample</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">])(</span><span class="n">opt_theta</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qarg</span> <span class="o">=</span> <span class="n">state_prep</span><span class="p">(</span><span class="n">opt_theta</span><span class="p">)</span>
+            <span class="n">res_sample</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="o">**</span><span class="n">mes_kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res_sample</span></div>
+
+
+<div class="viewcode-block" id="QAOAProblem.train_function">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.train_function.html#qrisp.qaoa.QAOAProblem.train_function">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">qarg</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">,</span>
+        <span class="n">mes_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,</span>
+<span class="sd">        such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\psi_p}=U_M(B,\beta_p)U_P(C,\gamma_p)\dotsb U_M(B,\beta_1)U_P(C,\gamma_1)\ket{\psi_0}</span>
+
+<span class="sd">        with optimized parameters $\gamma, \beta$.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable</span>
+<span class="sd">            The argument to which the QAOA circuit is applied,</span>
+<span class="sd">            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.</span>
+<span class="sd">        depth : int</span>
+<span class="sd">            The amount of QAOA layers.</span>
+<span class="sd">        mes_kwargs : dict, optional</span>
+<span class="sd">            The keyword arguments for the measurement function. Default is an empty dictionary.</span>
+<span class="sd">        max_iter : int, optional</span>
+<span class="sd">            The maximum number of iterations for the optimization method. Default is 50.</span>
+<span class="sd">        init_type : string, optional</span>
+<span class="sd">            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:</span>
+<span class="sd">            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.</span>
+<span class="sd">            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_ protocol.</span>
+<span class="sd">            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).</span>
+<span class="sd">        init_point : ndarray, shape (n,), optional</span>
+<span class="sd">            Specifies the initial optimization parameters.</span>
+<span class="sd">        optimizer : str, optional</span>
+<span class="sd">            Specifies the `SciPy optimization routine &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html&gt;`_.</span>
+<span class="sd">            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.</span>
+<span class="sd">            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines &lt;optimization_tools&gt;` must be utilized.</span>
+<span class="sd">            Available are ``COBYLA``, ``SPSA``.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            A dictionary of solver options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        circuit_generator : function</span>
+<span class="sd">            A function that can be applied to a ``QuantumVariable`` , with optimized parameters for the problem instance. The ``QuantumVariable`` then represents a solution of the problem.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a :ref:`MaxIndepSet &lt;maxIndepSetQAOA&gt;` instance and train a ciruit with the :ref:`QAOAProblem` instance.</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import QuantumVariable</span>
+<span class="sd">            from qrisp.qaoa import QAOAProblem, RZ_mixer, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function</span>
+<span class="sd">            import networkx as nx</span>
+<span class="sd">            import matplotlib.pyplot as plt</span>
+
+<span class="sd">            G = nx.erdos_renyi_graph(9, 0.5, seed = 133)</span>
+
+<span class="sd">            qaoa_instance = QAOAProblem(cost_operator=RZ_mixer,</span>
+<span class="sd">                                            mixer=create_max_indep_set_mixer(G),</span>
+<span class="sd">                                            cl_cost_function=create_max_indep_set_cl_cost_function(G),</span>
+<span class="sd">                                            init_function=max_indep_set_init_function)</span>
+
+<span class="sd">            # create a blueprint-qv to train the circuit with the problem instance</span>
+<span class="sd">            qarg = QuantumVariable(G.number_of_nodes())</span>
+<span class="sd">            training_func = qaoa_instance.train_function(qarg, depth=5)</span>
+
+<span class="sd">            # apply the trained function to a new qv</span>
+<span class="sd">            qarg_trained = QuantumVariable(G.number_of_nodes())</span>
+<span class="sd">            training_func(qarg_trained)</span>
+
+<span class="sd">            # get the measurement results</span>
+<span class="sd">            opt_res = qarg_trained.get_measurement()</span>
+
+<span class="sd">            cl_cost = create_max_indep_set_cl_cost_function(G)</span>
+
+<span class="sd">            print(&quot;5 most likely solutions&quot;)</span>
+<span class="sd">            max_five = sorted(opt_res.items(), key=lambda item: item[1], reverse=True)[:5]</span>
+<span class="sd">            for res, prob in max_five:</span>
+<span class="sd">                print([index for index, value in enumerate(res) if value == &#39;1&#39;], prob, cl_cost({res : 1}))</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">qarg</span><span class="p">):</span>
+            <span class="n">qarg_prep</span> <span class="o">=</span> <span class="n">qarg</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">()</span>
+
+        <span class="c1"># Set default options</span>
+        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;maxiter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_iter</span>
+
+        <span class="k">if</span> <span class="s2">&quot;shots&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mes_kwargs</span><span class="p">:</span>
+            <span class="n">mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5000</span>
+
+        <span class="n">opt_theta</span><span class="p">,</span> <span class="n">opt_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_routine</span><span class="p">(</span>
+            <span class="n">qarg_prep</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">,</span> <span class="n">init_type</span><span class="p">,</span> <span class="n">init_point</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">options</span>
+        <span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">circuit_generator</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">):</span>
+            <span class="c1"># Prepare initial state - if no init_function is specified, prepare uniform superposition</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">init_function</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">init_type</span> <span class="o">==</span> <span class="s2">&quot;tqa&quot;</span><span class="p">:</span>  <span class="c1"># Prepare the ground state (eigenvalue -1) of the X mixer</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">)</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cost_operator</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">,</span> <span class="n">opt_theta</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">(</span><span class="n">qarg_gen</span><span class="p">,</span> <span class="n">opt_theta</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">depth</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">circuit_generator</span></div>
+
+
+<div class="viewcode-block" id="QAOAProblem.benchmark">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.benchmark.html#qrisp.qaoa.QAOAProblem.benchmark">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">benchmark</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">qarg</span><span class="p">,</span>
+        <span class="n">depth_range</span><span class="p">,</span>
+        <span class="n">shot_range</span><span class="p">,</span>
+        <span class="n">iter_range</span><span class="p">,</span>
+        <span class="n">optimal_solution</span><span class="p">,</span>
+        <span class="n">repetitions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">mes_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This method enables convenient data collection regarding performance of the implementation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable</span>
+<span class="sd">            The argument to which the QAOA circuit is applied,</span>
+<span class="sd">            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.</span>
+<span class="sd">            Compare to the :meth:`.run &lt;qrisp.qaoa.QAOAProblem.run&gt;` method.</span>
+<span class="sd">        depth_range : list[int]</span>
+<span class="sd">            A list of integers indicating, which depth parameters should be explored. Depth means the amount of QAOA layers.</span>
+<span class="sd">        shot_range : list[int]</span>
+<span class="sd">            A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration.</span>
+<span class="sd">        iter_range : list[int]</span>
+<span class="sd">            A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.</span>
+<span class="sd">        optimal_solution : -</span>
+<span class="sd">            The optimal solution to the problem. Should have the same type as the keys of the result of ``qarg.get_measurement()``.</span>
+<span class="sd">        repetitions : int, optional</span>
+<span class="sd">            The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.</span>
+<span class="sd">        mes_kwargs : dict, optional</span>
+<span class="sd">            The keyword arguments, that are used for the ``qarg.get_measurement``. The default is {}.</span>
+<span class="sd">        init_type : string, optional</span>
+<span class="sd">            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:</span>
+<span class="sd">            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.</span>
+<span class="sd">            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing &lt;https://quantum-journal.org/papers/q-2021-07-01-491/&gt;`_ protocol.</span>
+<span class="sd">            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).</span>
+<span class="sd">        optimizer : str, optional</span>
+<span class="sd">            Specifies the `SciPy optimization routine &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html&gt;`_.</span>
+<span class="sd">            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            A dictionary of solver options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :ref:`QAOABenchmark`</span>
+<span class="sd">            The results of the benchmark.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a MaxCut instance and benchmark several parameters</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from networkx import Graph</span>
+<span class="sd">            G = Graph()</span>
+
+<span class="sd">            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])</span>
+
+<span class="sd">            from qrisp.qaoa import maxcut_problem</span>
+
+<span class="sd">            max_cut_instance = maxcut_problem(G)</span>
+
+<span class="sd">            benchmark_data = max_cut_instance.benchmark(QuantumVariable(5),</span>
+<span class="sd">                                       depth_range = [3,4,5],</span>
+<span class="sd">                                       shot_range = [5000, 10000],</span>
+<span class="sd">                                       iter_range = [25, 50],</span>
+<span class="sd">                                       optimal_solution = &quot;11100&quot;,</span>
+<span class="sd">                                       repetitions = 2</span>
+<span class="sd">                                       )</span>
+
+<span class="sd">        We can investigate the data by calling ``visualize``:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            benchmark_data.visualize()</span>
+
+<span class="sd">        .. image:: benchmark_plot.png</span>
+
+<span class="sd">        The :ref:`QAOABenchmark` class contains a variety of methods to help</span>
+<span class="sd">        you drawing conclusions from the collected data. Make sure to check them out!</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">qarg</span><span class="p">):</span>
+            <span class="n">qarg_prep</span> <span class="o">=</span> <span class="n">qarg</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">qarg</span><span class="o">.</span><span class="n">template</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">qarg_prep</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">template</span><span class="o">.</span><span class="n">construct</span><span class="p">()</span>
+
+        <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;layer_depth&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;circuit_depth&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;qubit_amount&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;shots&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;counts&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;runtime&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;cl_cost&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">depth_range</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shot_range</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">iter_range</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repetitions</span><span class="p">):</span>
+                        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+                        <span class="n">temp_mes_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mes_kwargs</span><span class="p">)</span>
+                        <span class="n">temp_mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+                        <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                            <span class="n">qarg_prep</span><span class="p">,</span>
+                            <span class="n">depth</span><span class="o">=</span><span class="n">p</span><span class="p">,</span>
+                            <span class="n">max_iter</span><span class="o">=</span><span class="n">it</span><span class="p">,</span>
+                            <span class="n">mes_kwargs</span><span class="o">=</span><span class="n">temp_mes_kwargs</span><span class="p">,</span>
+                            <span class="n">init_type</span><span class="o">=</span><span class="n">init_type</span><span class="p">,</span>
+                            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                            <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="n">final_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+                        <span class="n">compiled_qc</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_circuit</span><span class="p">(</span><span class="n">qarg_prep</span><span class="p">(),</span> <span class="n">depth</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;layer_depth&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;circuit_depth&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">())</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;qubit_amount&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">())</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+                        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">final_time</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">QAOABenchmark</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">optimal_solution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cl_cost_function</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QAOAProblem.visualize_cost">
+<a class="viewcode-back" href="../../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.visualize_cost.html#qrisp.qaoa.QAOAProblem.visualize_cost">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">visualize_cost</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualizes the cost during the optimization process. Can only be used if ``callback=True``.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Visualization can only be performed for a QAOA instance with callback=True&quot;</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimization_costs</span><span class="p">)))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_costs</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#20306f&quot;</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+            <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;solid&quot;</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;QAOA cost&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Iterations&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#444444&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Cost&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#444444&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">labelcolor</span><span class="o">=</span><span class="s2">&quot;#444444&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1427 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/alg_primitives/arithmetic/adders/gidney_venting_adder';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/alg_primitives/arithmetic/adders/gidney_venting_adder.html" />
+    <link rel="icon" href="../../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">bitwise_count</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">measure</span><span class="p">,</span> <span class="n">reset</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">control</span><span class="p">,</span> <span class="n">custom_control</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qtypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span>
+
+<span class="c1"># BigInteger is only used in type hints (lazy-evaluated strings thanks to</span>
+<span class="c1"># from __future__ import annotations) and never at runtime.</span>
+<span class="c1"># Importing it at module level triggers a circular import:</span>
+<span class="c1">#</span>
+<span class="c1">#   gidney_adder -&gt; BigInteger (from jasp_bigintiger)</span>
+<span class="c1">#     -&gt; jasp_arithmetic/__init__ -&gt; jasp_mod_adder/multiplyers/montgomery</span>
+<span class="c1">#     -&gt; gidney_adder  (circular!)</span>
+<span class="c1">#</span>
+<span class="c1"># The TYPE_CHECKING guard keeps the runtime import-free while satisfying</span>
+<span class="c1"># static type checkers.</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># noqa</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="p">)</span>  <span class="c1"># noqa</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.adders.gidney_adder</span><span class="w"> </span><span class="kn">import</span> <span class="n">_extract_bit</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">bit_inverted_mcx</span><span class="p">(</span>
+    <span class="n">parity_check_ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">simple_ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fig. 1 left: Toffoli with one inverted (Z⊕b) control and one normal control.</span>
+<span class="sd">    Done by flipping the parity-check qubit, running a Toffoli gate, then flipping it back.</span>
+
+<span class="sd">    - When b is 0: flip the target qubit if both the parity-check qubit and the simple control qubit are in the one</span>
+<span class="sd">      state. This is a normal MCX gate controlled on 11.</span>
+<span class="sd">    - When b is 1: flip the target qubit if the parity-check qubit is in the zero state and the simple control qubit is</span>
+<span class="sd">      in the one state. This is an MCX gate controlled on 01, i.e. one inverted control and one normal control.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">       *ctrl* only decides whether *parity_check_ctrl* gets flipped before the MCX.</span>
+<span class="sd">       When *ctrl* = |0⟩ the flip is skipped (same as *b* = 0), but the MCX still runs</span>
+<span class="sd">       and can fire if *parity_check_ctrl* and *simple_ctrl* are both |1⟩.</span>
+
+<span class="sd">    Circuit diagram — two X gates conditioned on classical b wrap a standard MCX:</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">        parity_check_ctrl: ───[X^b]──•──[X^b]──</span>
+<span class="sd">                                     │</span>
+<span class="sd">        simple_ctrl: ────────────────•─────────</span>
+<span class="sd">                                     │</span>
+<span class="sd">        target: ─────────────────────X─────────</span>
+
+<span class="sd">    Used in the carry chain when the classical addend bit decides whether the control fires on zero or one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_check_ctrl</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_check_ctrl</span><span class="p">)</span>
+
+    <span class="c1"># ctrl is not added to the MCX — it only conditions the X-flips on parity_check_ctrl.</span>
+    <span class="c1"># When ctrl=0 and b=1, cx(ctrl, parity_check_ctrl) is a no-op, so parity_check_ctrl</span>
+    <span class="c1"># stays unchanged and the MCX acts as if b=0.</span>
+    <span class="n">mcx</span><span class="p">([</span><span class="n">parity_check_ctrl</span><span class="p">,</span> <span class="n">simple_ctrl</span><span class="p">],</span> <span class="n">target</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_check_ctrl</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_check_ctrl</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">zz_mcx</span><span class="p">(</span>
+    <span class="n">z0_left</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">z1_left</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">control</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fig. 1 middle: Toffoli with one normal control and one ZZ-parity control.</span>
+
+<span class="sd">    Flips the target qubit if the two Z-box qubits are different from each other and the control qubit is in the one state.</span>
+
+<span class="sd">    The ZZ pair (z0_left, z1_left) acts as a single control that fires when</span>
+<span class="sd">    the two qubits disagree.  z1_left is temporarily modified by a CX and</span>
+<span class="sd">    restored, so both Z-box qubits are returned to their original state.</span>
+
+<span class="sd">    Circuit diagram — three columns (CX, MCX, CX):</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">        z0_left:   ──•──────────────────────•──</span>
+<span class="sd">                     │                      │</span>
+<span class="sd">        z1_left:   ──X─────•────────────────X──</span>
+<span class="sd">                           │</span>
+<span class="sd">        control: ──────────•────────────────────</span>
+<span class="sd">                           │</span>
+<span class="sd">        target: ───────────X────────────────────</span>
+
+<span class="sd">    Used in the carry XOR chains to check whether two qubits disagree instead</span>
+<span class="sd">    of checking if they are in the one state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z0_left</span><span class="p">,</span> <span class="n">z1_left</span><span class="p">)</span>  <span class="c1"># collect parity into z1_left</span>
+    <span class="n">mcx</span><span class="p">([</span><span class="n">z1_left</span><span class="p">,</span> <span class="n">control</span><span class="p">],</span> <span class="n">target</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z0_left</span><span class="p">,</span> <span class="n">z1_left</span><span class="p">)</span>  <span class="c1"># restore z1_left</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">zz_zz_mcx</span><span class="p">(</span>
+    <span class="n">z_left</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">z_left_right</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">z_right</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fig. 1 right: Toffoli controlled on AND of two ZZ-parity checks.</span>
+
+<span class="sd">    Flips the target qubit if the two Z qubits on the left are different</span>
+<span class="sd">    from each other AND the two Z qubits on the right are different from</span>
+<span class="sd">    each other. The middle qubit (z_left_right) belongs to both pairs.</span>
+
+<span class="sd">    Circuit diagram — five columns (CX, CX, MCX, CX, CX):</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">        z_left:       ──X───────────•───────────X──</span>
+<span class="sd">                        │           │           │</span>
+<span class="sd">        z_left_right: ──•─────•───────────•─────•──</span>
+<span class="sd">                              │     │     │</span>
+<span class="sd">        z_right:      ────────X─────•─────X────────</span>
+<span class="sd">                                    │</span>
+<span class="sd">        target:       ──────────────X────────────────</span>
+
+<span class="sd">    All three Z qubits are restored after the operation.</span>
+
+<span class="sd">    Used in the carry XOR block to check two conditions at once: whether the</span>
+<span class="sd">    incoming carry and the target bit disagree with their neighbours.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z_left_right</span><span class="p">,</span> <span class="n">z_left</span><span class="p">)</span>  <span class="c1"># z_left    ← left parity</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z_left_right</span><span class="p">,</span> <span class="n">z_right</span><span class="p">)</span>  <span class="c1"># z_right   ← right parity</span>
+    <span class="n">mcx</span><span class="p">([</span><span class="n">z_left</span><span class="p">,</span> <span class="n">z_right</span><span class="p">],</span> <span class="n">target</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z_left_right</span><span class="p">,</span> <span class="n">z_right</span><span class="p">)</span>  <span class="c1"># restore z_right</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">z_left_right</span><span class="p">,</span> <span class="n">z_left</span><span class="p">)</span>  <span class="c1"># restore z_left</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">bit_inverted_zz_zz_mcx</span><span class="p">(</span>
+    <span class="n">parity_ctrl1</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">parity_ctrl2</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MCX with two inverted controls. Flips the parity qubits before and after the</span>
+<span class="sd">    Toffoli so the control condition depends on the classical bit b.</span>
+
+<span class="sd">    - When b is 0: flip the target qubit if both parity controls are in the one state (MCX on 11).</span>
+<span class="sd">    - When b is 1: flip the target qubit if both parity controls are in the zero state (MCX on 00).</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">       Same as :func:`bit_inverted_mcx`: *ctrl* only decides whether *parity_ctrl1* and</span>
+<span class="sd">       *parity_ctrl2* get flipped before the MCX.  When *ctrl* = |0⟩ the flips are skipped</span>
+<span class="sd">       (same as *b* = 0), but the MCX still runs and can fire if both parity controls</span>
+<span class="sd">       are |1⟩.</span>
+
+<span class="sd">    Circuit diagram — two X gates on each control wrap a standard MCX:</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">        parity_ctrl1: ──[X^b]──•──[X^b]──</span>
+<span class="sd">                               │</span>
+<span class="sd">        parity_ctrl2: ──[X^b]──•──[X^b]──</span>
+<span class="sd">                               │</span>
+<span class="sd">        target:      ──────────X──────────</span>
+
+<span class="sd">    This gate is not explicitly defined as a standalone circuit in the paper</span>
+<span class="sd">    but appears as a building block of the carry-xor block in Fig. 3.</span>
+
+<span class="sd">    Used in the carry XOR block for the first slot, where the classical addend decides whether to flip both controls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_ctrl1</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_ctrl2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_ctrl1</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_ctrl2</span><span class="p">)</span>
+
+    <span class="c1"># Same as bit_inverted_mcx: ctrl only conditions the X-flips, not the MCX.</span>
+    <span class="n">mcx</span><span class="p">([</span><span class="n">parity_ctrl1</span><span class="p">,</span> <span class="n">parity_ctrl2</span><span class="p">],</span> <span class="n">target</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_ctrl1</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">parity_ctrl2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_ctrl1</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">parity_ctrl2</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">carry_venting_adder</span><span class="p">(</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">ancilla</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">c_in</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">carry_xor_target</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vent_final</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">c_out</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fig. 2 — carry-venting CQ in-place adder.</span>
+
+<span class="sd">    :math:`\text{target} \rightarrow (\text{target} + d + c_{\text{in}}) \bmod 2^n`</span>
+
+<span class="sd">    Instead of propagating carries across all bits with many Toffoli gates,</span>
+<span class="sd">    each carry is measured in the X-basis (vented) as soon as it is no longer</span>
+<span class="sd">    needed.  Measurement results are packed into an integer bitmask (ventmask)</span>
+<span class="sd">    and used later for phase correction.</span>
+
+<span class="sd">    Two provided clean ancillae alternate roles: one holds the current carry,</span>
+<span class="sd">    the other receives the next carry.  After each bit the current carry</span>
+<span class="sd">    ancilla is vented and reset, becoming available two steps later.</span>
+
+<span class="sd">    When *carry_xor_target* is provided, each carry is also copied into the</span>
+<span class="sd">    corresponding dirty workspace qubit via CX before being vented.  This</span>
+<span class="sd">    implements the combined first carry-xor and carry vernting pass used</span>
+<span class="sd">    by dirty_ancillae_adder (Fig. 4) at no extra gate cost.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target : QuantumVariable</span>
+<span class="sd">        Target register, little-endian (index 0 = LSB). Modified in place.</span>
+<span class="sd">    d : int</span>
+<span class="sd">        Classical addend (compile-time constant).</span>
+<span class="sd">    ancilla : QuantumVariable</span>
+<span class="sd">        2-qubit clean ancilla register for the streaming carry chain.</span>
+<span class="sd">    c_in : QuantumBool | None</span>
+<span class="sd">        Quantum carry-in.  ``None`` is treated as ``|0⟩``.</span>
+<span class="sd">    carry_xor_target : QuantumVariable | None</span>
+<span class="sd">        Optional dirty workspace register used for the fused carry-xor pass</span>
+<span class="sd">        (Fig. 4 in the paper).  The carry into bit i is XORed into</span>
+<span class="sd">        ``carry_xor_target[i-1]``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ventmask : int</span>
+<span class="sd">        Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.</span>
+<span class="sd">    num_vents : int</span>
+<span class="sd">        Number of vents written to the bitmask (helps callers reconstruct</span>
+<span class="sd">        the vent layout without knowing internal bit-indexing details).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jlen</span><span class="p">,</span> <span class="n">jrange</span><span class="p">,</span> <span class="n">q_fori_loop</span>
+
+    <span class="n">num_qubits</span> <span class="o">=</span> <span class="n">jlen</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="n">clean_anc</span> <span class="o">=</span> <span class="n">ancilla</span>
+
+    <span class="k">if</span> <span class="n">c_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">carry_in</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">carry_in</span> <span class="o">=</span> <span class="n">c_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="n">carry_in</span> <span class="o">=</span> <span class="n">c_in</span>
+
+    <span class="c1"># Bitmask that records the measurement outcome of each vented carry.</span>
+    <span class="c1"># The k-th bit of ventmask stores the vent measurement at position k.</span>
+    <span class="n">ventmask</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="c1"># Counter for carry_xor_target writes — advances on each write so slots</span>
+    <span class="c1"># are always filled consecutively, eliminating index-collision bugs</span>
+    <span class="c1"># (e.g. n=3 where the first-block write and final-block write would</span>
+    <span class="c1"># both target index 0 without this counter).</span>
+    <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Initial setup: X^{d_i} on all target bits</span>
+    <span class="c1"># Flip each target bit if the corresponding classical addend bit is 1.</span>
+    <span class="c1"># This bakes the classical addend into the target register so the carry</span>
+    <span class="c1"># chain only needs the register and carry-in to compute the sum.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_qubits</span><span class="p">):</span>
+        <span class="n">d_i</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d_i</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c1"># First building block (bits 0 and 1) that have to be handled before the loop</span>
+    <span class="c1"># The remaining bits are handled by a loop that applies the same gate</span>
+    <span class="c1"># pattern to each bit position.</span>
+    <span class="n">d0</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">d1</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">carry_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">carry_in</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">d0</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">carry_in</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">d0</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+
+    <span class="c1"># X on clean_anc[1] when d0=1: corrects the carry for the flipped</span>
+    <span class="c1"># target[0] bit so the carry chain still computes the right value.</span>
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d1</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Fused first carry-xor: write carry at clean_anc[1] into carry_xor_target.</span>
+    <span class="c1"># clean_anc[1] holds the carry into bit 1 at this point (computed by the</span>
+    <span class="c1"># first building block above, before it gets vented).  A single CX copies</span>
+    <span class="c1"># it to carry_xor_target at no extra Toffoli cost.</span>
+    <span class="k">if</span> <span class="n">carry_xor_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">carry_xor_target</span><span class="p">[</span><span class="n">carry_xor_cnt</span><span class="p">])</span>
+        <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">carry_xor_cnt</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># Vent clean_anc[1] (carry into bit 1) — X-basis measurement</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">m0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># Record the vent measurement at bit position 0 of the ventmask</span>
+    <span class="n">ventmask</span> <span class="o">=</span> <span class="n">ventmask</span> <span class="o">+</span> <span class="p">(</span><span class="n">m0</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Normal repeated blocks (bits 2 .. n-3)</span>
+    <span class="c1"># Each iteration handles one bit: holds the current carry, computes the</span>
+    <span class="c1"># next carry, then vents and resets.  The two ancilla qubits alternate so</span>
+    <span class="c1"># each gets reused every other step.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Before computing the next carry, we flip the current carry qubit if the</span>
+    <span class="c1"># previous addend bit was 1.  This corrects for the effect of the initial</span>
+    <span class="c1"># X gates on the carry computation.</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_middle_bit</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="n">d_i</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">d_prev</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">current_carry</span> <span class="o">=</span> <span class="n">clean_anc</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">next_carry</span> <span class="o">=</span> <span class="n">clean_anc</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d_prev</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">current_carry</span><span class="p">)</span>
+
+        <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">next_carry</span><span class="p">,</span> <span class="n">d_i</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">carry_xor_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">carry_xor_target</span><span class="p">[</span><span class="n">carry_xor_cnt</span><span class="p">])</span>
+            <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">carry_xor_cnt</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="n">h</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="n">m_i</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="n">reset</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="c1"># Record the vent measurement at bit position (j+1) of the ventmask</span>
+        <span class="n">ventmask</span> <span class="o">=</span> <span class="n">ventmask</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_i</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span>
+
+    <span class="n">num_main</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">q_fori_loop</span><span class="p">(</span>
+        <span class="mi">0</span><span class="p">,</span> <span class="n">num_main</span><span class="p">,</span> <span class="n">process_middle_bit</span><span class="p">,</span> <span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Write the final carry into the most significant bit</span>
+    <span class="c1"># The carry out of the second-to-last bit becomes the most significant</span>
+    <span class="c1"># bit of the result.  It is not vented (no follow-up bit needs it).</span>
+
+    <span class="c1"># Three cases:</span>
+    <span class="c1"># 2 qubits: nothing to do (bits 0 and 1 handled by the first block)</span>
+    <span class="c1"># 3 qubits: the carry is already computed in clean_anc[0]; just CX it into target[2], then vent clean_anc[0].</span>
+    <span class="c1"># 4+ qubits: use the full gate sequence to compute and write the final carry into the top bit.</span>
+    <span class="c1">#</span>
+    <span class="c1"># q_cond is used because ventmask is an integer that is modified inside</span>
+    <span class="c1"># the branch and read outside.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_final_carry_to_msb</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span><span class="p">):</span>
+        <span class="n">last_i</span> <span class="o">=</span> <span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">d_last</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">last_i</span><span class="p">)</span>
+        <span class="n">current_carry</span> <span class="o">=</span> <span class="n">clean_anc</span><span class="p">[</span><span class="n">num_main</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># carry lives in the alternator that didn&#39;t just vent</span>
+
+        <span class="c1"># Correction: X^{d_{last_i-1}} on current_carry to account for d&#39;s effect on</span>
+        <span class="c1"># the previous step&#39;s carry computation.</span>
+        <span class="n">d_correction</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d_correction</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">current_carry</span><span class="p">)</span>
+
+        <span class="c1"># For n=3, the carry into bit 2 is already in clean_anc[0] (computed by the</span>
+        <span class="c1"># first block).  Just CX it into target[2] — no MCX needed.</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">num_qubits</span> <span class="o">==</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">last_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Full MCX-based last block: write the carry into target[n-1].</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">last_i</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">d_last</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">last_i</span><span class="p">])</span>
+
+        <span class="c1"># Fused carry-xor: write the last carry into the next unwritten slot.</span>
+        <span class="c1"># Guared by counter vs. dirty count so it naturally skips when all</span>
+        <span class="c1"># slots are already filled (e.g. n=3 where the first block already</span>
+        <span class="c1"># wrote the only slot).  No need for a num_qubits &gt; 3 guard.</span>
+        <span class="k">if</span> <span class="n">carry_xor_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">still_needed</span> <span class="o">=</span> <span class="n">carry_xor_cnt</span> <span class="o">&lt;</span> <span class="n">jlen</span><span class="p">(</span><span class="n">carry_xor_target</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">still_needed</span><span class="p">):</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">carry_xor_target</span><span class="p">[</span><span class="n">carry_xor_cnt</span><span class="p">])</span>
+            <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">carry_xor_cnt</span> <span class="o">+</span> <span class="n">still_needed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># XOR the final carry into c_out before venting it.</span>
+        <span class="k">if</span> <span class="n">c_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">current_carry</span><span class="p">,</span> <span class="n">c_out</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Vent (common to both paths) — X-basis measurement</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="n">m_last</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="n">reset</span><span class="p">(</span><span class="n">current_carry</span><span class="p">)</span>
+        <span class="c1"># Record the vent measurement at bit position (1 + num_main) of the ventmask</span>
+        <span class="n">ventmask</span> <span class="o">=</span> <span class="n">ventmask</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_last</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">num_main</span><span class="p">))</span>
+
+        <span class="c1"># Final X^{d_last} on target[n-1] (only for n&gt;=4 — for n=3, target[2]</span>
+        <span class="c1"># was never X^{d} in the initial setup because d_last = d_2).</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d_last</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">skip_final_block</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c_out</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">vent_final</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">m_i</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">reset</span><span class="p">(</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">ventmask</span> <span class="o">=</span> <span class="n">ventmask</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_i</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.program_control.prefix_control</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_cond</span>
+
+    <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">,</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">carry_xor_cnt</span> <span class="o">=</span> <span class="n">q_cond</span><span class="p">(</span>
+        <span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">write_final_carry_to_msb</span><span class="p">,</span>
+        <span class="n">skip_final_block</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">,</span>
+        <span class="n">clean_anc</span><span class="p">,</span>
+        <span class="n">ventmask</span><span class="p">,</span>
+        <span class="n">carry_xor_cnt</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Count the number of vents for the caller (used in ventmask recombination).</span>
+    <span class="c1"># When num_qubits &lt;= 2 the final block is skipped (q_cond with num_qubits &gt; 2),</span>
+    <span class="c1"># so only m0 from the first block is vented → 1 vent.</span>
+    <span class="c1"># When num_qubits &gt;= 3 all three sources fire: m0 + middle + m_last.</span>
+    <span class="n">num_vents</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_qubits</span> <span class="o">-</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ventmask</span><span class="p">,</span> <span class="n">num_vents</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">carry_xor_block</span><span class="p">(</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="n">dirty_ancillas</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">c_in</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fig. 3 — carry-XOR block: second pass of the two-pass phase correction.</span>
+
+<span class="sd">    The target register holds the sum result.  The dirty workspace already</span>
+<span class="sd">    contains carries from the first pass (fused into carry_venting_adder).</span>
+<span class="sd">    Recompute the carries from the sum and XOR them into the dirty workspace.</span>
+<span class="sd">    After this block the dirty workspace should return to all zeros (up to</span>
+<span class="sd">    Z-phase corrections from surrounding CZ gates).</span>
+
+<span class="sd">    The computation has four phases:</span>
+<span class="sd">      1. Reverse order — walk dirty qubits from most significant bit to</span>
+<span class="sd">         least significant bit, computing the carry into each position</span>
+<span class="sd">         and XORing it in.</span>
+<span class="sd">      2. Flip each dirty qubit if the corresponding addend bit is 1.</span>
+<span class="sd">      3. If there is a carry-in, handle the first dirty qubit using a</span>
+<span class="sd">         parity-checking gate.</span>
+<span class="sd">      4. Forward order — walk dirty qubits from least significant bit to</span>
+<span class="sd">         most significant bit, computing the carry into each position</span>
+<span class="sd">         and XORing it in.</span>
+
+<span class="sd">    Steps 3-4 use parity-checking gates because the dirty workspace stores</span>
+<span class="sd">    carries differently from the clean ancilla chain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jlen</span><span class="p">,</span> <span class="n">jrange</span>
+
+    <span class="n">num_dirty_qubits</span> <span class="o">=</span> <span class="n">jlen</span><span class="p">(</span><span class="n">dirty_ancillas</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">c_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">carry_in</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">carry_in</span> <span class="o">=</span> <span class="n">c_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="n">carry_in</span> <span class="o">=</span> <span class="n">c_in</span>
+
+    <span class="c1"># Reverse chain</span>
+    <span class="c1"># Walk the dirty qubits from most significant bit to least significant bit.</span>
+    <span class="c1"># For each slot, combine the</span>
+    <span class="c1"># corresponding target bit and the previous dirty qubit (as carry-in) to</span>
+    <span class="c1"># recompute the carry, then flip the current dirty qubit if the addend</span>
+    <span class="c1"># bit is 1.  This propagates carries downward from high to low bits.</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_dirty_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_dirty_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">j</span>
+        <span class="n">bit_i</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">bit_inverted_mcx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bit_i</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+
+    <span class="c1"># Flip each dirty qubit if the addend bit is 1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_dirty_qubits</span><span class="p">):</span>
+        <span class="n">bit_i</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">bit_i</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ctrl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">(</span><span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">carry_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">d0</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">bit_inverted_zz_zz_mcx</span><span class="p">(</span><span class="n">carry_in</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d0</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">d0</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">d0</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Forward chain</span>
+    <span class="c1"># Walk dirty qubits from least significant bit to most significant bit.</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_dirty_qubits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">bit_i</span> <span class="o">=</span> <span class="n">_extract_bit</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">bit_inverted_zz_zz_mcx</span><span class="p">(</span><span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dirty_ancillas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bit_i</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dirty_ancillae_adder</span><span class="p">(</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">dirty_ancillas</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">ancilla</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">c_in</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">c_out</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fig. 4 — dirty-ancilla CQ in-place adder.</span>
+
+<span class="sd">    :math:`\text{target} \rightarrow (\text{target} + d + c_{\text{in}}) \bmod 2^n`</span>
+
+<span class="sd">    Uses 2 clean ancillae for the streaming carry chain plus n-2 dirty</span>
+<span class="sd">    workspace qubits that are restored to their original state.</span>
+
+<span class="sd">    Algorithm (two passes):</span>
+<span class="sd">      1. Vented addition (carry_venting_adder) with fused carry-xor pass.</span>
+<span class="sd">         Each carry is also written into the dirty workspace as it is vented.</span>
+<span class="sd">         After this, target contains the sum and dirty contains the carries.</span>
+<span class="sd">      2. Phase correction — a sandwich of X, CZ, carry_xor_block, CZ, X</span>
+<span class="sd">          that fixes the Z-phase from the vented measurements and returns</span>
+<span class="sd">          the dirty qubits to all zeros.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target : QuantumVariable</span>
+<span class="sd">        Target register, little-endian (index 0 = LSB). Modified in place.</span>
+<span class="sd">    d : int</span>
+<span class="sd">        Classical addend (compile-time constant).</span>
+<span class="sd">    dirty_ancillas : QuantumVariable</span>
+<span class="sd">        n-2 dirty workspace qubits.</span>
+<span class="sd">    ancilla : QuantumVariable</span>
+<span class="sd">        2-qubit clean ancilla register for the streaming carry chain.</span>
+<span class="sd">    c_in : QuantumBool | None</span>
+<span class="sd">        Quantum carry-in.  ``None`` is treated as ``|0⟩``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jlen</span><span class="p">,</span> <span class="n">jrange</span>
+
+    <span class="n">num_targets</span> <span class="o">=</span> <span class="n">jlen</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="n">dirty_qubits</span> <span class="o">=</span> <span class="n">dirty_ancillas</span>
+    <span class="n">num_dirty</span> <span class="o">=</span> <span class="n">jlen</span><span class="p">(</span><span class="n">dirty_qubits</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Vented addition with fused first carry-xor.</span>
+    <span class="c1"># Suppress the final vent (vent_final=False) — for small targets the</span>
+    <span class="c1"># excess vent has no corresponding dirty qubit and would leave an</span>
+    <span class="c1"># uncorrected Z-phase error.</span>
+    <span class="n">ventmask</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">carry_venting_adder</span><span class="p">(</span>
+        <span class="n">d</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">,</span>
+        <span class="n">ancilla</span><span class="o">=</span><span class="n">ancilla</span><span class="p">,</span>
+        <span class="n">c_in</span><span class="o">=</span><span class="n">c_in</span><span class="p">,</span>
+        <span class="n">carry_xor_target</span><span class="o">=</span><span class="n">dirty_qubits</span><span class="p">,</span>
+        <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">,</span>
+        <span class="n">vent_final</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">c_out</span><span class="o">=</span><span class="n">c_out</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Step 2: Phase correction</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_targets</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c1"># XOR excess vent bits (beyond num_dirty) into the last dirty slot&#39;s</span>
+    <span class="c1"># correction so their Z-phase errors are not left uncorrected.</span>
+    <span class="n">excess</span> <span class="o">=</span> <span class="n">ventmask</span> <span class="o">&gt;&gt;</span> <span class="n">num_dirty</span>
+    <span class="n">ventmask_fixed</span> <span class="o">=</span> <span class="p">(</span><span class="n">ventmask</span> <span class="o">&amp;</span> <span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">num_dirty</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">^</span> <span class="p">((</span><span class="n">bitwise_count</span><span class="p">(</span><span class="n">excess</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">num_dirty</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># CZ pass 1: correct Z-phases using ventmask (excess XORed into last slot)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_dirty</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">((</span><span class="n">ventmask_fixed</span> <span class="o">&gt;&gt;</span> <span class="n">k</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">z</span><span class="p">(</span><span class="n">dirty_qubits</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+    <span class="c1"># Second carry-xor pass: recompute carries against the flipped sum</span>
+    <span class="n">carry_xor_block</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dirty_qubits</span><span class="p">,</span> <span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">c_in</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+
+    <span class="c1"># CZ pass 2: correct Z-phases again</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_dirty</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">((</span><span class="n">ventmask_fixed</span> <span class="o">&gt;&gt;</span> <span class="n">k</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">z</span><span class="p">(</span><span class="n">dirty_qubits</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+    <span class="c1"># Restore target</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">num_targets</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">ventmask</span>
+
+
+<div class="viewcode-block" id="gidney_cq_venting_adder">
+<a class="viewcode-back" href="../../../../../reference/Primitives/generated/qrisp.gidney_cq_venting_adder.html#qrisp.gidney_cq_venting_adder">[docs]</a>
+<span class="nd">@custom_control</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gidney_cq_venting_adder</span><span class="p">(</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">c_in</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">c_out</span><span class="p">:</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumBool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;In-place classical-quantum adder using Gidney&#39;s carry-venting technique.</span>
+
+<span class="sd">    Adds a classical integer :math:`d` and an optional carry-in :math:`c_{\text{in}}`</span>
+<span class="sd">    to a quantum register, storing the result back in the same register.</span>
+
+<span class="sd">    Uses 3 clean ancillae (allocated internally) and no external dirty workspace.</span>
+<span class="sd">    The target register is split in half — each half serves as dirty storage for</span>
+<span class="sd">    the other half&#39;s carry chain — keeping the total qubit count to ``n + 3``.</span>
+<span class="sd">    For registers with fewer than 6 qubits the split-half path is replaced by</span>
+<span class="sd">    :func:`gidney_adder` (unitary, no vents), which avoids a nested-q_cond</span>
+<span class="sd">    tracing-session issue for n=5.  This matches the paper&#39;s strategy of using</span>
+<span class="sd">    a clean adder when enough ancillae are available.</span>
+
+<span class="sd">    Heavily adapted from the reference implementation released with</span>
+<span class="sd">    `arXiv:2507.23079 &lt;https://arxiv.org/abs/2507.23079&gt;`_ at https://zenodo.org/records/15866587.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">       This function requires dynamic (JASP) mode and does **not** work in static</span>
+<span class="sd">       circuit generation, because it relies on mid-circuit measurements (venting)</span>
+<span class="sd">       whose outcomes determine subsequent operations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target : QuantumVariable</span>
+<span class="sd">        Target register, little-endian (index 0 = LSB). Modified in place.</span>
+<span class="sd">    d : int or BigInteger</span>
+<span class="sd">        Classical addend (compile-time constant).</span>
+<span class="sd">    c_in : QuantumBool | None</span>
+<span class="sd">        Quantum carry-in. None is treated as :math:`\ket{0}`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If ``d`` is a :class:`QuantumVariable` or list (must be a classical integer).</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If ``target`` is not a :class:`QuantumVariable`.</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If called outside dynamic (JASP) tracing mode.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Basic addition in dynamic (JASP) mode::</span>
+
+<span class="sd">        from qrisp import QuantumFloat, measure, gidney_cq_venting_adder</span>
+<span class="sd">        from qrisp.jasp import jaspify</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main():</span>
+<span class="sd">            target = QuantumFloat(5)</span>
+<span class="sd">            target[:] = 2</span>
+<span class="sd">            gidney_cq_venting_adder(7, target)</span>
+<span class="sd">            return measure(target)</span>
+
+<span class="sd">        result = main()</span>
+<span class="sd">        # result is 9 (2 + 7 = 9)</span>
+
+<span class="sd">    Addition with a carry-in qubit::</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main():</span>
+<span class="sd">            target = QuantumFloat(4)</span>
+<span class="sd">            target[:] = 5</span>
+<span class="sd">            c_in = QuantumFloat(1)</span>
+<span class="sd">            c_in[:] = 1</span>
+<span class="sd">            gidney_cq_venting_adder(2, target, c_in=c_in[0])</span>
+<span class="sd">            return measure(target)</span>
+
+<span class="sd">        result = main()</span>
+<span class="sd">        # result is 8 (5 + 2 + carry_in = 8)</span>
+
+<span class="sd">    Controlled addition (zero extra Toffoli cost)::</span>
+
+<span class="sd">        from qrisp import control, QuantumBool</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main():</span>
+<span class="sd">            target = QuantumFloat(5)</span>
+<span class="sd">            target[:] = 10</span>
+<span class="sd">            ctrl = QuantumBool()</span>
+<span class="sd">            ctrl[:] = 1</span>
+<span class="sd">            with control(ctrl):</span>
+<span class="sd">                gidney_cq_venting_adder(5, target)</span>
+<span class="sd">            return measure(target)</span>
+
+<span class="sd">        result = main()</span>
+<span class="sd">        # result is 15 (10 + 5 = 15)</span>
+<span class="sd">        # when ctrl is not provided, target stays unchanged</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jlen</span><span class="p">,</span> <span class="n">jrange</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumVariable</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The first argument must be a classical integer.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The second argument must be a QuantumVariable.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The Gidney Classical-Quantum adder does not work in standard python execution mode.&quot;</span><span class="p">)</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.adders.gidney_adder</span><span class="w"> </span><span class="kn">import</span> <span class="n">gidney_adder</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.program_control.prefix_control</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_cond</span>
+
+    <span class="n">num_targets</span> <span class="o">=</span> <span class="n">jlen</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+    <span class="n">n_half</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_targets</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+
+    <span class="c1"># ---- Path selection ---------------------------------------------------</span>
+    <span class="c1"># n &lt; 6 → gidney_path (gidney_adder, unitary, no vents).</span>
+    <span class="c1">#   The paper&#39;s reference (_add_3_clean.py lines 57-64) uses a clean</span>
+    <span class="c1">#   adder when 3 clean qubits suffice for the full register (n &lt;= 5).</span>
+    <span class="c1">#   We extend this to n &lt; 6 because q_cond wrapping split_path (which</span>
+    <span class="c1">#   calls carry_venting_adder, itself using q_cond internally) creates</span>
+    <span class="c1">#   nested tracing sessions that interfere for n=5.</span>
+    <span class="c1">#</span>
+    <span class="c1"># n &gt;= 6 → split_path (split-half carry-venting, Fig. 2-4).</span>
+    <span class="c1">#   The paper enters the split-half for n &gt;= 6 (line 66+).  Sub-halves</span>
+    <span class="c1">#   may still use clean adders when they fit (lines 79-84, 101-107);</span>
+    <span class="c1">#   carry-venting (Fig. 2) only activates when a sub-half exceeds the</span>
+    <span class="c1">#   clean-adder budget (n &gt;= 10).</span>
+
+    <span class="n">d_lo</span> <span class="o">=</span> <span class="n">d</span> <span class="o">&amp;</span> <span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">n_half</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">d_hi</span> <span class="o">=</span> <span class="n">d</span> <span class="o">&gt;&gt;</span> <span class="n">n_half</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">gidney_path</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean unitary adder for n &lt; 6 (no vents, no phase correction).</span>
+
+<span class="sd">        Delegates to gidney_adder (arXiv:1709.06648), which uses no mid-circuit</span>
+<span class="sd">        measurements and is therefore deterministic under @terminal_sampling.</span>
+<span class="sd">        The 3 clean ancillae are unused (gidney_adder allocates its own).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gidney_adder</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">c_in</span><span class="o">=</span><span class="n">c_in</span><span class="p">,</span> <span class="n">c_out</span><span class="o">=</span><span class="n">c_out</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+        <span class="n">clean_anc</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_path</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split-half carry-venting adder for n &gt;= 6 (paper&#39;s main circuit).</span>
+
+<span class="sd">        Implements Fig. 2-4 of arXiv:2507.23079 using 3 clean ancillae.</span>
+<span class="sd">        The target is split at h = (n-1)&gt;&gt;1.  The bottom half is added via</span>
+<span class="sd">        carry_venting_adder (Fig. 2, vents carries in the X-basis).  The top</span>
+<span class="sd">        half is added via dirty_ancillae_adder (Fig. 4, uses bottom-half</span>
+<span class="sd">        qubits as dirty workspace).  The low half&#39;s vented Z-phases are</span>
+<span class="sd">        corrected by a CZ sandwich with two carry_xor passes (Fig. 3).</span>
+<span class="sd">        n_half, d_lo, and d_hi are closed over from the outer scope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">clean0</span> <span class="o">=</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># mid-carry ancilla (clean0 in paper notation)</span>
+
+        <span class="c1"># Step 1: Place clean0 into target[n_half].</span>
+        <span class="c1"># Three CNOTs implement a SWAP so that carry_venting_adder on the</span>
+        <span class="c1"># (n_half+1)-bit slice target[:n_half+1] writes the carry out of</span>
+        <span class="c1"># bit n_half-1 into clean0 (as its final carry).</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">clean0</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">])</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">],</span> <span class="n">clean0</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">clean0</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">])</span>
+
+        <span class="c1"># Step 2: Vented addition on bottom half (Fig. 2).</span>
+        <span class="c1"># carry_venting_adder vents carries in the X-basis and returns</span>
+        <span class="c1"># an integer ventmask whose k-th bit holds the k-th vent outcome.</span>
+        <span class="n">ventmask_lo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">carry_venting_adder</span><span class="p">(</span><span class="n">d_lo</span><span class="p">,</span> <span class="n">target</span><span class="p">[:</span> <span class="n">n_half</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">c_in</span><span class="o">=</span><span class="n">c_in</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: Swap clean0 back out — clean0 now holds the carry into</span>
+        <span class="c1"># the top half (the carry out of the bottom half).</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">clean0</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">])</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">],</span> <span class="n">clean0</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">clean0</span><span class="p">,</span> <span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">])</span>
+
+        <span class="c1"># Step 4: Top half addition using dirty ancillas (Fig. 4).</span>
+        <span class="c1"># target[n_half:] is the top half with clean0 as carry-in.</span>
+        <span class="c1"># target[:max(1, n-n_half-2)] are borrowed as dirty workspace.</span>
+        <span class="n">dirty_ancillae_adder</span><span class="p">(</span>
+            <span class="n">d_hi</span><span class="p">,</span>
+            <span class="n">target</span><span class="p">[</span><span class="n">n_half</span><span class="p">:],</span>
+            <span class="n">dirty_ancillas</span><span class="o">=</span><span class="n">target</span><span class="p">[:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">jlen</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_half</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)],</span>
+            <span class="n">ancilla</span><span class="o">=</span><span class="n">clean_anc</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+            <span class="n">c_in</span><span class="o">=</span><span class="n">clean0</span><span class="p">,</span>
+            <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">,</span>
+            <span class="n">c_out</span><span class="o">=</span><span class="n">c_out</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Step 5: MX measurement on clean0 (X-basis: H then Z-measurement).</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">clean0</span><span class="p">)</span>
+        <span class="n">m_clean0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">clean0</span><span class="p">)</span>
+        <span class="n">reset</span><span class="p">(</span><span class="n">clean0</span><span class="p">)</span>
+
+        <span class="c1"># Combine ventmask_lo with m_clean0 to get the full ventmask for</span>
+        <span class="c1"># the bottom-half phase correction.</span>
+        <span class="n">ventmask_lo_mask</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">n_half</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">high_vent_bits</span> <span class="o">=</span> <span class="n">ventmask_lo</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">n_half</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">full_ventmask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ventmask_lo</span> <span class="o">&amp;</span> <span class="n">ventmask_lo_mask</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
+            <span class="p">((</span><span class="n">m_clean0</span> <span class="o">^</span> <span class="p">(</span><span class="n">bitwise_count</span><span class="p">(</span><span class="n">high_vent_bits</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">n_half</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Step 6: Phase correction for bottom half vents (CZ sandwich +</span>
+        <span class="c1"># two carry_xor passes, Fig. 3).</span>
+        <span class="n">workspace</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="n">n_half</span> <span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_half</span><span class="p">]</span>
+        <span class="n">bottom</span> <span class="o">=</span> <span class="n">target</span><span class="p">[:</span><span class="n">n_half</span><span class="p">]</span>
+
+        <span class="c1"># 6a — Complement bottom half: NOT(bottom)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">n_half</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">bottom</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># 6b — CZ(workspace[k], vent[k+1]): correct Z-phases from vents</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">n_half</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">((</span><span class="n">full_ventmask</span> <span class="o">&gt;&gt;</span> <span class="n">k</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">z</span><span class="p">(</span><span class="n">workspace</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="c1"># 6c — First carry_xor pass (second-pass carries into workspace)</span>
+        <span class="n">carry_xor_block</span><span class="p">(</span><span class="n">d_lo</span><span class="p">,</span> <span class="n">workspace</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">c_in</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+        <span class="c1"># 6d — CZ again</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">n_half</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">((</span><span class="n">full_ventmask</span> <span class="o">&gt;&gt;</span> <span class="n">k</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">z</span><span class="p">(</span><span class="n">workspace</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="c1"># 6e — Second carry_xor pass (restore workspace)</span>
+        <span class="n">carry_xor_block</span><span class="p">(</span><span class="n">d_lo</span><span class="p">,</span> <span class="n">workspace</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">c_in</span><span class="p">,</span> <span class="n">ctrl</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+        <span class="c1"># 6f — Restore bottom half: NOT cancels the complement from 6a</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">n_half</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">bottom</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">clean_anc</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="c1"># initialize 3 clean ancillae</span>
+    <span class="n">clean_anc</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gidney_anc*&quot;</span><span class="p">)</span>
+    <span class="c1"># clean0, clean1, clean2 — mid-carry and streaming-carry ancillae</span>
+
+    <span class="c1"># Select path based on register size.</span>
+    <span class="c1"># n &lt; 6 → gidney_path (clean Gidney carry-lookahead, no vents).</span>
+    <span class="c1">#   n=5 is included because q_cond + split_path + carry_venting_adder&#39;s</span>
+    <span class="c1">#   internal q_cond creates nested tracing sessions that interfere.</span>
+    <span class="c1"># n &gt;= 6 → split_path  (split-half carry-venting, faithful to the paper)</span>
+    <span class="n">q_cond</span><span class="p">(</span><span class="n">num_targets</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">,</span> <span class="n">gidney_path</span><span class="p">,</span> <span class="n">split_path</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">clean_anc</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

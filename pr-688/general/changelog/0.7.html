@@ -1,0 +1,632 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Qrisp 0.7 &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/changelog/0.7';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/changelog/0.7.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Qrisp 0.6" href="0.6.html" />
+    <link rel="prev" title="Qrisp 0.8" href="0.8.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.9.html">Qrisp 0.9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.8.html">Qrisp 0.8</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Qrisp 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.6.html">Qrisp 0.6</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5.html">Qrisp 0.5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.4.html">Qrisp 0.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.3.html">Qrisp 0.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.2.html">Qrisp 0.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.1.html">Qrisp 0.1</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Changelog</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Qrisp 0.7</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="qrisp-0-7">
+<span id="v0-7"></span><h1>Qrisp 0.7<a class="headerlink" href="#qrisp-0-7" title="Link to this heading">#</a></h1>
+<p>Qrisp 0.7 is here, marking another significant milestone in the evolution of our high-level quantum programming framework. This release continues Qrisp’s mission to make quantum algorithm development more intuitive, efficient, and accessible for researchers and developers alike. While previous updates often focused on a unified theme, Qrisp 0.7 brings a diverse collection of features and improvements, reflecting the rapidly expanding landscape of quantum computing.</p>
+<p>With this version, users will find not only innovative new primitives and protocols, but also substantial enhancements to existing workflows and resource management. The integration of advanced compilation techniques, dynamic algorithmic components, and expanded compatibility with the Jasp submodule further solidifies Qrisp’s position as a leading platform for scalable quantum software development. Whether you are exploring cutting-edge quantum algorithms or optimizing large-scale simulations, Qrisp 0.7 delivers the tools and performance to push your projects forward.</p>
+<section id="linear-combination-of-unitaries">
+<h2>Linear Combination Of Unitaries<a class="headerlink" href="#linear-combination-of-unitaries" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="https://arxiv.org/abs/1202.5822" rel="noreferrer" target="_blank">LCU</a> was initially conceived for improving the precision of Hamiltonian simulations but since then has become a core tool for a diverse field of quantum algorithms including <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">QSP</a>, <a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3313276.3316366" rel="noreferrer" target="_blank">QSVT</a>, <a class="reference external" href="https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.131.150603" rel="noreferrer" target="_blank">LCHS</a>, and <a class="reference external" href="https://arxiv.org/abs/2502.04285" rel="noreferrer" target="_blank">optimization via dynamical simulation</a>. Qrisp 0.7 makes all of the above possible: i.e. LCHS (Linear Combination of Hamiltonian Simulation) utilizing the <a class="reference internal" href="../../reference/Operators/index.html#operators"><span class="std std-ref">operators module</span></a> and our <a class="reference internal" href="../../reference/Operators/generated/qrisp.operators.qubit.QubitOperator.trotterization.html#qrisp.operators.qubit.QubitOperator.trotterization" title="qrisp.operators.qubit.QubitOperator.trotterization"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Trotterization</span></code></a> for passing the Hamiltonian simulation unitary through the LCU protocol.</p>
+<p>The Linear Combination of Unitaries technique relies on a <a class="reference internal" href="../../reference/Jasp/Control%20Flow/RUS.html#rus"><span class="std std-ref">non-unitary feedback loop</span></a> to add up the unitaries of several user-specified quantum functions. Within the quantum software landscape the importance of LCU has been recognized within some artifacts implementing the <a class="reference external" href="https://github.com/Classiq/classiq-library/blob/main/tutorials/classiq_101/quantum_primitives/linear_combination_of_unitaries/linear_combination_of_unitaries.ipynb" rel="noreferrer" target="_blank">“loop body”</a> but to the best of our knowledge no framework implements the means for compiling the whole workflow down to a low-level representation. This changes with Qrisp 0.7.</p>
+<p>Using our new <a class="reference internal" href="../../reference/Primitives/LCU.html#lcu"><span class="std std-ref">Linear Combination of Unitaries (LCU)</span></a> primitive it is possible to perform a streamlined and efficient implementation of the workflow using an arbitrary set of user-specified functions.</p>
+</section>
+<section id="dynamic-quantum-switch">
+<h2>Dynamic Quantum Switch<a class="headerlink" href="#dynamic-quantum-switch" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="../../reference/Primitives/qswitch.html#qswitch"><span class="std std-ref">quantum switch</span></a> is a core component of the LCU protocol and as such is now compatible with Jasp. It is furthermore now possible to specify case functions dynamically, ensuring the scalability of every component involved. Finally an additional <a class="reference external" href="https://arxiv.org/pdf/2407.17966v1" rel="noreferrer" target="_blank">compilation technique based on a binary tree</a> has been implemented to ensure state of the art compilation performance.</p>
+</section>
+<section id="dynamic-qaoa-vqe-and-gradient-free-dynamic-optimization">
+<h2>Dynamic QAOA/VQE and gradient free dynamic optimization<a class="headerlink" href="#dynamic-qaoa-vqe-and-gradient-free-dynamic-optimization" title="Link to this heading">#</a></h2>
+<p>QAOA and VQE are among the most popular hybrid algorithms. The established way of running these is to set up a feedback loop that alternates between a quantum computer and a Python instance performing the classical optimization. While suitable for prototypical implementations, this architecture brings a considerable overhead because (a) entering and running the Python interpreter is slow and (b) using IP networks for connectivity introduces extra latency. For this reason we made the algorithms compatible with Jasp, implying the whole workflow is now compiled into one big QIR expression. Read more about this <a class="reference internal" href="../../reference/Algorithms/qaoa/JaspQAOA.html#jaspqaoa"><span class="std std-ref">here</span></a>. We also added JASP-compatability for the gradient-free <strong>COBYLA</strong> Optimizer. It will now be the Default Option for the <a class="reference internal" href="../../reference/Jasp/Optimization%20Tools/Optimization%20Tools.html#optimization-tools"><span class="std std-ref">jasp.minimize</span></a> optimization Routine.</p>
+<img alt="../../_images/optimization_loop.png" class="align-center" src="../../_images/optimization_loop.png" />
+</section>
+<section id="iterative-quantum-phase-estimation">
+<h2>Iterative Quantum Phase Estimation<a class="headerlink" href="#iterative-quantum-phase-estimation" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="../../reference/Primitives/IQPE.html#iqpe"><span class="std std-ref">Iterative Quantum Phase Estimation</span></a> is a technique that extends the idea of <a class="reference internal" href="../../reference/Primitives/QPE.html#qpe"><span class="std std-ref">regular QPE</span></a> to the dynamic context. By introducing real-time features the eigenvalues of a unitary <span class="math notranslate nohighlight">\(U\)</span> can be estimated to <span class="math notranslate nohighlight">\(n\)</span> digits of precision using only a single extra ancilla qubit (instead of <span class="math notranslate nohighlight">\(n\)</span>).</p>
+</section>
+<section id="resource-estimation">
+<h2>Resource estimation<a class="headerlink" href="#resource-estimation" title="Link to this heading">#</a></h2>
+<p>Estimating the resources of large scale quantum algorithms has become an <a class="reference external" href="https://qre2024.quantumresource.org/" rel="noreferrer" target="_blank">important field of research</a>, as it provides concrete indicators, which purposes future quantum computers might be suitable for. A variety of frameworks exists for tackling this problem - in many cases however the framework can either (a) not compile/simulate the full algorithm, which makes it hard to verify correctness or (b) can only estimate the resources at limited scale. With Jasp we can now do both! The <a class="reference internal" href="../../reference/Jasp/Resource%20Estimation.html#count-ops"><span class="std std-ref">count_ops</span></a> decorator uses the tight embedding into classically established compilation infrastructure to compile a binary program that computes the required resources. This allows us to probe algorithms at 1000000000 gates/s! By switching out the decorator to <a class="reference internal" href="../../reference/Jasp/Simulation%20Tools/Jaspify.html#jaspify"><span class="std std-ref">Jaspify</span></a>, we can simulate the exact same code without any changes on a smaller scale.</p>
+</section>
+<section id="other-jaspified-features">
+<h2>Other Jaspified features<a class="headerlink" href="#other-jaspified-features" title="Link to this heading">#</a></h2>
+<p>The following features are now compatible with Jasp:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a>.</p></li>
+<li><p><a class="reference internal" href="../../reference/Operators/QubitOperator.html#qubitoperator"><span class="std std-ref">QubitOperator</span></a> and <a class="reference internal" href="../../reference/Operators/FermionicOperator.html#fermionicoperator"><span class="std std-ref">FermionicOperator</span></a> expectation value evaluation.</p></li>
+<li><p><a class="reference internal" href="../../reference/Algorithms/QITE.html#qite"><span class="std std-ref">Quantum Imaginary-Time Evolution</span></a>.</p></li>
+<li><p><a class="reference internal" href="../../reference/Primitives/IQAE.html#iqae"><span class="std std-ref">Iterative Quantum Amplitude Estimation</span></a>.</p></li>
+<li><p><a class="reference internal" href="../../reference/Primitives/generated/qrisp.mcx.html#mcx"><span class="std std-ref">MCX</span></a> implementation by <a class="reference external" href="https://arxiv.org/pdf/2407.17966v1" rel="noreferrer" target="_blank">Khattar et. al</a> based on conditionally free ancillae.</p></li>
+</ul>
+</section>
+<section id="new-tutorials">
+<h2>New Tutorials<a class="headerlink" href="#new-tutorials" title="Link to this heading">#</a></h2>
+<p>Next to a major visual revamp of the <a class="reference internal" href="../tutorial/index.html#tutorial"><span class="std std-ref">Tutorials</span></a> page, the following tutorials have been added.</p>
+<ul class="simple">
+<li><p>A <a class="reference external" href="https://www.qrisp.eu/general/tutorial/HHL.html" rel="noreferrer" target="_blank">tutorial about implementing the HHL algorithm using Jasp</a>.</p></li>
+<li><p>A <a class="reference external" href="https://www.qrisp.eu/general/tutorial/JaspQAOAtutorial.html" rel="noreferrer" target="_blank">tutorial about creating your own Jasp implementation of QAOA</a> from scratch.</p></li>
+</ul>
+</section>
+<section id="ui-changes">
+<h2>UI Changes<a class="headerlink" href="#ui-changes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">QubitOperator.get_measurement</span></code> is replaced by <code class="docutils literal notranslate"><span class="pre">QubitOperator.expectation_value</span></code> and will be removed in a future release of Qrisp.</p></li>
+</ul>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/changelog"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#linear-combination-of-unitaries">Linear Combination Of Unitaries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-quantum-switch">Dynamic Quantum Switch</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-qaoa-vqe-and-gradient-free-dynamic-optimization">Dynamic QAOA/VQE and gradient free dynamic optimization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#iterative-quantum-phase-estimation">Iterative Quantum Phase Estimation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resource-estimation">Resource estimation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#other-jaspified-features">Other Jaspified features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#new-tutorials">New Tutorials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ui-changes">UI Changes</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

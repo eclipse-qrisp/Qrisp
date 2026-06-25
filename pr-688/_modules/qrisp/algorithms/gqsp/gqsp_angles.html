@@ -1,0 +1,1106 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.gqsp.gqsp_angles &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/gqsp/gqsp_angles';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/gqsp/gqsp_angles.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.gqsp.gqsp_angles</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.gqsp.gqsp_angles</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<span class="c1"># https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368</span>
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_complementary_objective</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the complementary objective function for two given polynomials.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+<span class="sd">    b : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Array</span>
+<span class="sd">        The scalar objective function value as 0-D Array.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">a</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">b</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">delta</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_maximum</span><span class="p">(</span><span class="n">b</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="n">N</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Finds the maximum absolute value that a given polynomial assumes on the unit circle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    b : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+<span class="sd">    N : int</span>
+<span class="sd">        The number of roots of unity to evaluate the polynomial.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Array</span>
+<span class="sd">        The scalar maximum absolute value as 0-D array.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 1. Evaluate b(z) at N-th roots of unity</span>
+    <span class="c1"># Using standard FFT (maps coefficients to point values on the circle).</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+
+
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_complementary_polynomial</span><span class="p">(</span><span class="n">b</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Finds a complementary polynomial $a$ such that $|a|^2 + |b|^2 = 1$ on the unit circle.</span>
+
+<span class="sd">    This function implements spectral factorization via the Cepstral method.</span>
+<span class="sd">    It constructs the unique outer polynomial (analytic and non-zero inside</span>
+<span class="sd">    the unit disk) that satisfies the power-sum identity.</span>
+
+<span class="sd">    This function calculates the spectral factor $a(z)$ by constructing an analytic function in the disk</span>
+<span class="sd">    whose real part on the boundary is $\log{|a|}$. The projection in Step 4 is the discreate equivalent of the Schwarz integral:</span>
+
+<span class="sd">    .. math ::</span>
+
+<span class="sd">        G(z) = \frac{1}{2\pi}\int_{0}^{2\pi}\log{|a(e^{i\theta})|}\frac{e^{i\theta}+z}{e^{i\theta}-z}\mathrm d\theta</span>
+
+<span class="sd">    The resulting $a(z)=\exp(G(z))$ is guaranteed to be the unique outer polynomial with a positive real mean $a_0$ (if b is real).</span>
+
+<span class="sd">    Note: The polynomial $b(z)$ must satisfy $|b(z)| \leq 1$ on the unit disk. This algorithm is unstable if $|b(z)|=1$ for an N-th root of unity $z_k=\exp(2\pi i k/N)$,</span>
+<span class="sd">    since $\log(|a(z)|) = \log(1-|b(z)|^2)/2 has a singularity is this case. This can be mitigated by rescaling $b(z)$ such that $|b(z)|&lt;1$ on the unit disk.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    b : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    a : Array</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># The degree of b is d. The degree of |b|^2 is 2d.</span>
+    <span class="c1"># Choose N as a power of two larger than 2d to avoid aliasing. Multiply by factor 8 for increased precison.</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">bit_length</span><span class="p">())</span>
+
+    <span class="c1"># 1. Evaluate b(z) at N-th roots of unity</span>
+    <span class="c1"># Using standard FFT (maps coefficients to point values on the circle).</span>
+    <span class="n">b_points</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># 2. Compute log-magnitude of a(z)</span>
+    <span class="c1"># log|a| = 0.5 * log(1 - |b|^2)</span>
+    <span class="n">mag_sq</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">b_points</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">log_a_mag</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mag_sq</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">))</span>
+
+    <span class="c1"># 3. Transform to the Cepstral domain</span>
+    <span class="c1"># The IFFT of the log-magnitude gives the &quot;real Cepstrum&quot;.</span>
+    <span class="n">cepstrum</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">log_a_mag</span><span class="p">)</span>
+
+    <span class="c1"># 4. Apply analytic projection (Schwarz/Hilbert transform in Cepstral domain)</span>
+    <span class="c1"># An outer function&#39;s log-magnitude and phase are related by the Hilbert</span>
+    <span class="c1"># Transform. In the Cepstral domain, this means zeroing negative frequencies</span>
+    <span class="c1"># (indices &gt; N/2) and doubling positive ones (indices &lt; N/2).</span>
+    <span class="n">mid</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">a_cep_analytic</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+
+    <span class="n">a_cep_analytic</span> <span class="o">=</span> <span class="n">a_cep_analytic</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cepstrum</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># DC</span>
+    <span class="n">a_cep_analytic</span> <span class="o">=</span> <span class="n">a_cep_analytic</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">mid</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cepstrum</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">mid</span><span class="p">])</span>  <span class="c1"># Positive frequencies</span>
+    <span class="n">a_cep_analytic</span> <span class="o">=</span> <span class="n">a_cep_analytic</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cepstrum</span><span class="p">[</span><span class="n">mid</span><span class="p">])</span>  <span class="c1"># Nyquist</span>
+
+    <span class="c1"># 5. Recovery of coefficients</span>
+    <span class="n">a_points</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">a_cep_analytic</span><span class="p">))</span>
+    <span class="n">a_coeffs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">a_points</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">a_coeffs</span><span class="p">[:</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_inlft</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the inverse non-linear Fourier transform using the layer stripping algorithm.</span>
+
+<span class="sd">    .. math ::</span>
+
+<span class="sd">        F_k = \frac{b_k(0)}{a_k^*(0)},</span>
+<span class="sd">        \quad a_{k+1}^*(z) = \frac{a_k^*(z)+\bar{F_k}b_k(z)}{\sqrt{1+|F_k|^2}},</span>
+<span class="sd">        \quad b_{k+1}(z) = \frac{b_k(z)-F_ka_k^*(z)}{\sqrt{1+|F_k|^2}}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+<span class="sd">    b : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : Array</span>
+<span class="sd">        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Layer stripping algorithm (https://arxiv.org/pdf/2505.12615, Equation (28))</span>
+    <span class="c1"># Define the single step of the scan loop</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">carry</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="n">a_star</span><span class="p">,</span> <span class="n">b_arr</span> <span class="o">=</span> <span class="n">carry</span>
+
+        <span class="c1"># Calculate F_k</span>
+        <span class="n">Fk</span> <span class="o">=</span> <span class="n">b_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">a_star</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Calculate intermediate scalar &#39;s&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Fk</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Update arrays</span>
+        <span class="n">a_star_new</span> <span class="o">=</span> <span class="p">(</span><span class="n">a_star</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">Fk</span><span class="p">)</span> <span class="o">*</span> <span class="n">b_arr</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span>
+        <span class="n">b_new</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">roll</span><span class="p">((</span><span class="n">b_arr</span> <span class="o">-</span> <span class="n">Fk</span> <span class="o">*</span> <span class="n">a_star</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># divide by z</span>
+
+        <span class="c1"># Return the new carry state and the output we want to accumulate (Fk)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">a_star_new</span><span class="p">,</span> <span class="n">b_new</span><span class="p">),</span> <span class="n">Fk</span>
+
+    <span class="c1"># Initial state for the carry</span>
+    <span class="n">initial_carry</span> <span class="o">=</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="c1"># Execute the scan loop for the length of &#39;a&#39;</span>
+    <span class="c1"># jax.lax.scan returns the final state (which we ignore with &#39;_&#39;) and the stacked outputs</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">F</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">initial_carry</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">F</span>
+
+
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_gqsp_angles_from_nlft_sequence</span><span class="p">(</span><span class="n">F</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the GQSP angles form the non-linear Fourier sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    F : ArrayLike</span>
+<span class="sd">        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : tuple of (Array, Array, Array)</span>
+<span class="sd">        A collection containing:</span>
+
+<span class="sd">        - **theta** (Array): 1-D array of angles $(\theta_0,\dotsc,\theta_d)$.</span>
+
+<span class="sd">        - **phi** (Array): 1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+
+<span class="sd">        - **lambda** (Array): The scalar angle $\lambda$ as 0-D array.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">thres</span> <span class="o">=</span> <span class="mf">1e-10</span>
+    <span class="c1"># pre-factor</span>
+    <span class="n">psi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">F</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">thres</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">F</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">thres</span><span class="p">,</span>
+            <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="o">-</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">F</span><span class="p">)</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">F</span><span class="p">)),</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Theorem 9, formula (4) in https://arxiv.org/pdf/2503.03026</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">psi</span><span class="p">)</span> <span class="o">*</span> <span class="n">F</span><span class="p">)</span>
+    <span class="n">psi_</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">psi</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])))</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">psi_</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">psi</span>
+    <span class="n">lambda_</span> <span class="o">=</span> <span class="n">psi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Switch (Q,P) -&gt; (P, iQ)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">lambda_</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">lambda_</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span>
+
+
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_xqsp_angles_from_nlft_sequence</span><span class="p">(</span><span class="n">F</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the XQSP angles form the non-linear Fourier sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    F : ArrayLike</span>
+<span class="sd">        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        Always raised until the XQSP convention is mathematically verified.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="s2">&quot;The XQSP angle calculation is currently unverified and disabled. &quot;</span>
+        <span class="s2">&quot;Please use QSP, GQSP, or QSVT conventions instead.&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># return jnp.arctan(-jnp.imag(F))</span>
+
+
+<span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_yqsp_angles_from_nlft_sequence</span><span class="p">(</span><span class="n">F</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the YQSP angles form the non-linear Fourier sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    F : ArrayLike</span>
+<span class="sd">        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        Always raised until the YQSP convention is mathematically verified.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="s2">&quot;The YQSP angle calculation is currently unverified and disabled. &quot;</span>
+        <span class="s2">&quot;Please use QSP, GQSP, or QSVT conventions instead.&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># return jnp.arctan(jnp.real(F))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">poly_to_nlft_sequence</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the non-linear Fourier sequence for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : Array</span>
+<span class="sd">        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Comupute the maximum of |p(z)| for |z|=1</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">_maximum</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+
+    <span class="c1"># Rescale p(z)</span>
+    <span class="c1"># Divide by M such that |p(z)|&lt;=1 for |z|=1 and QSP success probability is maximized</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="n">M</span>
+    <span class="c1"># Multiply by 0.99 to ensure that |p(z)|&lt;1 for |z|=1 for numerical stability of completion algorithm</span>
+    <span class="c1"># This comes at the expense of a slightly smaller QSP success probability</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="mf">0.99</span> <span class="o">*</span> <span class="n">p</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">M</span> <span class="o">/</span> <span class="mf">0.99</span>
+    <span class="c1"># Switch (Q,P) -&gt; (P, iQ)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">p</span>
+
+    <span class="c1"># Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">_complementary_polynomial</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">F</span> <span class="o">=</span> <span class="n">_inlft</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">alpha</span>
+
+
+<span class="c1"># https://arxiv.org/pdf/2503.03026</span>
+<div class="viewcode-block" id="gqsp_angles">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.gqsp_angles.html#qrisp.gqsp.gqsp_angles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gqsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">],</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the GQSP angles for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : tuple of (Array, Array, Array)</span>
+<span class="sd">        A collection containing:</span>
+
+<span class="sd">        - **theta** (Array): 1-D array of angles $(\theta_0,\dotsc,\theta_d)$.</span>
+
+<span class="sd">        - **phi** (Array): 1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+
+<span class="sd">        - **lambda** (Array): The scalar angle $\lambda$ as 0-D array.</span>
+
+<span class="sd">    alpha : Array</span>
+<span class="sd">        The scalar scaling factor as 0-D array.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The resulting angles correspond to a rescaled version of the input polynomial.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">F</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="n">poly_to_nlft_sequence</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span> <span class="o">=</span> <span class="n">_gqsp_angles_from_nlft_sequence</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">),</span> <span class="n">alpha</span></div>
+
+
+
+<span class="c1"># https://arxiv.org/pdf/2503.03026</span>
+<span class="c1"># Not verified to be correct.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">xqsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the XQSP angles for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+<span class="sd">    alpha : Array</span>
+<span class="sd">        The scalar scaling factor as 0-D array.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        Always raised until the XQSP convention is mathematically verified.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The resulting angles correspond to a rescaled version of the input polynomial.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="s2">&quot;The XQSP angle calculation is currently unverified and disabled. &quot;</span>
+        <span class="s2">&quot;Please use QSP, GQSP, or QSVT conventions instead.&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># F, alpha = poly_to_nlft_sequence(p)</span>
+    <span class="c1"># phi = _xqsp_angles_from_nlft_sequence(F)</span>
+    <span class="c1"># return phi, alpha</span>
+
+
+<span class="c1"># https://arxiv.org/pdf/2503.03026</span>
+<span class="c1"># Not verified to be correct.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">yqsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the YQSP angles for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+<span class="sd">    alpha : Array</span>
+<span class="sd">        The scalar scaling factor as 0-D array.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        Always raised until the YQSP convention is mathematically verified.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The resulting angles correspond to a rescaled version of the input polynomial.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="s2">&quot;The YQSP angle calculation is currently unverified and disabled. &quot;</span>
+        <span class="s2">&quot;Please use QSP, GQSP, or QSVT conventions instead.&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># F, alpha = poly_to_nlft_sequence(p)</span>
+    <span class="c1"># phi = _yqsp_angles_from_nlft_sequence(F)</span>
+    <span class="c1"># return phi, alpha</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">laurent_to_analytic_coeffs</span><span class="p">(</span><span class="n">target_coeffs</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="n">parity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;even&quot;</span><span class="p">,</span> <span class="s2">&quot;odd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;odd&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a target polynomial from the Laurent QSP framework to the Analytic QSP framework.</span>
+
+<span class="sd">    In standard QSP, signal operators enforce strict parity (even or odd). Analytic QSP</span>
+<span class="sd">    (like GQSP) natively builds polynomials in strictly positive powers of a variable</span>
+<span class="sd">    without parity constraints.</span>
+
+<span class="sd">    This helper performs the algebraic mapping required to trick an analytic solver</span>
+<span class="sd">    into solving a Laurent polynomial. Specifically, it factors out x^{-d} and</span>
+<span class="sd">    substitutes y = x^2 to create a dense analytic polynomial A(y).</span>
+
+<span class="sd">    Mathematical Example (Odd):</span>
+<span class="sd">        Target: P(x) = a_1*x + a_3*x^3  (Coeffs: [0, a_1, 0, a_3], degree d=3)</span>
+<span class="sd">        1. Factor out x^{-d}: P(x) = x^{-3} * (a_1*x^4 + a_3*x^6)</span>
+<span class="sd">        2. Substitute y = x^2: A(y) = a_1*y^2 + a_3*y^3</span>
+<span class="sd">        3. Expanded A(y): 0*y^0 + 0*y^1 + a_1*y^2 + a_3*y^3</span>
+<span class="sd">        4. Analytic Coeffs: [0.0, 0.0, a_1, a_3]</span>
+
+<span class="sd">    Mathematical Example (Even):</span>
+<span class="sd">        Target: P(x) = a_0 + a_2*x^2  (Coeffs: [a_0, 0, a_2], degree d=2)</span>
+<span class="sd">        1. Factor out x^{-d}: P(x) = x^{-2} * (a_0*x^2 + a_2*x^4)</span>
+<span class="sd">        2. Substitute y = x^2: A(y) = a_0*y + a_2*y^2</span>
+<span class="sd">        3. Expanded A(y): 0*y^0 + a_0*y^1 + a_2*y^2</span>
+<span class="sd">        4. Analytic Coeffs: [0.0, a_0, a_2]</span>
+
+<span class="sd">    Once the analytic solver finds the angles for A(y), Lemma 2 from Laneve (2025)</span>
+<span class="sd">    is used to shift the phases, effectively multiplying the x^{-d} shift back</span>
+<span class="sd">    into the quantum circuit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target_coeffs : jax.Array</span>
+<span class="sd">        The standard coefficients of the target polynomial (a_0, a_1, a_2, ...).</span>
+<span class="sd">    parity : Literal[&quot;even&quot;, &quot;odd&quot;]</span>
+<span class="sd">        The structural parity of the target polynomial (&#39;even&#39; or &#39;odd&#39;). Defaults to &#39;odd&#39;.</span>
+<span class="sd">        Must be known at compile time for JAX tracing.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jax.Array</span>
+<span class="sd">        The mapped Analytic QSP coefficient array A(y). The first half consists</span>
+<span class="sd">        of zeros (representing the skipped lower-degree y terms), and the second</span>
+<span class="sd">        half consists of the extracted parity coefficients.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parity</span> <span class="o">==</span> <span class="s2">&quot;odd&quot;</span><span class="p">:</span>
+        <span class="c1"># Extract odd coefficients: indices 1, 3, 5...</span>
+        <span class="n">extracted_coeffs</span> <span class="o">=</span> <span class="n">target_coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">num_zeros</span> <span class="o">=</span> <span class="n">extracted_coeffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">parity</span> <span class="o">==</span> <span class="s2">&quot;even&quot;</span><span class="p">:</span>
+        <span class="c1"># Extract even coefficients: indices 0, 2, 4...</span>
+        <span class="n">extracted_coeffs</span> <span class="o">=</span> <span class="n">target_coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">num_zeros</span> <span class="o">=</span> <span class="n">extracted_coeffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parity must be either &#39;even&#39; or &#39;odd&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create an array of zeros matching the input dtype</span>
+    <span class="n">zeros</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_zeros</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">target_coeffs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="c1"># Concatenate the zeros with the extracted coefficients</span>
+    <span class="n">analytic_coeffs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zeros</span><span class="p">,</span> <span class="n">extracted_coeffs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">analytic_coeffs</span>
+
+
+<div class="viewcode-block" id="qsp_angles">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.qsp_angles.html#qrisp.gqsp.qsp_angles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qsp_angles</span><span class="p">(</span>
+    <span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span>
+    <span class="n">parity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;even&quot;</span><span class="p">,</span> <span class="s2">&quot;odd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;odd&quot;</span><span class="p">,</span>
+    <span class="n">signal_basis</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the QSP angles for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients in Chebyshev basis, ordered from lowest order term to highest.</span>
+<span class="sd">    parity : Literal[&quot;even&quot;, &quot;odd&quot;]</span>
+<span class="sd">        The structural parity of the target polynomial (&#39;even&#39; or &#39;odd&#39;). Defaults to &#39;odd&#39;.</span>
+<span class="sd">        Must be known at compile time for JAX tracing.</span>
+<span class="sd">    signal_basis : Literal[&quot;X&quot;, &quot;Z&quot;]</span>
+<span class="sd">        The signal basis for the QSP angles (&#39;X&#39; or &#39;Z&#39;). Defaults to &#39;Z&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+<span class="sd">    alpha : Array</span>
+<span class="sd">        The scalar scaling factor as 0-D array.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The resulting angles correspond to a rescaled version of the input polynomial.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_analytic</span> <span class="o">=</span> <span class="n">laurent_to_analytic_coeffs</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parity</span><span class="o">=</span><span class="n">parity</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">),</span> <span class="n">alpha</span> <span class="o">=</span> <span class="n">gqsp_angles</span><span class="p">(</span><span class="n">p_analytic</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">signal_basis</span> <span class="o">==</span> <span class="s2">&quot;X&quot;</span><span class="p">:</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">phi</span><span class="p">,</span> <span class="n">alpha</span></div>
+
+
+
+<div class="viewcode-block" id="qsvt_angles">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.qsvt_angles.html#qrisp.gqsp.qsvt_angles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qsvt_angles</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="n">parity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;even&quot;</span><span class="p">,</span> <span class="s2">&quot;odd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;odd&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the QSVT angles for a given polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients in Chebyshev basis, ordered from lowest order term to highest.</span>
+<span class="sd">    parity : Literal[&quot;even&quot;, &quot;odd&quot;]</span>
+<span class="sd">        The structural parity of the target polynomial (&#39;even&#39; or &#39;odd&#39;). Defaults to &#39;odd&#39;.</span>
+<span class="sd">        Must be known at compile time for JAX tracing.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angles : Array</span>
+<span class="sd">        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.</span>
+<span class="sd">    alpha : Array</span>
+<span class="sd">        The scalar scaling factor as 0-D array.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The resulting angles correspond to a rescaled version of the input polynomial.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi_qsp</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="n">qsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parity</span><span class="o">=</span><span class="n">parity</span><span class="p">,</span> <span class="n">signal_basis</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">phi_qsp</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="n">phi_qsvt</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">phi_qsvt</span> <span class="o">=</span> <span class="n">phi_qsvt</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi_qsp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">phi_qsvt</span> <span class="o">=</span> <span class="n">phi_qsvt</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi_qsp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">phi_qsvt</span> <span class="o">=</span> <span class="n">phi_qsvt</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">phi_qsp</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">phi_qsvt</span><span class="p">,</span> <span class="n">alpha</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

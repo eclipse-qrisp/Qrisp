@@ -1,0 +1,787 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Digitized Counterdiabatic Quantum Optimization &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Algorithms/dcqo/DCQO';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Algorithms/dcqo/DCQO.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="qrisp.cold.DCQOProblem.run" href="generated/qrisp.cold.DCQOProblem.run.html" />
+    <link rel="prev" title="QIRO MaxSetPacking" href="../qiro/implementations/QIROMaxSetPack.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Algorithms</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../Grover.html">Grover’s Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quantum_counting.html">Quantum Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../QMCI.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Shor.html">Shor’s Algorithm</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../qaoa/QAOA.html">Quantum Approximate Optimization Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../qiro/QIRO.html">Quantum Informed Recursive Optimization</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Digitized Counterdiabatic Quantum Optimization</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../QuantumBacktrackingTree.html">Quantum Backtracking</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../vqe/VQE.html">Variational Quantum Eigensolver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../QITE.html">Quantum Imaginary-Time Evolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Lanczos.html">Lanczos Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../CKS.html">CKS Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../GQSP.html">Generalized Quantum Signal Processing (GQSP)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Algorithms</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Digitized Counterdiabatic Quantum Optimization</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="digitized-counterdiabatic-quantum-optimization">
+<span id="dcqo"></span><h1>Digitized Counterdiabatic Quantum Optimization<a class="headerlink" href="#digitized-counterdiabatic-quantum-optimization" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="qrisp.cold.DCQOProblem">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DCQOProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_prob</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A_lam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agp_coeffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lam_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_control</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qarg_prep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/algorithms/cold/dcqo_problem.html#DCQOProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.cold.DCQOProblem" title="Link to this definition">#</a></dt>
+<dd><p>General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
+This class is used to solve <a href="https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030" target="_blank">DCQO</a>
+problems with the algorithms <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">COLD</a>
+(counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
+To run the COLD algorithm on the problem, you need to specify the control Hamiltonian
+<code class="docutils literal notranslate"><span class="pre">H_control</span></code> and the inverse scheduling function <code class="docutils literal notranslate"><span class="pre">g_func</span></code>. These are not needed for
+the LCD algorithm. To learn more about counterdiabatic driving, make sure to check out the <a class="reference external" href="https://www.qrisp.eu/general/tutorial/CD.html" rel="noreferrer" target="_blank">tutorial</a>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>Q</strong><span class="classifier">np.array</span></dt><dd><p>The QUBO matrix.</p>
+</dd>
+<dt><strong>H_init</strong><span class="classifier"><a class="reference internal" href="../../Operators/QubitOperator.html#qubitoperator"><span class="std std-ref">QubitOperator</span></a></span></dt><dd><p>Hamiltonian, the system is at the time t=0.</p>
+</dd>
+<dt><strong>H_prob</strong><span class="classifier"><a class="reference internal" href="../../Operators/QubitOperator.html#qubitoperator"><span class="std std-ref">QubitOperator</span></a></span></dt><dd><p>Hamiltonian, the system evolves to for t=T.</p>
+</dd>
+<dt><strong>A_lam</strong><span class="classifier"><a class="reference internal" href="../../Operators/QubitOperator.html#qubitoperator"><span class="std std-ref">QubitOperator</span></a></span></dt><dd><p>Operator holding an appoximation for the adiabatic gauge potential (AGP).</p>
+</dd>
+<dt><strong>agp_coeffs</strong><span class="classifier">callable</span></dt><dd><p>The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
+they must depend on the optimization pulses in <code class="docutils literal notranslate"><span class="pre">H_control</span></code>.</p>
+</dd>
+<dt><strong>lam_func</strong><span class="classifier">callable</span></dt><dd><p>A function <span class="math notranslate nohighlight">\(\lambda(t, T)\)</span> mapping <span class="math notranslate nohighlight">\(t \in [0, T]\)</span> to <span class="math notranslate nohighlight">\(\lambda \in [0, 1]\)</span>. This function needs to return
+a <a class="reference external" href="https://docs.sympy.org/" rel="noreferrer" target="_blank">sympy</a> expression with <span class="math notranslate nohighlight">\(t\)</span> and <span class="math notranslate nohighlight">\(T\)</span> as <a class="reference external" href="https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol" rel="noreferrer" target="_blank">sympy.Symbols</a>.</p>
+</dd>
+<dt><strong>H_control</strong><span class="classifier"><a class="reference internal" href="../../Operators/QubitOperator.html#qubitoperator"><span class="std std-ref">QubitOperator</span></a>, optional</span></dt><dd><p>Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.</p>
+</dd>
+<dt><strong>qarg_prep</strong><span class="classifier">callable, optional</span></dt><dd><p>A function receiving a <a class="reference internal" href="../../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> for preparing the inital state.
+By default, the groundstate of the x-operator <span class="math notranslate nohighlight">\(\ket{-}^n\)</span> is prepared.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>For a quick demonstration we build a DCQO problem instance for a 4x4 QUBO. We choose a first order AGP ansatz with uniform coefficients and solve it with LCD.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.qubit</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">DCQOProblem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span>  <span class="mf">0.40</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">],</span>
+    <span class="p">[</span> <span class="mf">0.40</span><span class="p">,</span>  <span class="mf">0.30</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+    <span class="p">[</span> <span class="mf">0.0</span><span class="p">,</span>   <span class="mf">0.20</span><span class="p">,</span><span class="o">-</span><span class="mf">1.1</span><span class="p">,</span>  <span class="mf">0.30</span><span class="p">],</span>
+    <span class="p">[</span> <span class="mf">0.0</span><span class="p">,</span>   <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.30</span><span class="p">,</span><span class="o">-</span><span class="mf">0.80</span><span class="p">]</span>
+<span class="p">])</span>
+<span class="n">N</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Define QUBO problem hamiltonian</span>
+<span class="n">h</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">J</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Q</span>
+
+<span class="n">H_init</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+<span class="n">H_prob</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+        <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]))</span>
+
+<span class="c1"># Create AGP</span>
+<span class="n">A_lam</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span> <span class="c1"># uniform</span>
+
+<span class="c1"># Function for uniform AGP coefficients</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">h</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span>
+    <span class="n">nom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">B</span><span class="o">*</span><span class="n">h</span><span class="p">)</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">N</span> <span class="o">*</span> <span class="p">(</span><span class="n">B</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">alph</span> <span class="o">=</span> <span class="n">nom</span><span class="o">/</span><span class="n">denom</span>
+    <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">alph</span><span class="p">]</span><span class="o">*</span><span class="n">N</span>
+    <span class="k">return</span> <span class="n">alph</span>
+
+<span class="c1"># Simple scheduling function 0 -&gt; 1</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lam</span><span class="p">():</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;t T&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">lam_expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">/</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">lam_expr</span>
+
+<span class="c1"># Create problem instance</span>
+<span class="n">lcd_problem</span> <span class="o">=</span> <span class="n">DCQOProblem</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">H_init</span><span class="p">,</span> <span class="n">H_prob</span><span class="p">,</span> <span class="n">A_lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lam</span><span class="p">)</span>
+
+<span class="c1"># Run problem with LCD algorithm</span>
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">lcd_problem</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">N_steps</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;LCD&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;1011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.40630593694063055</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">)],</span> <span class="s1">&#39;1111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.16247837521624783</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9999999999999999</span><span class="p">)],</span> <span class="s1">&#39;0111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.13156868431315685</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6000000000000001</span><span class="p">)],</span> <span class="s1">&#39;1000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.06881931180688193</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">)],</span> <span class="s1">&#39;0011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.05949940500594993</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)],</span> <span class="s1">&#39;1010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.04499955000449995</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.3</span><span class="p">)],</span> <span class="s1">&#39;1101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.04084959150408495</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)],</span> <span class="s1">&#39;0110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.019769802301976978</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.40000000000000013</span><span class="p">)],</span> <span class="s1">&#39;1100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.01815981840181598</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.09999999999999998</span><span class="p">)],</span> <span class="s1">&#39;0100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.013679863201367985</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)],</span> <span class="s1">&#39;0001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.010399896001039988</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.8</span><span class="p">)],</span> <span class="s1">&#39;0000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.007659923400765992</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)],</span> <span class="s1">&#39;1110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.006329936700632993</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7999999999999999</span><span class="p">)],</span> <span class="s1">&#39;0101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0052899471005289946</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)],</span> <span class="s1">&#39;1001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0024299757002429973</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;0010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0017599824001759982</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.1</span><span class="p">)]}</span>
+</pre></div>
+</div>
+<p>We get a dictionary where the key is the quantum state and the values are lists of [probability, cost].
+So our most likely result is ‘1011’ with probabilty 0.4 and the QUBO cost <span class="math notranslate nohighlight">\(x^T Q x = -2.5\)</span>.</p>
+</dd></dl>
+
+</section>
+<section id="methods">
+<h1>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h1>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.run.html#qrisp.cold.DCQOProblem.run" title="qrisp.cold.DCQOProblem.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.run</span></code></a>(qarg, N_steps, T, method[, ...])</p></td>
+<td><p>Run the specific DCQO problem instance with given quantum arguments, number of timesteps, evolution time and method.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.apply_lcd_hamiltonian.html#qrisp.cold.DCQOProblem.apply_lcd_hamiltonian" title="qrisp.cold.DCQOProblem.apply_lcd_hamiltonian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.apply_lcd_hamiltonian</span></code></a>(qarg, ...)</p></td>
+<td><p>Simulate the local counterdiabatic driving (LCD) Hamiltonian on a quantum argument via trotterization.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.apply_cold_hamiltonian.html#qrisp.cold.DCQOProblem.apply_cold_hamiltonian" title="qrisp.cold.DCQOProblem.apply_cold_hamiltonian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.apply_cold_hamiltonian</span></code></a>(qarg, ...)</p></td>
+<td><p>Simulate counterdiabatic optimized local driving (COLD) Hamiltonian on a quantumvariable via trotterization.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.compile_U_cold.html#qrisp.cold.DCQOProblem.compile_U_cold" title="qrisp.cold.DCQOProblem.compile_U_cold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.compile_U_cold</span></code></a>(qarg, N_opt, ...)</p></td>
+<td><p>Compiles the circuit that is created by the <a class="reference internal" href="generated/qrisp.cold.DCQOProblem.apply_cold_hamiltonian.html#qrisp.cold.DCQOProblem.apply_cold_hamiltonian" title="qrisp.cold.DCQOProblem.apply_cold_hamiltonian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_cold_hamiltonian</span></code></a> method.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.optimization_routine.html#qrisp.cold.DCQOProblem.optimization_routine" title="qrisp.cold.DCQOProblem.optimization_routine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.optimization_routine</span></code></a>(qarg, ...)</p></td>
+<td><p>Subroutine for the optimization method used in COLD.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.cold.DCQOProblem.QUBO_cost.html#qrisp.cold.DCQOProblem.QUBO_cost" title="qrisp.cold.DCQOProblem.QUBO_cost"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DCQOProblem.QUBO_cost</span></code></a>(res)</p></td>
+<td><p>Returns the cost y = x^T Q x for a given binary array x.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="quick-run">
+<h1>Quick run<a class="headerlink" href="#quick-run" title="Link to this heading">#</a></h1>
+<p>Quickly run LCD/COLD with our predefined operators and functions in <code class="docutils literal notranslate"><span class="pre">QUBO.py</span></code>:</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.cold.solve_QUBO">
+<span class="sig-name descname"><span class="pre">solve_QUBO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/algorithms/cold/problems/QUBO.html#solve_QUBO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.cold.solve_QUBO" title="Link to this definition">#</a></dt>
+<dd><p>Solves a QUBO Matrix using counterdiabatic driving. This method uses the pre-defined COLD/LCD operators
+(hamiltonian, scheduling function, AGP parameters) as described in the tutorial.
+To define your own operators, create a DCQO instance and use the <code class="docutils literal notranslate"><span class="pre">run</span></code> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>Q</strong><span class="classifier">np.array</span></dt><dd><p>QUBO Matrix to solve.</p>
+</dd>
+<dt><strong>problem_args</strong><span class="classifier">dict</span></dt><dd><p>Holds arguments for DCQO problem creation (<code class="docutils literal notranslate"><span class="pre">method</span></code>: str (“COLD”/”LCD”), <code class="docutils literal notranslate"><span class="pre">uniform</span></code>: bool).</p>
+</dd>
+<dt><strong>run_args</strong><span class="classifier">dict</span></dt><dd><p>Holds arguments for running the DCQO instance (<code class="docutils literal notranslate"><span class="pre">N_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">T</span></code>, <code class="docutils literal notranslate"><span class="pre">N_opt</span></code>, <code class="docutils literal notranslate"><span class="pre">CRAB</span></code>, <code class="docutils literal notranslate"><span class="pre">objective</span></code>,``precision``, <code class="docutils literal notranslate"><span class="pre">backend</span></code>, <code class="docutils literal notranslate"><span class="pre">exp_value_backend</span></code>).
+All optionas are also listed here: <a class="reference internal" href="generated/qrisp.cold.DCQOProblem.run.html#qrisp.cold.DCQOProblem.run" title="qrisp.cold.DCQOProblem.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DCQOProblem.run()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>result</strong><span class="classifier">dict</span></dt><dd><p>The dictionary holding the QUBO vector results, with their probabilitites and cost.
+They are ordered from most to least likely and the dictionary entries are {“state”: [prob, cost]}.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_QUBO</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">]])</span>
+
+<span class="n">problem_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;COLD&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+<span class="n">run_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;N_steps&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;N_opt&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;CRAB&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="s2">&quot;agp_coeff_magnitude&quot;</span><span class="p">,</span> <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">solve_QUBO</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">problem_args</span><span class="p">,</span> <span class="n">run_args</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;101101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2749327493274933</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">3.4</span><span class="p">)],</span> <span class="s1">&#39;011101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.14747147471474714</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">)],</span> <span class="s1">&#39;111101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.10500105001050011</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.1</span><span class="p">)],</span> <span class="s1">&#39;101100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0888608886088861</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">)],</span> <span class="s1">&#39;011100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.04720047200472005</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.6</span><span class="p">)],</span> <span class="s1">&#39;101110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.043830438304383046</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.1</span><span class="p">)],</span> <span class="s1">&#39;111100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.035760357603576036</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.7000000000000002</span><span class="p">)],</span> <span class="s1">&#39;011110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.024410244102441025</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.7</span><span class="p">)],</span> <span class="s1">&#39;100101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.02137021370213702</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;110101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.016960169601696017</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.7000000000000002</span><span class="p">)],</span> <span class="s1">&#39;111110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.01686016860168602</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.8</span><span class="p">)],</span> <span class="s1">&#39;111001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.016390163901639016</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="p">)],</span> <span class="s1">&#39;001101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.014560145601456015</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">3.1</span><span class="p">)],</span> <span class="s1">&#39;010101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.014370143701437016</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.7999999999999998</span><span class="p">)],</span> <span class="s1">&#39;101011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.011320113201132012</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)],</span> <span class="s1">&#39;111000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.008620086200862008</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)],</span> <span class="s1">&#39;100001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.007290072900729008</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)],</span> <span class="s1">&#39;000101&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.006580065800658007</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)],</span> <span class="s1">&#39;110100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.006420064200642007</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3000000000000003</span><span class="p">)],</span> <span class="s1">&#39;011011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.006090060900609006</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">)],</span> <span class="s1">&#39;101000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.005780057800578007</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)],</span> <span class="s1">&#39;100100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0057700577005770064</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.6</span><span class="p">)],</span> <span class="s1">&#39;101001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.005720057200572007</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.7000000000000002</span><span class="p">)],</span> <span class="s1">&#39;101111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.005310053100531005</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)],</span> <span class="s1">&#39;100110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.005230052300523006</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7</span><span class="p">)],</span> <span class="s1">&#39;010100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.004050040500405004</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.4</span><span class="p">)],</span> <span class="s1">&#39;001100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.004040040400404004</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.7</span><span class="p">)],</span> <span class="s1">&#39;011000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.003870038700387004</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)],</span> <span class="s1">&#39;011111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0032400324003240034</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.1</span><span class="p">)],</span> <span class="s1">&#39;100000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0031800318003180035</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.1</span><span class="p">)],</span> <span class="s1">&#39;110010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0029900299002990033</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.1</span><span class="p">)],</span> <span class="s1">&#39;010001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.002930029300293003</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)],</span> <span class="s1">&#39;011001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.002850028500285003</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)],</span> <span class="s1">&#39;110011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.002770027700277003</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5000000000000001</span><span class="p">)],</span> <span class="s1">&#39;001110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.002650026500265003</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.8</span><span class="p">)],</span> <span class="s1">&#39;010110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0025900259002590025</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)],</span> <span class="s1">&#39;110001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0024400244002440027</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2000000000000002</span><span class="p">)],</span> <span class="s1">&#39;000100&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0022800228002280024</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)],</span> <span class="s1">&#39;100011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.002020020200202002</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.8000000000000002</span><span class="p">)],</span> <span class="s1">&#39;111011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.001770017700177002</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)],</span> <span class="s1">&#39;010000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0015300153001530014</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)],</span> <span class="s1">&#39;101010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0014900149001490016</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.6</span><span class="p">)],</span> <span class="s1">&#39;111111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0014200142001420015</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.20000000000000007</span><span class="p">)],</span> <span class="s1">&#39;000010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0010500105001050011</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">)],</span> <span class="s1">&#39;110111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0008300083000830009</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.19999999999999984</span><span class="p">)],</span> <span class="s1">&#39;010011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0008200082000820009</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">)],</span> <span class="s1">&#39;001011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0007900079000790008</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7000000000000001</span><span class="p">)],</span> <span class="s1">&#39;100111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0007200072000720008</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.09999999999999998</span><span class="p">)],</span> <span class="s1">&#39;001000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0006300063000630007</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)],</span> <span class="s1">&#39;100010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0006000060000600005</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.4000000000000001</span><span class="p">)],</span> <span class="s1">&#39;001111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0005800058000580006</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2000000000000002</span><span class="p">)],</span> <span class="s1">&#39;010010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0005700057000570006</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">)],</span> <span class="s1">&#39;001001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0005300053000530005</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.4</span><span class="p">)],</span> <span class="s1">&#39;011010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0005200052000520005</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">)],</span> <span class="s1">&#39;000011&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0005000050000500006</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)],</span> <span class="s1">&#39;111010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0004300043000430004</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">)],</span> <span class="s1">&#39;110000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.00026000260002600025</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.8000000000000002</span><span class="p">)],</span> <span class="s1">&#39;000110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.00026000260002600025</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.39999999999999997</span><span class="p">)],</span> <span class="s1">&#39;010111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.00021000210002100023</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.09999999999999998</span><span class="p">)],</span> <span class="s1">&#39;000001&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0001700017000170002</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="p">)],</span> <span class="s1">&#39;001010&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.00012000120001200013</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)],</span> <span class="s1">&#39;000000&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">9.00009000090001e-05</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)],</span> <span class="s1">&#39;000111&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">8.000080000800009e-05</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)],</span> <span class="s1">&#39;110110&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2.0000200002000023e-05</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4000000000000002</span><span class="p">)]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Algorithms/dcqo"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Digitized Counterdiabatic Quantum Optimization</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.cold.DCQOProblem"><code class="docutils literal notranslate"><span class="pre">DCQOProblem</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-run">Quick run</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.cold.solve_QUBO"><code class="docutils literal notranslate"><span class="pre">solve_QUBO()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

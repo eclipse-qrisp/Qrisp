@@ -1,0 +1,813 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.alg_primitives.iterative_qae &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/alg_primitives/iterative_qae';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/alg_primitives/iterative_qae.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.alg_primitives.iterative_qae</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.alg_primitives.iterative_qae</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2024 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.lax</span><span class="w"> </span><span class="kn">import</span> <span class="n">while_loop</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.qae</span><span class="w"> </span><span class="kn">import</span> <span class="n">amplitude_amplification</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span><span class="p">,</span> <span class="n">expectation_value</span>
+
+
+<div class="viewcode-block" id="IQAE">
+<a class="viewcode-back" href="../../../reference/Primitives/IQAE.html#qrisp.IQAE">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">IQAE</span><span class="p">(</span><span class="n">qargs</span><span class="p">,</span> <span class="n">state_function</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE &lt;QAE&gt;` with a fraction of the quantum resources of the well-known `QAE algorithm &lt;https://arxiv.org/abs/quant-ph/0005055&gt;`_.</span>
+<span class="sd">    See `Accelerated Quantum Amplitude Estimation without QFT &lt;https://arxiv.org/abs/2407.16795&gt;`_.</span>
+
+<span class="sd">    The problem of iterative quantum amplitude estimation is described as follows:</span>
+
+<span class="sd">    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}\ket{\text{False}}`.</span>
+<span class="sd">    * Write :math:`\ket{\Psi}=\sqrt{a}\ket{\Psi_1}\ket{\text{True}}+\sqrt{1-a}\ket{\Psi_0}\ket{\text{False}}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.</span>
+<span class="sd">    * Find an estimate for $a$, the probability that a measurement of $\ket{\Psi}$ yields a good state.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qargs : list[:ref:`QuantumVariable`] or callable</span>
+<span class="sd">        A list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed,</span>
+<span class="sd">        or a function preparing a list of QuantumVariables.</span>
+<span class="sd">        The last variable in the list must be of type :ref:`QuantumBool`.</span>
+<span class="sd">    state_function : callable</span>
+<span class="sd">        A Python function preparing the state :math:`\ket{\Psi}`.</span>
+<span class="sd">        This function will receive the variables returned by ``init_function`` as arguments.</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        Accuracy $\epsilon&gt;0$ of the algorithm.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Confidence level $\alpha\in (0,1)$ of the algorithm.</span>
+<span class="sd">    mes_kwargs : dict, optional</span>
+<span class="sd">        The keyword arguments for the measurement function. Default is an empty dictionary.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    a : float</span>
+<span class="sd">        An estimate $\hat{a}$ of $a$ such that</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbb P\{|\hat{a}-a|&lt;\epsilon\}\geq 1-\alpha</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We show the same **Numerical integration** example which can also be found in the :ref:`QAE documentation &lt;QAE&gt;`.</span>
+
+<span class="sd">    We wish to evaluate</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        A=\int_0^1f(x)\mathrm dx.</span>
+
+<span class="sd">    For this, we set up the corresponding ``state_function`` acting on the variables in ``input_list``:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        n = 6</span>
+<span class="sd">        inp = QuantumFloat(n,-n)</span>
+<span class="sd">        tar = QuantumBool()</span>
+<span class="sd">        input_list = [inp, tar]</span>
+
+<span class="sd">    For example, if $f(x)=\sin^2(x)$, the ``state_function`` can be implemented as follows:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def state_function(inp, tar):</span>
+<span class="sd">            h(inp)</span>
+
+<span class="sd">            N = 2**inp.size</span>
+<span class="sd">            for k in range(inp.size):</span>
+<span class="sd">                with control(inp[k]):</span>
+<span class="sd">                    ry(2**(k+1)/N,tar)</span>
+
+<span class="sd">    Finally, we apply IQAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)</span>
+
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    0.26782038552705856</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">qargs</span><span class="p">):</span>
+        <span class="n">init_function</span> <span class="o">=</span> <span class="n">qargs</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">templates</span> <span class="o">=</span> <span class="p">[</span><span class="n">qv</span><span class="o">.</span><span class="n">template</span><span class="p">()</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qargs</span><span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">init_function</span><span class="p">():</span>
+            <span class="n">qargs_</span> <span class="o">=</span> <span class="p">[</span><span class="n">temp</span><span class="o">.</span><span class="n">construct</span><span class="p">()</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">templates</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">qargs_</span>
+
+    <span class="c1"># The oracle tagging the good states</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">oracle_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">tar</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">z</span><span class="p">(</span><span class="n">tar</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+    <span class="n">E</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">14</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">6</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">E</span><span class="p">))</span>
+
+    <span class="n">C</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">F</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">break_cond</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">K_i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">m_i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">theta_b</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">theta_sh</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">L_arr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
+    <span class="n">m_arr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cond_fun</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">return</span> <span class="n">break_cond</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">body_fun</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span> <span class="o">=</span> <span class="n">state</span>
+
+        <span class="n">alp_i</span> <span class="o">=</span> <span class="n">C</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">K_i</span>
+        <span class="n">N_i</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">alp_i</span><span class="p">)))</span>
+
+        <span class="c1"># Perform quantum step</span>
+        <span class="n">A_i</span> <span class="o">=</span> <span class="n">quantum_step</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">((</span><span class="n">K_i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">N_i</span><span class="p">,</span>
+            <span class="n">init_function</span><span class="p">,</span>
+            <span class="n">state_function</span><span class="p">,</span>
+            <span class="n">oracle_function</span><span class="p">,</span>
+            <span class="n">mes_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Compute new thetas</span>
+        <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span> <span class="o">=</span> <span class="n">compute_thetas</span><span class="p">(</span><span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">A_i</span><span class="p">,</span> <span class="n">E</span><span class="p">)</span>
+
+        <span class="c1"># Compute new L_i</span>
+        <span class="n">L_new</span><span class="p">,</span> <span class="n">m_new</span> <span class="o">=</span> <span class="n">compute_Li</span><span class="p">(</span><span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span><span class="p">)</span>
+        <span class="n">m_i</span> <span class="o">=</span> <span class="n">m_new</span>
+        <span class="n">K_i</span> <span class="o">=</span> <span class="n">L_new</span> <span class="o">*</span> <span class="n">K_i</span>
+
+        <span class="n">break_cond</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">theta_b</span> <span class="o">-</span> <span class="n">theta_sh</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span> <span class="o">=</span> <span class="n">while_loop</span><span class="p">(</span><span class="n">cond_fun</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">cond_fun</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">body_fun</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">break_cond</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span> <span class="o">=</span> <span class="n">state</span>
+
+    <span class="n">final_res</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="n">theta_b</span> <span class="o">+</span> <span class="n">theta_sh</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">final_res</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">quantum_step</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">init_function</span><span class="p">,</span> <span class="n">state_function</span><span class="p">,</span> <span class="n">oracle_function</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs the quantum step, i.e., Quantum Amplitude Amplification,</span>
+<span class="sd">    in accordance to `Accelerated Quantum Amplitude Estimation without QFT &lt;https://arxiv.org/abs/2407.16795&gt;`_</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int</span>
+<span class="sd">        The amount of amplification steps, i.e., the power of :math:`\mathcal{Q}` in amplitude amplification.</span>
+<span class="sd">    N : int</span>
+<span class="sd">        The amount of shots, i.e., the amount of times the last qubit is measured after the amplitude amplification steps.</span>
+<span class="sd">    init_function : callable</span>
+<span class="sd">        A Python function that returns a list of QuantumVariables representing the state on which the quantum amplitude estimation is performed.</span>
+<span class="sd">        The last variable in the list must be of type :ref:`QuantumBool`.</span>
+<span class="sd">    state_function : callable</span>
+<span class="sd">        A Python function preparing the state :math:`\ket{\Psi}`.</span>
+<span class="sd">        This function will receive the variables in the list returnded by ``init_function`` as arguments.</span>
+<span class="sd">    oracle_function : callable</span>
+<span class="sd">        A Python function tagging the good state :math:`\ket{\Psi_1}`.</span>
+<span class="sd">        This function will receive the variables in the list ``args`` as arguments in the</span>
+<span class="sd">        course of this algorithm.</span>
+<span class="sd">    mes_kwargs : dict, optional</span>
+<span class="sd">        The keyword arguments for the measurement function. Default is an empty dictionary.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">state_prep</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+        <span class="n">qargs</span> <span class="o">=</span> <span class="n">init_function</span><span class="p">()</span>
+        <span class="n">state_function</span><span class="p">(</span><span class="o">*</span><span class="n">qargs</span><span class="p">)</span>
+        <span class="n">amplitude_amplification</span><span class="p">(</span><span class="n">qargs</span><span class="p">,</span> <span class="n">state_function</span><span class="p">,</span> <span class="n">oracle_function</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">qargs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="n">a_i</span> <span class="o">=</span> <span class="n">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">N</span><span class="p">)(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mes_kwargs</span><span class="p">[</span><span class="s2">&quot;shots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">res_dict</span> <span class="o">=</span> <span class="n">state_prep</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="o">**</span><span class="n">mes_kwargs</span><span class="p">)</span>
+        <span class="n">a_i</span> <span class="o">=</span> <span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">a_i</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_thetas</span><span class="p">(</span><span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">A_i</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Helper function to compute the angles for the next iteration.</span>
+<span class="sd">    See `the original paper &lt;https://arxiv.org/abs/2407.16795&gt;`_ , Algorithm 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m_i : int</span>
+<span class="sd">        Used for the computation of the interval of allowed angles.</span>
+<span class="sd">    K_i : int</span>
+<span class="sd">        Maximal amount of amplitude amplification steps for the next iteration.</span>
+<span class="sd">    A_i : float</span>
+<span class="sd">        Share of ``1``-measurements in amplitude amplification steps.</span>
+<span class="sd">    E : float</span>
+<span class="sd">        :math:`\epsilon` limit.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+    <span class="n">b_max</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">A_i</span> <span class="o">-</span> <span class="n">E</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">sh_min</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">A_i</span> <span class="o">+</span> <span class="n">E</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+
+    <span class="n">theta_b</span> <span class="o">=</span> <span class="p">((</span><span class="n">m_i</span> <span class="o">+</span> <span class="n">m_i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">m_i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b_max</span><span class="p">)))</span> <span class="o">/</span> <span class="n">K_i</span>
+    <span class="n">theta_sh</span> <span class="o">=</span> <span class="p">((</span><span class="n">m_i</span> <span class="o">+</span> <span class="n">m_i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">m_i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sh_min</span><span class="p">)))</span> <span class="o">/</span> <span class="n">K_i</span>
+
+    <span class="c1"># assert np.round( np.pow( np.sin(K_i * theta_b),2) , 8 )  == np.round(b_max, 8)</span>
+    <span class="c1"># assert np.round( np.pow( np.sin(K_i * theta_sh),2), 8 )  == np.round(sh_min, 8)</span>
+
+    <span class="k">return</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_Li</span><span class="p">(</span><span class="n">L_arr</span><span class="p">,</span> <span class="n">m_arr</span><span class="p">,</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">K_i</span><span class="p">,</span> <span class="n">theta_b</span><span class="p">,</span> <span class="n">theta_sh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to compute further values for the next iteration.</span>
+<span class="sd">    See `the original paper &lt;https://arxiv.org/abs/2407.16795&gt;`_ , Algorithm 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m_i : int</span>
+<span class="sd">        Used for the computation of the interval of allowed angles.</span>
+<span class="sd">    K_i : int</span>
+<span class="sd">        Maximal amount of amplitude amplification steps for the next iteration.</span>
+<span class="sd">    theta_b : float</span>
+<span class="sd">        Lower bound for angle from last iteration.</span>
+<span class="sd">    theta_b : float</span>
+<span class="sd">        Upper bound for angle from last iteration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+    <span class="n">first_arr</span> <span class="o">=</span> <span class="n">L_arr</span> <span class="o">*</span> <span class="n">K_i</span> <span class="o">*</span> <span class="n">theta_b</span>
+    <span class="n">second_arr</span> <span class="o">=</span> <span class="n">L_arr</span> <span class="o">*</span> <span class="n">K_i</span> <span class="o">*</span> <span class="n">theta_sh</span>
+
+    <span class="n">lower_arr</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_arr</span> <span class="o">*</span> <span class="n">m_i</span> <span class="o">+</span> <span class="n">m_arr</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">upper_arr</span> <span class="o">=</span> <span class="n">lower_arr</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">first_arr</span> <span class="o">&gt;=</span> <span class="n">lower_arr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">first_arr</span> <span class="o">&lt;=</span> <span class="n">upper_arr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">second_arr</span> <span class="o">&gt;=</span> <span class="n">lower_arr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">second_arr</span> <span class="o">&lt;=</span> <span class="n">upper_arr</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">L_new</span> <span class="o">=</span> <span class="n">L_arr</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">m_new</span> <span class="o">=</span> <span class="n">L_new</span> <span class="o">*</span> <span class="n">m_i</span> <span class="o">+</span> <span class="n">m_arr</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">L_new</span><span class="p">,</span> <span class="n">m_new</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

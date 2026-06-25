@@ -1,0 +1,1488 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/BE_tutorial/BE_vol2';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/BE_tutorial/BE_vol2.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Eigenstate filtering using quantum signal processing" href="../GQSP_filtering.html" />
+    <link rel="prev" title="BlockEncoding class 101: Block encoding, LCU, resource estimation" href="BE_vol1.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Quantum Linear Algebra with Qrisp</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="BE_vol1.html">BlockEncoding class 101: Block encoding, LCU, resource estimation</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Quantum Linear Algebra with Qrisp</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="BlockEncoding-class-201:-Qubitization,-Chebyshev-polynomials,-QSP">
+<h1>BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP<a class="headerlink" href="#BlockEncoding-class-201:-Qubitization,-Chebyshev-polynomials,-QSP" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>Welcome back to the tutorial on Quantum Linear Algebra. In the previous tutorial, we learned how to “embed” a non-unitary matrix <span class="math notranslate nohighlight">\(A\)</span> in the top left block of a larger unitary <span class="math notranslate nohighlight">\(U\)</span> using the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a>. But just having <span class="math notranslate nohighlight">\(A\)</span> block encoded usually isn’t enough.</p>
+<p>Often, we want to compute functions of that matrix; like <span class="math notranslate nohighlight">\(e^{-iAt}\)</span> for simulating dynamics (Hamiltonians), or <span class="math notranslate nohighlight">\(A^{-1}\)</span> for solving linear systems, or even applying step functions or Gaussian functions as a filter for ground-state preparation.</p>
+<p>Classically, to evaluate a complex function <span class="math notranslate nohighlight">\(f(x)\)</span>, we often approximate <span class="math notranslate nohighlight">\(f\)</span> using a polynomial, such as a Taylor series or Chebyshev expansion over a specific domain. In quantum computing, we can perform a similar functional transformation using <a class="reference external" href="https://dspace.mit.edu/handle/1721.1/115025" rel="noreferrer" target="_blank">Quantum Signal Processing (QSP)</a>, which allows us to apply polynomial transformations to the eigenvalues of a quantum operator. We will cover QSP toward the end of this tutorial. To get there,
+we first need to learn how to use the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a> to transform an operator into a “Quantum Walk” via Qubitization.</p>
+<p>After learning about Qubitization, this tutorial will also explain how to block-encode <a class="reference external" href="https://en.wikipedia.org/wiki/Chebyshev_polynomials" rel="noreferrer" target="_blank">Chebyshev polynomials</a> and why they are useful. Namely, we’ll cover the <a class="reference external" href="https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/" rel="noreferrer" target="_blank">quantum Lanczos method</a>, a technique that uses the Krylov subspace (built from Chebyshev polynomials) to estimate the ground state energy of a Hamiltonian without needing complex time-evolution. We will also cover the
+<a class="reference external" href="https://arxiv.org/pdf/1511.02306" rel="noreferrer" target="_blank">Childs-Kothari-Somma (CKS) algorithm</a>, which is a near-optimal linear system solver that uses block encoded Chebyshev polynomials in another layer of LCU, this time with a neat trick (spoiler alert, it’s unary encoding).</p>
+<p>We will then show how to run the algorithms stemming from <a class="reference external" href="https://arxiv.org/pdf/2308.01501" rel="noreferrer" target="_blank">generalized QSP</a> in Qrisp, and how the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a> makes polynomial transformations, solving linear systems, and Hamiltonian simulation as simple as calling <a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly(coeffs)</span></a>, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv(eps, kappa)</span></a>, and <a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim(t,
+N)</span></a> methods respectively.</p>
+<p>Here’s a summary:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Mathematical Basis</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/qubitization.html"><span class="doc">.qubitization()</span></a></p></td>
+<td><p>Encodes <span class="math notranslate nohighlight">\(A\)</span> into a “walk operator” <span class="math notranslate nohighlight">\(W\)</span></p></td>
+<td><p><a class="reference internal" href="../../../reference/Primitives/reflection.html"><span class="doc">reflection</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/chebyshev.html"><span class="doc">.chebyshev(k)</span></a></p></td>
+<td><p>Computes the <span class="math notranslate nohighlight">\(k\)</span>-th Chebyshev polynomial <span class="math notranslate nohighlight">\(T_k(A)\)</span></p></td>
+<td><p>Iterative application of <span class="math notranslate nohighlight">\(W^k\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly(coeffs)</span></a></p></td>
+<td><p>Applies an arbitrary polynomial transformation <span class="math notranslate nohighlight">\(P(A)\)</span></p></td>
+<td><p><a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">GQSP</a>, <a class="reference external" href="https://arxiv.org/pdf/2312.00723" rel="noreferrer" target="_blank">GQET</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv(eps, kappa)</span></a></p></td>
+<td><p>Solves the <a class="reference external" href="https://arxiv.org/pdf/2411.02522" rel="noreferrer" target="_blank">linear system</a> <span class="math notranslate nohighlight">\(Ax = b\)</span></p></td>
+<td><p><a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">GQSP</a>, <span class="math notranslate nohighlight">\(1/x\)</span> Chebyshev approximation</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim(t, N)</span></a></p></td>
+<td><p>Simulates Hamiltonian evolution <span class="math notranslate nohighlight">\(e^{-iHt}\)</span></p></td>
+<td><p><a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">GQSP</a>, Jacobi-Anger expansion (Bessel functions)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>But first things first. Let’s break down the concept called qubitization.</p>
+<section id="Qubitization">
+<h2>Qubitization<a class="headerlink" href="#Qubitization" title="Link to this heading">#</a></h2>
+<p>If a Block Encoding is a “static snapshot” of a matrix <span class="math notranslate nohighlight">\(A\)</span>, Qubitization is what makes it “move”. Technically, Qubitization is a method to transform an <span class="math notranslate nohighlight">\((\alpha, m, \epsilon)\)</span>-block-encoding of a matrix <span class="math notranslate nohighlight">\(A\)</span> into a special unitary operator <span class="math notranslate nohighlight">\(W\)</span>, often referred to as the “walk operator”. This operator has a nice property: it maps the eigenvalues <span class="math notranslate nohighlight">\(\lambda\)</span> of <span class="math notranslate nohighlight">\(A\)</span> to the eigenvalues <span class="math notranslate nohighlight">\(e^{\pm i \arccos(\lambda/\alpha)}\)</span> in a set of two-dimensional invariant
+subspaces.</p>
+<p>Given a Hermitian matrix <span class="math notranslate nohighlight">\(H\)</span> and its block-encoding <span class="math notranslate nohighlight">\((U, G)\)</span>, where <span class="math notranslate nohighlight">\(G\ket{0} = \ket{G}\)</span>, we use the definition of the reflection operator <span class="math notranslate nohighlight">\(R\)</span> acting on the ancilla space as <span class="math notranslate nohighlight">\(R = (2\ket{G}\bra{G}_a \otimes \mathbb{I}_a)\otimes \mathbb{I}_{s}\)</span> from <a class="reference external" href="https://arxiv.org/pdf/2208.00567" rel="noreferrer" target="_blank">Lemma 1 in Exact and efficient Lanczos method on a quantum computer</a>. To “qubitize” the encoding, we interleave the SELECT operator with this reflection. The Qubitized Walk Operator
+<span class="math notranslate nohighlight">\(W\)</span> is defined as <span class="math notranslate nohighlight">\(W = R\cdot U\)</span>.</p>
+<p>Rigorous analysis (see <a class="reference external" href="https://arxiv.org/pdf/2201.08309" rel="noreferrer" target="_blank">Lin Lin, Chapter 8</a>) shows that if <span class="math notranslate nohighlight">\(\ket{\psi_\lambda}\)</span> is an eigenvector of <span class="math notranslate nohighlight">\(H/\alpha\)</span> with eigenvalue <span class="math notranslate nohighlight">\(\lambda \in [-1, 1]\)</span>, the walk operator <span class="math notranslate nohighlight">\(W\)</span> doesn’t wander through the whole Hilbert space. Instead, it acts on an invariant 2D subspace spanned by the “ideal” state <span class="math notranslate nohighlight">\(\ket{G}\ket{\psi_\lambda}\)</span> and an orthogonal state. Within this subspace, the eigenvalues of <span class="math notranslate nohighlight">\(W\)</span> are
+<span class="math notranslate nohighlight">\(\mu_\pm = \lambda \pm i\sqrt{1-\lambda^2} = e^{\pm i \arccos(\lambda)}\)</span>. Essentially, Qubitization “lifts” the eigenvalues of our matrix onto the unit circle in the complex plane, allowing us to manipulate them using phase rotations.</p>
+<p>This seems like a mouthful, but in order for this tutorial to cater to both developers coming from the classical domain, and researchers in quantum computing, it’s the “necessary evil”. To make it up to you, we’re going to show how in Qrisp, you don’t need to build these reflections manually. But first, some visual aid so that you see that it’s not as complex as it sounds.</p>
+<img alt="Qubitization" src="../../../_images/qubitization.png" />
+<p>In the previous tutorial you’ve already learned how we use the <span class="math notranslate nohighlight">\(\text{SELECT}\)</span> by just calling <a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a>. Well, what if we told you that performing the reflection operation above you can just use the <a class="reference internal" href="../../../reference/Primitives/reflection.html"><span class="doc">reflection</span></a> function? And by combining the two you can easily define the qubitization walk operator? Yup, that’s the cool thing about modular software development approach Qrisp is taking with its
+focus on high-level abstractions. Let’s get to coding!</p>
+<section id="Qubitization-in-Qrisp-as-.qubitization()">
+<h3>Qubitization in Qrisp as <a class="reference internal" href="../../../reference/Block%20Encodings/methods/qubitization.html"><span class="doc">.qubitization()</span></a><a class="headerlink" href="#Qubitization-in-Qrisp-as-.qubitization()" title="Link to this heading">#</a></h3>
+<p>While understanding the internal mechanics of <a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a> and <a class="reference internal" href="../../../reference/Primitives/reflection.html"><span class="doc">reflection</span></a> is valuable for intuition, Qrisp abstracts this complexity away for standard operations. The <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a> features a dedicated method, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/qubitization.html"><span class="doc">.qubitization()</span></a>, which automatically constructs the walk
+operator <span class="math notranslate nohighlight">\(W\)</span> from your input matrix. This method handles the heavy lifting: it identifies the necessary reflection operators <span class="math notranslate nohighlight">\(R\)</span> and interleaves them with the signal oracle (the block-encoding unitary <span class="math notranslate nohighlight">\(U\)</span>). If the original block-encoding unitary <span class="math notranslate nohighlight">\(U\)</span> isn’t Hermitian (i.e., <span class="math notranslate nohighlight">\(U^2 \neq \mathbb{1}\)</span>), Qrisp automatically handles the Hermitian embedding by often requiring one additional ancilla qubit. This is the cost of ensuring the walk operator remains unitary.</p>
+<p>Here is how you can transform a Hamiltonian into its qubitized walk operator in just a few lines:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="c1"># 1. Define a Hamiltonian</span>
+<span class="c1"># We create a simple Hamiltonian H = X_0 Y_1 + 0.5 Z_0 X_1</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># 2. Create the initial Block Encoding</span>
+<span class="c1"># This generates the (U, G) pair discussed above</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+<span class="c1"># 3. Generate the Qubitized Walk Operator</span>
+<span class="c1"># This automates the construction of W = SELECT * R</span>
+<span class="n">BE_walk</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">qubitization</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The resulting object, <code class="docutils literal notranslate"><span class="pre">BE_walk</span></code>, is a new <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> instance representing the walk operator <span class="math notranslate nohighlight">\(W\)</span>. A thing to remember from this example is the fact that when you invoke methods of the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> class like <a class="reference internal" href="../../../reference/Block%20Encodings/methods/qubitization.html"><span class="doc">.qubitization</span></a>, or later <a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly</span></a>
+and <a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim</span></a>, Qrisp qubitizes your BlockEncoding object under the hood, handling the ancilla management and reflection logic for you, abstracting away the need to know how to implement these methods as (trigger warning) circuits.</p>
+<p>Crucially, the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/qubitization.html"><span class="doc">.qubitization()</span></a> operator is also how one encodes the Chebyshev polynomials of the Hamiltonian, as we’ll learn in the next part of the tutorial.</p>
+</section>
+</section>
+<section id="Block-encoding-Chebyshev-polynomials">
+<h2>Block encoding Chebyshev polynomials<a class="headerlink" href="#Block-encoding-Chebyshev-polynomials" title="Link to this heading">#</a></h2>
+<p>One of the most powerful features of Qubitization is its natural relationship with Chebyshev polynomials of the first kind, <span class="math notranslate nohighlight">\(T_k(x)\)</span>, defined as <span class="math notranslate nohighlight">\(T_k(\cos \theta) = \cos(k\theta)\)</span>. If we apply the walk operator <span class="math notranslate nohighlight">\(W\)</span> <span class="math notranslate nohighlight">\(k\)</span>-times, the resulting unitary <span class="math notranslate nohighlight">\(W^k\)</span> contains <span class="math notranslate nohighlight">\(T_k(A/\alpha)\)</span> block encoded in the top-left block:</p>
+<div class="math notranslate nohighlight">
+\[(\bra{G} \otimes \mathbb{I}) W^k (\ket{G} \otimes \mathbb{I}) = T_k(A/\alpha).\]</div>
+<p>This resembles how we defined our typical block encoding business. To refresh your memory, this is how we have defined block encoding in the previous tutorial:</p>
+<div class="math notranslate nohighlight">
+\[(\bra{G} \otimes \mathbb{I}) U (\ket{G} \otimes \mathbb{I}) = A/\alpha.\]</div>
+<p>We just replaced <span class="math notranslate nohighlight">\(U\)</span> with <span class="math notranslate nohighlight">\(W^k\)</span>. I’m still in awe about how this holds true - it cannot be this simple, right?! Well, based on the theory backing it, it is. Awesome!</p>
+<p>You might notice the term <span class="math notranslate nohighlight">\(A/\alpha\)</span> and wonder where this scaling comes from. In any block encoding, we are embedding a non-unitary matrix <span class="math notranslate nohighlight">\(A\)</span> into a larger unitary <span class="math notranslate nohighlight">\(U\)</span>. Since the eigenvalues of a unitary must lie on the unit circle (norm 1), and the spectral norm of our matrix <span class="math notranslate nohighlight">\(A\)</span> might be much larger, we must scale <span class="math notranslate nohighlight">\(A\)</span> down.</p>
+<p>In the LCU framework, if <span class="math notranslate nohighlight">\(A = \sum_i \alpha_i U_i\)</span>, then <span class="math notranslate nohighlight">\(\alpha = \sum_i |\alpha_i|\)</span>. This <span class="math notranslate nohighlight">\(\alpha\)</span> (often called the “subnormalization factor”) ensures that the operator <span class="math notranslate nohighlight">\(\|A/\alpha\| \leq 1\)</span>, making it mathematically possible to “fit” inside a quantum circuit.</p>
+<p>“But what’s so special about Chebyshev polynomials?”, you might be wondering. As noted in Lin Lin’s lecture notes, Chebyshev polynomials are “optimal” in two senses:</p>
+<ul class="simple">
+<li><p>Iterative Efficiency: Because <span class="math notranslate nohighlight">\(W\)</span> is a single unitary, applying <span class="math notranslate nohighlight">\(W^k\)</span> requires only <span class="math notranslate nohighlight">\(k\)</span> queries to the block encoding. This is much cheaper than the <span class="math notranslate nohighlight">\(O(2^n)\)</span> terms often required by naive Taylor series expansions.</p></li>
+<li><p>Approximation Theory: According to the <a class="reference external" href="https://en.wikipedia.org/wiki/Equioscillation_theorem" rel="noreferrer" target="_blank">Chebyshev Equioscillation Theorem</a>, <span class="math notranslate nohighlight">\(T_k(x)\)</span> provides the best uniform approximation to a function over the interval <span class="math notranslate nohighlight">\([-1, 1]\)</span>. This ensures that our quantum algorithm achieves the desired precision <span class="math notranslate nohighlight">\(\epsilon\)</span> with the minimum possible quantum resources.</p></li>
+</ul>
+<p>We think that, again, some visual aid is needed. By applying the walk operator <span class="math notranslate nohighlight">\(k\)</span> times, we block encode the <span class="math notranslate nohighlight">\(k\)</span>-th Chebyshev polynomial of the first kind <span class="math notranslate nohighlight">\(T_k\)</span>. If you apply <span class="math notranslate nohighlight">\(W^k=(RU)^k\)</span> <span class="math notranslate nohighlight">\(k\)</span> times, you get <span class="math notranslate nohighlight">\(T_k(H)\)</span> block encoded. Do it once, <span class="math notranslate nohighlight">\(k=1\)</span>, you get the top left figure. Do it twice (<span class="math notranslate nohighlight">\(k=2\)</span>), you block-encode <span class="math notranslate nohighlight">\(T_2\)</span> (top right figure). Do it <span class="math notranslate nohighlight">\(k=5\)</span> times… yup, you guessed it (bottom figure):</p>
+<img alt="Chebyshev" src="../../../_images/cheb_poly.png" />
+<p>Just as with the basic walk operator, Qrisp abstracts the iterative application of <span class="math notranslate nohighlight">\(W\)</span> into a simple method call. The <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a> provides a <a class="reference internal" href="../../../reference/Block%20Encodings/methods/chebyshev.html"><span class="doc">.chebyshev(k)</span></a> method, which returns a new block encoding for the <span class="math notranslate nohighlight">\(k\)</span>-th Chebyshev polynomial <span class="math notranslate nohighlight">\(T_k\)</span>. This handles the construction of <span class="math notranslate nohighlight">\(W^k\)</span> (or the appropriate sequence of reflections and
+select/<a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a> operators) internally.</p>
+<p>Here is how to generate and apply a Chebyshev polynomial transformation to a Hamiltonian:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="c1"># 1. Define the Hamiltonian</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># 2. Create the initial Block Encoding</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+<span class="c1"># 3. Create the Block Encoding for T_2(H)</span>
+<span class="c1"># This generates the circuit for the 2nd order Chebyshev polynomial</span>
+<span class="n">BE_cheb_2</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">chebyshev</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># 4. Use the new Block Encoding</span>
+<span class="c1"># For example, applying it via Repeat-Until-Success (RUS) to a state</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">():</span>
+    <span class="c1"># Prepare an initial state, e.g., uniform superposition on 2 qubits</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">BE</span><span class="p">):</span>
+    <span class="c1"># Apply the block encoded operator T_2(H) to the state</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">operand_prep</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="c1"># Execute</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="n">BE_cheb_2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.0: 0.4900000153295707, 3.0: 0.48999992592259706, 1.0: 0.010000029373916136, 2.0: 0.010000029373916136}
+</pre></div></div>
+</div>
+<p>The <a class="reference internal" href="../../../reference/Block%20Encodings/methods/chebyshev.html"><span class="doc">.chebyshev(k)</span></a> method is particularly useful for building polynomial approximations where <span class="math notranslate nohighlight">\(T_k\)</span> terms are the basis functions. By default (<code class="docutils literal notranslate"><span class="pre">rescale=True</span></code>), it returns a block-encoding of <span class="math notranslate nohighlight">\(T_k(H)\)</span>, managing the normalization factors via Quantum Eigenvalue Transformation (QET) logic. If you need the raw polynomial <span class="math notranslate nohighlight">\(T_k(H/\alpha)\)</span> relative to the block-encoding’s normalization <span class="math notranslate nohighlight">\(\alpha\)</span>, you can set
+<code class="docutils literal notranslate"><span class="pre">rescale=False</span></code>.</p>
+<p>As learned in the previous tutorial you can also perform resource analysis by just calling the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources()</span></a> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qv</span> <span class="o">=</span> <span class="n">operand_prep</span><span class="p">()</span>
+
+<span class="n">cheb_resources</span> <span class="o">=</span> <span class="n">BE_cheb_2</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cheb_resources</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;cx&#39;: 12, &#39;gphase&#39;: 4, &#39;u3&#39;: 4, &#39;rx&#39;: 2, &#39;p&#39;: 2, &#39;cz&#39;: 6, &#39;x&#39;: 8}, &#39;depth&#39;: 33, &#39;qubits&#39;: 5}
+</pre></div></div>
+</div>
+<p>Let’s, at this point, also show how we could do a quick benchmark of the scaling of resources needed. Since the walk operator <span class="math notranslate nohighlight">\(W=(RU)\)</span> is exactly the block encoding overhead for Chebyshev polynomials, we can see how the resources scale with repeated applications of them to block-encode <span class="math notranslate nohighlight">\(T_k\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">operand_prep</span><span class="p">()</span>
+    <span class="c1"># Generate the k-th Chebyshev Block Encoding</span>
+    <span class="c1"># We use rescale=False to look at the raw complexity of the walk operator iterations</span>
+    <span class="n">BE_cheb</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">chebyshev</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Extract resource dictionary</span>
+    <span class="n">cheb_resources</span> <span class="o">=</span> <span class="n">BE_cheb</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k = </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cheb_resources</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+k = 1: {&#39;gate counts&#39;: {&#39;cx&#39;: 4, &#39;x&#39;: 5, &#39;gphase&#39;: 3, &#39;u3&#39;: 2, &#39;z&#39;: 1, &#39;cz&#39;: 2}, &#39;depth&#39;: 16, &#39;qubits&#39;: 4}
+k = 2: {&#39;gate counts&#39;: {&#39;cx&#39;: 8, &#39;x&#39;: 10, &#39;gphase&#39;: 6, &#39;u3&#39;: 4, &#39;z&#39;: 2, &#39;cz&#39;: 4}, &#39;depth&#39;: 32, &#39;qubits&#39;: 4}
+k = 3: {&#39;gate counts&#39;: {&#39;cx&#39;: 12, &#39;x&#39;: 15, &#39;gphase&#39;: 9, &#39;u3&#39;: 6, &#39;z&#39;: 3, &#39;cz&#39;: 6}, &#39;depth&#39;: 48, &#39;qubits&#39;: 4}
+k = 4: {&#39;gate counts&#39;: {&#39;cx&#39;: 16, &#39;x&#39;: 20, &#39;gphase&#39;: 12, &#39;u3&#39;: 8, &#39;z&#39;: 4, &#39;cz&#39;: 8}, &#39;depth&#39;: 64, &#39;qubits&#39;: 4}
+</pre></div></div>
+</div>
+<p>If you look at the printed output of your benchmark, you’ll notice a very satisfying trend: the gate counts and depth grow linearly with <span class="math notranslate nohighlight">\(k\)</span>, the amount of qubits required stays the same.</p>
+<p>In the classical world, high-order polynomial approximations often come with a heavy computational tax. On a quantum computer, thanks to Qubitization, the <span class="math notranslate nohighlight">\(k\)</span>-th Chebyshev polynomial <span class="math notranslate nohighlight">\(T_k\)</span> is implemented simply by repeating the walk operator <span class="math notranslate nohighlight">\(W\)</span> exactly <span class="math notranslate nohighlight">\(k\)</span> times. This efficiency is the “secret sauce” behind many modern quantum algorithms. We, therefore, get high-precision approximations without the exponential gate-count explosion.</p>
+</section>
+<section id="Quantum-Lanczos-method">
+<h2>Quantum Lanczos method<a class="headerlink" href="#Quantum-Lanczos-method" title="Link to this heading">#</a></h2>
+<p>The ability to efficiently block-encode Chebyshev polynomials isn’t just a mathematical flex; it’s a prerequisite for one of the most exciting algorithms in recent years: the Quantum Lanczos Method, an algorithm that redefines how we study quantum systems.</p>
+<p>Typically, if we want to find the ground state energy or spectral properties of a Hamiltonian, we might reach for Quantum Phase Estimation (QPE). However, QPE requires long-time Hamiltonian simulation (real-time evolution), which can be extremely expensive in terms of circuit depth.</p>
+<p>As detailed in the paper <a class="reference external" href="https://arxiv.org/pdf/2208.00567" rel="noreferrer" target="_blank">Exact and efficient Lanczos method on a quantum computer</a>, we can use Chebyshev polynomials to achieve similar goals more efficiently. Instead of evolving the system in time, we use these polynomials to construct a Krylov subspace. This allows us to “scan” the spectrum of a Hamiltonian by building the subspace through simple repetitions of the walk operator, rather than complex time-evolution gates.</p>
+<p>To put it in a more digestible way, the Lanczos method projects the Hamiltonian into a much smaller, manageable subspace. We construct a projected Hamiltonian matrix <span class="math notranslate nohighlight">\(\mathbf{H}\)</span> and an overlap matrix <span class="math notranslate nohighlight">\(\mathbf{S}\)</span> within this subspace. The matrix elements are defined as:</p>
+<div class="math notranslate nohighlight">
+\[S_{ij} = \bra{\psi_0} T_i(H) T_j(H) \ket{\psi_0} = \braket{T_i(H)T_j(H)}_0\]</div>
+<div class="math notranslate nohighlight">
+\[H_{ij} = \bra{\psi_0} T_i(H) H T_j(H) \ket{\psi_0} = \braket{T_i(H)HT_j(H)}_0\]</div>
+<p>Using the product identities of Chebyshev polynomials, these can be broken down into linear combinations of simple expectation values <span class="math notranslate nohighlight">\(\braket{T_k(H)}_0\)</span>. For detail on how these expectation values are measured, see the <a class="reference internal" href="../../../reference/Algorithms/Lanczos.html"><span class="doc">Qrisp Lanczos algorithm documentation</span></a>.</p>
+<p>By diagonalizing these small matrices classically, we can find the ground state energy with far less quantum “effort” than traditional dynamics-based methods.</p>
+<p>If you’re wondering why you should care, this allows for highly accurate Ground State Preparation! By solving the generalized eigenvalue problem <span class="math notranslate nohighlight">\(\mathbf{H}\vec{v}=\epsilon \mathbf{S}\vec{v}\)</span> classically, we can find the lowest eigenvalue (the ground state energy) and the corresponding state with far fewer resources than traditional Phase Estimation.</p>
+<p>In Qrisp, the lanczos_alg function automates this entire pipeline: measuring the expectation values via Qubitization, building the matrices, regularizing them to handle noise, and solving the eigenvalue problem.</p>
+<p>Here is an example estimating the ground state energy of a 1D Heisenberg model. We use a tensor product of singlets as our initial guess <span class="math notranslate nohighlight">\(\ket{\psi_0}\)</span> to ensure a good overlap with the true ground state.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.lanczos</span><span class="w"> </span><span class="kn">import</span> <span class="n">lanczos_alg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.vqe.problems.heisenberg</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_heisenberg_init_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspify</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="c1"># 1. Define a 1D Heisenberg model on 6 qubits</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">cycle_graph</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="c1"># H = sum (X_i X_j + Y_i Y_j + 0.5 Z_i Z_j)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="nb">sum</span><span class="p">((</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+<span class="c1"># 2. Prepare initial state function (tensor product of singlets)</span>
+<span class="c1"># This acts as our |psi_0&gt;</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximal_matching</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="n">U_singlet</span> <span class="o">=</span> <span class="n">create_heisenberg_init_function</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">():</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">find_minimal_qubit_amount</span><span class="p">())</span>
+    <span class="n">U_singlet</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="c1"># 3. Run the Quantum Lanczos Algorithm</span>
+<span class="c1"># D is the Krylov space dimension</span>
+<span class="n">D</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="c1"># We use jaspify for high-performance JIT compilation/tracing</span>
+<span class="nd">@jaspify</span><span class="p">(</span><span class="n">terminal_sampling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># lanczos_alg handles the block encoding, measurements, and diagonalization</span>
+    <span class="k">return</span> <span class="n">lanczos_alg</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">operand_prep</span><span class="p">,</span> <span class="n">show_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">energy</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ground state energy estimate: </span><span class="si">{</span><span class="n">energy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># 4. Compare with exact classical diagonalization</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exact Ground state energy: </span><span class="si">{</span><span class="n">H</span><span class="o">.</span><span class="n">ground_state_energy</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ground state energy estimate: -2.3669872085929753
+Exact Ground state energy: -2.3680339887499047
+</pre></div></div>
+</div>
+</section>
+<section id="Childs-Kothari-Somma-algorithm">
+<h2>Childs-Kothari-Somma algorithm<a class="headerlink" href="#Childs-Kothari-Somma-algorithm" title="Link to this heading">#</a></h2>
+<p>Before we jump into arbitrary polynomials, there is one specific application of Chebyshev polynomials combined with Linear Combination of Unitaries (LCU) that deserves its own spotlight: The Childs-Kothari-Somma (CKS) algorithm.</p>
+<p>The CKS algorithm solves the Quantum Linear System Problem (QLSP) <span class="math notranslate nohighlight">\(A\vec{x} = \vec{b}\)</span>. “Why even approximate <span class="math notranslate nohighlight">\(1/x\)</span> to find <span class="math notranslate nohighlight">\(A^{-1}\)</span>?!”.</p>
+<p>To apply the inverse matrix <span class="math notranslate nohighlight">\(A^{-1}\)</span>, we simply need to invert these eigenvalues:</p>
+<div class="math notranslate nohighlight">
+\[A^{-1} = \sum_j \lambda_j^{-1} \ket{u_j}\bra{u_j}\]</div>
+<p>Therefore, the challenge of finding a quantum operator that applies a matrix inverse boils down to applying the scalar function <span class="math notranslate nohighlight">\(f(x) = 1/x\)</span> to the eigenvalues of <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<p>Because quantum circuits can efficiently implement polynomial transformations, the CKS algorithm achieves this by approximating the function <span class="math notranslate nohighlight">\(f(x) = 1/x\)</span> using a linear combination of Chebyshev polynomials. Assuming the matrix <span class="math notranslate nohighlight">\(A\)</span> is scaled so that its eigenvalues fall within the domain <span class="math notranslate nohighlight">\(D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]\)</span> (where <span class="math notranslate nohighlight">\(\kappa\)</span> is the condition number), the approximation is targeted precisely over this region.</p>
+<p>Visually, this is represented by the domains highlighted in light blue in the following figure:</p>
+<img alt="Inverse" src="../../../_images/inverse.png" />
+<p>The algorithm constructs a block-encoding of the inverse operator:</p>
+<div class="math notranslate nohighlight">
+\[A^{-1} \propto \sum_{j=0}^{j_0} \alpha_{2j+1} T_{2j+1}(A),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha_j\)</span> are carefully calculated coefficients. The more the terms, the better the approximation, as seen above, where the truncation order <span class="math notranslate nohighlight">\(j_0\)</span> is mentioned next to the corresponding precision <span class="math notranslate nohighlight">\(\epsilon\)</span>.</p>
+<p>For the visual learners, here is the circuit schematic for this underlying implementation (you can simply call, as seen in the example below, with the <a class="reference internal" href="../../../reference/Algorithms/CKS.html"><span class="doc">CKS</span></a> function).</p>
+<img alt="CKS" src="../../../_images/BE_CKS.png" />
+<p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Unary_coding" rel="noreferrer" target="_blank">unary encoding</a> trick is a neat one, that’s for sure. It constructs a unary state (instead of the usual <span class="math notranslate nohighlight">\(\text{PREP}\)</span> in binary encoding that we use in usual LCU). By restructuring the superposition into a unary format, it bypasses the need for complex multi-controlled operations, such as our qrispy <a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a>, and instead relies entirely on single-qubit controls.</p>
+<p>Mathematically, the prepared state takes the following form:</p>
+<div class="math notranslate nohighlight">
+\[\ket{\text{unary}} \propto \sqrt{\alpha_1}\ket{100\dots00} + (-1) \sqrt{\alpha_3}\ket{110\dots00} + (-1)^2 \sqrt{\alpha_5}\ket{111\dots00} +\cdots + (-1)^{j_0-1}\sqrt{\alpha_{2j_0-1}}\ket{111\dots10} +(-1)^{j_0}\sqrt{\alpha_{2j_0+1}}\ket{111\dots11}.\]</div>
+<p>The key to this decomposition is its cumulative “thermometer” structure. Each sequential state, <span class="math notranslate nohighlight">\(\ket{1^m 0^{N-m}}\)</span>, adds exactly one contiguous <span class="math notranslate nohighlight">\(\ket{1}\)</span> from left to right. Because these <span class="math notranslate nohighlight">\(\ket{1}\)</span> are cumulative, the system does not need to decode a binary string to know which unitary to apply. Instead, the state of the <span class="math notranslate nohighlight">\(m\)</span>-th ancillary qubit alone acts as a single control trigger for its corresponding unitary segment.</p>
+<p>We handle the alternating negative signs of the coefficients <span class="math notranslate nohighlight">\(\alpha_k\)</span> simply by applying <span class="math notranslate nohighlight">\(Z\)</span> gates to the respective outer ancillary qubits. Once this superposition is prepared, the unitaries are activated sequentially based on the presence of <span class="math notranslate nohighlight">\(\ket{1}\)</span>:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(k=1\)</span>: The state <span class="math notranslate nohighlight">\(\ket{100\dots00}\)</span> (corresponding to <span class="math notranslate nohighlight">\(\alpha_1\)</span>) activates only the first unitary, <span class="math notranslate nohighlight">\(T_1(A)\)</span> (top left in figure below).</p></li>
+<li><p><span class="math notranslate nohighlight">\(k=3\)</span>: The state <span class="math notranslate nohighlight">\(\ket{110\dots00}\)</span> (corresponding to <span class="math notranslate nohighlight">\(\alpha_3\)</span>) leaves the first qubit activated and adds the second, activating <span class="math notranslate nohighlight">\(T_3(A)\)</span> (top right in figure below).</p></li>
+<li><p><span class="math notranslate nohighlight">\(k=5\)</span>: The state <span class="math notranslate nohighlight">\(\ket{111\dots00}\)</span> continues the sequence (bottom left in figure below).</p></li>
+<li><p><span class="math notranslate nohighlight">\(k=2j_0+1\)</span>: This cascades down to the final state <span class="math notranslate nohighlight">\(\ket{111\dots11}\)</span>, where <span class="math notranslate nohighlight">\(j_0\)</span> is the truncation order from the original CKS paper. In this state, all <span class="math notranslate nohighlight">\((RU)^k\)</span> segments are sequentially applied (bottom figure below).</p></li>
+</ul>
+<p>Here is the “figure below” promised above:</p>
+<img alt="Unary" src="../../../_images/unary_magic.png" />
+<p>Since the first <span class="math notranslate nohighlight">\((RU)\)</span> is always triggered, we can basically remove the control on that one. The Qrisp implementation does just that.</p>
+<p>“But wait!”, you might think. “I know another, more famous algorithm for solving linear systems under the name HHL. Why use CKS over that algorithm?”</p>
+<p>Precision. The complexity of CKS scales as <span class="math notranslate nohighlight">\(\mathcal{O}(\text{polylog}(1/\epsilon))\)</span>, representing an exponentially better precision scaling compared to HHL. This makes it feasible to get high-accuracy solutions without an explosion in circuit depth. As we will see later, utilizing (foreshadowing again here) QSP/GQSP. You’ll learn about this later, as well as how to use this even more efficient approach, by simply calling the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv(eps,
+kappa)</span></a> method. How sick, right?!</p>
+<p>Oh, and <span class="math notranslate nohighlight">\(\epsilon\)</span> here is (as already mentioned) the precision, with <span class="math notranslate nohighlight">\(\kappa\)</span> being the condition number. The higher the <span class="math notranslate nohighlight">\(\kappa\)</span>, the more difficult is to solve the linear system. The higher the <span class="math notranslate nohighlight">\(\epsilon\)</span>, the more terms in the Chebyshev approximation, resulting in costing more resources.</p>
+<p>Time for an example. In Qrisp, the CKS function takes a Block Encoding of matrix <span class="math notranslate nohighlight">\(A\)</span> and returns a new Block Encoding representing <span class="math notranslate nohighlight">\(A^{-1}\)</span>. You can then apply this inverted operator to your state <span class="math notranslate nohighlight">\(\ket{b}\)</span> using the Repeat-Until-Success (RUS) protocol. Here is how to solve a 4x4 Hermitian system:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cks</span><span class="w"> </span><span class="kn">import</span> <span class="n">CKS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">terminal_sampling</span>
+
+<span class="c1"># 1. Define the linear system Ax = b</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.73255474</span><span class="p">,</span> <span class="mf">0.14516978</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.14510851</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0391581</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.14516978</span><span class="p">,</span> <span class="mf">0.68701415</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04929867</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00999921</span><span class="p">],</span>
+              <span class="p">[</span><span class="o">-</span><span class="mf">0.14510851</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04929867</span><span class="p">,</span> <span class="mf">0.76587818</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03420339</span><span class="p">],</span>
+              <span class="p">[</span><span class="o">-</span><span class="mf">0.0391581</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00999921</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03420339</span><span class="p">,</span> <span class="mf">0.58862043</span><span class="p">]])</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Calculate condition number (needed for the polynomial approximation domain)</span>
+<span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="c1"># 2. Define state preparation for vector |b&gt;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prep_b</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">prepare</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Convert matrix A to a Block Encoding</span>
+    <span class="n">BA</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="c1"># Create the Block Encoding for A^-1 using CKS</span>
+    <span class="c1"># This internally calculates coefficients and builds the LCU circuit</span>
+    <span class="n">BA_inv</span> <span class="o">=</span> <span class="n">CKS</span><span class="p">(</span><span class="n">BA</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">)</span>
+
+    <span class="c1"># Apply A^-1 to |b&gt; using Repeat-Until-Success</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">BA_inv</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_b</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+<span class="c1"># 3. Execute and compare results</span>
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+
+<span class="c1"># Extract amplitudes</span>
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QUANTUM SIMULATION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amps</span><span class="p">)</span>
+
+<span class="c1"># Calculate classical solution for verification</span>
+<span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CLASSICAL SOLUTION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QUANTUM SIMULATION
+ [0.02711482 0.55709842 0.5303515  0.63846176]
+CLASSICAL SOLUTION
+ [0.02944539 0.55423278 0.53013239 0.64102936]
+</pre></div></div>
+</div>
+<p>Feel free to experiment with the precision and use <a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources</span></a> to see how it impacts gate counts and depth, which is a direct consequence of approximating the inverse with a higher-degree Chebyshev polynomial <span class="math notranslate nohighlight">\(T_k\)</span>. We also encourage you to try the ‘custom block encoding’ for the Laplacian operator from the previous tutorial; as noted in BlockEncoding 101, the
+<a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> approach is significantly more efficient. In fact, we really urge you to try it now! The Laplacian is a genuinely relevant sparse matrix where quantum speedups can be really “felt” since it’s used in applications ranging from fluid dynamics to Quantum Support Vector Machines in quantum machine learning (proving there’s substance behind the hype, after all!).</p>
+<p>Actually, let’s just get the resources right now, why shouldn’t we, it’s easy!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BA</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">BE_CKS</span> <span class="o">=</span> <span class="n">CKS</span><span class="p">(</span><span class="n">BA</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="p">)</span>
+<span class="n">BE_CKS</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;cx&#39;: 3515,
+  &#39;t_dg&#39;: 1548,
+  &#39;gphase&#39;: 50,
+  &#39;ry&#39;: 2,
+  &#39;s_dg&#39;: 70,
+  &#39;t&#39;: 1173,
+  &#39;u3&#39;: 750,
+  &#39;z&#39;: 12,
+  &#39;p&#39;: 193,
+  &#39;cz&#39;: 150,
+  &#39;h&#39;: 890,
+  &#39;cy&#39;: 50,
+  &#39;x&#39;: 377,
+  &#39;s&#39;: 70},
+ &#39;depth&#39;: 5134,
+ &#39;qubits&#39;: 23}
+</pre></div></div>
+</div>
+<p>As we see, the gate counts and depth are over the roof! This is expected, though since CKS will likely provide an advantage for sparse matrices (with efficient block-encodings), the one we just performed the inversion one is, in fact, dense. We’ll retry this example and resource estimation for a sparse matrix a bit further below when comparing the performance to the <code class="docutils literal notranslate"><span class="pre">.inv(epsilon,</span> <span class="pre">kappa)</span></code>, so stay tuned!</p>
+<p>While Chebyshev polynomials are the “optimal” choice for many tasks, they are still just one type of polynomial. What if you want to implement a step function to filter states? Or an inverse function <span class="math notranslate nohighlight">\(1/x\)</span> for solving linear systems of equations? Or a complex exponential <span class="math notranslate nohighlight">\(e^{-ixt}\)</span> for Hamiltonian simulation?</p>
+<p>To do that, we need a more generalized framework that treats the walk operator not just as a repeating block, but as a tunable sequence. This brings us to the “Grand Unified Theory” of quantum algorithms: Quantum Signal Processing (QSP).</p>
+<p>In the next section (after learning about solving linear systems with the Childs-Kothari-Somma algorithm and how to do it as <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv(eps, kappa)</span></a>), we’ll see how Qrisp takes everything we’ve learned about block encodings and qubitization to let you implement an arbitrary polynomial transformation by simply calling .poly().</p>
+</section>
+<section id="Quantum-Signal-Processing-(QSP)">
+<h2>Quantum Signal Processing (QSP)<a class="headerlink" href="#Quantum-Signal-Processing-(QSP)" title="Link to this heading">#</a></h2>
+<p>While LCU and Qubitization allows us to block-encode operators and Chebyshev polynomials <span class="math notranslate nohighlight">\(T_k\)</span>; the latter by simply repeating a walk operator <span class="math notranslate nohighlight">\(W=RU\)</span>, Quantum Signal Processing (QSP) provides a way to implement nearly any arbitrary polynomial transformations <span class="math notranslate nohighlight">\(P(A)\)</span>. You might wonder: “Why go through the trouble of encoding a number <span class="math notranslate nohighlight">\(x\)</span> into an operator just to evaluate a polynomial? A calculator can do that.”.</p>
+<p>The power of QSP lies in the fact that <span class="math notranslate nohighlight">\(x\)</span> actually represents the eigenvalues of a large, block-encoded operator <span class="math notranslate nohighlight">\(A\)</span>. By finding a way to transform the scalar <span class="math notranslate nohighlight">\(x\)</span>, we can simultaneously apply that same transformation to the entire operator <span class="math notranslate nohighlight">\(A \rightarrow P(A)\)</span>, a task that is computationally impossible for a classical calculator when <span class="math notranslate nohighlight">\(A\)</span> is a <span class="math notranslate nohighlight">\(2^n \times 2^n\)</span> matrix.</p>
+<p>At its core, QSP manipulates a single-qubit “signal” using a sequence of rotations. If we have <span class="math notranslate nohighlight">\(2\times 2\)</span> signal operator <span class="math notranslate nohighlight">\(W(x)\)</span> that encodes some value <span class="math notranslate nohighlight">\(x \in [-1, 1]\)</span>, we interleave it with a series of phase shifts <span class="math notranslate nohighlight">\(e^{i\phi_j Z}\)</span>, the resulting product of unitaries can be written as:</p>
+<div class="math notranslate nohighlight">
+\[U_\Phi(x) = e^{i\phi_0 Z} \prod_{j=1}^d W(x) e^{i\phi_j Z}.\]</div>
+<p>To address a common point of confusion: a block encoding is formally defined as a tuple <span class="math notranslate nohighlight">\((\alpha, m, \epsilon)\)</span> associated with a unitary <span class="math notranslate nohighlight">\(U\)</span>. QSP provides a recipe to take an initial block encoding of an operator <span class="math notranslate nohighlight">\(A\)</span> and transform it.</p>
+<p>Specifically, by choosing the phase angles <span class="math notranslate nohighlight">\(\{\phi_0, \phi_1, \dots, \phi_d\}\)</span> correctly, the resulting unitary <span class="math notranslate nohighlight">\(U_\Phi\)</span> becomes a new block encoding. In this new encoding, the matrix occupying the top-left block is no longer <span class="math notranslate nohighlight">\(A/\alpha\)</span>, but rather a polynomial <span class="math notranslate nohighlight">\(P(A/\alpha)\)</span>. In other words, applying QSP to a block encoding returns a new block encoding representing the polynomial of the underlying operator.</p>
+<p>Through a clever choice of the phase angles <span class="math notranslate nohighlight">\(\{\phi_0, \phi_1, \dots, \phi_d\}\)</span>, the block-encoding (top left block) of this unitary becomes a polynomial <span class="math notranslate nohighlight">\(P(x)\)</span>. When we “lift” this logic from a single qubit to a full quantum variable this 1-qubit rotation sequence effectively applies the polynomial <span class="math notranslate nohighlight">\(P\)</span> to every eigenvalue of your Hamiltonian or matrix at once.</p>
+<p>The Fundamental Theorem of QSP states that there exists a set of phase angles <span class="math notranslate nohighlight">\(\{\phi_0, \dots, \phi_d\}\)</span> such that the top-left block of <span class="math notranslate nohighlight">\(U_\Phi\)</span> corresponds to a polynomial <span class="math notranslate nohighlight">\(P(A/\alpha)\)</span> where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\text{deg}(P) \leq d\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(P\)</span> has parity <span class="math notranslate nohighlight">\(d \pmod 2\)</span> (it is either purely even or purely odd), and</p></li>
+<li><p><span class="math notranslate nohighlight">\(|P(x)| \leq 1\)</span> for all <span class="math notranslate nohighlight">\(x \in [-1, 1]\)</span></p></li>
+</ul>
+<p>I know, I know, this was quite a lot of theory, but as always, we’re here to make things simple with Qrisp. We have made it possible for you to not even worry worry about the classical math of finding these phase angles! Qrisp includes an internal “angle solver”, which allows you to treat these sophisticated mathematical transformations as simple method calls!</p>
+<p>As a final point of emphasis here, the main advantage of QSP lies in its optimality: it can approximate any continuous function to within error <span class="math notranslate nohighlight">\(\epsilon\)</span> using a circuit depth that scales nearly linearly with the complexity of the function, meeting the theoretical lower bounds for quantum query complexity.</p>
+<section id="Quantum-Eigenvalue-and-Singular-Value-Transformation">
+<h3>Quantum Eigenvalue and Singular Value Transformation<a class="headerlink" href="#Quantum-Eigenvalue-and-Singular-Value-Transformation" title="Link to this heading">#</a></h3>
+<p>Building on our discussion of Qubitization and LCU, we can now dive into the <a class="reference external" href="https://arxiv.org/pdf/2105.02859" rel="noreferrer" target="_blank">Grand Unification of quantum algorithms</a>: <a class="reference external" href="https://dl.acm.org/doi/epdf/10.1145/3313276.3316366" rel="noreferrer" target="_blank">Quantum Singular Value Transformation (QSVT)</a>. In the context of <a class="reference external" href="https://arxiv.org/pdf/2201.08309" rel="noreferrer" target="_blank">Lin Lin’s lecture notes</a>, these methods represent the most efficient way to process matrices on a quantum computer by treating a matrix as a
+<a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a>.</p>
+<p>QSVT applies a polynomial <span class="math notranslate nohighlight">\(P\)</span> to the singular values of a matrix <span class="math notranslate nohighlight">\(A\)</span> without needing to perform a full Singular Value Decomposition (SVD).</p>
+<p>Disclaimer, a bit more maths before showing examples of how to perform this simply and intuitevely as methods of the class we’ve been covering.</p>
+<p>Consider a matrix <span class="math notranslate nohighlight">\(A \in \mathbb{C}^{m \times n}\)</span> with <span class="math notranslate nohighlight">\(\|A\| \leq 1\)</span> with SVD of <span class="math notranslate nohighlight">\(A = \sum_{i} \sigma_i \ket{w_i} \bra{v_i}\)</span>. If we have a <span class="math notranslate nohighlight">\((\alpha, m, \epsilon)\)</span>-block encoding <span class="math notranslate nohighlight">\(U\)</span>, our goal is to construct a new unitary <span class="math notranslate nohighlight">\(U_\Phi\)</span> that implements:</p>
+<div class="math notranslate nohighlight">
+\[P(A) = \sum_{i} P(\sigma_i) \ket{w_i} \bra{v_i}.\]</div>
+<p>QSVT does this by using Projector-Controlled Phase gates interleaved with the block encoding <span class="math notranslate nohighlight">\(U\)</span>. Let <span class="math notranslate nohighlight">\(\Pi = \ket{0}\bra{0}^a \otimes \mathbb{1}\)</span> be the projector onto the subspace where <span class="math notranslate nohighlight">\(A\)</span> lives. The QSVT circuit schematics for a degree-<span class="math notranslate nohighlight">\(d\)</span> polynomial is:</p>
+<div class="math notranslate nohighlight">
+\[U_\Phi = e^{i\phi_1(2\Pi - I)} U e^{i\phi_2(2\Pi - I)} U^\dagger e^{i\phi_3(2\Pi - I)} U \dots.\]</div>
+<p>To visualize this, the following circuit schematics can help.</p>
+<img alt="QSVT" src="../../../_images/BE_QSVT.png" />
+<p>You might be saying to yourself: “The picture is confusing to me. In the formula for <span class="math notranslate nohighlight">\(U_\Phi\)</span> only <span class="math notranslate nohighlight">\(U\)</span> and <span class="math notranslate nohighlight">\(\Pi\)</span> appear, but at no point <span class="math notranslate nohighlight">\(\ket{G}\)</span>?!”. What a great question you brewed there! The answer might suprise you, but it’s mostly the notation used in literature. In the algorithm schematics above we have explicitly shown the <span class="math notranslate nohighlight">\(\ket{G}\)</span> and <span class="math notranslate nohighlight">\(\bra{G}\)</span> parts sandwiching <span class="math notranslate nohighlight">\(U\)</span>. In literature, it is often assumed, that these unitaries are collectively
+labeled as <span class="math notranslate nohighlight">\(U\)</span>: <span class="math notranslate nohighlight">\(U\rightarrow (\bra{G}\otimes \mathbb{I})U(\ket{G}\otimes \mathbb{I})\)</span>.</p>
+<p>As promised above, you don’t even need to care about these angles with our crispy clean implementation. Generalizing QSP is the final piece of this mosaic.</p>
+</section>
+<section id="Lifting-constraints-and-generalizing-QSP">
+<h3>Lifting constraints and generalizing QSP<a class="headerlink" href="#Lifting-constraints-and-generalizing-QSP" title="Link to this heading">#</a></h3>
+<p>While standard QSVT is a milestone, it is limited by the parity constraint. In simpler terms, that the polynomials must be strictly even or odd, and their coefficients be real (I’m sure that was a social media at some point, right?).</p>
+<p>Recent advancements (e.g., <a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">Motlagh &amp; Wiebe, 2023</a>, <a class="reference external" href="https://arxiv.org/pdf/2312.00723" rel="noreferrer" target="_blank">Sünderhauf, 2023</a>) have introduced Generalized versions that remove these restrictions.</p>
+<ul class="simple">
+<li><p>GQSP (Generalized Quantum Signal Processing): GQSP applies complex polynomials <span class="math notranslate nohighlight">\(P(z)\)</span> to unitaries <span class="math notranslate nohighlight">\(U\)</span>. Unlike standard QSP, <span class="math notranslate nohighlight">\(P(z)\)</span> can have indefinite parity (e.g., <span class="math notranslate nohighlight">\(P(z) = z^2 + z + 1\)</span>), enabled by using general <span class="math notranslate nohighlight">\(SU(2)\)</span> rotations in the signal processing stage.</p></li>
+<li><p>GQET (Generalized Quantum Eigenvalue Transformation): For Hermitian matrices, GQET applies complex polynomials <span class="math notranslate nohighlight">\(P(z)\)</span> to eigenvalues. Unlike standard QET, <span class="math notranslate nohighlight">\(P(z)\)</span> can have indefinite parity (e.g., <span class="math notranslate nohighlight">\(P(z) = z^2 + z + 1\)</span>).</p></li>
+<li><p>GQSVT (Generalized Quantum Singular Value Transformation): This extends GQET to arbitrary matrices using the generalized framework.</p></li>
+</ul>
+<p>Why does this generalization matter so much? It allows for mixed parity polynomial, resulting in you being to implement functions like <span class="math notranslate nohighlight">\(e^{-iAt}\)</span> directly without splitting them into sine (odd) and cosine (even) components.</p>
+<p>Apart from that, finding precise phase factors for standard QSP/QSVT relied on specialized libaries like <a class="reference external" href="https://qsppack.gitbook.io/qsppack" rel="noreferrer" target="_blank">QSPPACK</a> or <a class="reference external" href="https://github.com/ichuang/pyqsp" rel="noreferrer" target="_blank">pyqsp</a> to handle the underlying numerical optimization. In the Generalized (GQSP) framework, phases can be computed efficiently (see <a class="reference external" href="https://arxiv.org/abs/2503.03026" rel="noreferrer" target="_blank">Laneve</a>, <a class="reference external" href="https://arxiv.org/pdf/2505.12615" rel="noreferrer" target="_blank">Ni et al.</a>) in time <span class="math notranslate nohighlight">\(\mathcal O(d\log(d))\)</span>, making it more accessible. (Of course
+this is already integrated in Qrisp, such that you don’t have to care about these phases.)</p>
+<p>The structure of GQSP is shown in the following schematics:</p>
+<img alt="GQSP" src="../../../_images/GQSP.png" />
+<p>Ok, enough of this, let’s now show how you can use, run, simulate, and provide resource analysis for three GQSP based applications.</p>
+</section>
+</section>
+<section id="GQSP-with-Qrisp:-.poly,-.inv,-and-.sim">
+<h2>GQSP with Qrisp: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly</span></a>, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv</span></a>, and <a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim</span></a><a class="headerlink" href="#GQSP-with-Qrisp:-.poly,-.inv,-and-.sim" title="Link to this heading">#</a></h2>
+<section id="Polynomial-transformations:-.poly(coeffs)">
+<h3>Polynomial transformations: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly(coeffs)</span></a><a class="headerlink" href="#Polynomial-transformations:-.poly(coeffs)" title="Link to this heading">#</a></h3>
+<p>In Qrisp, the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding class</span></a> provides the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly(coeffs)</span></a> method, which leverages GQET to apply a transformation <span class="math notranslate nohighlight">\(p(A)\)</span> to a Hermitian matrix. You simply provide the coefficients, and Qrisp’s internal “autopilot” handles the phase solving and circuit construction.</p>
+<p>Example: Applying a custom polynomial. This example applies <span class="math notranslate nohighlight">\(p(A) = 1 + 2A + A^2\)</span> to a matrix <span class="math notranslate nohighlight">\(A\)</span> and applies the result to a vector <span class="math notranslate nohighlight">\(\ket{b}\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+<span class="c1"># Define a Hermitian matrix A and a vector b</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.73255474</span><span class="p">,</span> <span class="mf">0.14516978</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.14510851</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0391581</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.14516978</span><span class="p">,</span> <span class="mf">0.68701415</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04929867</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00999921</span><span class="p">],</span>
+              <span class="p">[</span><span class="o">-</span><span class="mf">0.14510851</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04929867</span><span class="p">,</span> <span class="mf">0.76587818</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03420339</span><span class="p">],</span>
+              <span class="p">[</span><span class="o">-</span><span class="mf">0.0391581</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00999921</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03420339</span><span class="p">,</span> <span class="mf">0.58862043</span><span class="p">]])</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Generate a block-encoding and apply the polynomial [1, 2, 1]</span>
+<span class="n">BA</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">BA_poly</span> <span class="o">=</span> <span class="n">BA</span><span class="o">.</span><span class="n">poly</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]))</span>
+
+<span class="c1"># Prepare the state |b&gt;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prep_b</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">prepare</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Use Repeat-Until-Success (RUS) to apply the non-unitary polynomial</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">BA_poly</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_b</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))])</span>
+
+<span class="c1"># Classical verification</span>
+<span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">+</span> <span class="n">A</span> <span class="o">@</span> <span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">c</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QUANTUM SIMULATION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amps</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">CLASSICAL SOLUTION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QUANTUM SIMULATION
+ [0.02986315 0.57992487 0.62416743 0.52269529]
+CLASSICAL SOLUTION
+ [-0.02986321  0.57992485  0.6241675   0.52269522]
+</pre></div></div>
+</div>
+</section>
+<section id="Solving-linear-systems:-.inv">
+<h3>Solving linear systems: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv</span></a><a class="headerlink" href="#Solving-linear-systems:-.inv" title="Link to this heading">#</a></h3>
+<p>Matrix inversion is implemented via Quantum Eigenvalue Transformation (QET) using a polynomial approximation of <span class="math notranslate nohighlight">\(1/x\)</span> over the domain <span class="math notranslate nohighlight">\(D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]\)</span>. The polynomial degree scales as <span class="math notranslate nohighlight">\(\mathcal{O}(\kappa \log(\kappa/\epsilon))\)</span>, where <span class="math notranslate nohighlight">\(\kappa\)</span> is the condition number.</p>
+<p>To paraphrase, the smaller the set precision <span class="math notranslate nohighlight">\(\epsilon\)</span>, the higher the degree of polynomial we need to approximate the inverse function, translating directly to requirind more quantum resources for the execution of the algorithm.</p>
+<p>Let’s, for example solve the Quantum Linear System Problem <span class="math notranslate nohighlight">\(Ax=b\)</span></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assuming A and b are defined as above</span>
+<span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">BA</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prep_b</span><span class="p">():</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">prepare</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="c1"># Approximate A^-1 with target precision 0.01 and condition number bound 2</span>
+<span class="n">BA_inv</span> <span class="o">=</span> <span class="n">BA</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">)</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">BA_inv</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_b</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))])</span>
+
+<span class="c1"># Classical verification</span>
+<span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QUANTUM SIMULATION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amps</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">CLASSICAL SOLUTION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QUANTUM SIMULATION
+ [0.0271197  0.55708097 0.53034627 0.63848113]
+CLASSICAL SOLUTION
+ [0.02944539 0.55423278 0.53013239 0.64102936]
+</pre></div></div>
+</div>
+<p>Let’s compare the resources of this approach to the one we mentioned above under the abbriviation CKS:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BA_CKS</span> <span class="o">=</span> <span class="n">CKS</span><span class="p">(</span><span class="n">BA</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">BA_inv</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">BA_CKS</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cks</span><span class="w"> </span><span class="kn">import</span> <span class="n">cks_params</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cks_params</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="p">))</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;cx&#39;: 3471, &#39;t_dg&#39;: 1548, &#39;gphase&#39;: 50, &#39;s_dg&#39;: 48, &#39;t&#39;: 1173, &#39;u3&#39;: 750, &#39;rx&#39;: 13, &#39;p&#39;: 149, &#39;cz&#39;: 150, &#39;h&#39;: 846, &#39;cy&#39;: 50, &#39;x&#39;: 399, &#39;s&#39;: 48}, &#39;depth&#39;: 5134, &#39;qubits&#39;: 11}
+{&#39;gate counts&#39;: {&#39;cx&#39;: 3515, &#39;t_dg&#39;: 1548, &#39;gphase&#39;: 50, &#39;ry&#39;: 2, &#39;s_dg&#39;: 70, &#39;t&#39;: 1173, &#39;u3&#39;: 750, &#39;z&#39;: 12, &#39;p&#39;: 193, &#39;cz&#39;: 150, &#39;h&#39;: 890, &#39;cy&#39;: 50, &#39;x&#39;: 377, &#39;s&#39;: 70}, &#39;depth&#39;: 5134, &#39;qubits&#39;: 23}
+(12, 17)
+</pre></div></div>
+</div>
+<p>Uhm, that’s surprising on two accounts?! Firstly, the resources for this seem enormous? And, again, this is expected, because we’re (still) trying to invert a dense matrix (same as above). As already mentioned, the exponential quantum speedup comes for some specific, sparse, matrices - this means that they have only a small amount of entries, with all the rest being zero. Remember the Laplacian from the previous tutorial - it’s mostly zeroes.</p>
+<p>The second surprise is that gate counts and depth are <strong>almost exactly the same</strong>?! This stems from both having <strong>almost exactly the same</strong> structure of the algorithm (when Qrisp optimizations of the CKS circuit visualized above come into play). The only difference is the amount of qubits! This is also easily explainable: while CKS needs 14 auxiliary qubits (which is understandeable since we’re approximating the polynomial of the degree 25: <span class="math notranslate nohighlight">\(T_{25}\)</span>, which corresponds to 13 odd terms,
+which also the code above shows (12+1=13)), QET (which leverages the fact of having parity polynomials, resulting in a more efficient circuit) requires <strong>only one</strong>. Let’s check also the quality of the solutions of <a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv(eps, kappa)</span></a> and compare to those obtained with CKS:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BA_inv</span> <span class="o">=</span> <span class="n">BA</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">)</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">BA_inv</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_b</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))])</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main_CKS</span><span class="p">():</span>
+    <span class="n">BA</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="n">BA_CKS</span> <span class="o">=</span> <span class="n">CKS</span><span class="p">(</span><span class="n">BA</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">BA_CKS</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_b</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+<span class="n">res_dict_CKS</span> <span class="o">=</span> <span class="n">main_CKS</span><span class="p">()</span>
+
+<span class="n">amps_CKS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict_CKS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))])</span>
+
+<span class="c1"># Classically obtained result for verification</span>
+<span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">@</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QUANTUM SIMULATION via ``.inv(epsilon, kappa)``</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amps</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">QUANTUM SIMULATION via CKS</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amps_CKS</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">CLASSICAL SOLUTION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QUANTUM SIMULATION via ``.inv(epsilon, kappa)``
+ [0.02711972 0.5570811  0.53034627 0.63848101]
+QUANTUM SIMULATION via CKS
+ [0.02711485 0.55709829 0.53035176 0.63846166]
+CLASSICAL SOLUTION
+ [0.02944539 0.55423278 0.53013239 0.64102936]
+</pre></div></div>
+</div>
+<p>Also the quality of results for <span class="math notranslate nohighlight">\(\epsilon = 0.01\)</span> and <span class="math notranslate nohighlight">\(\kappa\)</span> are <strong>almost the same</strong>. Nice!</p>
+<p>Let’s try another example of the Laplacian operator (which is actually sparse, this time) with the custom block encoding (providing the answers to the homework given above. You’re… welcome?).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">L_well</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">I</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">L_well</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">L_well</span><span class="p">[</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">gphase</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">I</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Identity: do nothing</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">V</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Forward cyclic shift with a global phase -1</span>
+    <span class="n">qv</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">gphase</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># multiply by -1</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">V_dg</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Backward cyclic shift with a global phase -1</span>
+    <span class="n">qv</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">gphase</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">unitaries</span> <span class="o">=</span> <span class="p">[</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">V_dg</span><span class="p">]</span>
+<span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+<span class="n">BE_L</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_lcu</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">unitaries</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;kappa = &quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_well</span><span class="p">))</span>
+<span class="n">BE_inv</span> <span class="o">=</span> <span class="n">BE_L</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_well</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">BE_inv</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+
+<span class="n">BE_CKS</span> <span class="o">=</span> <span class="n">CKS</span><span class="p">(</span><span class="n">BE_L</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_well</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">BE_CKS</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+kappa =  2.3333333333333335
+{&#39;gate counts&#39;: {&#39;cx&#39;: 2504, &#39;t_dg&#39;: 724, &#39;gphase&#39;: 66, &#39;s_dg&#39;: 64, &#39;t&#39;: 658, &#39;u3&#39;: 198, &#39;rx&#39;: 17, &#39;p&#39;: 98, &#39;h&#39;: 854, &#39;x&#39;: 197, &#39;s&#39;: 262, &#39;measure&#39;: 198}, &#39;depth&#39;: 1980, &#39;qubits&#39;: 12}
+{&#39;gate counts&#39;: {&#39;cx&#39;: 2564, &#39;t_dg&#39;: 724, &#39;gphase&#39;: 66, &#39;ry&#39;: 2, &#39;s_dg&#39;: 94, &#39;t&#39;: 658, &#39;u3&#39;: 198, &#39;z&#39;: 16, &#39;p&#39;: 158, &#39;h&#39;: 914, &#39;x&#39;: 167, &#39;s&#39;: 292, &#39;measure&#39;: 198}, &#39;depth&#39;: 2013, &#39;qubits&#39;: 28}
+</pre></div></div>
+</div>
+<p>Celebratory: “And this, ladies and gentlemen interested in block encodings, is how quantum resource estimation is done, simply and efficiently!”.</p>
+<p>Crunching the numbers, we again observe a similar behavior when it comes to gate counts and depth with the same difference of used qubits following the same reasoning we laid down in the dense matrix example above.</p>
+<p>The astute readers among you will notice that it is not <strong>exactly</strong> the same matrix <span class="math notranslate nohighlight">\(L\)</span> we’re inverting here, compared to the one in the previous tutorial. This is because the discrete Laplacian from the previous tutorial is ill-conditioned, meaning it condition number <span class="math notranslate nohighlight">\(\kappa\)</span> is enormous! We then use the trick to, instead, increase the values on the main diagonal of <span class="math notranslate nohighlight">\(L\)</span>, resulting in a lower condition number - it is well conditioned (hence the name <code class="docutils literal notranslate"><span class="pre">L_well</span></code>, or
+<span class="math notranslate nohighlight">\(L_\text{well}\)</span> written fancier).</p>
+<p>As a proof of concept as to just how ill-conditioned the original <span class="math notranslate nohighlight">\(L\)</span> (let’s first rename it to <span class="math notranslate nohighlight">\(L_\text{ill}\)</span> from the previous tutorial) actually is, we welcome you to invert it using Numpy. Let’s just show how large <span class="math notranslate nohighlight">\(\kappa\)</span> is for that pesky matrix:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">L_ill</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">I</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">L_ill</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">L_ill</span><span class="p">[</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_ill</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3.805205574839392e+16
+</pre></div></div>
+</div>
+<p>Yes, you read that right! And, you might wonder how many terms of our beloved Chebyshevs we would need for this. Let’s see:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cks</span><span class="w"> </span><span class="kn">import</span> <span class="n">cks_params</span>
+<span class="n">j_0</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cks_params</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_ill</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CKS parameters: j_0 =&quot;</span><span class="p">,</span> <span class="n">j_0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CKS parameters: j_0 = 2309524379448826368
+</pre></div></div>
+</div>
+<p>Yes… A lot! Oh, and by the way, not even Numpy can invert <span class="math notranslate nohighlight">\(L_\text{ill}\)</span>!!!</p>
+<p>Our “more friendly Laplacian” with increased values on the diagonal is much more manageable, and therefore solvable:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_well</span><span class="p">))</span>
+<span class="n">j_0</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cks_params</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">L_well</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CKS parameters: j_0 =&quot;</span><span class="p">,</span> <span class="n">j_0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.3333333333333335
+CKS parameters: j_0 = 16
+</pre></div></div>
+</div>
+<p>We see that we need only 17 Chebyshevs for this, which is peanuts compared to 4238761233361477633 terms we’d need to approximate the inverse of <span class="math notranslate nohighlight">\(L_\text{ill}\)</span>. This is something that we share with our classical colleagues, where the problem of ill-conditioning is still present. There is definititely tricks that we can learn (or rather copy their homework) in the form of <a class="reference external" href="https://en.wikipedia.org/wiki/Preconditioner" rel="noreferrer" target="_blank">preconditioning</a> our ill-conditioned matrices.</p>
+<p>Concluding this side quest (deciding on how well conditioned this side quest actually was is left as an exercise for the reader), let’s actually comment on the results of comparing the resources: CKS ain’t too shabby afterall! This is why, fellow readers, you should always do your due diligence and perform analysis of the resources. “Big O” notation can be misleading because it ommits the scaling factors. Well, in this case the results were actually expected because the underlying structures of
+both algorithms are extremely similar (apart from the qubits required to performs controls on). But still, estimate your quantum resources!</p>
+</section>
+<section id="Hamiltonian-simulation:-.sim">
+<h3>Hamiltonian simulation: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim</span></a><a class="headerlink" href="#Hamiltonian-simulation:-.sim" title="Link to this heading">#</a></h3>
+<p>For a block-encoded Hamiltonian <span class="math notranslate nohighlight">\(H\)</span>, the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim(t, N)</span></a> method approximates the unitary evolution <span class="math notranslate nohighlight">\(e^{-itH}\)</span>. This utilizes the Jacobi-Anger expansion into Bessel functions:</p>
+<div class="math notranslate nohighlight">
+\[e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}\]</div>
+<p>The truncation error decreases super-exponentially with the order <span class="math notranslate nohighlight">\(N\)</span>.</p>
+<p>We can now simply simulate an Ising Hamiltonian:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_ising_hamiltonian</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="o">-</span><span class="n">J</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">))</span>
+
+<span class="n">L</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">create_ising_hamiltonian</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="c1"># Evolve state |0&gt; for time t using order N=8</span>
+    <span class="n">BE_sim</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">sim</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">BE_sim</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">L</span><span class="p">))()</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.0: 0.7794808035635605, 1.0: 0.05048200055416087, 8.0: 0.05048196702654611, 2.0: 0.049593675225200494, 4.0: 0.04959366032403838, 12.0: 0.0032753857948143363, 3.0: 0.0032753825351851235, 9.0: 0.0032694129899430856, 6.0: 0.0032556955388927354, 5.0: 0.0032142859078645274, 10.0: 0.0032142786901141274, 7.0: 0.00021251084259239425, 14.0: 0.0002125107116251491, 13.0: 0.00021228250847641657, 11.0: 0.00021228182453635852, 15.0: 1.386596244939242e-05}
+</pre></div></div>
+</div>
+<p>The result dictionary shows the measurement probabilites for evolved state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\psi(t)} = \dfrac{e^{itH}\ket{0}}{\|e^{itH}\ket{0}\|}.\]</div>
+</section>
+</section>
+<section id="Conclusion">
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Link to this heading">#</a></h2>
+<p>As hopefully you’re now convinced, having block encodings as programming abstractions lowers the barrier to entry for classical developers to dive into the field of state-of-the-art quantum computing algorithms, while at the same time allowing researchers to focus on the algorithm (the function to be applied) rather than the software implementations!</p>
+<p>A quick collection of take-home messages after this throrough (and math heavy) tutorial. We have transitioned from basic matrix representations to complex functional analysis on a quantum computer:</p>
+<ul class="simple">
+<li><p>Qubitization is the engine that enables walking through 2D subspaces.</p></li>
+<li><p>QSP/GQSP is the steering wheel, allowing you to transform <span class="math notranslate nohighlight">\(A\)</span> into almost any <span class="math notranslate nohighlight">\(f(A)\)</span>.</p></li>
+<li><p>Qrisp is the autopilot, solving for phase angles and automating circuit construction and resource management.</p></li>
+<li><p>Always do your due diligence and estimate your quantum resources of your state-of-the-art top notch block encoding and other algorithmic approach.</p></li>
+</ul>
+<p>If you’re ready to get your hands dirty, the next tutorial puts these tools to work on a 10-qubit Heisenberg model. We’ll show you how to use Gaussian filtering to get a better ground state and use Chebyshev you’re now a pro at. You will also use a Repeat-Until-Success (RUS) trick in Qrisp to lock in your desired state. Finally, we’ll double-check the work together by watching the energy levels drop, proving that you’ve successfully found the ground state. It’s the perfect way to see how all
+this theory actually solves a real-world physics problem.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/BE_tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Qubitization">Qubitization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Qubitization-in-Qrisp-as-.qubitization()">Qubitization in Qrisp as .qubitization()</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Block-encoding-Chebyshev-polynomials">Block encoding Chebyshev polynomials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-Lanczos-method">Quantum Lanczos method</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Childs-Kothari-Somma-algorithm">Childs-Kothari-Somma algorithm</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-Signal-Processing-(QSP)">Quantum Signal Processing (QSP)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-Eigenvalue-and-Singular-Value-Transformation">Quantum Eigenvalue and Singular Value Transformation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Lifting-constraints-and-generalizing-QSP">Lifting constraints and generalizing QSP</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#GQSP-with-Qrisp:-.poly,-.inv,-and-.sim">GQSP with Qrisp: .poly, .inv, and .sim</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Polynomial-transformations:-.poly(coeffs)">Polynomial transformations: .poly(coeffs)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Solving-linear-systems:-.inv">Solving linear systems: .inv</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-simulation:-.sim">Hamiltonian simulation: .sim</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/BE_tutorial/BE_vol2.ipynb" download="BE_vol2.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

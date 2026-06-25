@@ -1,0 +1,932 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Counterdiabatic Driving Protocols &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/CD';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/CD.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Solving Sudoku using Quantum Backtracking" href="Sudoku.html" />
+    <link rel="prev" title="Quantum-Informed Recursive Optimization" href="QIROtutorial.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Counterdiabatic Driving Protocols</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Counterdiabatic-Driving-Protocols">
+<h1>Counterdiabatic Driving Protocols<a class="headerlink" href="#Counterdiabatic-Driving-Protocols" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Carlotta Koroll</span>, <span style='font-weight: 600; color: #222;'>Sebastian Bock</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>The goal of counterdiabatic driving (CD) is to evolve an initial quantum state <span class="math notranslate nohighlight">\(\ket{\Psi_i} =\ket{\Psi(t=0)}\)</span> over time, without creating transitions to other higher exited states. This way, the state evolves into a target state after some time <span class="math notranslate nohighlight">\(T\)</span>: <span class="math notranslate nohighlight">\(\ket{\Psi_f} =\ket{\Psi(t=T)}\)</span>. This process, called adiabatic driving, is useful when we know how to create the groundstate but are interested in a state that the system evolves into. One example for a CD application is solving
+QUBOs, to which we will come later in the tutorial.</p>
+<p>First we will introduce the core concept of couterdiabatic driving and explain the driving protocols <a class="reference external" href="https://doi.org/10.1073/pnas.1619826114" rel="noreferrer" target="_blank">LCD (local counterdiabatic driving)</a> and <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">COLD (counterdiabatic optimized local driving)</a>. Then we will show how to run those algorithms in Qrisp by solving a QUBO problem. After this tutorial you will have learned what driving a system adiabatically means and how we can speed up adiabatic driving with
+LCD and COLD. You will be able to use qrisp to solve QUBO problems and to experiment with different parameters of the CD protocols.</p>
+<section id="The-concept-of-counterdiabatic-driving">
+<h2>The concept of counterdiabatic driving<a class="headerlink" href="#The-concept-of-counterdiabatic-driving" title="Link to this heading">#</a></h2>
+<p>To drive a system adiabatically, we must meet the adiabatic condition. This condition ensures that the system’s state follows the instantaneous eigenstates of the time-dependent Hamiltonian <span class="math notranslate nohighlight">\(H(\lambda(t))\)</span>, where <span class="math notranslate nohighlight">\(\lambda(t) \in [0, 1]\)</span> is a scheduling parameter that interpolates between initial (<span class="math notranslate nohighlight">\(\lambda=0\)</span>) and final (<span class="math notranslate nohighlight">\(\lambda=1\)</span>) Hamiltonians. The energy gaps <span class="math notranslate nohighlight">\(\Delta_{mn} = E_m(\lambda) - E_n(\lambda)\)</span> between eigenstates <span class="math notranslate nohighlight">\(\ket{m(\lambda)}\)</span> and
+<span class="math notranslate nohighlight">\(\ket{n(\lambda)}\)</span> must be large compared to the rate of change of the Hamiltonian. Specifically, the adiabatic theorem requires:</p>
+<div class="math notranslate nohighlight">
+\[\max_{n, m} \left[ \max_{\lambda} \bigg| \frac{
+   \hbar \frac{\partial \lambda}{\partial t} \bra{m(\lambda)} \partial_{\lambda} H(\lambda) \ket{n(\lambda)}}
+   {(E_m(\lambda) - E_n(\lambda))^2} \bigg| \right] \ll 1, m \neq n\]</div>
+<p>Here, <span class="math notranslate nohighlight">\(\partial_\lambda H(\lambda)\)</span> is the derivative of the Hamiltonian with respect to <span class="math notranslate nohighlight">\(\lambda\)</span>, and <span class="math notranslate nohighlight">\(\frac{\partial \lambda}{\partial t}\)</span> controls the speed of evolution. The matrix element <span class="math notranslate nohighlight">\(\bra{m} \partial_\lambda H \ket{n}\)</span> quantifies coupling between states.</p>
+<p>The adiabatic condition roughly tells us that in order to avoid transitions to exited states we must drive the system slow compared to the size of the energetic gaps. Unfortunately, we cannot push this evolution time too strongly as this leads to quantum incoherences and disruption through noise. Therefore we want to mitigate the diabatic transitions so that we can drive the system adiabatically while keeping the evolution time short.</p>
+<p>To understand how diabatic transitions can be mitigated, we need to introduce the <strong>adiabatic gauge potential (AGP)</strong> <span class="math notranslate nohighlight">\(A_{\lambda}\)</span>. This is a hermitian operator whose diagonal elements desribe the <em>adiabatic-</em> (phase accumulation) and its off-diagonal elements describe the <em>non-adiabatic</em> (transition-inducing) dynamics of the driven system. It is related to the state evolution in the instantaneous eigenbasis (denoted by <span class="math notranslate nohighlight">\(\sim\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[i \hbar \frac{d\ket{\tilde{\Psi}}}{dt} = \left( \tilde{H} - \frac{\partial \lambda}{\partial t} A_{\lambda} \right) \ket{\tilde{\Psi}}\]</div>
+<p>Here, <span class="math notranslate nohighlight">\(\tilde{H}\)</span> is the diagonal Hamiltonian in the eigenbasis. The term <span class="math notranslate nohighlight">\(- \frac{\partial \lambda}{\partial t} A_\lambda\)</span> encodes the non-adiabatic effects.</p>
+<p>The idea behind counterdiabatic driving is to add a term to the hamiltonian that <strong>counteracts the diabatic transitions</strong> (hence the name). It turns out that this can be done by adding the negation of the AGP!</p>
+<div class="math notranslate nohighlight">
+\[H_{CD}(\lambda) = H(\lambda) + \frac{\partial \lambda}{\partial t} A_{\lambda}\]</div>
+<p>Since the exact calculation of the AGP becomes impossible very fast, we need to approximate <span class="math notranslate nohighlight">\(A_{\lambda}\)</span>. This is the goal of local counterdiabatic driving (LCD) and counterdiabatic optimized local driving (COLD).</p>
+<section id="Local-counterdiabatic-driving-(LCD)">
+<h3>Local counterdiabatic driving (LCD)<a class="headerlink" href="#Local-counterdiabatic-driving-(LCD)" title="Link to this heading">#</a></h3>
+<p>The idea of LCD is to approximate the AGP through local manipulation. This means that our operator basis <span class="math notranslate nohighlight">\(\mathcal{O}_{LCD}\)</span> only consists of single-qubit gates:</p>
+<div class="math notranslate nohighlight">
+\[A_{\lambda} = \sum_j \alpha_j (\lambda) \mathcal{O}_{LCD}^{(j)}\]</div>
+<p>The operator basis should be purely imaginary for a real system hamiltonian <a class="reference external" href="https://doi.org/10.1073/pnas.1619826114" rel="noreferrer" target="_blank">[1]</a>. So, a common choice are the pauli <span class="math notranslate nohighlight">\(y\)</span> matrices:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{O}_{LCD} = \sum_i \alpha_i \sigma_y^{i}.\]</div>
+<p>The coefficients <span class="math notranslate nohighlight">\(\alpha_j\)</span> can be calculated by minimizing an action <span class="math notranslate nohighlight">\(S\)</span> associated with the AGP:</p>
+<div class="math notranslate nohighlight">
+\[S(A_{\lambda}) = \mathrm{Tr} \{ G_{\lambda}^2(A_{\lambda}) \}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(G_{\lambda}\)</span> is an operator that is the negation of the generalised force operator.</p>
+<div class="math notranslate nohighlight">
+\[G_{\lambda}(A_{\lambda}) = \partial_{\lambda} H + \frac{i}{\hbar} \left[ A_{\lambda}, H \right]\]</div>
+<p>Roughly speaking, the action <span class="math notranslate nohighlight">\(S\)</span> measures how close our operator is to the actual AGP of the system. For the derivation and physical meaning of the operators, we refer to <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">[2]</a>.</p>
+</section>
+<section id="Counterdiabatic-optimized-local-driving-(COLD)">
+<h3>Counterdiabatic optimized local driving (COLD)<a class="headerlink" href="#Counterdiabatic-optimized-local-driving-(COLD)" title="Link to this heading">#</a></h3>
+<p>We arrive at the core idea of COLD (counterdiabatic optimized local driving) by combining the LCD approach with the study of quantum optimal control theory. While LCD uses a restricted operator basis to find a CD protocol that minimizes the action <span class="math notranslate nohighlight">\(S\)</span>, COLD introduces another term that aims to find the optimal path <span class="math notranslate nohighlight">\(\ket{\Psi_i} \rightarrow \ket{\Psi_f}\)</span> such that diabatic transitions are avoided. The optimization objective can be chosen depending on the nature of the physical
+system. One possible control hamiltonian consists of <span class="math notranslate nohighlight">\(z\)</span>-pulses weighted by pulses of harmonics:</p>
+<div class="math notranslate nohighlight">
+\[f(\lambda, \beta) \mathcal{O}_{opt} = \sum_{k=1}^{N_{opt}} \beta_k \sin(\pi k g(\lambda)) \sum_i \sigma_z^{i}.\]</div>
+<p>Here, the function <span class="math notranslate nohighlight">\(g(\lambda)\)</span> is the inverse function of <span class="math notranslate nohighlight">\(\lambda(t)\)</span>.</p>
+<p>To find optimal parameters <span class="math notranslate nohighlight">\(\beta_k\)</span>, one has to choose an optimization objective.</p>
+<p>The objective strongly depends on the nature of the driven system as well as the information and tools available. If the desired final state is known, a sensible objective would be the state fidelity. Another approach is to minimize the coefficients of the AGP at higher orders. Here the idea is that a minimal AGP norm will minimize the non-adiabatic effects along the path in time <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">[2]</a>. In the case of QUBO problems, one can also choose the
+minimization of the classical cost function.</p>
+<p>In the following paragraph we will show two objectives for solving QUBO problems with COLD. But before that, let us quickly discuss how COLD and counterdiabatic driving are connected.</p>
+</section>
+</section>
+</section>
+<section id="QUBO-problems-as-CD-instances">
+<h1>QUBO problems as CD instances<a class="headerlink" href="#QUBO-problems-as-CD-instances" title="Link to this heading">#</a></h1>
+<p>A QUBO probelem is a combinatorical optimization problem that can be formulated as</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{min} \ y = x^T Q x,\]</div>
+<p>where <span class="math notranslate nohighlight">\(Q\)</span> is a symmetric matrix and <span class="math notranslate nohighlight">\(x\)</span> are binary vectors <span class="math notranslate nohighlight">\(x_i \in \{0, 1\}\)</span>.</p>
+<p>This optimization problem can be encoded into a spin-glass hamiltonian such that the expectation value <span class="math notranslate nohighlight">\(\bra{x}H_p\ket{x}\)</span> is equal to <span class="math notranslate nohighlight">\(y\)</span>. Thus, finding the groundstate of <span class="math notranslate nohighlight">\(H_p\)</span> leads to the solution of the QUBO problem. The problem Hamiltonian reads:</p>
+<div class="math notranslate nohighlight">
+\[H_p = \sum_{i&lt;j} J_{ij} \sigma_z^{i}\sigma_z^{j} + \sum_{i} h_i \sigma_z^{i}.\]</div>
+<p>The <span class="math notranslate nohighlight">\(\sigma_z\)</span> denote the Pauli matrices and <span class="math notranslate nohighlight">\(J\)</span> and <span class="math notranslate nohighlight">\(h\)</span> hold the entries of our QUBO matrix: <span class="math notranslate nohighlight">\(J_{ij} = \frac{1}{2} Q_{ij}\)</span> and <span class="math notranslate nohighlight">\(h_i = -\frac{1}{2} Q_{ii} - \sum_j \frac{1}{2} Q_{ij}\)</span>.</p>
+<p>Now we will use counterdiabatic driving to reach the groundstate of <span class="math notranslate nohighlight">\(H_p\)</span>. We prepare our qubits in a well-defined ground state of another initial hamiltonian <span class="math notranslate nohighlight">\(H_i\)</span> and then drive it adiabatically to end up in the groundstate of our problem hamiltonian <span class="math notranslate nohighlight">\(H_p\)</span>. The driving hamiltonian looks like this:</p>
+<div class="math notranslate nohighlight">
+\[H_{\lambda}(t) = (1-\lambda(t)) H_i + \lambda(t) H_p\]</div>
+<p>So at <span class="math notranslate nohighlight">\(\lambda(t)=1\)</span> the state of our system is our minimal solution of the QUBO problem! To enforce adiabatic driving we now add the AGP approximation from our LCD approach as well as the COLD control hamiltonian. This way, we reach the complete COLD hamiltonian:</p>
+<div class="math notranslate nohighlight">
+\[H_{COLD} = H_{\lambda}(t) +  \frac{\partial \lambda}{\partial t} \sum_i \alpha_i(\lambda, \beta) \mathcal{O}_{LCD} + f(\lambda, \beta) \mathcal{O}_{opt}.\]</div>
+<p>Note that the LCD coefficients <span class="math notranslate nohighlight">\(\alpha_i\)</span> depend on the optimization parameters <span class="math notranslate nohighlight">\(\beta\)</span> now.</p>
+<section id="COLD-routine-in-Qrisp">
+<h2>COLD routine in Qrisp<a class="headerlink" href="#COLD-routine-in-Qrisp" title="Link to this heading">#</a></h2>
+<p>Now that we gathered all the components needed for the COLD algorithm, we can implement it in Qrisp.</p>
+<p>We will demonstrate the algorithm for a small 6x6 QUBO example. Note that, depending on the simulator or hardware that you use, you can move to significantly larger QUBOs. Let’s start by defining our QUBO matrix.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">]])</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Next, we set up our initial- and problem Hamiltonian, as well as the control Hamiltonian:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.qubit</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="n">h</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">J</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Q</span>
+
+<span class="n">H_init</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+<span class="n">H_prob</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+          <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]))</span>
+
+<span class="n">H_control</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<p>The AGP approximation are the y-pulses with the coefficients <span class="math notranslate nohighlight">\(\alpha_i\)</span>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">A_lam</span> <span class="o">=</span> <span class="p">[</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span> <span class="c1"># non-uniform</span>
+</pre></div>
+</div>
+</div>
+<p>The coefficients are computed by minimizing the action <span class="math notranslate nohighlight">\(S\)</span>. They depend on the timestep <span class="math notranslate nohighlight">\(\lambda\)</span> as well as the rest of the Hamiltonian, including the optimization parameters <span class="math notranslate nohighlight">\(f\)</span>, <span class="math notranslate nohighlight">\(\partial_{\lambda} f\)</span>. For our spin-glass Hamiltonian and a non-uniform AGP this results in the following calculation:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_deriv</span><span class="p">):</span>
+
+    <span class="n">nom</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">f</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">lam</span><span class="p">)</span> <span class="o">*</span> <span class="n">f_deriv</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+
+    <span class="n">denom</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="p">((</span><span class="n">lam</span><span class="o">*</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">f</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">lam</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+            <span class="n">lam</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+
+    <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">nom</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">denom</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">alph</span>
+</pre></div>
+</div>
+</div>
+<p>Now all that is left to define is the scheduling function <span class="math notranslate nohighlight">\(\lambda(t, T)\)</span> and its inverse <span class="math notranslate nohighlight">\(g(\lambda, T)\)</span> (which is calculated automatically by Qrisp). The simplest choice is <span class="math notranslate nohighlight">\(\lambda(t, T) = t/T\)</span>. We are going to define them as sympy functions, as they will be differentiated during the COLD routine.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">lam</span><span class="p">():</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;t T&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">lam_expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">/</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">lam_expr</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we can create a DCQO instance (digitized counterdiabatic quantum optimization problem) by handing over all the callables and operators.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">DCQOProblem</span>
+
+<span class="n">cold_problem</span> <span class="o">=</span> <span class="n">DCQOProblem</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">H_init</span><span class="p">,</span> <span class="n">H_prob</span><span class="p">,</span> <span class="n">A_lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">H_control</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Before running the algorithm, we need to choose the objective by which the parameters <span class="math notranslate nohighlight">\(f\)</span> are optimized. Right now, the two possibilitis implemented in Qrisp are <code class="docutils literal notranslate"><span class="pre">exp_value</span></code> and <code class="docutils literal notranslate"><span class="pre">agp_coeff_magnitude</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">exp_value</span></code> objective will use the expectation value of <span class="math notranslate nohighlight">\(H_p\)</span> for the minimization and thus run a quantum simulation for each iteration of the optimization. This makes the objective very accurate but the simulation time scales exponentially with the problem size.</p>
+<p>The other objective choice <code class="docutils literal notranslate"><span class="pre">agp_coeff_magnitude</span></code> is going to minimize the magnitude of the AGP coefficients of 1st and 2nd order (note that the second order introduces new coefficients <span class="math notranslate nohighlight">\(\beta_i\)</span>, <span class="math notranslate nohighlight">\(\gamma_i\)</span>). The routine is handled in the module <code class="docutils literal notranslate"><span class="pre">AGP_params</span></code> module.</p>
+<p>We suggest that you try out both objectives for your problem, as the optimal choice strongly depends on the QUBO matrix. For our example, we stick with the default objective, which is <code class="docutils literal notranslate"><span class="pre">agp_coeff_magnitude</span></code>.</p>
+<p>We create a <code class="docutils literal notranslate"><span class="pre">QuantumVariable</span></code> with the size of the QUBO and choose to simulate the Hamiltonian in 6 timesteps over a total evolution time <code class="docutils literal notranslate"><span class="pre">T=50</span></code>. You can decide on the number of optimization parameters <span class="math notranslate nohighlight">\(\beta\)</span> with the argument <code class="docutils literal notranslate"><span class="pre">N_opt</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">N_steps</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;COLD&quot;</span>
+<span class="n">N_opt</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">cold_problem</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">N_steps</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">N_opt</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;101101&#39;: [0.2712, np.float64(-3.4)], &#39;011101&#39;: [0.1488, np.float64(-3.0)], &#39;111101&#39;: [0.1032, np.float64(-2.1000000000000005)], &#39;101100&#39;: [0.0908, np.float64(-3.0)], &#39;101110&#39;: [0.047, np.float64(-2.1)], &#39;011100&#39;: [0.045, np.float64(-2.6)], &#39;111100&#39;: [0.0348, np.float64(-1.7000000000000002)], &#39;100101&#39;: [0.0224, np.float64(-2.0)], &#39;011110&#39;: [0.0212, np.float64(-1.7000000000000002)], &#39;110101&#39;: [0.0186, np.float64(-1.7000000000000002)], &#39;111001&#39;: [0.0182, np.float64(-0.40000000000000013)], &#39;111110&#39;: [0.018, np.float64(-0.8000000000000002)], &#39;010101&#39;: [0.0148, np.float64(-1.7999999999999998)], &#39;001101&#39;: [0.014, np.float64(-3.1)], &#39;101011&#39;: [0.012, np.float64(-1.0)], &#39;111000&#39;: [0.0094, np.float64(-1.1102230246251565e-16)], &#39;100001&#39;: [0.0094, np.float64(-1.5)], &#39;011011&#39;: [0.0082, np.float64(-0.6000000000000001)], &#39;101001&#39;: [0.0074, np.float64(-1.7000000000000002)], &#39;000101&#39;: [0.0068, np.float64(-0.9)], &#39;101111&#39;: [0.0058, np.float64(-1.5)], &#39;101000&#39;: [0.0056, np.float64(-1.3)], &#39;100100&#39;: [0.005, np.float64(-1.6)], &#39;110100&#39;: [0.005, np.float64(-1.3000000000000003)], &#39;010100&#39;: [0.0044, np.float64(-1.4)], &#39;100110&#39;: [0.0044, np.float64(-0.7000000000000001)], &#39;011111&#39;: [0.0042, np.float64(-1.1)], &#39;011000&#39;: [0.0036, np.float64(-0.9)], &#39;001100&#39;: [0.0036, np.float64(-2.7)], &#39;100000&#39;: [0.0032, np.float64(-1.1)], &#39;010001&#39;: [0.0028, np.float64(-1.3)], &#39;110010&#39;: [0.0026, np.float64(-1.1)], &#39;011001&#39;: [0.0026, np.float64(-1.3)], &#39;001110&#39;: [0.0024, np.float64(-1.8000000000000003)], &#39;110001&#39;: [0.0024, np.float64(-1.2000000000000002)], &#39;110011&#39;: [0.0022, np.float64(-0.5000000000000002)], &#39;010110&#39;: [0.0018, np.float64(-0.5)], &#39;010011&#39;: [0.0018, np.float64(-0.6000000000000001)], &#39;111011&#39;: [0.0018, np.float64(0.2999999999999999)], &#39;100011&#39;: [0.0016, np.float64(-0.8000000000000002)], &#39;010000&#39;: [0.0014, np.float64(-0.9)], &#39;000100&#39;: [0.0012, np.float64(-0.5)], &#39;001011&#39;: [0.0012, np.float64(-0.7000000000000001)], &#39;110111&#39;: [0.001, np.float64(0.19999999999999984)], &#39;000010&#39;: [0.0008, np.float64(-0.3)], &#39;101010&#39;: [0.0008, np.float64(-1.6)], &#39;111111&#39;: [0.0008, np.float64(-0.20000000000000018)], &#39;001000&#39;: [0.0006, np.float64(-1.0)], &#39;010010&#39;: [0.0006, np.float64(-1.2)], &#39;000110&#39;: [0.0006, np.float64(0.39999999999999997)], &#39;110000&#39;: [0.0004, np.float64(-0.8000000000000002)], &#39;100010&#39;: [0.0004, np.float64(-1.4000000000000001)], &#39;111010&#39;: [0.0004, np.float64(-0.30000000000000004)], &#39;001001&#39;: [0.0004, np.float64(-1.4)], &#39;000011&#39;: [0.0004, np.float64(0.3)], &#39;001010&#39;: [0.0002, np.float64(-1.3)], &#39;000001&#39;: [0.0002, np.float64(-0.4)], &#39;100111&#39;: [0.0002, np.float64(-0.10000000000000009)], &#39;010111&#39;: [0.0002, np.float64(0.09999999999999998)], &#39;001111&#39;: [0.0002, np.float64(-1.2000000000000002)]}
+</pre></div></div>
+</div>
+<p>The measurement dictionary returns the probability and cost of each result in the form {“state”: [probability, cost]}. We can see that the most likely result is ‘101101’ with a QUBO cost of -3.4. This is the minimal result, thus the success probability is around 27%.</p>
+<section id="Quickly-run-a-DCQO-problem">
+<h3>Quickly run a DCQO problem<a class="headerlink" href="#Quickly-run-a-DCQO-problem" title="Link to this heading">#</a></h3>
+<p>If you want to run a DCQO problem without defining the operators and callables yourself, you can use our <code class="docutils literal notranslate"><span class="pre">solve_QUBO</span></code> method of the COLD module. Here, you only have to hand over the problem- and run arguments as dictionaries. This method defines all the operators needed, creates the problem instance and runs the algorithm.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_QUBO</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+               <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">]])</span>
+
+<span class="n">problem_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;COLD&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+<span class="n">run_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;N_steps&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;N_opt&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;CRAB&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="s2">&quot;agp_coeff_magnitude&quot;</span><span class="p">,</span> <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">solve_QUBO</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">problem_args</span><span class="p">,</span> <span class="n">run_args</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;101110&#39;: [0.0704, np.float64(-2.1)], &#39;101101&#39;: [0.0532, np.float64(-3.4)], &#39;011110&#39;: [0.051, np.float64(-1.7000000000000002)], &#39;011101&#39;: [0.0486, np.float64(-3.0)], &#39;110010&#39;: [0.0452, np.float64(-1.1)], &#39;101010&#39;: [0.0448, np.float64(-1.6)], &#39;101100&#39;: [0.042, np.float64(-3.0)], &#39;100010&#39;: [0.0342, np.float64(-1.4000000000000001)], &#39;010010&#39;: [0.0322, np.float64(-1.2)], &#39;001110&#39;: [0.0302, np.float64(-1.8000000000000003)], &#39;101001&#39;: [0.0288, np.float64(-1.7000000000000002)], &#39;011100&#39;: [0.0264, np.float64(-2.6)], &#39;001101&#39;: [0.026, np.float64(-3.1)], &#39;110101&#39;: [0.025, np.float64(-1.7000000000000002)], &#39;001100&#39;: [0.0226, np.float64(-2.7)], &#39;001010&#39;: [0.022, np.float64(-1.3)], &#39;011010&#39;: [0.0218, np.float64(-1.2000000000000002)], &#39;101111&#39;: [0.0216, np.float64(-1.5)], &#39;101011&#39;: [0.0212, np.float64(-1.0)], &#39;011001&#39;: [0.0206, np.float64(-1.3)], &#39;100101&#39;: [0.02, np.float64(-2.0)], &#39;010101&#39;: [0.0196, np.float64(-1.7999999999999998)], &#39;010011&#39;: [0.0194, np.float64(-0.6000000000000001)], &#39;011111&#39;: [0.0172, np.float64(-1.1)], &#39;110011&#39;: [0.017, np.float64(-0.5000000000000002)], &#39;100011&#39;: [0.0166, np.float64(-0.8000000000000002)], &#39;110100&#39;: [0.016, np.float64(-1.3000000000000003)], &#39;100100&#39;: [0.0152, np.float64(-1.6)], &#39;001001&#39;: [0.0152, np.float64(-1.4)], &#39;011011&#39;: [0.0136, np.float64(-0.6000000000000001)], &#39;010100&#39;: [0.0124, np.float64(-1.4)], &#39;001011&#39;: [0.0118, np.float64(-0.7000000000000001)], &#39;101000&#39;: [0.0112, np.float64(-1.3)], &#39;100001&#39;: [0.011, np.float64(-1.5)], &#39;110001&#39;: [0.0096, np.float64(-1.2000000000000002)], &#39;001111&#39;: [0.009, np.float64(-1.2000000000000002)], &#39;010001&#39;: [0.0084, np.float64(-1.3)], &#39;001000&#39;: [0.0074, np.float64(-1.0)], &#39;011000&#39;: [0.0062, np.float64(-0.9)], &#39;100000&#39;: [0.0058, np.float64(-1.1)], &#39;010000&#39;: [0.0048, np.float64(-0.9)], &#39;110000&#39;: [0.0042, np.float64(-0.8000000000000002)], &#39;000110&#39;: [0.0042, np.float64(0.39999999999999997)], &#39;111101&#39;: [0.0042, np.float64(-2.1000000000000005)], &#39;111110&#39;: [0.0038, np.float64(-0.8000000000000002)], &#39;000001&#39;: [0.0036, np.float64(-0.4)], &#39;000010&#39;: [0.0032, np.float64(-0.3)], &#39;111100&#39;: [0.0028, np.float64(-1.7000000000000002)], &#39;000101&#39;: [0.0026, np.float64(-0.9)], &#39;000000&#39;: [0.0024, np.float64(0.0)], &#39;000111&#39;: [0.0018, np.float64(1.0)], &#39;111010&#39;: [0.0016, np.float64(-0.30000000000000004)], &#39;100110&#39;: [0.0016, np.float64(-0.7000000000000001)], &#39;010110&#39;: [0.0016, np.float64(-0.5)], &#39;111111&#39;: [0.0016, np.float64(-0.20000000000000018)], &#39;000011&#39;: [0.0014, np.float64(0.3)], &#39;110110&#39;: [0.001, np.float64(-0.4000000000000002)], &#39;111011&#39;: [0.0008, np.float64(0.2999999999999999)], &#39;100111&#39;: [0.0008, np.float64(-0.10000000000000009)], &#39;111000&#39;: [0.0004, np.float64(-1.1102230246251565e-16)], &#39;000100&#39;: [0.0004, np.float64(-0.5)], &#39;111001&#39;: [0.0004, np.float64(-0.40000000000000013)], &#39;010111&#39;: [0.0004, np.float64(0.09999999999999998)]}
+</pre></div></div>
+</div>
+</section>
+<section id="Run-a-LCD-problem">
+<h3>Run a LCD problem<a class="headerlink" href="#Run-a-LCD-problem" title="Link to this heading">#</a></h3>
+<p>We can also use the LCD algorithm without the optimized control pulse. This can be done by ommiting the control hamiltonian and choosing <code class="docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">&quot;LCD&quot;</span></code>. Here is how you run the above example with LCD:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_QUBO</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+              <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">]])</span>
+
+<span class="n">problem_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;LCD&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">run_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;N_steps&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">solve_QUBO</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">problem_args</span><span class="p">,</span> <span class="n">run_args</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;101110&#39;: [0.0806, np.float64(-2.1)], &#39;101101&#39;: [0.0664, np.float64(-3.4)], &#39;011110&#39;: [0.0506, np.float64(-1.7000000000000002)], &#39;101010&#39;: [0.0474, np.float64(-1.6)], &#39;101100&#39;: [0.0462, np.float64(-3.0)], &#39;110010&#39;: [0.046, np.float64(-1.1)], &#39;011101&#39;: [0.0452, np.float64(-3.0)], &#39;001110&#39;: [0.0322, np.float64(-1.8000000000000003)], &#39;101001&#39;: [0.0294, np.float64(-1.7000000000000002)], &#39;010010&#39;: [0.029, np.float64(-1.2)], &#39;100010&#39;: [0.028, np.float64(-1.4000000000000001)], &#39;001101&#39;: [0.0272, np.float64(-3.1)], &#39;011100&#39;: [0.027, np.float64(-2.6)], &#39;011010&#39;: [0.027, np.float64(-1.2000000000000002)], &#39;001010&#39;: [0.0214, np.float64(-1.3)], &#39;101011&#39;: [0.0212, np.float64(-1.0)], &#39;110101&#39;: [0.0206, np.float64(-1.7000000000000002)], &#39;101111&#39;: [0.0204, np.float64(-1.5)], &#39;011001&#39;: [0.0202, np.float64(-1.3)], &#39;110100&#39;: [0.0178, np.float64(-1.3000000000000003)], &#39;010101&#39;: [0.0174, np.float64(-1.7999999999999998)], &#39;101000&#39;: [0.0172, np.float64(-1.3)], &#39;011111&#39;: [0.0164, np.float64(-1.1)], &#39;110011&#39;: [0.0162, np.float64(-0.5000000000000002)], &#39;001100&#39;: [0.0148, np.float64(-2.7)], &#39;100101&#39;: [0.0146, np.float64(-2.0)], &#39;011011&#39;: [0.0144, np.float64(-0.6000000000000001)], &#39;010100&#39;: [0.014, np.float64(-1.4)], &#39;100011&#39;: [0.0124, np.float64(-0.8000000000000002)], &#39;100100&#39;: [0.0114, np.float64(-1.6)], &#39;001011&#39;: [0.0104, np.float64(-0.7000000000000001)], &#39;010011&#39;: [0.01, np.float64(-0.6000000000000001)], &#39;011000&#39;: [0.0098, np.float64(-0.9)], &#39;001001&#39;: [0.0098, np.float64(-1.4)], &#39;100001&#39;: [0.0092, np.float64(-1.5)], &#39;001111&#39;: [0.0088, np.float64(-1.2000000000000002)], &#39;110001&#39;: [0.0078, np.float64(-1.2000000000000002)], &#39;100000&#39;: [0.007, np.float64(-1.1)], &#39;010001&#39;: [0.0068, np.float64(-1.3)], &#39;000110&#39;: [0.0064, np.float64(0.39999999999999997)], &#39;000101&#39;: [0.006, np.float64(-0.9)], &#39;010000&#39;: [0.0056, np.float64(-0.9)], &#39;001000&#39;: [0.0056, np.float64(-1.0)], &#39;111101&#39;: [0.0046, np.float64(-2.1000000000000005)], &#39;100110&#39;: [0.004, np.float64(-0.7000000000000001)], &#39;010110&#39;: [0.0036, np.float64(-0.5)], &#39;111010&#39;: [0.0034, np.float64(-0.30000000000000004)], &#39;111110&#39;: [0.0034, np.float64(-0.8000000000000002)], &#39;000001&#39;: [0.0032, np.float64(-0.4)], &#39;110000&#39;: [0.0028, np.float64(-0.8000000000000002)], &#39;000010&#39;: [0.0026, np.float64(-0.3)], &#39;000000&#39;: [0.0024, np.float64(0.0)], &#39;110110&#39;: [0.0024, np.float64(-0.4000000000000002)], &#39;000111&#39;: [0.0018, np.float64(1.0)], &#39;111100&#39;: [0.0016, np.float64(-1.7000000000000002)], &#39;111001&#39;: [0.0016, np.float64(-0.40000000000000013)], &#39;000100&#39;: [0.0014, np.float64(-0.5)], &#39;111000&#39;: [0.0012, np.float64(-1.1102230246251565e-16)], &#39;100111&#39;: [0.001, np.float64(-0.10000000000000009)], &#39;111111&#39;: [0.001, np.float64(-0.20000000000000018)], &#39;000011&#39;: [0.0008, np.float64(0.3)], &#39;111011&#39;: [0.0008, np.float64(0.2999999999999999)], &#39;010111&#39;: [0.0006, np.float64(0.09999999999999998)]}
+</pre></div></div>
+</div>
+<p>With LCD our minimal result only appears with a success probability of 6% as the second most likely result.</p>
+</section>
+<section id="Advanced-usage:-COLD-CRAB">
+<h3>Advanced usage: COLD-CRAB<a class="headerlink" href="#Advanced-usage:-COLD-CRAB" title="Link to this heading">#</a></h3>
+<p>An extension of the COLD algorithm is the COLD-CRAB method. CRAB stands for chopped random-basis quantum optimization. While the COLD routine uses the basis</p>
+<div class="math notranslate nohighlight">
+\[f_{COLD}(\lambda, \beta) \mathcal{O}_{opt} = \sum_{k=1}^{N_{opt}} \beta_k \sin(\pi k g(\lambda)) \sum_i \sigma_z^{i},\]</div>
+<p>we now add random parameters <span class="math notranslate nohighlight">\(r_k \in (-0.5, 0.5)\)</span> to each basis state:</p>
+<div class="math notranslate nohighlight">
+\[f_{CRAB}(\lambda, \beta) \mathcal{O}_{opt} = \sum_{k=1}^{N_{opt}} \beta_k \sin(\pi (k + r_k) g(\lambda)) \sum_i \sigma_z^{i}.\]</div>
+<p>This leads to a small variation of each basis vector and can reduce the risk to get stuck in a local optimization minimum <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">[2]</a>. To use the CRAB extention of COLD, simply hand over <code class="docutils literal notranslate"><span class="pre">&quot;CRAB&quot;:</span> <span class="pre">True</span></code> in the <code class="docutils literal notranslate"><span class="pre">run_args</span></code> dictionary.</p>
+</section>
+</section>
+</section>
+<section id="Recap">
+<h1>Recap<a class="headerlink" href="#Recap" title="Link to this heading">#</a></h1>
+<p>In this tutorial we have learned:</p>
+<ul class="simple">
+<li><p>What it means to drive a quantum system adiabatically from one state to another.</p></li>
+<li><p>Two methods to speed up adiabatic driving: <strong>LCD</strong> and <strong>COLD</strong>.</p></li>
+</ul>
+<p>With LCD we have seen how we can estimate the adiabatic gauge potential to mitigate non-adiabatic transitions. The COLD algorithm builds on that and introduces an additional quantum control pulse that can further optimize the adiabatic evolution. We have seen how we can use these methods to solve QUBO problems: If we encode the QUBO matrix into a spin-glass hamiltonian and let the groundstate evolve over time, we arrive at the groundstate of our QUBO cost hamiltonian.</p>
+<p>The qrisp module <code class="docutils literal notranslate"><span class="pre">COLD</span></code> lets you either define the necessarry operators yourself or you can use the <code class="docutils literal notranslate"><span class="pre">solve_QUBO</span></code> method to run the algorithm with different pre-defined instances. We encourage you to play around with the different options like the evolution time, size of timesteps, optimization objectives and AGP types!</p>
+<hr class="docutils" />
+<p>[1] D. Sels, &amp; A. Polkovnikov, Minimizing irreversible losses in quantum systems by local counterdiabatic driving, Proc. Natl. Acad. Sci. U.S.A. 114 (20) E3909-E3916, <a class="reference external" href="https://doi.org/10.1073/pnas.1619826114" rel="noreferrer" target="_blank">https://doi.org/10.1073/pnas.1619826114</a> (2017).</p>
+<p>[2] Čepaitė et. al., Counterdiabatic optimized local driving. PRX Quantum, 4(1), 010312. <a class="reference external" href="https://doi.org/10.1103/PRXQuantum.4.010312" rel="noreferrer" target="_blank">https://doi.org/10.1103/PRXQuantum.4.010312</a> (2023).</p>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Counterdiabatic Driving Protocols</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-concept-of-counterdiabatic-driving">The concept of counterdiabatic driving</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Local-counterdiabatic-driving-(LCD)">Local counterdiabatic driving (LCD)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Counterdiabatic-optimized-local-driving-(COLD)">Counterdiabatic optimized local driving (COLD)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#QUBO-problems-as-CD-instances">QUBO problems as CD instances</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#COLD-routine-in-Qrisp">COLD routine in Qrisp</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Quickly-run-a-DCQO-problem">Quickly run a DCQO problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Run-a-LCD-problem">Run a LCD problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Advanced-usage:-COLD-CRAB">Advanced usage: COLD-CRAB</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#Recap">Recap</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/CD.ipynb" download="CD.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

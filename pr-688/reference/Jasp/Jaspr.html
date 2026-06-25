@@ -1,0 +1,963 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Jaspr &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Jasp/Jaspr';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Jasp/Jaspr.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qrisp.jasp.Jaspr.inverse" href="generated/qrisp.jasp.Jaspr.inverse.html" />
+    <link rel="prev" title="Jasp" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Jasp</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Jaspr</a></li>
+
+
+
+<li class="toctree-l2"><a class="reference internal" href="Quantum%20Kernel.html">Quantum Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qache.html">Qaching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Control%20Flow/index.html">Hybrid Control Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sampling.html">Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Expectation%20Value.html">Expectation Value</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="Resource%20Estimation.html">Resource Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulation%20Tools/index.html">Simulation Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MLIR%20Interface.html">MLIR Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Optimization%20Tools/Optimization%20Tools.html">Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scalable%20Integer%20Type.html">Scalable Integer Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ported%20Features.html">Ported Features</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Jasp</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Jaspr</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="jaspr">
+<span id="id1"></span><h1>Jaspr<a class="headerlink" href="#jaspr" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="qrisp.jasp.Jaspr">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Jaspr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permeability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isqfree</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctrl_jaspr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_jaspr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/jasp/jasp_expression/centerclass.html#Jaspr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.jasp.Jaspr" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">Jaspr</span></code> class enables an efficient representations of a wide variety
+of (hybrid) algorithms. For many applications, the representation is agnostic
+to the scale of the problem, implying function calls with 10 or 10000 qubits
+can be represented by the same object. The actual unfolding to a circuit-level
+description is outsourced to
+<a class="reference external" href="https://mlir.llvm.org/" rel="noreferrer" target="_blank">established, classical compilation infrastructure</a>,
+implying state-of-the-art compilation speed can be reached.</p>
+<p>As a subtype of <code class="docutils literal notranslate"><span class="pre">jax.extend.core.ClosedJaxpr</span></code>, Jasprs are embedded into the well matured
+<a class="reference external" href="https://github.com/n2cholas/awesome-jax" rel="noreferrer" target="_blank">Jax ecosystem</a>,
+which facilitates the compilation of classical <a class="reference external" href="https://arxiv.org/abs/2206.12950" rel="noreferrer" target="_blank">real-time computation</a>
+using some of the most advanced libraries in the world such as
+<a class="reference external" href="https://jax.readthedocs.io/en/latest/Custom_Operation_for_GPUs.html" rel="noreferrer" target="_blank">CUDA</a>.
+Especially <a class="reference external" href="https://ai.google.dev/gemma/docs/jax_inference" rel="noreferrer" target="_blank">machine learning</a>
+and other scientific computations tasks are particularly well supported.</p>
+<p>To get a better understanding of the syntax and semantics of Jaxpr (and with
+that also Jaspr) please check <a class="reference external" href="https://jax.readthedocs.io/en/latest/jaxpr.html" rel="noreferrer" target="_blank">this link</a>.</p>
+<p>Similar to Jaxpr, Jaspr objects represent (hybrid) quantum
+algorithms in the form of a <a class="reference external" href="https://en.wikipedia.org/wiki/Functional_programming" rel="noreferrer" target="_blank">functional programming language</a>
+in <a class="reference external" href="https://en.wikipedia.org/wiki/Static_single-assignment_form" rel="noreferrer" target="_blank">SSA-form</a>.</p>
+<p>It is possible to compile Jaspr objects into QIR, which is facilitated by the
+<a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst framework</a>
+(check <code class="xref py py-meth docutils literal notranslate"><span class="pre">qrisp.jasp.jaspr.to_qir()</span></code> for more details).</p>
+<p>Qrisp scripts can be turned into Jaspr objects by
+calling the <code class="docutils literal notranslate"><span class="pre">make_jaspr</span></code> function, which has similar semantics as
+<a class="reference external" href="https://jax.readthedocs.io/en/latest/_autosummary/jax.make_jaxpr.html" rel="noreferrer" target="_blank">jax.make_jaxpr</a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fun</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">meas_res</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">meas_res</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">meas_res</span>
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">test_fun</span><span class="p">)(</span><span class="mi">4</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will give you the following output:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">a</span><span class="p">:</span><span class="n">QuantumState</span> <span class="n">b</span><span class="p">:</span><span class="n">i32</span><span class="p">[]</span><span class="o">.</span> <span class="n">let</span>
+    <span class="n">c</span><span class="p">:</span><span class="n">QuantumState</span> <span class="n">d</span><span class="p">:</span><span class="n">QubitArray</span> <span class="o">=</span> <span class="n">create_qubits</span> <span class="n">a</span> <span class="n">b</span>
+    <span class="n">e</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">get_qubit</span> <span class="n">d</span> <span class="mi">0</span>
+    <span class="n">f</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">x</span> <span class="n">c</span> <span class="n">e</span>
+    <span class="n">g</span><span class="p">:</span><span class="n">i32</span><span class="p">[]</span> <span class="o">=</span> <span class="n">sub</span> <span class="n">b</span> <span class="mi">1</span>
+    <span class="n">h</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">get_qubit</span> <span class="n">d</span> <span class="n">g</span>
+    <span class="n">i</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">cx</span> <span class="n">f</span> <span class="n">e</span> <span class="n">h</span>
+    <span class="n">j</span><span class="p">:</span><span class="n">QuantumState</span> <span class="n">k</span><span class="p">:</span><span class="n">i32</span><span class="p">[]</span> <span class="o">=</span> <span class="n">measure</span> <span class="n">i</span> <span class="n">d</span>
+    <span class="n">l</span><span class="p">:</span><span class="n">f32</span><span class="p">[]</span> <span class="o">=</span> <span class="n">convert_element_type</span><span class="p">[</span><span class="n">new_dtype</span><span class="o">=</span><span class="n">float64</span> <span class="n">weak_type</span><span class="o">=</span><span class="kc">True</span><span class="p">]</span> <span class="n">k</span>
+    <span class="n">m</span><span class="p">:</span><span class="n">f32</span><span class="p">[]</span> <span class="o">=</span> <span class="n">mul</span> <span class="n">l</span> <span class="mf">0.5</span>
+    <span class="n">n</span><span class="p">:</span><span class="n">f32</span><span class="p">[]</span> <span class="o">=</span> <span class="n">add</span> <span class="n">m</span> <span class="mf">1.0</span>
+  <span class="ow">in</span> <span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>A defining feature of the Jaspr class is that the first input and the
+first output are always of QuantumState type. Therefore, Jaspr objects always
+represent some (hybrid) quantum operation.</p>
+<p>Qrisp comes with a built-in Jaspr interpreter. For that you simply have to
+call the object like a function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">2.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="go">5.5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="methods">
+<h1>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h1>
+<section id="manipulation">
+<h2>Manipulation<a class="headerlink" href="#manipulation" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.inverse.html#qrisp.jasp.Jaspr.inverse" title="qrisp.jasp.Jaspr.inverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.inverse</span></code></a>()</p></td>
+<td><p>Returns the inverse Jaspr (if applicable).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.control.html#qrisp.jasp.Jaspr.control" title="qrisp.jasp.Jaspr.control"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.control</span></code></a>(num_ctrl[, ctrl_state])</p></td>
+<td><p>Returns the controlled version of the Jaspr.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.qjit.html#qrisp.jasp.Jaspr.qjit" title="qrisp.jasp.Jaspr.qjit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.qjit</span></code></a>(*args[, function_name, device])</p></td>
+<td><p>Leverages the Catalyst pipeline to compile a QIR representation of this function and executes that function using the Catalyst QIR runtime.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_qc.html#qrisp.jasp.Jaspr.to_qc" title="qrisp.jasp.Jaspr.to_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_qc</span></code></a>(*args)</p></td>
+<td><p>Converts the Jaspr into a <a class="reference internal" href="../Circuit%20Manipulation/QuantumCircuit.html#quantumcircuit"><span class="std std-ref">QuantumCircuit</span></a> if applicable.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.extract_post_processing.html#qrisp.jasp.Jaspr.extract_post_processing" title="qrisp.jasp.Jaspr.extract_post_processing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.extract_post_processing</span></code></a>(*args)</p></td>
+<td><p>Extracts the post-processing logic from this Jaspr and returns a function that performs the post-processing on measurement results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_qasm.html#qrisp.jasp.Jaspr.to_qasm" title="qrisp.jasp.Jaspr.to_qasm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_qasm</span></code></a>(*args)</p></td>
+<td><p>Compiles the Jaspr into an OpenQASM 2 string.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_mlir.html#qrisp.jasp.Jaspr.to_mlir" title="qrisp.jasp.Jaspr.to_mlir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_mlir</span></code></a>([lower_stablehlo])</p></td>
+<td><p>Compiles the Jaspr to an xDSL module using the Jasp Dialect.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_catalyst_jaxpr.html#qrisp.jasp.Jaspr.to_catalyst_jaxpr" title="qrisp.jasp.Jaspr.to_catalyst_jaxpr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_catalyst_jaxpr</span></code></a>()</p></td>
+<td><p>Compiles the jaspr to the corresponding <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst jaxpr</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_catalyst_mlir.html#qrisp.jasp.Jaspr.to_catalyst_mlir" title="qrisp.jasp.Jaspr.to_catalyst_mlir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_catalyst_mlir</span></code></a>()</p></td>
+<td><p>Compiles the Jaspr to MLIR using the <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst dialect</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.jasp.Jaspr.to_qir.html#qrisp.jasp.Jaspr.to_qir" title="qrisp.jasp.Jaspr.to_qir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Jaspr.to_qir</span></code></a>()</p></td>
+<td><p>Compiles the Jaspr to QIR using the <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst framework</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="construction">
+<h1>Construction<a class="headerlink" href="#construction" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">make_jaspr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flatten_envs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">jax_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/jasp/jasp_expression/centerclass.html#make_jaspr"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Creates a function that returns the Jaspr representation of a quantum function.</p>
+<p>This function is analogous to JAX’s <code class="docutils literal notranslate"><span class="pre">make_jaxpr</span></code>, but produces a Jaspr
+(a Jaxpr enhanced with quantum primitives) from a Qrisp quantum function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>fun</strong><span class="classifier">Callable</span></dt><dd><p>The quantum function whose Jaspr is to be computed.</p>
+</dd>
+<dt><strong>flatten_envs</strong><span class="classifier">bool, optional</span></dt><dd><p>If True (default), flatten quantum environments in the resulting Jaspr.</p>
+</dd>
+<dt><strong>return_shape</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, the returned function produces a tuple <code class="docutils literal notranslate"><span class="pre">(jaspr,</span> <span class="pre">out_tree)</span></code>
+where <code class="docutils literal notranslate"><span class="pre">out_tree</span></code> is a PyTreeDef representing the structure of the
+output of <code class="docutils literal notranslate"><span class="pre">fun</span></code>. This can be used to reconstruct PyTree objects
+from flat output lists using <code class="docutils literal notranslate"><span class="pre">jax.tree_util.tree_unflatten</span></code>.
+Default is False.</p>
+</dd>
+<dt><strong>**jax_kwargs</strong></dt><dd><p>Additional keyword arguments passed to <code class="docutils literal notranslate"><span class="pre">jax.make_jaxpr</span></code>, such as
+<code class="docutils literal notranslate"><span class="pre">static_argnums</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>Callable</dt><dd><p>A function that, when called with example arguments, returns either:
+- A Jaspr representation of <code class="docutils literal notranslate"><span class="pre">fun</span></code> (if <code class="docutils literal notranslate"><span class="pre">return_shape=False</span></code>)
+- A tuple <code class="docutils literal notranslate"><span class="pre">(Jaspr,</span> <span class="pre">out_tree)</span></code> (if <code class="docutils literal notranslate"><span class="pre">return_shape=True</span></code>) where <code class="docutils literal notranslate"><span class="pre">out_tree</span></code> is a PyTreeDef that can be used with <code class="docutils literal notranslate"><span class="pre">tree_unflatten</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p><strong>Basic quantum circuit with measurement</strong></p>
+<p>Create a Jaspr for a simple Bell state circuit:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simple_circuit</span><span class="p">():</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">simple_circuit</span><span class="p">)()</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">jaspr</span><span class="p">()</span>  <span class="c1"># Returns 0 or 3 with equal probability</span>
+</pre></div>
+</div>
+<p><strong>Parameterized quantum circuit</strong></p>
+<p>Create a Jaspr with parameterized gates that can be executed with different parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rotation_circuit</span><span class="p">(</span><span class="n">angle</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">rotation_circuit</span><span class="p">)(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">result1</span> <span class="o">=</span> <span class="n">jaspr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># Execute with angle=0.5</span>
+<span class="n">result2</span> <span class="o">=</span> <span class="n">jaspr</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># Execute with angle=1.0</span>
+</pre></div>
+</div>
+<p><strong>Using return_shape for PyTree reconstruction</strong></p>
+<p>Retrieve the output tree structure alongside the Jaspr for reconstructing
+complex return values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_unflatten</span><span class="p">,</span> <span class="n">tree_flatten</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">multi_output_circuit</span><span class="p">():</span>
+    <span class="n">qa</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">qb</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qa</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qa</span><span class="p">),</span> <span class="n">measure</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
+
+<span class="n">jaspr</span><span class="p">,</span> <span class="n">out_tree</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">multi_output_circuit</span><span class="p">,</span> <span class="n">return_shape</span><span class="o">=</span><span class="kc">True</span><span class="p">)()</span>
+<span class="n">result_a</span><span class="p">,</span> <span class="n">result_b</span> <span class="o">=</span> <span class="n">jaspr</span><span class="p">()</span>
+
+<span class="c1"># Use out_tree to reconstruct the output structure</span>
+<span class="n">flat_results</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">((</span><span class="n">result_a</span><span class="p">,</span> <span class="n">result_b</span><span class="p">))</span>
+<span class="n">reconstructed</span> <span class="o">=</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">out_tree</span><span class="p">,</span> <span class="n">flat_results</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="advanced-details">
+<h1>Advanced details<a class="headerlink" href="#advanced-details" title="Link to this heading">#</a></h1>
+<p>This section elaborates how Jaspr objects are embedded into the Jax infrastructure. If you just want to accelerate your code you can (probably) skip this. It is recommended to first get a solid understanding of <a class="reference external" href="https://jax.readthedocs.io/en/latest/notebooks/How_JAX_primitives_work.html" rel="noreferrer" target="_blank">Jax primitives</a> and how to create a Jaxpr out of them.</p>
+<p>Jasp is designed to model dynamic quantum computations with a minimal set of primitives.</p>
+<p>For that, there are 3 new Jax abstract data types defined:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>, which represents an object that tracks what kind of manipulations are applied to the quantum state.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">QubitArray</span></code>, which represents an array of qubits that can have a dynamic number of qubits.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Qubit</span></code>, which represents individual qubits.</p></li>
+</ul>
+<p>Before we describe how quantum computations are realized, we list some “administrative” primitives and their semantics.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Primitive</p></th>
+<th class="head"><p>Semantics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jasp.create_qubits</span></code></p></td>
+<td><p>Creates new qubits. Takes a (dynamic) integer representing the size and a <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>, then returns a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> and a new <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jasp.get_qubit</span></code></p></td>
+<td><p>Extracts a <code class="docutils literal notranslate"><span class="pre">Qubit</span></code> from a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code>. Takes a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> and a dynamic integer (indicating the position) and returns a <code class="docutils literal notranslate"><span class="pre">Qubit</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jasp.get_size</span></code></p></td>
+<td><p>Retrieves the size of a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code>. Takes a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> and returns an integer (the size).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jasp.delete_qubits</span></code></p></td>
+<td><p>Deallocates a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code>. Takes a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> and a <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>, returns a new <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jasp.reset</span></code></p></td>
+<td><p>Resets qubits in a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> to the <code class="docutils literal notranslate"><span class="pre">|0⟩</span></code> state. Takes a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> and a <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>, returns a new <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="quantum-operations">
+<h2>Quantum Operations<a class="headerlink" href="#quantum-operations" title="Link to this heading">#</a></h2>
+<p>Quantum gates are represented by the <code class="docutils literal notranslate"><span class="pre">jasp.quantum_gate</span></code> primitive. Here’s an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_function</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">bl</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">qv</span><span class="p">,</span> <span class="n">bl</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">make_jaspr</span><span class="p">(</span><span class="n">test_function</span><span class="p">)(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">a</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span> <span class="n">b</span><span class="p">:</span><span class="n">QuantumState</span><span class="o">.</span> <span class="n">let</span>
+    <span class="n">c</span><span class="p">:</span><span class="n">QubitArray</span> <span class="n">d</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">create_qubits</span> <span class="n">a</span> <span class="n">b</span>
+    <span class="n">e</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">0</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">f</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">1</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">g</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">cx</span><span class="p">]</span> <span class="n">e</span> <span class="n">f</span> <span class="n">d</span>
+    <span class="n">h</span><span class="p">:</span><span class="nb">bool</span><span class="p">[]</span> <span class="n">i</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">measure</span> <span class="n">f</span> <span class="n">g</span>
+  <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>The line starting with <code class="docutils literal notranslate"><span class="pre">g:</span></code> describes how quantum gates are represented in a Jaspr: The gate name is specified in the parameters (<code class="docutils literal notranslate"><span class="pre">gate=cx</span></code>), followed by the <code class="docutils literal notranslate"><span class="pre">Qubit</span></code> arguments, and finally the <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code>. This structure closely mirrors how quantum computations are modeled mathematically: as a unitary applied to a tensor at certain indices. You can think of <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code> objects as tensors, <code class="docutils literal notranslate"><span class="pre">Qubit</span></code> objects as integer indices, and <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code> objects as arrays of indices.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">jasp.measure</span></code> primitive takes a special role: Unlike other quantum operations, it not only returns a new <code class="docutils literal notranslate"><span class="pre">QuantumState</span></code> but also a measurement outcome. When measuring a single <code class="docutils literal notranslate"><span class="pre">Qubit</span></code>, it returns a boolean value. When measuring a <code class="docutils literal notranslate"><span class="pre">QubitArray</span></code>, it returns an integer:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_function</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">make_jaspr</span><span class="p">(</span><span class="n">test_function</span><span class="p">)(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">a</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span> <span class="n">b</span><span class="p">:</span><span class="n">QuantumState</span><span class="o">.</span> <span class="n">let</span>
+    <span class="n">c</span><span class="p">:</span><span class="n">QubitArray</span> <span class="n">d</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">create_qubits</span> <span class="n">a</span> <span class="n">b</span>
+    <span class="n">e</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">0</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">f</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">1</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">g</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">cx</span><span class="p">]</span> <span class="n">e</span> <span class="n">f</span> <span class="n">d</span>
+    <span class="n">h</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span> <span class="n">i</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">measure</span> <span class="n">c</span> <span class="n">g</span>
+  <span class="ow">in</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Both variants return values (<code class="docutils literal notranslate"><span class="pre">bool[]</span></code> or <code class="docutils literal notranslate"><span class="pre">i64[]</span></code>) that other Jax modules understand, highlighting the seamless embedding of quantum computations into the Jax ecosystem.</p>
+</section>
+<section id="quantumenvironments">
+<h2>QuantumEnvironments<a class="headerlink" href="#quantumenvironments" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="../Quantum%20Environments/index.html#quantumenvironment"><span class="std std-ref">Quantum Environments</span></a> objects in Jasp can be represented in two forms: unflattened (where environments appear as <code class="docutils literal notranslate"><span class="pre">jasp.q_env</span></code> primitives) or flattened (where environment transformations are applied directly).</p>
+<p><strong>Unflattened form</strong> (<code class="docutils literal notranslate"><span class="pre">flatten_envs=False</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_function</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+        <span class="n">t</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">test_function</span><span class="p">,</span> <span class="n">flatten_envs</span><span class="o">=</span><span class="kc">False</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">a</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span> <span class="n">b</span><span class="p">:</span><span class="n">QuantumState</span><span class="o">.</span> <span class="n">let</span>
+    <span class="n">c</span><span class="p">:</span><span class="n">QubitArray</span> <span class="n">d</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">create_qubits</span> <span class="n">a</span> <span class="n">b</span>
+    <span class="n">e</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">q_env</span><span class="p">[</span>
+      <span class="n">jaspr</span><span class="o">=</span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">c</span><span class="p">:</span><span class="n">QubitArray</span> <span class="n">f</span><span class="p">:</span><span class="n">QuantumState</span><span class="o">.</span> <span class="n">let</span>
+          <span class="n">g</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">0</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+          <span class="n">h</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">t</span><span class="p">]</span> <span class="n">g</span> <span class="n">f</span>
+          <span class="n">i</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">1</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+          <span class="n">j</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">cx</span><span class="p">]</span> <span class="n">g</span> <span class="n">i</span> <span class="n">h</span>
+        <span class="ow">in</span> <span class="p">(</span><span class="n">j</span><span class="p">,)</span> <span class="p">}</span>
+      <span class="nb">type</span><span class="o">=</span><span class="n">InversionEnvironment</span>
+    <span class="p">]</span> <span class="n">c</span> <span class="n">d</span>
+  <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Here, the body of the <a class="reference internal" href="../Quantum%20Environments/InversionEnvironment.html#inversionenvironment"><span class="std std-ref">InversionEnvironment</span></a> is collected into a nested Jaspr within the <code class="docutils literal notranslate"><span class="pre">jasp.q_env</span></code> primitive. This representation preserves the environment structure and reflects how <a class="reference internal" href="../Quantum%20Environments/index.html#quantumenvironment"><span class="std std-ref">QuantumEnvironments</span></a> describe <a class="reference external" href="https://en.wikipedia.org/wiki/Higher-order_function" rel="noreferrer" target="_blank">higher-order quantum functions</a> that transform quantum operations.</p>
+<p><strong>Flattened form</strong> (<code class="docutils literal notranslate"><span class="pre">flatten_envs=True</span></code>, default):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">test_function</span><span class="p">,</span> <span class="n">flatten_envs</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="k">lambda</span> <span class="p">;</span> <span class="n">a</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span> <span class="n">b</span><span class="p">:</span><span class="n">QuantumState</span><span class="o">.</span> <span class="n">let</span>
+    <span class="n">c</span><span class="p">:</span><span class="n">QubitArray</span> <span class="n">d</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">create_qubits</span> <span class="n">a</span> <span class="n">b</span>
+    <span class="n">e</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">0</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">f</span><span class="p">:</span><span class="n">Qubit</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">get_qubit</span> <span class="n">c</span> <span class="mi">1</span><span class="p">:</span><span class="n">i64</span><span class="p">[]</span>
+    <span class="n">g</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">cx</span><span class="p">]</span> <span class="n">e</span> <span class="n">f</span> <span class="n">d</span>
+    <span class="n">h</span><span class="p">:</span><span class="n">QuantumState</span> <span class="o">=</span> <span class="n">jasp</span><span class="o">.</span><span class="n">quantum_gate</span><span class="p">[</span><span class="n">gate</span><span class="o">=</span><span class="n">t_dg</span><span class="p">]</span> <span class="n">e</span> <span class="n">g</span>
+  <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>In the flattened form, the <a class="reference internal" href="../Quantum%20Environments/InversionEnvironment.html#inversionenvironment"><span class="std std-ref">InversionEnvironment</span></a> transformation has been applied: the order of the <code class="docutils literal notranslate"><span class="pre">cx</span></code> and <code class="docutils literal notranslate"><span class="pre">t</span></code> gates has been reversed, and the <code class="docutils literal notranslate"><span class="pre">t</span></code> gate has been transformed into <code class="docutils literal notranslate"><span class="pre">t_dg</span></code> (T-dagger). This is the default behavior as it produces more optimized Jaspr representations suitable for execution.</p>
+<p>For more detailed information about the Jasp primitives and their semantics, see the <a class="reference internal" href="MLIR%20Interface.html#mlir-interface"><span class="std std-ref">MLIR Interface</span></a> documentation.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Jasp"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Jaspr</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.jasp.Jaspr"><code class="docutils literal notranslate"><span class="pre">Jaspr</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manipulation">Manipulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">Evaluation</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#construction">Construction</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-details">Advanced details</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantum-operations">Quantum Operations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantumenvironments">QuantumEnvironments</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

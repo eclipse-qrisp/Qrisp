@@ -1,0 +1,880 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>QUBO as a QAOAProblem &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QAOAtutorial/QUBO';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QAOAtutorial/QUBO.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Portfolio rebalancing with constrained mixers" href="PortfolioRebalancing.html" />
+    <link rel="prev" title="Channelled Constrained Mixers" href="ConstrainedMixers.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Solving combinatorial optimization problems with QAOA</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Theoretical.html">Theoretical Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxCut.html">MaxCut QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MkCS.html">Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ConstrainedMixers.html">Channelled Constrained Mixers</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">QUBO as a QAOAProblem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PortfolioRebalancing.html">Portfolio rebalancing with constrained mixers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Solving combinatorial optimization problems with QAOA</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">QUBO as a QAOAProblem</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="QUBO-as-a-QAOAProblem">
+<h1>QUBO as a QAOAProblem<a class="headerlink" href="#QUBO-as-a-QAOAProblem" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>In this tutorial you’ll be guided through the process of defining a new phase separator to be used within the scope of the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOA.html"><span class="doc">Alternating Operator Ansatz</span></a> focussed on solving various QUBO problems with only needing the QUBO matrix <span class="math notranslate nohighlight">\(Q\)</span> as an input. QUBO, or <a class="reference external" href="https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization" rel="noreferrer" target="_blank">Quadratic Unconstrained Binary Optimization</a>, is a type of problem that involves optimizing a quadratic function
+of binary variables.</p>
+<p>After first translating the QUBO Hamiltonian <span class="math notranslate nohighlight">\(H_C\)</span> from the binary basis <span class="math notranslate nohighlight">\(x_i\)</span>​ to the state basis with the translation <span class="math notranslate nohighlight">\(x_i\rightarrow \frac{\mathbb{I}-Z_i}{2}\)</span>, we’ll construct the phase separator unitary and run QAOA to solve the set partitioning problem.</p>
+<p>Not to get too ahead of ourselves with how to do it, let’s first show how to solve a QUBO problem using Qrisp. To obtain the optimal solutions to a problem, we only need to know the QUBO matrix <span class="math notranslate nohighlight">\(Q\)</span>. In order to get familiar with that, we propose having a look at the <a class="reference external" href="https://arxiv.org/abs/1811.11538" rel="noreferrer" target="_blank">Tutorial on Formulating and Using QUBO Models</a>, which explains how to derive such a matrix <span class="math notranslate nohighlight">\(Q\)</span>.</p>
+<p>One can then simply minimize the cost function <span class="math notranslate nohighlight">\(\min C(x)=\min x^TQx\)</span> for binary variables <span class="math notranslate nohighlight">\(x_i\in\{0,1\}\)</span>. This is done either by sending the QUBO matrix <span class="math notranslate nohighlight">\(Q\)</span> to the annealer/quantum computer, which calculates and returns the bitstrings with corresponding values of <span class="math notranslate nohighlight">\(C(x)\)</span>. The lower the <span class="math notranslate nohighlight">\(C(x)\)</span>, the better the solution. In other words, we want to find the Hamiltonian <span class="math notranslate nohighlight">\(H_C|x\rangle=C(x)|x\rangle\)</span>.</p>
+<p>Let’s borrow the QUBO matrix (explained in depth in the above mentioned <a class="reference external" href="https://arxiv.org/abs/1811.11538" rel="noreferrer" target="_blank">tutorial</a>) for the set partitioning problem. The QUBO matrix in that case is</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q = \begin{pmatrix}-17&amp;10&amp;10&amp;10&amp;0&amp;20\\10&amp;-18&amp;10&amp;10&amp;10&amp;20\\10&amp;10&amp;-29&amp;10&amp;20&amp;20\\10&amp;10&amp;10&amp;-19&amp;10&amp;10\\0&amp;10&amp;20&amp;10&amp;-17&amp;10\\20&amp;20&amp;20&amp;10&amp;10&amp;-28\end{pmatrix}\end{split}\]</div>
+<p>Usually, QUBO matrices are upper triangular (by convention) - this means that only elements above the diagonal (with the diagonal included) are not equal to zero. This is because the variables in QUBO problems are binary, which results in the identity <span class="math notranslate nohighlight">\(q_iq_j=q_jq_i\)</span> for binary variables. Because of this, the elements above the diagonal are doubled compared to the symmetrized version of <span class="math notranslate nohighlight">\(Q\)</span> we wrote down above.</p>
+<p>Of course it’s easy to go from the conventional QUBO <span class="math notranslate nohighlight">\(Q_{\text{up}\Delta}\)</span> formulation to the symmetrized <span class="math notranslate nohighlight">\(Q_\text{sym}\)</span> QUBO: <span class="math notranslate nohighlight">\(Q_\text{sym}=\frac{1}{2}\big(Q_{\text{up}\Delta}+Q_{\text{up}\Delta}^T\big)\)</span>, and back:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">upper_triangular_to_symmetric</span><span class="p">(</span><span class="n">Q_up_triang</span><span class="p">):</span>
+    <span class="c1"># Convert upper triangular QUBO matrix to symmetrized version</span>
+    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">Q_up_triang</span> <span class="o">+</span> <span class="n">Q_up_triang</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">symmetric_to_upper_triangular</span><span class="p">(</span><span class="n">Q_sym</span><span class="p">):</span>
+    <span class="c1"># Convert symmetrized QUBO matrix to upper triangular version</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">Q_sym</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q_sym</span><span class="p">))</span>
+
+
+<span class="c1"># Example from the notebook</span>
+<span class="n">Q_sym</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">18</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">29</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">28</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Convert symmetric to upper triangular</span>
+<span class="n">Q_up_triang</span> <span class="o">=</span> <span class="n">symmetric_to_upper_triangular</span><span class="p">(</span><span class="n">Q_sym</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Our implementation of solving QUBO problems using QAOA works for both the upper triangular, as well as symmetrized matrix conventions. As promised, we can now immediately solve the QUBO by calling the <a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/QUBO.html"><span class="doc">solve_QUBO</span></a> method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">18</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">29</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">28</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">solve_QUBO</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">5000</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[(np.int64(-34),
+  OutcomeArray([&#39;1&#39;, &#39;0&#39;, &#39;0&#39;, &#39;0&#39;, &#39;1&#39;, &#39;0&#39;], dtype=object),
+  0.0496),
+ (np.int64(-29),
+  OutcomeArray([&#39;0&#39;, &#39;0&#39;, &#39;1&#39;, &#39;0&#39;, &#39;0&#39;, &#39;0&#39;], dtype=object),
+  0.0584),
+ (np.int64(-28),
+  OutcomeArray([&#39;0&#39;, &#39;0&#39;, &#39;0&#39;, &#39;0&#39;, &#39;0&#39;, &#39;1&#39;], dtype=object),
+  0.0614),
+ (np.int64(-28),
+  OutcomeArray([&#39;0&#39;, &#39;0&#39;, &#39;1&#39;, &#39;1&#39;, &#39;0&#39;, &#39;0&#39;], dtype=object),
+  0.0412),
+ (np.int64(-27),
+  OutcomeArray([&#39;0&#39;, &#39;0&#39;, &#39;0&#39;, &#39;1&#39;, &#39;0&#39;, &#39;1&#39;], dtype=object),
+  0.044)]
+</pre></div></div>
+</div>
+<p>That’s it! You can try running this block of code on the website using the Thebe interactivity integration, or run it on your own Qrispy environment. We see that we obtain the 5 best solutions with the corresponding bitsring of the binary variables. You can test the statements above, and convert the symmetrized matrix into the upper triangular one, and run <code class="docutils literal notranslate"><span class="pre">solve_QUBO</span></code> again.</p>
+<p>We see, that we only needed to provide the matrix <span class="math notranslate nohighlight">\(Q\)</span>, specify the depth of the QAOA circuit that is running in the background, and the backend you want to run the algorithm on. Clean and qrispy!</p>
+<section id="From-QUBO-to-QAOA">
+<h2>From QUBO to QAOA<a class="headerlink" href="#From-QUBO-to-QAOA" title="Link to this heading">#</a></h2>
+<p>Of course it’s beneficial to not only know the “how”, but also understand the “why”. So let’s dig in!</p>
+<p>To construct such a circuit with quantum gates and run it on a quantum computer, one has to translate between the basis of <span class="math notranslate nohighlight">\(x_i\)</span> to Pauli gate operators.</p>
+<div class="math notranslate nohighlight">
+\[Z_i|x\rangle=(-1)^{x_i}\rightarrow\frac{\mathbb{1}-Z_i}{2}|x\rangle=x_i\]</div>
+<p>To find <span class="math notranslate nohighlight">\(H_C\)</span> one can calculate</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align*}H_C=&amp;\sum_{i,j=1}^nQ_{ij}\frac{\mathbb{1}-Z_i}{2}\frac{\mathbb{1}-Z_j}{2}\\=&amp;\sum_{i,j=1}^n\frac{Q_{ij}}{4}+\sum_{i,j}^n\frac{Q_{ij}}{4}Z_iZ_j\\&amp;-\sum_{i=1}^n\bigg(\sum_{j=1}^n\frac{Q_{ij}}{4}\bigg)Z_i-\sum_{j=1}^n\bigg(\sum_{i=1}^n\frac{Q_{ij}}{4}\bigg)Z_j\end{align*}\end{split}\]</div>
+<p>Swapping the indices <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> in the last sum, and using the identity <span class="math notranslate nohighlight">\(Z_iZ_i=\mathbb{1}\)</span>, we get</p>
+<div class="math notranslate nohighlight">
+\[H_C=\frac{1}{4}\sum_{i\neq j}Q_{ij}Z_iZ_j-\frac{1}{4}\sum_{i=1}^n\sum_{j=1}^n(Q_{ij}+Q_{ji})Z_i+\frac{1}{4}\sum_{i,j=1}^nQ_{ij}+\frac{1}{4}\sum_{i=1}^nQ_{ii}\]</div>
+<p>Note that for each single <span class="math notranslate nohighlight">\(Z_i\)</span> we sum the <span class="math notranslate nohighlight">\(i\)</span>-th row and the <span class="math notranslate nohighlight">\(i\)</span>-th column of the matrix <span class="math notranslate nohighlight">\(Q\)</span>.</p>
+<p>For the cost operator <span class="math notranslate nohighlight">\(U_C\)</span>, which we feed into <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code>, we get</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align*}U_C=e^{-i\gamma H_C}=&amp;\prod_{i,j=1}^nR_{Z_iZ_j}\Bigg(\frac{\gamma}{2}Q_{ij}\Bigg)\times\prod_{i=1}^nR_{Z_i}\Bigg(-\frac{\gamma}{2}\bigg(\sum_{j=1}^n(Q_{ij}+Q_{ji})\bigg)\Bigg)\\&amp;\times\exp\Bigg(-\frac{i\gamma}{4}\sum_{i,j=1}^nQ_{ij}-\frac{i\gamma}{4}\sum_{i=1}^nQ_{ii}\Bigg)\end{align*}\end{split}\]</div>
+<p>Here, the last factor correspods to a global phase.</p>
+<p>Let’s translate this into a function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_QUBO_cost_operator</span><span class="p">(</span><span class="n">Q</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">QUBO_cost_operator</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+
+        <span class="c1"># Rescaling for enhancing the performance of the QAOA</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Q</span><span class="p">))</span>
+
+        <span class="n">gphase</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">Q</span><span class="p">)),</span> <span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)):</span>
+            <span class="n">rz</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])),</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">rzz</span><span class="p">(</span><span class="n">gamma</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">QUBO_cost_operator</span>
+</pre></div>
+</div>
+</div>
+<p>Like we did for MaxCut and M-<span class="math notranslate nohighlight">\(\kappa\)</span>-CS we also define the general QUBO objective function, the classical cost function, as well as construct the <code class="docutils literal notranslate"><span class="pre">QUBOProblem</span></code> blueprint bringing everything together.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">rzz</span><span class="p">,</span> <span class="n">rz</span><span class="p">,</span> <span class="n">gphase</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">QUBO_obj</span><span class="p">(</span><span class="n">bitstring</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bitstring</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">cost</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_QUBO_cl_cost_function</span><span class="p">(</span><span class="n">Q</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cl_cost_function</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">QUBO_obj</span><span class="p">(</span><span class="n">bitstring</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bitstring</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">x</span>
+            <span class="k">return</span> <span class="n">cost</span>
+
+        <span class="n">energy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">meas</span><span class="p">,</span> <span class="n">meas_count</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">obj_for_meas</span> <span class="o">=</span> <span class="n">QUBO_obj</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span>
+            <span class="n">energy</span> <span class="o">+=</span> <span class="n">obj_for_meas</span> <span class="o">*</span> <span class="n">meas_count</span>
+        <span class="k">return</span> <span class="n">energy</span>
+
+    <span class="k">return</span> <span class="n">cl_cost_function</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">QUBO_problem</span><span class="p">(</span><span class="n">Q</span><span class="p">):</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAOAProblem</span><span class="p">,</span> <span class="n">RX_mixer</span>
+
+    <span class="k">return</span> <span class="n">QAOAProblem</span><span class="p">(</span>
+        <span class="n">create_QUBO_cost_operator</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span> <span class="n">RX_mixer</span><span class="p">,</span> <span class="n">create_QUBO_cl_cost_function</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>That’s it for the necessary ingredients you learned about in the QAOA tutorial! Let’s solve the set partitioning problem from above using this newly acquired information, and combine with how we already ran the QAOA algorithm using the <code class="docutils literal notranslate"><span class="pre">run</span></code> method:</p>
+<ul class="simple">
+<li><p>define the QUBO matrix <span class="math notranslate nohighlight">\(Q\)</span>,</p></li>
+<li><p>define the quantum argument <code class="docutils literal notranslate"><span class="pre">qarg</span></code> as a <a class="reference internal" href="../../../reference/Core/QuantumArray.html"><span class="doc">QuantumArray</span></a> of <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariables</span></a>,</p></li>
+<li><p>create the QUBO instance using <code class="docutils literal notranslate"><span class="pre">QUBO_problem</span></code> we defined above,</p></li>
+<li><p>run the algorithm using the <code class="docutils literal notranslate"><span class="pre">run</span></code> method, and last but not least,</p></li>
+<li><p>examine the QAOA solutions and perform for classical post processing: compute the cost functions, sort the solutions by their cost in ascending order, and print the solutions with their costs.</p></li>
+</ul>
+<blockquote>
+<div><p>⚠️ <strong>Warning</strong></p>
+<p>For small QUBO instance the number of <code class="docutils literal notranslate"><span class="pre">shots</span></code> typically exceeds the number of possible solutions. In this case, even QAOA with <code class="docutils literal notranslate"><span class="pre">depth=0</span></code>, i.e., sampling from a uniform superposition, may yield the optimal solution as the classical post-processing amounts to brute force search! Performance of <a class="reference internal" href="../../../reference/Algorithms/qaoa/implementations/QUBO.html"><span class="doc">solve_QUBO</span></a> for small instance may not be indicative of performance for large instances.</p>
+</div></blockquote>
+<p>These are exactly the pieces in the mosaic of code that <code class="docutils literal notranslate"><span class="pre">solve_QUBO</span></code> consists of and performs:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.default_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">def_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+
+<span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">18</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">29</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">28</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">))</span>
+
+<span class="n">QUBO_instance</span> <span class="o">=</span> <span class="n">QUBO_problem</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">QUBO_instance</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">mes_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">def_backend</span><span class="p">},</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="n">costs_and_solutions</span> <span class="o">=</span> <span class="p">[(</span><span class="n">QUBO_obj</span><span class="p">(</span><span class="n">bitstring</span><span class="p">,</span> <span class="n">Q</span><span class="p">),</span> <span class="n">bitstring</span><span class="p">)</span> <span class="k">for</span> <span class="n">bitstring</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+
+<span class="n">sorted_costs_and_solutions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">costs_and_solutions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Solution </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">sorted_costs_and_solutions</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> with cost: </span><span class="si">{</span><span class="n">sorted_costs_and_solutions</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and probability: </span><span class="si">{</span><span class="n">res</span><span class="p">[</span><span class="n">sorted_costs_and_solutions</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Solution 1: [&#39;1&#39; &#39;0&#39; &#39;0&#39; &#39;0&#39; &#39;1&#39; &#39;0&#39;] with cost: -34 and probability: 0.0386
+Solution 2: [&#39;0&#39; &#39;0&#39; &#39;0&#39; &#39;0&#39; &#39;0&#39; &#39;1&#39;] with cost: -28 and probability: 0.0398
+Solution 3: [&#39;0&#39; &#39;0&#39; &#39;1&#39; &#39;1&#39; &#39;0&#39; &#39;0&#39;] with cost: -28 and probability: 0.0254
+Solution 4: [&#39;0&#39; &#39;1&#39; &#39;1&#39; &#39;0&#39; &#39;0&#39; &#39;0&#39;] with cost: -27 and probability: 0.0054
+Solution 5: [&#39;0&#39; &#39;0&#39; &#39;0&#39; &#39;1&#39; &#39;0&#39; &#39;1&#39;] with cost: -27 and probability: 0.0024
+</pre></div></div>
+</div>
+<p>Now you are prepared to solve all QUBOs you derive and want to solve. On the other hand, if you would just like to play around instead, try out some QUBOs from this <a class="reference external" href="https://blog.xa0.de/post/List-of-QUBO-formulations" rel="noreferrer" target="_blank">list of QUBO formulations</a>.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/QAOAtutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#From-QUBO-to-QAOA">From QUBO to QAOA</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/QAOAtutorial/QUBO.ipynb" download="QUBO.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

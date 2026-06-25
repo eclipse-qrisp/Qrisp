@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Algorithms &amp; Applications &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Block Encodings/applications';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Block%20Encodings/applications.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How to run on NISQ" href="nisq.html" />
+    <link rel="prev" title="BlockEncoding.svt" href="methods/svt.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Block Encodings</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="BlockEncoding.html">BlockEncoding</a></li>
+<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">Algorithms &amp; Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="methods/inv.html">BlockEncoding.inv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="methods/poly.html">BlockEncoding.poly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="methods/pseudo_inv.html">BlockEncoding.pseudo_inv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="methods/sim.html">BlockEncoding.sim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="methods/svt.html">BlockEncoding.svt</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="nisq.html">How to run on NISQ</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Block Encodings</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Algorithms &amp; Applications</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="algorithms-applications">
+<span id="block-encodigns-applications"></span><h1>Algorithms &amp; Applications<a class="headerlink" href="#algorithms-applications" title="Link to this heading">#</a></h1>
+<p>Utilizing block-encodings as programming abstraction – in principle – enables the realization of a vast array of fundamental tasks in quantum computation <a class="reference internal" href="#martyn2021" id="id1"><span>[Martyn2021]</span></a>.
+Through (Generalized) Quantum Signal Processing (QSP) <a class="reference internal" href="#motlagh2024" id="id2"><span>[Motlagh2024]</span></a> and its derivatives Quantum Eigenvalue Transform (QET) and Quantum Singular Value Transformation (QSVT) <a class="reference internal" href="#gilyen2019" id="id3"><span>[Gilyén2019]</span></a>, <a class="reference internal" href="#sunderhauf2023" id="id4"><span>[Sünderhauf2023]</span></a>,
+diverse algorithms – ranging from Hamiltonian simulation to linear systems solvers – can be expressed as polynomial transformations of a block-encoded matrix.</p>
+<p>While it serves as a powerful toolbox for designing algorithms with rigorous performance bounds, its practical viability depends heavily on the specific application and the underlying hardware constraints.
+In many scenarios, established alternatives remain highly competitive: for example, Trotter-Suzuki decompositions are often more straightforward for near-term Hamiltonian simulation,
+variational methods may be better suited for noisy hardware, and traditional Quantum Phase Estimation (QPE) remains a standard for Shor’s algorithm.
+Ultimately, block-encodings should be viewed as a modular and expressive language that complements, rather than replaces, the existing suite of quantum algorithmic strategies.</p>
+<p>Key applications of block-encodings are:</p>
+<ul class="simple">
+<li><p><strong>Matrix Inversion:</strong> Solves the Quantum Linear Systems Problem (QLSP) by applying a polynomial transformation approximating <span class="math notranslate nohighlight">\(1/x\)</span> to the eigenvalues of an encoded matrix <a class="reference internal" href="#childs2017" id="id5"><span>[Childs2017]</span></a>.</p></li>
+<li><p><strong>Threshold Matrix Pseudoinverse:</strong> : Approximates the pseudoinverse of a matrix by ignoring singular values below a specified threshold.
+In ill-conditioned linear systems, tiny singular values amplify noise and cause large numerical errors; discarding them trades a small amount of exact accuracy for a significantly more stable solution.
+In Quantum Machine Learning (QML), this thresholding acts as a powerful regularizer that prevents models from overfitting to noisy data. <a class="reference internal" href="#martyn2021" id="id6"><span>[Martyn2021]</span></a></p></li>
+<li><p><strong>Ground State Preparation:</strong> Efficiently prepares eigenstates using eigenstate filtering – applying a polynomial that acts as a band-pass filter on the spectrum of the Hamiltonian.</p></li>
+<li><p><strong>Hamiltonian Simulation:</strong> Implements time-evolution <span class="math notranslate nohighlight">\(e^{-iHt}\)</span> by approximating the exponential function with a low-degree polynomial <a class="reference internal" href="#low2019" id="id7"><span>[Low2019]</span></a>.</p></li>
+</ul>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="methods/inv.html#qrisp.block_encodings.BlockEncoding.inv" title="qrisp.block_encodings.BlockEncoding.inv"><code class="xref py py-func docutils literal notranslate"><span class="pre">inv()</span></code></a></p></td>
+<td><p>Returns a BlockEncoding approximating the matrix inversion of the operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="methods/poly.html#qrisp.block_encodings.BlockEncoding.poly" title="qrisp.block_encodings.BlockEncoding.poly"><code class="xref py py-func docutils literal notranslate"><span class="pre">poly()</span></code></a></p></td>
+<td><p>Returns a BlockEncoding representing a polynomial transformation of the operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="methods/pseudo_inv.html#qrisp.block_encodings.BlockEncoding.pseudo_inv" title="qrisp.block_encodings.BlockEncoding.pseudo_inv"><code class="xref py py-func docutils literal notranslate"><span class="pre">pseudo_inv()</span></code></a></p></td>
+<td><p>Returns a BlockEncoding approximating the threshold matrix pseudoinverse of the operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="methods/sim.html#qrisp.block_encodings.BlockEncoding.sim" title="qrisp.block_encodings.BlockEncoding.sim"><code class="xref py py-func docutils literal notranslate"><span class="pre">sim()</span></code></a></p></td>
+<td><p>Returns a BlockEncoding approximating Hamiltonian simulation of the operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="methods/svt.html#qrisp.block_encodings.BlockEncoding.svt" title="qrisp.block_encodings.BlockEncoding.svt"><code class="xref py py-func docutils literal notranslate"><span class="pre">svt()</span></code></a></p></td>
+<td><p>Returns a BlockEncoding representing a singular value transformation of the operator.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<p><strong>References</strong></p>
+<p>To understand the theoretical framework underpinning these algorithms, refer to the following seminal works:</p>
+<div role="list" class="citation-list">
+<div class="citation" id="childs2017" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">Childs2017</a><span class="fn-bracket">]</span></span>
+<p>Childs et al. (2017). <a class="reference external" href="https://arxiv.org/abs/1511.02306" rel="noreferrer" target="_blank">Quantum algorithm for systems of linear equations with exponentially improved dependence on precision</a></p>
+</div>
+<div class="citation" id="gilyen2019" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">Gilyén2019</a><span class="fn-bracket">]</span></span>
+<p>Gilyén et al. (2019). <a class="reference external" href="https://dl.acm.org/doi/10.1145/3313276.3316366" rel="noreferrer" target="_blank">Quantum singular value transformation and beyond</a>.</p>
+</div>
+<div class="citation" id="low2019" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id7">Low2019</a><span class="fn-bracket">]</span></span>
+<p>Low &amp; Chuang (2019). <a class="reference external" href="https://quantum-journal.org/papers/q-2019-07-12-163/" rel="noreferrer" target="_blank">Hamiltonian Simulation by Qubitization</a>.</p>
+</div>
+<div class="citation" id="martyn2021" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Martyn2021<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id6">2</a>)</span>
+<p>Martyn et al. (2021). <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.2.040203" rel="noreferrer" target="_blank">Grand Unification of Quantum Algorithms</a>.</p>
+</div>
+<div class="citation" id="motlagh2024" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">Motlagh2024</a><span class="fn-bracket">]</span></span>
+<p>Motlagh &amp; Wiebe (2024). <a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">Generalized Quantum Signal Processing</a></p>
+</div>
+<div class="citation" id="sunderhauf2023" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">Sünderhauf2023</a><span class="fn-bracket">]</span></span>
+<p>Sünderhauf (2023). <a class="reference external" href="https://arxiv.org/pdf/2312.00723" rel="noreferrer" target="_blank">Generalized Quantum Singular Value Transformation</a>.</p>
+</div>
+</div>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Block Encodings"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1085 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting familiar with Qrisp &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/tutorial';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/tutorial.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Factoring integers using Shor’s Algorithm" href="Shor.html" />
+    <link rel="prev" title="Tutorials" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Getting familiar with Qrisp</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Getting-familiar-with-Qrisp">
+<h1>Getting familiar with Qrisp<a class="headerlink" href="#Getting-familiar-with-Qrisp" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>The Qrisp authors</span>, <span style='color: #666; font-style: italic;'>Eclipse Qrisp Contributors</span>.
+    </div>
+    <p>Congratulations, you made it to your first Qrisp tutorial! This tutorial is designed to provide you with a hands-on understanding of how to use Qrisp for all things quantum. In this tutorial, you will create a QuantumVariable, solve a quadratic equation using Grover’s algorithm, and delve into the Quantum Phase Estimation algorithm.</p>
+<p>We’ll start by introducing you to the concept of a QuantumVariable and how it forms the basis of quantum computing in Qrisp. Next, we’ll explore Grover’s algorithm, a quantum algorithm that provides a quadratic speedup for unstructured search problems. You’ll learn how to construct an oracle and use it within Grover’s algorithm to solve a quadratic equation. Finally, we’ll visit the Quantum Phase Estimation algorithm, a key subroutine in many other quantum algorithms and an essential tool in
+quantum computing.</p>
+<p>By the end of this tutorial, you’ll have a solid understanding of Qrisp’s fundamental concepts and be well-equipped to tackle more complex problems and implement the Quantum Approximate Optimization Algorithm with some Qrisp exclusive mixers using our framework.</p>
+<section id="Creating-a-QuantumVariable">
+<h2>Creating a QuantumVariable<a class="headerlink" href="#Creating-a-QuantumVariable" title="Link to this heading">#</a></h2>
+<p>The central building block of Qrisp algorithms is the <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a>. A QuantumVariable hides the qubit management from the user, enables human readable in- and outputs, strong typing via class inheritance, infix arithmetic syntax and much more. Creating a QuantumVariable is simple:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here, 5 refers to the number of qubits the QuantumVariable represents. QuantumVariables allow for convenient quantum function construction and evaluation, since a QuantumVariable carries all the information that is relevant for performing quantum operations on it.</p>
+<p>QuantumVariables can be low-level manipulated by calling <a class="reference internal" href="../../reference/Primitives/Gate%20functions.html"><span class="doc">gate application functions</span></a> on them:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">cx</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">z</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(Qubit(qv.0), Qubit(qv.3))
+</pre></div></div>
+</div>
+<p>Note that the Z gate is applied to all qubits of <code class="docutils literal notranslate"><span class="pre">qv</span></code> since there is no qubit specified.</p>
+<p>In order to take a look at the generated circuit, we call <code class="docutils literal notranslate"><span class="pre">print</span></code> on the <a class="reference internal" href="../../reference/Core/QuantumSession.html"><span class="doc">QuantumSession</span></a> in which <code class="docutils literal notranslate"><span class="pre">qv</span></code> is registered:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QuantumCircuit:
+---------------
+      ┌───┐┌───┐
+qv.0: ┤ H ├┤ Z ├──■──
+      ├───┤└───┘  │
+qv.1: ┤ Z ├───────┼──
+      ├───┤       │
+qv.2: ┤ Z ├───────┼──
+      ├───┤     ┌─┴─┐
+qv.3: ┤ Z ├─────┤ X ├
+      ├───┤     └───┘
+qv.4: ┤ Z ├──────────
+      └───┘
+Live QuantumVariables:
+----------------------
+QuantumVariable qv
+</pre></div></div>
+</div>
+<p>Once the QuantumVariable is not needed anymore, we can call the <code class="docutils literal notranslate"><span class="pre">delete</span></code> method, to tell the qubit manager, to free up the corresponding qubits. Calling <code class="docutils literal notranslate"><span class="pre">delete</span></code> enables the qubits of <code class="docutils literal notranslate"><span class="pre">qv</span></code> to be reused at a later point for other purposes.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">qv</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">verify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Tried to delete qubits not in |0&gt; state
+</pre></div></div>
+</div>
+<p>If given the keyword argument <code class="docutils literal notranslate"><span class="pre">verify</span></code>, Qrisp will check if the deleted qubits are properly disentangled by querying a simulator. Note that <code class="docutils literal notranslate"><span class="pre">verify</span></code> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> by default as the simulation can be resource costly for algorithms, which are creating and destroying a lot of QuantumVariables.</p>
+<p>In this case, the qubits are not ready to use for other purposes as they still are in a non-trivial state. If <code class="docutils literal notranslate"><span class="pre">qv</span></code> is entangled to other qubits, a simple reset would result in a non-unitary collapse of superposition. We would need to perform a procedure which is commonly called uncomputation.</p>
+<p>QuantumVariables can be thought of as the abstract parent class of more special types. One example is the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumChar.html"><span class="doc">QuantumChar</span></a>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumChar</span>
+
+<span class="n">qch</span> <span class="o">=</span> <span class="n">QuantumChar</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>In order to initialize <code class="docutils literal notranslate"><span class="pre">qch</span></code>, we use the slicing operator (which invokes the encode method):</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qch</span><span class="p">[:]</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>We can check the content using a simple <code class="docutils literal notranslate"><span class="pre">print</span></code> call:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">qch</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;e&#39;: 1.0}
+</pre></div></div>
+</div>
+<p>This command queries a simulator which evaluates the compiled quantum circuit. The measurement results are returned as bitstrings, which are then converted to the corresponding outcome value. Here, the 1.0 corresponds to the probability of the outcome <code class="docutils literal notranslate"><span class="pre">'e'</span></code>.</p>
+<p>In order to bring some quantumness into the script, we can entangle it to our previously created QuantumVariable:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qch</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qch</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;e&#39;: 0.5, &#39;f&#39;: 0.5}
+</pre></div></div>
+</div>
+<p>This brings the 0-th qubit of <code class="docutils literal notranslate"><span class="pre">qch</span></code> into a superposition and therefore <code class="docutils literal notranslate"><span class="pre">'f'</span></code> now appears with 50% probability.</p>
+<p>If we want to apply further processing to the measurement results, we can retrieve them as a dictionary using the <code class="docutils literal notranslate"><span class="pre">get_measurement</span></code> method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">qch</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>To investigate the statevector, we call the <code class="docutils literal notranslate"><span class="pre">statevector</span></code> method of the QuantumSession:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qch</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="math notranslate nohighlight">
+$\displaystyle \frac{\sqrt{2} \left({\left|00000\right\rangle } {\left|e\right\rangle } - {\left|10010\right\rangle } {\left|f\right\rangle }\right)}{2}$</div></div>
+</div>
+<p>Qrisp has full compatibility to Qiskit featuring convenient importing and exporting of Qiskit <a class="reference internal" href="../../reference/Circuit%20Manipulation/QuantumCircuit.html"><span class="doc">circuits</span></a>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">qch</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">to_qiskit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>It is also possible to run Qrisp code directly on IBM Quantum hardware using a <a class="reference internal" href="../../reference/Backend%20Interface/Hardware%20Backends/QiskitBackend.html"><span class="doc">QiskitBackend</span></a>, on an IQM Quantum Computer using <a class="reference internal" href="../../reference/Backend%20Interface/Hardware%20Backends/IQMBackend.html"><span class="doc">IQMBackend</span></a> or on an AQT Quantum Computer using <a class="reference internal" href="../../reference/Backend%20Interface/Hardware%20Backends/AQTBackend.html"><span class="doc">AQTBackend</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Replace with your actual token</span>
+<span class="c1"># from qiskit_ibm_runtime import QiskitRuntimeService</span>
+<span class="c1"># service = QiskitRuntimeService(channel=&quot;ibm_cloud&quot;, token=&quot;YOUR_IBM_CLOUD_TOKEN&quot;)</span>
+<span class="c1"># brisbane_qiskit = service.backend(&quot;ibm_brisbane&quot;)</span>
+<span class="c1"># from qrisp.interface import QiskitBackend</span>
+<span class="c1"># brisbane_qrisp = QiskitBackend(brisbane_qiskit)</span>
+<span class="c1"># results = qch.get_measurement(backend = brisbane_qrisp)</span>
+<span class="c1"># print(results)</span>
+
+<span class="c1"># Make sure to install qrisp with the IQM interface: pip install qrisp[iqm]</span>
+<span class="c1"># from qrisp.interface import IQMBackend</span>
+<span class="c1"># iqm_garnet = IQMBackend(api_token = &quot;IQM_RESONANCE_API_TOKEN&quot;,</span>
+<span class="c1">#                           device_instance = &quot;garnet&quot;)</span>
+<span class="c1"># results = qch.get_measurement(backend = iqm_garnet)</span>
+<span class="c1"># print(results)</span>
+</pre></div>
+</div>
+</div>
+<p>And that’s it - you’re set with the basics and ready to build some algorithms!</p>
+</section>
+<section id="Solving-a-quadratic-equation-using-Grover's-algorithm">
+<h2>Solving a quadratic equation using Grover’s algorithm<a class="headerlink" href="#Solving-a-quadratic-equation-using-Grover's-algorithm" title="Link to this heading">#</a></h2>
+<p>As a first example, we showcase how to solve the quadratic equation</p>
+<div class="math notranslate nohighlight">
+\[x^2 = 0.25\]</div>
+<p>using Grover’s algorithm. The idea here is to prepare an oracle, that multiplies a QuantumFloat with itself and tags the desired value <span class="math notranslate nohighlight">\(c_{tag} = 0.25\)</span>. This oracle is then embedded into several Grover iterations to amplify the amplitude of the solution.</p>
+<section id="Oracle-Construction">
+<h3>Oracle Construction<a class="headerlink" href="#Oracle-Construction" title="Link to this heading">#</a></h3>
+<p>We start with elaborating the oracle construction:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">temp_qbool</span> <span class="o">=</span> <span class="n">qf</span> <span class="o">*</span> <span class="n">qf</span> <span class="o">==</span> <span class="mf">0.25</span>
+    <span class="n">z</span><span class="p">(</span><span class="n">temp_qbool</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This oracle receives a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> <code class="docutils literal notranslate"><span class="pre">qf</span></code> and evaluates the square. Subsequently it determines whether the result is equal to 0.25, which returns the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a> <code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>. Finally, we perform a Z gate on <code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>. Note the <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator, which automatically uncomputes all temporary values of this function (i.e. the result of the multiplication and
+<code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>). You can find more information about Qrisps automatic uncomputation in <a class="reference internal" href="../../reference/Core/Uncomputation.html"><span class="doc">Uncomputation</span></a>.</p>
+<p>To inspect the circuit, we create a QuantumFloat, evaluate the oracle and call <code class="docutils literal notranslate"><span class="pre">print</span></code> on the <code class="docutils literal notranslate"><span class="pre">.qs</span></code> attribute:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QuantumCircuit:
+---------------
+              ┌───────────┐                            ┌──────────────┐
+        qf.0: ┤0          ├────────────────────────────┤0             ├
+              │           │                            │              │
+        qf.1: ┤1          ├────────────────────────────┤1             ├
+              │           │                            │              │
+        qf.2: ┤2          ├────────────────────────────┤2             ├
+              │           │                            │              │
+        qf.3: ┤3          ├────────────────────────────┤3             ├
+              │           │┌────────┐     ┌───────────┐│              │
+   mul_res.0: ┤4          ├┤0       ├─────┤0          ├┤4             ├
+              │           ││        │     │           ││              │
+   mul_res.1: ┤5          ├┤1       ├─────┤1          ├┤5             ├
+              │           ││        │     │           ││              │
+   mul_res.2: ┤6          ├┤2       ├─────┤2          ├┤6             ├
+              │           ││        │     │           ││              │
+   mul_res.3: ┤7          ├┤3       ├─────┤3          ├┤7             ├
+              │           ││        │     │           ││              │
+   mul_res.4: ┤8  __mul__ ├┤4       ├─────┤4          ├┤8  __mul___dg ├
+              │           ││        │     │           ││              │
+   mul_res.5: ┤9          ├┤5       ├─────┤5          ├┤9             ├
+              │           ││        │     │           ││              │
+   mul_res.6: ┤10         ├┤6       ├─────┤6          ├┤10            ├
+              │           ││  equal │     │  equal_dg ││              │
+   sbp_anc.0: ┤11         ├┤        ├─────┤           ├┤11            ├
+              │           ││        │     │           ││              │
+ sbp_anc_7.0: ┤12         ├┤        ├─────┤           ├┤12            ├
+              │           ││        │     │           ││              │
+ sbp_anc_8.0: ┤13         ├┤        ├─────┤           ├┤13            ├
+              │           ││        │     │           ││              │
+ sbp_anc_9.0: ┤14         ├┤        ├─────┤           ├┤14            ├
+              │           ││        │     │           ││              │
+sbp_anc_10.0: ┤15         ├┤        ├─────┤           ├┤15            ├
+              │           ││        │     │           ││              │
+sbp_anc_11.0: ┤16         ├┤        ├─────┤           ├┤16            ├
+              └───────────┘│        │┌───┐│           │└──────────────┘
+    eq_qbl.0: ─────────────┤7       ├┤ Z ├┤7          ├────────────────
+                           └────────┘└───┘└───────────┘
+Live QuantumVariables:
+----------------------
+QuantumFloat qf
+</pre></div></div>
+</div>
+<p>We can see how the multiplication is evaluated into a new QuantumFloat called <code class="docutils literal notranslate"><span class="pre">mul_res_0</span></code> using some ancilla qubits. Subsequently, a multi-controlled X-gate evaluates the condition of it to be equal to 0.25 into a qubit called <code class="docutils literal notranslate"><span class="pre">eq_cond_0</span></code>. The ancilla qubits and <code class="docutils literal notranslate"><span class="pre">eq_cond</span></code> will be recycled for each other during compilation, implying there is 0 qubit overhead for the ancillae:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qf</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+12
+</pre></div></div>
+</div>
+<p>We perform the Z-gate and uncompute. The uncomputation is necessary here because the state the Grover diffuser acts on needs to be disentangled.</p>
+<blockquote>
+<div><p><strong>Note</strong>: QuantumVariables can be named independently of their name as a Python variable. If no name is provided, Qrisp tries to infer the name of the Python variable but in many cases there is ambiguity, meaning there is no guaranteed relation between the naming of the qubits and the name of the Python variable.</p>
+</div></blockquote>
+</section>
+<section id="Grover's-algorithm">
+<h3>Grover’s algorithm<a class="headerlink" href="#Grover's-algorithm" title="Link to this heading">#</a></h3>
+<p>The code for embedding the constructed oracle into Grover’s algorithm is:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">pi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.grover</span><span class="w"> </span><span class="kn">import</span> <span class="n">diffuser</span>
+
+<span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">qf</span><span class="o">.</span><span class="n">size</span>
+<span class="n">iterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+    <span class="n">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="n">diffuser</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.5: 0.47263164210147385, -0.5: 0.47263164210147385, 0.0: 0.003909765414075155, 1.0: 0.003909765414075155, 1.5: 0.003909765414075155, 2.0: 0.003909765414075155, 2.5: 0.003909765414075155, 3.0: 0.003909765414075155, 3.5: 0.003909765414075155, -4.0: 0.003909765414075155, -3.5: 0.003909765414075155, -3.0: 0.003909765414075155, -2.5: 0.003909765414075155, -2.0: 0.003909765414075155, -1.5: 0.003909765414075155, -1.0: 0.003909765414075155}
+</pre></div></div>
+</div>
+<p>First we create the QuantumFloat which will contain the solution. Note that the QuantumFloat constructor creates unsigned floats by default. We determine the number of iterations according to the formula given <a class="reference external" href="https://arxiv.org/abs/quant-ph/9909040" rel="noreferrer" target="_blank">here</a>, taking into consideration that we expect two solutions (<span class="math notranslate nohighlight">\(S = \{0.5, -0.5\}\)</span>). The next step is then to bring <code class="docutils literal notranslate"><span class="pre">qf</span></code> into uniform superposition, followed by the Grover iterations and finalized by a measurement (which is called by
+<code class="docutils literal notranslate"><span class="pre">print</span></code>). The <a class="reference internal" href="../../reference/Primitives/Grover%20tools.html"><span class="doc">diffuser</span></a> function applies the diffusion operator required for Grover’s algorithm.</p>
+</section>
+</section>
+<section id="Quantum-Phase-Estimation">
+<h2>Quantum Phase Estimation<a class="headerlink" href="#Quantum-Phase-Estimation" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm" rel="noreferrer" target="_blank">Quantum phase estimation</a> is an important subroutine in many quantum algorithms. If you are not familiar with this algorithm, we recommend that you first read about it <a class="reference external" href="https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html" rel="noreferrer" target="_blank">elsewhere</a> and then come back here. We shortly summarize the problem this algorithm solves:</p>
+<p>Given is a unitary <span class="math notranslate nohighlight">\(U\)</span> and quantum state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> which is an eigenvector of <span class="math notranslate nohighlight">\(U\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[U \ket{\psi} = \text{exp}(i 2 \pi \phi)\ket{\psi}\]</div>
+<p>Applying quantum phase estimation to <span class="math notranslate nohighlight">\(U\)</span> and <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> returns a quantum variable containing an estimate for the value of <span class="math notranslate nohighlight">\(\phi\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\text{QPE}_{U} \ket{\psi} \ket{0} = \ket{\psi} \ket{\phi}\]</div>
+<p>It can be implemented within a few lines of code in Qrisp:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">QFT</span><span class="p">,</span> <span class="n">h</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">QPE</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">precision</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">U</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">QFT</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The first step here is to create the QuantumFloat <code class="docutils literal notranslate"><span class="pre">res</span></code> which will contain the result. The first argument specifies the amount of mantissa qubits, the QuantumFloat should contain and the second argument specifies the exponent. Having <span class="math notranslate nohighlight">\(n\)</span> mantissa qubits and and exponent of <span class="math notranslate nohighlight">\(-n\)</span> means that this QuantumFloat can represent the values between 0 and 1 with a granularity of <span class="math notranslate nohighlight">\(2^{-n}\)</span>.</p>
+<p>Subsequently we apply a Hadamard gate to all qubits of <code class="docutils literal notranslate"><span class="pre">res</span></code> and continue by performing controlled evaluations of <span class="math notranslate nohighlight">\(U\)</span>. This is achieved by using the <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">control(res[i]):</span></code> statement. This statement enters a <a class="reference internal" href="../../reference/Quantum%20Environments/ConditionEnvironment.html"><span class="doc">ControlEnvironment</span></a> such that every quantum operation inside the indented code block will be controlled on the i-th qubit of <code class="docutils literal notranslate"><span class="pre">res</span></code>. We conclude the algorithm by performing an inverse <a class="reference internal" href="../../reference/Primitives/QFT.html"><span class="doc">Quantum Fourier
+Transform</span></a> of <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p>
+<p>Note that compared to the <a class="reference external" href="https://qiskit.org/documentation/stubs/qiskit.circuit.library.PhaseEstimation.html" rel="noreferrer" target="_blank">Qiskit implementation</a> the Qrisp version comes with the convenience that <span class="math notranslate nohighlight">\(U\)</span> can be given as a Python function (instead of a QuantumCircuit object) allowing for slim and elegant evaluations. Furthermore, the line <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">control(res[i]):</span></code> invokes a ControlEnvironment, which can yield significant gains in performance if <code class="docutils literal notranslate"><span class="pre">qpe</span></code> is called within another ControlEnvironment
+(compared to the Qiskit approach of simply synthesizing the double controlled version for every participating gate).</p>
+<p>We test our code with a simple example:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">p</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">multi_measurement</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">psi</span><span class="p">):</span>
+    <span class="n">phi_1</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">phi_2</span> <span class="o">=</span> <span class="mf">0.125</span>
+
+    <span class="n">p</span><span class="p">(</span><span class="n">phi_1</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">psi</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">p</span><span class="p">(</span><span class="n">phi_2</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">psi</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="n">psi</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">QPE</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In this code snippet, we define a function <code class="docutils literal notranslate"><span class="pre">U</span></code> which applies a phase gate onto the first two qubits of its input. We then create the QuantumVariable <code class="docutils literal notranslate"><span class="pre">psi</span></code> and bring it into uniform superposition by applying Hadamard gates onto each qubit. Subsequently, we evaluate <code class="docutils literal notranslate"><span class="pre">QPE</span></code> on <code class="docutils literal notranslate"><span class="pre">U</span></code> and <code class="docutils literal notranslate"><span class="pre">psi</span></code> with the precision 3.</p>
+<p>The quantum state is now:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{2} \text{QPE}_{U}(\ket{00} + \ket{01} + \ket{10} + \ket{11})\ket{0} = \frac{1}{2} (\ket{00}\ket{0} + \ket{10}\ket{\phi_1} + \ket{01}\ket{\phi_2} +\ket{11}\ket{\phi_1 + \phi_2})\]</div>
+<p>We verify by measuring <code class="docutils literal notranslate"><span class="pre">psi</span></code> together with <code class="docutils literal notranslate"><span class="pre">res</span></code> using the <code class="docutils literal notranslate"><span class="pre">multi_measurement</span></code> method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">multi_measurement</span><span class="p">([</span><span class="n">psi</span><span class="p">,</span> <span class="n">res</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(&#39;00&#39;, 0.0): 0.25, (&#39;10&#39;, 0.5): 0.25, (&#39;01&#39;, 0.125): 0.25, (&#39;11&#39;, 0.625): 0.25}
+</pre></div></div>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-a-QuantumVariable">Creating a QuantumVariable</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Solving-a-quadratic-equation-using-Grover's-algorithm">Solving a quadratic equation using Grover’s algorithm</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Oracle-Construction">Oracle Construction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Grover's-algorithm">Grover’s algorithm</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-Phase-Estimation">Quantum Phase Estimation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/tutorial.ipynb" download="tutorial.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

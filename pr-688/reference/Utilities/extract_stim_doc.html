@@ -1,0 +1,885 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>extract_stim &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Utilities/extract_stim_doc';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Utilities/extract_stim_doc.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="stim_noise" href="stim_noise_doc.html" />
+    <link rel="prev" title="Stim Tools" href="stim_tools.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Utilities</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="stim_tools.html">Stim Tools</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">extract_stim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stim_noise_doc.html">stim_noise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="StimNoiseGate_doc.html">StimNoiseGate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="permute_detectors_doc.html">permute_detectors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="find_detectors_doc.html">find_detectors</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="multi_measurement.html">multi_measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batched_measurement.html">batched_measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate_wrap.html">gate_wrap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_control.html">custom_control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lifted.html">lifted</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redirect_qfunction.html">redirect_qfunction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="as_hamiltonian.html">as_hamiltonian</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lock.html">lock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unlock.html">unlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="perm_lock.html">perm_lock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="perm_unlock.html">perm_unlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="t_depth_indicator.html">t_depth_indicator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cnot_depth_indicator.html">cnot_depth_indicator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inpl_adder_test.html">inpl_adder_test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="typing.html">Typing</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Utilities</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="stim_tools.html" class="nav-link">Stim Tools</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">extract_stim</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="extract-stim">
+<h1>extract_stim<a class="headerlink" href="#extract-stim" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.jasp.extract_stim">
+<span class="sig-name descname"><span class="pre">extract_stim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'chronological'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/jasp/evaluation_tools/stim_extraction.html#extract_stim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.jasp.extract_stim" title="Link to this definition">#</a></dt>
+<dd><p>Decorator that extracts a Stim circuit from a Jasp-traceable function.</p>
+<p>This decorator enables high-performance Clifford circuit simulation by converting
+Jasp-traceable Qrisp functions into Stim circuits. It handles the translation of
+quantum measurements, detectors, observables, and qubit references into Stim’s
+internal indices, allowing you to map simulation results back to the original
+function’s return values.</p>
+<p>Return values are wrapped in typed numpy array subtypes for easy identification:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">StimMeasurementHandles</span></code> - measurement record indices (for slicing sampler results)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">StimDetectorHandles</span></code> - detector indices (for slicing detector sampler results)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">StimObservableHandles</span></code> - observable indices (for slicing observable results)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">StimQubitIndices</span></code> - qubit indices (for identifying which Stim qubits correspond to a QuantumVariable)</p></li>
+</ul>
+<p>These typed arrays behave exactly like regular numpy arrays and can be used directly
+for slicing sample arrays, while also carrying type information about what they represent.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Stim only supports Clifford operations. Functions containing non-Clifford
+gates (e.g., T, RZ, RX) will raise an error during conversion.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>Measurement post-processing limitation:</strong> Advanced quantum types like
+<a class="reference internal" href="../Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> apply post-processing to raw measurement results during
+decoding. For example, a QuantumFloat might convert a raw integer into a fractional
+value. This post-processing cannot be performed during the Stim extraction
+because it requires transforming a list of classical bits in ways that involve
+classical post-processing steps that can not be represented by the Stim circuit
+format.</p>
+<p>For this reason, it is <strong>recommended to use</strong> <a class="reference internal" href="../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> <strong>instead
+of QuantumFloat</strong> (or similar advanced types) when working with <code class="docutils literal notranslate"><span class="pre">extract_stim</span></code>.
+QuantumVariable’s decoder returns raw integer values without post-processing,
+making it fully compatible with Stim’s measurement record. You can then apply
+any necessary transformations manually after sampling. Values that have
+been processed in this way are represented through the <code class="docutils literal notranslate"><span class="pre">ProcessedMeasurement</span></code>
+class, which acts as a dummy representative.</p>
+<p>See the <a class="reference internal" href="../Jasp/generated/qrisp.jasp.Jaspr.to_qc.html#qrisp.jasp.Jaspr.to_qc" title="qrisp.jasp.Jaspr.to_qc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Jaspr.to_qc</span></code></a> documentation for more
+details on this limitation.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>func</strong><span class="classifier">callable</span></dt><dd><p>A Jasp-traceable function that manipulates quantum variables and returns
+quantum measurement results, parity checks (detectors/observables),
+QuantumVariables (for qubit indices), and/or classical values.</p>
+</dd>
+<dt><strong>detector_order</strong><span class="classifier">str, optional</span></dt><dd><p>Specifies the ordering of detectors in the returned Stim circuit.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;chronological&quot;</span></code> (default): Detectors appear in the circuit in the
+order they appear in the code execution.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;return_order&quot;</span></code>: Reorders detectors based on the function’s return
+values. This analyzes all <code class="docutils literal notranslate"><span class="pre">StimDetectorHandles</span></code> in the return values,
+flattens and concatenates them to form a permutation, then applies
+<code class="xref py py-func docutils literal notranslate"><span class="pre">permute_detectors()</span></code> to reorder the circuit
+accordingly. The detector handle values are also adjusted to reflect
+the new ordering.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>callable</dt><dd><p>A decorated function that returns:</p>
+<ul class="simple">
+<li><p><strong>No return value:</strong> If <cite>func</cite> returns nothing, returns just the
+<cite>stim.Circuit</cite> object.</p></li>
+<li><p><strong>With return values:</strong> If <cite>func</cite> returns n values, returns a tuple
+of (n+1) elements:</p>
+<ul>
+<li><p>Elements 0 to n-1: The function’s return values, where:</p>
+<ul>
+<li><p><strong>Classical values</strong> (integers, floats, etc.) are returned as-is.</p></li>
+<li><p><strong>Quantum measurements</strong> are returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimMeasurementHandles</span></code>
+arrays containing measurement record indices. These can be used directly
+to slice the results from <code class="docutils literal notranslate"><span class="pre">stim_circuit.compile_sampler().sample()</span></code>.</p></li>
+<li><p><strong>Parity detectors</strong> (from <code class="docutils literal notranslate"><span class="pre">parity(...,</span> <span class="pre">expectation=0/1)</span></code>) are
+returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimDetectorHandles</span></code> arrays containing detector indices.</p></li>
+<li><p><strong>Parity observables</strong> (from <code class="docutils literal notranslate"><span class="pre">parity(...,</span> <span class="pre">observable=True)</span></code>) are
+returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimObservableHandles</span></code> arrays containing observable indices.</p></li>
+<li><p><strong>QuantumVariables</strong> (unmeasured) are returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimQubitIndices</span></code>
+arrays containing the Stim qubit indices for that variable.</p></li>
+</ul>
+</li>
+<li><p>Element n: The <cite>stim.Circuit</cite> object.</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p><strong>Example 1: Single return value</strong></p>
+<p>When the function has no return value, only the Stim circuit is returned:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_stim</span>
+
+<span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">bell_state</span><span class="p">():</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+<span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">bell_state</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stim_circuit</span><span class="p">)</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># H 0</span>
+<span class="c1"># CX 0 1</span>
+<span class="c1"># M 0 1</span>
+</pre></div>
+</div>
+<p><strong>Example 2: Multiple return values with measurement indices</strong></p>
+<p>When returning one or more values, quantum measurements are returned as
+<code class="xref py py-class docutils literal notranslate"><span class="pre">StimMeasurementHandles</span></code> arrays, while classical values remain unchanged:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_stim</span>
+
+<span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_state</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="c1"># Mid-circuit measurement</span>
+    <span class="n">first_qubit_result</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Classical computation</span>
+    <span class="n">classical_value</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="c1"># Final measurement</span>
+    <span class="n">final_result</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">classical_value</span><span class="p">,</span> <span class="n">first_qubit_result</span><span class="p">,</span> <span class="n">final_result</span>
+
+<span class="n">classical_val</span><span class="p">,</span> <span class="n">first_meas_idx</span><span class="p">,</span> <span class="n">final_meas_indices</span><span class="p">,</span> <span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">analyze_state</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classical value: </span><span class="si">{</span><span class="n">classical_val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># 6 (unchanged)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First qubit measurement index: </span><span class="si">{</span><span class="n">first_meas_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimMeasurementHandles([0])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final measurement indices: </span><span class="si">{</span><span class="n">final_meas_indices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimMeasurementHandles([1, 2, 3])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">final_meas_indices</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># &lt;class &#39;StimMeasurementHandles&#39;&gt;</span>
+</pre></div>
+</div>
+<p><strong>Example 3: Sampling and slicing results</strong></p>
+<p>Use the measurement handles (which are numpy arrays) to slice results from Stim’s samples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_entangled_state</span><span class="p">():</span>
+    <span class="n">qf1</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">qf2</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># Prepare qf1 in superposition</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf1</span><span class="p">)</span>
+
+    <span class="c1"># Entangle qf2 with qf1[0]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qf1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qf2</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">result1</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf1</span><span class="p">)</span>
+    <span class="n">result2</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result1</span><span class="p">,</span> <span class="n">result2</span>
+
+<span class="c1"># Extract the circuit and measurement indices</span>
+<span class="n">qf1_indices</span><span class="p">,</span> <span class="n">qf2_indices</span><span class="p">,</span> <span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">prepare_entangled_state</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qf1 measured at positions: </span><span class="si">{</span><span class="n">qf1_indices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimMeasurementHandles([0, 1])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qf2 measured at positions: </span><span class="si">{</span><span class="n">qf2_indices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimMeasurementHandles([2, 3, 4])</span>
+
+<span class="c1"># Sample 1000 shots from the Stim circuit</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">stim_circuit</span><span class="o">.</span><span class="n">compile_sampler</span><span class="p">()</span>
+<span class="n">all_samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>  <span class="c1"># Shape: (1000, 5) - 5 total measurements</span>
+
+<span class="c1"># Slice the samples using the handle arrays directly (they are numpy arrays)</span>
+<span class="n">qf1_samples</span> <span class="o">=</span> <span class="n">all_samples</span><span class="p">[:,</span> <span class="n">qf1_indices</span><span class="p">]</span>  <span class="c1"># Shape: (1000, 2)</span>
+<span class="n">qf2_samples</span> <span class="o">=</span> <span class="n">all_samples</span><span class="p">[:,</span> <span class="n">qf2_indices</span><span class="p">]</span>  <span class="c1"># Shape: (1000, 3)</span>
+
+<span class="c1"># Slice the samples using the handle arrays directly (they are numpy arrays)</span>
+<span class="n">qf1_samples</span> <span class="o">=</span> <span class="n">all_samples</span><span class="p">[:,</span> <span class="n">qf1_indices</span><span class="p">]</span>  <span class="c1"># Shape: (1000, 2)</span>
+<span class="n">qf2_samples</span> <span class="o">=</span> <span class="n">all_samples</span><span class="p">[:,</span> <span class="n">qf2_indices</span><span class="p">]</span>  <span class="c1"># Shape: (1000, 3)</span>
+
+<span class="c1"># Convert bit arrays to integers (little-endian)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="n">qf1_values</span> <span class="o">=</span> <span class="n">qf1_samples</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">qf1_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">qf2_values</span> <span class="o">=</span> <span class="n">qf2_samples</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">qf2_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First 10 qf1 values: </span><span class="si">{</span><span class="n">qf1_values</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First 10 qf2 values: </span><span class="si">{</span><span class="n">qf2_values</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verify entanglement: when qf1[0]=0, all qf2 bits should be 0</span>
+<span class="n">qf1_first_bit</span> <span class="o">=</span> <span class="n">qf1_samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">qf2_samples</span><span class="p">[</span><span class="n">qf1_first_bit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Example 4: Using parity checks (Detectors)</strong></p>
+<p>You can use the <code class="xref py py-func docutils literal notranslate"><span class="pre">parity()</span></code> function to define parity checks within your circuit.
+When extracted to Stim, these are converted into <code class="docutils literal notranslate"><span class="pre">DETECTOR</span></code> instructions and
+returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimDetectorHandles</span></code> arrays:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">measure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_stim</span><span class="p">,</span> <span class="n">parity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc.stim_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">stim_noise</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">stim</span>
+
+<span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">selective_noise_demo</span><span class="p">():</span>
+    <span class="c1"># Create two QuantumVariables for independent Bell pairs</span>
+    <span class="n">bell_pair_1</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">bell_pair_2</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">bell_pair_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">cx</span><span class="p">(</span><span class="n">bell_pair_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bell_pair_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">cx</span><span class="p">(</span><span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Apply deterministic X error to one of the qubits in the second pair</span>
+    <span class="n">stim_noise</span><span class="p">(</span><span class="s2">&quot;X_ERROR&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">m1_0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">bell_pair_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">m1_1</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">bell_pair_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">m2_0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">m2_1</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">bell_pair_2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Detector 1: expectation=0 implies we expect even parity</span>
+    <span class="n">d1</span> <span class="o">=</span> <span class="n">parity</span><span class="p">(</span><span class="n">m1_0</span><span class="p">,</span> <span class="n">m1_1</span><span class="p">,</span> <span class="n">expectation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Detector 2: Checks parity of second, noisy pair</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="n">parity</span><span class="p">(</span><span class="n">m2_0</span><span class="p">,</span> <span class="n">m2_1</span><span class="p">,</span> <span class="n">expectation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span>
+
+<span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">selective_noise_demo</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detector 1 index: </span><span class="si">{</span><span class="n">d1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimDetectorHandles([0])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detector 2 index: </span><span class="si">{</span><span class="n">d2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimDetectorHandles([1])</span>
+
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">stim_circuit</span><span class="o">.</span><span class="n">compile_detector_sampler</span><span class="p">()</span>
+<span class="n">detector_samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Slice detector results using the handles</span>
+<span class="n">d1_result</span> <span class="o">=</span> <span class="n">detector_samples</span><span class="p">[:,</span> <span class="n">d1</span><span class="p">]</span>
+<span class="n">d2_result</span> <span class="o">=</span> <span class="n">detector_samples</span><span class="p">[:,</span> <span class="n">d2</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;D1: </span><span class="si">{</span><span class="n">d1_result</span><span class="si">}</span><span class="s2">, D2: </span><span class="si">{</span><span class="n">d2_result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># [[False]] [[True]] (error in pair 2)</span>
+</pre></div>
+</div>
+<p><strong>Example 5: Defining Observables</strong></p>
+<p>Similarly, <code class="xref py py-func docutils literal notranslate"><span class="pre">parity()</span></code> with <code class="docutils literal notranslate"><span class="pre">observable=True</span></code> defines logical observables
+in Stim, returned as <code class="xref py py-class docutils literal notranslate"><span class="pre">StimObservableHandles</span></code> arrays:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">observable_demo</span><span class="p">():</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">m0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">m1</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Define an observable O = Z_0 Z_1</span>
+    <span class="n">logical_obs</span> <span class="o">=</span> <span class="n">parity</span><span class="p">(</span><span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">observable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">logical_obs</span>
+
+<span class="n">obs_idx</span><span class="p">,</span> <span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">observable_demo</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observable index: </span><span class="si">{</span><span class="n">obs_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimObservableHandles([0])</span>
+<span class="c1"># stim_circuit contains OBSERVABLE_INCLUDE(0) ...</span>
+</pre></div>
+</div>
+<p><strong>Example 6: Returning qubit indices</strong></p>
+<p>When returning an unmeasured QuantumVariable, you get <code class="xref py py-class docutils literal notranslate"><span class="pre">StimQubitIndices</span></code> arrays
+containing the Stim qubit indices for that variable:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@extract_stim</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qubit_index_demo</span><span class="p">():</span>
+    <span class="n">qv1</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">qv2</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv1</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">qv1</span><span class="p">,</span> <span class="n">qv2</span>
+
+<span class="n">qv1_indices</span><span class="p">,</span> <span class="n">qv2_indices</span><span class="p">,</span> <span class="n">stim_circuit</span> <span class="o">=</span> <span class="n">qubit_index_demo</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qv1 uses Stim qubits: </span><span class="si">{</span><span class="n">qv1_indices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimQubitIndices([0, 1])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qv2 uses Stim qubits: </span><span class="si">{</span><span class="n">qv2_indices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># StimQubitIndices([2, 3, 4])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Utilities"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.jasp.extract_stim"><code class="docutils literal notranslate"><span class="pre">extract_stim()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

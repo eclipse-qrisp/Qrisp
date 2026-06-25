@@ -1,0 +1,1442 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.operators.fermionic.fermionic_operator &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/operators/fermionic/fermionic_operator';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/operators/fermionic/fermionic_operator.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.operators.fermionic.fermionic_operator</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.operators.fermionic.fermionic_operator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2024 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hamiltonian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.fermionic.fermionic_term</span><span class="w"> </span><span class="kn">import</span> <span class="n">FermionicTerm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.fermionic.trotterization</span><span class="w"> </span><span class="kn">import</span> <span class="n">fermionic_trotterization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.hamiltonian_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">group_up_iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.qubit</span><span class="w"> </span><span class="kn">import</span> <span class="n">QubitOperator</span>
+
+<span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-9</span>
+
+<span class="c1">#</span>
+<span class="c1"># FermionicOperator</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="FermionicOperator">
+<a class="viewcode-back" href="../../../../reference/Operators/FermionicOperator.html#qrisp.operators.fermionic.FermionicOperator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FermionicOperator</span><span class="p">(</span><span class="n">Hamiltonian</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This class provides an efficient implementation of ladder term operators, i.e.,</span>
+<span class="sd">    operators of the form</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        O=\sum\limits_{j}\alpha_jO_j </span>
+<span class="sd">            </span>
+<span class="sd">    where each term $O_j$ is a product of fermionic raising $a_i^{\dagger}$ and lowering $a_i$ operators acting on the $i$ th fermionic mode.</span>
+
+<span class="sd">    The ladder operators satisfy the commutation relations</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \{a_i,a_j^{\dagger}\} &amp;= a_ia_j^{\dagger}+a_j^{\dagger}a_i = \delta_{ij}\\</span>
+<span class="sd">        \{a_i^{\dagger},a_j^{\dagger}\} &amp;= \{a_i,a_j\} = 0</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    A ladder term operator can be specified conveniently in terms of ``a`` (lowering, i.e., annihilation), ``c`` (raising, i.e., creation) operators:</span>
+
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">        from qrisp.operators.fermionic import a, c</span>
+
+<span class="sd">        O = a(2)*c(1)+a(3)*c(2)</span>
+<span class="sd">        O</span>
+
+<span class="sd">    Yields $a_2c_1+a_3c_2$.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms_dict</span><span class="o">=</span><span class="p">{}):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">terms_dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FermionicOperator.reduce">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.reduce.html#qrisp.operators.fermionic.FermionicOperator.reduce">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assume_hermitian</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the fermionic anticommutation laws to bring the operator into</span>
+<span class="sd">        a standard form. This can reduce the amount of terms because several</span>
+<span class="sd">        terms might be the permuted version of each other and therefore their</span>
+<span class="sd">        coefficients add up.</span>
+
+<span class="sd">        This function can reduce the amount of terms even further if the user</span>
+<span class="sd">        can guarantee that the operator will be hermitized. In this case more</span>
+<span class="sd">        identifications can be made.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        assume_hermitian : bool, optional</span>
+<span class="sd">            If set to True the function will assume that the result will be</span>
+<span class="sd">            hermitized. The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FermionicOperator</span>
+<span class="sd">            The reduced FermionicOperator.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a FermionicOperator with redundant term definitions:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp.operators import *</span>
+
+<span class="sd">            O = a(0)*a(1) - a(1)*a(0)</span>
+<span class="sd">            print(O.reduce())</span>
+<span class="sd">            # Yields: 2*a0*a1</span>
+
+<span class="sd">        To demonstrate the ``assume_hermitian`` feature, we create a FermionicOperator</span>
+<span class="sd">        that has redundant terms, if hermitized.</span>
+
+
+<span class="sd">        &gt;&gt;&gt; O = a(0)*a(1) + c(1)*c(0)</span>
+<span class="sd">        &gt;&gt;&gt; reduced_O = O.reduce(assume_hermitian = True)</span>
+<span class="sd">        &gt;&gt;&gt; print(reduced_O)</span>
+<span class="sd">        2*a0*a1</span>
+
+<span class="sd">        Hermitizing gives the original operator.</span>
+
+<span class="sd">        &gt;&gt;&gt; print(reduced_O.hermitize())</span>
+<span class="sd">        1.0*a0*a1 + 1.0*c1*c0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This function performs some non trivial logic.</span>
+
+        <span class="c1"># The problem here is that each fermionic term can</span>
+        <span class="c1"># be reshaped into several different forms and still express</span>
+        <span class="c1"># the same operator.</span>
+        <span class="c1"># For instance, the operator can be arbitrarily reordered</span>
+        <span class="c1"># if the permutation sign is take care of and no creators/annihilators</span>
+        <span class="c1"># with the same index are swapped.</span>
+        <span class="c1"># Furthermore the Hamiltonian must be Hermitian, so each</span>
+        <span class="c1"># term must be equivalent to is Hermitian conjugate.</span>
+
+        <span class="c1"># This function implements a storage system, that combines</span>
+        <span class="c1"># the coefficients of differing terms representing the same operator</span>
+        <span class="c1"># into a single term.</span>
+
+        <span class="c1"># This dictionary will contain the new terms, where redundancies</span>
+        <span class="c1"># are taken care of.</span>
+        <span class="n">new_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># We only store the sorted version of each term.</span>
+            <span class="c1"># Sorting here means permuting the creators/annihilators</span>
+            <span class="c1"># while considering the sign of the permutation applied by the sort.</span>
+            <span class="c1"># The sort is performed in a stable manner, so terms like a(0)*c(0)</span>
+            <span class="c1"># don&#39;t get permuted (this would be a non-trivial anti-commutator).</span>
+            <span class="n">sorted_term</span><span class="p">,</span> <span class="n">flip_sign</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">sorted_term</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_terms_dict</span> <span class="ow">and</span> <span class="n">assume_hermitian</span><span class="p">:</span>
+                <span class="c1"># If the sorted term is not in the terms dict, the sorted version</span>
+                <span class="c1"># of the daggering might be.</span>
+                <span class="n">daggered_sorted_term</span><span class="p">,</span> <span class="n">daggered_flip_sign</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">dagger</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">daggered_sorted_term</span> <span class="ow">in</span> <span class="n">new_terms_dict</span><span class="p">:</span>
+                    <span class="n">sorted_term</span> <span class="o">=</span> <span class="n">daggered_sorted_term</span>
+                    <span class="n">flip_sign</span> <span class="o">=</span> <span class="n">daggered_flip_sign</span>
+
+            <span class="c1"># Compute the new coefficient.</span>
+            <span class="n">new_terms_dict</span><span class="p">[</span><span class="n">sorted_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">flip_sign</span> <span class="o">*</span> <span class="n">coeff</span> <span class="o">+</span> <span class="n">new_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sorted_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">coeff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">new_terms_dict</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">new_terms_dict</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FermionicOperator.coeffs">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.coeffs.html#qrisp.operators.fermionic.FermionicOperator.coeffs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">coeffs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the coefficients of the operator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray</span>
+<span class="sd">            The coefficients.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp.operators import a, c</span>
+<span class="sd">        &gt;&gt;&gt; O = a(0)*c(1)+a(1)*c(0)+0.5*a(1)+0.5*c(1)</span>
+<span class="sd">        &gt;&gt;&gt; O.coeffs()</span>
+<span class="sd">        array([1. , 1. , 0.5, 0.5])</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Printing</span>
+    <span class="c1">#</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Convert the sympy expression to LaTeX and return it</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_expr</span><span class="p">()</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">sp</span><span class="o">.</span><span class="n">latex</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="si">}</span><span class="s2">$&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Convert the sympy expression to a string and return it</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_expr</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_expr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a SymPy expression representing the operator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        expr : sympy.expr</span>
+<span class="sd">            A SymPy expression representing the operator.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">expr</span> <span class="o">+=</span> <span class="n">coeff</span> <span class="o">*</span> <span class="n">ladder_term</span><span class="o">.</span><span class="n">to_expr</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">expr</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Arithmetic</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="FermionicOperator.dagger">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.dagger.html#qrisp.operators.fermionic.FermionicOperator.dagger">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dagger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the daggered/adjoint version of self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FermionicOperator</span>
+<span class="sd">            The Operator $O^\dagger$.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a FermionicOperator and dagger it:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp.operators import *</span>
+
+<span class="sd">            O = a(0)*c(1)*a(2) + a(3)</span>
+<span class="sd">            print(O.dagger())</span>
+<span class="sd">            # Yields: c2*a1*c0 + c3</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">terms_dict</span><span class="p">[</span><span class="n">term</span><span class="o">.</span><span class="n">dagger</span><span class="p">()]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">terms_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FermionicOperator.hermitize">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.hermitize.html#qrisp.operators.fermionic.FermionicOperator.hermitize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hermitize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the hermitized version of self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FermionicOperator</span>
+<span class="sd">            The Operator $(O + O^\dagger)/2$.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a FermionicOperator and hermitize it:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp.operators import *</span>
+
+<span class="sd">            O = a(0)*c(1)*a(2) + a(3)</span>
+<span class="sd">            print(O.hermitize())</span>
+<span class="sd">            # Yields: 0.5*a0*c1*a2 + 0.5*a3 + 0.5*c2*a1*c0 + 0.5*c3</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dagger</span><span class="p">())</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">reduced_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
+        <span class="n">reduced_other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_other</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">reduced_self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">term</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">:</span>
+                <span class="n">daggered_sorted_term</span><span class="p">,</span> <span class="n">flip_sign</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">dagger</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">daggered_sorted_term</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reduced_other</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">elif</span> <span class="n">reduced_self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">!=</span> <span class="n">flip_sign</span> <span class="o">*</span> <span class="n">reduced_other</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">daggered_sorted_term</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">reduced_self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">!=</span> <span class="n">reduced_other</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">term</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span>
+
+    <span class="c1"># def __pow__(self, e):</span>
+    <span class="c1">#    if self.len()==1:</span>
+    <span class="c1">#        if isinstance(e, int) and e&gt;=0:</span>
+    <span class="c1">#            if e%2==0:</span>
+    <span class="c1">#                return FermionicOperator({FermionicTerm():1})</span>
+    <span class="c1">#            else:</span>
+    <span class="c1">#                return self</span>
+    <span class="c1">#        else:</span>
+    <span class="c1">#            raise TypeError(&quot;Unsupported operand type(s) for ** or pow(): &quot;+str(type(self))+&quot; and &quot;+str(type(e)))</span>
+    <span class="c1">#    else:</span>
+    <span class="c1">#        raise TypeError(&quot;Unsupported operand type(s) for ** or pow(): &quot;+str(type(self))+&quot; and &quot;+str(type(e)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the sum of the operator self and other.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to add to the operator self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : FermionicOperator</span>
+<span class="sd">            The sum of the operator self and other.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">FermionicTerm</span><span class="p">():</span> <span class="n">other</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot add FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="n">res_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the difference of the operator self and other.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to substract from the operator self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : FermionicOperator</span>
+<span class="sd">            The difference of the operator self and other.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">FermionicTerm</span><span class="p">():</span> <span class="n">other</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot substract FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="n">res_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the difference of the operator other and self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to substract from the operator self from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : FermionicOperator</span>
+<span class="sd">            The difference of the operator other and self.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">FermionicTerm</span><span class="p">():</span> <span class="n">other</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot substract FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="n">res_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the product of the operator self and other.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to multiply with the operator self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : FermionicOperator</span>
+<span class="sd">            The product of the operator self and other.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">FermionicTerm</span><span class="p">():</span> <span class="n">other</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot multipliy FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="n">res_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ladder_term1</span><span class="p">,</span> <span class="n">coeff1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">ladder_term2</span><span class="p">,</span> <span class="n">coeff2</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">curr_ladder_term</span> <span class="o">=</span> <span class="n">ladder_term1</span> <span class="o">*</span> <span class="n">ladder_term2</span>
+                <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">curr_ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">curr_ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff1</span> <span class="o">*</span> <span class="n">coeff2</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">res_terms_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="fm">__radd__</span> <span class="o">=</span> <span class="fm">__add__</span>
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Inplace arithmetic</span>
+    <span class="c1">#</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds other to the operator self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to add to the operator self.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">FermionicTerm</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FermionicTerm</span><span class="p">(),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">other</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot add FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">)</span><span class="o">.</span><span class="n">terms_dict</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Substracts other from the operator self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to substract from the operator self.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">FermionicTerm</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FermionicTerm</span><span class="p">(),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">other</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot add FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">coeff</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiplys other to the operator self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : int, float, complex or FermionicOperator</span>
+<span class="sd">            A scalar or a FermionicOperator to multiply with the operator self.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">FermionicTerm</span><span class="p">():</span> <span class="n">other</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot multipliy FermionicOperator and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="n">res_terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ladder_term1</span><span class="p">,</span> <span class="n">coeff1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">ladder_term2</span><span class="p">,</span> <span class="n">coeff2</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">curr_ladder_term</span> <span class="o">=</span> <span class="n">ladder_term1</span> <span class="o">*</span> <span class="n">ladder_term2</span>
+                <span class="n">res_terms_dict</span><span class="p">[</span><span class="n">curr_ladder_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_terms_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">curr_ladder_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">coeff1</span> <span class="o">*</span> <span class="n">coeff2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span> <span class="o">=</span> <span class="n">res_terms_dict</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Miscellaneous</span>
+    <span class="c1">#</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes all ladder_term terms with coefficient absolute value below the specified threshold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        threshold : float</span>
+<span class="sd">            The threshold for the coefficients of the ladder_term terms.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delete_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ladder_term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">delete_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ladder_term</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ladder_term</span> <span class="ow">in</span> <span class="n">delete_list</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">ladder_term</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_sparse_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapping_type</span><span class="o">=</span><span class="s2">&quot;jordan_wigner&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a matrix representing the operator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        M : scipy.sparse.csr_matrix</span>
+<span class="sd">            A sparse matrix representing the operator.</span>
+<span class="sd">        mapping_type : string, optional</span>
+<span class="sd">            How to embedd the fermionic terms into a QubitOperator. Currently</span>
+<span class="sd">            only ``jordan_wigner`` is supported.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">(</span><span class="n">mapping_type</span><span class="o">=</span><span class="n">mapping_type</span><span class="p">)</span><span class="o">.</span><span class="n">to_sparse_matrix</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FermionicOperator.ground_state_energy">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.ground_state_energy.html#qrisp.operators.fermionic.FermionicOperator.ground_state_energy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ground_state_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The ground state energy.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">()</span><span class="o">.</span><span class="n">ground_state_energy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="FermionicOperator.from_pyscf">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.from_pyscf.html#qrisp.operators.fermionic.FermionicOperator.from_pyscf">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_pyscf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pyscf_molecular_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;.. _pscf_loading:</span>
+
+<span class="sd">        Loads the data of a `PySCF molecule &lt;https://pyscf.org/user/gto.html&gt;`_</span>
+<span class="sd">        into a FermionicOperator.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pyscf_molecular_data : pyscf.gto.mole.Mole</span>
+<span class="sd">            The molecule to load.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        molecule_hamiltonian : FermionicOperator</span>
+<span class="sd">            The molecule as an operator.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We load the Hydrogen molecule and perform a hamiltonian simulation:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pyscf import gto</span>
+<span class="sd">        &gt;&gt;&gt; mol = gto.M(atom = &#39;&#39;&#39;H 0 0 0; H 0 0 0.74&#39;&#39;&#39;, basis = &#39;sto-3g&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; H = FermionicOperator.from_pyscf(mol)</span>
+<span class="sd">        &gt;&gt;&gt; print(H)</span>
+<span class="sd">        -0.181210462015197*a0*a1*c2*c3 + 0.181210462015197*a0*c1*c2*a3</span>
+<span class="sd">        - 1.25330978664598*c0*a0 + 0.674755926814448*c0*a0*c1*a1</span>
+<span class="sd">        + 0.482500939335616*c0*a0*c2*a2 + 0.663711401350814*c0*a0*c3*a3</span>
+<span class="sd">        + 0.181210462015197*c0*a1*a2*c3 - 0.181210462015197*c0*c1*a2*a3</span>
+<span class="sd">        - 1.25330978664598*c1*a1 + 0.663711401350814*c1*a1*c2*a2</span>
+<span class="sd">        + 0.482500939335616*c1*a1*c3*a3 - 0.475068848772178*c2*a2</span>
+<span class="sd">        + 0.697651504490463*c2*a2*c3*a3 - 0.475068848772178*c3*a3</span>
+
+<span class="sd">        Create a :ref:`QuantumVariable` and initialize two electrons in the upper</span>
+<span class="sd">        orbitals.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">        &gt;&gt;&gt; electron_state = QuantumVariable(4)</span>
+<span class="sd">        &gt;&gt;&gt; electron_state[:] = &quot;0011&quot;</span>
+
+<span class="sd">        Simulate for $t = 100$ `Angstrom seconds &lt;https://en.wikipedia.org/wiki/Angstrom&gt;`_.</span>
+
+<span class="sd">        &gt;&gt;&gt; U = H.trotterization()</span>
+<span class="sd">        &gt;&gt;&gt; U(electron_state, t = 100, steps = 20)</span>
+<span class="sd">        &gt;&gt;&gt; print(electron_state)</span>
+<span class="sd">        {&#39;0011&#39;: 0.75331, &#39;1100&#39;: 0.24669}</span>
+
+<span class="sd">        We see that the electrons decayed to one of the lower levels. How cool is that?!</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.vqe.problems.electronic_structure</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">create_electronic_hamiltonian</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">create_electronic_hamiltonian</span><span class="p">(</span><span class="n">pyscf_molecular_data</span><span class="p">)</span></div>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Transformations</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="FermionicOperator.to_qubit_operator">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.to_qubit_operator.html#qrisp.operators.fermionic.FermionicOperator.to_qubit_operator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_qubit_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapping_type</span><span class="o">=</span><span class="s2">&quot;jordan_wigner&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transforms the FermionicOperator to a :ref:`QubitOperator`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mapping : str, optional</span>
+<span class="sd">            The mapping to transform the Hamiltonian. Available is ``jordan_wigner``.</span>
+<span class="sd">            The default is ``jordan_wigner``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        O : :ref:`QubitOperator`</span>
+<span class="sd">            The resulting QubitOperator.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We map a singular fermionic ladder operator to a QubitOperator to see</span>
+<span class="sd">        the Jordan-Wigner embedding.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.operators import a</span>
+<span class="sd">        &gt;&gt;&gt; O = a(4)</span>
+<span class="sd">        &gt;&gt;&gt; print(O.to_qubit_operator())</span>
+<span class="sd">        Z_0*Z_1*Z_2*Z_3*A_4</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mapping_type</span> <span class="o">==</span> <span class="s2">&quot;jordan_wigner&quot;</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">QubitOperator</span><span class="p">({})</span>
+            <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="n">coeff</span> <span class="o">*</span> <span class="n">term</span><span class="o">.</span><span class="n">to_qubit_term</span><span class="p">(</span><span class="n">mapping_type</span><span class="o">=</span><span class="s2">&quot;jordan_wigner&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Don&#39;t know fermionic mapping </span><span class="si">{</span><span class="n">mapping_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FermionicOperator.expectation_value">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.expectation_value.html#qrisp.operators.fermionic.FermionicOperator.expectation_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expectation_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_prep</span><span class="p">,</span> <span class="n">mapping_type</span><span class="o">=</span><span class="s2">&quot;jordan_wigner&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">measurement_kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.</span>
+<span class="sd">        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.</span>
+
+<span class="sd">        Note that this method measures the **hermitized** version of the operator:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            H = (O + O^\dagger)/2</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state_prep : callable</span>
+<span class="sd">            A function returning a QuantumVariable.</span>
+<span class="sd">            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured.</span>
+<span class="sd">            The state preparation function can only take classical values as arguments.</span>
+<span class="sd">            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.</span>
+<span class="sd">        mapping_type : str, optional</span>
+<span class="sd">            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.</span>
+<span class="sd">        measurement_kwargs : dict, optional</span>
+<span class="sd">            The keyword arguments of :meth:`QubitOperator.expectation_value &lt;qrisp.operators.qubit.QubitOperator.expectation_value&gt;`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        callable</span>
+<span class="sd">            A function returning an array containing the expectaion value.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We define a Fermionic Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.</span>
+
+<span class="sd">        We prepare the state</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.operators import a,c</span>
+<span class="sd">            import numpy as np</span>
+
+<span class="sd">            def state_prep(theta):</span>
+<span class="sd">                qv = QuantumFloat(2)</span>
+
+<span class="sd">                ry(theta,qv)</span>
+
+<span class="sd">                return qv</span>
+
+<span class="sd">        And compute the expectation value of the Hamiltonion $H=a_0^{\dagger}a_1+a_1^{\dagger}a_0$ for the state $\ket{\psi_{\theta}}$</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            H = c(0)*a(1) + c(1)*a(0)</span>
+
+<span class="sd">            ev_function = H.expectation_value(state_prep)</span>
+
+<span class="sd">            print(ev_function(np.pi/2))</span>
+<span class="sd">            # Yields: 0.5027499999999724</span>
+
+<span class="sd">        Similiarly, expectation values can be calculated with Jasp</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            @jaspify(terminal_sampling=True)</span>
+<span class="sd">            def main():</span>
+
+<span class="sd">                H = c(0)*a(1) + c(1)*a(0)</span>
+
+<span class="sd">                ev_function = H.expectation_value(state_prep)</span>
+
+<span class="sd">                return ev_function(np.pi/2)</span>
+
+<span class="sd">            print(main())</span>
+<span class="sd">            # Yields: 0.5027499999999724</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">qubit_operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">(</span><span class="n">mapping_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">qubit_operator</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="o">**</span><span class="n">measurement_kwargs</span><span class="p">)</span></div>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Trotterization</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="FermionicOperator.trotterization">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.trotterization.html#qrisp.operators.fermionic.FermionicOperator.trotterization">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trotterization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_evolution</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.</span>
+<span class="sd">        Note that this method will always simulate the **hermitized** operator, i.e.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            H = (O + O^\dagger)/2</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forward_evolution, bool, optional</span>
+<span class="sd">            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        U : function</span>
+<span class="sd">            A Python function that implements the first order Suzuki-Trotter formula.</span>
+<span class="sd">            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is</span>
+<span class="sd">            approximated by</span>
+
+<span class="sd">            .. math::</span>
+
+<span class="sd">                e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N</span>
+
+<span class="sd">            This function recieves the following arguments:</span>
+
+<span class="sd">            * qarg : QuantumVariable or QuantumArray</span>
+<span class="sd">                The quantum argument.</span>
+<span class="sd">            * t : float, optional</span>
+<span class="sd">                The evolution time $t$. The default is 1.</span>
+<span class="sd">            * steps : int, optional</span>
+<span class="sd">                The number of Trotter steps $N$. The default is 1.</span>
+<span class="sd">            * iter : int, optional</span>
+<span class="sd">                The number of iterations the unitary $U(t,N)$ is applied. The default is 1.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We simulate a simple FermionicOperator.</span>
+
+<span class="sd">        &gt;&gt;&gt; from sympy import Symbol</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp.operators import a,c</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">        &gt;&gt;&gt; O = a(0)*a(1) + a(2)</span>
+<span class="sd">        &gt;&gt;&gt; U = O.trotterization()</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(3)</span>
+<span class="sd">        &gt;&gt;&gt; t = Symbol(&quot;t&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; U(qv, t = t)</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.qs)</span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        ---------------</span>
+<span class="sd">                    ┌───┐             ┌───┐┌────────────┐┌───┐     ┌───┐</span>
+<span class="sd">        qv.0: ────■─┤ X ├─────────────┤ X ├┤ Rz(-0.5*t) ├┤ X ├─────┤ X ├─■────</span>
+<span class="sd">                  │ └─┬─┘    ┌───┐    └─┬─┘├────────────┤└─┬─┘┌───┐└─┬─┘ │</span>
+<span class="sd">        qv.1: ─■──┼───■──────┤ H ├──────■──┤ Rz(-0.5*t) ├──■──┤ H ├──■───┼──■─</span>
+<span class="sd">               │  │ ┌───┐┌───┴───┴───┐┌───┐└────────────┘     └───┘      │  │</span>
+<span class="sd">        qv.2: ─■──■─┤ H ├┤ Rz(1.0*t) ├┤ H ├──────────────────────────────■──■─</span>
+<span class="sd">                    └───┘└───────────┘└───┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ----------------------</span>
+<span class="sd">        QuantumVariable qv</span>
+
+<span class="sd">        Execute a simulation:</span>
+
+<span class="sd">        &gt;&gt;&gt; print(qv.get_measurement(subs_dic = {t : 0.5}))</span>
+<span class="sd">        {&#39;000&#39;: 0.9242, &#39;001&#39;: 0.06026, &#39;110&#39;: 0.01459, &#39;111&#39;: 0.00095}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">fermionic_trotterization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_evolution</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">group_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">denominator</span><span class="p">):</span>
+        <span class="n">term_groups</span> <span class="o">=</span> <span class="n">group_up_iterable</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">denominator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">term_groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">term_group</span> <span class="ow">in</span> <span class="n">term_groups</span><span class="p">:</span>
+            <span class="n">O</span> <span class="o">=</span> <span class="n">FermionicOperator</span><span class="p">({</span><span class="n">term</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">term_group</span><span class="p">})</span>
+            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">groups</span>
+
+<div class="viewcode-block" id="FermionicOperator.from_openfermion">
+<a class="viewcode-back" href="../../../../reference/Operators/generated/qrisp.operators.fermionic.FermionicOperator.from_openfermion.html#qrisp.operators.fermionic.FermionicOperator.from_openfermion">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_openfermion</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">of_fermionic_hamiltonian</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Imports a FermionicOperator from `OpenFermion &lt;https://quantumai.google/reference/python/openfermion/ops/FermionOperator&gt;`_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        of_fermionic_operator : openfermion.FermionOperator</span>
+<span class="sd">            The OpenFermion operator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FermionicOperator</span>
+<span class="sd">            The equivlanet Qrisp operator.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We load the $H_2$ molecule from PySCF via OpenFermion and import it into Qrisp:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            import openfermion as of</span>
+<span class="sd">            import openfermionpyscf as ofpyscf</span>
+<span class="sd">            # Set molecule parameters</span>
+<span class="sd">            geometry = [(&quot;H&quot;, (0.0, 0.0, 0.0)), (&quot;H&quot;, (0.0, 0.0, 0.8))]</span>
+<span class="sd">            basis = &quot;sto-3g&quot;</span>
+<span class="sd">            multiplicity = 1</span>
+<span class="sd">            charge = 0</span>
+
+<span class="sd">            # Perform electronic structure calculations and</span>
+<span class="sd">            # obtain Hamiltonian as an InteractionOperator</span>
+<span class="sd">            hamiltonian = ofpyscf.generate_molecular_hamiltonian(</span>
+<span class="sd">                geometry, basis, multiplicity, charge</span>
+<span class="sd">            )</span>
+<span class="sd">            # Convert to a FermionOperator</span>
+<span class="sd">            hamiltonian_ferm_op = of.get_fermion_operator(hamiltonian)</span>
+
+<span class="sd">            from qrisp.operators import FermionicOperator</span>
+<span class="sd">            H = FermionicOperator.from_openfermion(hamiltonian_ferm_op)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">terms_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">of_fermionic_hamiltonian</span><span class="o">.</span><span class="n">terms</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ladder_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">term</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">ladder_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">bool</span><span class="p">(</span><span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+            <span class="n">terms_dict</span><span class="p">[</span><span class="n">FermionicTerm</span><span class="p">(</span><span class="n">ladder_list</span><span class="p">)]</span> <span class="o">=</span> <span class="n">coeff</span>
+
+        <span class="k">return</span> <span class="n">FermionicOperator</span><span class="p">(</span><span class="n">terms_dict</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_minimal_qubit_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="p">[[</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">term</span><span class="o">.</span><span class="n">ladder_list</span><span class="p">]</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span>
+            <span class="p">[],</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_fermionic_swap</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">permutation</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">cz</span>
+
+    <span class="n">qb_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">swaps</span> <span class="o">=</span> <span class="n">get_swaps_for_permutation</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">swap</span> <span class="ow">in</span> <span class="n">swaps</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">cz</span><span class="p">(</span><span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">qb_list</span><span class="p">[</span><span class="n">swap</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="k">return</span> <span class="n">qb_list</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_swaps_for_permutation</span><span class="p">(</span><span class="n">permutation</span><span class="p">):</span>
+    <span class="n">swaps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">permutation</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">permutation</span><span class="p">)):</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">permutation</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">:</span>
+            <span class="n">permutation</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">permutation</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">permutation</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">swaps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">swaps</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

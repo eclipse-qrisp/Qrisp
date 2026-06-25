@@ -1,0 +1,1437 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.circuit.pass_management.passes.fuse_adjacents &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/circuit/pass_management/passes/fuse_adjacents';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/circuit/pass_management/passes/fuse_adjacents.html" />
+    <link rel="icon" href="../../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.circuit.pass_management.passes.fuse_adjacents</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.circuit.pass_management.passes.fuse_adjacents</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+
+<span class="sd">Circuit pass that cancels adjacent gate–inverse-gate pairs by building a</span>
+<span class="sd">directed acyclic graph (DAG) and fusing neighbouring instructions.</span>
+
+<span class="sd">**Architecture**</span>
+
+<span class="sd">The module is layered in three tiers:</span>
+
+<span class="sd">1. **Operation-level fusion** — domain logic that decides whether two</span>
+<span class="sd">   :class:`~qrisp.circuit.Operation` objects cancel, fuse into a single</span>
+<span class="sd">   operation, or cannot be combined.  A dispatcher,</span>
+<span class="sd">   :func:`_fuse_operations`, delegates to specialised handlers in order:</span>
+
+<span class="sd">   * :func:`_fuse_swap_with_neighbour` — SWAP·{CX,CP,RZZ} and vice</span>
+<span class="sd">     versa, replacing the pair with a cheaper compound gate.</span>
+<span class="sd">   * :func:`_fuse_parameterized_1q` — same-site Rz, P, Rx, Ry, gphase</span>
+<span class="sd">     fusion by parameter addition; cross-type Rz↔P fusion with global</span>
+<span class="sd">     phase absorption.</span>
+<span class="sd">   * :func:`_fuse_gidney_and` — compute/uncompute cancellation of</span>
+<span class="sd">     :class:`~qrisp.alg_primitives.GidneyLogicalAND`.</span>
+<span class="sd">   * :func:`_fuse_controlled_ops` — recursion into</span>
+<span class="sd">     :class:`~qrisp.circuit.ControlledOperation` and</span>
+<span class="sd">   * :func:`_check_inverse_cancel` — generic final fallback via</span>
+<span class="sd">     ``op_a.inverse().name == op_b.name``.</span>
+
+<span class="sd">2. **Instruction-level layer** — :func:`_fuse_instructions` validates</span>
+<span class="sd">   qubit alignment, delegates symmetric-gate set-matching to</span>
+<span class="sd">   :func:`_resolve_qubit_order`, then calls :func:`_fuse_operations`.</span>
+
+<span class="sd">3. **DAG orchestration** — :func:`fuse_adjacents` builds a DAG where</span>
+<span class="sd">   each instruction is a node and edges track qubit/clbit flow.  When</span>
+<span class="sd">   an instruction has a single predecessor (meaning the pair is locally</span>
+<span class="sd">   adjacent on every qubit), fusion is attempted.  Cancelled or fused</span>
+<span class="sd">   nodes are removed and edges rewired via :func:`_rewire_past_node`.</span>
+<span class="sd">   Surviving instructions are emitted in topological order by</span>
+<span class="sd">   :func:`_emit_surviving_circuit`.</span>
+
+<span class="sd">**Sentinel**</span>
+
+<span class="sd">Fusion functions return :data:`_FUSION_CANCEL` (a unique sentinel</span>
+<span class="sd">object) to signal total cancellation, avoiding the ambiguity of magic</span>
+<span class="sd">integers.</span>
+
+<span class="sd">**Global phase**</span>
+
+<span class="sd">Rotations that carry a ``global_phase`` attribute contribute it to a</span>
+<span class="sd">running accumulator.  Non-zero accumulated phase is emitted as a single</span>
+<span class="sd">``gphase`` gate at the end of the pass.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClControlledOperation</span><span class="p">,</span>
+    <span class="n">ControlledOperation</span><span class="p">,</span>
+    <span class="n">GPhaseGate</span><span class="p">,</span>
+    <span class="n">Instruction</span><span class="p">,</span>
+    <span class="n">Operation</span><span class="p">,</span>
+    <span class="n">PGate</span><span class="p">,</span>
+    <span class="n">QuantumCircuit</span><span class="p">,</span>
+    <span class="n">RXGate</span><span class="p">,</span>
+    <span class="n">RYGate</span><span class="p">,</span>
+    <span class="n">RZGate</span><span class="p">,</span>
+    <span class="n">fast_append</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit.pass_management.circuit_pass</span><span class="w"> </span><span class="kn">import</span> <span class="n">CircuitPass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit.pass_management.passes.combine_single_qubit_gates</span><span class="w"> </span><span class="kn">import</span> <span class="n">combine_single_qubit_gates</span>
+
+<span class="c1"># Sentinel object returned when two operations cancel completely.</span>
+<span class="n">_FUSION_CANCEL</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Operation-level fusion logic — dispatched by _fuse_operations</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_swap_with_neighbour</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse a SWAP gate with a neighbouring symmetric two-qubit gate.</span>
+
+<span class="sd">    When a SWAP immediately precedes (or follows) one of these symmetric</span>
+<span class="sd">    two-qubit gates (CX, CP, RZZ, CZ), the pair can be replaced by a simpler</span>
+<span class="sd">    compound gate that uses fewer CX gates than the naive decomposition</span>
+<span class="sd">    of SWAP then gate.</span>
+
+<span class="sd">    The &quot;half_*_qc&quot; circuits below are the gate that remains after</span>
+<span class="sd">    absorbing part of the SWAP into the neighbouring operation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Operation or None</span>
+<span class="sd">        The fused operation, or ``None`` if neither op is a SWAP or</span>
+<span class="sd">        the neighbour is not a recognised symmetric two-qubit gate.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">fast_append</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># --- swap-a then something ---</span>
+        <span class="k">if</span> <span class="s2">&quot;swap&quot;</span> <span class="o">==</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cx&quot;</span><span class="p">:</span>
+                <span class="c1"># SWAP · CX(0,1) = CX(0,1) · CX(1,0)</span>
+                <span class="n">half_swap_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rzz&quot;</span><span class="p">:</span>
+                <span class="c1"># SWAP · RZZ(θ, 0,1) ⇒ 2 CX, RZ(θ), CX</span>
+                <span class="n">half_rzz_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">rz</span><span class="p">(</span><span class="n">op_b</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cp&quot;</span><span class="p">:</span>
+                <span class="c1"># SWAP · CP(θ, 0,1) ⇒ 2 CX, P(-θ/2,1), CX, P(θ/2,0), P(θ/2,1)</span>
+                <span class="n">half_cp_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="o">-</span><span class="n">op_b</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="n">op_b</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="n">op_b</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+
+        <span class="c1"># --- something then swap-b ---</span>
+        <span class="c1"># Mirrors the cases above but with SWAP on the right.</span>
+        <span class="k">if</span> <span class="s2">&quot;swap&quot;</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cx&quot;</span><span class="p">:</span>
+                <span class="c1"># CX(0,1) · SWAP = CX(1,0) · CX(0,1)</span>
+                <span class="n">half_swap_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_swap_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rzz&quot;</span><span class="p">:</span>
+                <span class="c1"># RZZ(θ, 0,1) · SWAP ⇒ 2 CX, RZ(θ), CX</span>
+                <span class="n">half_rzz_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">rz</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_rzz_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cp&quot;</span><span class="p">:</span>
+                <span class="c1"># CP(θ, 0,1) · SWAP ⇒ 2 CX, P(-θ/2,1), CX, P(θ/2,0), P(θ/2,1)</span>
+                <span class="n">half_cp_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="o">-</span><span class="n">op_a</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_cp_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cz&quot;</span><span class="p">:</span>
+                <span class="c1"># CZ(0,1) · SWAP ⇒ H(1), CX(1,0), CX(0,1), H(0)</span>
+                <span class="n">half_cz_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">half_cz_qc</span><span class="o">.</span><span class="n">h</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">half_cz_qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">half_cz_qc</span><span class="o">.</span><span class="n">h</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">half_cz_qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_parameterized_1q</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse two parameterised single-qubit gates.</span>
+
+<span class="sd">    Rz(θ₁)·Rz(θ₂) → Rz(θ₁+θ₂), and if θ₁+θ₂ = 0 the pair cancels.</span>
+<span class="sd">    P(θ₁)·P(θ₂)  → P(θ₁+θ₂), same logic.</span>
+<span class="sd">    Cross-type fusion (Rz+P) absorbs the Rz global phase into the</span>
+<span class="sd">    gphase tracker and emits a single P gate.</span>
+
+<span class="sd">    Also handles same-name Rx, Ry, and gphase gates.</span>
+
+<span class="sd">    Note: global phases from Rz are tracked in gphase_array and</span>
+<span class="sd">    collapsed at the very end of the main pass.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+<span class="sd">    gphase_array : list</span>
+<span class="sd">        Single-element list tracking accumulated global phase.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Operation or _FUSION_CANCEL or None</span>
+<span class="sd">        * ``Operation`` — the fused result.</span>
+<span class="sd">        * ``_FUSION_CANCEL`` — the two operations cancel completely.</span>
+<span class="sd">        * ``None`` — no parameterised fusion possible.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">op_a</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">param_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">params</span> <span class="o">+</span> <span class="n">op_b</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># --- Rz + Rz / Rz + P ---</span>
+    <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rz&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rz&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>  <span class="c1"># perfect cancellation</span>
+            <span class="k">return</span> <span class="n">RZGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+            <span class="n">gphase_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">op_a</span><span class="o">.</span><span class="n">global_phase</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+            <span class="k">return</span> <span class="n">PGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+
+    <span class="c1"># --- P + Rz / P + P ---</span>
+    <span class="k">elif</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rz&quot;</span><span class="p">:</span>
+            <span class="n">gphase_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">op_b</span><span class="o">.</span><span class="n">global_phase</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+            <span class="k">return</span> <span class="n">PGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+            <span class="k">return</span> <span class="n">PGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+
+    <span class="c1"># --- Rx, Ry, gphase (same-name only) ---</span>
+    <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rx&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+            <span class="k">return</span> <span class="n">RXGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;ry&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">param_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+            <span class="k">return</span> <span class="n">RYGate</span><span class="p">(</span><span class="n">param_sum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;gphase&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">GPhaseGate</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">global_phase</span> <span class="o">+</span> <span class="n">op_b</span><span class="o">.</span><span class="n">global_phase</span><span class="p">)</span>
+        <span class="c1"># Other parameterised gates with matching names (e.g. cp, rzz)</span>
+        <span class="c1"># are handled by the generic inverse check further below.</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_gidney_and</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cancel a GidneyLogicalAND compute/uncompute pair.</span>
+
+<span class="sd">    This is a definitive check — if the ops are GidneyLogicalAND</span>
+<span class="sd">    instances, no further fusion paths should be attempted.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    _FUSION_CANCEL or None</span>
+<span class="sd">        ``_FUSION_CANCEL`` if the compute/uncompute pair cancels,</span>
+<span class="sd">        ``None`` otherwise (including &quot;definitive no match&quot;).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Lazy import to avoid circular dependencies at module load time.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">GidneyLogicalAND</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">GidneyLogicalAND</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op_b</span><span class="p">,</span> <span class="n">GidneyLogicalAND</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">:</span>
+        <span class="c1"># A compute/uncompute pair cancels.</span>
+        <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">inv</span> <span class="o">!=</span> <span class="n">op_b</span><span class="o">.</span><span class="n">inv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+
+    <span class="c1"># Definitive no-match for GidneyLogicalAND pairs — do not fall</span>
+    <span class="c1"># through to any other fusion path.</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_controlled_ops</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse two controlled operations by recursing into their</span>
+<span class="sd">    base operations.</span>
+
+<span class="sd">    IMPORTANT: when this function returns ``None`` it means &quot;no</span>
+<span class="sd">    controlled-op match was found, but a generic inverse cancellation</span>
+<span class="sd">    should still be attempted&quot;.  This is deliberate because many gates</span>
+<span class="sd">    with definitions (SWAP, circuit wrappers, etc.) are self-inverse</span>
+<span class="sd">    and need the fallback path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : ControlledOperation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : ControlledOperation</span>
+<span class="sd">        The second operation (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Operation or _FUSION_CANCEL or None</span>
+<span class="sd">        * ``Operation`` — the fused result (re-wrapped in the</span>
+<span class="sd">          appropriate controlled wrapper).</span>
+<span class="sd">        * ``_FUSION_CANCEL`` — the two operations cancel completely.</span>
+<span class="sd">        * ``None`` — not handled here; fall through to generic inverse check.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">op_a</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">:</span>
+        <span class="c1"># Recurse into the base (target) operations.</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">_fuse_via_transpile</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">base_operation</span><span class="p">,</span> <span class="n">op_b</span><span class="o">.</span><span class="n">base_operation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="n">_FUSION_CANCEL</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+        <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Re-wrap the fused base in a controlled wrapper.</span>
+            <span class="k">return</span> <span class="n">ControlledOperation</span><span class="p">(</span>
+                <span class="n">temp</span><span class="p">,</span>
+                <span class="n">num_ctrl_qubits</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">controls</span><span class="p">),</span>
+                <span class="n">ctrl_state</span><span class="o">=</span><span class="n">op_a</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Deliberately fall through to the generic inverse check.</span>
+    <span class="c1"># Many gates with definitions (SWAP, circuits wrapped as</span>
+    <span class="c1"># gates, etc.) need to be tested for self-inverse cancellation.</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_via_transpile</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse two composite gates by transpiling and cancelling.</span>
+
+<span class="sd">    Some cancellations are only visible after decomposing composite</span>
+<span class="sd">    gates into their constituent operations.  This escape hatch:</span>
+
+<span class="sd">    1. Builds a two-instruction circuit from ``op_a`` and ``op_b``.</span>
+<span class="sd">    2. Transpiles it (decomposes the definitions).</span>
+<span class="sd">    3. Runs ``fuse_adjacents`` on the decomposition.</span>
+<span class="sd">    4. If anything cancelled (gate count changed), returns the fused</span>
+<span class="sd">       result as a new gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Operation or None</span>
+<span class="sd">        The fused operation, or ``None`` if nothing cancelled.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">)</span>
+    <span class="n">qc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span>
+    <span class="n">qc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op_b</span><span class="p">,</span> <span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span>
+    <span class="n">qc</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">transpile</span><span class="p">()</span>
+    <span class="n">op_counts</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">count_ops</span><span class="p">()</span>
+    <span class="n">qc</span> <span class="o">=</span> <span class="n">fuse_adjacents</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+    <span class="n">qc</span> <span class="o">=</span> <span class="n">combine_single_qubit_gates</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_counts</span> <span class="o">!=</span> <span class="n">qc</span><span class="o">.</span><span class="n">count_ops</span><span class="p">():</span>
+        <span class="c1"># If all gates cancelled → full cancellation.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+        <span class="k">return</span> <span class="n">qc</span><span class="o">.</span><span class="n">to_gate</span><span class="p">()</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_inverse_cancel</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether op_b is the exact inverse of op_a.</span>
+
+<span class="sd">    This is the generic final fallback for inverse cancellation.</span>
+<span class="sd">    Handles:</span>
+<span class="sd">      * Self-inverse gates: X·X, H·H, CX·CX, CZ·CZ, SWAP·SWAP, …</span>
+<span class="sd">      * Param gates with zero sum not caught by _fuse_parameterized_1q</span>
+<span class="sd">        (e.g. cp·cp⁻¹)</span>
+
+<span class="sd">    The &quot;alloc&quot; suffix guard prevents confusing qb_alloc / qb_dealloc</span>
+<span class="sd">    with proper gates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    _FUSION_CANCEL or None</span>
+<span class="sd">        ``_FUSION_CANCEL`` if the pair cancels, ``None`` otherwise.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If the name of the inverse of gate a is the same</span>
+    <span class="c1"># as gate b, chances are they are indeed inverse to each other</span>
+    <span class="c1"># We confirm this by comparing their unitaries</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">inv_op</span> <span class="o">=</span> <span class="n">op_a</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">inv_op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="n">op_a</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">!=</span> <span class="s2">&quot;alloc&quot;</span><span class="p">:</span>
+        <span class="c1"># Avoid calculating very large unitaries</span>
+        <span class="k">if</span> <span class="n">inv_op</span><span class="o">.</span><span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">4</span> <span class="ow">or</span> <span class="n">op_b</span><span class="o">.</span><span class="n">num_qubits</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Retrieve the unitaries</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">unitary_a</span> <span class="o">=</span> <span class="n">inv_op</span><span class="o">.</span><span class="n">get_unitary</span><span class="p">()</span>
+            <span class="n">unitary_b</span> <span class="o">=</span> <span class="n">op_b</span><span class="o">.</span><span class="n">get_unitary</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Compare</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">unitary_a</span> <span class="o">-</span> <span class="n">unitary_b</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-4</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Mark as cancelled</span>
+        <span class="k">return</span> <span class="n">_FUSION_CANCEL</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Operation-level dispatcher</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_operations</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse two operations into one (or cancel them).</span>
+
+<span class="sd">    Dispatches through the specialised fusion helpers in order:</span>
+<span class="sd">    1. SWAP fusion with neighbouring two-qubit gates.</span>
+<span class="sd">    2. Parameterised single-qubit gate fusion.</span>
+<span class="sd">    3. GidneyLogicalAND compute/uncompute cancellation.</span>
+<span class="sd">    4. Controlled-operation recursion (if op_a has a definition).</span>
+<span class="sd">    5. Generic inverse cancellation.</span>
+<span class="sd">    6. Recursive transpile-and-cancel for composite gates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op_a : Operation</span>
+<span class="sd">        The first operation (earlier in time).</span>
+<span class="sd">    op_b : Operation</span>
+<span class="sd">        The second operation (later in time).</span>
+<span class="sd">    gphase_array : list</span>
+<span class="sd">        Single-element list tracking accumulated global phase.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Operation or _FUSION_CANCEL or None</span>
+<span class="sd">        * ``Operation`` — the fused result.</span>
+<span class="sd">        * ``_FUSION_CANCEL`` — the two operations cancel completely.</span>
+<span class="sd">        * ``None`` — no fusion possible.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 1. SWAP fusion with neighbouring two-qubit gates.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_swap_with_neighbour</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="c1"># 2. Parameterised single-qubit gate fusion.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_parameterized_1q</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="c1"># 3. GidneyLogicalAND — must be checked before the generic path</span>
+    <span class="c1">#    and does NOT fall through to inverse check.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_gidney_and</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="c1"># 4. Composite gate handling (controlled ops) — falls through</span>
+    <span class="c1">#    to generic inverse check if no controlled-op match is found.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">ControlledOperation</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op_b</span><span class="p">,</span> <span class="n">ControlledOperation</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_controlled_ops</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="c1"># Deliberately fall through to the generic inverse check.</span>
+        <span class="c1"># Many gates with definitions (SWAP, circuits wrapped as</span>
+        <span class="c1"># gates, etc.) need to be tested for self-inverse cancellation.</span>
+
+    <span class="c1"># 5. Generic inverse cancellation — catches self-inverse gates</span>
+    <span class="c1">#    (X·X, H·H, SWAP·SWAP, …) and param gates with zero sum.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_check_inverse_cancel</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="c1"># 6. Recursive transpile-and-cancel for composite gates whose</span>
+    <span class="c1">#    cancellation only becomes visible after decomposition.</span>
+    <span class="c1">#    This is an escape hatch for cases where the inverse names</span>
+    <span class="c1">#    don&#39;t match but the decompositions partially cancel.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">op_a</span><span class="o">.</span><span class="n">definition</span> <span class="ow">or</span> <span class="n">op_b</span><span class="o">.</span><span class="n">definition</span><span class="p">)</span> <span class="ow">and</span> <span class="n">op_a</span><span class="o">.</span><span class="n">num_clbits</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">op_b</span><span class="o">.</span><span class="n">num_clbits</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_via_transpile</span><span class="p">(</span><span class="n">op_a</span><span class="p">,</span> <span class="n">op_b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Instruction-level fusion</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="c1"># Gates whose qubit arguments are symmetric (set-based matching).</span>
+<span class="n">_SYMMETRIC_GATES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="s2">&quot;swap&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;rzz&quot;</span><span class="p">})</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_qubit_order</span><span class="p">(</span><span class="n">instr_a</span><span class="p">,</span> <span class="n">instr_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the correct qubit order for the fused instruction.</span>
+
+<span class="sd">    For symmetric two-qubit gates (CZ, SWAP, CP, RZZ) the qubit order</span>
+<span class="sd">    does not matter — CZ(0,1) followed by CZ(1,0) is still the same</span>
+<span class="sd">    pair.  We match by qubit *set* rather than by position.</span>
+
+<span class="sd">    For non-symmetric gates, exact positional qubit match is required.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    instr_a : Instruction</span>
+<span class="sd">        The first instruction (earlier in time).</span>
+<span class="sd">    instr_b : Instruction</span>
+<span class="sd">        The second instruction (later in time).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of Qubit or None</span>
+<span class="sd">        The qubit list to use for the fused instruction, or ``None``</span>
+<span class="sd">        if the qubits cannot be matched.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a_sym</span> <span class="o">=</span> <span class="n">instr_a</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">_SYMMETRIC_GATES</span>
+    <span class="n">b_sym</span> <span class="o">=</span> <span class="n">instr_b</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">_SYMMETRIC_GATES</span>
+
+    <span class="k">if</span> <span class="n">a_sym</span> <span class="ow">or</span> <span class="n">b_sym</span><span class="p">:</span>
+        <span class="c1"># Symmetric match by set — qubit order difference is tolerated.</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">instr_a</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">instr_b</span><span class="o">.</span><span class="n">qubits</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Preserve the non-symmetric side&#39;s qubit order if there is one.</span>
+        <span class="c1"># If only op_a is symmetric, keep op_b&#39;s order (the successor&#39;s).</span>
+        <span class="c1"># If only op_b is symmetric (or both), keep op_a&#39;s order.</span>
+        <span class="k">if</span> <span class="n">a_sym</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">b_sym</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">instr_b</span><span class="o">.</span><span class="n">qubits</span>
+        <span class="k">return</span> <span class="n">instr_a</span><span class="o">.</span><span class="n">qubits</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">qb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">instr_a</span><span class="o">.</span><span class="n">qubits</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instr_b</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">qb</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">instr_a</span><span class="o">.</span><span class="n">qubits</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fuse_instructions</span><span class="p">(</span><span class="n">instr_a</span><span class="p">,</span> <span class="n">instr_b</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to fuse two neighbouring instructions.</span>
+
+<span class="sd">    This is a thin wrapper around ``_fuse_operations`` that additionally</span>
+<span class="sd">    validates qubit alignment and handles *symmetric* gates (via</span>
+<span class="sd">    ``_resolve_qubit_order``).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Instruction or _FUSION_CANCEL or None</span>
+<span class="sd">        * ``Instruction`` — the fused result.</span>
+<span class="sd">        * ``_FUSION_CANCEL`` — the two instructions cancel.</span>
+<span class="sd">        * ``None`` — no fusion possible.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Must operate on the same number of qubits.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instr_a</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">instr_b</span><span class="o">.</span><span class="n">qubits</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Skip classically-controlled operations (not yet handled).</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr_a</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ClControlledOperation</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr_b</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ClControlledOperation</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Resolve the correct qubit order (handles symmetric gates).</span>
+    <span class="n">qubits</span> <span class="o">=</span> <span class="n">_resolve_qubit_order</span><span class="p">(</span><span class="n">instr_a</span><span class="p">,</span> <span class="n">instr_b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">qubits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Delegate to the operation-level fusion logic.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_operations</span><span class="p">(</span><span class="n">instr_a</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">instr_b</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">)</span>
+
+    <span class="c1"># If the result is a new Operation, wrap it in an Instruction.</span>
+    <span class="c1"># Otherwise propagate _FUSION_CANCEL or None as-is.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Operation</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Instruction</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Public pass</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># DAG management helpers — used by fuse_adjacents</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_dag</span><span class="p">(</span><span class="n">qc</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the DAG with virtual nodes for every qubit and clbit.</span>
+
+<span class="sd">    Nodes are identified by integers:</span>
+<span class="sd">      * Negative numbers (-1, -2, …) represent qubits and clbits</span>
+<span class="sd">        at the *start* of time (before any gate acts on them).</span>
+<span class="sd">      * Non-negative numbers (0, 1, 2, …) represent instructions.</span>
+
+<span class="sd">    qubit_dic / clbit_dic map each (c)bit to the *last* node that</span>
+<span class="sd">    touched it, so we can connect each new instruction to its</span>
+<span class="sd">    immediate predecessors.</span>
+
+<span class="sd">    edge_dic maps DAG edges → lists of qubits, so that when we</span>
+<span class="sd">    delete a node we know which qubit_dic entries to rewire.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qc : QuantumCircuit</span>
+<span class="sd">        The input circuit.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        (G, qubit_dic, clbit_dic, edge_dic, data_list)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+    <span class="n">qubit_dic</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">clbit_dic</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">edge_dic</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Seed the DAG with &quot;virtual&quot; nodes for every qubit and clbit.</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">qb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">):</span>
+        <span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">clbits</span><span class="p">):</span>
+        <span class="n">clbit_dic</span><span class="p">[</span><span class="n">cb</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="o">-</span><span class="n">qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Work on a copy so we can mutate instructions in-place (for</span>
+    <span class="c1"># fusion replacements) without affecting the original circuit.</span>
+    <span class="n">data_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">G</span><span class="p">,</span> <span class="n">qubit_dic</span><span class="p">,</span> <span class="n">clbit_dic</span><span class="p">,</span> <span class="n">edge_dic</span><span class="p">,</span> <span class="n">data_list</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rewire_past_node</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">qubit_dic</span><span class="p">,</span> <span class="n">edge_dic</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rewire incoming edges of *node_id* to skip past it.</span>
+
+<span class="sd">    After rewiring, subsequent gates that would have seen *node_id*</span>
+<span class="sd">    as a predecessor now see *node_id*&#39;s predecessor instead.</span>
+<span class="sd">    The node itself is NOT removed (the caller decides when to do that).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.DiGraph</span>
+<span class="sd">        The DAG.</span>
+<span class="sd">    node_id : int</span>
+<span class="sd">        The node whose incoming edges should be rewired.</span>
+<span class="sd">    qubit_dic : dict</span>
+<span class="sd">        Maps each qubit → last node that touched it.</span>
+<span class="sd">    edge_dic : dict</span>
+<span class="sd">        Maps DAG edges → list of qubits travelling on that edge.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">in_edges</span><span class="p">(</span><span class="n">node_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">edge_dic</span><span class="p">[</span><span class="n">edge</span><span class="p">]:</span>
+            <span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">edge_dic</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_emit_surviving_circuit</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">data_list</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Emit the surviving instructions in topological order.</span>
+
+<span class="sd">    Topological sort guarantees that earlier instructions appear</span>
+<span class="sd">    before later ones in the dependency chain — even after nodes have</span>
+<span class="sd">    been deleted and edges rewired.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.DiGraph</span>
+<span class="sd">        The DAG containing only surviving instruction nodes and</span>
+<span class="sd">        virtual qubit/clbit nodes.</span>
+<span class="sd">    data_list : list</span>
+<span class="sd">        The working copy of circuit instructions (mutated for fusions).</span>
+<span class="sd">    qc : QuantumCircuit</span>
+<span class="sd">        The original circuit (used for clearcopy and clbit lookup).</span>
+<span class="sd">    gphase_array : list</span>
+<span class="sd">        Single-element list tracking accumulated global phase.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumCircuit</span>
+<span class="sd">        A new circuit containing only the surviving instructions.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qc_new</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">clearcopy</span><span class="p">()</span>
+    <span class="n">topo_sort</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="n">fast_append</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">topo_sort</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Virtual qubit/clbit node — skip.</span>
+                <span class="k">continue</span>
+            <span class="c1"># Emit the instruction (unless it&#39;s a gphase whose value</span>
+            <span class="c1"># was already absorbed into the accumulated counter).</span>
+            <span class="k">if</span> <span class="n">data_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;gphase&quot;</span><span class="p">:</span>
+                <span class="n">qc_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">data_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">qubits</span><span class="p">,</span> <span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gphase_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">data_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># If accumulated global phase is non-zero, emit a gphase gate.</span>
+    <span class="k">if</span> <span class="n">gphase_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">qc_new</span><span class="o">.</span><span class="n">gphase</span><span class="p">(</span><span class="n">gphase_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qc_new</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qc_new</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Public pass</span>
+<span class="c1"># =============================================================================</span>
+
+
+<div class="viewcode-block" id="fuse_adjacents">
+<a class="viewcode-back" href="../../../../../reference/Circuit%20Manipulation/Pass%20Management/Passes/fuse_adjacents.html#qrisp.fuse_adjacents">[docs]</a>
+<span class="nd">@CircuitPass</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fuse_adjacents</span><span class="p">(</span><span class="n">qc</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumCircuit</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cancel adjacent gate–inverse-gate pairs.</span>
+
+<span class="sd">    **How it works**</span>
+
+<span class="sd">    1.  Build a **directed acyclic graph (DAG)** where each instruction</span>
+<span class="sd">        is a node.  Edges connect an instruction to its immediate</span>
+<span class="sd">        successor on the same qubit or classical bit.</span>
+
+<span class="sd">    2.  Walk through the instructions in circuit order.  For each</span>
+<span class="sd">        instruction whose **predecessors all agree on a single node**</span>
+<span class="sd">        (i.e. the instruction is directly adjacent to its predecessor on</span>
+<span class="sd">        every qubit it touches), call ``_fuse_instructions`` to attempt</span>
+<span class="sd">        to merge or cancel the pair.</span>
+
+<span class="sd">    3.  When a pair is cancelled, both nodes are</span>
+<span class="sd">        removed from the DAG and their qubit edges are rewired to</span>
+<span class="sd">        bridge over the gap.</span>
+
+<span class="sd">    4.  When a pair is fused into a new gate, the predecessor node is</span>
+<span class="sd">        replaced with the fused result and the successor node is</span>
+<span class="sd">        removed.</span>
+
+<span class="sd">    5.  After all candidate pairs have been inspected, the surviving</span>
+<span class="sd">        nodes are emitted in **topological order**, which preserves the</span>
+<span class="sd">        circuit&#39;s original dependency structure.</span>
+
+<span class="sd">    **What it cancels / fuses**</span>
+
+<span class="sd">    * Self-inverse gates: ``X·X``, ``H·H``, ``CX·CX``, ``CZ·CZ``,</span>
+<span class="sd">      ``SWAP·SWAP``, …</span>
+<span class="sd">    * Parameterised rotations with opposite angles:</span>
+<span class="sd">      ``Rz(θ)·Rz(−θ)``, ``Rx(θ)·Rx(−θ)``, ``Ry(θ)·Ry(−θ)``</span>
+<span class="sd">    * Phase gates: ``P(θ)·P(−θ)``</span>
+<span class="sd">    * Cross-type fusion: ``Rz(θ)·P(−θ)`` → ``P(0)·Gphase``</span>
+<span class="sd">    * Controlled operations whose base gates cancel</span>
+<span class="sd">    * Partial fusion of ``SWAP`` with neighbouring ``CX``, ``CP``,</span>
+<span class="sd">      ``RZZ`` into fewer CX gates</span>
+
+<span class="sd">    **Global phase tracking**</span>
+
+<span class="sd">    Gates that carry a ``global_phase`` attribute (notably ``Rz``)</span>
+<span class="sd">    contribute their global phase to a running total.  At the end of</span>
+<span class="sd">    the pass, any non-zero accumulated phase is emitted as a single</span>
+<span class="sd">    ``gphase`` gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qc : QuantumCircuit</span>
+<span class="sd">        The input circuit.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumCircuit</span>
+<span class="sd">        A new circuit with adjacent inverse gates cancelled.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Cancel adjacent self-inverse gates (e.g. CX·CX)::</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit, PassManager</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import fuse_adjacents</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0, 1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0, 1)   # CX is self-inverse → cancelled</span>
+<span class="sd">        &gt;&gt;&gt; print(qc)</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">        qb_96: ──■────■──</span>
+<span class="sd">               ┌─┴─┐┌─┴─┐</span>
+<span class="sd">        qb_97: ┤ X ├┤ X ├</span>
+<span class="sd">               └───┘└───┘</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; pm = PassManager()</span>
+<span class="sd">        &gt;&gt;&gt; pm += fuse_adjacents</span>
+<span class="sd">        &gt;&gt;&gt; optimized_qc = pm.run(qc)</span>
+<span class="sd">        &gt;&gt;&gt; print(optimized_qc)</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">        qb_96:</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">        qb_97:</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+
+<span class="sd">    Fuse a SWAP with a neighbouring CX into fewer gates::</span>
+
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.swap(0, 1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0, 1)</span>
+<span class="sd">        &gt;&gt;&gt; pm = PassManager()</span>
+<span class="sd">        &gt;&gt;&gt; pm += fuse_adjacents</span>
+<span class="sd">        &gt;&gt;&gt; pm += decompose()</span>
+<span class="sd">        &gt;&gt;&gt; optimized = pm.run(qc)</span>
+<span class="sd">        &gt;&gt;&gt; # SWAP·CX fused into a cheaper compound gate rather than</span>
+<span class="sd">        &gt;&gt;&gt; # decomposing into 3 CX + 1 CX = 4 CX gates.</span>
+<span class="sd">        &gt;&gt;&gt; print(optimized)</span>
+<span class="sd">                     ┌───┐</span>
+<span class="sd">        qb_110: ──■──┤ X ├</span>
+<span class="sd">                ┌─┴─┐└─┬─┘</span>
+<span class="sd">        qb_111: ┤ X ├──■──</span>
+<span class="sd">                └───┘</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gphase_array</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># mutable accumulator for global phase</span>
+
+    <span class="c1"># Step 1: initialise the DAG.</span>
+    <span class="n">G</span><span class="p">,</span> <span class="n">qubit_dic</span><span class="p">,</span> <span class="n">clbit_dic</span><span class="p">,</span> <span class="n">edge_dic</span><span class="p">,</span> <span class="n">data_list</span> <span class="o">=</span> <span class="n">_init_dag</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: build the DAG and attempt fusion/cancellation on the fly.</span>
+    <span class="c1">#</span>
+    <span class="c1"># For each instruction we:</span>
+    <span class="c1">#   a) Add a node to the DAG.</span>
+    <span class="c1">#   b) Add edges from the last instruction on each touched qubit.</span>
+    <span class="c1">#   c) If ALL those edges come from the SAME node, the instruction</span>
+    <span class="c1">#      is &quot;locally adjacent&quot; to its predecessor and we can attempt</span>
+    <span class="c1">#      to fuse/cancel them.</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">instr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_list</span><span class="p">):</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="c1"># Collect the immediate predecessors for every qubit.</span>
+        <span class="n">predecessors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">:</span>
+            <span class="n">predecessors</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">])</span>
+
+            <span class="c1"># Add an edge from the predecessor to the current node.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">G</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">],</span> <span class="n">i</span><span class="p">):</span>
+                <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">],</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">edge_dic</span><span class="p">[(</span><span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">],</span> <span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># Track which qubits travel along this edge for later rewire.</span>
+            <span class="n">edge_dic</span><span class="p">[(</span><span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">],</span> <span class="n">i</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
+
+            <span class="c1"># Update the &quot;last seen at&quot; pointer for this qubit.</span>
+            <span class="n">qubit_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="c1"># Classical bits — same logic, no fusion needed (they just</span>
+        <span class="c1"># act as barriers in the DAG).</span>
+        <span class="k">for</span> <span class="n">cb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">clbits</span><span class="p">:</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">clbit_dic</span><span class="p">[</span><span class="n">cb</span><span class="p">],</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">clbit_dic</span><span class="p">[</span><span class="n">cb</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="c1"># Convert to list for indexing.</span>
+        <span class="n">predecessors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">predecessors</span><span class="p">)</span>
+
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="c1"># Fusion check: only attempt when the instruction has exactly one</span>
+        <span class="c1"># predecessor, meaning it is directly adjacent on EVERY qubit it</span>
+        <span class="c1"># touches.  A multi-predecessor situation (e.g. a CNOT whose</span>
+        <span class="c1"># control and target were last touched by different gates) means</span>
+        <span class="c1"># the gates are NOT locally adjacent → skip.</span>
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">predecessors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">predecessors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pred</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># predecessor is the initial |0⟩ — nothing to fuse</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">_fuse_instructions</span><span class="p">(</span><span class="n">data_list</span><span class="p">[</span><span class="n">pred</span><span class="p">],</span> <span class="n">instr</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="n">_FUSION_CANCEL</span><span class="p">:</span>
+                    <span class="c1"># ---- Total cancellation ----</span>
+                    <span class="c1"># Both gates cancel out.  Remove the predecessor</span>
+                    <span class="c1"># node and rewire its incoming edges so that</span>
+                    <span class="c1"># subsequent gates see the predecessor of &#39;pred&#39;.</span>
+                    <span class="n">_rewire_past_node</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">qubit_dic</span><span class="p">,</span> <span class="n">edge_dic</span><span class="p">)</span>
+                    <span class="n">G</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># ---- Partial fusion ----</span>
+                    <span class="c1"># The two gates are replaced by a single fused gate.</span>
+                    <span class="c1"># The predecessor node gets the new operation.</span>
+                    <span class="n">data_list</span><span class="p">[</span><span class="n">pred</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+
+                    <span class="c1"># Rewire the incoming edges of the *successor* node</span>
+                    <span class="c1"># to point past it (since it is being removed).</span>
+                    <span class="n">_rewire_past_node</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">qubit_dic</span><span class="p">,</span> <span class="n">edge_dic</span><span class="p">)</span>
+
+                <span class="c1"># In both cases the successor node (i) is removed.</span>
+                <span class="n">G</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: emit the surviving instructions in topological order.</span>
+    <span class="k">return</span> <span class="n">_emit_surviving_circuit</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">data_list</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">gphase_array</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,758 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.gqsp.gqsp &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/gqsp/gqsp';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/gqsp/gqsp.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.gqsp.gqsp</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.gqsp.gqsp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.gqsp_angles</span><span class="w"> </span><span class="kn">import</span> <span class="n">gqsp_angles</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core.gate_application_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">rx</span><span class="p">,</span> <span class="n">rz</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">control</span><span class="p">,</span> <span class="n">invert</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jrange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qtypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<span class="c1"># https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368</span>
+<div class="viewcode-block" id="GQSP">
+<a class="viewcode-back" href="../../../../reference/Algorithms/GQSP.html#qrisp.gqsp.GQSP">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">GQSP</span><span class="p">(</span>
+    <span class="n">anc</span><span class="p">:</span> <span class="n">QuantumBool</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">qargs</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">unitary</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">p</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;ArrayLike&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{},</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs `Generalized Quantum Signal Processing &lt;https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368&gt;`_.</span>
+
+<span class="sd">    Generalized Quantum Signal Processing was introduced by `Motlagh and Wiebe &lt;https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368&gt;`_. Its equivalence to</span>
+<span class="sd">    the non-linear Fourier transform (NLFT) was subsequently established by `Laneve &lt;https://arxiv.org/pdf/2503.03026&gt;`_. </span>
+<span class="sd">    By adopting the conventions from Laneve, we treat Generalized Quantum Signal Processing (GQSP) as the overarching framework for single-qubit signal processing. </span>
+<span class="sd">    In this setting, previously known QSP variants—such as those constrained to $X$ or $Y$ rotations—emerge naturally as special cases where the underlying complex sequences of the NLFT are restricted to purely imaginary or real values, respectively.</span>
+
+<span class="sd">    GQSP is described as follows:</span>
+
+<span class="sd">    * Given a unitary $U$, </span>
+<span class="sd">    * and a complex degree $d$ polynomial $p(z)\in\mathbb C[z]$ such that $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$,</span>
+
+<span class="sd">    this algorithm implements the unitary</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \begin{pmatrix} </span>
+<span class="sd">        p(U) &amp; * \\ </span>
+<span class="sd">        * &amp; *</span>
+<span class="sd">        \end{pmatrix}</span>
+<span class="sd">        &amp;=R(\theta_0,\phi_0,\lambda)\left(\prod_{j=1}^{d}AR(\theta_j,\phi_j,0)\right)\\</span>
+<span class="sd">        &amp;=R(\theta_0,\phi_0,\lambda)AR(\theta_1,\phi_1,0)A\dotsc AR(\theta_d,\phi_d,0)</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        R(\theta,\phi,\lambda) = e^{i\lambda Z}e^{i\phi X}e^{i\theta Z} \in SU(2)</span>
+
+<span class="sd">    and the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$ are calculated from the polynomial $p$, </span>
+<span class="sd">    $A=\begin{pmatrix}U &amp; 0\\ 0 &amp; I\end{pmatrix}$ is the signal operator.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    anc : QuantumBool</span>
+<span class="sd">        Auxiliary variable in state $\ket{0}$ for applying the GQSP protocol.</span>
+<span class="sd">        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.</span>
+<span class="sd">    *qargs : QuantumVariable</span>
+<span class="sd">        QuantumVariables serving as operands for the unitary.</span>
+<span class="sd">    unitary : Callable</span>
+<span class="sd">        A function applying a unitary to the variables ``*qargs``.</span>
+<span class="sd">        Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.</span>
+<span class="sd">    p : ArrayLike, optional</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+<span class="sd">        Either the polynomial ``p`` or ``angles`` must be specified.</span>
+<span class="sd">    angles : tuple(ArrayLike, ArrayLike, ArrayLike), optional</span>
+<span class="sd">        A tuple of angles $(\theta,\phi,\lambda)$ where $\theta,\phi\in\mathbb R^{d+1}$ are 1-D arrays</span>
+<span class="sd">        and $\lambda\in\mathbb R$ is a scalar.</span>
+<span class="sd">    k : int</span>
+<span class="sd">        If specified, the Laurent polynomial $\tilde p(x)=x^{-k}p(x)$ is applied.</span>
+<span class="sd">        The default is 0.</span>
+<span class="sd">    kwargs : dict</span>
+<span class="sd">        A dictionary of keyword arguments to pass to ``unitary``. The default is {}.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The polynomial $p$ is rescaled automatically to satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.</span>
+<span class="sd">        </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    **Applying a transformation in Fourier basis**</span>
+
+<span class="sd">    We apply the operator</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \cos(H) = \frac{e^{iH}+e^{-iH}}{2}</span>
+
+<span class="sd">    for some :ref:`Hermitian operator &lt;operators&gt;` $H$ to the input state $\ket{\psi}=\ket{0}$.</span>
+
+<span class="sd">    First, we define an operator $H$ and the unitary performing the Hamiltonian evolution $e^{iH}$.</span>
+<span class="sd">    (In this case, Trotterization will perform Hamiltonian evolution exactly since the individual terms commute.)</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.gqsp import *</span>
+<span class="sd">        from qrisp.operators import X,Y,Z</span>
+<span class="sd">        import jax.numpy as jnp</span>
+
+<span class="sd">        H = Z(0)*Z(1) + X(0)*X(1)</span>
+
+<span class="sd">        def U(operand):</span>
+<span class="sd">            H.trotterization(forward_evolution=False)(operand)</span>
+
+
+<span class="sd">    Next, we define the ``operand_prep`` function that prepares a QuantumVariable is state $\ket{\psi}=\ket{0}$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def operand_prep():</span>
+<span class="sd">            operand = QuantumVariable(2)</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">    The transformation $\cos(H)$ is achieved by applying $\tilde p(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.</span>
+<span class="sd">    This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. </span>
+
+<span class="sd">    Finally, we apply QSP within a :ref:`RUS` protocol.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @RUS</span>
+<span class="sd">        def inner():</span>
+
+<span class="sd">            p = jnp.array([0.5,0,0.5])</span>
+
+<span class="sd">            operand = operand_prep()</span>
+<span class="sd">            anc = QuantumBool()</span>
+<span class="sd">            GQSP(anc, operand, unitary=U, p=p, k=1)</span>
+
+<span class="sd">            success_bool = measure(anc) == 0</span>
+<span class="sd">            reset(anc)</span>
+<span class="sd">            anc.delete()</span>
+<span class="sd">            return success_bool, operand</span>
+
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main(): </span>
+
+<span class="sd">            qv = inner()</span>
+<span class="sd">            return qv</span>
+
+<span class="sd">    and simulate</span>
+
+<span class="sd">    &gt;&gt;&gt; main()</span>
+<span class="sd">    {3: 0.85471756539818, 0: 0.14528243460182003}</span>
+
+<span class="sd">    Let&#39;s compare to the classically calculated result:</span>
+
+<span class="sd">    &gt;&gt;&gt; A = H.to_array()</span>
+<span class="sd">    &gt;&gt;&gt; from scipy.linalg import cosm</span>
+<span class="sd">    &gt;&gt;&gt; print(cosm(A))</span>
+<span class="sd">    [[ 0.29192658+0.j  0.        +0.j  0.        +0.j -0.70807342+0.j]</span>
+<span class="sd">    [ 0.        +0.j  0.29192658+0.j  0.70807342+0.j  0.        +0.j]</span>
+<span class="sd">    [ 0.        +0.j  0.70807342+0.j  0.29192658+0.j  0.        +0.j]</span>
+<span class="sd">    [-0.70807342+0.j  0.        +0.j  0.        +0.j  0.29192658+0.j]]</span>
+
+<span class="sd">    That is, starting in state $\ket{\psi}=\ket{0}=(1,0,0,0)$, we obtain</span>
+
+<span class="sd">    &gt;&gt;&gt; result = cosm(A)@(np.array([1,0,0,0]).transpose())</span>
+<span class="sd">    &gt;&gt;&gt; result = result/np.linalg.norm(result) # normalise</span>
+<span class="sd">    &gt;&gt;&gt; result = result**2 # compute measurement probabilities</span>
+<span class="sd">    &gt;&gt;&gt; print(result)</span>
+<span class="sd">    [0.1452825+0.j 0.       +0.j 0.       +0.j 0.8547175-0.j]</span>
+
+<span class="sd">    which are exactly the probabilities we observed in the quantum simulation.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        While GQSP allows you to apply arbitrary polynomials to operators, applying</span>
+<span class="sd">        abitrary polynomials to :ref:`BlockEncodings &lt;BlockEncoding&gt;` requires an </span>
+<span class="sd">        additional step. This is because raising the operator</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            U = \begin{pmatrix} \frac{A}{\alpha} &amp; * \\ * &amp; * \end{pmatrix}</span>
+
+<span class="sd">        to a given power $k$ does not necessarily give you</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \tilde{U} = \begin{pmatrix} \left(\frac{A}{\alpha}\right)^k &amp; * \\ * &amp; * \end{pmatrix}</span>
+
+<span class="sd">        In order to still apply polynomials also to them, we need to call the qubitization</span>
+<span class="sd">        method and transform the polynomial into Chebychev basis. More to that in </span>
+<span class="sd">        the GQSP :ref:`tutorial`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">angles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span> <span class="o">=</span> <span class="n">angles</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gqsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Define R gate application function based on Theorem 9 in https://arxiv.org/abs/2503.03026</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">R</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubit</span><span class="p">):</span>
+        <span class="n">rz</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)</span>
+        <span class="n">rx</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="n">k</span><span class="p">):</span>
+        <span class="n">R</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">phi</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">anc</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">unitary</span><span class="p">(</span><span class="o">*</span><span class="n">qargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+        <span class="n">R</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="n">d</span> <span class="o">-</span> <span class="n">k</span> <span class="o">+</span> <span class="n">i</span><span class="p">],</span> <span class="n">phi</span><span class="p">[</span><span class="n">d</span> <span class="o">-</span> <span class="n">k</span> <span class="o">+</span> <span class="n">i</span><span class="p">],</span> <span class="n">anc</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+                <span class="n">unitary</span><span class="p">(</span><span class="o">*</span><span class="n">qargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">R</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="n">phi</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="n">anc</span><span class="p">)</span>
+    <span class="n">rz</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">lambda_</span><span class="p">,</span> <span class="n">anc</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

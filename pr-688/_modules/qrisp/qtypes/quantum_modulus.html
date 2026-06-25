@@ -1,0 +1,1115 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.qtypes.quantum_modulus &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/qtypes/quantum_modulus';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/qtypes/quantum_modulus.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.qtypes.quantum_modulus</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.qtypes.quantum_modulus</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tracer</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">cx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">gate_wrap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qtypes.quantum_float</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_moduli_neq</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare two moduli for inequality.</span>
+
+<span class="sd">    This check is designed for **static** (non-tracing) contexts only.</span>
+<span class="sd">    When either operand contains JAX tracers (dynamic mode), the digits</span>
+<span class="sd">    cannot be materialised, so the function raises ``RuntimeError``.</span>
+<span class="sd">    Callers in tracing code paths must skip the</span>
+<span class="sd">    check themselves (``if not check_for_tracing_mode(): …``).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : int or BigInteger</span>
+<span class="sd">        First modulus to compare.</span>
+<span class="sd">    b : int or BigInteger</span>
+<span class="sd">        Second modulus to compare.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        ``True`` if the moduli are unequal, ``False`` if they represent</span>
+<span class="sd">        the same modulus.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">digits</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">digits</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;_moduli_neq cannot compare traced moduli.&quot;</span>
+                <span class="s2">&quot;This check should only be called in static (non-tracing) &quot;</span>
+                <span class="s2">&quot;mode.  Guard the call with `if not check_for_tracing_mode():`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">a_digits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">digits</span><span class="p">)</span>
+        <span class="n">b_digits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">digits</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">a_digits</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">b_digits</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">a_digits</span> <span class="o">!=</span> <span class="n">b_digits</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_bigint_operand</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">modulus</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coerce *value* to a BigInteger matching *modulus*&#39;s limb count.</span>
+
+<span class="sd">    If *value* is already a BigInteger with fewer limbs it is zero-padded;</span>
+<span class="sd">    if it has more limbs than the modulus a ``ValueError`` is raised.</span>
+<span class="sd">    Non-BigInteger values are converted via ``BigInteger.coerce``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : int, BigInteger, or array-like</span>
+<span class="sd">        Operand to coerce.</span>
+<span class="sd">    modulus : BigInteger</span>
+<span class="sd">        Reference modulus whose limb count determines the target width.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BigInteger</span>
+<span class="sd">        Value with exactly ``modulus.digits.shape[0]`` limbs.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">BigInteger</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">coerce</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">modulus</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="n">qm</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">other</span>
+
+    <span class="k">return</span> <span class="n">qm</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">other</span> <span class="o">%</span> <span class="n">qm</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">comparison_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">res_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="c1"># Two QuantumModuli can be compared as long as they share the</span>
+            <span class="c1"># same Montgomery shift (they&#39;re in the same representation).</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to evaluate QuantumModulus comparison with differing Montgomery shifts&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">_moduli_neq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">modulus</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to compare QuantumModulus instances of differing modulus&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Comparing against a non-QuantumModulus (e.g. QuantumFloat)</span>
+            <span class="c1"># requires standard representation (m == 0).</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+            <span class="c1"># other.__class__ = QuantumFloat</span>
+            <span class="c1"># conversion_flag = True</span>
+
+        <span class="c1"># self.__class__ = QuantumFloat</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="c1"># self.__class__ = QuantumModulus</span>
+        <span class="c1"># if conversion_flag:</span>
+        <span class="c1">#    other.__class__ = QuantumModulus</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">return</span> <span class="n">res_func</span>
+
+
+<div class="viewcode-block" id="QuantumModulus">
+<a class="viewcode-back" href="../../../reference/Quantum%20Types/QuantumModulus.html#qrisp.QuantumModulus">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantumModulus</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This class is a subtype of :ref:`QuantumFloat`, which can be used to model and</span>
+<span class="sd">    process `modular arithmetic &lt;https://en.wikipedia.org/wiki/Modular_arithmetic&gt;`_.</span>
+<span class="sd">    Modular arithmetic plays an important role in many cryptographical applications,</span>
+<span class="sd">    especially in Shor&#39;s algorithm.</span>
+
+<span class="sd">    The QuantumModulus allows users convenient access to modular arithmetic, which</span>
+<span class="sd">    for many gate based frameworks is rather complicated due to the intricacies</span>
+<span class="sd">    of the reduction process.</span>
+
+<span class="sd">    For a first example we simply add two instances:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumModulus</span>
+<span class="sd">    &gt;&gt;&gt; N = 13</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumModulus(N)</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumModulus(N)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 5</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 10</span>
+<span class="sd">    &gt;&gt;&gt; c = a + b</span>
+<span class="sd">    &gt;&gt;&gt; print(c)</span>
+<span class="sd">    {2: 1.0}</span>
+
+<span class="sd">    We get the output 2 because</span>
+
+<span class="sd">    &gt;&gt;&gt; (5 + 10)%13</span>
+<span class="sd">    2</span>
+
+<span class="sd">    Similar to :ref:`QuantumFloat`, subtraction and addition are also supported:</span>
+
+<span class="sd">    &gt;&gt;&gt; d = a*b</span>
+<span class="sd">    &gt;&gt;&gt; print(d)</span>
+<span class="sd">    {11: 1.0}</span>
+
+<span class="sd">    Check the result:</span>
+
+<span class="sd">    &gt;&gt;&gt; (5*10)%13</span>
+<span class="sd">    11</span>
+
+<span class="sd">    Especially relevant for Shor&#39;s algorithm are the in-place operations:</span>
+
+<span class="sd">    &gt;&gt;&gt; a = QuantumModulus(N)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 5</span>
+<span class="sd">    &gt;&gt;&gt; a *= 10</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {11: 1.0}</span>
+
+<span class="sd">    **Specifying a custom adder**</span>
+
+<span class="sd">    It is possible to specify a custom adder that is used when processing the</span>
+<span class="sd">    Modular-Arithmetic. For this, you can use the ``inpl_adder`` keyword.</span>
+
+<span class="sd">    By default, the `Fourier-adder &lt;https://arxiv.org/abs/quant-ph/0008033&gt;`_</span>
+<span class="sd">    is used, but we can for instance also try the `Cuccaro-adder &lt;https://arxiv.org/abs/quant-ph/0410184&gt;`_.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import cuccaro_adder</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumModulus(N, inpl_adder = cuccaro_adder)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 5</span>
+<span class="sd">    &gt;&gt;&gt; a *= 10</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {11: 1.0}</span>
+
+<span class="sd">    Or the `Gidney-adder &lt;https://arxiv.org/abs/1709.06648&gt;`_.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import gidney_adder</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumModulus(N, inpl_adder = gidney_adder)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 5</span>
+<span class="sd">    &gt;&gt;&gt; a *= 10</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {11: 1.0}</span>
+
+<span class="sd">    To learn how to create your own adder for this feature, please visit :meth:`this page &lt;qrisp.inpl_adder_test&gt;`.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        Currently the adder is only used in in-place multiplication, since this is the</span>
+<span class="sd">        relevant operation for Shor&#39;s algorithm. The other operations (such as addition etc.)</span>
+<span class="sd">        will follow in a future release of Qrisp.</span>
+
+<span class="sd">    **Advanced usage**</span>
+
+<span class="sd">    The modular multiplication uses a technique called `Montgomery reduction &lt;https://en.wikipedia.org/wiki/Montgomery_modular_multiplication&gt;`_.</span>
+<span class="sd">    The quantum version of this algorithm can be found in `this paper &lt;https://arxiv.org/abs/1801.01081&gt;`__.</span>
+<span class="sd">    The idea behind Montgomery reduction is to choose a differing representation of numbers to enhance</span>
+<span class="sd">    the reduction step of modular arithmetic. This representation works as follows:</span>
+<span class="sd">    For an integer $m$ called Montgomery shift, the modular number $a \in \mathbb{Z}/N\mathbb{Z}$ is represented as</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \hat{k} = (2^{-m} k) \text{mod} N</span>
+
+<span class="sd">    If you&#39;re interested in why this representation is advantageous, we recommend</span>
+<span class="sd">    checking out the linked resources above.</span>
+
+<span class="sd">    For Qrisp, the Montgomery shift can be modified via the attribute ``m``.</span>
+
+<span class="sd">    &gt;&gt;&gt; a = QuantumModulus(N)</span>
+<span class="sd">    &gt;&gt;&gt; a.m = 3</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 1</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {1: 1.0}</span>
+
+<span class="sd">    We shift back to 0:</span>
+
+<span class="sd">    &gt;&gt;&gt; a.m -= 3</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {8: 1.0}</span>
+
+<span class="sd">    Note that this shift is only a compiler shift - ie. no quantum gates are applied.</span>
+<span class="sd">    Instead the :meth:`decoder &lt;qrisp.QuantumVariable.decoder&gt;` function is modified.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modulus</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">smallest_power_of_two</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span> <span class="o">=</span> <span class="n">modulus</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">smallest_power_of_two</span><span class="p">(</span><span class="n">modulus</span><span class="p">)</span>
+        <span class="n">QuantumFloat</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msize</span><span class="o">=</span><span class="n">aux</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="n">qs</span><span class="p">)</span>
+        <span class="c1"># Dynamic modular arithmetic uses gidney_adder while static uses fourier_adder.</span>
+        <span class="c1"># Consider reconciling it.</span>
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">inpl_adder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.adders</span><span class="w"> </span><span class="kn">import</span> <span class="n">gidney_adder</span>
+
+                <span class="n">inpl_adder</span> <span class="o">=</span> <span class="n">gidney_adder</span>
+
+        <span class="k">elif</span> <span class="n">inpl_adder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">fourier_adder</span>
+
+            <span class="n">inpl_adder</span> <span class="o">=</span> <span class="n">fourier_adder</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span> <span class="o">=</span> <span class="n">inpl_adder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode a Montgomery-encoded value back to standard representation.</span>
+
+<span class="sd">        Montgomery encoding stores k as k_hat = (k * 2^{-m}) mod N.</span>
+<span class="sd">        Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)</span>
+<span class="sd">        where R = 2^m is the Montgomery radix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">BigInteger</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">new_montgomery_decoder</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">new_montgomery_decoder</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="n">i_value</span> <span class="o">=</span> <span class="n">i</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">modulus_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i_value</span> <span class="o">&gt;=</span> <span class="n">modulus_value</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="k">return</span> <span class="n">new_montgomery_decoder</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">jdecoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">new_montgomery_decoder</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_montgomery_decoder</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">BigInteger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">measure</span><span class="p">,</span> <span class="n">q_fori_loop</span>
+
+            <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+                <span class="n">for_loop</span> <span class="o">=</span> <span class="n">q_fori_loop</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">for_loop</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="n">init_val</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">init_val</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">):</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">body_fun</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">val</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">body_fun</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">val</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">32</span> <span class="o">*</span> <span class="n">i</span> <span class="p">:</span> <span class="mi">32</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">uint32</span><span class="p">))</span>
+
+            <span class="n">digits</span> <span class="o">=</span> <span class="n">for_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">32</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="o">.</span><span class="n">digits</span><span class="p">))</span>
+            <span class="n">digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">at</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">32</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="n">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">32</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span> <span class="p">:])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jdecoder</span><span class="p">(</span><span class="n">BigInteger</span><span class="p">(</span><span class="n">digits</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jdecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">measure</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">BigInteger</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">montgomery_encoder</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">montgomery_encoder</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">montgomery_encoder</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">BigInteger</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">montgomery_encoder</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">i_value</span> <span class="o">=</span> <span class="n">i</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">modulus_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">i_value</span> <span class="o">&gt;=</span> <span class="n">modulus_value</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to encode a number into QuantumModulus, which is greator or equal to the modulus&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">i_value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to encode a negative number into QuantumModulus&quot;</span><span class="p">)</span>
+
+        <span class="c1"># if i &gt;= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):</span>
+        <span class="c1">#     return np.nan</span>
+
+        <span class="k">return</span> <span class="n">montgomery_encoder</span><span class="p">(</span><span class="n">i_value</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">modulus_value</span><span class="p">)</span>
+
+    <span class="c1"># def encode(self, i):</span>
+    <span class="c1">#    QuantumVariable.encode(self, self.encoder(i))</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">BigInteger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">()</span> <span class="ow">and</span> <span class="n">_moduli_neq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">modulus</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both QuantumModuli must have the same modulus&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">qq_montgomery_multiply_modulus</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">qq_montgomery_multiply_modulus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">montgomery_mod_mul</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">montgomery_mod_mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">)):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">best_montgomery_shift</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">cq_montgomery_multiply</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">shift</span> <span class="o">=</span> <span class="n">best_montgomery_shift</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                    <span class="n">other</span> <span class="o">=</span> <span class="n">_coerce_bigint_operand</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">cq_montgomery_multiply</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">get_larger</span><span class="p">(),</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="o">.</span><span class="n">get_larger</span><span class="p">(),</span> <span class="n">shift</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cq_montgomery_multiply</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quantum modular multiplication with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">BigInteger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">)):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">best_montgomery_shift</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">cq_montgomery_multiply_inplace</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">):</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+            <span class="n">shift</span> <span class="o">=</span> <span class="n">best_montgomery_shift</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                    <span class="n">other</span> <span class="o">=</span> <span class="n">_coerce_bigint_operand</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+                <span class="n">cq_montgomery_multiply_inplace</span><span class="p">(</span>
+                    <span class="n">other</span><span class="o">.</span><span class="n">get_larger</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="o">.</span><span class="n">get_larger</span><span class="p">(),</span>
+                    <span class="n">shift</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cq_montgomery_multiply_inplace</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BigInteger</span><span class="p">):</span>
+                <span class="n">pad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">other</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">other</span><span class="o">.</span><span class="n">digits</span><span class="p">,</span> <span class="n">pad</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quantum modular in-place multiplication with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to add two QuantumModulus with differing Montgomery shift&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">mod_adder</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+
+        <span class="n">mod_adder</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="fm">__radd__</span> <span class="o">=</span> <span class="fm">__add__</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">montgomery_addition</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">montgomery_addition</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">mod_adder</span>
+
+        <span class="n">mod_adder</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to add subtract QuantumModulus with differing Montgomery shift&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">mod_adder</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">invert</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="n">mod_adder</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to subtract QuantumModulus with differing Montgomery shift&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">mod_adder</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="n">res</span> <span class="o">-=</span> <span class="bp">self</span>
+
+        <span class="n">mod_adder</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_normalize_modular_arithmetic_operand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumModulus</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to subtract QuantumModulus with differing Montgomery shift&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.arithmetic.modular_arithmetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">mod_adder</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">invert</span>
+
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="n">mod_adder</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modulus</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">uint_lt</span>
+
+        <span class="k">return</span> <span class="n">uint_lt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">)</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">uint_gt</span>
+
+        <span class="k">return</span> <span class="n">uint_gt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">)</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">uint_le</span>
+
+        <span class="k">return</span> <span class="n">uint_le</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">)</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">uint_ge</span>
+
+        <span class="k">return</span> <span class="n">uint_ge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inpl_adder</span><span class="p">)</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@comparison_wrapper</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="o">.</span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,813 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.gqsp.pseudo_inversion &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/gqsp/pseudo_inversion';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/gqsp/pseudo_inversion.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.gqsp.pseudo_inversion</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.gqsp.pseudo_inversion</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.polynomial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chebyshev</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">erf</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cks</span><span class="w"> </span><span class="kn">import</span> <span class="n">cks_coeffs</span><span class="p">,</span> <span class="n">cks_params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.helper_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">chebyshev_approx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.qsvt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QSVT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+
+<div class="viewcode-block" id="pseudo_inversion">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.pseudo_inversion.html#qrisp.gqsp.pseudo_inversion">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pseudo_inversion</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">BlockEncoding</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">delta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockEncoding</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a BlockEncoding approximating the threshold `matrix pseudoinverse &lt;https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse&gt;`_ of the operator.</span>
+
+<span class="sd">    Let $A$ be a matrix with `Singular Value Decomposition &lt;https://en.wikipedia.org/wiki/Singular_value_decomposition&gt;`_</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        A = U\Sigma V^{\dagger} = \sum_i \sigma_i u_iv_i^{\dagger}</span>
+
+<span class="sd">    where $\sigma_i$ are the singular values, $u_i$ are the left singular vectors, </span>
+<span class="sd">    and $v_i$ are the right singular vectors.</span>
+
+<span class="sd">    Given a threshold $\theta&gt;0$, define a scalar thresholding function $f_{\theta}(\sigma)$ that </span>
+<span class="sd">    acts on the singular values:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        f_{\theta}(\sigma)=\begin{cases} \frac{1}{\sigma} &amp; \sigma\geq\theta \\ 0 &amp; \sigma&lt;\theta \end{cases}</span>
+
+<span class="sd">    The threshold pseudo inverse $A_{\theta}^{+}$ is constructed by applying this function to the singular values and recombining the matrix:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        A_{\theta}^{+} = V f_{\theta}(\Sigma)U^{\dagger} = \sum_{\sigma_i\geq\theta}\frac{1}{\sigma_i}v_iu_i^{\dagger}</span>
+<span class="sd">    </span>
+<span class="sd">    For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an operator </span>
+<span class="sd">    $\tilde{A}_{\alpha\cdot\theta}^{+}$ such that $\|\tilde{A}_{\alpha\cdot\theta}^{+} - A_{\alpha\cdot\theta}^{+}\| \leq \epsilon$.</span>
+
+<span class="sd">    The pseudo inverse is implemented via Quantum Singular Value Transform (QSVT)</span>
+<span class="sd">    using a polynomial approximation of $1/x$ over the domain $D_{\theta} = [-1, -\theta] \cup [\theta, 1]$, </span>
+<span class="sd">    and a smoothed rectangle filter over the domain $D_{\theta}&#39; = [-\theta, \theta]$.</span>
+
+<span class="sd">    .. image:: /_static/chebyshev_pseudo_inversion.png</span>
+<span class="sd">       :align: center</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    A : BlockEncoding</span>
+<span class="sd">        The block-encoded matrix to be pseudo inverted. It is assumed that</span>
+<span class="sd">        the relevant singular values of $A/\alpha$ lie within $D_{\theta}$.</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        The target precision $\epsilon$.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        This threshold value defines the boundaries of the &quot;gap&quot; around zero </span>
+<span class="sd">        $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        The width of the transition region. The function will smoothly decay from 1 to 0 over the intervals </span>
+<span class="sd">        $[-\theta, -\theta + 2\delta]$ and $[\theta - 2\delta, \theta]$. </span>
+<span class="sd">        Defaults to $\delta = \theta/4$.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BlockEncoding</span>
+<span class="sd">        A new BlockEncoding instance representing an approximation of the pseudo inverse $A_{\alpha\cdot\theta}^{+}$.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\log(1/(\epsilon\theta))/\theta)`.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - Childs et al. (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision &lt;https://arxiv.org/pdf/1511.02306&gt;`_.</span>
+<span class="sd">    - Gilyén et al. (2019) `Quantum singular value transformation and beyond: exponential improvements for quantum matrix arithmetics &lt;https://dl.acm.org/doi/abs/10.1145/3313276.3316366&gt;`_.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    First, define a matrix $A$ and a right-hand side vector $\vec{b}$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        N = 4</span>
+<span class="sd">        A = 1.4 * np.eye(N, k=1) + 1.1 * np.eye(N, k=-1)</span>
+<span class="sd">        A[0, N-1] = 1.1</span>
+<span class="sd">        A[N-1, 0] = 1.4</span>
+
+<span class="sd">        b = np.array([0, 1, 1, 1])</span>
+
+<span class="sd">        print(A)</span>
+<span class="sd">        #[[0.  1.4 0.  1.1]</span>
+<span class="sd">        # [1.1 0.  1.4 0. ]</span>
+<span class="sd">        # [0.  1.1 0.  1.4]</span>
+<span class="sd">        # [1.4 0.  1.1 0. ]]</span>
+<span class="sd">        </span>
+<span class="sd">        _, S, _ = np.linalg.svd(A)</span>
+<span class="sd">        print(&quot;Singular values of A: &quot;, S)</span>
+<span class="sd">        # Singular values of A:  [2.5 2.5 0.3 0.3]</span>
+
+<span class="sd">    Generate a block-encoding of $A$ and use :meth:`pseudo_inversion` to find a block-encoding approximating $A_{1}^{+}$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.block_encodings import BlockEncoding</span>
+<span class="sd">        from qrisp.gqsp import pseudo_inversion</span>
+
+<span class="sd">        # Define efficient block-encoding.</span>
+<span class="sd">        def f0(x): x+=1</span>
+<span class="sd">        def f1(x): x-=1</span>
+<span class="sd">        BE = BlockEncoding.from_lcu(np.array([1.4, 1.1]), [f0, f1])</span>
+<span class="sd">        # alpha = 1.4 + 1.1 = 2.5</span>
+
+<span class="sd">        # Choose threshold theta &gt; 0.3 / 2.5 = 0.12 </span>
+<span class="sd">        # to cut off smallest singular values.</span>
+<span class="sd">        BE_inv = pseudo_inversion(BE, eps=0.01, theta=0.4, delta=0.1)</span>
+
+<span class="sd">        # Prepares operand variable in state |b&gt;</span>
+<span class="sd">        def prep_b():</span>
+<span class="sd">            operand = QuantumFloat(2)</span>
+<span class="sd">            prepare(operand, b)</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+<span class="sd">            operand = prep_b()</span>
+<span class="sd">            ancillas = BE_inv.apply(operand)</span>
+<span class="sd">            return operand, *ancillas</span>
+
+<span class="sd">        res_dict = main()</span>
+
+<span class="sd">        # Post-selection on ancillas being in |0&gt; state</span>
+<span class="sd">        filtered_dict = {k[0]: p for k, p in res_dict.items() \</span>
+<span class="sd">                        if all(x == 0 for x in k[1:])}</span>
+<span class="sd">        success_prob = sum(filtered_dict.values())</span>
+<span class="sd">        print(success_prob)</span>
+<span class="sd">        filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}</span>
+
+<span class="sd">        amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])</span>
+<span class="sd">        print(amps)</span>
+
+<span class="sd">    Finally, compare the quantum simulation result with the classical solution:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def threshold_pseudoinverse(A, threshold):</span>
+<span class="sd">            U, S, Vh = np.linalg.svd(A, full_matrices=False)</span>
+<span class="sd">            S_inv = np.zeros_like(S)</span>
+<span class="sd">            valid_mask = S &gt;= threshold</span>
+<span class="sd">            S_inv[valid_mask] = 1.0 / S[valid_mask]</span>
+<span class="sd">            return (Vh.conj().T * S_inv) @ U.conj().T</span>
+
+<span class="sd">        c = (threshold_pseudoinverse(A, 0.4 * 2.5) @ b) </span>
+<span class="sd">        c = c / np.linalg.norm(c)</span>
+
+<span class="sd">        print(&quot;QUANTUM SIMULATION\n&quot;, amps, &quot;\nCLASSICAL SOLUTION\n&quot;, c)</span>
+<span class="sd">        # QUANTUM SIMULATION</span>
+<span class="sd">        # [0.63244232 0.31179432 0.63244232 0.32065201] </span>
+<span class="sd">        # CLASSICAL SOLUTION</span>
+<span class="sd">        # [0.63245553 0.31622777 0.63245553 0.31622777]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">_pseudo_inversion_cheb</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="c1"># Set _rescale=False to apply p(A/α) instead of p(A).</span>
+    <span class="n">A_pseudo_inv</span> <span class="o">=</span> <span class="n">QSVT</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;Chebyshev&quot;</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Adjust scaling factor since (A/α)^{-1} = αA^{-1}.</span>
+    <span class="n">A_pseudo_inv</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">A_pseudo_inv</span><span class="o">.</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">A</span><span class="o">.</span><span class="n">alpha</span>
+    <span class="k">return</span> <span class="n">A_pseudo_inv</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_smooth_rectangle</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes a smoothed rectangle (indicator) function using the error function.</span>
+
+<span class="sd">    This function acts as a continuous, differentiable stand-in for</span>
+<span class="sd">    a harsh discontinuous step function. It evaluates to approximately 1 inside</span>
+<span class="sd">    the interval [-t, t] and transitions to 0 over a specified width.</span>
+<span class="sd">    Smoothing the jump prevents the Gibbs phenomenon (wild oscillations) when</span>
+<span class="sd">    subsequently fitting this target with a Chebyshev polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : ndarray</span>
+<span class="sd">        The input array of values (typically evaluating over the domain [-1, 1]).</span>
+<span class="sd">    t : float</span>
+<span class="sd">        The half-width of the inner interval. The function will be approximately 1 for x in [-t, t].</span>
+<span class="sd">    delta :float</span>
+<span class="sd">        The width of the transition region. The function will smoothly decay from 1 to 0 over the intervals</span>
+<span class="sd">        $[-t - \delta, -t + \delta]$ and $[t - \delta, t + \delta]$.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray</span>
+<span class="sd">        An array of evaluated function values, bounded between 0 and 1, with the same shape as the input array ``x``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># kappa dictates the steepness of the transition.</span>
+    <span class="c1"># The factor of 2.0 is an empirical choice to ensure the curve settles</span>
+    <span class="c1"># completely to 0 or 1 within the delta region.</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">delta</span>
+
+    <span class="n">erf_plus</span> <span class="o">=</span> <span class="n">erf</span><span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">t</span><span class="p">))</span>
+    <span class="n">erf_minus</span> <span class="o">=</span> <span class="n">erf</span><span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">erf_plus</span> <span class="o">-</span> <span class="n">erf_minus</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pseudo_inversion_cheb</span><span class="p">(</span>
+    <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">delta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">max_N</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2024</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Constructs a Chebyshev polynomial approximation of the pseudo-inversion.</span>
+
+<span class="sd">    This function creates a polynomial that approximates $1/x$ over the domain</span>
+<span class="sd">    $[-1, \theta] \cup [\theta, 1]$ while smoothly dropping to zero around the</span>
+<span class="sd">    origin. It achieves this by multiplying an odd Chebyshev approximation of $1/x$</span>
+<span class="sd">    (https://arxiv.org/pdf/1511.02306, Lemma 14) with an even, smooth &quot;inverted rectangle&quot;</span>
+<span class="sd">    filter that cuts off the region close to zero (https://arxiv.org/pdf/1806.01838, Lemma 29).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        This threshold value defines the boundaries of the &quot;gap&quot; around zero</span>
+<span class="sd">        $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.</span>
+<span class="sd">    delta : float, optional</span>
+<span class="sd">        The width of the transition region for the smooth origin cutoff.</span>
+<span class="sd">        If None, it defaults to $\theta / 4$.</span>
+<span class="sd">    eps : float, optional</span>
+<span class="sd">        The target precision $\epsilon$ for the approximation. Defaults to 1e-3.</span>
+<span class="sd">    max_N : int, optional</span>
+<span class="sd">        The maximum polynomial degree to evaluate when interpolating the</span>
+<span class="sd">        even cutoff polynomial (the smooth rectangle). Defaults to 2048.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray</span>
+<span class="sd">        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded</span>
+<span class="sd">        approximation of the pseudo-inverse, ordered from lowest order term to highest.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="mi">4</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">-</span> <span class="n">delta</span>
+
+    <span class="c1"># Define the target function for Chebyshev interpolation.</span>
+    <span class="n">target_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_smooth_rectangle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">delta</span><span class="p">)</span>
+    <span class="n">cheb_even</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">chebyshev_approx</span><span class="p">(</span><span class="n">target_func</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span> <span class="n">max_N</span><span class="o">=</span><span class="n">max_N</span><span class="p">)</span>
+
+    <span class="c1"># The inversion polynomial is constructed using cks_params and cks_coeffs.</span>
+    <span class="c1"># Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]</span>
+    <span class="c1"># requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.</span>
+    <span class="c1"># This array is expanded into a full Chebyshev series by padding even-degree terms with zeros.</span>
+    <span class="n">j_0</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="n">cks_params</span><span class="p">(</span><span class="n">eps</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">theta</span><span class="p">)</span>
+    <span class="n">coeffs_odd</span> <span class="o">=</span> <span class="n">cks_coeffs</span><span class="p">(</span><span class="n">j_0</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="n">coeffs_odd</span> <span class="o">=</span> <span class="n">coeffs_odd</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs_odd</span><span class="p">))</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">coeffs_odd</span><span class="p">))</span>
+    <span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">coeffs_odd</span>
+    <span class="n">cheb_odd</span> <span class="o">=</span> <span class="n">Chebyshev</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+
+    <span class="n">cheb_pseudo_inverse</span> <span class="o">=</span> <span class="n">cheb_odd</span> <span class="o">*</span> <span class="n">cheb_even</span>
+    <span class="k">return</span> <span class="n">cheb_pseudo_inverse</span><span class="o">.</span><span class="n">coef</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

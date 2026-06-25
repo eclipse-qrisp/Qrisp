@@ -1,0 +1,986 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>VQE Electronic structure problem &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Algorithms/vqe/vqeProblems/electronic_structure';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Algorithms/vqe/vqeProblems/electronic_structure.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="How to use VQE in Jasp" href="../JaspVQE.html" />
+    <link rel="prev" title="VQE Heisenberg model" href="heisenberg.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../../index.html">Algorithms</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../Grover.html">Grover’s Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../quantum_counting.html">Quantum Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../QMCI.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../Shor.html">Shor’s Algorithm</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../qaoa/QAOA.html">Quantum Approximate Optimization Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../qiro/QIRO.html">Quantum Informed Recursive Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dcqo/DCQO.html">Digitized Counterdiabatic Quantum Optimization</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../QuantumBacktrackingTree.html">Quantum Backtracking</a></li>
+
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../VQE.html">Variational Quantum Eigensolver</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../VQEProblem.html">VQEProblem</a></li>
+
+<li class="toctree-l3"><a class="reference internal" href="../VQEBenchmark.html">VQEBenchmark</a></li>
+
+<li class="toctree-l3 current active has-children"><a class="reference internal" href="../VQEImplementations.html">Implementations</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="heisenberg.html">VQE Heisenberg model</a></li>
+<li class="toctree-l4 current active"><a class="current reference internal" href="#">VQE Electronic structure problem</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../JaspVQE.html">How to use VQE in Jasp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../QITE.html">Quantum Imaginary-Time Evolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../Lanczos.html">Lanczos Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CKS.html">CKS Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../GQSP.html">Generalized Quantum Signal Processing (GQSP)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Algorithms</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../VQE.html" class="nav-link">Variational Quantum Eigensolver</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../VQEImplementations.html" class="nav-link">Implementations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">VQE Electronic structure problem</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="vqe-electronic-structure-problem">
+<span id="vqeelectronicstructure"></span><h1>VQE Electronic structure problem<a class="headerlink" href="#vqe-electronic-structure-problem" title="Link to this heading">#</a></h1>
+<section id="problem-description">
+<h2>Problem description<a class="headerlink" href="#problem-description" title="Link to this heading">#</a></h2>
+<p>Consider the problem of finding approximate solutions to the non-relativistic time-independent Schrödinger equation</p>
+<div class="math notranslate nohighlight">
+\[H\ket{\Psi}=E\ket{\Psi}\]</div>
+<p>The Hamiltonian <span class="math notranslate nohighlight">\(H\)</span> for a system of <span class="math notranslate nohighlight">\(M\)</span> nuclei and <span class="math notranslate nohighlight">\(N\)</span> electrons with coordinates <span class="math notranslate nohighlight">\(R_A\in\mathbb R^3\)</span> and <span class="math notranslate nohighlight">\(r_i\in\mathbb R^3\)</span>, respectively,
+is defined as</p>
+<div class="math notranslate nohighlight">
+\[H= -\sum_{i=1}^N\frac12\nabla_i^2-\sum_{i=1}^M\frac{1}{2M_A}\nabla_A^2-\sum_{i=1}^N\sum_{A=1}^M\frac{Z_A}{r_{iA}}+\sum_{i=1}^N\sum_{j&gt;i}^N\frac{1}{r_{ij}}+\sum_{A=1}^M\sum_{B&gt;A}^M\frac{Z_AZ_B}{R_{AB}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(r_{iA}=|r_i-R_A|\)</span>, <span class="math notranslate nohighlight">\(r_{ij}=|r_i-r_j|\)</span>, and <span class="math notranslate nohighlight">\(R_{AB}=|R_A-R_B|\)</span>, are the distances between electrons and nuclei, <span class="math notranslate nohighlight">\(M_A\)</span> is the ratio of the mass of nucleus <span class="math notranslate nohighlight">\(A\)</span> to an electron,
+and <span class="math notranslate nohighlight">\(Z_A\)</span> is the atomic number of nulecus <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<p>Within the Born-Oppenheimer approximation, one considers the electrons in a molecule to be moving a the field of fixed nuclei.
+Therefore, the kinetic energy of the nuclei is neglected, and the nuclear repulsion energy is constant.</p>
+<p>The Hamiltonian describing the motion of <span class="math notranslate nohighlight">\(N\)</span> electrons in the field of <span class="math notranslate nohighlight">\(M\)</span> fixed nuclei is</p>
+<div class="math notranslate nohighlight">
+\[H_{\text{el}} = -\sum_{i=1}^N\frac12\nabla_i^2-\sum_{i=1}^N\sum_{A=1}^M\frac{Z_A}{r_{iA}}+\sum_{i=1}^N\sum_{j&gt;i}^N\frac{1}{r_{ij}}\]</div>
+<p>The <strong>electronic stucture problem</strong> consists of finding solutions to the Schrödinger equation for the electronic Hamiltonian</p>
+<div class="math notranslate nohighlight">
+\[H_{\text{el}}\ket{\Psi_{\text{el}}}=E_{\text{el}}\ket{\Psi_{\text{el}}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ket{\Psi_{\text{el}}}\)</span> is the electronic wave function.</p>
+<p>In the following, we focus on finding the ground state energy</p>
+<div class="math notranslate nohighlight">
+\[E_0 = \braket{\Psi_0|H_{\text{el}}|\Psi_0}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ket{\Psi_0}\)</span> is a ground state wave function of the system.</p>
+<p>A starting point for solving this problem is the (restricted) <strong>Hartree-Fock</strong> method which produces a set <span class="math notranslate nohighlight">\(\{\psi_i\}\)</span> of <span class="math notranslate nohighlight">\(K\)</span> spacial orbitals
+that correspond to <span class="math notranslate nohighlight">\(M=2K\)</span> spin orbitals <span class="math notranslate nohighlight">\(\chi_{2i}=\psi_{i}\alpha\)</span> and <span class="math notranslate nohighlight">\(\chi_{2i+1}=\psi_{i}\beta\)</span>, for <span class="math notranslate nohighlight">\(i=0,\dotsc,K-1\)</span>, for the <span class="math notranslate nohighlight">\(N\)</span> electrons
+of the molecule.</p>
+<p>Utilizing the second quantization formalism, the electronic Hamiltonian is then expressed
+in the basis of the solutions (i.e., the spin orbitals) of the Hartree-Fock method:</p>
+<div class="math notranslate nohighlight">
+\[\hat H_{\text{el}} = \sum\limits_{i,j=0}^{M-1}h_{ij}a_i^{\dagger}a_j+\frac{1}{2}\sum\limits_{i,j,k,l=0}^{M-1}h_{i,j,k,l}a_i^{\dagger}a_j^{\dagger}a_ka_l\]</div>
+<p>where <span class="math notranslate nohighlight">\(a_i^{\dagger}\)</span> and <span class="math notranslate nohighlight">\(a_i\)</span> are the fermionic creation and annihilation operators, respectively.</p>
+<p>Here, the coefficients <span class="math notranslate nohighlight">\(h_{ij}\)</span> and <span class="math notranslate nohighlight">\(h_{ijkl}\)</span> are one- and two-electron integrals which can be computed classically:</p>
+<ul>
+<li><p>One-electron integrals:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[h_{i,j}=\int\mathrm dx \chi_i^*(x)\chi_j(x)\]</div>
+</div></blockquote>
+</li>
+<li><p>Two-electron integrals:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[h_{i,j,k,l} = \int\mathrm dx_1\mathrm dx_2\chi_i^*(x_1)\chi_j^*(x_2)\frac{1}{|r_1-r_2|}\chi_k(x_1)\chi_l(x_2)\]</div>
+</div></blockquote>
+</li>
+</ul>
+<p>Note: There is a difference between the <strong>physicists’s notation</strong> (above) and the <strong>chemists’ notation</strong> for the two-electron integrals!</p>
+<p>The Hartree-Fock state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_{\text{HF}}} = \ket{1_0,\dotsc,1_{N-1},0_N,\dotsc,0_{M-1}}\]</div>
+<p>where the first (i.e., the lowest energy) <span class="math notranslate nohighlight">\(N\)</span> orbitals are occupied
+is the best approximation of the ground state <span class="math notranslate nohighlight">\(\ket{\hat\Psi_0}\)</span> of the Hamiltonian <span class="math notranslate nohighlight">\(\hat H_{\text{el}}\)</span> in this form.</p>
+<p>All feasible <span class="math notranslate nohighlight">\(N\)</span>-electron states are expressed as a superposition of the Hartree-Fock state and</p>
+<ul>
+<li><p>single electron excitation states:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\ket{\Psi_i^r}=\ket{1_0,\dotsc,0_i,\dotsc,1_{N-1}0_{N},\dotsc,1_r,\dotsc,0_{M-1}}\]</div>
+<p>One electron is moved from the occupied orbital <span class="math notranslate nohighlight">\(\chi_i\)</span> to the unoccupied (virtual) orbital <span class="math notranslate nohighlight">\(\chi_r\)</span>.</p>
+</div></blockquote>
+</li>
+<li><p>double electron excitation states:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\ket{\Psi_{ij}^{rs}}=\ket{1_0,\dotsc,0_i,\dotsc,0_j,\dotsc,1_{N-1},0_{N},\dotsc,1_r,\dotsc,1_s,\dotsc,0_{M-1}}\]</div>
+<p>Two electrons are moved from the occupied orbitals <span class="math notranslate nohighlight">\(\chi_i, \chi_j\)</span> to the unoccupied (virtual) orbitals <span class="math notranslate nohighlight">\(\chi_r, \chi_s\)</span>.</p>
+</div></blockquote>
+</li>
+<li><p>higher order (triple, quadruple, ect.) excitation states.</p></li>
+</ul>
+<p>That is, a ground state can be expressed as</p>
+<div class="math notranslate nohighlight">
+\[\ket{\hat\Psi_{0}}=c_0\ket{\Psi_{\text{HF}}}+\sum_{i,r}c_i^r\ket{\Psi_i^r}+\sum_{i&lt;j,r&lt;s}c_{ij}^{rs}\ket{\Psi_i^r}+\dotsb\]</div>
+<p>Solving the electronic structure problem, i.e., finding a ground state <span class="math notranslate nohighlight">\(\ket{\hat\Psi_0}\)</span> of the electronic Hamiltonian <span class="math notranslate nohighlight">\(\hat H_{\text{el}}\)</span> within the feasible <span class="math notranslate nohighlight">\(N\)</span>-electron subspace,
+with a quantum computer requires transforming the fermionic representation into a qubit representation.
+This is achieved by, e.g., the Jordan-Wigner, Parity, or Bravyi-Kitaev transformation.</p>
+</section>
+<section id="electronic-structure-problem">
+<h2>Electronic structure problem<a class="headerlink" href="#electronic-structure-problem" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.vqe.problems.electronic_structure.electronic_structure_problem">
+<span class="sig-name descname"><span class="pre">electronic_structure_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_orb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_elec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ansatz_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'QCCSD'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/qrisp/vqe/problems/electronic_structure.html#electronic_structure_problem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.vqe.problems.electronic_structure.electronic_structure_problem" title="Link to this definition">#</a></dt>
+<dd><p>Creates a VQE problem instance for an electronic structure problem defined by the
+one-electron and two-electron integrals for the spin orbitals (in physicists’ notation).</p>
+<p>The problem Hamiltonian is given by:</p>
+<div class="math notranslate nohighlight">
+\[H = \sum\limits_{i,j=0}^{M-1}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=0}^{M-1}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l\]</div>
+<p>for one-electron integrals:</p>
+<div class="math notranslate nohighlight">
+\[h_{i,j}=\int\mathrm dx \chi_i^*(x)\chi_j(x)\]</div>
+<p>and two-electron integrals:</p>
+<div class="math notranslate nohighlight">
+\[h_{i,j,k,l} = \int\mathrm dx_1\mathrm dx_2\chi_i^*(x_1)\chi_j^*(x_2)\frac{1}{|r_1-r_2|}\chi_k(x_1)\chi_l(x_2)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>arg</strong><span class="classifier">pyscf.gto.Mole or dict</span></dt><dd><p>A PySCF <a class="reference external" href="https://pyscf.org/user/gto.html#" rel="noreferrer" target="_blank">molecule</a> or
+a dictionary specifying the electronic data for a molecule. The following data is required:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">one_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The one-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">two_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The two-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_orb</span></code><span class="classifier">int</span></dt><dd><p>The number of spin orbitals.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_elec</span></code><span class="classifier">int</span></dt><dd><p>The number of electrons.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt><strong>active_orb</strong><span class="classifier">int, optional</span></dt><dd><p>The number of active spin orbitals.</p>
+</dd>
+<dt><strong>active_elec</strong><span class="classifier">int, optional</span></dt><dd><p>The number of active electrons.</p>
+</dd>
+<dt><strong>ansatz_type</strong><span class="classifier">string, optional</span></dt><dd><p>The ansatz type. Availabe is <code class="docutils literal notranslate"><span class="pre">QCCSD</span></code>. The default is <code class="docutils literal notranslate"><span class="pre">QCCSD</span></code>.</p>
+</dd>
+<dt><strong>threshold</strong><span class="classifier">float, optional</span></dt><dd><p>The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>VQEProblem</dt><dd><p>The VQE problem instance.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We calculate the electronic energy for the Hydrogen molecule at bond distance 0.74 angstroms:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyscf</span><span class="w"> </span><span class="kn">import</span> <span class="n">gto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.vqe.problems.electronic_structure</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">mol</span> <span class="o">=</span> <span class="n">gto</span><span class="o">.</span><span class="n">M</span><span class="p">(</span>
+    <span class="n">atom</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;H 0 0 0; H 0 0 0.74&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">basis</span> <span class="o">=</span> <span class="s1">&#39;sto-3g&#39;</span><span class="p">)</span>
+
+<span class="n">vqe</span> <span class="o">=</span> <span class="n">electronic_structure_problem</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+<span class="n">vqe</span><span class="o">.</span><span class="n">set_callback</span><span class="p">()</span>
+
+<span class="n">energy</span> <span class="o">=</span> <span class="n">vqe</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+<span class="c1">#Yields -1.8461290172512965</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="helper-functions">
+<h2>Helper functions<a class="headerlink" href="#helper-functions" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.vqe.problems.electronic_structure.electronic_data">
+<span class="sig-name descname"><span class="pre">electronic_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/qrisp/vqe/problems/electronic_structure.html#electronic_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.vqe.problems.electronic_structure.electronic_data" title="Link to this definition">#</a></dt>
+<dd><p>A function that utilizes <a class="reference external" href="https://pyscf.org/user/scf.html" rel="noreferrer" target="_blank">restricted Hartree-Fock (RHF)</a>
+calculation in the <a class="reference external" href="https://pyscf.org" rel="noreferrer" target="_blank">PySCF</a> quantum chemistry package to obtain the electronic data for
+defining an electronic structure problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>mol</strong><span class="classifier">pyscf.gto.Mole</span></dt><dd><p>The <a class="reference external" href="https://pyscf.org/user/gto.html#" rel="noreferrer" target="_blank">molecule</a>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">dict</span></dt><dd><p>A dictionary specifying the electronic data for a molecule. The following data is provided:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">one_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The one-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">two_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The two-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_orb</span></code><span class="classifier">int</span></dt><dd><p>The number of spin orbitals.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_elec</span></code><span class="classifier">int</span></dt><dd><p>The number of electrons.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">energy_nuc</span></code></dt><dd><p>The nuclear repulsion energy.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">energy_hf</span></code></dt><dd><p>The Hartree-Fock ground state energy.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="hamiltonian">
+<h2>Hamiltonian<a class="headerlink" href="#hamiltonian" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.vqe.problems.electronic_structure.create_electronic_hamiltonian">
+<span class="sig-name descname"><span class="pre">create_electronic_hamiltonian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_orb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_elec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/qrisp/vqe/problems/electronic_structure.html#create_electronic_hamiltonian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.vqe.problems.electronic_structure.create_electronic_hamiltonian" title="Link to this definition">#</a></dt>
+<dd><p>Creates the qubit Hamiltonian for an electronic structure problem.
+If an Active Space (AS) is specified, the Hamiltonian is calculated following this <a class="reference external" href="https://arxiv.org/abs/2009.01872" rel="noreferrer" target="_blank">paper</a>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>arg</strong><span class="classifier">pyscf.gto.Mole or dict</span></dt><dd><p>A PySCF <a class="reference external" href="https://pyscf.org/user/gto.html#" rel="noreferrer" target="_blank">molecule</a> or
+a dictionary specifying the electronic data for a molecule. The following data is required:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">one_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The one-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">two_int</span></code><span class="classifier">numpy.ndarray</span></dt><dd><p>The two-electron integrals w.r.t. spin orbitals (in physicists’ notation).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_orb</span></code><span class="classifier">int</span></dt><dd><p>The number of spin orbitals.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_elec</span></code><span class="classifier">int</span></dt><dd><p>The number of electrons.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt><strong>active_orb</strong><span class="classifier">int, optional</span></dt><dd><p>The number of active spin orbitals.</p>
+</dd>
+<dt><strong>active_elec</strong><span class="classifier">int, optional</span></dt><dd><p>The number of active electrons.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>H</strong><span class="classifier"><a class="reference internal" href="../../../Operators/FermionicOperator.html#fermionicoperator"><span class="std std-ref">FermionicOperator</span></a></span></dt><dd><p>The fermionic Hamiltonian.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}-&amp;0.812170607248714 - 0.0453026155037992 X_0X_1Y_2Y_3 + 0.0453026155037992 X_0Y_1Y_2X_3 - 0.0453026155037992 Y_0Y_1X_2X_3\\&amp;+0.171412826447769 Z_0 + 0.168688981703612 Z_0Z_1 + 0.120625234833904 Z_0Z_2 + 0.165927850337703 Z_0Z_3 + 0.171412826447769 Z_1\\&amp;+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2 + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3\end{aligned}\end{align} \]</div>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We calucalte the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyscf</span><span class="w"> </span><span class="kn">import</span> <span class="n">gto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.vqe.problems.electronic_structure</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">mol</span> <span class="o">=</span> <span class="n">gto</span><span class="o">.</span><span class="n">M</span><span class="p">(</span>
+    <span class="n">atom</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;H 0 0 0; H 0 0 0.74&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">basis</span> <span class="o">=</span> <span class="s1">&#39;sto-3g&#39;</span><span class="p">)</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">create_electronic_hamiltonian</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+<span class="n">H</span><span class="o">.</span><span class="n">to_qubit_operator</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="ansatz">
+<h2>Ansatz<a class="headerlink" href="#ansatz" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.vqe.problems.electronic_structure.create_QCCSD_ansatz">
+<span class="sig-name descname"><span class="pre">create_QCCSD_ansatz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/qrisp/vqe/problems/electronic_structure.html#create_QCCSD_ansatz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.vqe.problems.electronic_structure.create_QCCSD_ansatz" title="Link to this definition">#</a></dt>
+<dd><p>This method creates a function for applying one layer of the <a class="reference external" href="https://arxiv.org/abs/2005.08451" rel="noreferrer" target="_blank">QCCSD ansatz</a>.</p>
+<p>The chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz evolves the initial state, 
+usually, the Hartree-Fock state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\Psi_{\text{HF}}}=\ket{1_0,\dotsc,1_N,0_{N+1},\dotsc,0_M}\]</div>
+<p>under the action of parametrized (non-commuting) single and double excitation unitaries.</p>
+<p>The single (S) excitation unitaries <span class="math notranslate nohighlight">\(U_i^r\)</span> implement a continuous swap for qubits <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(r\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}U_i^r(\theta) = \begin{pmatrix}
+                1&amp;0&amp;0&amp;0\\
+                0&amp;\cos(\theta)&amp;-\sin(\theta)&amp;0\\
+                0&amp;\sin(\theta)&amp;\cos(\theta)&amp;0\\
+                0&amp;0&amp;0&amp;1
+                \end{pmatrix}\end{split}\]</div>
+<p>Similarly, the double (D) excitation unitaries <span class="math notranslate nohighlight">\(U_{ij}^{rs}(\theta)\)</span> implement a continuous swap 
+for qubit pairs <span class="math notranslate nohighlight">\(i,j\)</span> and <span class="math notranslate nohighlight">\(r,s\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>M</strong><span class="classifier">int</span></dt><dd><p>The number of (active) spin orbitals.</p>
+</dd>
+<dt><strong>N</strong><span class="classifier">int</span></dt><dd><p>The number of (active) electrons.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>ansatz</strong><span class="classifier">function</span></dt><dd><p>A function that can be applied to a <a class="reference internal" href="../../../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> and a list of parameters.</p>
+</dd>
+<dt><strong>num_params</strong><span class="classifier">int</span></dt><dd><p>The number of parameters.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.vqe.problems.electronic_structure.create_hartree_fock_init_function">
+<span class="sig-name descname"><span class="pre">create_hartree_fock_init_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/qrisp/vqe/problems/electronic_structure.html#create_hartree_fock_init_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.vqe.problems.electronic_structure.create_hartree_fock_init_function" title="Link to this definition">#</a></dt>
+<dd><p>Creates the function that, when applied to a <a class="reference internal" href="../../../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a>, initializes the Hartee-Fock state:
+Consistent with the Jordan-Wigner mapping, the first <code class="docutils literal notranslate"><span class="pre">N</span></code> qubits are initialized in the <span class="math notranslate nohighlight">\(\ket{1}\)</span> state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>M</strong><span class="classifier">int</span></dt><dd><p>The number of (active) spin orbitals.</p>
+</dd>
+<dt><strong>N</strong><span class="classifier">int</span></dt><dd><p>The number of (active) electrons.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>init_function</strong><span class="classifier">function</span></dt><dd><p>A function that can be applied to a <a class="reference internal" href="../../../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Algorithms/vqe/vqeProblems"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-description">Problem description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#electronic-structure-problem">Electronic structure problem</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.vqe.problems.electronic_structure.electronic_structure_problem"><code class="docutils literal notranslate"><span class="pre">electronic_structure_problem()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#helper-functions">Helper functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.vqe.problems.electronic_structure.electronic_data"><code class="docutils literal notranslate"><span class="pre">electronic_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hamiltonian">Hamiltonian</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.vqe.problems.electronic_structure.create_electronic_hamiltonian"><code class="docutils literal notranslate"><span class="pre">create_electronic_hamiltonian()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ansatz">Ansatz</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.vqe.problems.electronic_structure.create_QCCSD_ansatz"><code class="docutils literal notranslate"><span class="pre">create_QCCSD_ansatz()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.vqe.problems.electronic_structure.create_hartree_fock_init_function"><code class="docutils literal notranslate"><span class="pre">create_hartree_fock_init_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

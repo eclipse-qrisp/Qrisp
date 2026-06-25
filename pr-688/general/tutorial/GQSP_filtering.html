@@ -1,0 +1,1052 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Eigenstate filtering using quantum signal processing &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/GQSP_filtering';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/GQSP_filtering.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Solving linear system problems with HHL" href="HHL.html" />
+    <link rel="prev" title="BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP" href="BE_tutorial/BE_vol2.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Eigenstate filtering using quantum signal processing</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Eigenstate-filtering-using-quantum-signal-processing">
+<h1>Eigenstate filtering using quantum signal processing<a class="headerlink" href="#Eigenstate-filtering-using-quantum-signal-processing" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>Ground state preparation is a fundamental task in quantum computation, serving as a cornerstone for simulating strongly correlated systems in chemistry, material sciences and physics. Understanding the ground state, i.e., the state of lowest energy, is essential for predicting a system’s stability, electronic properties, and chemical reactivity. At the macroscopic level, the behavior of most materials at low temperatures is governed by their ground state configuration. For instance:</p>
+<ul class="simple">
+<li><p>In Chemistry: The ground state determines the equilibrium geometry of molecules. Knowing this energy level allows us to calculate reaction rates and understand how catalysts lower the energy barriers for specific processes.</p></li>
+<li><p>In Material Science: Key phenomena such as superconductivity and magnetism are emergent properties of the ground state in many-body systems.</p></li>
+<li><p>In Physics: Identifying the ground state of a Hamiltonian like the Heisenberg model reveals whether a material will behave as an insulator, a metal, or a more exotic phase of matter, such as a quantum spin liquid.</p></li>
+</ul>
+<p>However, finding the ground state is a notoriously difficult challenge. In fact, ground state preparation is QMA-complete, meaning it is generally hard even for quantum computers to find the exact solution for any arbitrary Hamiltonian. In practice, we often circumvent this complexity by starting with a ‘good enough’ initial guess (a trial state) and employing quantum algorithms, e.g., <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/rw81-k8vk" rel="noreferrer" target="_blank">Gluza et al.</a>, to systematically lower the
+system’s energy, a process often referred to as algorithmic cooling.</p>
+<p>In this tutorial, we explore how to use <a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">Generalized Quantum Signal Processing</a> for this task: starting from an initial system state for a Heisenberg model, we apply a Gaussian filter to enhance the overlap of the prepared state with the ground state.</p>
+<section id="Contents">
+<h2>Contents<a class="headerlink" href="#Contents" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#1.-Heisenberg-model"><span class="std std-ref">1. Heisenberg model</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#1.1-Spectral-Analysis"><span class="std std-ref">1.1. Spectral analysis</span></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#2.-Eigenstate-Filtering"><span class="std std-ref">2. Eigenstate Filtering</span></a></p></li>
+<li><p><a class="reference internal" href="#3.-Deep-Dive:-The-Theory-and-Implementation"><span class="std std-ref">3. Deep Dive: The Theory and Implementation</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#3.1-Introduction-to-Block-Encodings-and-GQSP"><span class="std std-ref">3.1 Introduction to Block-Encodings and GQSP</span></a></p></li>
+<li><p><a class="reference internal" href="#3.2-Pauli-Block-Encodings"><span class="std std-ref">3.2 Pauli Block-Encodings</span></a></p></li>
+<li><p><a class="reference internal" href="#3.3-Implementation"><span class="std std-ref">3.3 Implementation</span></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#4.-Conclusion"><span class="std std-ref">4. Conclusion</span></a></p></li>
+</ul>
+<p>This tutorial guides you through the process using the example of a Heisenberg model. First, we will set up the model and perform a classical analysis of its spectrum and our initial state. Next, we introduce the concept of eigenstate filtering and demonstrate how to use Qrisp’s BlockEncoding abstraction with built-in quantum signal processing features to isolate the ground state. Finally, we take a deep dive into the theory of block-encodings and GQSP, providing a detailed look at the
+implementation.</p>
+</section>
+<section id="1.-Heisenberg-model">
+<h2>1. Heisenberg model<a class="headerlink" href="#1.-Heisenberg-model" title="Link to this heading">#</a></h2>
+<p>Let us consider an <span class="math notranslate nohighlight">\(L\)</span>-qubit antiferromagnetic Heisenberg model</p>
+<div class="math notranslate nohighlight">
+\[H = \sum_{i=0}^{L-1}(X_iX_{i+1} + Y_iY_{i+1} + Z_iZ_{i+1})\]</div>
+<p>Physically, <a class="reference external" href="https://en.wikipedia.org/wiki/Antiferromagnetism" rel="noreferrer" target="_blank">antiferromagnetism</a> describes materials where neighboring spins “want” to point in opposite directions <span class="math notranslate nohighlight">\(\uparrow\downarrow\)</span> to reach the lowest energy state. Unlike a standard fridge magnet (where spins point the same way), an antiferromagnet has no net external magnetism. These models are crucial for understanding quantum materials, such as high-temperature superconductors.</p>
+<p>As initial system state we choose a tensor product of Singlet states</p>
+<div class="math notranslate nohighlight">
+\[\ket{\text{Singlet}} = 2^{-L/4}(\ket{10}-\ket{01})^{\otimes L/2}\]</div>
+<p>of consecutive qubits. Starting at our initial state <span class="math notranslate nohighlight">\(\ket{\text{Singlet}}\)</span>, we aim to prepare a state with an even higher overlap with the ground state of the <a class="reference internal" href="../../reference/Operators/QubitOperator.html"><span class="doc">operator</span></a> <span class="math notranslate nohighlight">\(H\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.gqsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">GQSP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.vqe.problems.heisenberg</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_heisenberg_init_function</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_1D_chain_graph</span><span class="p">(</span><span class="n">L</span><span class="p">):</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="k">L</span>) for k in range(L-1)])
+    <span class="k">return</span> <span class="n">graph</span>
+
+
+<span class="c1"># Define Heisenberg Hamiltonian with spectrum in [-1,1].</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">generate_1D_chain_graph</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">L</span> <span class="o">-</span> <span class="mi">3</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">((</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">X</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">))</span> \
+                            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+<span class="c1"># Finds a maximum matching M of the graph G.</span>
+<span class="c1"># For a chain graph G, M contains every second edge of G.</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximal_matching</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="c1"># Prepares a tensor product of Singlet states</span>
+<span class="c1"># corresponding to the edges in M when applied to</span>
+<span class="c1"># a QuantumVariable in state |0&gt;.</span>
+<span class="n">U0</span> <span class="o">=</span> <span class="n">create_heisenberg_init_function</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+
+<span class="c1"># Define initial state preparation function</span>
+<span class="c1"># preparing a tensor product of Singlet states.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">psi_prep</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+    <span class="n">U0</span><span class="p">(</span><span class="n">operand</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+
+<span class="c1"># Calculate the energy for the initial state.</span>
+<span class="c1"># Computes the operator&#39;s expectation value using Pauli measurement settings.</span>
+<span class="n">E</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">psi_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-0.555883883883884
+</pre></div></div>
+</div>
+<section id="1.1-Spectral-Analysis">
+<h3>1.1 Spectral Analysis<a class="headerlink" href="#1.1-Spectral-Analysis" title="Link to this heading">#</a></h3>
+<p>While this classical analysis does not scale to larger systems, it provides crucial intuition for the filtering approach by illustrating how it acts upon the Hamiltonian spectrum. Let us take a closer look at the spectrum of this Hamiltonian, and the inital state <span class="math notranslate nohighlight">\(\ket{\psi_0}=\ket{\text{Singlet}}\)</span>. First, we compute all eigenvalues and the corresponding eigenvectors. Secondly, we calculate the fidelities of the initial state <span class="math notranslate nohighlight">\(\ket{\psi_0}\)</span> and each eigenstate
+<span class="math notranslate nohighlight">\(\ket{\lambda_k}\)</span>. Next, we find the indices <span class="math notranslate nohighlight">\(k\)</span> of the eigenstates <span class="math notranslate nohighlight">\(\ket{\lambda_k}\)</span> that have a significant overlap with the initial state, i.e., <span class="math notranslate nohighlight">\(F_k=|\langle \lambda_k | \psi_0 \rangle|^2&gt;0.01\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">H_matrix</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+<span class="n">eigvals</span><span class="p">,</span> <span class="n">eigvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">H_matrix</span><span class="p">)</span>
+
+<span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">eigvals</span><span class="p">)</span>
+<span class="n">eigvals_sorted</span> <span class="o">=</span> <span class="n">eigvals</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
+<span class="n">eigvecs_sorted</span> <span class="o">=</span> <span class="n">eigvecs</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Ground state energy: </span><span class="si">{</span><span class="n">eigvals_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1"># lambda_0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;First excited state energy: </span><span class="si">{</span><span class="n">eigvals_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1"># lambda_1</span>
+
+<span class="n">psi0</span> <span class="o">=</span> <span class="n">psi_prep</span><span class="p">()</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+<span class="n">fidelities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">eigvecs_sorted</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">psi0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+<span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">significant_mask</span> <span class="o">=</span> <span class="n">fidelities</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+<span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">significant_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Indices: </span><span class="si">{</span><span class="n">indices</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Eigenvalues: </span><span class="si">{</span><span class="n">eigvals_sorted</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Fidelities: </span><span class="si">{</span><span class="n">fidelities</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ground state energy: -0.6308200307085748
+
+First excited state energy: -0.5823220132594902
+
+Indices: [  0   7  35  83 154 220]
+
+Eigenvalues: [-0.63082003 -0.50314048 -0.38308217 -0.28333426 -0.21195784 -0.15485291]
+
+Fidelities: [0.68261391 0.13067813 0.10160195 0.04302465 0.01256852 0.01153198]
+
+</pre></div></div>
+</div>
+<p>We observe that the initial state already has fidelity <span class="math notranslate nohighlight">\(F_0 \approx 0.68\)</span> with the ground state <span class="math notranslate nohighlight">\(\ket{\lambda_0}\)</span> with energy <span class="math notranslate nohighlight">\(\lambda_0 \approx -0.63\)</span>. Moreover, the inital state has a significant overlap with only 5 higher energy eigenstates.</p>
+</section>
+</section>
+<section id="2.-Eigenstate-Filtering">
+<h2>2. Eigenstate Filtering<a class="headerlink" href="#2.-Eigenstate-Filtering" title="Link to this heading">#</a></h2>
+<p>Starting at our initial state <span class="math notranslate nohighlight">\(\ket{\psi_0}\)</span>, we aim to prepare a state with an even higher overlap with the ground state <span class="math notranslate nohighlight">\(\ket{\lambda_0}\)</span>. Therefore, we aim to apply a <a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_filter" rel="noreferrer" target="_blank">Gaussian filter</a> centered at <span class="math notranslate nohighlight">\(\lambda_0\)</span> which suppresses higher energy components: indeed for</p>
+<div class="math notranslate nohighlight">
+\[H = \sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}\quad \text{and}\quad \ket{\psi_0} = \sum_i\alpha_i\ket{\lambda_i}\]</div>
+<p>the state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> after applying the filter <span class="math notranslate nohighlight">\(f\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[\ket{\psi} = \frac{f(H)\ket{\psi_0}}{\|f(H)\ket{\psi_0}\|}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[f(H)\ket{\psi_0} = \left(\sum_i f(\lambda_i)\ket{\lambda_i}\bra{\lambda_i}\right) \sum_j\alpha_j\ket{\lambda_j} = \sum_i f(\lambda_i)\alpha_i\ket{\lambda_i}\]</div>
+<p>Thus, the magnitude of the amplitude of <span class="math notranslate nohighlight">\(\ket{\lambda_i}\)</span> for <span class="math notranslate nohighlight">\(i&gt;0\)</span> is suppressed relative to the amplitude of <span class="math notranslate nohighlight">\(\ket{\lambda_0}\)</span> in the state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span>.</p>
+<p>This filter is approximated by <a class="reference external" href="https://en.wikipedia.org/wiki/Chebyshev_polynomials" rel="noreferrer" target="_blank">Chebyshev polynomials</a> of the first kind. Chebyshev polynomials <span class="math notranslate nohighlight">\(T_n(x)\)</span> are a sequence of orthogonal functions defined by the recurrence: <span class="math notranslate nohighlight">\(T_0(x)=1\)</span>, <span class="math notranslate nohighlight">\(T_1(x)=x\)</span> and <span class="math notranslate nohighlight">\(T_{n+1}(x)=2xT_n(x)-T_{n-1}(x)\)</span>. They are crucial for quantum algorithms (and approximation theory in gerneral) because: 1) They minimize the maximum error when approximating functions like our Gaussian filter. 2) Quantum
+Signal Processing naturally implements transformations of a Hermitian operator <span class="math notranslate nohighlight">\(H\)</span> as a polynomial expansion in the Chebyshev basis.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">numpy.polynomial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chebyshev</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.polynomial.chebyshev</span><span class="w"> </span><span class="kn">import</span> <span class="n">chebval</span>
+
+<span class="c1"># Define the Gaussian centered at minimal eigenvalue lambda_0 on [-1, 1].</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">eigvals_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Chebyshev fit</span>
+<span class="n">x_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">201</span><span class="p">)</span> <span class="o">/</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">f_nodes</span> <span class="o">=</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">x_nodes</span><span class="p">)</span>
+<span class="n">cheb_fit</span> <span class="o">=</span> <span class="n">Chebyshev</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_nodes</span><span class="p">,</span> <span class="n">f_nodes</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">cheb_coeffs</span> <span class="o">=</span> <span class="n">cheb_fit</span><span class="o">.</span><span class="n">coef</span>
+
+<span class="n">x_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+<span class="n">f_gaussian</span> <span class="o">=</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">x_plot</span><span class="p">)</span>
+<span class="n">f_cheb_10</span> <span class="o">=</span> <span class="n">chebval</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">cheb_coeffs</span><span class="p">[:</span><span class="mi">11</span><span class="p">])</span>
+<span class="n">f_cheb_20</span> <span class="o">=</span> <span class="n">chebval</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">cheb_coeffs</span><span class="p">[:</span><span class="mi">21</span><span class="p">])</span>
+
+<span class="c1"># Plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">f_gaussian</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#20306f&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Gaussian&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">f_cheb_10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#6929C4&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;d=10&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">f_cheb_20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#444444&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;d=20&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Chebyshev approximation of Gaussian filter&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/general_tutorial_GQSP_filtering_6_0.png" src="../../_images/general_tutorial_GQSP_filtering_6_0.png" />
+</div>
+</div>
+<p>Let us now apply the filter using the built-in features of Qrisp’s <a class="reference internal" href="../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> programming abstraction.</p>
+<p>We will delve deeper into block-encodings shortly; for now, think of them as a way to make Hermitian operators accessible for computation on a quantum computer.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+<span class="c1"># Encodes the operator $H$.</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+<span class="c1"># Encodes the operator p(H) for a degree 10 Chebychev approximation</span>
+<span class="c1"># of the Gaussian filter.</span>
+<span class="n">BE_filter</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">poly</span><span class="p">(</span><span class="n">cheb_coeffs</span><span class="p">[:</span><span class="mi">11</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;Chebyshev&quot;</span><span class="p">)</span>
+
+<span class="c1"># Returns the filtered state.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filtered_psi_prep</span><span class="p">():</span>
+    <span class="c1"># Applies p(H) to the inital state |psi_0&gt;.</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">BE_filter</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">psi_prep</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">operand</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span><span class="p">(</span><span class="n">terminal_sampling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">E</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">filtered_psi_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">E</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-0.6183163163163162
+</pre></div></div>
+</div>
+<p>Indeed, we achieve a significantly lower energy (<span class="math notranslate nohighlight">\(\approx -0.62\)</span> versus <span class="math notranslate nohighlight">\(\approx -0.56\)</span>) – hence, a higher overlap with the ground state (energy <span class="math notranslate nohighlight">\(\approx -0.63\)</span>) – for the transformed state after QSP.</p>
+<p>Let us note that, in general, we cannot deduce a higher ground state fidelity just form decreased energy. However, if the observed energy lies within the spectral gap <span class="math notranslate nohighlight">\(\Delta=\lambda_1-\lambda_0\)</span> of the ground state energy <span class="math notranslate nohighlight">\(\lambda_0\)</span>, we can use the following observation:</p>
+<p>Suppose that the state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> has overlap with only the ground state and the first excited state, i.e., <span class="math notranslate nohighlight">\(\ket{\psi} = \alpha_0\ket{\lambda_0} + \alpha_1\ket{\lambda_1}\)</span>. Then the energy <span class="math notranslate nohighlight">\(E\)</span> evaluates to</p>
+<div class="math notranslate nohighlight">
+\[E = \langle\psi|H|\psi\rangle = \langle\psi|\sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}|\psi\rangle = |\alpha_0|^2\lambda_0 + |\alpha_1|^2\lambda_1\]</div>
+<p>where <span class="math notranslate nohighlight">\(F_0=|\alpha_0|^2\)</span> is the fidelity with the ground state. Writing <span class="math notranslate nohighlight">\(|\alpha_1|^2=1-F_0\)</span>, we find</p>
+<div class="math notranslate nohighlight">
+\[F_0=\dfrac{\lambda_1-E}{\Delta}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Delta=\lambda_1-\lambda_0\)</span> is the spectral gap.</p>
+<p>This equation provides a lower bound on the ground state fidelity whenever the observed energy lies within the spectral gap of the ground state energy <span class="math notranslate nohighlight">\(\lambda_0\)</span>. Clearly, if the state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> would overlap with additional higher energy excited states, the fidelity <span class="math notranslate nohighlight">\(F_0\)</span> would be even higher.</p>
+<p>In our example, we find</p>
+<div class="math notranslate nohighlight">
+\[F_0 \geq \dfrac{-0.58-(-0.62)}{-0.58-(-0.63)} = 0.8\]</div>
+<p>Assuming that our initial state has zero overlap with all excited states until <span class="math notranslate nohighlight">\(\ket{\lambda_7}\)</span> at energy <span class="math notranslate nohighlight">\(\lambda_7\approx -0.50\)</span>, the above formula yields <span class="math notranslate nohighlight">\(F_0\geq 0.92\)</span> which is a significant increase form the initial fidelity <span class="math notranslate nohighlight">\(F_0\approx 0.68\)</span>.</p>
+</section>
+<section id="3.-Deep-Dive:-The-Theory-and-Implementation">
+<h2>3. Deep Dive: The Theory and Implementation<a class="headerlink" href="#3.-Deep-Dive:-The-Theory-and-Implementation" title="Link to this heading">#</a></h2>
+<p><strong>But, how does this work?</strong></p>
+<p>Essentially, we use <a class="reference internal" href="../../reference/Algorithms/GQSP.html"><span class="doc">GQSP</span></a> to apply a polynomial approximation of the Gaussian filter in Chebyshev basis resulting in the filtered state</p>
+<div class="math notranslate nohighlight">
+\[\ket{\psi}=\dfrac{p(H)\ket{\psi_0}}{\|p(H)\ket{\psi_0}\|}\]</div>
+<p>Before we dive into the implementation details, let’s establish a basic understanding of block-encodings and quantum signal processing.</p>
+<section id="3.1-Introduction-to-Block-Encodings-and-GQSP">
+<h3>3.1 Introduction to Block-Encodings and GQSP<a class="headerlink" href="#3.1-Introduction-to-Block-Encodings-and-GQSP" title="Link to this heading">#</a></h3>
+<p>If you have never heard of block-encodigs before, we recommend this <a class="reference external" href="https://www.qrisp.eu/general/tutorial/BE_tutorial/index.html" rel="noreferrer" target="_blank">tutorial</a>. Otherwise, let us recall the notion of a block-encoding:</p>
+<p>Block-encoding is a foundational technique that enables the implementation of non-unitary operations on a quantum computer by embedding them into a larger unitary operator. Consider a normalized Pauli operator <span class="math notranslate nohighlight">\(H=\sum_i\alpha_iP_i\)</span> where <span class="math notranslate nohighlight">\(\alpha_i&gt;0\)</span> are real coefficients such that <span class="math notranslate nohighlight">\(\sum_i|\alpha_i|=1\)</span>, and <span class="math notranslate nohighlight">\(P_i\)</span> are Pauli strings acting on <span class="math notranslate nohighlight">\(n\)</span> qubits (including their respective signs). We embed <span class="math notranslate nohighlight">\(H\)</span> into the upper-left block of a unitary matrix <span class="math notranslate nohighlight">\(U\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}U = \begin{pmatrix} H &amp; * \\ * &amp; * \end{pmatrix}\end{split}\]</div>
+<p>More formally, a block-encoding of an operator <span class="math notranslate nohighlight">\(H\)</span> (not necessarily unitary) acting on a Hilbert space <span class="math notranslate nohighlight">\(\mathcal H_{s}\)</span> is a unitary acting on <span class="math notranslate nohighlight">\(\mathcal H_a\otimes H_s\)</span> (for some auxiliary Hilbert space <span class="math notranslate nohighlight">\(\mathcal H_a\)</span>) such that</p>
+<div class="math notranslate nohighlight">
+\[(\bra{0}_a \otimes \mathbb I_s) U (\ket{0}_a \otimes \mathbb I_s) = H\]</div>
+<p>Our next ingredient is <a class="reference internal" href="../../reference/Algorithms/GQSP.html"><span class="doc">GQSP</span></a>: <a class="reference external" href="https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368" rel="noreferrer" target="_blank">Generalized Quantum Signal Processing</a> allows for applying polynomial transformations <span class="math notranslate nohighlight">\(p(U)\)</span> of a <strong>unitary</strong> <span class="math notranslate nohighlight">\(U\)</span>.</p>
+<p>Given a unitary <span class="math notranslate nohighlight">\(U\)</span>, and a complex degree <span class="math notranslate nohighlight">\(d\)</span> polynomial <span class="math notranslate nohighlight">\(p(z)\in\mathbb C[z]\)</span> that is bounded by 1 on the eunit circle, i.e., <span class="math notranslate nohighlight">\(|p(z)|^2\leq 1\)</span> for <span class="math notranslate nohighlight">\(|z|=1\)</span>, this algorithm implements a unitary</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{pmatrix} p(U) &amp; * \\ * &amp; * \end{pmatrix}\end{split}\]</div>
+<p>hence, can be undestood as block-encoding of <span class="math notranslate nohighlight">\(p(U)\)</span>, i.e.,</p>
+<div class="math notranslate nohighlight">
+\[(\bra{0}_a \otimes \mathbb I_s) \text{GQSP}_{p,U} (\ket{0}_a \otimes \mathbb I_s) = p(U)\]</div>
+<p>But, how can we actually realize <span class="math notranslate nohighlight">\(p(H)\)</span> for a Hermitian operator <span class="math notranslate nohighlight">\(H\)</span>? This is achieved by a technique termed <a class="reference external" href="https://quantum-journal.org/papers/q-2019-07-12-163/" rel="noreferrer" target="_blank">qubitization</a>:</p>
+<p>Given a block-encoding unitary <span class="math notranslate nohighlight">\(U\)</span> of a Hamiltonian <span class="math notranslate nohighlight">\(H\)</span>, such that <span class="math notranslate nohighlight">\(U^2=I\)</span>, let</p>
+<div class="math notranslate nohighlight">
+\[R=(2\ket{0}_a\bra{0}_a-I_a)\otimes I_s\]</div>
+<p>be the <a class="reference internal" href="../../reference/Primitives/reflection.html"><span class="doc">reflection</span></a> around <span class="math notranslate nohighlight">\(\ket{0}_a\)</span>. Then <span class="math notranslate nohighlight">\((RU)^k\)</span> is a block-encoding of <span class="math notranslate nohighlight">\(T_k(H)\)</span> where <span class="math notranslate nohighlight">\(T_k\)</span> is the <span class="math notranslate nohighlight">\(k\)</span>-th Chebyshev polynomial of the first kind (see <a class="reference external" href="https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/" rel="noreferrer" target="_blank">Kirby et al.</a>).</p>
+<p>That is, using <span class="math notranslate nohighlight">\(RU\)</span> as our unitary for <a class="reference internal" href="../../reference/Algorithms/GQSP.html"><span class="doc">GQSP</span></a>, we effectively apply a polynomial of the Hermitian operator <span class="math notranslate nohighlight">\(H\)</span> in Chebyshev basis. This algorithm is also referred to as Generalized Quantum Eigenvalue Transform (GQET).</p>
+</section>
+<section id="3.2-Pauli-Block-Encodings">
+<h3>3.2 Pauli Block-Encodings<a class="headerlink" href="#3.2-Pauli-Block-Encodings" title="Link to this heading">#</a></h3>
+<p>First, we construct a block-encoding for the Pauli operator <span class="math notranslate nohighlight">\(H=\sum_i\alpha_iP_i\)</span>, where <span class="math notranslate nohighlight">\(\alpha_i&gt;0\)</span> are real coefficients and <span class="math notranslate nohighlight">\(P_i\)</span> are Pauli strings (including their respective signs), using the Linear Combination of Unitaries (LCU) protocol:</p>
+<p>We build our block-encoding unitary as <span class="math notranslate nohighlight">\(U=\text{PREP}^{\dagger}\cdot \text{SELECT}\cdot \text{PREP}\)</span> where</p>
+<div class="math notranslate nohighlight">
+\[\text{SELECT} = \sum_i\ket{i}_a\bra{i}_a\otimes P_i\]</div>
+<p>acts as a <a class="reference internal" href="../../reference/Primitives/qswitch.html"><span class="doc">quantum switch case</span></a> applying the <span class="math notranslate nohighlight">\(i\)</span>-th unitary <span class="math notranslate nohighlight">\(P_i\)</span> conditioned on the ancilla being in state <span class="math notranslate nohighlight">\(\ket{i}_a\)</span>, and</p>
+<div class="math notranslate nohighlight">
+\[\text{PREP}\ket{0} = \sum_i\sqrt{\alpha_i}\ket{i}_a\]</div>
+<p><a class="reference internal" href="../../reference/Primitives/prepare.html"><span class="doc">prepares</span></a> a state encoding the coefficients.</p>
+<p>Indeed, a direct calculation using <span class="math notranslate nohighlight">\(\langle i | j\rangle=\delta_{ij}\)</span> shows</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+(\bra{0}_a \otimes \mathbb I_s) \text{PREP}^{\dagger}\cdot &amp;\text{SELECT}\cdot \text{PREP} (\ket{0}_a \otimes \mathbb I_s) \\
+&amp;= \left(\sum_i \sqrt{\alpha_i}\bra{i}_a \otimes I_s\right) \left(\sum_j\ket{j}_a\bra{j}_a\otimes P_j\right) \left(\sum_k \sqrt{\alpha_k}\ket{k}_a\otimes I_s\right) \\
+&amp;= \sum_j \alpha_j P_j = H.
+\end{align}\end{split}\]</div>
+<p>In Qrisp, this Pauli block-encoding unitary can be defined as follows:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Returns a list of unitaries, i.e., functions performing in-place operations</span>
+<span class="c1"># on the operand quantum variable, and a list of coefficients.</span>
+<span class="n">unitaries</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">unitaries</span><span class="p">()</span>
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unitaries</span><span class="p">)</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="c1"># Number of qubits for auxiliary variable.</span>
+
+<span class="c1"># Define block-encoding unitary using LCU = PREP SELECT PREP_dg.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">operand</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">prepare</span><span class="p">)(</span><span class="n">anc</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">):</span>
+        <span class="n">q_switch</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">unitaries</span><span class="p">,</span> <span class="n">operand</span><span class="p">)</span> <span class="c1"># quantum switch aka SELECT</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="3.3-Implementation">
+<h2>3.3 Implementation<a class="headerlink" href="#3.3-Implementation" title="Link to this heading">#</a></h2>
+<p>Next, we define a function for performing the filtered state prepation using <a class="reference internal" href="../../reference/Algorithms/GQSP.html"><span class="doc">GQSP</span></a>.</p>
+<p>Block-encodings and (generalized) quantum signal processing are applied to realize non-unitray transformations on a quantum computer. Thereby, the desired transformation is successfully realized upon projecting onto the subspace where the ancilla variables are in state <span class="math notranslate nohighlight">\(\ket{0}\)</span>. In this example, the ancilla QuantumBool <code class="docutils literal notranslate"><span class="pre">anc_qsp</span></code> and QuantumFloat <code class="docutils literal notranslate"><span class="pre">anc_be</span></code> must both be measured in state <span class="math notranslate nohighlight">\(\ket{0}\)</span>. Hence, the filtered state preparation is embedded within a
+<a class="reference internal" href="../../reference/Jasp/Control%20Flow/RUS.html"><span class="doc">Repeat-Until-Success</span></a> protocol.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">RUS</span></code> decorator is applied to a trial function that must return a boolean value as first return value. The trial function is repeatedly executed until the boolean value is True, and the remaining return values are retuned.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@RUS</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filtered_psi_prep</span><span class="p">():</span>
+
+    <span class="c1"># Qubitization step: RU^k is a block-encoding of T_k(H).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RU</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">operand</span><span class="p">):</span>
+        <span class="n">U</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">operand</span><span class="p">)</span>
+        <span class="n">reflection</span><span class="p">(</span><span class="n">case</span><span class="p">)</span> <span class="c1"># Reflection around |0&gt;.</span>
+
+
+    <span class="c1"># GQSP requires one 1-qubit ancilla variable.</span>
+    <span class="n">anc_qsp</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="c1"># Pauli block-encoding requires one n-qubit ancilla variable.</span>
+    <span class="n">anc_be</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">psi_prep</span><span class="p">()</span>
+
+    <span class="c1"># Apply degree 10 Chebyshev approximation of Gaussian filter.</span>
+    <span class="n">GQSP</span><span class="p">(</span><span class="n">anc_qsp</span><span class="p">,</span> <span class="c1"># Ancilla variable for GQSP protocol.</span>
+         <span class="n">anc_be</span><span class="p">,</span> <span class="c1"># Ancilla variable for block-encoding.</span>
+         <span class="n">operand</span><span class="p">,</span> <span class="c1"># Variable holding the system state |psi_0&gt;.</span>
+         <span class="n">unitary</span><span class="o">=</span><span class="n">RU</span><span class="p">,</span> <span class="c1"># Block-encoding unitary.</span>
+         <span class="n">p</span><span class="o">=</span><span class="n">cheb_coeffs</span><span class="p">[:</span><span class="mi">11</span><span class="p">],</span> <span class="c1"># Polynomial transformation to apply.</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Protocol is successful if all ancilla variables are measured in state |0&gt;.</span>
+    <span class="n">success_bool</span> <span class="o">=</span> <span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="n">anc_qsp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="n">anc_be</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Release quantum resources.</span>
+    <span class="c1"># The operand variable will be realeased automatically if success_bool=False.</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">anc_qsp</span><span class="p">)</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">anc_be</span><span class="p">)</span>
+    <span class="n">anc_qsp</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="n">anc_be</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">success_bool</span><span class="p">,</span> <span class="n">operand</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span><span class="p">(</span><span class="n">terminal_sampling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">E</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">expectation_value</span><span class="p">(</span><span class="n">filtered_psi_prep</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">E</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-0.6201741741741742
+</pre></div></div>
+</div>
+<p>And voila, we again achieve a significantly lower energy (<span class="math notranslate nohighlight">\(\approx -0.62\)</span> versus <span class="math notranslate nohighlight">\(\approx -0.56\)</span>) – hence, a higher overlap with the ground state (energy <span class="math notranslate nohighlight">\(\approx -0.63\)</span>) – for the transformed state after QSP.</p>
+</section>
+<section id="4.-Conclusion">
+<h2>4. Conclusion<a class="headerlink" href="#4.-Conclusion" title="Link to this heading">#</a></h2>
+<p>In this tutorial, we demonstrated how Quantum Signal Processing can be leveraged for ground state preparation. By applying a Gaussian filter to a Heisenberg model, we showcased how eigenstate filtering can systematically enhance the overlap with the target state.</p>
+<p>Key takeaways include:</p>
+<ul class="simple">
+<li><p><strong>The Versatility of Block-Encodings:</strong> How Qrisp’s abstraction allows us to embed non-unitary operators, like our Heisenberg Hamiltonian, into quantum programs.</p></li>
+<li><p><strong>Algorithmic Flexibility:</strong> GQSP allows us to implement polynomial transformations, turning abstract mathematical filters into executable quantum programs.</p></li>
+<li><p><strong>Scalability:</strong> While we analyzed the spectrum classically for verification, the methods discussed here provide a scalable path towards exploring complex quantum systems that are beyond the reach of classical simulation.</p></li>
+</ul>
+<p>As a next step, you might explore how different filter shapes (such as step functions for excited state isolation) or more complex Hamiltonians impact the performance of the algorithm. For those interested in how these filtering techniques can be utilized to enhance other algorithms, we recommend exploring the work of Lee et al. (2025) on <a class="reference external" href="https://arxiv.org/pdf/2510.04294" rel="noreferrer" target="_blank">Filtered Quantum Phase Estimation</a>, which further investigates the utility of spectral filters in the context of phase
+estimation.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Contents">Contents</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Heisenberg-model">1. Heisenberg model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#1.1-Spectral-Analysis">1.1 Spectral Analysis</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Eigenstate-Filtering">2. Eigenstate Filtering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Deep-Dive:-The-Theory-and-Implementation">3. Deep Dive: The Theory and Implementation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#3.1-Introduction-to-Block-Encodings-and-GQSP">3.1 Introduction to Block-Encodings and GQSP</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#3.2-Pauli-Block-Encodings">3.2 Pauli Block-Encodings</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.3-Implementation">3.3 Implementation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Conclusion">4. Conclusion</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/GQSP_filtering.ipynb" download="GQSP_filtering.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

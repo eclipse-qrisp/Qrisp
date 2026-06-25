@@ -1,0 +1,1039 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quantum-Informed Recursive Optimization &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QIROtutorial';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QIROtutorial.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Counterdiabatic Driving Protocols" href="CD.html" />
+    <link rel="prev" title="Portfolio rebalancing with constrained mixers" href="QAOAtutorial/PortfolioRebalancing.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Quantum-Informed Recursive Optimization</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Quantum-Informed-Recursive-Optimization">
+<h1>Quantum-Informed Recursive Optimization<a class="headerlink" href="#Quantum-Informed-Recursive-Optimization" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Niklas Steinmann</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>This tutorial will give you an overview of problem specific implementations for solving optimization problems with the <a class="reference internal" href="../../reference/Algorithms/qaoa/QAOA.html"><span class="doc">Quantum Approximate Optimization Algorithm (QAOA)</span></a>.</p>
+<p>The Quantum Approximate Optimization Algorithm (QAOA), is used to solve combinatorical optimization problem instances of NP-hard problems. For further information see our tutorial on <a class="reference internal" href="QAOAtutorial/index.html"><span class="doc">QAOA</span></a>!</p>
+<p>The paper <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327" rel="noreferrer" target="_blank">Quantum-Informed Recursive Optimization Algorithms (2023)</a> by J. Finzgar et. al. establishes a blueprint for developing alogrithms that update the problem instance recursively, based on the correlations in results obtained by QAOA. While QAOA cost functions are designed with specific problem instances in mind, this research has shown promising improvements to this to approach by further leveraging the problem
+structure.</p>
+<p>We have implemented this approach for different problem instances, namely <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxClique.html"><span class="doc">MaxClique</span></a>, <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxIndep.html"><span class="doc">MaxIndependentSet</span></a>, <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxSat.html"><span class="doc">MaxSat</span></a> and <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxSetPack.html"><span class="doc">MaxSetPacking</span></a>. The explanation below tackles the <a class="reference external" href="https://en.wikipedia.org/wiki/Maximal_independent_set" rel="noreferrer" target="_blank">Maximum Indepent Set
+(MIS)</a> problem, in analogy to the original paper by Finzgar et. al.</p>
+<section id="Starting-point-of-the-algorithm">
+<h2>Starting point of the algorithm<a class="headerlink" href="#Starting-point-of-the-algorithm" title="Link to this heading">#</a></h2>
+<p>The algorithm evaluates the result of a <a class="reference internal" href="../../reference/Algorithms/qaoa/QAOA.html"><span class="doc">QAOA</span></a> optimization procedure to establish correlations in the solution space, then recursively updates the problem structure. We will further assume that you are already mostly familiar with QAOA.</p>
+<p>The MIS is defined via a graph with a set of vertices <span class="math notranslate nohighlight">\(V\)</span> and a set of edges <span class="math notranslate nohighlight">\(E\)</span> . To solve this optimization problem, one has to find the maximum number of vertices, where none of the vertices share a common edge, i.e. we want to find</p>
+<div class="math notranslate nohighlight">
+\[\max \left( |V'| , V' \subset V \right), \text{ where } \sum_{ i, j \in V' } \mathbb{1}_{(i,j) \in E} = 0\]</div>
+<p>The QAOA cost operator has the form</p>
+<div class="math notranslate nohighlight">
+\[H_C = - \sum_{i \in V} ( \textbf{1} - Z_i ) + 3  \sum_{i,j \in E} ( \textbf{1} - Z_i )( \textbf{1} - Z_j ),\]</div>
+<p>and the mixer operator is</p>
+<div class="math notranslate nohighlight">
+\[H_M = - \sum_{i \in V} Z_i .\]</div>
+<p>Executing the optimization loop of our QAOA implementation of depth <span class="math notranslate nohighlight">\(p\)</span> will result in the state</p>
+<div class="math notranslate nohighlight">
+\[|\psi\rangle = e^{i \beta^{*}_{p-1} H_M} e^{i \gamma^{*}_{p-1} H_C} \dotsb e^{i \beta^{*}_0 H_M} e^{i \gamma^{*}_0 H_C} ( |0\rangle + |1\rangle )^{\otimes n},\]</div>
+<p>with <span class="math notranslate nohighlight">\(n\)</span> being the number of vertices in the graph. The parameters <span class="math notranslate nohighlight">\(\{\gamma^{*}_{p-1}, \beta^{*}_{p-1}, \dotsc, \gamma^{*}_0 , \beta^{*}_0 \}\)</span> represent the optimized QAOA angles. This state <span class="math notranslate nohighlight">\(|\psi\rangle\)</span> is the starting point of the <strong>Quantum-Informed Recursive Optimization</strong> considerations.</p>
+</section>
+<section id="Establishing-correlations">
+<h2>Establishing correlations<a class="headerlink" href="#Establishing-correlations" title="Link to this heading">#</a></h2>
+<p>We quickly want to motivate the search for correlations with the arguments made in the original paper. For further detail we again refer to the original paper by <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327" rel="noreferrer" target="_blank">J. Finzgar et. al.</a></p>
+<p>Firstly, QAOA is a local algorithm, which was shown to severely limit its performance. In turn, applying non-local updates classically has been proposed, i.e., in recursive QAOA (RQAOA) implementations. Values of variables are iteratively frozen as given by the correlations in the measurements of the quantum state prepared in a QAOA optimization routine. In QIRO, this information is used to recursively decrease the size of the problem instance by introducing problem-specific classical
+optimization routines. With this, new connections between previously unconnected nodes non-local effects are introduced, counterbalancing the locality inherent to QAOA.</p>
+<p>For any problem specific QIRO implementation the next step is to evaluate the expected correlations in the solution space, i.e., computing the values of the matrix <span class="math notranslate nohighlight">\(\text{M}\)</span>, where <span class="math notranslate nohighlight">\(\text{M}_{ii} = \langle\psi| Z_i |\psi\rangle\)</span> and <span class="math notranslate nohighlight">\(\text{M}_{ij} = \langle\psi| Z_i Z_j |\psi\rangle\)</span>.</p>
+<p>We then need to find the <strong>maximum absolute value</strong> of <span class="math notranslate nohighlight">\(\text{M}\)</span>.</p>
+</section>
+<section id="Reducing-the-problem">
+<h2>Reducing the problem<a class="headerlink" href="#Reducing-the-problem" title="Link to this heading">#</a></h2>
+<p>Based on the <strong>maximum absolute entry</strong> of the correlation matrix M and its sign, one of the following replacements is employed:</p>
+<ul class="simple">
+<li><p>If <span class="math notranslate nohighlight">\(\text{M}_{ii} \geq 0\)</span> is the maximum absolute value, then the <span class="math notranslate nohighlight">\(i\)</span>-th vertex is set to be in the independent set (IS). In turn, all vertices that share an edge with this vertex can be removed from the graph, since including them in the solution would violate the problem constraints.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(\text{M}_{ii} &lt; 0\)</span> is the maximum absolute value, we remove <span class="math notranslate nohighlight">\(i\)</span>-th vertex from the graph.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(\text{M}_{ij} &gt; 0, (i, j) ∈ E\)</span> was selected, we remove both vertices from the graph with the argument, that, since both of them would be in the same state in the final solution, including both as part of the solution would violate the constraint, as they share an edge. In turn, they can be removed from the graph.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(\text{M}_{ij} &lt; 0, (i, j) ∈ E\)</span> was selected, we remove all vertices that share an edge with both vertices <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span>. Since one of the vertices <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> will be part of the final solution (but not both), any vertex that is connected to both <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> is guaranteed to violate the problem constraints, and can be removed from the graph. In this case, it may be possible that no vertex is found to be a canditate for being removed. We will then
+simply choose the second biggest absolute value of <strong>M</strong> for the replacement routine.</p></li>
+</ul>
+<p>These operations are performed on a copy of the <code class="docutils literal notranslate"><span class="pre">networkx</span></code> graph that was provided to the instance of the <a class="reference internal" href="../../reference/Algorithms/qiro/QIROProblem.html"><span class="doc">QIROProblem</span></a> class, see the code example below. Based on the reduced problem graph, the <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, <code class="docutils literal notranslate"><span class="pre">mixer</span></code>, and <code class="docutils literal notranslate"><span class="pre">init_function</span></code> are updated. Subsequently, we optimize the parameters for the simplified <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code> instance, and reduce the problem again with the same subroutine as described above.</p>
+</section>
+<section id="The-final-solution">
+<h2>The final solution<a class="headerlink" href="#The-final-solution" title="Link to this heading">#</a></h2>
+<p>The after a specific number of recursions the final solution is returned as the result of a <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code> optimization routine, where we consider the excluded and included vertices from the above steps in the <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, <code class="docutils literal notranslate"><span class="pre">mixer</span></code> and <code class="docutils literal notranslate"><span class="pre">init_function</span></code> of the <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code>.</p>
+<p>The final result is therefore a dictionary of measurement results from the <code class="docutils literal notranslate"><span class="pre">.run</span></code> method of the <a class="reference internal" href="../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem</span></a> class and poses an optimized solution to the initial full problem instance.</p>
+<p>Try it out yourself with the example code below!</p>
+</section>
+</section>
+<section id="QIRO-implementation">
+<h1>QIRO implementation<a class="headerlink" href="#QIRO-implementation" title="Link to this heading">#</a></h1>
+<section id="The-QIRO-class">
+<h2>The QIRO class<a class="headerlink" href="#The-QIRO-class" title="Link to this heading">#</a></h2>
+<p>Upon instantiation, the <a class="reference internal" href="../../reference/Algorithms/qiro/QIROProblem.html"><span class="doc">QIROProblem</span></a> class requires five arguments:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">problem</span></code> to be solved, which not necessarly a graph, since QIRO is also implemented for <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxSat.html"><span class="doc">MaxSat</span></a>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">replacement_routine</span></code>, which has the job of performing the aforementioned specific reductions to the <code class="docutils literal notranslate"><span class="pre">problem</span></code> object.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, <code class="docutils literal notranslate"><span class="pre">mixer</span></code>, <code class="docutils literal notranslate"><span class="pre">cl_cost_function</span></code> and <code class="docutils literal notranslate"><span class="pre">init_function</span></code> in analogy to <a class="reference internal" href="../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem</span></a> instantiation.</p></li>
+</ul>
+<p>Why the <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, <code class="docutils literal notranslate"><span class="pre">mixer</span></code>, and <code class="docutils literal notranslate"><span class="pre">init_function</span></code> undergo some slight adjustements, will be made clear in the code example below, as well as the necessity for directly assigning a <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, a <code class="docutils literal notranslate"><span class="pre">mixer</span></code>, and an <code class="docutils literal notranslate"><span class="pre">init_function</span></code>.</p>
+<p>To run the instance and solve the optimization problem we use the <code class="docutils literal notranslate"><span class="pre">.run</span></code> method, which takes the following arguments: <code class="docutils literal notranslate"><span class="pre">qarg</span></code>, <code class="docutils literal notranslate"><span class="pre">depth</span></code>, <code class="docutils literal notranslate"><span class="pre">n_recursions</span></code>, <code class="docutils literal notranslate"><span class="pre">mes_kwargs</span> <span class="pre">=</span> <span class="pre">{}</span></code>, and <code class="docutils literal notranslate"><span class="pre">max_iter</span> <span class="pre">=</span> <span class="pre">50</span></code>.</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> <code class="docutils literal notranslate"><span class="pre">qarg</span></code>, which is the quantum argument the algorithm is evaluated on.</p></li>
+<li><p>The integer <code class="docutils literal notranslate"><span class="pre">depth</span></code>, which is the depth of QAOA optimization circuit.</p></li>
+<li><p>The integer <code class="docutils literal notranslate"><span class="pre">n_recursions</span></code>, representing the number of QIRO update steps.</p></li>
+<li><p>The dictionary <code class="docutils literal notranslate"><span class="pre">mes_kwargs</span> <span class="pre">=</span> <span class="pre">{}</span></code>, an empty dictionary by default, to define further specifications of the measurements.</p></li>
+<li><p>The integer <code class="docutils literal notranslate"><span class="pre">max_iter</span> <span class="pre">=</span> <span class="pre">50</span></code>, set to 50 by default, which defines the maximum number of the classical optimization loop with the <code class="docutils literal notranslate"><span class="pre">COBYLA</span></code> optimizer as part of the QAOA optimization routine</p></li>
+</ul>
+</section>
+</section>
+<section id="Maximum-independent-set-example">
+<h1>Maximum independent set example<a class="headerlink" href="#Maximum-independent-set-example" title="Link to this heading">#</a></h1>
+<p>We now investigate a code example for the maximum independent set problem. The in-depth explanation will focus on the unconnected cost operator implementation displayed. In constrast, our <a class="reference internal" href="../../reference/Algorithms/qaoa/implementations/maxIndepSet.html"><span class="doc">general QAOA implementation for the MIS problem</span></a> is based on a constrained mixer approach. This can also be used for the QIRO implementation, which we show at the end of this tutorial!</p>
+<section id="Preliminaries">
+<h2>Preliminaries<a class="headerlink" href="#Preliminaries" title="Link to this heading">#</a></h2>
+<p>Before we get to the superficial code let us first do some explaining of the relevant aspects, starting with the <code class="docutils literal notranslate"><span class="pre">replacment_routine</span></code>.</p>
+<p>All in all, the function remains straight forward. We employ a <code class="docutils literal notranslate"><span class="pre">find_max</span></code> subroutine to find the entry and the sign of the maximum correlation value, to then adjust the graph.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_maxIndep_replacement_routine</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">solutions</span><span class="o">=</span><span class="p">[],</span> <span class="n">exclusions</span><span class="o">=</span><span class="p">[]):</span>
+
+    <span class="c1"># for multi qubit correlations</span>
+    <span class="n">orig_edges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+
+    <span class="c1"># for single qubit correlations</span>
+    <span class="n">orig_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+    <span class="n">max_item</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">max_item</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="n">find_max</span><span class="p">(</span><span class="n">orig_nodes</span><span class="p">,</span> <span class="n">orig_edges</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">solutions</span><span class="p">)</span>
+
+    <span class="c1"># create a copy of the graph</span>
+    <span class="n">new_graph</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># we remove nodes from the graph, as suggested by the replacement rules</span>
+    <span class="c1"># if the item is an int, it is a single node, else it is an edge</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sign</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># remove all adjacent nodes</span>
+            <span class="n">to_remove</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">max_item</span><span class="p">]</span>
+            <span class="n">new_graph</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span>
+            <span class="n">solutions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_item</span><span class="p">)</span>
+            <span class="n">exclusions</span> <span class="o">+=</span> <span class="n">to_remove</span>
+
+        <span class="k">elif</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># remove the node</span>
+            <span class="n">new_graph</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">max_item</span><span class="p">)</span>
+            <span class="n">exclusions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_item</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sign</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># remove both nodes</span>
+            <span class="n">new_graph</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">max_item</span><span class="p">)</span>
+            <span class="n">exclusions</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">max_item</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># remove all nodes connected to both nodes</span>
+            <span class="n">intersect</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">max_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">max_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="p">)</span>
+            <span class="n">new_graph</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">intersect</span><span class="p">)</span>
+            <span class="n">exclusions</span> <span class="o">+=</span> <span class="n">intersect</span>
+
+    <span class="k">return</span> <span class="n">new_graph</span><span class="p">,</span> <span class="n">solutions</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">exclusions</span>
+</pre></div>
+</div>
+</div>
+<p>As you might have noticed in the code above, we add the nodes that are included into (respective excluded from) the solution to a list <code class="docutils literal notranslate"><span class="pre">solutions</span></code> (<code class="docutils literal notranslate"><span class="pre">exclusions</span></code>). This allows us to directly use the same ideas for the <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code>, <code class="docutils literal notranslate"><span class="pre">mixer</span></code> and <code class="docutils literal notranslate"><span class="pre">init_function</span></code> of the original unconstrained QAOA theory with minor adjustments.</p>
+<p>Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply <code class="docutils literal notranslate"><span class="pre">cost_operator</span></code> or <code class="docutils literal notranslate"><span class="pre">mixer</span></code> to said nodes. We therefore include some simple lines of code into the functions to take this into account, for example the <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">not</span></code>-statement in the <code class="docutils literal notranslate"><span class="pre">qiro_rx_mixer</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">qiro_rx_mixer</span><span class="p">(</span><span class="n">solutions</span><span class="o">=</span><span class="p">[],</span> <span class="n">exclusions</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="n">union</span> <span class="o">=</span> <span class="n">solutions</span> <span class="o">+</span> <span class="n">exclusions</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">RX_mixer</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv</span><span class="p">)):</span>
+            <span class="c1"># DONT mix solutions or exclusions</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">union</span><span class="p">:</span>
+                <span class="n">rx</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">beta</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">RX_mixer</span>
+</pre></div>
+</div>
+</div>
+<p>Similarly an <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">not</span></code>-statement is included in the cost operator, which is named <code class="docutils literal notranslate"><span class="pre">create_max_indep_cost_operator_reduced</span></code> due to it respecting the problem reduction:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_max_indep_cost_operator_reduced</span><span class="p">(</span><span class="n">problem_updated</span><span class="p">):</span>
+
+    <span class="n">problem</span> <span class="o">=</span> <span class="n">problem_updated</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">solutions</span> <span class="o">=</span> <span class="n">problem_updated</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost_operator</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">problem</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+            <span class="c1"># cx(qv[pair[0]], qv[pair[1]])</span>
+            <span class="n">rzz</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">rz</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">rz</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">problem</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="c1"># DO NOT apply gates on nodes in the solution set</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">:</span>
+                <span class="n">rz</span><span class="p">(</span><span class="n">gamma</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">cost_operator</span>
+</pre></div>
+</div>
+</div>
+<p>With the preliminaries out of the way, let us jump right into the code example:</p>
+</section>
+<section id="Code-execution">
+<h2>Code execution<a class="headerlink" href="#Code-execution" title="Link to this heading">#</a></h2>
+<p>We start off by defining the graph of our problem, as well as the <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> to run our instance on:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qiro</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QIROProblem</span><span class="p">,</span>
+    <span class="n">create_max_indep_replacement_routine</span><span class="p">,</span>
+    <span class="n">create_max_indep_cost_operator_reduced</span><span class="p">,</span>
+    <span class="n">qiro_rx_mixer</span><span class="p">,</span>
+    <span class="n">qiro_init_function</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_max_indep_set_cl_cost_function</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="c1"># define a random graph via the number of nodes and the QuantumVariable arguments</span>
+<span class="n">num_nodes</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">erdos_renyi_graph</span><span class="p">(</span><span class="n">num_nodes</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">107</span><span class="p">)</span>
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>With this, we can directly throw everything that is relevant at the QIROProblem class and create an instance.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># assign the correct new update functions for qiro</span>
+<span class="n">qiro_instance</span> <span class="o">=</span> <span class="n">QIROProblem</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">replacement_routine</span><span class="o">=</span><span class="n">create_max_indep_replacement_routine</span><span class="p">,</span>
+    <span class="n">cost_operator</span><span class="o">=</span><span class="n">create_max_indep_cost_operator_reduced</span><span class="p">,</span>
+    <span class="n">mixer</span><span class="o">=</span><span class="n">qiro_rx_mixer</span><span class="p">,</span>
+    <span class="n">cl_cost_function</span><span class="o">=</span><span class="n">create_max_indep_set_cl_cost_function</span><span class="p">,</span>
+    <span class="n">init_function</span><span class="o">=</span><span class="n">qiro_init_function</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We think of arguments for the <code class="docutils literal notranslate"><span class="pre">.run_qiro</span></code> method, run the algorithm, et violà!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_qiro</span> <span class="o">=</span> <span class="n">qiro_instance</span><span class="o">.</span><span class="n">run_qiro</span><span class="p">(</span><span class="n">qarg</span><span class="o">=</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_recursions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>All done! We have solved the MIS problem using Quantum-Informed Recursive Optimization!</p>
+</section>
+<section id="Results">
+<h2>Results<a class="headerlink" href="#Results" title="Link to this heading">#</a></h2>
+<p>But of course, we also want to investigate our results, so let’s find out about the five most likely solutions the algorithm came up with:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cl_cost</span> <span class="o">=</span> <span class="n">create_max_indep_set_cl_cost_function</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;5 most likely QIRO solutions&quot;</span><span class="p">)</span>
+<span class="n">max_five_qiro</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res_qiro</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">res_qiro</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">max_five_qiro</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">([</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cl_cost</span><span class="p">({</span><span class="n">res</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+5 most likely QIRO solutions
+[4, 6, 7, 10, 11, 12]
+-6
+[2, 7, 10, 11]
+-4
+[2, 3, 7, 8]
+-4
+[2, 10, 11]
+-3
+[2, 3, 7]
+-3
+</pre></div></div>
+</div>
+<p>We do not put the example output here, since the algorithm is not deterministic, and the output you receive may differ from what an example might show. Just go ahead and try it yourself!</p>
+<p>We can further compare our results to the <a class="reference external" href="https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.mis.maximal_independent_set.html" rel="noreferrer" target="_blank">NetworkX MIS algorithm</a> for solving the MIS problem:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Networkx solution&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">approximation</span><span class="o">.</span><span class="n">maximum_independent_set</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Networkx solution
+{0, 4, 5, 9, 12}
+</pre></div></div>
+</div>
+<p>As a final caveat, we can look at the graph we are left with after all reduction steps.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">final_graph</span> <span class="o">=</span> <span class="n">qiro_instance</span><span class="o">.</span><span class="n">problem</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">final_graph</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">font_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="s2">&quot;#20306f&quot;</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;#D3D3D3&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Final QIRO graph&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/general_tutorial_QIROtutorial_28_0.png" src="../../_images/general_tutorial_QIROtutorial_28_0.png" />
+</div>
+</div>
+</section>
+<section id="Constrained-mixer-implementation">
+<h2>Constrained mixer implementation<a class="headerlink" href="#Constrained-mixer-implementation" title="Link to this heading">#</a></h2>
+<p>Before we end this tutorial we want to show you what the constrained mixer implementation looks like for the MIS QIRO algorithm. In analogy to our <a class="reference internal" href="../../reference/Algorithms/qaoa/implementations/maxIndepSet.html"><span class="doc">general QAOA implementation for the MIS problem</span></a> we use the <a class="reference internal" href="../../reference/Algorithms/qiro/QIRO.html"><span class="doc">qiro_rz_mixer</span></a> as the mixer and the <a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxIndep.html"><span class="doc">create_max_indep_controlled_mixer_reduced</span></a> as the cost operator. In
+principle, these functions do the exact same thing as the general implementations, but they respect the solutions and exclusions chosen via the update routine. We suggest to try this instance with larger graph sizes (more than 20 nodes).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.qiro</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">qiro_rz_mixer</span><span class="p">,</span>
+    <span class="n">create_max_indep_controlled_mixer_reduced</span><span class="p">,</span>
+    <span class="n">qiro_max_indep_set_init_function</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># assign the correct update functions for constrained qiro</span>
+<span class="n">qiro_instance</span> <span class="o">=</span> <span class="n">QIROProblem</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">create_max_indep_replacement_routine</span><span class="p">,</span>
+    <span class="n">qiro_rz_mixer</span><span class="p">,</span>
+    <span class="n">create_max_indep_controlled_mixer_reduced</span><span class="p">,</span>
+    <span class="n">create_max_indep_set_cl_cost_function</span><span class="p">,</span>
+    <span class="n">qiro_max_indep_set_init_function</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># We run the qiro instance and get the results!</span>
+<span class="n">res_qiro</span> <span class="o">=</span> <span class="n">qiro_instance</span><span class="o">.</span><span class="n">run_qiro</span><span class="p">(</span><span class="n">qarg</span><span class="o">=</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_recursions</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cl_cost</span> <span class="o">=</span> <span class="n">create_max_indep_set_cl_cost_function</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;5 most likely QIRO solutions&quot;</span><span class="p">)</span>
+<span class="n">max_five_qiro</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res_qiro</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">res_qiro</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">max_five_qiro</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">([</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cl_cost</span><span class="p">({</span><span class="n">res</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+5 most likely QIRO solutions
+[2, 3, 7, 8]
+-4
+[3, 5, 6, 7, 8, 12]
+-6
+[2, 7, 10, 11]
+-4
+[4, 5, 6, 7, 8, 12]
+-6
+[4, 6, 7, 10, 11, 12]
+-6
+</pre></div></div>
+</div>
+<p>Congratulations, you have reached the end of the tutorial and are now capable of solving the MIS problem in Qrisp! Should your appetite not be satisfied, we advise you to check out our other QIRO implementations:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxClique.html"><span class="doc">MaxClique</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxSat.html"><span class="doc">MaxSat</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/Algorithms/qiro/implementations/QIROMaxSetPack.html"><span class="doc">MaxSetPacking</span></a></p></li>
+</ul>
+<p>and of course all the other material in the tutorial section!</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Quantum-Informed Recursive Optimization</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Starting-point-of-the-algorithm">Starting point of the algorithm</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Establishing-correlations">Establishing correlations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reducing-the-problem">Reducing the problem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-final-solution">The final solution</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#QIRO-implementation">QIRO implementation</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-QIRO-class">The QIRO class</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#Maximum-independent-set-example">Maximum independent set example</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Preliminaries">Preliminaries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Code-execution">Code execution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Results">Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Constrained-mixer-implementation">Constrained mixer implementation</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/QIROtutorial.ipynb" download="QIROtutorial.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

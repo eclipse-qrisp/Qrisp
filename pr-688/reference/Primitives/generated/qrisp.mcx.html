@@ -1,0 +1,973 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>qrisp.mcx &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Primitives/generated/qrisp.mcx';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Primitives/generated/qrisp.mcx.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="qrisp.mcz" href="qrisp.mcz.html" />
+    <link rel="prev" title="qrisp.rz" href="qrisp.rz.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Primitives</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../Gate%20functions.html">Gate Functions</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="qrisp.measure.html">qrisp.measure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.parity.html">qrisp.parity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.x.html">qrisp.x</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.y.html">qrisp.y</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.z.html">qrisp.z</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.h.html">qrisp.h</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.cx.html">qrisp.cx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.cy.html">qrisp.cy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.cz.html">qrisp.cz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.p.html">qrisp.p</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.cp.html">qrisp.cp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.rx.html">qrisp.rx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.ry.html">qrisp.ry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.rz.html">qrisp.rz</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">qrisp.mcx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.mcz.html">qrisp.mcz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.mcp.html">qrisp.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.crz.html">qrisp.crz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.s.html">qrisp.s</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.s_dg.html">qrisp.s_dg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.t.html">qrisp.t</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.t_dg.html">qrisp.t_dg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.sx.html">qrisp.sx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.sx_dg.html">qrisp.sx_dg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.swap.html">qrisp.swap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.rxx.html">qrisp.rxx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.rzz.html">qrisp.rzz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.xxyy.html">qrisp.xxyy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.u3.html">qrisp.u3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.barrier.html">qrisp.barrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.gphase.html">qrisp.gphase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qrisp.id.html">qrisp.id</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../Prefix%20arithmetic.html">Prefix Arithmetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../QFT.html">Quantum Fourier Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../QPE.html">Quantum Phase Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reflection.html">Reflection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../amplitude_amplification.html">Quantum Amplitude Amplification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../QAE.html">Quantum Amplitude Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../IQAE.html">Iterative Quantum Amplitude Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../IQPE.html">Iterative Quantum Phase Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../prepare.html">Quantum State Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../DickeStates.html">Dicke State Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../unbalanced_w_states.html">Unbalanced W State Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../qswitch.html">Quantum Switch Case</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../LCU.html">Linear Combination of Unitaries (LCU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Grover%20tools.html">Grover Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Phase%20polynomial%20tools.html">Phase Polynomial Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demux.html">Iterable Demuxing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cyclic_shift.html">Iterable Shifting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../iterable_permutation.html">Iterable Permutation</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Primitives</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../Gate%20functions.html" class="nav-link">Gate Functions</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.mcx</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="qrisp-mcx">
+<h1>qrisp.mcx<a class="headerlink" href="#qrisp-mcx" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="qrisp.mcx">
+<span class="sig-name descname"><span class="pre">mcx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">controls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctrl_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_ancilla</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/core/gate_application_functions.html#mcx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.mcx" title="Link to this definition">#</a></dt>
+<dd><p id="mcx">Applies a multi-controlled X gate.</p>
+<p>The following methods are available:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gray</span></code></p></td>
+<td><p>Performs a gray code traversal which requires no ancillae but is rather inefficient for large numbers of control qubits.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gray_pt</span></code>/<code class="docutils literal notranslate"><span class="pre">gray_pt_inv</span></code></p></td>
+<td><p>More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check <a class="reference external" href="https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta" rel="noreferrer" target="_blank">this paper</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">balauca</span></code></p></td>
+<td><p>Method based on this <a class="reference external" href="https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf" rel="noreferrer" target="_blank">paper</a> with logarithmic depth but requires many ancilla qubits.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">khattar</span></code></p></td>
+<td><p>Method based on this <a class="reference external" href="https://arxiv.org/abs/2407.17966" rel="noreferrer" target="_blank">paper</a>, implements the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this <a class="reference external" href="https://arxiv.org/abs/2106.11513" rel="noreferrer" target="_blank">paper</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">maslov</span></code></p></td>
+<td><p>Documented <a class="reference external" href="https://arxiv.org/abs/1508.03273" rel="noreferrer" target="_blank">here</a>, requires less ancilla qubits but is only available for 4 or less control qubits.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">yong</span></code></p></td>
+<td><p>Can be found int this <a class="reference external" href="https://link.springer.com/article/10.1007/s10773-017-3389-4" rel="noreferrer" target="_blank">article</a>.This method requires only a single ancilla and has moderate scaling in depth and gate count.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">amy</span></code></p></td>
+<td><p>A Toffoli-circuit (ie. only two control qubits are possible), which (temporarily) requires one ancilla qubit. However, instead of the no-ancilla T-depth 4, this circuit achieves a T-depth of 2. Find the implementation details in <a class="reference external" href="https://arxiv.org/pdf/1206.0758.pdf" rel="noreferrer" target="_blank">this paper</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jones</span></code></p></td>
+<td><p>Similar to <code class="docutils literal notranslate"><span class="pre">amy</span></code> but uses two ancilla qubits, and has a T-depth of 1. Read about it <a class="reference external" href="https://arxiv.org/abs/1212.5069" rel="noreferrer" target="_blank">here</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gidney</span></code></p></td>
+<td><p>A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details <a class="reference external" href="https://arxiv.org/abs/1709.06648" rel="noreferrer" target="_blank">here</a>. Works only for two control qubits.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hybrid</span></code></p></td>
+<td><p>A flexible method which combines the other available methods, such that the amount of used ancillae is customizable. After several <code class="docutils literal notranslate"><span class="pre">balauca</span></code>-layers, the recursion is canceled by either a <code class="docutils literal notranslate"><span class="pre">yong</span></code>, <code class="docutils literal notranslate"><span class="pre">maslov</span></code> or <code class="docutils literal notranslate"><span class="pre">gray</span></code> mcx, depending on what fits the most.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code></p></td>
+<td><p>Recompiles the mcx gate at compile time using the hybrid algorithm together with the information about how many clean/dirty ancillae qubits are available. For more information check <a class="reference internal" href="../../Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">qrisp.QuantumSession.compile()</span></code></a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Due to Qrisp’s automatic qubit management, clean ancilla qubits are not as much
+of a sparse resource as one might think. Even though the <code class="docutils literal notranslate"><span class="pre">balauca</span></code> method
+requires a considerable amount of ancillae, many other functions also do,
+implying there is alot of recycling potential. The net effect is that in more
+complex programs, the amount of qubits of the circuit returned by the
+<a class="reference internal" href="../../Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compile</span> <span class="pre">method</span></code></a> increases only slightly.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>controls</strong><span class="classifier">list[Qubits] or QuantumVariable</span></dt><dd><p>The Qubits to control on.</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">Qubit or QuantumBool</span></dt><dd><p>The Qubit to perform the X gate on.</p>
+</dd>
+<dt><strong>method</strong><span class="classifier">str, optional</span></dt><dd><p>The synthesis method. Available are <code class="docutils literal notranslate"><span class="pre">auto</span></code>, <code class="docutils literal notranslate"><span class="pre">gray</span></code>, <code class="docutils literal notranslate"><span class="pre">gray_pt</span></code>,
+<code class="docutils literal notranslate"><span class="pre">gray_pt_inv</span></code>, <code class="docutils literal notranslate"><span class="pre">maslov</span></code>, <code class="docutils literal notranslate"><span class="pre">balauca</span></code> and <code class="docutils literal notranslate"><span class="pre">yong</span></code>. The default is <code class="docutils literal notranslate"><span class="pre">auto</span></code>.</p>
+</dd>
+<dt><strong>ctrl_state</strong><span class="classifier">int or str, optional</span></dt><dd><p>The state on which to activate the X gate. The default is “1111..”.</p>
+</dd>
+<dt><strong>num_ancilla</strong><span class="classifier">int, optional</span></dt><dd><p>Specifies the amount of ancilla qubits to use. This parameter is used only if
+the method is set to <code class="docutils literal notranslate"><span class="pre">hybrid</span></code>. The default is 1.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We apply a 3-contolled X gate</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">QuantumBool</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">control</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mcx</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;gray&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>QuantumCircuit:
+--------------
+control.0: ──■──
+             │
+control.1: ──■──
+             │
+control.2: ──■──
+           ┌─┴─┐
+ target.0: ┤ X ├
+           └───┘
+Live QuantumVariables:
+---------------------
+QuantumVariable control
+QuantumBool target
+</pre></div>
+</div>
+<p>We compare different performance indicators.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">QuantumBool</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">benchmark_mcx</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">methods</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+
+        <span class="n">controls</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+        <span class="n">mcx</span><span class="p">(</span><span class="n">controls</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="p">)</span>
+
+        <span class="n">compiled_qc</span> <span class="o">=</span> <span class="n">controls</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;==================</span><span class="se">\n</span><span class="s2">Method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="se">\n</span><span class="s2">------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Depth: </span><span class="se">\t\t\t</span><span class="si">{</span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CNOT count: </span><span class="se">\t</span><span class="si">{</span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Qubit count: </span><span class="se">\t</span><span class="si">{</span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">benchmark_mcx</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="s2">&quot;gray_pt&quot;</span><span class="p">,</span> <span class="s2">&quot;maslov&quot;</span><span class="p">,</span> <span class="s2">&quot;balauca&quot;</span><span class="p">,</span> <span class="s2">&quot;yong&quot;</span><span class="p">])</span>
+<span class="go">==================</span>
+<span class="go">Method: gray</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          50</span>
+<span class="go">CNOT count:     30</span>
+<span class="go">Qubit count:    5</span>
+<span class="go">==================</span>
+<span class="go">Method: gray_pt</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          34</span>
+<span class="go">CNOT count:     16</span>
+<span class="go">Qubit count:    5</span>
+<span class="go">==================</span>
+<span class="go">Method: maslov</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          43</span>
+<span class="go">CNOT count:     18</span>
+<span class="go">Qubit count:    6</span>
+<span class="go">==================</span>
+<span class="go">Method: balauca</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          22</span>
+<span class="go">CNOT count:     18</span>
+<span class="go">Qubit count:    7</span>
+<span class="go">==================</span>
+<span class="go">Method: yong</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          77</span>
+<span class="go">CNOT count:     30</span>
+<span class="go">Qubit count:    6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">benchmark_mcx</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="s2">&quot;gray_pt&quot;</span><span class="p">,</span> <span class="s2">&quot;balauca&quot;</span><span class="p">,</span> <span class="s2">&quot;yong&quot;</span><span class="p">])</span>
+<span class="go">==================</span>
+<span class="go">Method: gray</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          3106</span>
+<span class="go">CNOT count:     2046</span>
+<span class="go">Qubit count:    11</span>
+<span class="go">==================</span>
+<span class="go">Method: gray_pt</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          2050</span>
+<span class="go">CNOT count:     1024</span>
+<span class="go">Qubit count:    11</span>
+<span class="go">==================</span>
+<span class="go">Method: balauca</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          53</span>
+<span class="go">CNOT count:     54</span>
+<span class="go">Qubit count:    18</span>
+<span class="go">==================</span>
+<span class="go">Method: yong</span>
+<span class="go">------------------</span>
+<span class="go">Depth:          621</span>
+<span class="go">CNOT count:     264</span>
+<span class="go">Qubit count:    12</span>
+</pre></div>
+</div>
+<p><strong>Mid circuit measurement based methods</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">gidney</span></code> and <code class="docutils literal notranslate"><span class="pre">jones</span></code> method are unique in the way that they require
+mid circuit measurements. The measurements are inserted retroactively by the
+<a class="reference internal" href="../../Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.compile</span></code></a> method, because immediate compilation
+would prevent evaluation of the statevector (since a measurement is involved).</p>
+<p>Instead a tentative (measurement free) representative is inserted and replaced
+at compile time.</p>
+<p>To get a better understanding consider the following script:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">mcx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">control</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mcx</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;jones&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">                 ┌───────────────────────────┐</span>
+<span class="go">      control.0: ┤0                          ├</span>
+<span class="go">                 │                           │</span>
+<span class="go">      control.1: ┤1                          ├</span>
+<span class="go">                 │                           │</span>
+<span class="go">       target.0: ┤2 uncompiled_jones_toffoli ├</span>
+<span class="go">                 │                           │</span>
+<span class="go">jones_ancilla.0: ┤3                          ├</span>
+<span class="go">                 │                           │</span>
+<span class="go">jones_ancilla.1: ┤4                          ├</span>
+<span class="go">                 └───────────────────────────┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable control</span>
+<span class="go">QuantumBool target</span>
+</pre></div>
+</div>
+<p>We see that there is no classical bit and therefore also no measurement.
+The statevector can still be accessed:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">())</span>
+<span class="go">|00&gt;*|0&gt;</span>
+</pre></div>
+</div>
+<p>To introduce the measurement we simply call the <a class="reference internal" href="../../Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.compile</span></code></a> method
+with the keyword <code class="docutils literal notranslate"><span class="pre">compile_mcm</span> <span class="pre">=</span> <span class="pre">True</span></code>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compile_mcm</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+<span class="go">             ┌─────────────────────────┐</span>
+<span class="go">  control.0: ┤0                        ├</span>
+<span class="go">             │                         │</span>
+<span class="go">  control.1: ┤1                        ├</span>
+<span class="go">             │                         │</span>
+<span class="go">   target.0: ┤2                        ├</span>
+<span class="go">             │  compiled_jones_toffoli │</span>
+<span class="go">workspace_0: ┤3                        ├</span>
+<span class="go">             │                         │</span>
+<span class="go">workspace_1: ┤4                        ├</span>
+<span class="go">             │                         │</span>
+<span class="go">       cb_0: ╡0                        ╞</span>
+<span class="go">             └─────────────────────────┘</span>
+</pre></div>
+</div>
+<p>Because there is a measurement now, the statevector can no longer be accessed.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+<span class="go">Exception: Unitary of operation measure not defined.</span>
+</pre></div>
+</div>
+<p>However the T-depth went down by 50%:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">t_depth</span><span class="p">())</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compile_mcm</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">t_depth</span><span class="p">())</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>A similar construction holds for the <a class="reference external" href="https://arxiv.org/abs/1709.06648" rel="noreferrer" target="_blank">Gidney’s temporary logical AND</a>.
+However there are additional details: This technique always comes in pairs. A computation
+and an uncomputation. The computation circuit has a T-depth of 1 and the uncomputation
+circuit has a T-depth of 0. The uncomputation circuit however contains a measurement.</p>
+<p>As you can imagine, this measurement is also inserted at compile time.</p>
+<p>Even though both circuits are not the inverses of each other, Qrisp will use
+the respective partner if called to invert:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">control</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mcx</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;gidney&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">           ┌────────────────────────┐</span>
+<span class="go">control.0: ┤0                       ├</span>
+<span class="go">           │                        │</span>
+<span class="go">control.1: ┤1 uncompiled_gidney_mcx ├</span>
+<span class="go">           │                        │</span>
+<span class="go"> target.0: ┤2                       ├</span>
+<span class="go">           └────────────────────────┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable control</span>
+<span class="go">QuantumBool target</span>
+</pre></div>
+</div>
+<p>This even works in conjunction with the <a class="reference internal" href="../../Core/Uncomputation.html#uncomputation"><span class="std std-ref">uncomputation module</span></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span><span class="o">.</span><span class="n">uncompute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">           ┌────────────────────────┐┌────────────────────────────┐</span>
+<span class="go">control.0: ┤0                       ├┤0                           ├</span>
+<span class="go">           │                        ││                            │</span>
+<span class="go">control.1: ┤1 uncompiled_gidney_mcx ├┤1 uncompiled_gidney_mcx_inv ├</span>
+<span class="go">           │                        ││                            │</span>
+<span class="go"> target.0: ┤2                       ├┤2                           ├</span>
+<span class="go">           └────────────────────────┘└────────────────────────────┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable control</span>
+</pre></div>
+</div>
+<p>To introduce the measurement, we call the compile method.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compile_mcm</span> <span class="o">=</span> <span class="kc">True</span><span class="p">))</span>
+<span class="go">             ┌──────────────────────┐┌──────────────────────────┐</span>
+<span class="go">  control.0: ┤0                     ├┤0                         ├</span>
+<span class="go">             │                      ││                          │</span>
+<span class="go">  control.1: ┤1 compiled_gidney_mcx ├┤1                         ├</span>
+<span class="go">             │                      ││  compiled_gidney_mcx_inv │</span>
+<span class="go">workspace_0: ┤2                     ├┤2                         ├</span>
+<span class="go">             └──────────────────────┘│                          │</span>
+<span class="go">       cb_0: ════════════════════════╡0                         ╞</span>
+<span class="go">                                     └──────────────────────────┘</span>
+</pre></div>
+</div>
+<p>Apart from uncomputation, the inverted Gidney mcx can also be accessed via,
+the <a class="reference internal" href="../../Quantum%20Environments/InversionEnvironment.html#inversionenvironment"><span class="std std-ref">InversionEnvironment</span></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">invert</span>
+
+<span class="n">control</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">control</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;gidney&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">           ┌────────────────────────────┐</span>
+<span class="go">control.0: ┤0                           ├</span>
+<span class="go">           │                            │</span>
+<span class="go">control.1: ┤1 uncompiled_gidney_mcx_inv ├</span>
+<span class="go">           │                            │</span>
+<span class="go"> target.0: ┤2                           ├</span>
+<span class="go">           └────────────────────────────┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable control</span>
+<span class="go">QuantumBool target</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Primitives/generated"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.mcx"><code class="docutils literal notranslate"><span class="pre">mcx()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

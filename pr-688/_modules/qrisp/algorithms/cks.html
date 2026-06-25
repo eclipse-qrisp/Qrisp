@@ -1,0 +1,1035 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.cks &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/cks';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/cks.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.cks</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.cks</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QuantumFloat</span><span class="p">,</span>
+    <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">conjugate</span><span class="p">,</span>
+    <span class="n">control</span><span class="p">,</span>
+    <span class="n">invert</span><span class="p">,</span>
+    <span class="n">ry</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">z</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.reflection</span><span class="w"> </span><span class="kn">import</span> <span class="n">reflection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jrange</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<div class="viewcode-block" id="cks_params">
+<a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.cks.cks_params.html#qrisp.cks.cks_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cks_params</span><span class="p">(</span><span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_beta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the complexity parameter :math:`\\beta` and the truncation order :math:`j_0` for the</span>
+<span class="sd">    truncated Chebyshev approximation of :math:`1/x`, as described in the `Childs–Kothari–Somma paper &lt;https://arxiv.org/abs/1511.02306&gt;`_.</span>
+
+<span class="sd">    Given the condition number :math:`\\kappa` and the target precision</span>
+<span class="sd">    :math:`\\epsilon`, the parameters are computed as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\beta = \\kappa^2 \\log\\!\\left(\\frac{\\kappa}{\\epsilon}\\right),</span>
+<span class="sd">        \\quad</span>
+<span class="sd">        j_0 = \\sqrt{\\beta \\log\\!\\left(\\frac{4\\beta}{\\epsilon}\\right)}.</span>
+
+<span class="sd">    If ``max_beta`` is provided, :math:`\\beta` is capped to</span>
+<span class="sd">    :math:`\\min(\\beta, \\beta_{\\max})`. The returned values are cast to integers</span>
+<span class="sd">    via the floor operation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        Target precision :math:`\\epsilon`.</span>
+<span class="sd">    kappa : float</span>
+<span class="sd">        An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the &quot;gap&quot;</span>
+<span class="sd">        around zero where the function :math:`1/x` is not approximated.</span>
+<span class="sd">    max_beta : float, optional</span>
+<span class="sd">        Optional upper bound on the complexity parameter :math:`\\beta`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    j0 : int</span>
+<span class="sd">        Truncation order of the Chebyshev expansion</span>
+<span class="sd">        :math:`j_0 = \\lfloor\\sqrt{\\beta \\log(4\\beta/\\epsilon)}\\rfloor`.</span>
+<span class="sd">    beta : int</span>
+<span class="sd">        Complexity parameter :math:`\\beta = \\lfloor\\kappa^2 \\log(\\kappa/\\epsilon)\\rfloor`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">max_beta</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">kappa</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">kappa</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">kappa</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">kappa</span> <span class="o">/</span> <span class="n">eps</span><span class="p">),</span> <span class="n">max_beta</span><span class="p">)</span>
+    <span class="n">j0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">/</span> <span class="n">eps</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">j0</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="cks_coeffs">
+<a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.cks.cks_coeffs.html#qrisp.cks.cks_coeffs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cks_coeffs</span><span class="p">(</span><span class="n">j0</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the positive coefficients :math:`\\alpha_i` for the truncated</span>
+<span class="sd">    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`.</span>
+
+<span class="sd">    The approximation is expressed as a linear combination</span>
+<span class="sd">    of odd Chebyshev polynomials truncated at index :math:`j_0` (Lemma 14):</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        g(x) = 4 \\sum_{j=0}^{j_0} (-1)^j</span>
+<span class="sd">        \\left[ \\sum_{i=j+1}^{b} \\frac{\\binom{2b}{b+i}}{2^{2b}} \\right]</span>
+<span class="sd">        T_{2j+1}(x)</span>
+
+<span class="sd">    The Linear Combination of Unitaries (LCU) lemma requires strictly</span>
+<span class="sd">    positive coefficients :math:`\\alpha_i &gt; 0`, their absolute values are</span>
+<span class="sd">    used. The alternating factor :math:`(-1)^j` is later implemented as a set of</span>
+<span class="sd">    Z-gates within the CKS circuit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    j0 : int</span>
+<span class="sd">        Truncation order of the Chebyshev expansion,</span>
+<span class="sd">        :math:`j_0 = \\lfloor\\sqrt{\\beta \\log(4\\beta/\\epsilon)}\\rfloor`.</span>
+<span class="sd">    b : float</span>
+<span class="sd">        Complexity parameter :math:`\\beta = \\lfloor\\kappa^2 \\log(\\kappa/\\epsilon)\\rfloor`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coeffs : ndarray</span>
+<span class="sd">        1-D array of positive Chebyshev coefficients :math:`{\\alpha_{2j+1}}`,</span>
+<span class="sd">        corresponding to the odd degree Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dotsc, T_{2j_0+1}`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">binom</span>
+    <span class="c1"># Computes CKS coefficients using the Binomial Survival Function</span>
+    <span class="c1"># to guarantee numerical stability for very large parameters.</span>
+    <span class="c1"># Original formula (https://arxiv.org/pdf/1511.02306, Lemma 19):</span>
+    <span class="c1"># c_j = 4 * (2 ** (-2 * b)) * sum_{i=j+1}^{b} comb(2 * b, b + i)</span>
+    <span class="c1"># comb(2b, k) * (0.5 ** (2 * b)) is the probability mass function for a</span>
+    <span class="c1"># Binomial distribution: X ~ Binomial(2b, 0.5)</span>
+    <span class="c1"># The sum is calculating the probability that X &gt;= b + j + 1.</span>
+    <span class="c1"># The sum of the &quot;upper tail&quot; of the distribution is evaluated by</span>
+    <span class="c1"># the Binomial Survival Function.</span>
+
+    <span class="c1"># Create an array of all j values from 0 to j0.</span>
+    <span class="n">j_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">j0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># binom.sf(k, n, p) calculates P(X &gt; k) for X ~ Binomial(n, p).</span>
+    <span class="c1"># We want P(X &gt;= b + j + 1), which is identical to P(X &gt; b + j).</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">binom</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">j_values</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coeffs</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unary_angles</span><span class="p">(</span><span class="n">coeffs</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\\ket{\\text{unary}}`,</span>
+<span class="sd">    corresponding to the square-root-amplitude encoding of the Chebyshev coefficients.</span>
+
+<span class="sd">    The prepared unary state is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\ket{\\text{unary}} \\propto</span>
+<span class="sd">        \\sqrt{\\alpha_1}\\ket{100\\dots00} + \\sqrt{\\alpha_3}\\ket{110\\dots00} +</span>
+<span class="sd">        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\\ket{111\\dots11}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coeffs : ArrayLike</span>
+<span class="sd">        1-D array of positive Chebyshev coefficients :math:`\\alpha_i`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ArrayLike</span>
+<span class="sd">        1-D array of rotation angles :math:`\\phi_i` for unary state preparation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>  <span class="c1"># coeffs need not to be normalized since unary angles only depend on their ratio</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>  <span class="c1"># Last angle is determined by ratio of final two amplitudes</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="p">)</span>  <span class="c1"># Recursively compute previous rotation angles</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">phi</span>  <span class="c1"># Compensate for factor 1/2 in ry</span>
+
+
+<div class="viewcode-block" id="unary_prep">
+<a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.cks.unary_prep.html#qrisp.cks.unary_prep">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unary_prep</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepares the unary-encoded state :math:`\\ket{\\text{unary}}` of Chebyshev coefficients.</span>
+
+<span class="sd">    When applied to a variable in state :math:`\\ket{0}`, the resulting superposition is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\ket{\\text{unary}} \\propto</span>
+<span class="sd">        \\sqrt{\\alpha_1}\\ket{100\\dots00} + \\sqrt{\\alpha_3}\\ket{110\\dots00} +</span>
+<span class="sd">        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\\ket{111\\dots11}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    case : QuantumVariable</span>
+<span class="sd">        Variable with :math:`j_0` qubits on which the unary state preparation will be performed.</span>
+<span class="sd">        If the variable is in state :math:`\\ket{0}`, the state :math:`\\ket{\\text{unary}}` is prepared.</span>
+<span class="sd">    coeffs : ArrayLike</span>
+<span class="sd">        1-D array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\\dotsc,\\alpha_{2j_0+1}`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">_unary_angles</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+
+    <span class="n">x</span><span class="p">(</span><span class="n">case</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ry</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">case</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">case</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="n">ry</span><span class="p">(</span><span class="n">phi</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">case</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="CKS">
+<a class="viewcode-back" href="../../../reference/Algorithms/CKS.html#qrisp.cks.CKS">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">CKS</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">BlockEncoding</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockEncoding</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs the `Childs–Kothari–Somma (CKS) quantum algorithm &lt;https://arxiv.org/abs/1511.02306&gt;`_ to solve the Quantum Linear System Problem (QLSP)</span>
+<span class="sd">    :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.</span>
+<span class="sd">    When applied to a state $\\ket{b}$, the algorithm prepares a state :math:`\\ket{\\tilde{x}} \\propto A^{-1} \\ket{b}`</span>
+<span class="sd">    within target precision :math:`\\epsilon` of the ideal solution :math:`\\ket{x}`.</span>
+
+<span class="sd">    For a block-encoded **Hermitian** matrix :math:`A`, this function returns a BlockEncoding of an</span>
+<span class="sd">    operator :math:`\\tilde{A}^{-1}` such that :math:`\\|\\tilde{A}^{-1} - A^{-1}\\| \\leq \\epsilon`.</span>
+<span class="sd">    The inversion is implemented using a polynomial approximation of :math:`1/x` over the domain :math:`D_{\\kappa} = [-1, -1/\\kappa] \\cup [1/\\kappa, 1]`.</span>
+
+<span class="sd">    The asymptotic complexity is</span>
+<span class="sd">    :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and</span>
+<span class="sd">    :math:`\\kappa` its condition number. This represents an exponentially</span>
+<span class="sd">    better precision scaling compared to the HHL algorithm.</span>
+
+<span class="sd">    This function integrates all core components of the CKS approach:</span>
+<span class="sd">    Chebyshev polynomial approximation, Linear Combination of Unitaries (LCU),</span>
+<span class="sd">    `qubitization with reflection operators &lt;https://arxiv.org/abs/2208.00567&gt;`_, and the :ref:`Repeat-Until-Success (RUS) &lt;RUS&gt;` protocol.</span>
+<span class="sd">    The semantics of the approach can be illustrated with the following circuit schematics:</span>
+
+<span class="sd">    .. image:: /_static/CKS_schematics.png</span>
+<span class="sd">       :align: center</span>
+
+<span class="sd">    Implementation overview:</span>
+<span class="sd">      1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`cks_params`).</span>
+<span class="sd">      2. Generate Chebyshev coefficients and the auxiliary unary state (:func:`cks_coeffs`, :func:`unary_prep`).</span>
+<span class="sd">      3. Build the core LCU structure via qubitization operator.</span>
+
+<span class="sd">    The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the</span>
+<span class="sd">    input state :math:`\\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as</span>
+<span class="sd">    a linear combination of odd Chebyshev polynomials:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        A^{-1}\\propto\\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),</span>
+
+<span class="sd">    where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} &gt; 0` are computed</span>
+<span class="sd">    via :func:`cks_coeffs`. These operators can be efficiently implemented with qubitization, which relies on a unitary</span>
+<span class="sd">    block encoding :math:`U` of the matrix :math:`A`, and a :ref:`reflection operator &lt;reflection&gt;` :math:`R`.</span>
+
+<span class="sd">    If the block encoding unitary is $U$ is Hermitian (:math:`U^2=I`),</span>
+<span class="sd">    the fundamental iteration step is defined as :math:`(RU)`, where :math:`R` reflects</span>
+<span class="sd">    around the auxiliary block-encoding state :math:`\\ket{G}`, prepared as the ``inner_case`` QuantumFloat.</span>
+<span class="sd">    Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial</span>
+<span class="sd">    of the first kind :math:`T_k(A)`.</span>
+
+<span class="sd">    We then construct a linear combination of these block-encoded polynomials using the LCU structure</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       \\text{LCU}\\ket{0}\\ket{\\psi}=\\text{PREP}^{\\dagger}\\cdot \\text{SEL}\\cdot \\text{PREP}\\ket{0}\\ket{\\psi}=\\tilde{A}\\ket{0}\\ket{\\psi}.</span>
+
+<span class="sd">    Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\\ket{\\text{unary}}`</span>
+<span class="sd">    that encodes the square root of the Chebyshev coefficients :math:`\\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the</span>
+<span class="sd">    appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary</span>
+<span class="sd">    state :math:`\\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\\ket{\\text{unary}}`,</span>
+<span class="sd">    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.</span>
+
+<span class="sd">    To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper,</span>
+<span class="sd">    our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\\ket{\\text{unary}}`.</span>
+
+<span class="sd">    The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.</span>
+<span class="sd">    Since the LCU lemma requires :math:`\\alpha_j&gt;0`, negative terms are accounted for</span>
+<span class="sd">    by applying Z-gates on each index qubit in ``out_case``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    A : BlockEncoding</span>
+<span class="sd">        The block-encoded Hermitian matrix to be inverted.</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        Target precision :math:`\\epsilon`.</span>
+<span class="sd">    kappa : float</span>
+<span class="sd">        An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the &quot;gap&quot;</span>
+<span class="sd">        around zero where the function :math:`1/x` is not approximated.</span>
+<span class="sd">    max_beta : float, optional</span>
+<span class="sd">        Optional upper bound on the complexity parameter :math:`\\beta`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BlockEncoding</span>
+<span class="sd">        A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The following examples demonstrate how the CKS algorithm can be applied to solve the</span>
+<span class="sd">    quantum linear systems problem (QLSP)</span>
+<span class="sd">    :math:`A \\vec{x} = \\vec{b}`, using either a direct Hermitian matrix input or</span>
+<span class="sd">    a preconstructed block-encoding representation.</span>
+
+<span class="sd">    **Example 1: Solving a 4×4 Hermitian system**</span>
+
+<span class="sd">    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],</span>
+<span class="sd">                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],</span>
+<span class="sd">                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],</span>
+<span class="sd">                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])</span>
+
+<span class="sd">        b = np.array([0, 1, 1, 1])</span>
+
+<span class="sd">        kappa = np.linalg.cond(A)</span>
+<span class="sd">        print(&quot;Condition number of A: &quot;, kappa)</span>
+<span class="sd">        # Condition number of A:  1.8448536035491883</span>
+
+<span class="sd">    Next, we solve this linear system using the CKS quantum algorithm:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import prepare, QuantumFloat</span>
+<span class="sd">        from qrisp.algorithms.cks import CKS</span>
+<span class="sd">        from qrisp.block_encodings import BlockEncoding</span>
+<span class="sd">        from qrisp.jasp import terminal_sampling</span>
+
+<span class="sd">        def prep_b():</span>
+<span class="sd">            operand = QuantumFloat(2)</span>
+<span class="sd">            prepare(operand, b)</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+
+<span class="sd">            BA = BlockEncoding.from_array(A)</span>
+<span class="sd">            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()</span>
+<span class="sd">            return x</span>
+
+<span class="sd">        res_dict = main()</span>
+
+<span class="sd">        # The resulting dictionary contains the measurement probabilities</span>
+<span class="sd">        # for each computational basis state.</span>
+<span class="sd">        # To extract the corresponding quantum amplitudes (up to sign):</span>
+<span class="sd">        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])</span>
+<span class="sd">        print(&quot;QUANTUM SIMULATION\\n&quot;, amps)</span>
+<span class="sd">        # QUANTUM SIMULATION</span>
+<span class="sd">        # [0.02714082 0.55709921 0.53035395 0.63845794]</span>
+
+<span class="sd">    We compare this to the classical normalized solution:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)</span>
+
+<span class="sd">        print(&quot;CLASSICAL SOLUTION\\n&quot;, c)</span>
+<span class="sd">        # CLASSICAL SOLUTION</span>
+<span class="sd">        # [0.02944539 0.55423278 0.53013239 0.64102936]</span>
+
+<span class="sd">    We see that we obtained the same result in our quantum simulation up to precision :math:`\\epsilon`!</span>
+
+<span class="sd">    To perform quantum resource estimation, replace the ``@terminal_sampling``</span>
+<span class="sd">    decorator with ``@count_ops(meas_behavior=&quot;0&quot;)``:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp import count_ops</span>
+
+<span class="sd">        @count_ops(meas_behavior=&quot;0&quot;)</span>
+<span class="sd">        def main():</span>
+
+<span class="sd">            BA = BlockEncoding.from_array(A)</span>
+<span class="sd">            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()</span>
+<span class="sd">            return x</span>
+
+<span class="sd">        res_dict = main()</span>
+<span class="sd">        print(res_dict)</span>
+<span class="sd">        # {&#39;gphase&#39;: 51, &#39;t_dg&#39;: 1548, &#39;cz&#39;: 150, &#39;ry&#39;: 2, &#39;z&#39;: 12, &#39;h&#39;: 890, &#39;cy&#39;: 50, &#39;cx&#39;: 3516, &#39;x&#39;: 377, &#39;s_dg&#39;: 70, &#39;p&#39;: 193, &#39;s&#39;: 70, &#39;t&#39;: 1173, &#39;u3&#39;: 753, &#39;measure&#39;: 18}</span>
+
+<span class="sd">    The printed dictionary lists the estimated quantum gate counts required for the CKS algorithm. Since the simulation itself is not executed,</span>
+<span class="sd">    this approach enables scalable gate count estimation for linear systems of arbitrary size.</span>
+
+<span class="sd">    **Example 2: Using a custom block encoding**</span>
+
+<span class="sd">    The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,</span>
+<span class="sd">    where the block-encoding is constructed from the Pauli decomposition of :math:`A`. While this approach is efficient when :math:`A`</span>
+<span class="sd">    corresponds to, e.g., an Ising or a Heisenberg Hamiltonian, the number of Pauli terms may not scale favorably in general.</span>
+<span class="sd">    For certain sparse matrices, their structure can be exploited to construct more efficient block-encodings.</span>
+
+<span class="sd">    In this example, we construct a block-encoding representation for the following following tridiagonal sparse matrix:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        def tridiagonal_shifted(n, mu=1.0, dtype=float):</span>
+<span class="sd">            I = np.eye(n, dtype=dtype)</span>
+<span class="sd">            return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)</span>
+
+<span class="sd">        N = 8</span>
+<span class="sd">        A = tridiagonal_shifted(N, mu=3)</span>
+<span class="sd">        b = np.random.randint(0, 2, size=N)</span>
+
+<span class="sd">        print(A)</span>
+<span class="sd">        # [[ 5.  0.  0.  0. -2.  0.  0.  0.]</span>
+<span class="sd">        #  [ 0.  5.  0.  0.  0. -2.  0.  0.]</span>
+<span class="sd">        #  [ 0.  0.  5.  0.  0.  0. -2.  0.]</span>
+<span class="sd">        #  [ 0.  0.  0.  5.  0.  0.  0. -2.]</span>
+<span class="sd">        #  [-2.  0.  0.  0.  5.  0.  0.  0.]</span>
+<span class="sd">        #  [ 0. -2.  0.  0.  0.  5.  0.  0.]</span>
+<span class="sd">        #  [ 0.  0. -2.  0.  0.  0.  5.  0.]</span>
+<span class="sd">        #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]</span>
+
+<span class="sd">    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\\colon\\ket{k}\\rightarrow-\\ket{k+N/2 \\mod N}$ and $V^{\\dagger}\\colon\\ket{k}\\rightarrow-\\ket{k-N/2 \\mod N}$.</span>
+<span class="sd">    We define their corresponding functions and the block-encoding using Linear Combination of Unitaries (LCU):</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import gphase</span>
+
+<span class="sd">        def I(qv):</span>
+<span class="sd">            pass</span>
+
+<span class="sd">        def V(qv):</span>
+<span class="sd">            qv += N//2</span>
+<span class="sd">            gphase(np.pi, qv[0])</span>
+
+<span class="sd">        def V_dg(qv):</span>
+<span class="sd">            qv -= N//2</span>
+<span class="sd">            gphase(np.pi, qv[0])</span>
+
+<span class="sd">        unitaries = [I, V, V_dg]</span>
+<span class="sd">        coeffs = np.array([5,1,1,0])</span>
+<span class="sd">        BA = BlockEncoding.from_lcu(coeffs, unitaries)</span>
+
+<span class="sd">    Next, we solve this linear system using the CKS quantum algorithm:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def prep_b():</span>
+<span class="sd">            operand = QuantumFloat(3)</span>
+<span class="sd">            prepare(operand, b)</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+
+<span class="sd">            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()</span>
+<span class="sd">            return x</span>
+
+<span class="sd">        res_dict = main()</span>
+<span class="sd">        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])</span>
+
+<span class="sd">    We, again, compare the solution obtained by quantum simulation with the classical solution</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)</span>
+
+<span class="sd">        print(&quot;QUANTUM SIMULATION\\n&quot;, amps, &quot;\\nCLASSICAL SOLUTION\\n&quot;, c)</span>
+<span class="sd">        # QUANTUM SIMULATION</span>
+<span class="sd">        # [0.43917486 0.31395935 0.12522139 0.43917505 0.43917459 0.12522104 0.31395943 0.43917502]</span>
+<span class="sd">        # CLASSICAL SOLUTION</span>
+<span class="sd">        # [0.43921906 0.3137279  0.12549116 0.43921906 0.43921906 0.12549116 0.3137279  0.43921906]</span>
+
+<span class="sd">    Quantum resource estimation can be performed in the same way as in the first example:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @count_ops(meas_behavior=&quot;0&quot;)</span>
+<span class="sd">        def main():</span>
+
+<span class="sd">            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()</span>
+<span class="sd">            return x</span>
+
+<span class="sd">        res_dict = main()</span>
+<span class="sd">        print(res_dict)</span>
+<span class="sd">        # {&#39;gphase&#39;: 51, &#39;s_dg&#39;: 70, &#39;s&#39;: 120, &#39;z&#39;: 12, &#39;x&#39;: 127, &#39;t&#39;: 298, &#39;u3&#39;: 157, &#39;cx&#39;: 1194, &#39;p&#39;: 118, &#39;ry&#39;: 2, &#39;h&#39;: 390, &#39;t_dg&#39;: 348, &#39;measure&#39;: 116}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">j_0</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="n">cks_params</span><span class="p">(</span><span class="n">eps</span><span class="p">,</span> <span class="n">kappa</span><span class="p">,</span> <span class="n">max_beta</span><span class="o">=</span><span class="n">max_beta</span><span class="p">)</span>
+    <span class="n">cheb_coeffs</span> <span class="o">=</span> <span class="n">cks_coeffs</span><span class="p">(</span><span class="n">j_0</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">_anc_templates</span><span class="p">)</span>
+
+    <span class="c1"># Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104):</span>
+    <span class="c1"># T1 = (U R), T2 = (U R U_dg R) -&gt; T2^k T1 is block encoding T_{2k+1}(A)</span>
+    <span class="c1"># This is valid even if the block encoding unitary is not Hermitian.</span>
+    <span class="c1"># The first control-(U R) can be simplified to U since:</span>
+    <span class="c1"># 1) The first qubit of the |unary&gt; state is always 1.</span>
+    <span class="c1"># 2) The R acts as identity on |0&gt;.</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">inv_unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">reflection</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">m</span><span class="p">])</span>
+        <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">inv_unitary</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="n">reflection</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">m</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="c1"># Core LCU protocol: PREP, SELECT, PREP^†</span>
+        <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">unary_prep</span><span class="p">)(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cheb_coeffs</span><span class="p">):</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">j_0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">z</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">T2</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="n">new_anc_templates</span> <span class="o">=</span> <span class="p">[</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="n">j_0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">template</span><span class="p">()]</span> <span class="o">+</span> <span class="n">A</span><span class="o">.</span><span class="n">_anc_templates</span>
+    <span class="n">new_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">cheb_coeffs</span><span class="p">))</span> <span class="o">/</span> <span class="n">A</span><span class="o">.</span><span class="n">alpha</span>
+    <span class="k">return</span> <span class="n">BlockEncoding</span><span class="p">(</span><span class="n">new_alpha</span><span class="p">,</span> <span class="n">new_anc_templates</span><span class="p">,</span> <span class="n">new_unitary</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

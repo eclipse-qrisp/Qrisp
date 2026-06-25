@@ -1,0 +1,828 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.cold.problems.QUBO &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/cold/problems/QUBO';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/cold/problems/QUBO.html" />
+    <link rel="icon" href="../../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.cold.problems.QUBO</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.cold.problems.QUBO</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.cold</span><span class="w"> </span><span class="kn">import</span> <span class="n">DCQOProblem</span><span class="p">,</span> <span class="n">solve_alpha</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.qubit</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_COLD_instance</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Q : np.array</span>
+<span class="sd">        The QUBO Matrix to be encoded in the Hamiltonian.</span>
+<span class="sd">    uniform_AGP_coeffs : bool</span>
+<span class="sd">        Whether to approximate the AGP with uniform or non-uniform coefficients.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    collected operators : tuple</span>
+<span class="sd">        Tuple containing the following functions and operators:</span>
+<span class="sd">        Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem</span>
+<span class="sd">        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of</span>
+<span class="sd">        problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Q</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lam</span><span class="p">():</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;t T&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">lam_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">T</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">lam_expr</span>
+
+    <span class="c1"># AGP coefficients</span>
+    <span class="k">if</span> <span class="n">uniform_AGP_coeffs</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_deriv</span><span class="p">):</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">h</span> <span class="o">+</span> <span class="n">f</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">h</span> <span class="o">+</span> <span class="n">f_deriv</span>
+
+            <span class="n">nom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">B</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">N</span> <span class="o">*</span> <span class="p">(</span><span class="n">B</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">alph</span> <span class="o">=</span> <span class="n">nom</span> <span class="o">/</span> <span class="n">denom</span>
+            <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">alph</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span>
+
+            <span class="k">return</span> <span class="n">alph</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_deriv</span><span class="p">):</span>
+            <span class="n">nom</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">f</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span> <span class="o">*</span> <span class="n">f_deriv</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="mi">2</span> <span class="o">*</span> <span class="p">((</span><span class="n">lam</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">f</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">lam</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">nom</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">denom</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">alph</span>
+
+    <span class="c1"># Initial Hamiltonian</span>
+    <span class="n">H_init</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+    <span class="c1"># Problem Hamiltonian</span>
+    <span class="n">H_prob</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">N</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># AGP as function of alpha</span>
+    <span class="k">if</span> <span class="n">uniform_AGP_coeffs</span><span class="p">:</span>
+        <span class="n">A_lam</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">A_lam</span> <span class="o">=</span> <span class="p">[</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+
+    <span class="c1"># Control Hamiltonian</span>
+    <span class="n">H_control</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+    <span class="n">collected_operators</span> <span class="o">=</span> <span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">H_init</span><span class="p">,</span> <span class="n">H_prob</span><span class="p">,</span> <span class="n">A_lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">H_control</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">collected_operators</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_LCD_instance</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">agp_type</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the necessary parameters and operators to initialize a DCQO problem instance for LCD.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Q : np.array</span>
+<span class="sd">        The QUBO Matrix to be encoded in the Hamiltonian.</span>
+<span class="sd">    agp_type : str</span>
+<span class="sd">        Which approximation of the AGP to use. Can choose between ``order1``,</span>
+<span class="sd">        ``order2``, ``nc`` (nested commutators up to first order).</span>
+<span class="sd">    uniform_AGP_coeffs : bool</span>
+<span class="sd">        Whether to approximate the AGP with uniform or non-uniform coefficients.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    collected operators : tuple</span>
+<span class="sd">        Tuple containing the following functions and operators:</span>
+<span class="sd">        Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem</span>
+<span class="sd">        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of</span>
+<span class="sd">        problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_agp</span><span class="p">(</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">order1</span><span class="p">():</span>
+            <span class="n">A_lam</span> <span class="o">=</span> <span class="p">[</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">A_lam</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">nested_commutators</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+            <span class="n">A_lam</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="p">[</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Y</span><span class="p">(</span><span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">A_lam</span>
+
+        <span class="n">builders</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;order1&quot;</span><span class="p">:</span> <span class="n">order1</span><span class="p">(),</span> <span class="s2">&quot;nc&quot;</span><span class="p">:</span> <span class="n">nested_commutators</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">)}</span>
+
+        <span class="k">return</span> <span class="n">builders</span><span class="p">[</span><span class="n">agp_type</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_coeffs</span><span class="p">(</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">order1_uniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">h</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span>
+                <span class="n">nom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">B</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
+                <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">N</span> <span class="o">*</span> <span class="p">(</span><span class="n">B</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">alph</span> <span class="o">=</span> <span class="n">nom</span> <span class="o">/</span> <span class="n">denom</span>
+                <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">alph</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span>
+                <span class="k">return</span> <span class="n">alph</span>
+
+            <span class="k">return</span> <span class="n">alpha</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">order1_nonuniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+                <span class="n">denom</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="mi">2</span> <span class="o">*</span> <span class="p">((</span><span class="n">lam</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">lam</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]))</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">denom</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+                <span class="k">return</span> <span class="n">alph</span>
+
+            <span class="k">return</span> <span class="n">alpha</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">nc_uniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+                <span class="n">S_hR</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">)])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+                <span class="n">S_hsqR</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">)])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+                <span class="n">S_2</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">)])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+                <span class="n">S_4</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">4</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">)])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+                <span class="n">R_i_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+                <span class="n">S_Rsq</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">R_i</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">R_i</span> <span class="ow">in</span> <span class="n">R_i_list</span><span class="p">)</span>
+                <span class="n">S_h</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+                <span class="n">S_hsq</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">i</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">h</span><span class="p">)</span>
+
+                <span class="n">nom</span> <span class="o">=</span> <span class="n">S_h</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">S_2</span>
+                <span class="n">denom</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="n">lam</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">S_hsq</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">S_hsqR</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">S_hR</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">S_Rsq</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">S_2</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">S_4</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">S_2</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="n">alph</span> <span class="o">=</span> <span class="o">-</span><span class="n">nom</span> <span class="o">/</span> <span class="n">denom</span>
+                <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">N</span> <span class="o">*</span> <span class="p">[</span><span class="n">alph</span><span class="p">]]</span>
+                <span class="k">return</span> <span class="n">alph</span>
+
+            <span class="k">return</span> <span class="n">alpha</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">nc_nonuniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="n">lam</span><span class="p">):</span>
+                <span class="n">alph</span> <span class="o">=</span> <span class="p">[</span><span class="n">solve_alpha</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">lam</span><span class="p">)]</span>
+                <span class="k">return</span> <span class="n">alph</span>
+
+            <span class="k">return</span> <span class="n">alpha</span>
+
+        <span class="n">builders</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">(</span><span class="s2">&quot;order1&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="n">order1_uniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;order1&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="n">order1_nonuniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;nc&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="n">nc_uniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;nc&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="n">nc_nonuniform</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">builders</span><span class="p">[(</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="p">)]</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Q</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lam</span><span class="p">():</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;t T&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">lam_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">T</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">lam_expr</span>
+
+    <span class="c1"># AGP coefficients</span>
+    <span class="n">coeff_func</span> <span class="o">=</span> <span class="n">build_coeffs</span><span class="p">(</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="c1"># Initial Hamiltonian</span>
+    <span class="n">H_init</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+    <span class="c1"># Problem Hamiltonian</span>
+    <span class="c1"># H_prob = sum(</span>
+    <span class="c1">#    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]</span>
+    <span class="c1"># ) + sum([h[i] * Z(i) for i in range(N)])</span>
+
+    <span class="n">H_prob</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">N</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># AGP</span>
+    <span class="n">A_lam</span> <span class="o">=</span> <span class="n">build_agp</span><span class="p">(</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Q</span><span class="p">,</span> <span class="n">H_init</span><span class="p">,</span> <span class="n">H_prob</span><span class="p">,</span> <span class="n">A_lam</span><span class="p">,</span> <span class="n">coeff_func</span><span class="p">,</span> <span class="n">lam</span>
+
+
+<div class="viewcode-block" id="solve_QUBO">
+<a class="viewcode-back" href="../../../../../reference/Algorithms/dcqo/DCQO.html#qrisp.cold.solve_QUBO">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">solve_QUBO</span><span class="p">(</span><span class="n">Q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">problem_args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">run_args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solves a QUBO Matrix using counterdiabatic driving. This method uses the pre-defined COLD/LCD operators</span>
+<span class="sd">    (hamiltonian, scheduling function, AGP parameters) as described in the tutorial.</span>
+<span class="sd">    To define your own operators, create a DCQO instance and use the ``run`` method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Q : np.array</span>
+<span class="sd">        QUBO Matrix to solve.</span>
+<span class="sd">    problem_args : dict</span>
+<span class="sd">        Holds arguments for DCQO problem creation (``method``: str (&quot;COLD&quot;/&quot;LCD&quot;), ``uniform``: bool).</span>
+<span class="sd">    run_args : dict</span>
+<span class="sd">        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``, ``objective``,``precision``, ``backend``, ``exp_value_backend``).</span>
+<span class="sd">        All optionas are also listed here: :meth:`DCQOProblem.run`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : dict</span>
+<span class="sd">        The dictionary holding the QUBO vector results, with their probabilitites and cost.</span>
+<span class="sd">        They are ordered from most to least likely and the dictionary entries are {&quot;state&quot;: [prob, cost]}.</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    ::</span>
+
+<span class="sd">        import numpy as np</span>
+<span class="sd">        from qrisp.algorithms.cold import solve_QUBO</span>
+
+<span class="sd">        Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],</span>
+<span class="sd">                    [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],</span>
+<span class="sd">                    [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],</span>
+<span class="sd">                    [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],</span>
+<span class="sd">                    [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],</span>
+<span class="sd">                    [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])</span>
+
+<span class="sd">        problem_args = {&quot;method&quot;: &quot;COLD&quot;, &quot;uniform&quot;: False}</span>
+
+<span class="sd">        run_args = {&quot;N_steps&quot;: 4, &quot;T&quot;: 8, &quot;N_opt&quot;: 1, &quot;CRAB&quot;: False,</span>
+<span class="sd">                    &quot;objective&quot;: &quot;agp_coeff_magnitude&quot;, &quot;bounds&quot;: (-3, 3)}</span>
+
+<span class="sd">        result = solve_QUBO(Q, problem_args, run_args)</span>
+
+<span class="sd">        print(result)</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        {&#39;101101&#39;: [0.2749327493274933, np.float64(-3.4)], &#39;011101&#39;: [0.14747147471474714, np.float64(-3.0)], &#39;111101&#39;: [0.10500105001050011, np.float64(-2.1)], &#39;101100&#39;: [0.0888608886088861, np.float64(-3.0)], &#39;011100&#39;: [0.04720047200472005, np.float64(-2.6)], &#39;101110&#39;: [0.043830438304383046, np.float64(-2.1)], &#39;111100&#39;: [0.035760357603576036, np.float64(-1.7000000000000002)], &#39;011110&#39;: [0.024410244102441025, np.float64(-1.7)], &#39;100101&#39;: [0.02137021370213702, np.float64(-2.0)], &#39;110101&#39;: [0.016960169601696017, np.float64(-1.7000000000000002)], &#39;111110&#39;: [0.01686016860168602, np.float64(-0.8)], &#39;111001&#39;: [0.016390163901639016, np.float64(-0.4)], &#39;001101&#39;: [0.014560145601456015, np.float64(-3.1)], &#39;010101&#39;: [0.014370143701437016, np.float64(-1.7999999999999998)], &#39;101011&#39;: [0.011320113201132012, np.float64(-1.0)], &#39;111000&#39;: [0.008620086200862008, np.float64(0.0)], &#39;100001&#39;: [0.007290072900729008, np.float64(-1.5)], &#39;000101&#39;: [0.006580065800658007, np.float64(-0.9)], &#39;110100&#39;: [0.006420064200642007, np.float64(-1.3000000000000003)], &#39;011011&#39;: [0.006090060900609006, np.float64(-0.6)], &#39;101000&#39;: [0.005780057800578007, np.float64(-1.3)], &#39;100100&#39;: [0.0057700577005770064, np.float64(-1.6)], &#39;101001&#39;: [0.005720057200572007, np.float64(-1.7000000000000002)], &#39;101111&#39;: [0.005310053100531005, np.float64(-1.5)], &#39;100110&#39;: [0.005230052300523006, np.float64(-0.7)], &#39;010100&#39;: [0.004050040500405004, np.float64(-1.4)], &#39;001100&#39;: [0.004040040400404004, np.float64(-2.7)], &#39;011000&#39;: [0.003870038700387004, np.float64(-0.9)], &#39;011111&#39;: [0.0032400324003240034, np.float64(-1.1)], &#39;100000&#39;: [0.0031800318003180035, np.float64(-1.1)], &#39;110010&#39;: [0.0029900299002990033, np.float64(-1.1)], &#39;010001&#39;: [0.002930029300293003, np.float64(-1.3)], &#39;011001&#39;: [0.002850028500285003, np.float64(-1.3)], &#39;110011&#39;: [0.002770027700277003, np.float64(-0.5000000000000001)], &#39;001110&#39;: [0.002650026500265003, np.float64(-1.8)], &#39;010110&#39;: [0.0025900259002590025, np.float64(-0.5)], &#39;110001&#39;: [0.0024400244002440027, np.float64(-1.2000000000000002)], &#39;000100&#39;: [0.0022800228002280024, np.float64(-0.5)], &#39;100011&#39;: [0.002020020200202002, np.float64(-0.8000000000000002)], &#39;111011&#39;: [0.001770017700177002, np.float64(0.3)], &#39;010000&#39;: [0.0015300153001530014, np.float64(-0.9)], &#39;101010&#39;: [0.0014900149001490016, np.float64(-1.6)], &#39;111111&#39;: [0.0014200142001420015, np.float64(-0.20000000000000007)], &#39;000010&#39;: [0.0010500105001050011, np.float64(-0.3)], &#39;110111&#39;: [0.0008300083000830009, np.float64(0.19999999999999984)], &#39;010011&#39;: [0.0008200082000820009, np.float64(-0.6)], &#39;001011&#39;: [0.0007900079000790008, np.float64(-0.7000000000000001)], &#39;100111&#39;: [0.0007200072000720008, np.float64(-0.09999999999999998)], &#39;001000&#39;: [0.0006300063000630007, np.float64(-1.0)], &#39;100010&#39;: [0.0006000060000600005, np.float64(-1.4000000000000001)], &#39;001111&#39;: [0.0005800058000580006, np.float64(-1.2000000000000002)], &#39;010010&#39;: [0.0005700057000570006, np.float64(-1.2)], &#39;001001&#39;: [0.0005300053000530005, np.float64(-1.4)], &#39;011010&#39;: [0.0005200052000520005, np.float64(-1.2)], &#39;000011&#39;: [0.0005000050000500006, np.float64(0.3)], &#39;111010&#39;: [0.0004300043000430004, np.float64(-0.3)], &#39;110000&#39;: [0.00026000260002600025, np.float64(-0.8000000000000002)], &#39;000110&#39;: [0.00026000260002600025, np.float64(0.39999999999999997)], &#39;010111&#39;: [0.00021000210002100023, np.float64(0.09999999999999998)], &#39;000001&#39;: [0.0001700017000170002, np.float64(-0.4)], &#39;001010&#39;: [0.00012000120001200013, np.float64(-1.3)], &#39;000000&#39;: [9.00009000090001e-05, np.float64(0.0)], &#39;000111&#39;: [8.000080000800009e-05, np.float64(1.0)], &#39;110110&#39;: [2.0000200002000023e-05, np.float64(-0.4000000000000002)]}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">problem_args</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;LCD&quot;</span><span class="p">:</span>
+        <span class="c1"># Check if AGP type is specified, otherwise use 1st order</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">agp_type</span> <span class="o">=</span> <span class="n">problem_args</span><span class="p">[</span><span class="s2">&quot;agp_type&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">agp_type</span> <span class="o">=</span> <span class="s2">&quot;order1&quot;</span>
+
+        <span class="n">problem_operators</span> <span class="o">=</span> <span class="n">create_LCD_instance</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">agp_type</span><span class="o">=</span><span class="n">agp_type</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="o">=</span><span class="n">problem_args</span><span class="p">[</span><span class="s2">&quot;uniform&quot;</span><span class="p">])</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;COLD&quot;</span><span class="p">:</span>
+        <span class="n">problem_operators</span> <span class="o">=</span> <span class="n">create_COLD_instance</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">uniform_AGP_coeffs</span><span class="o">=</span><span class="n">problem_args</span><span class="p">[</span><span class="s2">&quot;uniform&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Create qarg and problem instrance</span>
+    <span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">prob</span> <span class="o">=</span> <span class="n">DCQOProblem</span><span class="p">(</span><span class="o">*</span><span class="n">problem_operators</span><span class="p">)</span>
+
+    <span class="c1"># Run problem</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">run_args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

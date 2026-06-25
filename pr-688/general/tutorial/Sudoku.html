@@ -1,0 +1,1530 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Solving Sudoku using Quantum Backtracking &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/Sudoku';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/Sudoku.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Quantum Monte Carlo Integration" href="QMCItutorial.html" />
+    <link rel="prev" title="Counterdiabatic Driving Protocols" href="CD.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Solving Sudoku using Quantum Backtracking</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Solving-Sudoku-using-Quantum-Backtracking">
+<h1>Solving Sudoku using Quantum Backtracking<a class="headerlink" href="#Solving-Sudoku-using-Quantum-Backtracking" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='font-weight: 600; color: #222;'>Niklas Steinmann</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>This tutorial is the practical hands on-part of <a class="reference external" href="https://arxiv.org/abs/2402.10060" rel="noreferrer" target="_blank">this paper</a>.</p>
+<section id="Sudoku">
+<h2>Sudoku<a class="headerlink" href="#Sudoku" title="Link to this heading">#</a></h2>
+<p>Sudoku is a popular logic-based puzzle game that gained widespread popularity in the late 20th century. Its name, “Sudoku,” originates from the Japanese words “su” (meaning “number”) and “doku” (meaning “single”). The puzzle consists of a grid typically composed of nine rows, nine columns, and nine smaller subgrids known as “regions” or “blocks.”</p>
+<p>The objective of Sudoku is simple: fill in the grid so that each row, column, and region contains the numbers 1 through 9, with no repetition. A partially completed grid is provided, with some numbers already filled in. The challenge lies in using deductive reasoning and logic to determine the correct placement of numbers within the grid.</p>
+<p>Sudoku puzzles come in various difficulty levels, ranging from easy to extremely challenging, based on the number and placement of initial clues provided. While the rules remain consistent, the complexity of solving the puzzle increases with fewer initial clues and the necessity for more advanced solving strategies.</p>
+<p>Over the years, Sudoku has evolved into a beloved pastime for enthusiasts of all ages, offering a stimulating mental exercise that promotes concentration, critical thinking, and problem-solving skills. Whether played casually in newspapers, puzzle books, or digital platforms, Sudoku continues to captivate individuals worldwide with its timeless appeal.</p>
+<p>In our case, we will be working with 4x4 Sudoku mostly because we want to keep the results still simulable. A 9x9 or even 16x16 implementation would of course work equally well.</p>
+<img alt="Sudoku" src="../../_images/sudoku.png" />
+</section>
+<section id="Backtracking">
+<h2>Backtracking<a class="headerlink" href="#Backtracking" title="Link to this heading">#</a></h2>
+<p>As they fall into the category of constraint satisfaction problems, Sudokus are (in a quantum sense) usually tackled using Grover’s algorithm (SPOILER ALERT: we won’t be using that approach). In this case constructing the oracle is rather straight forward, if the circuits for evaluating numerical comparisons are available. This, however, comes with the drawback that the state space of the search grows exponentially, which the quadratic speed-up of the Grover search barely mitigates. Of course
+there are much better ways of solving a Sudoku than just trying out every single combination; the same also holds true for the quantum realm. In this tutorial you will learn how a strategy called <em>backtracking</em> can be used to utilize the problem structure to gain a performance advantage.</p>
+<p>Backtracking approaches encopass a large class of algorithms, which are usually specified by both an <code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> function. Furthermore, a set of possible assignments to an array of fixed length is also required. For a more detailed introduction consider <a class="reference external" href="https://www.geeksforgeeks.org/introduction-to-backtracking-data-structure-and-algorithm-tutorials/" rel="noreferrer" target="_blank">this page</a> or <a class="reference external" href="https://en.wikipedia.org/wiki/Backtracking" rel="noreferrer" target="_blank">this page</a>. In general, the algorithm in Python code usually boils
+down to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">,</span> <span class="n">assignments</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">backtracking</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">accept</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">reject</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">max_depth</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">assigments</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">backtracking</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</section>
+<section id="Quantum-backtracking">
+<h2>Quantum backtracking<a class="headerlink" href="#Quantum-backtracking" title="Link to this heading">#</a></h2>
+<p>The quantum algorithm for solving backtracking problems has been <a class="reference external" href="https://arxiv.org/abs/1509.02374" rel="noreferrer" target="_blank">proposed by Ashley Montanaro</a> and yields a 1 to 1 correspondence between an arbitrary classical backtracking algorithm and its quantum equivalent. The quantum version achieves a quadratic speed up over the classical one.</p>
+<p>The algorithm is based on performing quantum phase estimation on a quantum walk operator, which traverses the backtracking tree. The core algorithm returns “Solution exists” if the 0 component of the quantum phase estimation result has a higher probability then 3/8 = 0.375.</p>
+<p>Similar to the classical version, in our Qrispy implementation of this quantum algorithm, a backtracking problem is specified by a maximum recursion depth and two functions, each returning a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a> respectively:</p>
+<p><strong>accept</strong>: Is the function that returns True, if called on a node, satisfying the specifications.</p>
+<p><strong>reject</strong>: Is the function that returns True, if called on a node, representing a branch that should no longer be considered.</p>
+<p>Also required is a <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> <code class="docutils literal notranslate"><span class="pre">branch_qv</span></code> that specifies the branches that can be taken by the algorithm at each node.</p>
+<p><strong>Node encoding</strong></p>
+<p>An important aspect of this algorithm is the node encoding. In Montanaro’s paper, a central quantity is the distance from the root <span class="math notranslate nohighlight">\(\ell(x)\)</span>. We realized that this doesn’t generalize well to the specification of subtrees, which is why we encode the height of a node. In a tree with maximum depth <span class="math notranslate nohighlight">\(n\)</span>, for example, a leaf has height 0 and the root has height <span class="math notranslate nohighlight">\(n\)</span>.</p>
+<p>This quantity is encoded as a one-hot integer QuantumVariable, which can be found under the attribute <code class="docutils literal notranslate"><span class="pre">h</span></code>.</p>
+<p>To fully identify a node, we also need to specify the path to take starting at the root. This path is encoded in a <a class="reference internal" href="../../reference/Core/QuantumArray.html"><span class="doc">QuantumArray</span></a>, which can be found under the attribute <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code>. The variable <code class="docutils literal notranslate"><span class="pre">branch_qv</span></code> serves as a template for the entries of this array. To fit into the setting of height encoding, this array contains the reversed path.</p>
+<p>We summarize the encoding by giving an example:</p>
+<p>In a binary tree with depth 4, the node that has the path from the root [0,1] is encoded by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\ket{\text{branch qa}} &amp;= \ket{[0,0,1,0]}\\
+\ket{\text{h}} = \ket{2} &amp;= \ket{00100}\\
+\ket{x} &amp;= \ket{\text{branch qa}}\ket{\text{h}}
+\end{align}\end{split}\]</div>
+<p><strong>Details on the predicate functions</strong></p>
+<p>The predicate functions <code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> must meet certain conditions for the algorithm to function properly:</p>
+<ul class="simple">
+<li><p>Both functions have to return a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a>.</p></li>
+<li><p>Both functions must not change the state of the tree.</p></li>
+<li><p>Both functions must delete/uncompute all temporarily created QuantumVariables.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> must never return <code class="docutils literal notranslate"><span class="pre">True</span></code> on the same node.</p></li>
+</ul>
+<p>More details for the Qrisp interface to quantum backtracking (including visualisation features) can be found in the <a class="reference internal" href="../../reference/Algorithms/QuantumBacktrackingTree.html"><span class="doc">QuantumBacktrackingTree</span></a> documentation.</p>
+<p>Let us illustrate this with an example for a binary tree of depth 3:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">accept</span></code> function below simply marks the node with the path [1,1,1] starting from the root in a tree of depth 3.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">reject</span></code> function discards the node with path [0] starting from the root in a tree of depth 3.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBacktrackingTree</span>
+
+
+<span class="c1"># Automatically delete/uncompute all temporarily created QuantumVariables.</span>
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="c1"># Marks the node with the path [1,1,1]</span>
+    <span class="c1"># starting from the root in a tree of depth 3.</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span>
+        <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span>
+        <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="c1"># Discards the node with path [0]</span>
+    <span class="c1"># starting from the root in a tree of depth 3.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="o">==</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<p>Next, we initalize the <code class="docutils literal notranslate"><span class="pre">QuantumBacktrackingTree</span></code> in the <span class="math notranslate nohighlight">\(\ket{\text{root}}=\ket{[0,0,0]}\ket{3}\)</span> state, and apply two steps of the <strong>discrete quantum walk</strong>. One step of the walk consists of applying the diffusion operators <span class="math notranslate nohighlight">\(R_A\)</span> and <span class="math notranslate nohighlight">\(R_B\)</span> which act as identity <span class="math notranslate nohighlight">\(\mathbb{I}\)</span> on a marked node <span class="math notranslate nohighlight">\(x\)</span>, as minus identity <span class="math notranslate nohighlight">\(-\mathbb{I}\)</span> on a rejected node <span class="math notranslate nohighlight">\(x\)</span>, and as a reflection in the invariant subspace <span class="math notranslate nohighlight">\(\mathcal{H}_x\)</span> spanned by a node <span class="math notranslate nohighlight">\(x\)</span> and is
+child nodes <span class="math notranslate nohighlight">\(x\rightarrow y\)</span>. (See <a class="reference external" href="https://arxiv.org/abs/2402.10060" rel="noreferrer" target="_blank">this paper</a> for more details.)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tree</span> <span class="o">=</span> <span class="n">QuantumBacktrackingTree</span><span class="p">(</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">branch_qv</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="c1"># Use 1 qubit variable for a binary tree.</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="p">,</span>
+    <span class="n">reject</span><span class="o">=</span><span class="n">reject</span>
+<span class="p">)</span>
+<span class="n">tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">([])</span> <span class="c1"># Initialize tree in the |root&gt; = |[0,0,0]&gt;|3&gt; state.</span>
+
+<span class="c1"># Create a figure with 2 rows and 2 columns.</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">axs</span> <span class="o">=</span> <span class="n">axs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># Flatten to iterate easily: 0, 1, 2, 3.</span>
+
+<span class="c1"># Apply two steps of the discrete quantum walk operator R_B R_A.</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="c1"># Apply R_A.</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">qstep_diffuser</span><span class="p">(</span><span class="n">even</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Act on</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">visualize_statevector</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: After R_A&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+    <span class="c1"># Apply R_B.</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">qstep_diffuser</span><span class="p">(</span><span class="n">even</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">visualize_statevector</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: After R_B&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/general_tutorial_Sudoku_7_1.png" src="../../_images/general_tutorial_Sudoku_7_1.png" />
+</div>
+</div>
+<p>The tree visualization provides a look at how the quantum state evolves. The colors of the nodes (green, purple) indicate the sign of their (non-zero) amplitudes and the brightness signifies the magnitude of the amplitudes in a superposition state. Conversely, black nodes indicate zero amplitudes. We observe the following:</p>
+<ul class="simple">
+<li><p>Top left (<span class="math notranslate nohighlight">\(\ket{x}=R_A\ket{r}\)</span>): The initial application of the diffuser <span class="math notranslate nohighlight">\(R_A\)</span> explores the children of the root. At this stage, all first-level nodes, including the rejected node [0], are explored and possess non-zero amplitudes.</p></li>
+<li><p>Top right (<span class="math notranslate nohighlight">\(\ket{x}=R_BR_A\ket{r}\)</span>): The pruning mechanism becomes visible. Branches originating from the rejected node [0] remain unexplored. This occurs because the diffuser <span class="math notranslate nohighlight">\(R_B\)</span> acts as <span class="math notranslate nohighlight">\(-\mathbb{I}\)</span> on the node state <span class="math notranslate nohighlight">\(\ket{x} = \ket{[0,0,0]}\ket{2}\)</span>.</p></li>
+<li><p>Bottom: The quantum walk further explores the valid branches of the tree.</p></li>
+</ul>
+</section>
+<section id="Quantum-backtracking-for-solving-a-Sudoku-puzzle">
+<h2>Quantum backtracking for solving a Sudoku puzzle<a class="headerlink" href="#Quantum-backtracking-for-solving-a-Sudoku-puzzle" title="Link to this heading">#</a></h2>
+<p>Now that we understood each separate element of the problem, we can start putting them together. Since most of the quantum backtracking logic is already settled with the Qrisp interface we are just left to implement the <code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> functions. The first step here is to set-up a Sudoku board. To keep the algorithm still treatable with simulators, we will restrict ourselves to 4x4 Sudokus, however the traditional 9x9 is equally possible.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">sudoku_board</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+
+<span class="n">num_empty_fields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sudoku_board</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This array represents a Sudoku board with 3 empty fields, that are to be filled. Assuming, that we already have the <code class="docutils literal notranslate"><span class="pre">accept</span></code> and <code class="docutils literal notranslate"><span class="pre">reject</span></code> functions that we will construct below, we encode this Sudoku puzzle:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBacktrackingTree</span> <span class="k">as</span> <span class="n">QBT</span>
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">QBT</span><span class="p">(</span><span class="n">max_depth</span> <span class="o">=</span> <span class="n">num_empty_fields</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+           <span class="n">branch_qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+           <span class="n">accept</span> <span class="o">=</span> <span class="n">accept</span><span class="p">,</span>
+           <span class="n">reject</span> <span class="o">=</span> <span class="n">reject</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, the statement <code class="docutils literal notranslate"><span class="pre">branch_qv</span> <span class="pre">=</span> <span class="pre">QuantumFloat(2)</span></code> indicates, that each assignment of the backtracking problem is a 2-qubit integer. These assignments are saved in a QuantumArray of size <code class="docutils literal notranslate"><span class="pre">max_depth</span></code>. We have to add one additional entry because of reasons that will soon become clear.</p>
+<section id="The-accept-function">
+<h3>The accept function<a class="headerlink" href="#The-accept-function" title="Link to this heading">#</a></h3>
+<p>This function is rather simple: A Sudoku board is solved correctly if all entries are filled with numbers that do not contradict the rules of Sudoku. In backtracking language this means, that a node is accepted if it has height <span class="math notranslate nohighlight">\(0\)</span> and none of its ancestor nodes were rejected. Thus, the implementation of this function is rather simple:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">tree</span><span class="o">.</span><span class="n">h</span> <span class="o">==</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+<p>However, there is a caveat for practical reasons: While Montanaro suggests that the algorithm should never explore rejected nodes, in our implementation rejected nodes are explored but have no children. As described above, we need to pick the depth to be <span class="math notranslate nohighlight">\(n = k + 1\)</span> where <span class="math notranslate nohighlight">\(k\)</span> is the number of empty fields in the Sudoku board. Otherwise, i.e., if <span class="math notranslate nohighlight">\(n = k\)</span>, the sibling nodes of the solution might be rejected. Because of this fact, the algorithm will still explore them and evaluate
+<code class="docutils literal notranslate"><span class="pre">accept</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> (because they have height 0), leading to the ambiguous situation that a node returns <code class="docutils literal notranslate"><span class="pre">True</span></code> for both <code class="docutils literal notranslate"><span class="pre">reject</span></code> and <code class="docutils literal notranslate"><span class="pre">accept</span></code>.</p>
+</section>
+<section id="The-reject-function">
+<h3>The reject function<a class="headerlink" href="#The-reject-function" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">reject</span></code> function is more complicated because this function needs to consider the Sudoku board and check whether all the assignments are in compliance with the rules of Sudoku. Another layer of complexity is introduced by the fact that the <code class="docutils literal notranslate"><span class="pre">reject</span></code> function should only consider entries that have already been assigned. To keep our presentation comprehensive, we will first implement a function, which checks a fully assigned Sudoku board and then modify this function such that it can also
+ignore non-assigned values.</p>
+</section>
+<section id="Mapping-to-a-graph-coloring-problem">
+<h3>Mapping to a graph-coloring problem<a class="headerlink" href="#Mapping-to-a-graph-coloring-problem" title="Link to this heading">#</a></h3>
+<p>To check the compliance of a fully assigned Sudoku board (encoded in <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code>), the first step is to transform it into a graph-coloring problem. This implies that we represent each entry of the Sudoku board (given or assigned) as a node of an undirected graph <span class="math notranslate nohighlight">\(G\)</span>. The rules of Sudoku (columns, rows, and squares containing only distinct entries) are then included by adding an edge to <span class="math notranslate nohighlight">\(G\)</span> for each comparison that needs to be performed to assert distinctness of the elements.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sudoku_to_graph</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a 4x4 Sudoku problem into a graph coloring problem using networkx.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - sudoku_board: 4x4 numpy array with numbers 0 to 3 for set fields and -1 for empty fields.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - G: networkx graph representing the Sudoku problem.</span>
+<span class="sd">    - empty_nodes: list of nodes corresponding to the empty fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create an empty graph</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">empty_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Add nodes and edges</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">sudoku_board</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+
+                <span class="c1"># Add node for each empty cell</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                <span class="n">empty_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+                <span class="c1"># Connect to nodes in the same row</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
+
+                        <span class="c1"># This distincts, wether it is a quantum-quantum or a</span>
+                        <span class="c1"># classical quantum comparison.</span>
+                        <span class="c1"># Multiple classical-quantum comparisons can be executed</span>
+                        <span class="c1"># in a single QuantumDictionary call</span>
+                        <span class="k">if</span> <span class="n">sudoku_board</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;qq&quot;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;cq&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Connect to nodes in the same column</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">i</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">sudoku_board</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;qq&quot;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;cq&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Connect to nodes in the same 2x2 subgrid</span>
+                <span class="n">subgrid_start_row</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="n">subgrid_start_col</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">subgrid_start_row</span><span class="p">,</span> <span class="n">subgrid_start_row</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">subgrid_start_col</span><span class="p">,</span> <span class="n">subgrid_start_col</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="n">node</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">sudoku_board</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                                <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;qq&quot;</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">),</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;cq&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">G</span><span class="p">,</span> <span class="n">empty_nodes</span>
+</pre></div>
+</div>
+</div>
+<p>For obvious reasons, we add an edge only if at least one of the participating nodes represents an assigned field. Furthermore, we distinguish between quantum-quantum edges, i.e., a comparison between two empty fields, and classical-quantum edges. This is because for any given node the latter type can be batched together into a single <a class="reference internal" href="../../reference/Core/QuantumDictionary.html"><span class="doc">QuantumDictionary</span></a> call. To capture this fact, we write a helper function, which extracts the comparisons in the
+following form:</p>
+<ul class="simple">
+<li><p>quantum-quantum comparisons in the form <code class="docutils literal notranslate"><span class="pre">list[(int,</span> <span class="pre">int)]</span></code> where the integers indicate the position of the corresponding empty field</p></li>
+<li><p>classical-quantum comparisons in the form <code class="docutils literal notranslate"><span class="pre">dict({int</span> <span class="pre">:</span> <span class="pre">list[int]})</span></code>. Here the keys of the dictionary indicate the position of the corresponding empty field and the values are the list of numbers to compare to.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">extract_comparisons</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a Sudoku board in the form of a numpy array</span>
+<span class="sd">    where the empty fields are indicated by the value -1.</span>
+
+<span class="sd">    Returns two lists:</span>
+<span class="sd">    1. The quantum-quantum comparisons in the form of a list[(int, int)]</span>
+<span class="sd">    2. The batched classical-quantum comparisons in the form dict({int : list[int]})</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">num_empty_fields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sudoku_board</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Generate the comparison graph</span>
+    <span class="n">graph</span><span class="p">,</span> <span class="n">empty_nodes</span> <span class="o">=</span> <span class="n">sudoku_to_graph</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">)</span>
+
+    <span class="c1"># Generate the list of required comparisons</span>
+
+    <span class="c1"># This dictionary contains the classical-quantum comparisons for each</span>
+    <span class="c1"># quantum entry</span>
+    <span class="n">cq_checks</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">q_assignment_index</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">q_assignment_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_empty_fields</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># This dictionary contains the quantum-quantum comparisons as tuples</span>
+    <span class="n">qq_checks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Each edge of the graph corresponds to a comparison.</span>
+    <span class="c1"># We therefore iterate over the edges distinguish between the classical-quantum</span>
+    <span class="c1"># and quantum-quantum comparisons</span>
+
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">edge_type</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_edge_data</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)[</span><span class="s2">&quot;edge_type&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Append the quantum-quantum comparison to the corresponding list</span>
+        <span class="k">if</span> <span class="n">edge_type</span> <span class="o">==</span> <span class="s2">&quot;qq&quot;</span><span class="p">:</span>
+            <span class="n">assigment_index_0</span> <span class="o">=</span> <span class="n">empty_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">assigment_index_1</span> <span class="o">=</span> <span class="n">empty_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">qq_checks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">assigment_index_0</span><span class="p">,</span> <span class="n">assigment_index_1</span><span class="p">))</span>
+
+        <span class="c1"># Append the classical quantum comparison to the corresponding dictionary</span>
+        <span class="k">elif</span> <span class="n">edge_type</span> <span class="o">==</span> <span class="s2">&quot;cq&quot;</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">sudoku_board</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">q_assignment_index</span> <span class="o">=</span> <span class="n">empty_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">cq_checks</span><span class="p">[</span><span class="n">q_assignment_index</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">q_assignment_index</span> <span class="o">=</span> <span class="n">empty_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">cq_checks</span><span class="p">[</span><span class="n">q_assignment_index</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">qq_checks</span><span class="p">,</span> <span class="n">cq_checks</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Evaluating-the-comparisons">
+<h3>Evaluating the comparisons<a class="headerlink" href="#Evaluating-the-comparisons" title="Link to this heading">#</a></h3>
+<p>The next step is to evaluate the comparisons to check for element distinctness. This means that we iterate over the edges of the graph and compute a QuantumBool for each edge indicating distinctness of the two connected nodes. For this, we distinguish between the quantum-quantum and the classical-quantum comparison cases. For the first case, we simply call the <code class="docutils literal notranslate"><span class="pre">==</span></code> operator on the two participating quantum variables to compute the comparison QuantumBool.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval_qq_checks</span><span class="p">(</span><span class="n">qq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batched cq_checks is a list of the form</span>
+
+<span class="sd">    [(int, int)]</span>
+
+<span class="sd">    Where each tuple entry corresponds the index</span>
+<span class="sd">    of the quantum value that should be compared.</span>
+<span class="sd">    q_assigments is a QuantumArray of QuantumFloats,</span>
+<span class="sd">    containing the assignments of the Sudoku field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create result list</span>
+    <span class="n">res_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Iterate over all comparison tuples</span>
+    <span class="c1"># to evaluate the comparisons.</span>
+    <span class="k">for</span> <span class="n">ind_0</span><span class="p">,</span> <span class="n">ind_1</span> <span class="ow">in</span> <span class="n">qq_checks</span><span class="p">:</span>
+        <span class="c1"># Evaluate the comparison</span>
+        <span class="n">eq_qbl</span> <span class="o">=</span> <span class="n">q_assigments</span><span class="p">[</span><span class="n">ind_0</span><span class="p">]</span> <span class="o">==</span> <span class="n">q_assigments</span><span class="p">[</span><span class="n">ind_1</span><span class="p">]</span>
+        <span class="n">res_qbls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eq_qbl</span><span class="p">)</span>
+
+    <span class="c1"># Return results</span>
+    <span class="k">return</span> <span class="n">res_qbls</span>
+</pre></div>
+</div>
+</div>
+<p>We test the functionality:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_assigments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+
+<span class="n">q_assigments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+<span class="n">comparison_bools</span> <span class="o">=</span> <span class="n">eval_qq_checks</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)],</span> <span class="n">q_assigments</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">qbl</span> <span class="ow">in</span> <span class="n">comparison_bools</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+
+<span class="c1"># Yields</span>
+<span class="c1"># {False: 1.0}</span>
+<span class="c1"># {True: 1.0}</span>
+<span class="c1"># {False: 1.0}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{False: 1.0}
+{True: 1.0}
+{False: 1.0}
+</pre></div></div>
+</div>
+<p>As mentioned earlier, classical-quantum comparisons can be batched together to be evaluated in a single function call. This is performed using the QuantumDictionary class. For this, we create a function that receives a QuantumVariable and a list of classical values and returns a QuantumBool indicating, whether the quantum value is contained in the classical list:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cq_eq_check</span><span class="p">(</span><span class="n">q_value</span><span class="p">,</span> <span class="n">cl_values</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Receives a QuantumVariable and a list of classical</span>
+<span class="sd">    values and returns a QuantumBool, indicating whether</span>
+<span class="sd">    the value of the QuantumVariable is contained in the</span>
+<span class="sd">    list of classical values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cl_values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># If there are no values to compare with, we</span>
+        <span class="c1"># return False</span>
+        <span class="k">return</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="c1"># Create dictionary</span>
+    <span class="n">qd</span> <span class="o">=</span> <span class="n">QuantumDictionary</span><span class="p">(</span><span class="n">return_type</span><span class="o">=</span><span class="n">QuantumBool</span><span class="p">())</span>
+
+    <span class="c1"># Determine the values that q_value can assume</span>
+    <span class="n">value_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">q_value</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">q_value</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="c1"># Fill dictionary with entries</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">value_range</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">cl_values</span><span class="p">:</span>
+            <span class="n">qd</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qd</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Evaluate dictionary with quantum value</span>
+    <span class="k">return</span> <span class="n">qd</span><span class="p">[</span><span class="n">q_value</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>We test the functionality:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_value</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">q_value</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="p">}</span>
+<span class="n">cl_values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+<span class="n">res_qbl</span> <span class="o">=</span> <span class="n">cq_eq_check</span><span class="p">(</span><span class="n">q_value</span><span class="p">,</span> <span class="n">cl_values</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">res_qbl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">())</span>
+<span class="c1"># sqrt(2)*(|0&gt;*|False&gt; + |1&gt;*|True&gt;)/2</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+sqrt(2)*(|0&gt;*|False&gt; + |1&gt;*|True&gt;)/2
+</pre></div></div>
+</div>
+<p>The next step is to write a function, which performs multiple of these checks and returns a list of QuantumBool similar to the quantum-quantum case.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval_cq_checks</span><span class="p">(</span><span class="n">batched_cq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batched cq_checks is a dictionary of the form</span>
+
+<span class="sd">    {int : list[int]}</span>
+
+<span class="sd">    Where each key/value pair corresponds to</span>
+<span class="sd">    one batched quantum-classical comparison.</span>
+<span class="sd">    The keys represent the the quantum values</span>
+<span class="sd">    as indices of q_assigments and the values</span>
+<span class="sd">    are the list of classical values that</span>
+<span class="sd">    the quantum value should be compared with.</span>
+<span class="sd">    q_assigments and height are the quantum values</span>
+<span class="sd">    that specify the state of the tree.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create result list</span>
+    <span class="n">res_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Iterate over all key/value pairs to evaluate</span>
+    <span class="c1"># the comparisons.</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">batched_cq_checks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Evaluate the comparison</span>
+        <span class="n">eq_qbl</span> <span class="o">=</span> <span class="n">cq_eq_check</span><span class="p">(</span><span class="n">q_assigments</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">res_qbls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eq_qbl</span><span class="p">)</span>
+
+    <span class="c1"># Return results</span>
+    <span class="k">return</span> <span class="n">res_qbls</span>
+</pre></div>
+</div>
+</div>
+<p>We test the functionality:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_assigments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+<span class="n">q_assigments</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">res_qbls</span> <span class="o">=</span> <span class="n">eval_cq_checks</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]},</span> <span class="n">q_assigments</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">qbl</span> <span class="ow">in</span> <span class="n">res_qbls</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{False: 1.0}
+{True: 1.0}
+{True: 1.0}
+</pre></div></div>
+</div>
+<p>We can now write the function that checks the Sudoku board.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">check_sudoku_assignments</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a Sudoku board in the form of a numpy array</span>
+<span class="sd">    where the empty fields are indicated by the value -1.</span>
+
+<span class="sd">    Furthermore, q_assigments is a QuantumArray of type</span>
+<span class="sd">    type QuantumFloat, describing the assignments.</span>
+
+<span class="sd">    The function returns a QuantumBool, indicating whether</span>
+<span class="sd">    the assigments are a valid Sudoku solution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">num_empty_fields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sudoku_board</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num_empty_fields</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_assigments</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Number of empty field and length of assigment array disagree.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Generate the comparisons</span>
+    <span class="n">qq_checks</span><span class="p">,</span> <span class="n">cq_checks</span> <span class="o">=</span> <span class="n">extract_comparisons</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate the comparisons</span>
+    <span class="n">comparison_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># quantum-quantum</span>
+    <span class="n">comparison_qbls</span> <span class="o">+=</span> <span class="n">eval_qq_checks</span><span class="p">(</span><span class="n">qq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">)</span>
+
+    <span class="c1"># classical-quantum</span>
+    <span class="n">comparison_qbls</span> <span class="o">+=</span> <span class="n">eval_cq_checks</span><span class="p">(</span><span class="n">cq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">)</span>
+
+    <span class="c1"># Allocate result</span>
+    <span class="n">sudoku_valid</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="c1"># Compute the result</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">comparison_qbls</span><span class="p">,</span> <span class="n">sudoku_valid</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;balauca&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sudoku_valid</span>
+</pre></div>
+</div>
+</div>
+<p>We test the functionality:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_assignments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,))</span>
+<span class="n">q_assignments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+<span class="n">sudoku_check</span> <span class="o">=</span> <span class="n">check_sudoku_assignments</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assignments</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sudoku_check</span><span class="p">)</span>
+<span class="c1"># Yields {True: 1.0}</span>
+
+<span class="c1"># Another check</span>
+
+<span class="n">q_assignments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,))</span>
+<span class="n">q_assignments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+<span class="n">sudoku_check</span> <span class="o">=</span> <span class="n">check_sudoku_assignments</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assignments</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sudoku_check</span><span class="p">)</span>
+<span class="c1"># Yields {False: 1.0}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{True: 1.0}
+{False: 1.0}
+</pre></div></div>
+</div>
+<p>So far so good! This could have already been used in a Grover based implementation, but as discussed before, we want to utilize the <strong>structure</strong> of the problem!</p>
+</section>
+</section>
+<section id="Adaptation-for-Quantum-Backtracking">
+<h2>Adaptation for Quantum Backtracking<a class="headerlink" href="#Adaptation-for-Quantum-Backtracking" title="Link to this heading">#</a></h2>
+<p>As this is a backtracking implementation, our Sudoku compliance check also has to understand that the results of certain comparisons should be ignored, since the corresponding fields are not assigned yet. For example, consider a Sudoku field with 4 empty fields, where only one field has been assigned so far. In our implementation of the algorithm, the empty fields are encoded as zeros in <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code> and we only know that they are not assigned yet by considering the height QuantumVariable. The
+implementation of the Sudoku-check algorithm given above would therefore return “not valid” for almost every single node, because it assumes that the 3 remaining empty fields carry the value 0 even though in reality they have not been assigned yet. Because of that we need to also take the value of the height variable <code class="docutils literal notranslate"><span class="pre">h</span></code> into consideration, describing the height of the node in the QuantumBacktrackingTree.</p>
+<p>Fortunately, the one-hot encoding of this variable makes this rather easy: The value that has been assigned most recently is indicated by the corresponding qubit in <code class="docutils literal notranslate"><span class="pre">h</span></code> being in the <span class="math notranslate nohighlight">\(\ket{1}\)</span> state. For example, in a tree of maximum depth 5, if the <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code> entry with height 3 has been assigned recently, <code class="docutils literal notranslate"><span class="pre">h</span></code> will be in the state <span class="math notranslate nohighlight">\(000100\)</span>. The next assignment would then be height 2, i.e. <span class="math notranslate nohighlight">\(001000\)</span>. For a quantum-classical comparison with the <code class="docutils literal notranslate"><span class="pre">branch_qa</span></code> entry
+<span class="math notranslate nohighlight">\(i\)</span>, we can therefore simply call the comparison evaluation controlled on the <span class="math notranslate nohighlight">\(i\)</span>-th qubit in <code class="docutils literal notranslate"><span class="pre">h</span></code>. This implies that this comparison can only result in <code class="docutils literal notranslate"><span class="pre">True</span></code>, and as a result cause the <code class="docutils literal notranslate"><span class="pre">reject</span></code> value to be <code class="docutils literal notranslate"><span class="pre">True</span></code> if <span class="math notranslate nohighlight">\(i\)</span> was assigned most recently.</p>
+<p>We reformulate the classical comparison function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval_cq_checks</span><span class="p">(</span><span class="n">batched_cq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batched cq_checks is a dictionary of the form</span>
+
+<span class="sd">    {int : list[int]}</span>
+
+<span class="sd">    Each key/value pair corresponds to</span>
+<span class="sd">    one batched quantum-classical comparison.</span>
+<span class="sd">    The keys represent the the quantum values</span>
+<span class="sd">    as indices of q_assigments and the values</span>
+<span class="sd">    are the list of classical values that</span>
+<span class="sd">    the quantum value should be compared with.</span>
+<span class="sd">    q_assigments and height are the quantum values</span>
+<span class="sd">    that specify the state of the tree.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create result list</span>
+    <span class="n">res_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Iterate over all key/value pairs to evaluate</span>
+    <span class="c1"># the comparisons.</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">batched_cq_checks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Enter the control environment</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
+            <span class="c1"># Evaluate the comparison</span>
+            <span class="n">eq_qbl</span> <span class="o">=</span> <span class="n">cq_eq_check</span><span class="p">(</span><span class="n">q_assigments</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">res_qbls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eq_qbl</span><span class="p">)</span>
+
+    <span class="c1"># Return results</span>
+    <span class="k">return</span> <span class="n">res_qbls</span>
+</pre></div>
+</div>
+</div>
+<p>The code example above demonstrates a function that takes a dictionary representing the batched quantum-classical equality checks, the <code class="docutils literal notranslate"><span class="pre">QuantumArray</span> <span class="pre">branch_qa</span></code>, and the QuantumVariable <code class="docutils literal notranslate"><span class="pre">h</span></code> as input. It returns a list of of QuantumBool that represent the result of the comparisons. Note the line <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">control(h[key]):</span></code> which enters a ControlEnvironment. This means that every quantum instruction that happens in the indented area is controlled on the qubit <code class="docutils literal notranslate"><span class="pre">h[key]</span></code>. As described above, this
+feature ensures that the comparison of values that are not assigned yet cannot contribute to the result of the <code class="docutils literal notranslate"><span class="pre">reject</span></code> function.</p>
+<p>We adopt a similar approach for the quantum-quantum comparison. For a comparison between the <span class="math notranslate nohighlight">\(i\)</span>-th and <span class="math notranslate nohighlight">\(j\)</span>-th position, we control the comparison on the <span class="math notranslate nohighlight">\(k\)</span>-th qubit of the <code class="docutils literal notranslate"><span class="pre">h</span></code> variable where <span class="math notranslate nohighlight">\(k = \text{min}(i,j)\)</span>. This way only comparisons are executed on recently assigned variables, preventing rejections for cases involving variables that are either not assigned at all or not recently assigned. For more details, consult the corresponding section of the paper.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval_qq_checks</span><span class="p">(</span><span class="n">qq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batched cq_checks is a list of the form</span>
+
+<span class="sd">    [(int, int)]</span>
+
+<span class="sd">    Where each tuple entry corresponds the index</span>
+<span class="sd">    of the quantum value that should be compared.</span>
+<span class="sd">    branch_qa and height are the quantum values</span>
+<span class="sd">    that specify the tree state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create result list</span>
+    <span class="n">res_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Iterate over all comparison tuples</span>
+    <span class="c1"># to evaluate the comparisons.</span>
+    <span class="k">for</span> <span class="n">ind_0</span><span class="p">,</span> <span class="n">ind_1</span> <span class="ow">in</span> <span class="n">qq_checks</span><span class="p">:</span>
+        <span class="c1"># Enter the control environment</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">ind_0</span><span class="p">,</span> <span class="n">ind_1</span><span class="p">)]):</span>
+            <span class="c1"># Evaluate the comparison</span>
+            <span class="n">eq_qbl</span> <span class="o">=</span> <span class="n">q_assigments</span><span class="p">[</span><span class="n">ind_0</span><span class="p">]</span> <span class="o">==</span> <span class="n">q_assigments</span><span class="p">[</span><span class="n">ind_1</span><span class="p">]</span>
+        <span class="n">res_qbls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eq_qbl</span><span class="p">)</span>
+
+    <span class="c1"># Return results</span>
+    <span class="k">return</span> <span class="n">res_qbls</span>
+</pre></div>
+</div>
+</div>
+<p>Similarly to the previous case, we can now create the Sudoku checking function but this time ignoring all the non-assigned values.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">check_singular_sudoku_assignment</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes the following arguments:</span>
+
+<span class="sd">    1. sudoku_board is Sudoku board in the form of a numpy array</span>
+<span class="sd">    where the empty fields are indicated by the value -1.</span>
+
+<span class="sd">    2. q_assigments is a QuantumArray of type</span>
+<span class="sd">    type QuantumFloat, describing the assignments.</span>
+
+<span class="sd">    3. h is a one-hot encoded QuantumVariable representing, which</span>
+<span class="sd">    assignment should be checked for validity</span>
+
+<span class="sd">    The function returns a QuantumBool, indicating whether</span>
+<span class="sd">    the assigment indicated by h respects the rules of Sudoku.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">num_empty_fields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sudoku_board</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num_empty_fields</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_assigments</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Number of empty field and length of assigment array disagree.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Generate the comparisons</span>
+    <span class="n">qq_checks</span><span class="p">,</span> <span class="n">cq_checks</span> <span class="o">=</span> <span class="n">extract_comparisons</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate the comparisons</span>
+    <span class="n">comparison_qbls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># quantum-quantum</span>
+    <span class="n">comparison_qbls</span> <span class="o">+=</span> <span class="n">eval_qq_checks</span><span class="p">(</span><span class="n">qq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="c1"># classical-quantum</span>
+    <span class="n">comparison_qbls</span> <span class="o">+=</span> <span class="n">eval_cq_checks</span><span class="p">(</span><span class="n">cq_checks</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="c1"># Allocate result</span>
+    <span class="n">sudoku_valid</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="c1"># Compute the result</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">comparison_qbls</span><span class="p">,</span> <span class="n">sudoku_valid</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;balauca&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sudoku_valid</span>
+</pre></div>
+</div>
+</div>
+<p>We can now test it:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_assigments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,))</span>
+<span class="n">q_assigments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">OHQInt</span>
+
+<span class="n">h</span> <span class="o">=</span> <span class="n">OHQInt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">test_qbl</span> <span class="o">=</span> <span class="n">check_singular_sudoku_assignment</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">test_qbl</span><span class="p">)</span>
+<span class="c1"># Yields {True: 1.0}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{True: 1.0}
+</pre></div></div>
+</div>
+<p>Even though the first two entries are 0 and they are in the same quadrant, their comparisons is not evaluated so our function still returns <code class="docutils literal notranslate"><span class="pre">True</span></code> because the assignment corresponding to height 2 passes all the checks. We can repeat the experiment with an invalid assignment at height 2.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_assigments</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,))</span>
+<span class="n">q_assigments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">OHQInt</span>
+
+<span class="n">h</span> <span class="o">=</span> <span class="n">OHQInt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">h</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">test_qbl</span> <span class="o">=</span> <span class="n">check_singular_sudoku_assignment</span><span class="p">(</span><span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">test_qbl</span><span class="p">)</span>
+<span class="c1"># Yields {False: 1.0}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{False: 1.0}
+</pre></div></div>
+</div>
+<p>We can therefore now finally formulate our reject function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reject</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+
+    <span class="c1"># Cut off the assignment with height 0</span>
+    <span class="c1"># since it is not relevant for the sudoku</span>
+    <span class="c1"># checker</span>
+    <span class="n">q_assigments</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">branch_qa</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="c1"># Modify the height to reflect the cut off</span>
+    <span class="n">modified_height</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="n">assignment_valid</span> <span class="o">=</span> <span class="n">check_singular_sudoku_assignment</span><span class="p">(</span>
+        <span class="n">sudoku_board</span><span class="p">,</span> <span class="n">q_assigments</span><span class="p">,</span> <span class="n">modified_height</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">assignment_valid</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<section id="Finding-a-solution">
+<h3>Finding a solution<a class="headerlink" href="#Finding-a-solution" title="Link to this heading">#</a></h3>
+<p>Finally, with the accept and reject funtions, we can encode our Sudoku puzzle as a backtracking tree and <strong>detect</strong> the existence of a solution. For this, the tree is initialized in the state <span class="math notranslate nohighlight">\(\ket{r}\)</span> (indicating the root) and quantum phase estimation (QPE) for the quantum walk operator with the specified <code class="docutils literal notranslate"><span class="pre">precision</span></code> is applied. The algorithm returns “Solution exists” if the 0 component of the quantum phase estimation result has a higher probability then 3/8 = 0.375. If the probability
+is less than 0.25, the algorithm returns “No solution exists”. Otherwise, the precision of the phase estimation has to be increased. To make the result still simulable on a laptop, we will decrease the amount of empty fields to 3. If you want to try higher more empty fields, we recommend using the Qiskit Aer MPS simulator. Find out how to deploy it using the <a class="reference internal" href="../../reference/Backend%20Interface/Hardware%20Backends/QiskitBackend.html"><span class="doc">QiskitBackend</span></a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Decrease the empty field count</span>
+<span class="n">sudoku_board</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+
+<span class="n">num_empty_fields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sudoku_board</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBacktrackingTree</span> <span class="k">as</span> <span class="n">QBT</span>
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">QBT</span><span class="p">(</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="n">num_empty_fields</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">branch_qv</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="p">,</span>
+    <span class="n">reject</span><span class="o">=</span><span class="n">reject</span><span class="p">,</span>
+    <span class="n">subspace_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Initialize root</span>
+<span class="n">tree</span><span class="o">.</span><span class="n">init_node</span><span class="p">([])</span>
+
+<span class="c1"># Perform QPE</span>
+<span class="n">qpe_res</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">estimate_phase</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Retrieve measurements</span>
+<span class="n">mes_res</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="n">mes_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.375</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Solution exists&quot;</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">mes_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.25</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No solution exists&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Insufficent precision&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Solution exists
+</pre></div></div>
+</div>
+<p>To <strong>find</strong> a solution, we employ the <code class="docutils literal notranslate"><span class="pre">find_solution</span></code> method. This method starts by applying the <code class="docutils literal notranslate"><span class="pre">estimate_phase</span></code> function to the entrire tree (initialized in the state <span class="math notranslate nohighlight">\(\ket{r}\)</span>) and, based on the (multi-) measurement results, recursively applies the <code class="docutils literal notranslate"><span class="pre">estimate_phase</span></code> function to subtrees in order to find a solution. Note that, in order to achieve a speed-up in practical scenarios, it is necessary to specify the <code class="docutils literal notranslate"><span class="pre">precision</span></code> and the number of measurements (by default 10000) for the
+<code class="docutils literal notranslate"><span class="pre">estimate_phase</span></code> method accordingly.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.quantum_backtracking</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBacktrackingTree</span> <span class="k">as</span> <span class="n">QBT</span>
+
+<span class="n">tree</span> <span class="o">=</span> <span class="n">QBT</span><span class="p">(</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="n">num_empty_fields</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">branch_qv</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="p">,</span>
+    <span class="n">reject</span><span class="o">=</span><span class="n">reject</span><span class="p">,</span>
+    <span class="n">subspace_optimization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sol</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">find_solution</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sol</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+<span class="c1"># Yields [1, 1, 2]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[np.int32(1), np.int32(1), np.int32(2)]
+</pre></div></div>
+</div>
+<p>With this, we can find the solution for Sudoku problems with up to 3 empty fields with the statevector simulator on our local computer. For instances with more empty fields, we can still find the solution with a matrix product state simulator that can be employd with the <code class="docutils literal notranslate"><span class="pre">measurement_kwargs</span></code> keyword.</p>
+<p>Well done on completing our quantum Sudoku-solving tutorial! You’re now part of an exclusive club, as this is the only guide of its kind available online. Pretty cool, huh? Remember, what makes quantum computing so exciting is how it taps into the unique structure of problems (like how we utilized the problem structure above). By understanding this, you’re diving headfirst into a world where quantum algorithms could outshine their classical counterparts.</p>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Sudoku">Sudoku</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Backtracking">Backtracking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-backtracking">Quantum backtracking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-backtracking-for-solving-a-Sudoku-puzzle">Quantum backtracking for solving a Sudoku puzzle</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#The-accept-function">The accept function</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#The-reject-function">The reject function</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Mapping-to-a-graph-coloring-problem">Mapping to a graph-coloring problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Evaluating-the-comparisons">Evaluating the comparisons</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Adaptation-for-Quantum-Backtracking">Adaptation for Quantum Backtracking</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Finding-a-solution">Finding a solution</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/Sudoku.ipynb" download="Sudoku.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

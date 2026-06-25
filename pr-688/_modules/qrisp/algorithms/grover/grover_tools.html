@@ -1,0 +1,1004 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.grover.grover_tools &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/grover/grover_tools';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/grover/grover_tools.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.grover.grover_tools</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.grover.grover_tools</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IterationEnvironment</span><span class="p">,</span>
+    <span class="n">QuantumArray</span><span class="p">,</span>
+    <span class="n">QuantumFloat</span><span class="p">,</span>
+    <span class="n">QuantumVariable</span><span class="p">,</span>
+    <span class="n">conjugate</span><span class="p">,</span>
+    <span class="n">control</span><span class="p">,</span>
+    <span class="n">gate_wrap</span><span class="p">,</span>
+    <span class="n">h</span><span class="p">,</span>
+    <span class="n">mcp</span><span class="p">,</span>
+    <span class="n">mcx</span><span class="p">,</span>
+    <span class="n">mcz</span><span class="p">,</span>
+    <span class="n">merge</span><span class="p">,</span>
+    <span class="n">p</span><span class="p">,</span>
+    <span class="n">recursive_qs_search</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">z</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.reflection</span><span class="w"> </span><span class="kn">import</span> <span class="n">reflection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span><span class="p">,</span> <span class="n">jrange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FloatLike</span>
+
+
+<span class="c1"># Applies the grover diffuser onto the (sequence of) quantum variable input_object</span>
+<div class="viewcode-block" id="diffuser">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.grover.diffuser.html#qrisp.grover.diffuser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">diffuser</span><span class="p">(</span>
+    <span class="n">input_object</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span><span class="p">],</span>
+    <span class="n">phase</span><span class="p">:</span> <span class="n">FloatLike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="n">state_function</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">reflection_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies the Grover diffuser onto (multiple) QuantumVariables.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_object : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]</span>
+<span class="sd">        The (list of) QuantumVariables to apply the Grover diffuser on.</span>
+<span class="sd">    phase : FloatLike, optional</span>
+<span class="sd">        Specifies the phase shift. The default is $\pi$, i.e. a</span>
+<span class="sd">        multi-controlled Z gate.</span>
+<span class="sd">    state_function : function, optional</span>
+<span class="sd">        A Python function preparing the initial state.</span>
+<span class="sd">        By default, the function prepares the uniform superposition state.</span>
+<span class="sd">    reflection_indices : list[int], optional</span>
+<span class="sd">        A list indicating with respect to which variables the reflection is performed.</span>
+<span class="sd">        By default, the reflection is performed with respect to all variables in ``input_object``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We apply the Grover diffuser onto several QuantumChars:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumChar</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp.grover import diffuser</span>
+<span class="sd">    &gt;&gt;&gt; q_ch_list = [QuantumChar(), QuantumChar(), QuantumChar()]</span>
+<span class="sd">    &gt;&gt;&gt; diffuser(q_ch_list)</span>
+<span class="sd">    &gt;&gt;&gt; print(q_ch_list[0].qs)</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">                  ┌────────────┐</span>
+<span class="sd">        q_ch_0.0: ┤0           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_0.1: ┤1           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_0.2: ┤2           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_0.3: ┤3           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_0.4: ┤4           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_1.0: ┤5           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_1.1: ┤6           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_1.2: ┤7  diffuser ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_1.3: ┤8           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_1.4: ┤9           ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_2.0: ┤10          ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_2.1: ┤11          ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_2.2: ┤12          ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_2.3: ┤13          ├</span>
+<span class="sd">                  │            │</span>
+<span class="sd">        q_ch_2.4: ┤14          ├</span>
+<span class="sd">                  └────────────┘</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">state_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_state_function</span><span class="p">(</span><span class="o">*</span><span class="n">qargs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">qargs</span><span class="p">:</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+        <span class="n">state_function</span> <span class="o">=</span> <span class="n">_state_function</span>
+
+    <span class="n">reflection</span><span class="p">(</span><span class="n">input_object</span><span class="p">,</span> <span class="n">state_function</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phase</span><span class="p">,</span> <span class="n">reflection_indices</span><span class="o">=</span><span class="n">reflection_indices</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="tag_state">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.grover.tag_state.html#qrisp.grover.tag_state">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tag_state</span><span class="p">(</span>
+    <span class="n">tag_specificator</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">binary_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">phase</span><span class="p">:</span> <span class="n">FloatLike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies a phase tag to (multiple) QuantumVariables. The tagged state is specified in</span>
+<span class="sd">    the dictionary ``tag_specificator``. This dictionary should contain the</span>
+<span class="sd">    QuantumVariables as keys and the labels of the states which should be tagged as</span>
+<span class="sd">    values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tag_specificator : dict</span>
+<span class="sd">        A dictionary specifying which state should be tagged.</span>
+<span class="sd">    binary_values : bool, optional</span>
+<span class="sd">        If set to True, the values in the tag_specificator dict have to be bitstrings</span>
+<span class="sd">        instead of labels. The default is False.</span>
+<span class="sd">    phase : FloatLike, optional</span>
+<span class="sd">        Specify the phase shift the tag should perform. The default is $\pi$, i.e. a</span>
+<span class="sd">        multi-controlled Z gate.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We construct an oracle that tags the states -3 and 2 on two QuantumFloats</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.grover import tag_state</span>
+
+<span class="sd">        def test_oracle(qf_list):</span>
+
+<span class="sd">            tag_dic = {qf_list[0] : -3, qf_list[1] : 2}</span>
+
+<span class="sd">            tag_state(tag_dic)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qv_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tag_specificator</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="n">qv</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">tag_specificator</span><span class="p">[</span><span class="n">qv</span><span class="p">])</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_list</span><span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">conjugator</span><span class="p">(</span><span class="n">qv_list</span><span class="p">,</span> <span class="n">temp_qf</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv_list</span><span class="p">)):</span>
+                <span class="n">mcx</span><span class="p">(</span><span class="n">qv_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">temp_qf</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;balauca&quot;</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">states</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qv_list</span><span class="p">)</span>
+        <span class="n">temp_qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">conjugator</span><span class="p">)(</span><span class="n">qv_list</span><span class="p">,</span> <span class="n">temp_qf</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">phase</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+                    <span class="n">z</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">phase</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+                    <span class="n">p</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">temp_qf</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">conjugator</span><span class="p">)(</span><span class="n">qv_list</span><span class="p">,</span> <span class="n">temp_qf</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">phase</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+                    <span class="n">h</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+                    <span class="n">mcx</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">[:</span> <span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">temp_qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;balauca&quot;</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+                    <span class="n">h</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">phase</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+                    <span class="n">mcp</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">temp_qf</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;balauca&quot;</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">temp_qf</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_specificator</span><span class="p">[</span><span class="n">qv</span><span class="p">]</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_list</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">states</span><span class="p">:</span>
+            <span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span> <span class="o">*</span> <span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_list</span><span class="p">]</span>
+
+        <span class="n">bit_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">bin_rep</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv_list</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">binary_values</span><span class="p">:</span>
+                <span class="n">bit_string</span> <span class="o">+=</span> <span class="n">states</span><span class="p">[</span><span class="n">i</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bit_string</span> <span class="o">+=</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">qv_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">states</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">qv_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">qubit_list</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_list</span><span class="p">],</span> <span class="p">[])</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">bit_string</span>
+
+        <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># The control state is the state we are looking for without the base qubit</span>
+        <span class="n">ctrl_state</span> <span class="o">=</span> <span class="n">state</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="n">mcz</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span> <span class="o">+</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mcp</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">qubit_list</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span> <span class="o">+</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Apply the final x gate</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="grovers_alg">
+<a class="viewcode-back" href="../../../../reference/Algorithms/Grover.html#qrisp.grover.grovers_alg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">grovers_alg</span><span class="p">(</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">QuantumArray</span><span class="p">],</span>
+    <span class="n">oracle_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">winner_state_amount</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exact</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies Grover&#39;s algorithm to a given oracle (in the form of a Python function).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]</span>
+<span class="sd">        The quantum variable, array, or collection thereof that defines the search space</span>
+<span class="sd">        for Grover&#39;s algorithm.</span>
+<span class="sd">    oracle_function : Callable</span>
+<span class="sd">        The quantum oracle function. This callable must accept ``args`` as its argument</span>
+<span class="sd">        and apply a phase flip to tag the target winner state(s).</span>
+<span class="sd">        Must uncompute any auxiliary QuantumVariables it uses.</span>
+<span class="sd">        If ``exact`` is set to True, the oracle function must also support the keyword argument</span>
+<span class="sd">        ``phase``, which specifies how much the winner states are phase-shifted</span>
+<span class="sd">        (in standard Grover, this would be $\pi$).</span>
+<span class="sd">    kwargs : dict, optional</span>
+<span class="sd">        A dictionary containing keyword arguments to be passed to the oracle. The default is None.</span>
+<span class="sd">    iterations : int, optional</span>
+<span class="sd">        The exact amount of Grover iterations to perform.</span>
+<span class="sd">    winner_state_amount : int, optional</span>
+<span class="sd">        If ``iterations`` is not specified, the optimal number of iterations is calculated</span>
+<span class="sd">        using the established mathematical formula based on the number of winner states.</span>
+<span class="sd">        The default assumption (if omitted) is 1.</span>
+<span class="sd">    exact : bool, optional</span>
+<span class="sd">        If set to True, the `exact version &lt;https://arxiv.org/pdf/quant-ph/0106071.pdf&gt;`_</span>
+<span class="sd">        of Grover&#39;s algorithm will be evaluated. For this, the correct</span>
+<span class="sd">        ``winner_state_amount`` must be supplied, and the oracle must support the</span>
+<span class="sd">        keyword argument ``phase`` to apply the calculated fractional phase shift.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``exact`` is set to True but ``winner_state_amount`` is not specified.</span>
+<span class="sd">    ZeroDivisionError</span>
+<span class="sd">        If ``winner_state_amount`` is 0.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We construct an oracle that tags the states -3 and 2 on two QuantumFloats and apply</span>
+<span class="sd">    Grover&#39;s algorithm.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat</span>
+
+<span class="sd">        #Create list of QuantumFloats</span>
+<span class="sd">        qf_list = [QuantumFloat(2, signed = True), QuantumFloat(2, signed = True)]</span>
+
+<span class="sd">        from qrisp.grover import tag_state, grovers_alg</span>
+
+<span class="sd">        def test_oracle(qf_list):</span>
+
+<span class="sd">            tag_dic = {qf_list[0] : -3, qf_list[1] : 2}</span>
+<span class="sd">            tag_state(tag_dic)</span>
+
+<span class="sd">        grovers_alg(qf_list, test_oracle)</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp.misc import multi_measurement</span>
+<span class="sd">    &gt;&gt;&gt; print(multi_measurement(qf_list))</span>
+<span class="sd">    {(-3, 2): 0.9966, (0, 0): 0.0001, (0, 1): 0.0001, (0, 2): 0.0001, (0, 3): 0.0001,</span>
+<span class="sd">    (0, -4): 0.0001, (0, -3): 0.0001, (0, -2): 0.0001, (0, -1): 0.0001, (1, 0): 0.0001,</span>
+<span class="sd">    (1, 1): 0.0001, (1, 2): 0.0001, (1, 3): 0.0001, (1, -4): 0.0001, (1, -3): 0.0001,</span>
+<span class="sd">    (1, -2): 0.0001, (1, -1): 0.0001, (2, 0): 0.0001, (2, 1): 0.0001, (2, 2): 0.0001,</span>
+<span class="sd">    (2, 3): 0.0001, (2, -4): 0.0001, (2, -3): 0.0001, (2, -2): 0.0001, (2, -1): 0.0001,</span>
+<span class="sd">    (3, 0): 0.0001, (3, 1): 0.0001, (3, 2): 0.0001, (3, 3): 0.0001, (3, -4): 0.0001,</span>
+<span class="sd">    (3, -3): 0.0001, (3, -2): 0.0001, (3, -1): 0.0001, (-4, 0): 0.0001, (-4, 1): 0.0001,</span>
+<span class="sd">     (-4, 2): 0.0001, (-4, 3): 0.0001, (-4, -4): 0.0001, (-4, -3): 0.0001,</span>
+<span class="sd">     (-4, -2): 0.0001, (-4, -1): 0.0001, (-3, 0): 0.0001, (-3, 1): 0.0001,</span>
+<span class="sd">     (-3, 3): 0.0001, (-3, -4): 0.0001, (-3, -3): 0.0001, (-3, -2): 0.0001,</span>
+<span class="sd">     (-3, -1): 0.0001, (-2, 0): 0.0001, (-2, 1): 0.0001, (-2, 2): 0.0001,</span>
+<span class="sd">     (-2, 3): 0.0001, (-2, -4): 0.0001, (-2, -3): 0.0001, (-2, -2): 0.0001,</span>
+<span class="sd">     (-2, -1): 0.0001, (-1, 0): 0.0001, (-1, 1): 0.0001, (-1, 2): 0.0001,</span>
+<span class="sd">     (-1, 3): 0.0001, (-1, -4): 0.0001, (-1, -3): 0.0001, (-1, -2): 0.0001,</span>
+<span class="sd">     (-1, -1): 0.0001}</span>
+
+<span class="sd">    **Exact Grovers Algorithm**</span>
+
+<span class="sd">    In the next example, we will showcase the ``exact`` functionality. For this we</span>
+<span class="sd">    create an oracle, which tags all the states of a QuantumVariable, that contain 3</span>
+<span class="sd">    ones and 2 zeros.</span>
+
+<span class="sd">    To count the amount of ones we use quantum phase estimation on the operator</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        U = \text{exp}\left(\frac{i 2 \pi}{2^k}</span>
+<span class="sd">        \sum_{i = 0}^{n-1} ( 1 - \sigma_{z}^i )\right)</span>
+
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QPE, p, QuantumVariable, lifted</span>
+<span class="sd">        from qrisp.grover import grovers_alg, tag_state</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        def U(qv, prec = None, iter = 1):</span>
+<span class="sd">            for i in range(qv.size):</span>
+<span class="sd">                p(iter*2*np.pi/2**prec, qv[i])</span>
+
+<span class="sd">        @lifted</span>
+<span class="sd">        def count_ones(qv):</span>
+<span class="sd">            prec = int(np.ceil(np.log2(qv.size+1)))</span>
+<span class="sd">            res = QPE(qv, U, precision = prec, iter_spec = True, kwargs = {&quot;prec&quot; : prec})</span>
+<span class="sd">            res &lt;&lt;= prec</span>
+<span class="sd">            return res</span>
+
+
+<span class="sd">    Quick test:</span>
+
+<span class="sd">    &gt;&gt;&gt; qv = QuantumVariable(5)</span>
+<span class="sd">    &gt;&gt;&gt; qv[:] = {&quot;11000&quot; : 1, &quot;11010&quot; : 1, &quot;11110&quot; : 1}</span>
+<span class="sd">    &gt;&gt;&gt; count_qf = count_ones(qv)</span>
+<span class="sd">    &gt;&gt;&gt; count_qf.qs.statevector()</span>
+<span class="sd">    sqrt(3)*(|11000&gt;*|2&gt; + |11010&gt;*|3&gt; + |11110&gt;*|4&gt;)/3</span>
+
+<span class="sd">    We now define the oracle ::</span>
+
+<span class="sd">        def counting_oracle(qv, phase = np.pi, k = 1):</span>
+
+<span class="sd">            count_qf = count_ones(qv)</span>
+
+<span class="sd">            tag_state({count_qf : k}, phase = phase)</span>
+
+<span class="sd">            count_qf.uncompute()</span>
+
+<span class="sd">    And evaluate Grover&#39;s algorithm ::</span>
+
+<span class="sd">        n = 5</span>
+<span class="sd">        k = 3</span>
+<span class="sd">        qv = QuantumVariable(n)</span>
+
+<span class="sd">        import math</span>
+
+<span class="sd">        grovers_alg(qv, counting_oracle, exact = True, winner_state_amount = math.comb(n,k), kwargs = {&quot;k&quot; : k})  # noqa</span>
+
+
+<span class="sd">    &gt;&gt;&gt; print(qv)</span>
+<span class="sd">    {&#39;11100&#39;: 0.1,</span>
+<span class="sd">     &#39;11010&#39;: 0.1,</span>
+<span class="sd">     &#39;10110&#39;: 0.1,</span>
+<span class="sd">     &#39;01110&#39;: 0.1,</span>
+<span class="sd">     &#39;11001&#39;: 0.1,</span>
+<span class="sd">     &#39;10101&#39;: 0.1,</span>
+<span class="sd">     &#39;01101&#39;: 0.1,</span>
+<span class="sd">     &#39;10011&#39;: 0.1,</span>
+<span class="sd">     &#39;01011&#39;: 0.1,</span>
+<span class="sd">     &#39;00111&#39;: 0.1}</span>
+
+<span class="sd">    We see that contrary to regular Grover&#39;s algorithm, the states which have not been</span>
+<span class="sd">    tagged by the oracle have zero percent measurement probability.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Necessary to prevent errors in recursive_qs_search when applied to jax arrays.</span>
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+    <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">exact</span> <span class="ow">and</span> <span class="n">winner_state_amount</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Exact Grover&#39;s algorithm requires &#39;winner_state_amount&#39; to be specified.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">winner_state_amount</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">winner_state_amount</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">flat_qvs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">QuantumVariable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                <span class="n">flat_qvs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">flat_qvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">flat_qvs</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">flatten</span><span class="p">()]))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">args</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type for args: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">exact</span><span class="p">:</span>
+        <span class="c1"># Implementation for phase calculation for exact grovers alg as in</span>
+        <span class="c1"># https://arxiv.org/pdf/quant-ph/0106071.pdf</span>
+
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">winner_state_amount</span> <span class="o">/</span> <span class="n">N</span><span class="p">))</span>
+
+        <span class="n">iterations</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">theta</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">))</span>
+
+        <span class="n">phi</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">iterations</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">6</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">N</span> <span class="o">/</span> <span class="n">winner_state_amount</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">iterations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">iterations</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span> <span class="o">/</span> <span class="n">winner_state_amount</span><span class="p">)</span>
+        <span class="n">iterations</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">iterations</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">exact</span><span class="p">:</span>
+                <span class="n">oracle_function</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phi</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">diffuser</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phi</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">oracle_function</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">diffuser</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">iterations</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">merge</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">recursive_qs_search</span><span class="p">(</span><span class="n">args</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># qv_amount = len(qs.qv_list)</span>
+
+        <span class="k">with</span> <span class="n">IterationEnvironment</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">exact</span><span class="p">:</span>
+                <span class="n">oracle_function</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phi</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">diffuser</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phi</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">oracle_function</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">diffuser</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+
+        <span class="c1"># NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake.</span>
+        <span class="c1"># This check was deactivated, be cause it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.</span>
+        <span class="c1"># if qv_amount != len(qs.qv_list):</span>
+        <span class="c1">#    raise Exception(</span>
+        <span class="c1">#        &quot;Applied oracle introducing new QuantumVariables without uncomputing/deleting&quot;</span>
+        <span class="c1">#    )</span>
+
+
+<span class="c1"># Workaround to keep the docstring but still gatewrap</span>
+
+<span class="n">temp</span> <span class="o">=</span> <span class="n">diffuser</span><span class="o">.</span><span class="vm">__doc__</span>
+
+<span class="n">diffuser</span> <span class="o">=</span> <span class="n">gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">False</span><span class="p">)(</span><span class="n">diffuser</span><span class="p">)</span>
+
+<span class="n">diffuser</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">temp</span>
+
+
+<span class="n">temp</span> <span class="o">=</span> <span class="n">tag_state</span><span class="o">.</span><span class="vm">__doc__</span>
+
+<span class="n">tag_state</span> <span class="o">=</span> <span class="n">gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">tag_state</span><span class="p">)</span>
+
+<span class="n">tag_state</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">temp</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

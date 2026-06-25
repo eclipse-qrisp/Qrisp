@@ -1,0 +1,842 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.interface.batched_backend &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/interface/batched_backend';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/interface/batched_backend.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.interface.batched_backend</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.interface.batched_backend</h1><div class="highlight"><pre>
+<span></span><span class="c1"># &quot;&quot;&quot;</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># * Copyright (c) 2026 the Qrisp authors</span>
+<span class="c1"># *</span>
+<span class="c1"># * This program and the accompanying materials are made available under the</span>
+<span class="c1"># * terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="c1"># * http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="c1"># *</span>
+<span class="c1"># * This Source Code may also be made available under the following Secondary</span>
+<span class="c1"># * Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="c1"># * Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="c1"># * with the GNU Classpath Exception which is</span>
+<span class="c1"># * available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="c1"># *</span>
+<span class="c1"># * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># &quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;This module defines :class:`BatchedBackend`, obtained via</span>
+<span class="sd">:meth:`Backend.batched() &lt;qrisp.interface.Backend.batched&gt;`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">overload</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit.quantum_circuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">Backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.measurement_result</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeasurementResult</span>
+
+
+<span class="c1"># NOTE: ``BatchedBackend`` intentionally does not inherit from</span>
+<span class="c1"># ``Backend``. ``Backend.run`` is contractually required to return</span>
+<span class="c1"># a fully populated result. A ``BatchedBackend`` cannot honour that</span>
+<span class="c1"># contract because its ``run`` returns an empty placeholder that is</span>
+<span class="c1"># only populated after ``dispatch`` is called. Inheriting from</span>
+<span class="c1"># ``Backend`` would therefore violate the Liskov Substitution Principle.</span>
+<div class="viewcode-block" id="BatchedBackend">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/BatchedBackend.html#qrisp.interface.BatchedBackend">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchedBackend</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class that buffers circuit submissions and executes them on an explicit</span>
+<span class="sd">    :meth:`dispatch` call.</span>
+
+<span class="sd">    Obtain an instance via :meth:`~qrisp.interface.Backend.batched`:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        batched_backend = my_backend.batched()</span>
+
+<span class="sd">    .. rubric:: How it works</span>
+
+<span class="sd">    Each call to :meth:`run` registers the circuit in an internal queue and</span>
+<span class="sd">    returns a :class:`~qrisp.interface.MeasurementResult` immediately.  The</span>
+<span class="sd">    result is *lazy*: its data is not available until :meth:`dispatch` is</span>
+<span class="sd">    called.  Accessing the result before dispatch raises ``RuntimeError``.</span>
+
+<span class="sd">    After :meth:`dispatch`, every pending</span>
+<span class="sd">    :class:`~qrisp.interface.MeasurementResult` is populated with raw</span>
+<span class="sd">    bitstring counts by forwarding each circuit to the wrapped backend&#39;s</span>
+<span class="sd">    :meth:`~qrisp.interface.Backend.run_async`. Higher-level decoding (performed by</span>
+<span class="sd">    :meth:`QuantumVariable.get_measurement</span>
+<span class="sd">    &lt;qrisp.QuantumVariable.get_measurement&gt;`) is deferred until the user</span>
+<span class="sd">    actually reads the decoded result.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        :class:`BatchedBackend` is not thread-safe. :meth:`run` and</span>
+<span class="sd">        :meth:`dispatch` must be called from the same thread. Concurrent</span>
+<span class="sd">        calls from multiple threads can silently drop queued circuits.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    backend : Backend</span>
+<span class="sd">        The backend whose :meth:`~qrisp.interface.Backend.run_async` is called</span>
+<span class="sd">        with all queued circuits when :meth:`dispatch` is invoked.</span>
+
+<span class="sd">    name : str or None</span>
+<span class="sd">        Optional name for this backend.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    In this example, we collect two measurements, then dispatch:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from qrisp import QuantumFloat</span>
+<span class="sd">        from qrisp.default_backend import QrispSimulatorBackend</span>
+
+<span class="sd">        backend = QrispSimulatorBackend()</span>
+<span class="sd">        batched_backend = backend.batched()</span>
+
+<span class="sd">        a = QuantumFloat(4); a[:] = 1</span>
+<span class="sd">        b = QuantumFloat(3); b[:] = 2</span>
+<span class="sd">        c = a + b</span>
+
+<span class="sd">        d = QuantumFloat(4); d[:] = 2</span>
+<span class="sd">        e = QuantumFloat(3); e[:] = 3</span>
+<span class="sd">        f = d + e</span>
+
+<span class="sd">        res_c = c.get_measurement(backend=batched_backend)  # lazy (returns immediately)</span>
+<span class="sd">        res_f = f.get_measurement(backend=batched_backend)  # lazy (returns immediately)</span>
+
+<span class="sd">        batched_backend.dispatch()  # runs both circuits, then populates results</span>
+
+<span class="sd">        print(res_c)  # {3: 1.0}</span>
+<span class="sd">        print(res_f)  # {5: 1.0}</span>
+
+<span class="sd">    The same pattern is available via</span>
+<span class="sd">    :func:`~qrisp.batched_measurement`:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from qrisp import batched_measurement</span>
+<span class="sd">        results = batched_measurement([c, f], backend=batched_backend)</span>
+<span class="sd">        print(results)  # [{3: 1.0}, {5: 1.0}]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="c1"># Each entry: (circuit, shots, MeasurementResult)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Current runtime options (read-only). Delegates to the wrapped backend.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">options</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pending_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of circuits currently queued, waiting for :meth:`dispatch`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queries</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BatchedBackend.update_options">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/generated/qrisp.interface.BatchedBackend.update_options.html#qrisp.interface.BatchedBackend.update_options">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update existing runtime options.</span>
+
+<span class="sd">        Delegates to the wrapped backend&#39;s</span>
+<span class="sd">        :meth:`~qrisp.interface.Backend.update_options`, which validates keys</span>
+<span class="sd">        and raises ``AttributeError`` for unknown ones.  Changes are visible</span>
+<span class="sd">        through both ``self.options`` and the wrapped backend&#39;s ``options``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Key-value pairs to update.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">update_options</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuits</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeasurementResult</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuits</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">QuantumCircuit</span><span class="p">],</span> <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">MeasurementResult</span><span class="p">]:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="BatchedBackend.run">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/generated/qrisp.interface.BatchedBackend.run.html#qrisp.interface.BatchedBackend.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">circuits</span><span class="p">:</span> <span class="n">QuantumCircuit</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">QuantumCircuit</span><span class="p">],</span>
+        <span class="n">shots</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeasurementResult</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">MeasurementResult</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register one or more circuits in the queue and return lazy result(s).</span>
+
+<span class="sd">        Each circuit is stored alongside its shot count. The corresponding</span>
+<span class="sd">        :class:`~qrisp.interface.MeasurementResult` objects are *empty* until</span>
+<span class="sd">        :meth:`dispatch` is called.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        circuits : QuantumCircuit or Sequence[QuantumCircuit]</span>
+<span class="sd">            One circuit or a sequence of circuits to include in the batch.</span>
+
+<span class="sd">        shots : int or None</span>
+<span class="sd">            Number of shots. Defaults to the backend&#39;s ``shots`` option.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MeasurementResult or list[MeasurementResult]</span>
+<span class="sd">            A single lazy result for a single circuit, or a list of lazy</span>
+<span class="sd">            results when multiple circuits are given.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Backend</span><span class="o">.</span><span class="n">_validate_shots</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">circuits</span><span class="p">,</span> <span class="n">QuantumCircuit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">batch</span><span class="p">:</span>
+            <span class="n">circuits</span> <span class="o">=</span> <span class="p">[</span><span class="n">circuits</span><span class="p">]</span>
+
+        <span class="n">n_shots</span> <span class="o">=</span> <span class="n">shots</span> <span class="k">if</span> <span class="n">shots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;shots&quot;</span><span class="p">)</span>
+
+        <span class="n">raw_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MeasurementResult</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">qc</span> <span class="ow">in</span> <span class="n">circuits</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">MeasurementResult</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queries</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">qc</span><span class="p">,</span> <span class="n">n_shots</span><span class="p">,</span> <span class="n">raw</span><span class="p">))</span>
+            <span class="n">raw_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">raw_list</span> <span class="k">if</span> <span class="n">batch</span> <span class="k">else</span> <span class="n">raw_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Dispatch</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="BatchedBackend.dispatch">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/generated/qrisp.interface.BatchedBackend.dispatch.html#qrisp.interface.BatchedBackend.dispatch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute all pending circuits and populate their results.</span>
+
+<span class="sd">        All queued circuits are submitted via</span>
+<span class="sd">        :meth:`~qrisp.interface.Backend.run_async`, eliminating redundant</span>
+<span class="sd">        network round-trips and queue-wait overhead regardless of whether the</span>
+<span class="sd">        circuits were queued with the same or different shot counts.</span>
+
+<span class="sd">        When all queued circuits share the same shot count a scalar is passed</span>
+<span class="sd">        to :meth:`~qrisp.interface.Backend.run_async`.</span>
+<span class="sd">        When circuits carry different shot counts the full per-circuit list is</span>
+<span class="sd">        passed, enabling each circuit to be executed with its own shot budget.</span>
+<span class="sd">        Backends whose SDK does not natively support per-circuit shot counts</span>
+<span class="sd">        should fall back to a fixed shot count and emit a ``UserWarning``.</span>
+
+<span class="sd">        If the wrapped backend&#39;s :attr:`~qrisp.interface.Backend.max_circuits`</span>
+<span class="sd">        limit is set and the queued batch exceeds it, the batch is</span>
+<span class="sd">        automatically split into smaller jobs and a :exc:`UserWarning` is</span>
+<span class="sd">        emitted.</span>
+
+<span class="sd">        If the wrapped backend raises, that error is stored in every</span>
+<span class="sd">        not-yet-populated :class:`~qrisp.interface.MeasurementResult` and then</span>
+<span class="sd">        re-raised. Accessing any of those results later will re-raise the stored</span>
+<span class="sd">        exception.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeout : float or None, optional</span>
+<span class="sd">            Maximum seconds to wait for each hardware job. ``None`` (default)</span>
+<span class="sd">            waits indefinitely. Passed through to</span>
+<span class="sd">            :meth:`Job.result &lt;qrisp.interface.Job.result&gt;`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If the batch is split across multiple jobs due to</span>
+<span class="sd">            :attr:`~qrisp.interface.Backend.max_circuits`.</span>
+
+<span class="sd">        TimeoutError</span>
+<span class="sd">            If *timeout* is given and a hardware job does not finish in time.</span>
+<span class="sd">            Results for all circuits in the batch are left unpopulated.</span>
+
+<span class="sd">        Exception</span>
+<span class="sd">            Re-raises any exception thrown by the wrapped backend during</span>
+<span class="sd">            execution, after injecting the error into all pending results.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">queries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queries</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queries</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">queries</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">circuits</span><span class="p">,</span> <span class="n">shots_list</span><span class="p">,</span> <span class="n">raws</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">queries</span><span class="p">))</span>
+
+        <span class="n">limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">max_circuits</span>
+        <span class="n">chunk_size</span> <span class="o">=</span> <span class="n">limit</span> <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+            <span class="n">n_jobs</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span> <span class="o">//</span> <span class="n">limit</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The number of queued circuits (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">)</span><span class="si">}</span><span class="s2">) exceeds the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;backend&#39;s per-job circuit limit (</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Splitting into </span><span class="si">{</span><span class="n">n_jobs</span><span class="si">}</span><span class="s2"> jobs automatically.&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">circuits</span><span class="p">),</span> <span class="n">chunk_size</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_submit_chunk</span><span class="p">(</span>
+                    <span class="n">circuits</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">],</span>
+                    <span class="n">shots_list</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">],</span>
+                    <span class="n">raws</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">],</span>
+                    <span class="n">timeout</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">queries</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="o">.</span><span class="n">_populated</span><span class="p">:</span>
+                    <span class="n">r</span><span class="o">.</span><span class="n">_inject_error</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_chunk</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">chunk_circuits</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">chunk_shots</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">chunk_raws</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit one chunk of circuits and inject results into the corresponding placeholders.&quot;&quot;&quot;</span>
+        <span class="n">unique</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">chunk_shots</span><span class="p">)</span>
+        <span class="n">effective_shots</span> <span class="o">=</span> <span class="n">chunk_shots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">chunk_shots</span>
+        <span class="n">chunk_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">run_async</span><span class="p">(</span><span class="n">chunk_circuits</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">effective_shots</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span><span class="o">.</span><span class="n">all_counts</span>
+        <span class="k">for</span> <span class="n">raw</span><span class="p">,</span> <span class="n">counts</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">chunk_raws</span><span class="p">,</span> <span class="n">chunk_counts</span><span class="p">):</span>
+            <span class="n">raw</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BatchedBackend.clear">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/generated/qrisp.interface.BatchedBackend.clear.html#qrisp.interface.BatchedBackend.clear">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Discard all queued circuits without dispatching.</span>
+
+<span class="sd">        Any :class:`~qrisp.interface.MeasurementResult` objects previously</span>
+<span class="sd">        returned by :meth:`run` for the cleared circuits remain unpopulated.</span>
+<span class="sd">        Accessing them after ``clear()`` raises ``RuntimeError``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queries</span> <span class="o">=</span> <span class="p">[]</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

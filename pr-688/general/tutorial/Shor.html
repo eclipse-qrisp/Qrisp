@@ -1,0 +1,908 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Factoring integers using Shor’s Algorithm &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/Shor';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/Shor.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Solving the Traveling Salesman Problem" href="TSP.html" />
+    <link rel="prev" title="Getting familiar with Qrisp" href="tutorial.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Factoring integers using Shor’s Algorithm</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Factoring-integers-using-Shor's-Algorithm">
+<h1>Factoring integers using Shor’s Algorithm<a class="headerlink" href="#Factoring-integers-using-Shor's-Algorithm" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>In the realm of quantum computing, where classical limitations are challenged and new horizons are explored, Shor’s Algorithm stands as a testament to the transformative potential of quantum mechanics in the field of cryptography. Developed by mathematician Peter Shor in 1994, this groundbreaking algorithm has the power to revolutionize the world of cryptography by efficiently factoring large numbers, once considered an insurmountable task - at least for classical computers.</p>
+<p>At its core, Shor’s Algorithm addresses one of the cornerstones of modern asymmetric encryption: the difficulty of factoring the product of two large prime numbers. Many cryptographic protocols, including the widely used RSA algorithm, rely on the presumed computational complexity of this task to secure sensitive information. However, Shor’s Algorithm exploits the unique properties of quantum computing to perform this factorization exponentially faster than the best-known classical algorithms.</p>
+<p>This tutorial aims to demystify the intricacies of Shor’s Algorithm by leveraging the programming abstractions that Qrisp provides to boil down the algorithm to only a few lines of code. Please note that this tutorial is not meant to teach the number-theoretical details, but is focussed on how the algorithm can be implemented and compiled. For an in-depth look, please consider the following resources:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.cambridge.org/highereducation/books/quantum-computation-and-quantum-information/01E10196D0A682A6AEFFEA52D53BE9AE#overview" rel="noreferrer" target="_blank">Nielsen &amp; Chuang textbook</a></p></li>
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Shor%27s_algorithm" rel="noreferrer" target="_blank">Wikipedia article</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/quant-ph/0303175" rel="noreferrer" target="_blank">Tutorial paper</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/quant-ph/9508027" rel="noreferrer" target="_blank">Original paper</a></p></li>
+</ul>
+<p>Our presentation of the theory below will follow the one given by the textbook from Nielsen &amp; Chuang.</p>
+<p>The implementation that you find below is with 11 lines of quantum code not only relatively simple but also one of the most efficient that you can find (you don’t find many!).</p>
+<section id="The-general-idea">
+<h2>The general idea<a class="headerlink" href="#The-general-idea" title="Link to this heading">#</a></h2>
+<p>Given the number to factorize <span class="math notranslate nohighlight">\(N \in \mathbb{N}\)</span>, the first step of Shor’s algorithm is to find the <a class="reference external" href="https://en.wikipedia.org/wiki/Multiplicative_order" rel="noreferrer" target="_blank">order</a> <span class="math notranslate nohighlight">\(r\)</span> of a random number <span class="math notranslate nohighlight">\(a \in \mathbb{Z}/N\mathbb{Z}\)</span>. Here,</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(a\)</span> is a random number <span class="math notranslate nohighlight">\(&lt;N\)</span>, which is coprime to <span class="math notranslate nohighlight">\(N\)</span> i.e., <span class="math notranslate nohighlight">\(\text{GCD}(a, N) = 1\)</span> (otherwise <span class="math notranslate nohighlight">\(\text{GCD}(a, N)\)</span> is a factor and we are done already).</p></li>
+<li><p><span class="math notranslate nohighlight">\(r\)</span> is the order of <span class="math notranslate nohighlight">\(a\)</span> i.e. a number such that <span class="math notranslate nohighlight">\(a^r = 1 \pmod N\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(a \in \mathbb{Z}/N\mathbb{Z}\)</span> is the <a class="reference external" href="https://en.wikipedia.org/wiki/Quotient_ring" rel="noreferrer" target="_blank">Quotient Ring</a> of integers modulo <span class="math notranslate nohighlight">\(N\)</span>.</p></li>
+</ul>
+<p>Assume now, that for a given classical number <span class="math notranslate nohighlight">\(x\)</span>, we have access to an operator <span class="math notranslate nohighlight">\(U_x\)</span>, which acts as</p>
+<div class="math notranslate nohighlight">
+\[U_x \ket{y} = \ket{(xy) \pmod N}\]</div>
+<p>that is, <span class="math notranslate nohighlight">\(U_x\)</span> performs an in-place modular multiplication with <span class="math notranslate nohighlight">\(x\)</span> on any quantum number <span class="math notranslate nohighlight">\(\ket{y}\)</span>.</p>
+<p>The next step of the construction is defining the state <span class="math notranslate nohighlight">\(\ket{u_s}\)</span> for an arbitrary <span class="math notranslate nohighlight">\(s &lt; r\)</span></p>
+<div class="math notranslate nohighlight">
+\[\ket{u_s} = \frac{1}{\sqrt{r}} \sum_{k = 0}^{r-1} \text{exp}\left(\frac{-2\pi i s k}{r}\right)\ket{x^k \pmod N}\]</div>
+<p>Applying <span class="math notranslate nohighlight">\(U\)</span> to such a state reveals, that it is indeed an eigenvector:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+U \ket{u_s} &amp;= \frac{1}{\sqrt{r}} \sum_{k = 0}^{r-1} \text{exp}\left(\frac{-2\pi i s k}{r}\right) U_x \ket{x^k \pmod N}\\
+&amp;= \frac{1}{\sqrt{r}} \sum_{k = 0}^{r-1} \text{exp}\left(\frac{-2\pi i s k}{r}\right) \ket{x^{k+1} \pmod N}\\
+&amp;= \text{exp}\left(\frac{2\pi i s}{r}\right) \ket{u_s}
+\end{align}\end{split}\]</div>
+<p>Therefore, if we apply <a class="reference internal" href="../../reference/Primitives/QFT.html"><span class="doc">quantum phase estimation</span></a> (with sufficient precision) to <span class="math notranslate nohighlight">\(U_x\)</span> and <span class="math notranslate nohighlight">\(\ket{u_1}\)</span> we have basically solved the problem:</p>
+<div class="math notranslate nohighlight">
+\[\text{QPE}_{U_x} \ket{u_1} \ket{0} = \ket{u_1} \ket{\phi_1}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\ket{\phi_1}\)</span> is a state that, if measured, is close to <span class="math notranslate nohighlight">\(\frac{1}{r}\)</span> with high probability.</p>
+<p>An important point here is that we don’t need to call the operator <span class="math notranslate nohighlight">\(U_x\)</span> for <span class="math notranslate nohighlight">\(2^j\)</span> times to achieve <span class="math notranslate nohighlight">\(U_x^{2^j}\)</span>, which is required for the quantum phase estimation. Instead we can classically precompute <span class="math notranslate nohighlight">\(x^{2^j} \pmod N\)</span> and use <span class="math notranslate nohighlight">\(U_x^{2^j} = U_{x^{2^j}}\)</span>.</p>
+<p>As you might have noticed however, there is a problem. We would need the solution <span class="math notranslate nohighlight">\(r\)</span> to prepare <span class="math notranslate nohighlight">\(\ket{u_1}\)</span>, so this idea is not feasible. What we can do however is preparing a superposition of different <span class="math notranslate nohighlight">\(\ket{u_s}\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{\sqrt{r}}\sum_{s = 0}^{r-1} \ket{u_s} = \ket{1}\]</div>
+<p>To get an intuition about this equation, it can be helpful to view the mapping <span class="math notranslate nohighlight">\(\ket{s} \rightarrow \ket{u_s}\)</span> as the generalized quantum fourier transform over <span class="math notranslate nohighlight">\(\mathbb{F}_N\)</span> (the regular <span class="math notranslate nohighlight">\(n\)</span> qubit QFT would be <span class="math notranslate nohighlight">\(N = 2^n\)</span>). If you believe us that this Fourier transform is it’s own inverse (maybe up to some signs), then the above equation should be no problem to understand. Otherwise feel free to investigate using one of the mentioned resources.</p>
+<p>To commence with our factoring problem we now apply quantum phase estimation to <span class="math notranslate nohighlight">\(\ket{1}\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\text{QPE}_{U_x} \ket{1} \ket{0} &amp;= \frac{1}{\sqrt{r}}\sum_{s = 0}^{r-1} \text{QPE}_{U_x} \ket{u_s} \ket{0}\\
+&amp;= \frac{1}{\sqrt{r}} \sum_{s = 0}^{r-1} \ket{u_s} \ket{\phi_s}
+\end{align}\end{split}\]</div>
+<p>In the next step, we measure the second register to acquire a value <span class="math notranslate nohighlight">\(h\)</span> which is close to a number of the form <span class="math notranslate nohighlight">\(\frac{s}{r}\)</span>. Using the <a class="reference external" href="https://en.wikipedia.org/wiki/Continued_fraction" rel="noreferrer" target="_blank">continued fraction algorithm</a> we can turn <span class="math notranslate nohighlight">\(h\)</span> into a fraction <span class="math notranslate nohighlight">\(\frac{\tilde{s}}{\tilde{r}}\)</span>. <span class="math notranslate nohighlight">\(\tilde{r}\)</span> is therefore a potential candidate for the solution <span class="math notranslate nohighlight">\(r\)</span>. Finally, we verify our potential solutin using <span class="math notranslate nohighlight">\(a^r = 1 \pmod N\)</span> or (if neccessary) measure another
+<span class="math notranslate nohighlight">\(h\)</span>.</p>
+<p>The next step is to transform the equation, defining <span class="math notranslate nohighlight">\(r\)</span></p>
+<div class="math notranslate nohighlight">
+\[a^r = 1 \pmod N \Leftrightarrow a^r -1 = 0 \pmod N\]</div>
+<p>Combining this with the definition of the modulus operation, we can see that <span class="math notranslate nohighlight">\(N\)</span> must be a factor of <span class="math notranslate nohighlight">\(a^r - 1\)</span> (written <span class="math notranslate nohighlight">\(N | (a^r - 1)\)</span>). If <span class="math notranslate nohighlight">\(r\)</span> is even, we can write</p>
+<div class="math notranslate nohighlight">
+\[a^r - 1 = (a^{r/2} - 1)(a^{r/2} + 1)\]</div>
+<p>On the other hand, if <span class="math notranslate nohighlight">\(r\)</span> is odd, the algorithm needs to restart picking a different <span class="math notranslate nohighlight">\(a\)</span>. Finally, we check whether one of these (for instance <span class="math notranslate nohighlight">\(a^{r/2} + 1\)</span>) has a common factor with <span class="math notranslate nohighlight">\(N\)</span> and, if so, we are done. Otherwise the algorithm needs to restart.</p>
+<p>To acquire the final result of the factorization <span class="math notranslate nohighlight">\(g\)</span> we compute</p>
+<div class="math notranslate nohighlight">
+\[g = \text{gcd}(a^{r/2} + 1, N)\]</div>
+<p>Naturally, the other factor is found to be <span class="math notranslate nohighlight">\(N/g\)</span>.</p>
+</section>
+<section id="Implementation">
+<h2>Implementation<a class="headerlink" href="#Implementation" title="Link to this heading">#</a></h2>
+<p>As you might know by now, the reason why this algorithm can be tricky to implement is because the operator <span class="math notranslate nohighlight">\(U_x\)</span> is non-trivial to encode as a quantum circuit and a variety of ideas have been proposed in the past. A popular way of constructing this circuit is to start with a regular in-place adder, build a modular adder from that, build an out-of-place modular multiplyer from that, and finally combine two out-of-place multiplyers into one modular in-place multiplyer. If this wasn’t already
+complicated enough, you also need the controlled version of this circuit. The <a class="reference external" href="https://arxiv.org/abs/1801.01081" rel="noreferrer" target="_blank">approach that we are using here</a> might also be complicated but the Qrisp abstractions allow for a powerfull reduction in complexity for the user, while still retaining a degree of flexibility for customization and most importantly, PERFORMANCE. 🚀</p>
+<blockquote>
+<div><p><strong>Note</strong> To make sure you understand everything and get familiar with the concepts, we strongly recommend to execute the code yourself! Either with the Thebe server (might be slow) or on your own device!</p>
+</div></blockquote>
+<p>The central concept of our implementation is the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumModulus.html"><span class="doc">QuantumModulus</span></a> class. This quantum type can be used to represent and process elements of a <a class="reference external" href="https://en.wikipedia.org/wiki/Quotient_ring" rel="noreferrer" target="_blank">Quotient Ring</a>, which is basically just a fancy wording for “numbers that operate under modular arithmetic”.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">qg</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+</div>
+<p>This snippet creates such a <a class="reference internal" href="../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> with modulus <span class="math notranslate nohighlight">\(N = 13\)</span>. Subsequently we encode the value 8. The defining feature of this type is the fact that arithmetic is always modular.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qg</span> <span class="o">+=</span> <span class="mi">8</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qg</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{3: 1.0}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">qg</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QuantumCircuit:
+---------------
+                                ┌───────────┐
+                   qf_0.0: ─────┤0          ├
+                                │           │
+                   qf_0.1: ─────┤1          ├
+                                │           │
+                   qf_0.2: ─────┤2          ├
+                           ┌───┐│  __iadd__ │
+                   qf_0.3: ┤ X ├┤3          ├
+                           └───┘│           │
+reduction_not_necessary.0: ─────┤4          ├
+                                │           │
+                   sign.0: ─────┤5          ├
+                                └───────────┘
+Live QuantumVariables:
+----------------------
+QuantumModulus qf_0
+</pre></div></div>
+</div>
+<p>As you can see under the hood, there is a lot of complexity, however due to systematic development and testing, a lot of it can be hidden from the user. Feel free to try out the in-place multiplication <code class="docutils literal notranslate"><span class="pre">*=</span></code>!</p>
+<p>Using the QuantumModulus class allows us to implement Shor’s algorithm within a few lines of code! For a simple example, let us factor <span class="math notranslate nohighlight">\(N = 99\)</span> using <span class="math notranslate nohighlight">\(a = 10\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">99</span>
+<span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">qg</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<p>According to <a class="reference external" href="https://www.cambridge.org/de/universitypress/subjects/physics/quantum-physics-quantum-information-and-quantum-computation/quantum-computation-and-quantum-information-10th-anniversary-edition" rel="noreferrer" target="_blank">literature</a>, a quantum phase estimation precision of <span class="math notranslate nohighlight">\(2n+1\)</span> is sufficient, where <span class="math notranslate nohighlight">\(n\)</span> is the bit-width of <span class="math notranslate nohighlight">\(N\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="n">qg</span><span class="o">.</span><span class="n">size</span>
+<span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;QuantumFloat &#39;qpe_res&#39;&gt;
+</pre></div></div>
+</div>
+<p>Note the <code class="docutils literal notranslate"><span class="pre">exponent</span></code> keyword of the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> constructor. It indicates that this QuantumFloat can represent numbers up to the precision <span class="math notranslate nohighlight">\(2^{-(2n+1)}\)</span>. After construction, we apply a Hadamard gate to each qubit as is customary in quantum phase estimation.</p>
+<p>We can now code the main loop:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">a</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)):</span>
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+        <span class="n">qg</span> <span class="o">*=</span> <span class="n">x</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span>
+</pre></div>
+</div>
+</div>
+<p>Note that we have <span class="math notranslate nohighlight">\(x=a^{2^i}\)</span> at the i-th iteration. Such a procedure is called repeated squaring and reduces the classical resources for the computation of <span class="math notranslate nohighlight">\(x\)</span> in each iteration. We use the <a class="reference internal" href="../../reference/Quantum%20Environments/ControlEnvironment.html"><span class="doc">control</span></a> environment to make the operation conditional on the state of a qubit.</p>
+<p>Finally, we conclude the phase estimation with the inverse quantum Fourier transformation and perform a measurement.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">meas_res</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">meas_res</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.0: 0.5, 0.5: 0.5}
+</pre></div></div>
+</div>
+<p>To perform the continued fraction step, we can use some <a class="reference external" href="https://docs.sympy.org/latest/modules/ntheory.html" rel="noreferrer" target="_blank">sympy tools</a>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">continued_fraction_convergents</span><span class="p">,</span> <span class="n">continued_fraction_iterator</span><span class="p">,</span> <span class="n">Rational</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_r_candidates</span><span class="p">(</span><span class="n">approx</span><span class="p">):</span>
+    <span class="n">rationals</span> <span class="o">=</span> <span class="n">continued_fraction_convergents</span><span class="p">(</span>
+        <span class="n">continued_fraction_iterator</span><span class="p">(</span><span class="n">Rational</span><span class="p">(</span><span class="n">approx</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">rat</span><span class="o">.</span><span class="n">q</span> <span class="k">for</span> <span class="n">rat</span> <span class="ow">in</span> <span class="n">rationals</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>This function takes an approximation value <code class="docutils literal notranslate"><span class="pre">approx</span></code> and calculates fractionals of the form <span class="math notranslate nohighlight">\(\frac{p}{q}\)</span> that are increasingly close to <code class="docutils literal notranslate"><span class="pre">approx</span></code>. To extract our results for the <span class="math notranslate nohighlight">\(r\)</span> values, we are interested in the <span class="math notranslate nohighlight">\(q\)</span> part of each fractional.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">r_candidates</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">get_r_candidates</span><span class="p">(</span><span class="n">approx</span><span class="p">)</span> <span class="k">for</span> <span class="n">approx</span> <span class="ow">in</span> <span class="n">meas_res</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="p">[])</span>
+</pre></div>
+</div>
+</div>
+<p>To find the correct <span class="math notranslate nohighlight">\(r\)</span>, we perform a classical search on our results:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">cand</span> <span class="ow">in</span> <span class="n">r_candidates</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="o">**</span><span class="n">cand</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">cand</span>
+        <span class="k">break</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Please sample again&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">r</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Please choose another a&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The final step in acquiring the factor is computing the greatest common divisor of <span class="math notranslate nohighlight">\(a^{r/2} + 1\)</span>, which can be <a class="reference external" href="https://w.wiki/znj" rel="noreferrer" target="_blank">done efficiently</a>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">a</span> <span class="o">**</span> <span class="p">(</span><span class="n">r</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+11
+</pre></div></div>
+</div>
+<p>Aaaaand we are done! ⏲️</p>
+<p>To highlight once more how much Qrisp simplifies the construction, we summarize the code of the quantum subroutine in a single function. The function uses <a class="reference internal" href="../../reference/Quantum%20Types/QuantumModulus.html"><span class="doc">QuantumModulus</span></a>, <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a>, <a class="reference internal" href="../../reference/Quantum%20Environments/ConditionEnvironment.html"><span class="doc">control</span></a> environment, and <a class="reference internal" href="../../reference/Primitives/QFT.html"><span class="doc">QFT</span></a> to implement the algorithm:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_order</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">qg</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">qg</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">qg</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="n">qg</span> <span class="o">*=</span> <span class="n">a</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>11 lines - feel free to compare with other implementations!</p>
+<p>To learn how to compile this algorithm optimized for fault-tolerant backends and deploy an exponentially faster adder, make sure to check out the Fault-tolerant compilation tutorial!</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-general-idea">The general idea</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Implementation">Implementation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/Shor.ipynb" download="Shor.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

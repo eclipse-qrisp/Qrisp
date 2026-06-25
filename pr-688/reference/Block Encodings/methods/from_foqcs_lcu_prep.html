@@ -1,0 +1,1044 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>BlockEncoding.from_foqcs_lcu_prep &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Block Encodings/methods/from_foqcs_lcu_prep';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Block%20Encodings/methods/from_foqcs_lcu_prep.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="BlockEncoding.from_projector" href="from_projector.html" />
+    <link rel="prev" title="BlockEncoding.from_foqcs_lcu_operator" href="from_foqcs_lcu_operator.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Block Encodings</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../BlockEncoding.html">BlockEncoding</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="from_array.html">BlockEncoding.from_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="from_eye.html">BlockEncoding.from_eye</a></li>
+<li class="toctree-l3"><a class="reference internal" href="from_lcu.html">BlockEncoding.from_lcu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="from_operator.html">BlockEncoding.from_operator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="from_foqcs_lcu_operator.html">BlockEncoding.from_foqcs_lcu_operator</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">BlockEncoding.from_foqcs_lcu_prep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="from_projector.html">BlockEncoding.from_projector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apply.html">BlockEncoding.apply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="apply_rus.html">BlockEncoding.apply_rus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chebyshev.html">BlockEncoding.chebyshev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="create_ancillas.html">BlockEncoding.create_ancillas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dagger.html">BlockEncoding.dagger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="expectation_value.html">BlockEncoding.expectation_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qubitization.html">BlockEncoding.qubitization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resources.html">BlockEncoding.resources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="add.html">BlockEncoding.__add__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="matmul.html">BlockEncoding.__matmul__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mul.html">BlockEncoding.__mul__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neg.html">BlockEncoding.__neg__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sub.html">BlockEncoding.__sub__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kron.html">BlockEncoding.kron</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inv.html">BlockEncoding.inv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="poly.html">BlockEncoding.poly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pseudo_inv.html">BlockEncoding.pseudo_inv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sim.html">BlockEncoding.sim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="svt.html">BlockEncoding.svt</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications.html">Algorithms &amp; Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../nisq.html">How to run on NISQ</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Block Encodings</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../BlockEncoding.html" class="nav-link">BlockEncoding</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">BlockEncoding.from_foqcs_lcu_prep</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="blockencoding-from-foqcs-lcu-prep">
+<span id="id1"></span><h1>BlockEncoding.from_foqcs_lcu_prep<a class="headerlink" href="#blockencoding-from-foqcs-lcu-prep" title="Link to this heading">#</a></h1>
+<dl class="py method">
+<dt class="sig sig-object py" id="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BlockEncoding.</span></span><span class="sig-name descname"><span class="pre">from_foqcs_lcu_prep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prep_r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../Core/QuantumVariable.html#qrisp.QuantumVariable" title="qrisp.core.quantum_variable.QuantumVariable"><span class="pre">QuantumVariable</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prep_l</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../Core/QuantumVariable.html#qrisp.QuantumVariable" title="qrisp.core.quantum_variable.QuantumVariable"><span class="pre">QuantumVariable</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_q_ops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_hermitian</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArrayLike</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_q_anc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../BlockEncoding.html#qrisp.block_encodings.BlockEncoding" title="qrisp.block_encodings.block_encoding_base.BlockEncoding"><span class="pre">BlockEncoding</span></a></span></span><a class="headerlink" href="#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep" title="Link to this definition">#</a></dt>
+<dd><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This implementation is designed for building custom FOQCS-LCU
+block encodings. For automatic construction from a given operator, use
+<a class="reference internal" href="from_foqcs_lcu_operator.html#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator" title="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_foqcs_lcu_operator()</span></code></a>.</p>
+</div>
+<p>This method implements the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) structure.
+The provided <code class="docutils literal notranslate"><span class="pre">prep_r</span></code> routine prepares the right PREP (<span class="math notranslate nohighlight">\(PREP_{R}\)</span>) state on the FOQCS-LCU ancilla register.
+The provided <code class="docutils literal notranslate"><span class="pre">prep_l</span></code> routine is the corresponding left PREP (<span class="math notranslate nohighlight">\(PREP_{L}\)</span>) routine and is applied inversely
+after <code class="docutils literal notranslate"><span class="pre">SELECT</span></code>. Based on the methodology established in <a class="reference external" href="https://arxiv.org/abs/2507.20887" rel="noreferrer" target="_blank">https://arxiv.org/abs/2507.20887</a>.</p>
+<p>In order not to restrict this implementation to just the Heisenberg and spin-glass models,
+<a class="reference internal" href="#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep" title="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_foqcs_lcu_prep()</span></code></a> is designed using partial functions for the <code class="docutils literal notranslate"><span class="pre">prep_r</span></code> and <code class="docutils literal notranslate"><span class="pre">prep_l</span></code> parameters, letting
+users pass more or less anything for the <span class="math notranslate nohighlight">\(P_{R}\)</span> and <span class="math notranslate nohighlight">\(P_{L}\)</span> subroutines. This means you can experiment
+with different <span class="math notranslate nohighlight">\(P_{R}\)</span> and <span class="math notranslate nohighlight">\(P_{L}\)</span> pairs to your hearts desire! 🦊</p>
+<p>Note, custom <span class="math notranslate nohighlight">\(P_{R}\)</span> and <span class="math notranslate nohighlight">\(P_{L}\)</span> routines must prepare an ancilla register
+containing at least <span class="math notranslate nohighlight">\(2L\)</span> qubits, where <span class="math notranslate nohighlight">\(L\)</span> is the number of operand
+qubits. The final <span class="math notranslate nohighlight">\(2L\)</span> qubits of this ancilla register are interpreted by
+the FOQCS-LCU <code class="docutils literal notranslate"><span class="pre">SELECT</span></code> block as two activation registers of length
+<span class="math notranslate nohighlight">\(L\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[[x_0, \dots, x_{L-1}, z_0, \dots, z_{L-1}].\]</div>
+<p>The <span class="math notranslate nohighlight">\(x_i\)</span> qubits control the application of <span class="math notranslate nohighlight">\(X_i\)</span> to the operand
+register, while the <span class="math notranslate nohighlight">\(z_i\)</span> qubits control the application of <span class="math notranslate nohighlight">\(Z_i\)</span>.</p>
+<p>Any additional ancilla qubits required by the custom PREP routine must precede
+these <span class="math notranslate nohighlight">\(2L\)</span> activation qubits. Thus, if the PREP routine uses
+<span class="math notranslate nohighlight">\(m\)</span> extra ancillas, the ancilla register layout is</p>
+<div class="math notranslate nohighlight">
+\[[\text{extra}_0, \dots, \text{extra}_{m-1},
+x_0, \dots, x_{L-1},
+z_0, \dots, z_{L-1}].\]</div>
+<p>For example, with <span class="math notranslate nohighlight">\(L = 2\)</span>, the FOQCS-LCU activation part consists of
+four ancilla qubits,</p>
+<div class="math notranslate nohighlight">
+\[[x_0, x_1, z_0, z_1],\]</div>
+<p>possibly preceded by any extra PREP ancillas.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>prep_r</strong><span class="classifier">Callable[[QuantumVariable], None]</span></dt><dd><p>Right FOQCS-LCU PREP routine, corresponding to <span class="math notranslate nohighlight">\(P_{R} = \mathrm{PREP}(\alpha)\)</span>
+The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.</p>
+<p>The callable is expected to take only the ancilla <code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumVariable</span></code> as its remaining argument.
+All classical parameters of the PREP routine, such as the system size or coefficient dictionaries,
+should already be fixed, for example by using <code class="xref py py-class docutils literal notranslate"><span class="pre">functools.partial</span></code>.</p>
+<p>For example, <code class="xref py py-func docutils literal notranslate"><span class="pre">foqcs_prep_heisenberg()</span></code> has parameters of the form</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">foqcs_prep_heisenberg</span><span class="p">(</span>
+    <span class="n">prep_qv</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Qubit</span><span class="p">],</span>
+    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">g</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">J</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">conjugate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</pre></div>
+</div>
+<p>In this case, <code class="docutils literal notranslate"><span class="pre">L</span></code>, <code class="docutils literal notranslate"><span class="pre">g</span></code>, and <code class="docutils literal notranslate"><span class="pre">J</span></code> should be fixed before passing the
+routine to <a class="reference internal" href="#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep" title="qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_foqcs_lcu_prep()</span></code></a>, leaving only <code class="docutils literal notranslate"><span class="pre">prep_qv</span></code> to be
+supplied internally by the <a class="reference internal" href="../BlockEncoding.html#qrisp.block_encodings.BlockEncoding" title="qrisp.block_encodings.BlockEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockEncoding</span></code></a> during <a class="reference internal" href="apply.html#qrisp.block_encodings.BlockEncoding.apply" title="qrisp.block_encodings.BlockEncoding.apply"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply()</span></code></a> or
+<a class="reference internal" href="apply_rus.html#qrisp.block_encodings.BlockEncoding.apply_rus" title="qrisp.block_encodings.BlockEncoding.apply_rus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_rus()</span></code></a>.</p>
+<p>In this example case the partial construction would look as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prep_r</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span> <span class="c1"># PREP function</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">heis_L</span><span class="p">,</span>              <span class="c1"># Number of qubits</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">_g</span><span class="p">,</span>                  <span class="c1"># Heisenberg model g coefficients</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">_J</span><span class="p">,</span>                  <span class="c1"># heisenberg model J coefficients</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>prep_l</strong><span class="classifier">Callable[[QuantumVariable], None]</span></dt><dd><p>Left FOQCS-LCU PREP routine, corresponding to
+<span class="math notranslate nohighlight">\(P_{L} = \mathrm{PREP}(a^*)\)</span>. The block-encoding circuit applies this
+routine under inversion, realizing <span class="math notranslate nohighlight">\(P_{L}^\dagger\)</span> after <code class="docutils literal notranslate"><span class="pre">SELECT</span></code></p>
+<p>In the common case, <code class="docutils literal notranslate"><span class="pre">prep_l</span></code> is constructed from the same PREP routine as
+<code class="docutils literal notranslate"><span class="pre">prep_r</span></code>, but with conjugated coefficients. It should follow the same
+calling convention as <code class="docutils literal notranslate"><span class="pre">prep_r</span></code>: all classical parameters should
+already be fixed, leaving only the ancilla <code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumVariable</span></code> to be
+supplied internally by the <a class="reference internal" href="../BlockEncoding.html#qrisp.block_encodings.BlockEncoding" title="qrisp.block_encodings.BlockEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockEncoding</span></code></a>.</p>
+<p>Following the example set in <code class="docutils literal notranslate"><span class="pre">prep_r</span></code>, the partial construction will
+be of form:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prep_l</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span> <span class="c1"># PREP function</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">heis_L</span><span class="p">,</span>              <span class="c1"># Number of qubits</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">_g</span><span class="p">,</span>                  <span class="c1"># Heisenberg model g coefficients</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">_J</span><span class="p">,</span>                  <span class="c1"># Heisenberg model J coefficients</span>
+    <span class="n">conjugate</span><span class="o">=</span><span class="kc">True</span>         <span class="c1"># Conjugate g and J coefficients</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>However, <code class="docutils literal notranslate"><span class="pre">prep_l</span></code> is not required to be built from the same Python function
+as <code class="docutils literal notranslate"><span class="pre">prep_r</span></code>. Any callable is valid as long as it prepares the correct left
+PREP state <span class="math notranslate nohighlight">\(P_{L}\)</span> for the chosen FOQCS-LCU representation and accepts
+the ancilla quantum variable as its only remaining argument.</p>
+</dd>
+<dt><strong>num_q_ops</strong><span class="classifier">int</span></dt><dd><p>Number of operand qubits, i.e. <code class="docutils literal notranslate"><span class="pre">L</span></code> argument for FOQCS-LCU PREP routines.
+The default is 1.</p>
+</dd>
+<dt><strong>is_hermitian</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the block-encoding unitary is Hermitian. For more information
+see <code class="docutils literal notranslate"><span class="pre">is_hermitian</span></code> parameter from <a class="reference internal" href="../BlockEncoding.html#qrisp.block_encodings.BlockEncoding" title="qrisp.block_encodings.BlockEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockEncoding</span></code></a> class.
+The default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd>
+<dt><strong>norm</strong><span class="classifier">“ArrayLike”</span></dt><dd><p>Normalization factor.
+The default is <cite>1</cite> in case no normalization factor is passed.</p>
+</dd>
+<dt><strong>num_q_anc</strong><span class="classifier">int</span></dt><dd><p>Number of ancillary qubits required for the passed PREP method. (Minimum 2 * <code class="docutils literal notranslate"><span class="pre">num_q_ops</span></code>)
+For example, <code class="xref py py-func docutils literal notranslate"><span class="pre">foqcs_prep_heisenberg()</span></code> requires 2 * <code class="docutils literal notranslate"><span class="pre">num_q_ops</span></code> + 6 qubits.
+This parameter is necessary for custom PREP routines whose ancilla count
+cannot be inferred automatically. For built-in FOQCS-LCU PREP routines,
+the ancilla count is predefined and this argument can be omitted.
+The default is -1.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>BlockEncoding</dt><dd><p>A BlockEncoding using FOQCS LCU.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>ValueError</dt><dd><p>When the operator is not representing spin-glass model.</p>
+</dd>
+<dt>KeyError</dt><dd><p>If method received an unsupported FOQCS-LCU PREP method</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><strong>State Preparation in FOQCS-LCU</strong></p>
+<p>The FOQCS-LCU block encoding unitary <span class="math notranslate nohighlight">\(U\)</span> relies on distinct right and left state preparation subroutines, denoted as <span class="math notranslate nohighlight">\(P_R\)</span> and <span class="math notranslate nohighlight">\(P_L\)</span>, alongside a <span class="math notranslate nohighlight">\(\text{SELECT}\)</span> operation:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbf{P_R}\)</span> <strong>(Right State Preparation):</strong> This subroutine prepares the state based on the target system’s original coefficients, <span class="math notranslate nohighlight">\(\alpha\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{P_L}\)</span> <strong>(Left State Preparation):</strong> This subroutine acts identically to <span class="math notranslate nohighlight">\(P_R\)</span>, but operates on the complex conjugated coefficients, <span class="math notranslate nohighlight">\(\alpha^*\)</span>.</p></li>
+</ul>
+<p><strong>Note on the Adjoint:</strong> Because <span class="math notranslate nohighlight">\(P_L\)</span> utilizes conjugated coefficients, its adjoint <span class="math notranslate nohighlight">\(P_L^\dagger\)</span> is in general <em>not</em> the mathematical inverse of <span class="math notranslate nohighlight">\(P_R\)</span>.</p>
+<p><strong>Summary:</strong></p>
+<p><span class="math notranslate nohighlight">\(P_R = \text{PREP}(\alpha),\; P_L = \text{PREP}(\alpha^*)\)</span></p>
+<p><span class="math notranslate nohighlight">\(U = P_L^\dagger \cdot \text{SELECT} \cdot P_R\)</span></p>
+<p class="rubric">Examples</p>
+<p>This example constructs a FOQCS-LCU block encoding for the one-dimensional
+nearest-neighbour Heisenberg Hamiltonian</p>
+<div class="math notranslate nohighlight">
+\[H =
+\sum_i (g_X X_i + g_Y Y_i + g_Z Z_i)
++
+\sum_i (J_X X_i X_{i+1} + J_Y Y_i Y_{i+1} + J_Z Z_i Z_{i+1}).\]</div>
+<p>The arrays <code class="docutils literal notranslate"><span class="pre">g</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> store the three field and coupling coefficients.
+The helper <code class="xref py py-func docutils literal notranslate"><span class="pre">foqcs_prep_heisenberg()</span></code> prepares the FOQCS-LCU state
+on the ancillary qubits that correspond to these terms.</p>
+<p>The coefficients <code class="docutils literal notranslate"><span class="pre">_g</span></code> and <code class="docutils literal notranslate"><span class="pre">_J</span></code> are the amplitudes used internally by the
+PREP routine. Their squared norm gives the LCU normalization factor
+<span class="math notranslate nohighlight">\(\alpha\)</span>, so the resulting block encoding represents approximately
+<span class="math notranslate nohighlight">\({H} / {\alpha}\)</span>. Finally, a random input state <code class="docutils literal notranslate"><span class="pre">psi</span></code> is prepared on the
+operand register and <a class="reference internal" href="apply_rus.html#qrisp.block_encodings.BlockEncoding.apply_rus" title="qrisp.block_encodings.BlockEncoding.apply_rus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_rus()</span></code></a> applies the block encoding using
+repeat-until-success sampling</p>
+<p>The constructor</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_foqcs_lcu_prep</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>wraps these PREP routines into a <a class="reference internal" href="../BlockEncoding.html#qrisp.block_encodings.BlockEncoding" title="qrisp.block_encodings.BlockEncoding"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockEncoding</span></code></a>. Essentially,
+the user supplies the state preparation routines, the number of
+operand qubits, and the normalization factor, while the constructor builds
+the corresponding FOQCS-LCU block-encoding structure.</p>
+<p>It can be applied in two common ways. The method <a class="reference internal" href="apply.html#qrisp.block_encodings.BlockEncoding.apply" title="qrisp.block_encodings.BlockEncoding.apply"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply()</span></code></a> applies the
+block encoding circuit directly, leaving the success/failure information
+in the block-encoding ancilla qubits, requiring us to explicitly filter out
+the non-zero ancillary qubits. The method <a class="reference internal" href="apply_rus.html#qrisp.block_encodings.BlockEncoding.apply_rus" title="qrisp.block_encodings.BlockEncoding.apply_rus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_rus()</span></code></a> instead uses
+repeat-until-success sampling: it repeatedly applies the block encoding
+until the success condition is observed, and then returns the transformed
+operand register. This example uses <a class="reference internal" href="apply_rus.html#qrisp.block_encodings.BlockEncoding.apply_rus" title="qrisp.block_encodings.BlockEncoding.apply_rus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_rus()</span></code></a> so that the sampled result
+corresponds to a successful application of the encoded operator to the random
+input state <code class="docutils literal notranslate"><span class="pre">psi</span></code>.</p>
+<p>This example uses <a class="reference internal" href="apply_rus.html#qrisp.block_encodings.BlockEncoding.apply_rus" title="qrisp.block_encodings.BlockEncoding.apply_rus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_rus()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">terminal_sampling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings.constructors.foqcs_lcu</span><span class="w"> </span><span class="kn">import</span> <span class="n">foqcs_prep_heisenberg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prep_psi</span><span class="p">(</span><span class="n">q_num</span><span class="p">):</span>
+    <span class="c1"># Generate state amplitudes.</span>
+    <span class="n">psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">q_num</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+        <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">q_num</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">psi</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">psi</span>
+
+<span class="c1"># Initialize variables + their values</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+<span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+
+<span class="c1"># Normalize</span>
+<span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">([</span><span class="n">g</span><span class="p">,</span> <span class="n">J</span><span class="p">]))</span>
+<span class="n">g</span> <span class="o">/=</span> <span class="n">norm</span>
+<span class="n">J</span> <span class="o">/=</span> <span class="n">norm</span>
+
+<span class="c1"># Calculating the normalization factor</span>
+<span class="n">_g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+<span class="n">_J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">_g</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">_J</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">J</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="c1"># Correction for XZ = -iY</span>
+<span class="n">_J</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">_J</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">_g</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">_g</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Normalization for block encoding</span>
+<span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">([</span><span class="n">_g</span><span class="p">,</span> <span class="n">_J</span><span class="p">]))</span>
+
+<span class="c1"># Construct dictionary input expected by foqcs_prep_heisenberg()</span>
+<span class="n">heis_g</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+<span class="n">heis_J</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">J</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+
+<span class="c1"># Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU</span>
+<span class="n">prep_r</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">heis_g</span><span class="p">,</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">heis_J</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">prep_l</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">heis_g</span><span class="p">,</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">heis_J</span><span class="p">,</span>
+    <span class="n">conjugate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">be</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_foqcs_lcu_prep</span><span class="p">(</span><span class="n">prep_r</span><span class="o">=</span><span class="n">prep_r</span><span class="p">,</span> <span class="n">prep_l</span><span class="o">=</span><span class="n">prep_l</span><span class="p">,</span> <span class="n">num_q_ops</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">psi</span> <span class="o">=</span> <span class="n">_prep_psi</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">(</span><span class="n">psi</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">qv</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;qswitch&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main_apply_rus</span><span class="p">(</span><span class="n">BE</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">BE</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">operand_prep</span><span class="p">)(</span><span class="n">psi</span><span class="p">)</span>
+
+<span class="c1"># Do the measurement using RUS</span>
+<span class="n">result_rus</span> <span class="o">=</span> <span class="n">main_apply_rus</span><span class="p">(</span><span class="n">be</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result_rus</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This example uses <a class="reference internal" href="apply.html#qrisp.block_encodings.BlockEncoding.apply" title="qrisp.block_encodings.BlockEncoding.apply"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">terminal_sampling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings.constructors.foqcs_lcu</span><span class="w"> </span><span class="kn">import</span> <span class="n">foqcs_prep_heisenberg</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prep_psi</span><span class="p">(</span><span class="n">q_num</span><span class="p">):</span>
+    <span class="c1"># Generate random normalized input state amplitudes.</span>
+    <span class="n">psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">q_num</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+        <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">q_num</span>
+    <span class="p">)</span>
+    <span class="n">psi</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">psi</span>
+
+<span class="c1"># Initialize variables + their values.</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+<span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+
+<span class="c1"># Normalize coefficients.</span>
+<span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">([</span><span class="n">g</span><span class="p">,</span> <span class="n">J</span><span class="p">]))</span>
+<span class="n">g</span> <span class="o">/=</span> <span class="n">norm</span>
+<span class="n">J</span> <span class="o">/=</span> <span class="n">norm</span>
+
+<span class="c1"># Calculate the normalization factor used by the block encoding.</span>
+<span class="n">_g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+<span class="n">_J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex&quot;</span><span class="p">)</span>
+
+<span class="n">_g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+<span class="n">_g</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">L</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+<span class="n">_g</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+<span class="n">_J</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">_J</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">_J</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">J</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">([</span><span class="n">_g</span><span class="p">,</span> <span class="n">_J</span><span class="p">]))</span>
+<span class="n">_g</span> <span class="o">/=</span> <span class="n">norm</span>
+<span class="n">_J</span> <span class="o">/=</span> <span class="n">norm</span>
+
+<span class="c1"># Construct dictionary input expected by foqcs_prep_heisenberg().</span>
+<span class="n">heis_g</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">_g</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">_g</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">_g</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+<span class="n">heis_J</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">_J</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="n">_J</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">_J</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+
+<span class="c1"># Create PREP_R and PREP_L^dagger functions.</span>
+<span class="n">prep_r</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">heis_g</span><span class="p">,</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">heis_J</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">prep_l</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">foqcs_prep_heisenberg</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="n">g</span><span class="o">=</span><span class="n">heis_g</span><span class="p">,</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">heis_J</span><span class="p">,</span>
+    <span class="n">conjugate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Constructing the block encoding using the :func:`from_foqcs_lcu_prep` function.</span>
+<span class="n">be</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_foqcs_lcu_prep</span><span class="p">(</span>
+    <span class="n">prep_r</span><span class="o">=</span><span class="n">prep_r</span><span class="p">,</span>
+    <span class="n">prep_l</span><span class="o">=</span><span class="n">prep_l</span><span class="p">,</span>
+    <span class="n">num_q_ops</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate the operands state</span>
+<span class="n">psi</span> <span class="o">=</span> <span class="n">_prep_psi</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+<span class="c1"># Create a quantum variable with the psi state</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">(</span><span class="n">psi</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+    <span class="n">qv</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;qswitch&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+
+<span class="n">qv</span> <span class="o">=</span> <span class="n">operand_prep</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+<span class="c1"># apply() applies the block-encoding circuit directly.</span>
+<span class="c1"># Unlike apply_rus(), it does not repeat until the success branch occurs.</span>
+
+<span class="c1"># Since apply() only applies the block-encoding circuit once, this branch is not</span>
+<span class="c1"># automatically selected or renormalized as in apply_rus(). Therefore, these</span>
+<span class="c1"># amplitudes represent the unnormalized block-encoded action on the input state:</span>
+<span class="n">ancillas</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+<span class="n">qc</span> <span class="o">=</span> <span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">sv</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+
+<span class="c1"># The remaining amplitude of the full statevector lives in the failure branches,</span>
+<span class="c1"># where the ancilla register is nonzero.</span>
+<span class="n">res_ops</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">L</span><span class="p">):</span>
+    <span class="n">qi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">0</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># Reverses bits</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">qi</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ancillas</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">res_ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sv</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+
+<span class="c1"># res_ops contains the amplitudes of the operand register in the postselected</span>
+<span class="c1"># success branch of the block encoding, i.e. the branch where all ancillas are 0.</span>
+
+<span class="c1">#     res_ops ≈ H|psi&gt; / alpha</span>
+
+<span class="c1"># where alpha is the LCU/block-encoding normalization factor passed as `norm`.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res_ops</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The following example shows how to define and use a custom PREP function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+<span class="n">L</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># 2 operand qubits</span>
+<span class="n">n_anc_custom_prep</span> <span class="o">=</span> <span class="mi">5</span> <span class="c1"># 4 base ancillary qubits + one extra</span>
+
+<span class="c1"># Custom PREP_R subroutine.</span>
+<span class="c1"># Defines how many ancillary qubits the circuit requires.</span>
+<span class="c1"># This example does not result in a viable block encoding,</span>
+<span class="c1"># it only shows the process of defining a custom subroutine.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">custom_prep</span><span class="p">(</span><span class="n">qv</span><span class="p">:</span> <span class="n">QuantumVariable</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Qubit</span><span class="p">],</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="c1"># Ancilla layout for L = 2 and n_anc = 5:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   [extra, x0, x1, z0, z1]</span>
+    <span class="c1">#</span>
+    <span class="c1"># SELECT will use only the final 2L qubits:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   [x0, x1, z0, z1]</span>
+    <span class="c1">#</span>
+    <span class="c1"># This PREP sets extra = 1 and copies it into x0.</span>
+    <span class="c1"># Also it sets z1 = 1.</span>
+    <span class="c1"># Thus the selected operation should be X(0)Z(1)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># Extra ancillary</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># x[0] taken from extra ancillary.</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="c1"># z[1]</span>
+
+<span class="c1"># Then, custom_prep is used for both prep_r and prep_l, as there is no</span>
+<span class="c1"># specific handling required. (For example, parametrised subcircuit</span>
+<span class="c1"># would have required conjugated parameters. See the foqcs_prep_heisenberg()</span>
+<span class="c1"># usage from the previous example)</span>
+<span class="n">prep_r</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">custom_prep</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span>
+<span class="p">)</span>
+<span class="n">prep_l</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">custom_prep</span><span class="p">,</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">L</span>
+<span class="p">)</span>
+
+<span class="n">be</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_foqcs_lcu_prep</span><span class="p">(</span>
+    <span class="n">prep_r</span> <span class="o">=</span> <span class="n">prep_r</span><span class="p">,</span>
+    <span class="n">prep_l</span> <span class="o">=</span> <span class="n">prep_l</span><span class="p">,</span>
+    <span class="n">num_q_ops</span> <span class="o">=</span> <span class="n">L</span><span class="p">,</span>
+    <span class="n">num_q_anc</span> <span class="o">=</span> <span class="n">n_anc_custom_prep</span>
+<span class="p">)</span>
+
+<span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="n">ancillas</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">qv</span><span class="p">]</span> <span class="o">+</span> <span class="n">ancillas</span><span class="p">)</span>
+
+<span class="c1"># res contains the measurement probabilities for the operand register</span>
+<span class="c1"># together with the FOQCS-LCU ancilla register.</span>
+<span class="c1">#</span>
+<span class="c1"># In this example, the custom PREP activates x[0] and z[1], so SELECT applies</span>
+<span class="c1"># X(0)Z(1). Since the operand starts in |00&gt;, the Z(1) part has no visible</span>
+<span class="c1"># phase effect and X(0) flips the first operand qubit. The inverse of prep_l</span>
+<span class="c1"># then uncomputes the PREP register, so all ancillas return to |00000&gt;.</span>
+<span class="c1"># Therefore, the expected measurement result is the operand state |10&gt; and</span>
+<span class="c1"># the ancilla state |00000&gt;, with probability 1: {(&#39;10&#39;, &#39;00000&#39;): 1.0}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Block Encodings/methods"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep"><code class="docutils literal notranslate"><span class="pre">BlockEncoding.from_foqcs_lcu_prep()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

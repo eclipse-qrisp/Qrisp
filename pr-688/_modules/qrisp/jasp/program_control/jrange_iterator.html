@@ -1,0 +1,957 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.program_control.jrange_iterator &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/program_control/jrange_iterator';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/program_control/jrange_iterator.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.program_control.jrange_iterator</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.program_control.jrange_iterator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax._src.array</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayImpl</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Marker function for robust identification of jrange loop index and</span>
+<span class="c1"># threshold inside a compiled Jaxpr.  Called once per environment, right</span>
+<span class="c1"># before __exit__, with the *updated* loop index:</span>
+<span class="c1">#   invars[0] = updated loop index</span>
+<span class="c1">#   invars[1] = threshold (stop value)</span>
+<span class="c1"># Returns the updated loop index to keep the variable live.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_jrange_marker</span><span class="p">(</span><span class="n">updated_loop_index</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identity marker returning the updated loop index (invars[0]).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">updated_loop_index</span>
+
+
+<span class="c1"># JIT-compile so every call site shares the same compiled object.</span>
+<span class="n">_jrange_marker</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">_jrange_marker</span><span class="p">)</span>
+
+<span class="c1"># Public constant exported for use in other modules.</span>
+<span class="n">JRANGE_MARKER_NAME</span> <span class="o">=</span> <span class="s2">&quot;_jrange_marker&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">JRangeIterator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+        <span class="c1"># Differentiate between the 2 possible cases of input signature</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int64&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int64&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int64&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;jrange only supports 1 or 2 arguments (step size 1 only)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># The loop index should be inclusive because this makes loop inversion</span>
+        <span class="c1"># much easier. For more details check inv_transform.py.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># The idea is now to trace two iterations to capture what values get</span>
+        <span class="c1"># updated after each iteration.</span>
+        <span class="c1"># We capture the loop semantics using the JIterationEnvironment.</span>
+        <span class="c1"># The actual jax loop primitive is then compiled in</span>
+        <span class="c1"># JIterationEnvironment.jcompile</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">JIterationEnvironment</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter_env</span> <span class="o">=</span> <span class="n">JIterationEnvironment</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter_env</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Perform the incrementation (step size 1)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Marker called right before __exit__ with the updated</span>
+            <span class="c1"># loop index.  invars[0] = updated loop index,</span>
+            <span class="c1"># invars[1] = threshold.  Assignment keeps it live.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">=</span> <span class="n">_jrange_marker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+
+            <span class="c1"># Exit the first environment and enter the second.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter_env</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter_env</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Marker for the second environment, right before __exit__.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span> <span class="o">=</span> <span class="n">_jrange_marker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loop_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter_env</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+
+
+<div class="viewcode-block" id="jrange">
+<a class="viewcode-back" href="../../../../reference/Jasp/Control%20Flow/jrange.html#qrisp.jasp.jrange">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">jrange</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs a loop with a dynamic bound. Similar to the Python native ``range``,</span>
+<span class="sd">    this iterator can receive one argument (stop) or two arguments (start, stop).</span>
+<span class="sd">    Step size is always 1.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        Similar to the :ref:`ClControlEnvironment &lt;ClControlEnvironment&gt;`, this feature must not have</span>
+<span class="sd">        external carry values, implying values computed within the loop can&#39;t</span>
+<span class="sd">        be used outside of the loop. It is however possible to carry on values</span>
+<span class="sd">        from the previous iteration.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        Each loop iteration must perform exactly the same instructions - the only</span>
+<span class="sd">        thing that changes is the loop index</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args : int</span>
+<span class="sd">        Can be either a single integer ``stop``, or two integers ``start, stop``.</span>
+<span class="sd">        In both cases, ``stop`` is exclusive, as in standard Python range.</span>
+<span class="sd">        - If one argument is provided, it acts as ``stop`` and ``start`` defaults to 0.</span>
+<span class="sd">        - If two arguments are provided, they act as ``start`` and ``stop``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We construct a function that encodes an integer into an arbitrarily sized</span>
+<span class="sd">    :ref:`QuantumVariable`:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat, control, x</span>
+<span class="sd">        from qrisp import QuantumFloat, control, measure, x</span>
+<span class="sd">        from qrisp.jasp import jrange, make_jaspr, qache</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def int_encoder(qv, encoding_int):</span>
+
+<span class="sd">            for i in jrange(qv.size):</span>
+<span class="sd">                with control(encoding_int &amp; (1&lt;&lt;i)):</span>
+<span class="sd">                    x(qv[i])</span>
+
+<span class="sd">        def test_f(a, b):</span>
+
+<span class="sd">            qv = QuantumFloat(a)</span>
+
+<span class="sd">            int_encoder(qv, b+1)</span>
+
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1,1)</span>
+
+<span class="sd">    Test the result:</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(5, 8)</span>
+<span class="sd">    9</span>
+<span class="sd">    &gt;&gt;&gt; jaspr(5, 9)</span>
+<span class="sd">    10</span>
+
+<span class="sd">    We now give examples that violate the above rules (ie. no carries and changing</span>
+<span class="sd">    iteration behavior).</span>
+
+<span class="sd">    To create a loop with carry behavior we return the incremented final loop index</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def int_encoder(qv, encoding_int):</span>
+
+<span class="sd">            for i in jrange(qv.size):</span>
+<span class="sd">                with control(encoding_int &amp; (1&lt;&lt;i)):</span>
+<span class="sd">                    x(qv[i])</span>
+<span class="sd">                j = i + 1</span>
+<span class="sd">            return j</span>
+
+
+<span class="sd">        def test_f(a, b):</span>
+
+<span class="sd">            qv = QuantumFloat(a)</span>
+
+<span class="sd">            int_encoder(qv, b+1)</span>
+
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1,1)</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(5, 8)</span>
+<span class="sd">    Exception: Found jrange with external carry value</span>
+
+<span class="sd">    To demonstrate the second kind of illegal behavior, we construct a loop</span>
+<span class="sd">    that behaves differently on the first iteration:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def int_encoder(qv, encoding_int):</span>
+
+<span class="sd">            flag = True</span>
+<span class="sd">            for i in jrange(qv.size):</span>
+<span class="sd">                if flag:</span>
+<span class="sd">                    with control(encoding_int &amp; (1&lt;&lt;i)):</span>
+<span class="sd">                        x(qv[i])</span>
+<span class="sd">                else:</span>
+<span class="sd">                    x(qv[0])</span>
+<span class="sd">                flag = False</span>
+
+<span class="sd">        def test_f(a, b):</span>
+
+<span class="sd">            qv = QuantumFloat(a)</span>
+
+<span class="sd">            int_encoder(qv, b+1)</span>
+
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1,1)</span>
+
+<span class="sd">    In this script, ``int_encoder`` defines a boolean flag that changes the</span>
+<span class="sd">    semantics of the iteration behavior. After the first iteration the flag</span>
+<span class="sd">    is set to ``False`` such that the alternate behavior is activated.</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(5, 8)</span>
+<span class="sd">    Exception: Jax semantics changed during jrange iteration</span>
+
+<span class="sd">    Since the ``step`` argument has been removed as of v0.9, multiply the loop</span>
+<span class="sd">    variable by your desired step inside the body.</span>
+
+<span class="sd">    The following example steps through every second qubit (equivalent to step 2):</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp import jrange, make_jaspr, qache</span>
+<span class="sd">        from qrisp import QuantumFloat, x, measure</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def stepped_loop(qv):</span>
+<span class="sd">            # Number of iterations for step 2</span>
+<span class="sd">            n = (qv.size + 1) // 2</span>
+<span class="sd">            # Step-1 loop</span>
+<span class="sd">            for k in jrange(n):</span>
+<span class="sd">                # Multiply by the desired step</span>
+<span class="sd">                i = 2 * k</span>
+<span class="sd">                x(qv[i])</span>
+
+<span class="sd">        def test_f(a):</span>
+<span class="sd">            qv = QuantumFloat(a)</span>
+<span class="sd">            stepped_loop(qv)</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1)</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(3)</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; jaspr(4)</span>
+<span class="sd">    5</span>
+
+<span class="sd">    Reversing a ``jrange`` loop (equivalent to step size -1) can be done in</span>
+<span class="sd">    two ways.</span>
+
+<span class="sd">    The first is to compute the index manually:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp import jrange, make_jaspr, qache</span>
+<span class="sd">        from qrisp import QuantumFloat, x, measure</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def reversed_loop(qv):</span>
+<span class="sd">            # Step-1 loop</span>
+<span class="sd">            for j in jrange(qv.size):</span>
+<span class="sd">                # Compute index in reverse</span>
+<span class="sd">                i = qv.size - j - 1</span>
+<span class="sd">                x(qv[i])</span>
+
+<span class="sd">        def test_f(a):</span>
+<span class="sd">            qv = QuantumFloat(a)</span>
+<span class="sd">            reversed_loop(qv)</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1)</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(3)</span>
+<span class="sd">    7</span>
+<span class="sd">    &gt;&gt;&gt; jaspr(4)</span>
+<span class="sd">    15</span>
+
+<span class="sd">    The second way is to wrap the forward loop in an</span>
+<span class="sd">    :meth:`~qrisp.environments.InversionEnvironment`:</span>
+
+<span class="sd">    First, the forward loop without inversion:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, x, invert</span>
+<span class="sd">        from qrisp.jasp import jrange, make_jaspr, qache</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def loop_with_offset(qv, start):</span>
+<span class="sd">            # Forward jrange loop</span>
+<span class="sd">            for i in jrange(qv.size - start):</span>
+<span class="sd">                # Offset the loop variable by start</span>
+<span class="sd">                x(qv[i + start])</span>
+
+<span class="sd">        def test_f(a):</span>
+<span class="sd">            qv = QuantumVariable(a)</span>
+<span class="sd">            loop_with_offset(qv, 2)</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(test_f)(1)</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr(4)</span>
+<span class="sd">    12</span>
+
+<span class="sd">    This applies ``x`` to qubits 2 and 3, giving state ``|0011⟩``.</span>
+<span class="sd">    Wrapping the same loop in ``invert()`` reverses the iteration order and</span>
+<span class="sd">    daggers the operations:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def reversed_loop_with_offset(qv, start):</span>
+<span class="sd">            # Reverses the enclosed loop</span>
+<span class="sd">            with invert():</span>
+<span class="sd">                # Same forward loop, now runs backwards</span>
+<span class="sd">                for i in jrange(qv.size - start):</span>
+<span class="sd">                    x(qv[i + start])</span>
+
+<span class="sd">        def test_f_rev(a):</span>
+<span class="sd">            qv = QuantumVariable(a)</span>
+<span class="sd">            reversed_loop_with_offset(qv, 2)</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr_rev = make_jaspr(test_f_rev)(1)</span>
+
+<span class="sd">    &gt;&gt;&gt; jaspr_rev(4)</span>
+<span class="sd">    12</span>
+
+<span class="sd">    Because ``x`` is self-inverse, the result is the same — the loop still</span>
+<span class="sd">    iterates from ``qv.size - start - 1`` down to ``start``. JASP handles</span>
+<span class="sd">    the reversed iteration and proper daggers automatically, including at</span>
+<span class="sd">    higher nesting levels.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;jrange takes 1 or 2 arguments (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> given). &quot;</span>
+            <span class="s2">&quot;The step argument of jrange has been removed &quot;</span>
+            <span class="s2">&quot;in version 0.9. Use arithmetic on the loop variable to achieve &quot;</span>
+            <span class="s2">&quot;stepping behavior.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">new_args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">ArrayImpl</span><span class="p">)):</span>
+                <span class="n">new_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">make_tracer</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">JRangeIterator</span><span class="p">(</span><span class="o">*</span><span class="n">new_args</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">new_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">new_args</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_tracer</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a JIT-compiled tracer from a Python scalar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : bool, int, float, or complex</span>
+<span class="sd">        The value to convert into a tracer.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ArrayImpl</span>
+<span class="sd">        A traced JAX array representing the given value.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    Exception</span>
+<span class="sd">        If the type of *x* is not supported.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">bool</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">int64</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">float64</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">complex32</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Don&#39;t know how to tracerize type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">tracerizer</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jit</span><span class="p">(</span><span class="n">tracerizer</span><span class="p">)()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">jlen</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the length of *x*, supporting both lists and JAX arrays.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : list or ArrayImpl</span>
+<span class="sd">        The object whose length to return.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        ``len(x)`` if *x* is a list, otherwise ``x.size``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,2074 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.core.quantum_variable &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/core/quantum_variable';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/core/quantum_variable.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.core.quantum_variable</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.core.quantum_variable</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_util</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core.compilation</span><span class="w"> </span><span class="kn">import</span> <span class="n">qompiler</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.measurement_result</span><span class="w"> </span><span class="kn">import</span> <span class="n">DecodedMeasurementResult</span>
+
+
+<div class="viewcode-block" id="QuantumVariable">
+<a class="viewcode-back" href="../../../reference/Core/QuantumVariable.html#qrisp.QuantumVariable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantumVariable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The QuantumVariable is the quantum equivalent of a regular variable in classical</span>
+<span class="sd">    programming languages. All :ref:`quantum types &lt;QuantumTypes&gt;` inherit from this</span>
+<span class="sd">    class. The QuantumVariable allows many automizations and quality of life</span>
+<span class="sd">    improvements such as hidden qubit management, de/encoding to human readable labels</span>
+<span class="sd">    or typing.</span>
+
+<span class="sd">    Each QuantumVariable is registered in a :ref:`QuantumSession`. It can be accessed</span>
+<span class="sd">    using the ``.qs`` attribute:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">    &gt;&gt;&gt; example_qv = QuantumVariable(3)</span>
+<span class="sd">    &gt;&gt;&gt; quantum_session = example_qv.qs</span>
+
+<span class="sd">    The qubits of the QuantumVariable are stored as a list in the ``.reg`` attribute</span>
+
+<span class="sd">    &gt;&gt;&gt; qubits = example_qv.reg</span>
+
+<span class="sd">    To quickly access the qubits of a given variable, we use the [ ] operator:</span>
+
+<span class="sd">    &gt;&gt;&gt; qubit_2 = example_qv[2]</span>
+
+<span class="sd">    We can find out about the amount of qubits in the QuantumVariable with the ``.size``</span>
+<span class="sd">    attribute</span>
+
+<span class="sd">    &gt;&gt;&gt; example_qv.size</span>
+<span class="sd">    3</span>
+
+<span class="sd">    **Naming**</span>
+
+<span class="sd">    QuantumVariables can be given names to identify them independently of their naming</span>
+<span class="sd">    as Python objects.</span>
+
+<span class="sd">    &gt;&gt;&gt; example_qv_2 = QuantumVariable(3, name = &quot;alice&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; example_qv_2.name</span>
+<span class="sd">    &#39;alice&#39;</span>
+
+<span class="sd">    If not explicitely specified during construction, a name is determined</span>
+<span class="sd">    automatically. Qrisp will try to infer the name of the Python variable and if that</span>
+<span class="sd">    fails, a generic name is given.</span>
+
+<span class="sd">    &gt;&gt;&gt; example_qv.name</span>
+<span class="sd">    &#39;example_qv&#39;</span>
+
+<span class="sd">    In order to keep the generated quantum circuits comprehensive, the qubits are named</span>
+<span class="sd">    after their containing QuantumVariable with an extra number, which indicates their</span>
+<span class="sd">    index.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import cx</span>
+<span class="sd">    &gt;&gt;&gt; cx(example_qv, example_qv_2)</span>
+<span class="sd">    &gt;&gt;&gt; print(example_qv.qs)</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">        example_qv.0: ──■────────────</span>
+<span class="sd">                        │</span>
+<span class="sd">        example_qv.1: ──┼────■───────</span>
+<span class="sd">                        │    │</span>
+<span class="sd">        example_qv.2: ──┼────┼────■──</span>
+<span class="sd">                      ┌─┴─┐  │    │</span>
+<span class="sd">             alice.0: ┤ X ├──┼────┼──</span>
+<span class="sd">                      └───┘┌─┴─┐  │</span>
+<span class="sd">             alice.1: ─────┤ X ├──┼──</span>
+<span class="sd">                           └───┘┌─┴─┐</span>
+<span class="sd">             alice.2: ──────────┤ X ├</span>
+<span class="sd">                                └───┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable example_qv</span>
+<span class="sd">        QuantumVariable alice</span>
+
+<span class="sd">    QuantumSessions can only contain uniquely named QuantumVariables. If two</span>
+<span class="sd">    QuantumSessions are :ref:`merged &lt;SessionMerging&gt;` containing identically named</span>
+<span class="sd">    QuantumVariables, the more recently created QuantumVariable will be renamed:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat</span>
+
+<span class="sd">        s = QuantumFloat(5)</span>
+
+<span class="sd">        for i in range(4):</span>
+<span class="sd">            temp = QuantumFloat(4)</span>
+<span class="sd">            temp[:] = 2**i</span>
+<span class="sd">            s += temp</span>
+
+<span class="sd">    &gt;&gt;&gt; print(s.qs)</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                       ┌───────────┐┌───────────┐┌───────────┐┌───────────┐</span>
+<span class="sd">             s.0: ─────┤0          ├┤0          ├┤0          ├┤0          ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">             s.1: ─────┤1          ├┤1          ├┤1          ├┤1          ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">             s.2: ─────┤2          ├┤2          ├┤2          ├┤2          ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">             s.3: ─────┤3          ├┤3          ├┤3          ├┤3          ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">             s.4: ─────┤4 __iadd__ ├┤4          ├┤4          ├┤4          ├</span>
+<span class="sd">                  ┌───┐│           ││           ││           ││           │</span>
+<span class="sd">          temp.0: ┤ X ├┤5          ├┤           ├┤           ├┤           ├</span>
+<span class="sd">                  └───┘│           ││           ││           ││           │</span>
+<span class="sd">          temp.1: ─────┤6          ├┤  __iadd__ ├┤           ├┤           ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">          temp.2: ─────┤7          ├┤           ├┤           ├┤           ├</span>
+<span class="sd">                       │           ││           ││           ││           │</span>
+<span class="sd">          temp.3: ─────┤8          ├┤           ├┤  __iadd__ ├┤           ├</span>
+<span class="sd">                       └───────────┘│           ││           ││           │</span>
+<span class="sd">        temp_1.0: ──────────────────┤5          ├┤           ├┤           ├</span>
+<span class="sd">                  ┌───┐             │           ││           ││           │</span>
+<span class="sd">        temp_1.1: ┤ X ├─────────────┤6          ├┤           ├┤  __iadd__ ├</span>
+<span class="sd">                  └───┘             │           ││           ││           │</span>
+<span class="sd">        temp_1.2: ──────────────────┤7          ├┤           ├┤           ├</span>
+<span class="sd">                                    │           ││           ││           │</span>
+<span class="sd">        temp_1.3: ──────────────────┤8          ├┤           ├┤           ├</span>
+<span class="sd">                                    └───────────┘│           ││           │</span>
+<span class="sd">        temp_2.0: ───────────────────────────────┤5          ├┤           ├</span>
+<span class="sd">                                                 │           ││           │</span>
+<span class="sd">        temp_2.1: ───────────────────────────────┤6          ├┤           ├</span>
+<span class="sd">                  ┌───┐                          │           ││           │</span>
+<span class="sd">        temp_2.2: ┤ X ├──────────────────────────┤7          ├┤           ├</span>
+<span class="sd">                  └───┘                          │           ││           │</span>
+<span class="sd">        temp_2.3: ───────────────────────────────┤8          ├┤           ├</span>
+<span class="sd">                                                 └───────────┘│           │</span>
+<span class="sd">        temp_3.0: ────────────────────────────────────────────┤5          ├</span>
+<span class="sd">                                                              │           │</span>
+<span class="sd">        temp_3.1: ────────────────────────────────────────────┤6          ├</span>
+<span class="sd">                                                              │           │</span>
+<span class="sd">        temp_3.2: ────────────────────────────────────────────┤7          ├</span>
+<span class="sd">                  ┌───┐                                       │           │</span>
+<span class="sd">        temp_3.3: ┤ X ├───────────────────────────────────────┤8          ├</span>
+<span class="sd">                  └───┘                                       └───────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumFloat s</span>
+<span class="sd">        QuantumFloat temp</span>
+<span class="sd">        QuantumFloat temp_1</span>
+<span class="sd">        QuantumFloat temp_2</span>
+<span class="sd">        QuantumFloat temp_3</span>
+
+
+<span class="sd">    Renaming does not happen for names given through the ``name`` keyword, unless the</span>
+<span class="sd">    name ends with a ``*``.</span>
+
+<span class="sd">    &gt;&gt;&gt; example_qv_3 = QuantumVariable(3, name = &quot;alice&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; cx(example_qv, example_qv_3)</span>
+<span class="sd">    Exception: Tried to merge QuantumSession containing identically named</span>
+<span class="sd">    QuantumVariables</span>
+<span class="sd">    &gt;&gt;&gt; example_qv_4 = QuantumVariable(3, name = &quot;alice*&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; cx(example_qv, example_qv_4)</span>
+<span class="sd">    &gt;&gt;&gt; example_qv_4.name</span>
+<span class="sd">    &#39;alice_1&#39;</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Writing a function that brings an arbitrary QuantumVariable into a GHZ state</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, cx</span>
+<span class="sd">        def GHZ(qv):</span>
+<span class="sd">             h(qv[0])</span>
+<span class="sd">             for i in range(1, qv.size):</span>
+<span class="sd">                 cx(qv[0], qv[i])</span>
+
+<span class="sd">    Evaluation:</span>
+
+<span class="sd">    &gt;&gt;&gt; qv = QuantumVariable(5)</span>
+<span class="sd">    &gt;&gt;&gt; GHZ(qv)</span>
+<span class="sd">    &gt;&gt;&gt; print(qv)</span>
+<span class="sd">    {&#39;00000&#39;: 0.5, &#39;11111&#39;: 0.5}</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">live_qvs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">creation_counter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">name_tracker</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="QuantumVariable.__init__">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.__init__.html#qrisp.QuantumVariable.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Constructs a QuantumVariable - possibly with a given name or in a given</span>
+<span class="sd">        QuantumSession.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size : int</span>
+<span class="sd">            The amount of qubits this QuantumVariable contains.</span>
+<span class="sd">        qs : QuantumSession, optional</span>
+<span class="sd">            A QuantumSession object, where the QuantumVariable is supposed to be</span>
+<span class="sd">            registered. The default is None.</span>
+<span class="sd">        name : string, optional</span>
+<span class="sd">            A name which uniquely identifies the QuantumVariable. If ended with a</span>
+<span class="sd">            \*, name is allowed to be updated if a naming collision arises. By default,</span>
+<span class="sd">            Qrisp will try to infer the name of the Python variable - otherwise a</span>
+<span class="sd">            generic name is given.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store quantum session</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumSession</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span><span class="p">,</span> <span class="n">check_for_tracing_mode</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">qubit_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="n">qs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="p">()</span>
+
+        <span class="c1"># self.size = size</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># If name is given, register variable in session manager</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_counter</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="k">continue</span>
+                        <span class="k">break</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+        <span class="c1"># Otherwise try to infer from code inspection</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_calling_line</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">is</span> <span class="n">QuantumVariable</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">find_calling_line</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">find_calling_line</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">split_line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
+            <span class="n">name_found</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_line</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">split_line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">split_line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Quantum&quot;</span><span class="p">:</span>
+                    <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">python_var_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">python_var_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                    <span class="c1"># name = self.get_unique_name(python_var_name)</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">python_var_name</span>
+
+                    <span class="n">name_found</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+                            <span class="n">name_found</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+                        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">python_var_name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># If this didn&#39;t work, generate a generic, unique name</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">name_found</span><span class="p">:</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+        <span class="c1"># This attribute tracks the created QuantumVariables for the</span>
+        <span class="c1"># auto_uncompute decorator</span>
+        <span class="c1"># We use weak references as some qrisp modules rely on reference counting</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="n">flatten_qv</span><span class="p">,</span> <span class="n">unflatten_qv</span>
+
+            <span class="c1"># Register as a PyTree with JAX</span>
+            <span class="n">tree_util</span><span class="o">.</span><span class="n">register_pytree_node</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">flatten_qv</span><span class="p">,</span> <span class="n">unflatten_qv</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># The following lists are used to indicate to the</span>
+        <span class="c1"># (un)flattening mechanism of Jax which attributes</span>
+        <span class="c1"># of the QuantumVariable should be considered static</span>
+        <span class="c1"># and which are dynamic.</span>
+        <span class="c1"># For instance, in the case of QuantumFloat,</span>
+        <span class="c1"># the exponent is dynamic and the signed boolean is</span>
+        <span class="c1"># static.</span>
+        <span class="c1"># For reference check:</span>
+        <span class="c1"># https://docs.jax.dev/en/latest/custom_pytrees.html</span>
+
+        <span class="c1"># Specify the traced attributes (None for base type QuantumVariable)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traced_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Specify the static attributes (None for base type QuantumVariable)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_attributes</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">cx</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">x</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="n">or_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">or_res</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">))):</span>
+            <span class="n">mcx</span><span class="p">([</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">or_res</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">or_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+            <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">or_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)):</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">or_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">or_res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__and__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">mcx</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="n">and_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">and_res</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">))):</span>
+            <span class="n">mcx</span><span class="p">([</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">and_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">and_res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__xor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">cx</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="n">and_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">and_res</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">))):</span>
+            <span class="n">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">and_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">and_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">and_res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to inject QuantumVariable into non-callable&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc.utility</span><span class="w"> </span><span class="kn">import</span> <span class="n">redirect_qfunction</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">return_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">redirect_qfunction</span><span class="p">(</span><span class="n">other</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">return_function</span>
+
+<div class="viewcode-block" id="QuantumVariable.delete">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.delete.html#qrisp.QuantumVariable.delete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recompute</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This method is for deleting a QuantumVariable and thus freeing up and resetting</span>
+<span class="sd">        the used qubits.</span>
+
+<span class="sd">        Note that this method has a different function than the destructor. Calling this</span>
+<span class="sd">        method will tell the QuantumSession to mark the used qubits as free and apply a</span>
+<span class="sd">        reset gate.</span>
+<span class="sd">        If set to True, the keyword verify will cause a simulation to check, wether the</span>
+<span class="sd">        deleted qubits are in the $\ket{0}$ state prior to resetting. This is helpfull</span>
+<span class="sd">        during debugging, as it indicates wether the uncomputation of this</span>
+<span class="sd">        QuantumVariable was successfull.</span>
+
+<span class="sd">        After deletion, the QuantumVariable object is basically unchanged but an error</span>
+<span class="sd">        will be raised if further operations on the deleted qubits are attempted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verify : bool, optional</span>
+<span class="sd">            If this bool is set to True, Qrisp will verify that the deleted qubits are</span>
+<span class="sd">            indeed in the $\ket{0}$ state. The default is ``False``.</span>
+<span class="sd">        recompute : bool, optional</span>
+<span class="sd">            If set to ``True``, this QuantumVariable can be recomputed if it is required</span>
+<span class="sd">            for the uncomputation of another QuantumVariable. For more information on</span>
+<span class="sd">            the (dis)advantages check :ref:`recomputation &lt;recomputation&gt;`. The default</span>
+<span class="sd">            is ``False``.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to delete qubits not in \|0&gt; state.</span>
+
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumVariable, execute some gates and try to delete with</span>
+<span class="sd">        verify = True</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable, x, h</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(2)</span>
+<span class="sd">        &gt;&gt;&gt; x(qv[0])</span>
+<span class="sd">        &gt;&gt;&gt; h(qv[1])</span>
+<span class="sd">        &gt;&gt;&gt; qv.delete(verify = True)</span>
+<span class="sd">        Exception: Tried to delete qubits not in |0&gt; state.</span>
+
+<span class="sd">        We now (manually) uncompute the gates</span>
+
+<span class="sd">        &gt;&gt;&gt; x(qv[0])</span>
+<span class="sd">        &gt;&gt;&gt; h(qv[1])</span>
+<span class="sd">        &gt;&gt;&gt; qv.delete(verify = True)</span>
+<span class="sd">        &gt;&gt;&gt; qv.is_deleted()</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; x(qv[0])</span>
+<span class="sd">        Exception: Tried to perform operation x on unallocated qubit qv_1.0.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">TracingQuantumSession</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deleted</span><span class="p">():</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">delete_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verify</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]()</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">recompute</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">:</span>
+                <span class="n">qb</span><span class="o">.</span><span class="n">recompute</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">qb</span><span class="o">.</span><span class="n">allocated</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="QuantumVariable.duplicate">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.duplicate.html#qrisp.QuantumVariable.duplicate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">qubits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Duplicates the QuantumVariable in the sense that a new QuantumVariable is</span>
+<span class="sd">        created with same type and parameters but initialized in the $\ket{0}$ state.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : string, optional</span>
+<span class="sd">            A unique name to identify that QuantumVariable. If not given, a name will be</span>
+<span class="sd">            generated.</span>
+<span class="sd">        qs : QuantumSession, optional</span>
+<span class="sd">            A QuantumSession, where the result should be registered. If not given, a new</span>
+<span class="sd">            QuantumSession will be generated.</span>
+<span class="sd">        init : bool, optional</span>
+<span class="sd">            If set to True, the :meth:`init_from &lt;qrisp.QuantumVariable.init_from&gt;`</span>
+<span class="sd">            method of the result will be called on self. The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        duplicate : Type of self</span>
+<span class="sd">            The duplicated QuantumVariable.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumFloat and duplicate:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf_0 = QuantumFloat(4, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; qf_1 = qf_0.duplicate()</span>
+<span class="sd">        &gt;&gt;&gt; type(qf_1)</span>
+<span class="sd">        qrisp.qtypes.quantum_float.QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf_1.size</span>
+<span class="sd">        4</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumSession</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span><span class="p">,</span> <span class="n">check_for_tracing_mode</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="n">new_qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_qs</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="p">()</span>
+
+        <span class="n">duplicate</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">qubits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="n">qubits</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="c1"># Register duplicate variable in session</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">new_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">user_given_name</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_dupl&quot;</span>
+                <span class="n">new_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_dupl&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                        <span class="n">new_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge</span>
+
+        <span class="n">duplicate</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">new_qs</span>
+
+        <span class="k">if</span> <span class="n">qs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">QuantumSession</span><span class="p">):</span>
+            <span class="n">merge</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">new_qs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">init</span><span class="p">:</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">init_from</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">duplicate</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.decoder">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.decoder.html#qrisp.QuantumVariable.decoder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The decoder method specifies how a QuantumVariable turns the outcomes of</span>
+<span class="sd">        measurements into human-readable values. It recieves an integer ``i`` and</span>
+<span class="sd">        returns a human-readable value.</span>
+
+<span class="sd">        This method is supposed to be overloaded when defining new</span>
+<span class="sd">        :ref:`quantum types &lt;QuantumTypes&gt;`.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        i : int</span>
+<span class="sd">            Integer representing the outcome of a measurement of the qubits of this</span>
+<span class="sd">            QuantumVariable.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            A human-readable value. Has to be hashable.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumFloat and inspect its decoder:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(3, -1, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; print(qf.decoder(1))</span>
+<span class="sd">        0.5</span>
+
+<span class="sd">        This implies that if the 3 qubits of this QuantumFloat are measured in state</span>
+<span class="sd">        001, this outcome corresponds to the value 0.5.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">bin_rep</span>
+
+        <span class="k">return</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">jdecoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">i</span>
+
+<div class="viewcode-block" id="QuantumVariable.encoder">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.encoder.html#qrisp.QuantumVariable.encoder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The encoder reverses the decoder, it turns human-readable values into integers.</span>
+
+<span class="sd">        If not overloaded, the encoder will perform a linear search on decoder inputs to</span>
+<span class="sd">        match the given value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label :</span>
+<span class="sd">            A human-readable value.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Unknown input value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        i : int</span>
+<span class="sd">            The integer encoding the given value.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumChar and inspect it&#39;s encoder:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumChar</span>
+<span class="sd">        &gt;&gt;&gt; q_ch = QuantumChar()</span>
+<span class="sd">        &gt;&gt;&gt; print(q_ch.encoder(&quot;f&quot;))</span>
+<span class="sd">        5</span>
+
+<span class="sd">        This implies that if the 5 qubits of this QuantumChar are measured to</span>
+<span class="sd">        ``5 = 00101``, the out come will be displayed as f.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">i</span>
+
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Value &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; not supported by encoder.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.encode">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.encode.html#qrisp.QuantumVariable.encode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">permit_dirtyness</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The encode method allows to quickly bring a QuantumVariable in a desired</span>
+<span class="sd">        computational basis state.</span>
+
+<span class="sd">        A shorthand for this method is given by the ``[:]`` operator.</span>
+
+<span class="sd">        Note that the qubits to initialize have to be fresh (i.e. no operations</span>
+<span class="sd">        performed on them).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value :</span>
+<span class="sd">            A value supported by the encoder.</span>
+<span class="sd">        permit_dirtyness : bool, optional</span>
+<span class="sd">            Surpresses the error message when calling encode on dirty qubits.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create two quantum floats and encode the value 2.5. For one of them, we</span>
+<span class="sd">        perform an x gate onto the corresponding qubits, resulting in an error.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, x</span>
+<span class="sd">        &gt;&gt;&gt; qf_0 = QuantumFloat(3, -1, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; qf_1 = QuantumFloat(3, -1, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; x(qf_0)</span>
+<span class="sd">        &gt;&gt;&gt; qf_0.encode(2.5)</span>
+<span class="sd">        Exception: Tried to initialize qubits which are not fresh anymore.</span>
+<span class="sd">        &gt;&gt;&gt; qf_1[:] = 2.5</span>
+<span class="sd">        &gt;&gt;&gt; print(qf_1)</span>
+<span class="sd">        {2.5: 1.0}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_fresh</span><span class="p">,</span> <span class="n">int_encoder</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">TracingQuantumSession</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">permit_dirtyness</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_fresh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize qubits which are not fresh anymore.&quot;</span><span class="p">)</span>
+
+        <span class="n">int_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.init_state">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.init_state.html#qrisp.QuantumVariable.init_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize an arbitrary quantum state on this quantum variable.</span>
+
+<span class="sd">        This method supports two input formats:</span>
+
+<span class="sd">        **1. Dictionary input**</span>
+
+<span class="sd">            A dictionary ``{value: amplitude}`` describing the (possibly</span>
+<span class="sd">            non-normalized) wavefunction in the logical basis of the quantum</span>
+<span class="sd">            variable. Any value not listed is assigned amplitude zero.</span>
+
+<span class="sd">        **2. Explicit statevector input**</span>
+
+<span class="sd">            A flat vector of complex amplitudes of length :math:`2^{n}`, where</span>
+<span class="sd">            :math:`n` is the number of qubits. The vector is automatically</span>
+<span class="sd">            normalized. The little-endian convention is assumed for indexing</span>
+<span class="sd">            basis states. See :ref:`prepare &lt;prepare&gt;` for details.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            In Jasp mode, Python-based shape and checks on the norm of the</span>
+<span class="sd">            statevector are skipped to avoid tracing side effects.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict or array-like</span>
+<span class="sd">            Either a dictionary ``{value: amplitude}`` or a length</span>
+<span class="sd">            :math:`2^{n}` complex statevector.</span>
+
+<span class="sd">        method : {&quot;auto&quot;, &quot;qiskit&quot;, &quot;qswitch&quot;}, optional</span>
+<span class="sd">            Select the state-preparation backend.</span>
+<span class="sd">            The possible options are:</span>
+
+<span class="sd">            - ``&quot;auto&quot;`` (default):</span>
+<span class="sd">                Use the Qiskit-based initializer outside Jasp mode and fall back</span>
+<span class="sd">                to the internal ``qswitch`` initializer in Jasp mode.</span>
+
+<span class="sd">            - ``&quot;qiskit&quot;``:</span>
+<span class="sd">                Force the Qiskit state-preparation circuit. Not available in</span>
+<span class="sd">                Jasp mode.</span>
+
+<span class="sd">            - ``&quot;qswitch&quot;``:</span>
+<span class="sd">                Use the :ref:`q_switch &lt;q_switch&gt;`-based implementation, which</span>
+<span class="sd">                is compatible with Jasp mode.</span>
+
+<span class="sd">            Defaults to ``&quot;auto&quot;``.</span>
+
+
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        **Dictionary input**</span>
+
+<span class="sd">        We create a ``QuantumFloat`` and encode the state</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\psi} = \sqrt{\tfrac{1}{3}}\,\ket{0.5}</span>
+<span class="sd">                         + i\sqrt{\tfrac{2}{3}}\,\ket{2.0}</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(3, -1)</span>
+<span class="sd">        &gt;&gt;&gt; qf.init_state({0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5})</span>
+
+<span class="sd">        or equivalently:</span>
+
+<span class="sd">        &gt;&gt;&gt; qf[:] = {0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5}</span>
+
+<span class="sd">        **Explicit statevector input**</span>
+
+<span class="sd">        In this example, we create a :ref:`QuantumFloat` and prepare the normalized state</span>
+<span class="sd">        $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.</span>
+
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+
+<span class="sd">        &gt;&gt;&gt; b = np.array([0, 1, 2, 3], dtype=float)</span>
+<span class="sd">        &gt;&gt;&gt; b /= np.linalg.norm(b)</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(2)</span>
+<span class="sd">        &gt;&gt;&gt; qf.init_state(b)</span>
+
+<span class="sd">        We can use the ``statevector`` method to get a function that maps basis states</span>
+<span class="sd">        to amplitudes to verify the prepared state:</span>
+
+<span class="sd">        &gt;&gt;&gt; sv_function = qf.qs.statevector(&quot;function&quot;)</span>
+
+<span class="sd">        &gt;&gt;&gt; print(f&quot;b[1]: {b[1]:.6f} -&gt; {sv_function({qf: 1}):.6f}&quot;)</span>
+<span class="sd">        b[1]: 0.267261 -&gt; 0.267261-0.000000j</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;b[2]: {b[2]:.6f} -&gt; {sv_function({qf: 2}):.6f}&quot;)</span>
+<span class="sd">        b[2]: 0.534522 -&gt; 0.534522-0.000000j</span>
+
+<span class="sd">        where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`</span>
+<span class="sd">        and index 2 to :math:`\ket{q_0=0, q_1=1}`.</span>
+
+<span class="sd">        **Forcing a backend**</span>
+
+<span class="sd">        We can also explicitly choose the state-preparation backend:</span>
+
+<span class="sd">        &gt;&gt;&gt; qf.init_state(psi, method=&quot;qswitch&quot;)   # Always allowed</span>
+<span class="sd">        &gt;&gt;&gt; qf.init_state(psi, method=&quot;qiskit&quot;)    # Only outside Jasp mode</span>
+
+<span class="sd">        After initialization, the amplitudes can be inspected</span>
+<span class="sd">        using ``qf.qs.statevector(&quot;function&quot;)`` as above.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Imports here to avoid circular dependencies</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.alg_primitives.state_preparation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">prepare</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">target_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">amp</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">target_array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">amp</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Use JAX array to allow tracing; convert later if needed</span>
+            <span class="n">target_array</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+
+        <span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_array</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumVariable.extend">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.extend.html#qrisp.QuantumVariable.extend">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">position</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method is used to add more qubits to the QuantumVariable. Using the</span>
+<span class="sd">        position keyword it is possible to specify the position where the qubits should</span>
+<span class="sd">        be added. By default, the qubits are added at the end.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        amount : int</span>
+<span class="sd">            The amount of qubits to add.</span>
+<span class="sd">        position : int, optional</span>
+<span class="sd">            The position of where to add the qubits. By default, qubits are added at the</span>
+<span class="sd">            end.</span>
+<span class="sd">            st of qubits which are to be added to the QuantumVariable.</span>
+<span class="sd">            The default is None.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Missmatch between proposed qubits and amount integer.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumVariable and extend it with some extra qubits.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(3)</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.reg)</span>
+<span class="sd">        [Qubit(qv.0), Qubit(qv.1), Qubit(qv.2)]</span>
+<span class="sd">        &gt;&gt;&gt; qv.extend(3)</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.reg)</span>
+<span class="sd">        [Qubit(qv.0), Qubit(qv.1), Qubit(qv.2), Qubit(qv.6), Qubit(qv.6), Qubit(qv.6)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">insertion_qubits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">request_qubits</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">position</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">+</span> <span class="n">insertion_qubits</span>
+                <span class="k">elif</span> <span class="n">position</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="n">insertion_qubits</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[:</span><span class="n">position</span><span class="p">]</span> <span class="o">+</span> <span class="n">insertion_qubits</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">position</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">amount</span><span class="p">):</span>
+                <span class="n">insertion_qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_ext_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubit_index_counter</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">position</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">insertion_qubits</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.reduce">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.reduce.html#qrisp.QuantumVariable.reduce">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reduces the qubit count of the QuantumVariable by removing a specified set of</span>
+<span class="sd">        qubits.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qubits : list</span>
+<span class="sd">            The qubits to remove from the QuantumVariable.</span>
+
+<span class="sd">        verify : bool</span>
+<span class="sd">            Boolean value which indicates wether Qrisp should verify that the reduced</span>
+<span class="sd">            qubits are in the $\ket{0}$ state.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Qubits not present in QuantumVariable.</span>
+
+<span class="sd">        Exception</span>
+<span class="sd">            Verification that the given qubits are in $\ket{0}$ state failed.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumVariable with 5 qubits and remove the first 2</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(5)</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.reg)</span>
+<span class="sd">        [Qubit(qv.0), Qubit(qv.1), Qubit(qv.2), Qubit(qv.3), Qubit(qv.4)]</span>
+<span class="sd">        &gt;&gt;&gt; qv.reduce(qv[:2])</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.reg)</span>
+<span class="sd">        [Qubit(qv.2), Qubit(qv.3), Qubit(qv.4)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">qubits</span> <span class="o">=</span> <span class="p">[</span><span class="n">qubits</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to reduce QuantumVariable by invalid qubits&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Find Qubits to be cleared</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="s2">&quot;reduced_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubit_index_counter</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubit_index_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">clear_qubits</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">verify</span><span class="p">)</span></div>
+
+        <span class="c1"># Adjust variable size</span>
+
+<div class="viewcode-block" id="QuantumVariable.get_measurement">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_measurement</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">shots</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">compilation_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">subs_dic</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">circuit_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">precompiled_qc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DecodedMeasurementResult&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for quick access to the measurement results of the state of the variable.</span>
+<span class="sd">        Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like</span>
+<span class="sd">        a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        plot : Bool, optional</span>
+<span class="sd">            Plots the measurement results as a historgram. The default is False.</span>
+<span class="sd">        backend : BackendLike, optional</span>
+<span class="sd">            The backend on which to evaluate the quantum circuit.</span>
+<span class="sd">            The default can be specified in the file default_backend.py.</span>
+<span class="sd">        shots : integer, optional</span>
+<span class="sd">            The amount of shots to evaluate the circuit. The default is given by the backend it runs on.</span>
+<span class="sd">        compile : bool, optional</span>
+<span class="sd">            Boolean indicating if the .compile method of the underlying QuantumSession</span>
+<span class="sd">            should be called before. The default is True.</span>
+<span class="sd">        compilation_kwargs  : dict, optional</span>
+<span class="sd">            Keyword arguments for the compile method. For more details check</span>
+<span class="sd">            :meth:`QuantumSession.compile &lt;qrisp.QuantumSession.compile&gt;`. The default</span>
+<span class="sd">            is ``{}``.</span>
+<span class="sd">        subs_dic : dict, optional</span>
+<span class="sd">            A dictionary of Sympy symbols and floats to specify parameters in the case</span>
+<span class="sd">            of a circuit with unspecified, :ref:`abstract parameters&lt;QuantumCircuit&gt;`.</span>
+<span class="sd">            The default is {}.</span>
+<span class="sd">        circuit_preprocessor : Python function, optional</span>
+<span class="sd">            A function which recieves a QuantumCircuit and returns one, which is applied</span>
+<span class="sd">            after compilation and parameter substitution. The default is None.</span>
+<span class="sd">        filename : string, optional</span>
+<span class="sd">            The location of where to save a generated plot. The default is None.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            If the containing QuantumSession is in a quantum environment, it is not</span>
+<span class="sd">            possible to execute measurements.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DecodedMeasurementResult</span>
+<span class="sd">            A lazy :class:`~qrisp.interface.DecodedMeasurementResult` mapping each</span>
+<span class="sd">            decoded value to its measurement probability.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create an integer :ref:`QuantumFloat`, encode the value 1 and bring the qubit</span>
+<span class="sd">        with significance 2 in superposition. We utilize the Qiskit transpiler by</span>
+<span class="sd">        transpiling into the gate set $\{\text{CX}, \text{U}\}$</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, h</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(3,-1)</span>
+<span class="sd">        &gt;&gt;&gt; qf[:] = 1</span>
+<span class="sd">        &gt;&gt;&gt; h(qf[2])</span>
+<span class="sd">        &gt;&gt;&gt; mes_results = qf.get_measurement(transpilation_kwargs = {&quot;basis_gates&quot; : [&quot;cx&quot;, &quot;u&quot;]})  # noqa:501</span>
+<span class="sd">        &gt;&gt;&gt; print(mes_results)</span>
+<span class="sd">        {1.0: 0.5, 3.0: 0.5}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.default_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">def_backend</span>
+
+                <span class="n">backend</span> <span class="o">=</span> <span class="n">def_backend</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">backend</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">env_stack</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to get measurement within open environment&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deleted</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to get measurement from deleted QuantumVariable&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">precompiled_qc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">compile</span><span class="p">:</span>
+                <span class="n">qc</span> <span class="o">=</span> <span class="n">qompiler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">intended_measurements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="o">**</span><span class="n">compilation_kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">precompiled_qc</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Bind parameters</span>
+        <span class="k">if</span> <span class="n">subs_dic</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit.pass_management.passes.combine_single_qubit_gates</span><span class="w"> </span><span class="kn">import</span> <span class="n">combine_single_qubit_gates</span>
+
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">combine_single_qubit_gates</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+
+        <span class="c1"># Copy circuit in over to prevent modification</span>
+        <span class="c1"># from qrisp.quantum_network import QuantumNetworkClient</span>
+
+        <span class="c1"># if isinstance(backend, QuantumNetworkClient):</span>
+        <span class="c1">#     self.qs.data = []</span>
+        <span class="c1">#     shots = 1</span>
+
+        <span class="c1"># Execute user specified circuit_preprocessor</span>
+        <span class="k">if</span> <span class="n">circuit_preprocessor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">circuit_preprocessor</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+
+        <span class="c1"># qc = qc.transpile()</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface.measurement_result</span><span class="w"> </span><span class="kn">import</span> <span class="n">DecodedMeasurementResult</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_measurement_from_qc</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">get_measurement_from_qc</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="n">backend</span><span class="p">,</span> <span class="n">shots</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">DecodedMeasurementResult</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+            <span class="n">outcome_labels</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">hash</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Outcome value &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; is not hashable&quot;</span><span class="p">)</span>
+                <span class="n">outcome_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+            <span class="n">plot_histogram</span><span class="p">(</span><span class="n">outcome_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.most_likely">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.most_likely.html#qrisp.QuantumVariable.most_likely">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_likely</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs a measurement and returns the most likely outcome.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs : Keyword arguments for the get_measurement call.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, ry</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; ry(np.pi*9/8, qf[0])</span>
+<span class="sd">        &gt;&gt;&gt; print(qf)</span>
+<span class="sd">        {1: 0.9619, 0: 0.0381}</span>
+<span class="sd">        &gt;&gt;&gt; qf.most_likely()</span>
+<span class="sd">        1</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_for_tracing_mode</span>
+
+        <span class="k">if</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &#39;&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;&#39;&gt;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;(name = &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]()</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">live_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># Overload equality operator to use python syntax for if environments?</span>
+    <span class="c1"># Not sure if the possible user confusion is worth it</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_eq</span>
+
+        <span class="k">return</span> <span class="n">q_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_eq</span>
+
+        <span class="k">return</span> <span class="n">q_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">creation_time</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to encode value into QuantumVariable using non-trivial slicing.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_from</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumVariable.app_phase_function">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.app_phase_function.html#qrisp.QuantumVariable.app_phase_function">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">app_phase_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies a previously specified phase function to each computational basis state</span>
+<span class="sd">        of the QuantumVariable using Gray-Synthesis.</span>
+
+<span class="sd">        For a given phase function $\phi(x)$ and a QuantumVariable in state</span>
+<span class="sd">        $\ket{\psi} = \sum_{x \in \text{Labels}} a_x \ket{x}$  this method acts as:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            U_{\phi} \sum_{x \in \text{Labels}} a_x \ket{x} =</span>
+<span class="sd">            \sum_{x \in \text{Labels}} \text{exp}(i\phi(x)) a_x \ket{x}</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        phi : Python function</span>
+<span class="sd">            A Python function which turns the labels of the QuantumVariable into floats.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumFloat and encode the k-th basis state of the Fourier basis.</span>
+<span class="sd">        Finally, we will apply an inverse Fourier transformation to measure k in the</span>
+<span class="sd">        computational basis.</span>
+
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, h, QFT</span>
+<span class="sd">        &gt;&gt;&gt; n = 5</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(n, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; h(qf)</span>
+
+<span class="sd">        After this, qf is in the state</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\text{qf}} = \frac{1}{\sqrt{2^n}} \sum_{x = 0}^{2^n} \ket{x}</span>
+
+<span class="sd">        We specify phi</span>
+
+<span class="sd">        &gt;&gt;&gt; k = 4</span>
+<span class="sd">        &gt;&gt;&gt; def phi(x):</span>
+<span class="sd">        &gt;&gt;&gt;     return 2*np.pi*x*k/2**n</span>
+
+<span class="sd">        And apply phi as a phase function</span>
+
+<span class="sd">        &gt;&gt;&gt; qf.app_phase_function(phi)</span>
+
+<span class="sd">        qf is now in the state</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \ket{\text{qf}} = \frac{1}{\sqrt{2^n}} \sum_{x = 0}^{2^n}</span>
+<span class="sd">            \text{exp}\left( \frac{2\pi ikx}{2^n}\right) \ket{x}</span>
+
+
+<span class="sd">        Finally we apply the inverse Fourier transformation and measure:</span>
+
+<span class="sd">        &gt;&gt;&gt; QFT(qf, inv = True)</span>
+<span class="sd">        &gt;&gt;&gt; print(qf)</span>
+<span class="sd">        {4: 1.0}</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_phase_function</span>
+
+        <span class="n">app_phase_function</span><span class="p">([</span><span class="bp">self</span><span class="p">],</span> <span class="n">phi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.uncompute">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.uncompute.html#qrisp.QuantumVariable.uncompute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">uncompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do_it</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recompute</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for automatic uncomputation. Uses a generalized form of</span>
+<span class="sd">        `this algorithm &lt;https://dl.acm.org/doi/10.1145/3453483.3454040&gt;`_.</span>
+
+<span class="sd">        For more information check the</span>
+<span class="sd">        :ref:`uncomputation documentation&lt;uncomputation&gt;`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        do_it : bool, optional</span>
+<span class="sd">            If set to False, this variable will be appended to the uncomputation stack</span>
+<span class="sd">            of it&#39;s QuantumSession and uncomputed once an uncompute call with</span>
+<span class="sd">            ``do_it = True`` is performed. The default is True.</span>
+<span class="sd">        recompute : bool, optional</span>
+<span class="sd">            If set to True, this QuantumVariable will be uncomputed but temporarily</span>
+<span class="sd">            recomputed, if it is required for the uncomputation of another</span>
+<span class="sd">            QuantumVariable. For more information check</span>
+<span class="sd">            :ref:`recomputation &lt;recomputation&gt;`. The default is False.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create two QuantumVariables, apply some gates and perform automatic</span>
+<span class="sd">        uncomputation:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable, x, cx, h, p, mcx</span>
+<span class="sd">        &gt;&gt;&gt; a = QuantumVariable(3)</span>
+<span class="sd">        &gt;&gt;&gt; b = QuantumVariable(2)</span>
+<span class="sd">        &gt;&gt;&gt; mcx(a, b[0])</span>
+<span class="sd">        &gt;&gt;&gt; h(a[:2])</span>
+<span class="sd">        &gt;&gt;&gt; x(b[0])</span>
+<span class="sd">        &gt;&gt;&gt; cx(b[0], b[1])</span>
+<span class="sd">        &gt;&gt;&gt; p(0.5, b[1])</span>
+<span class="sd">        &gt;&gt;&gt; print(a.qs)</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">            QuantumCircuit:</span>
+<span class="sd">            --------------</span>
+<span class="sd">                      ┌───┐</span>
+<span class="sd">            a.0: ──■──┤ H ├───────────────</span>
+<span class="sd">                   │  ├───┤</span>
+<span class="sd">            a.1: ──■──┤ H ├───────────────</span>
+<span class="sd">                   │  └───┘</span>
+<span class="sd">            a.2: ──■──────────────────────</span>
+<span class="sd">                 ┌─┴─┐┌───┐</span>
+<span class="sd">            b.0: ┤ X ├┤ X ├──■────────────</span>
+<span class="sd">                 └───┘└───┘┌─┴─┐┌────────┐</span>
+<span class="sd">            b.1: ──────────┤ X ├┤ P(0.5) ├</span>
+<span class="sd">                           └───┘└────────┘</span>
+<span class="sd">            Live QuantumVariables:</span>
+<span class="sd">            ---------------------</span>
+<span class="sd">            QuantumVariable a</span>
+<span class="sd">            QuantumVariable b</span>
+
+<span class="sd">        &gt;&gt;&gt; b.uncompute()</span>
+<span class="sd">        &gt;&gt;&gt; print(b.qs)</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">            QuantumCircuit:</span>
+<span class="sd">            --------------</span>
+<span class="sd">                 ┌────────┐                              ┌────────┐┌───┐</span>
+<span class="sd">            a.0: ┤0       ├──────────────────────────────┤0       ├┤ H ├</span>
+<span class="sd">                 │        │                              │        │├───┤</span>
+<span class="sd">            a.1: ┤1       ├──────────────────────────────┤1       ├┤ H ├</span>
+<span class="sd">                 │  pt3cx │                              │  pt3cx │└───┘</span>
+<span class="sd">            a.2: ┤2       ├──────────────────────────────┤2       ├─────</span>
+<span class="sd">                 │        │┌───┐                    ┌───┐│        │</span>
+<span class="sd">            b.0: ┤3       ├┤ X ├──■──────────────■──┤ X ├┤3       ├─────</span>
+<span class="sd">                 └────────┘└───┘┌─┴─┐┌────────┐┌─┴─┐└───┘└────────┘</span>
+<span class="sd">            b.1: ───────────────┤ X ├┤ P(0.5) ├┤ X ├────────────────────</span>
+<span class="sd">                                └───┘└────────┘└───┘</span>
+<span class="sd">            Live QuantumVariables:</span>
+<span class="sd">            ---------------------</span>
+<span class="sd">            QuantumVariable a</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deleted</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to uncompute deleted QuantumVariable&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">do_it</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.permeability</span><span class="w"> </span><span class="kn">import</span> <span class="n">uncompute</span>
+
+            <span class="n">uncompute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">uncomp_stack</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="n">recompute</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">uncomp_stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">uncomp_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_unique_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">QuantumBool</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;qbl&quot;</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;qf&quot;</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;qch&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;qv&quot;</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">naming_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_tracker</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name_tracker</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">naming_number</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name_tracker</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_0&quot;</span>
+
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">):</span>
+                <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="p">[</span><span class="n">i</span><span class="p">]()</span>
+                <span class="k">if</span> <span class="n">qv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">live_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">qv</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">name</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to perform a static iteration on a dynamic QuantumVariable&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="QuantumVariable.init_from">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.init_from.html#qrisp.QuantumVariable.init_from">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method to initiate a QuantumVariable based on the state of another. This method</span>
+<span class="sd">        does NOT copy the state. Much rather it performs the operation</span>
+
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            U_{\text{init_from}} \left( \sum_{x \in \text{labels}} a_x \ket{x}</span>
+<span class="sd">            \right)  \ket{0} = \sum_{x \in \text{labels}} a_x \ket{x} \ket{x}</span>
+
+
+<span class="sd">        This is different from a state copying operation:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            U_{\text{copy}} \left( \sum_{x \in \text{labels}} a_x \ket{x} \right)</span>
+<span class="sd">            \ket{0} = \left( \sum_{x \in \text{labels}} a_x \ket{x} \right)</span>
+<span class="sd">            \left( \sum_{x \in \text{labels}} a_x \ket{x} \right)</span>
+
+
+<span class="sd">        A shorthand for initiating this way is the ``[:]`` operator.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : QuantumVariable</span>
+<span class="sd">            The QuantumVariable from which to initiate.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to initialize qubits which are not fresh anymore.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumFloat, and bring it into superposition.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, h, multi_measurement</span>
+<span class="sd">        &gt;&gt;&gt; qf_a = QuantumFloat(8)</span>
+<span class="sd">        &gt;&gt;&gt; qf_a[:] = 6</span>
+<span class="sd">        &gt;&gt;&gt; h(qf_a[0])</span>
+<span class="sd">        &gt;&gt;&gt; print(qf_a)</span>
+<span class="sd">        {6: 0.5, 7: 0.5}</span>
+
+<span class="sd">        We now duplicate and initiate the duplicate</span>
+
+<span class="sd">        &gt;&gt;&gt; qf_b = qf_a.duplicate()</span>
+<span class="sd">        &gt;&gt;&gt; print(qf_b)</span>
+<span class="sd">        {0: 1.0}</span>
+<span class="sd">        &gt;&gt;&gt; qf_b.init_from(qf_a)</span>
+<span class="sd">        &gt;&gt;&gt; print(multi_measurement([qf_a, qf_b]))</span>
+<span class="sd">        {(6, 6): 0.5, (7, 7): 0.5}</span>
+
+<span class="sd">        The slicing operator achieves the same:</span>
+
+<span class="sd">        &gt;&gt;&gt; qf_c = qf_a.duplicate()</span>
+<span class="sd">        &gt;&gt;&gt; qf_c[:] = qf_b</span>
+<span class="sd">        &gt;&gt;&gt; print(multi_measurement([qf_a, qf_b, qf_c]))</span>
+<span class="sd">        {(6, 6, 6): 0.5, (7, 7, 7): 0.5}</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; from &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_fresh</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_fresh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize qubits which are not fresh anymore&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuantumVariable.custom">
+<a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumVariable.custom.html#qrisp.QuantumVariable.custom">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">custom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_list</span><span class="p">,</span> <span class="n">decoder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a QuantumVariable with customized outcome labels.</span>
+
+<span class="sd">        Note that this is a class method, implying there is no need to create another</span>
+<span class="sd">        QuantumVariable first to call this method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label_list : list</span>
+<span class="sd">            A list of outcome labels.</span>
+<span class="sd">        decoder : function, optional</span>
+<span class="sd">            The decoder function. If given none, the labels will be encoded according to</span>
+<span class="sd">            their placement in the ``label_list``.</span>
+<span class="sd">        qs : QuantumSession, optional</span>
+<span class="sd">            The :ref:`QuantumSession` in which to register the customized</span>
+<span class="sd">            QuantumVariable. If given none, the QuantumVariable will be registered in a</span>
+<span class="sd">            new QuantumSession.</span>
+<span class="sd">        name : string, optional</span>
+<span class="sd">            The name of the QuantumVariable. If given none, a suited name will be</span>
+<span class="sd">            generated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        CustomQuantumVariable</span>
+<span class="sd">            A QuantumVariable with the desired outcome labels.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a QuantumVariable with some examples values as outcome labels and</span>
+<span class="sd">        bring it into uniform superposition.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable, h</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable.custom([&quot;lorem&quot;, &quot;ipsum&quot;, &quot;dolor&quot;, &quot;sit&quot;, 42, (1,2,3)])</span>
+<span class="sd">        &gt;&gt;&gt; h(qv)</span>
+<span class="sd">        &gt;&gt;&gt; print(qv)</span>
+<span class="sd">        {&#39;lorem&#39;: 0.125, &#39;ipsum&#39;: 0.125, &#39;dolor&#39;: 0.125, &#39;sit&#39;: 0.125, 42: 0.125,</span>
+<span class="sd">        (1, 2, 3): 0.125, &#39;undefined_label_6&#39;: 0.125, &#39;undefined_label_7&#39;: 0.125}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">custom_qv</span>
+
+        <span class="k">return</span> <span class="n">custom_qv</span><span class="p">(</span><span class="n">label_list</span><span class="p">,</span> <span class="n">decoder</span><span class="o">=</span><span class="n">decoder</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="n">qs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_reg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jdecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">measure</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariableTemplate</span>
+
+        <span class="k">return</span> <span class="n">QuantumVariableTemplate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_histogram</span><span class="p">(</span><span class="n">outcome_labels</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">res_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outcome_labels</span><span class="p">)):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">outcome_labels</span><span class="p">[</span><span class="n">k</span><span class="p">]])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">outcome_labels</span><span class="p">,</span> <span class="n">res_list</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Measurement probability&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;QuantumVariable value&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,879 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>qrisp.jasp.Jaspr.to_qir &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Jasp/generated/qrisp.jasp.Jaspr.to_qir';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Jasp/generated/qrisp.jasp.Jaspr.to_qir.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Quantum Kernels" href="../Quantum%20Kernel.html" />
+    <link rel="prev" title="qrisp.jasp.Jaspr.to_catalyst_mlir" href="qrisp.jasp.Jaspr.to_catalyst_mlir.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Jasp</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../Jaspr.html">Jaspr</a></li>
+
+
+
+<li class="toctree-l2"><a class="reference internal" href="../Quantum%20Kernel.html">Quantum Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../qache.html">Qaching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Control%20Flow/index.html">Hybrid Control Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Sampling.html">Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Expectation%20Value.html">Expectation Value</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../Resource%20Estimation.html">Resource Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Simulation%20Tools/index.html">Simulation Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../MLIR%20Interface.html">MLIR Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Optimization%20Tools/Optimization%20Tools.html">Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Scalable%20Integer%20Type.html">Scalable Integer Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Ported%20Features.html">Ported Features</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Jasp</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../Jaspr.html" class="nav-link">Jaspr</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.Jaspr.to_qir</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="qrisp-jasp-jaspr-to-qir">
+<h1>qrisp.jasp.Jaspr.to_qir<a class="headerlink" href="#qrisp-jasp-jaspr-to-qir" title="Link to this heading">#</a></h1>
+<dl class="py method">
+<dt class="sig sig-object py" id="qrisp.jasp.Jaspr.to_qir">
+<span class="sig-prename descclassname"><span class="pre">Jaspr.</span></span><span class="sig-name descname"><span class="pre">to_qir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/jasp/jasp_expression/centerclass.html#Jaspr.to_qir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.jasp.Jaspr.to_qir" title="Link to this definition">#</a></dt>
+<dd><p>Compiles the Jaspr to QIR using the <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst framework</a>.
+Requires the Catalyst package to be installed (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">qrisp[catalyst]</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>None</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The QIR string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We create a simple script and inspect the QIR string:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">example_function</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">t</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">meas_res</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">meas_res</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">meas_res</span>
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">example_function</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="o">.</span><span class="n">to_qir</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Yields</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>; ModuleID = &#39;LLVMDialectModule&#39;
+source_filename = &quot;LLVMDialectModule&quot;
+
+@&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot; = internal constant [66 x i8] c&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot;
+@lightning.qubit = internal constant [16 x i8] c&quot;lightning.qubit&quot;
+@&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot; = internal constant [111 x i8] c&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot;
+
+declare void @__catalyst__rt__finalize() local_unnamed_addr
+
+declare void @__catalyst__rt__initialize() local_unnamed_addr
+
+declare ptr @__catalyst__qis__Measure(ptr, i32) local_unnamed_addr
+
+declare void @__catalyst__qis__T(ptr, ptr) local_unnamed_addr
+
+declare void @__catalyst__qis__CNOT(ptr, ptr, ptr) local_unnamed_addr
+
+declare ptr @__catalyst__rt__array_get_element_ptr_1d(ptr, i64) local_unnamed_addr
+
+declare ptr @__catalyst__rt__qubit_allocate_array(i64) local_unnamed_addr
+
+declare void @__catalyst__rt__device_init(ptr, ptr, ptr) local_unnamed_addr
+
+declare void @_mlir_memref_to_llvm_free(ptr) local_unnamed_addr
+
+declare ptr @_mlir_memref_to_llvm_alloc(i64) local_unnamed_addr
+
+define { ptr, ptr, i64 } @jit_jaspr_function(ptr nocapture readnone %0, ptr nocapture readonly %1, i64 %2) local_unnamed_addr {
+  tail call void @__catalyst__rt__device_init(ptr nonnull @&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot;, ptr nonnull @lightning.qubit, ptr nonnull @&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot;)
+  %4 = tail call ptr @__catalyst__rt__qubit_allocate_array(i64 20)
+  %5 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 0)
+  %6 = load ptr, ptr %5, align 8
+  %7 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 1)
+  %8 = load ptr, ptr %7, align 8
+  tail call void @__catalyst__qis__CNOT(ptr %6, ptr %8, ptr null)
+  %9 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 1)
+  %10 = load ptr, ptr %9, align 8
+  tail call void @__catalyst__qis__T(ptr %10, ptr null)
+  %11 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 65)
+  %12 = ptrtoint ptr %11 to i64
+  %13 = add i64 %12, 63
+  %14 = and i64 %13, -64
+  %15 = inttoptr i64 %14 to ptr
+  %16 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 65)
+  %17 = ptrtoint ptr %16 to i64
+  %18 = add i64 %17, 63
+  %19 = and i64 %18, -64
+  %20 = inttoptr i64 %19 to ptr
+  %21 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %22 = ptrtoint ptr %21 to i64
+  %23 = add i64 %22, 63
+  %24 = and i64 %23, -64
+  %25 = inttoptr i64 %24 to ptr
+  %26 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %27 = ptrtoint ptr %26 to i64
+  %28 = add i64 %27, 63
+  %29 = and i64 %28, -64
+  %30 = inttoptr i64 %29 to ptr
+  %31 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %32 = ptrtoint ptr %31 to i64
+  %33 = add i64 %32, 63
+  %34 = and i64 %33, -64
+  %35 = inttoptr i64 %34 to ptr
+  %36 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %37 = ptrtoint ptr %36 to i64
+  %38 = add i64 %37, 63
+  %39 = and i64 %38, -64
+  %40 = inttoptr i64 %39 to ptr
+  %41 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  store i64 0, ptr %41, align 1
+  %42 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  store i64 0, ptr %42, align 1
+  %43 = load i64, ptr %1, align 4
+  %44 = icmp slt i64 %43, 1
+  store i1 %44, ptr %15, align 64
+  %45 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %46 = load i64, ptr %42, align 1
+  store i64 %46, ptr %45, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %42)
+  %47 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %48 = load i64, ptr %41, align 1
+  store i64 %48, ptr %47, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %41)
+  br i1 %44, label %.lr.ph, label %._crit_edge
+
+.lr.ph:                                           ; preds = %3, %.lr.ph
+  %49 = phi ptr [ %87, %.lr.ph ], [ %47, %3 ]
+  %50 = phi ptr [ %85, %.lr.ph ], [ %45, %3 ]
+  %51 = load i64, ptr %50, align 4
+  %52 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 %51)
+  %53 = load ptr, ptr %52, align 8
+  %54 = tail call ptr @__catalyst__qis__Measure(ptr %53, i32 -1)
+  %55 = load i1, ptr %54, align 1
+  store i1 %55, ptr %20, align 64
+  %56 = load i64, ptr %50, align 4
+  store i64 %56, ptr %25, align 64
+  %57 = shl i64 2, %56
+  %58 = icmp ult i64 %56, 64
+  %59 = select i1 %58, i64 %57, i64 0
+  store i64 %59, ptr %30, align 64
+  %60 = load i1, ptr %20, align 64
+  %61 = zext i1 %60 to i64
+  store i64 %61, ptr %35, align 64
+  %62 = load i64, ptr %30, align 64
+  %63 = select i1 %60, i64 %62, i64 0
+  store i64 %63, ptr %40, align 64
+  %64 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %65 = ptrtoint ptr %64 to i64
+  %66 = add i64 %65, 63
+  %67 = and i64 %66, -64
+  %68 = inttoptr i64 %67 to ptr
+  %69 = load i64, ptr %49, align 4
+  %70 = load i64, ptr %40, align 64
+  %71 = add i64 %70, %69
+  store i64 %71, ptr %68, align 64
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %49)
+  %72 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)
+  %73 = ptrtoint ptr %72 to i64
+  %74 = add i64 %73, 63
+  %75 = and i64 %74, -64
+  %76 = inttoptr i64 %75 to ptr
+  %77 = load i64, ptr %50, align 4
+  %78 = add i64 %77, 1
+  store i64 %78, ptr %76, align 64
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %50)
+  %79 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %80 = load i64, ptr %68, align 64
+  store i64 %80, ptr %79, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr %64)
+  %81 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %82 = load i64, ptr %76, align 64
+  store i64 %82, ptr %81, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr %72)
+  %.pre = load i64, ptr %81, align 4
+  %83 = load i64, ptr %1, align 4
+  %84 = icmp sge i64 %.pre, %83
+  store i1 %84, ptr %15, align 64
+  %85 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %86 = load i64, ptr %81, align 1
+  store i64 %86, ptr %85, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %81)
+  %87 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)
+  %88 = load i64, ptr %79, align 1
+  store i64 %88, ptr %87, align 1
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %79)
+  br i1 %84, label %.lr.ph, label %._crit_edge
+
+._crit_edge:                                      ; preds = %.lr.ph, %3
+  %.lcssa20 = phi ptr [ %45, %3 ], [ %85, %.lr.ph ]
+  %.lcssa = phi ptr [ %47, %3 ], [ %87, %.lr.ph ]
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %.lcssa20)
+  tail call void @_mlir_memref_to_llvm_free(ptr %36)
+  tail call void @_mlir_memref_to_llvm_free(ptr %31)
+  tail call void @_mlir_memref_to_llvm_free(ptr %26)
+  tail call void @_mlir_memref_to_llvm_free(ptr %21)
+  tail call void @_mlir_memref_to_llvm_free(ptr %16)
+  tail call void @_mlir_memref_to_llvm_free(ptr %11)
+  %89 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 68)
+  %90 = ptrtoint ptr %89 to i64
+  %91 = add i64 %90, 63
+  %92 = and i64 %91, -64
+  %93 = inttoptr i64 %92 to ptr
+  %94 = load i64, ptr %.lcssa, align 4
+  %95 = trunc i64 %94 to i32
+  store i32 %95, ptr %93, align 64
+  tail call void @_mlir_memref_to_llvm_free(ptr nonnull %.lcssa)
+  %96 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 68)
+  %97 = ptrtoint ptr %96 to i64
+  %98 = add i64 %97, 63
+  %99 = and i64 %98, -64
+  %100 = inttoptr i64 %99 to ptr
+  %101 = load i32, ptr %93, align 64
+  %102 = add i32 %101, 1
+  store i32 %102, ptr %100, align 64
+  tail call void @_mlir_memref_to_llvm_free(ptr %89)
+  %103 = icmp eq ptr %96, inttoptr (i64 3735928559 to ptr)
+  br i1 %103, label %104, label %107
+
+104:                                              ; preds = %._crit_edge
+  %105 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 4)
+  %106 = load i32, ptr %100, align 64
+  store i32 %106, ptr %105, align 1
+  br label %107
+
+107:                                              ; preds = %104, %._crit_edge
+  %.pn16 = phi ptr [ %105, %104 ], [ %96, %._crit_edge ]
+  %.pn14 = phi ptr [ %105, %104 ], [ %100, %._crit_edge ]
+  %.pn13 = insertvalue { ptr, ptr, i64 } undef, ptr %.pn16, 0
+  %.pn = insertvalue { ptr, ptr, i64 } %.pn13, ptr %.pn14, 1
+  %108 = insertvalue { ptr, ptr, i64 } %.pn, i64 0, 2
+  ret { ptr, ptr, i64 } %108
+}
+
+define void @_catalyst_pyface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {
+  %.unpack = load ptr, ptr %1, align 8
+  %.elt1.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %.unpack, i64 0, i32 1
+  %.unpack2.i = load ptr, ptr %.elt1.i, align 8
+  %3 = tail call { ptr, ptr, i64 } @jit_jaspr_function(ptr poison, ptr %.unpack2.i, i64 poison)
+  %.elt.i = extractvalue { ptr, ptr, i64 } %3, 0
+  store ptr %.elt.i, ptr %0, align 8
+  %.repack5.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 1
+  %.elt6.i = extractvalue { ptr, ptr, i64 } %3, 1
+  store ptr %.elt6.i, ptr %.repack5.i, align 8
+  %.repack7.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 2
+  %.elt8.i = extractvalue { ptr, ptr, i64 } %3, 2
+  store i64 %.elt8.i, ptr %.repack7.i, align 8
+  ret void
+}
+
+define void @_catalyst_ciface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {
+  %.elt1 = getelementptr inbounds { ptr, ptr, i64 }, ptr %1, i64 0, i32 1
+  %.unpack2 = load ptr, ptr %.elt1, align 8
+  %3 = tail call { ptr, ptr, i64 } @jit_jaspr_function(ptr poison, ptr %.unpack2, i64 poison)
+  %.elt = extractvalue { ptr, ptr, i64 } %3, 0
+  store ptr %.elt, ptr %0, align 8
+  %.repack5 = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 1
+  %.elt6 = extractvalue { ptr, ptr, i64 } %3, 1
+  store ptr %.elt6, ptr %.repack5, align 8
+  %.repack7 = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 2
+  %.elt8 = extractvalue { ptr, ptr, i64 } %3, 2
+  store i64 %.elt8, ptr %.repack7, align 8
+  ret void
+}
+
+define void @setup() local_unnamed_addr {
+  tail call void @__catalyst__rt__initialize()
+  ret void
+}
+
+define void @teardown() local_unnamed_addr {
+  tail call void @__catalyst__rt__finalize()
+  ret void
+}
+
+!llvm.module.flags = !{!0}
+
+!0 = !{i32 2, !&quot;Debug Info Version&quot;, i32 3}
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Jasp/generated"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.jasp.Jaspr.to_qir"><code class="docutils literal notranslate"><span class="pre">Jaspr.to_qir()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

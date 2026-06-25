@@ -1,0 +1,902 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Reference &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/index';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/index.html" />
+    <link rel="icon" href="../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Core" href="Core/index.html" />
+    <link rel="prev" title="Solving linear system problems with HHL" href="../general/tutorial/HHL.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Circuit%20Manipulation/index.html">Circuit Manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Reference</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="reference">
+<h1>Reference<a class="headerlink" href="#reference" title="Link to this heading">#</a></h1>
+</section>
+<section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
+<p>Quantum computing promises strong speedups for problems across optimization, chemistry, and machine learning - but actually <em>programming</em> a quantum computer remains far harder than it should be. Most quantum frameworks still operate at the level of individual qubits and gates: the quantum equivalent of writing assembly. The result is code that is tedious to write, difficult to maintain, and nearly impossible to scale.</p>
+<p>Qrisp is a high-level quantum programming framework, written in pure Python, that closes this gap. It lets developers express quantum algorithms using typed variables, infix arithmetic, automatic memory management, and classical control flow - concepts familiar from everyday software engineering - while compiling everything down to executable quantum circuits. With its JAX-based compilation backend (Jasp), Qrisp scales to problem sizes that are entirely out of reach for interpreter-level circuit construction, and natively supports real-time classical computation within quantum programs.</p>
+<p>Qrisp targets three goals simultaneously:</p>
+<ul class="simple">
+<li><p><strong>Expressiveness</strong>: A high-level programming interface with typed quantum variables, automatic uncomputation, and environment-based control flow that maps naturally to the way algorithms are described on paper.</p></li>
+<li><p><strong>Performance</strong>: Compilation to efficient circuits through qubit recycling, gate optimization, and lowering via Jasp to LLVM-backed infrastructure that can compile function calls with thousands of qubits and trillions of gates.</p></li>
+<li><p><strong>Portability</strong>: Output as standard circuit objects that run on physical backends from IQM, IBM, AQT, Rigetti, and others, as well as a wide range of simulators.</p></li>
+</ul>
+<p>Since Qrisp programs are Python, developers have direct access to the entire scientific Python ecosystem - NumPy, SciPy, JAX, and beyond - without any language boundary.</p>
+</section>
+<section id="framework-overview">
+<h1>Framework Overview<a class="headerlink" href="#framework-overview" title="Link to this heading">#</a></h1>
+<section id="quantumvariables">
+<h2>QuantumVariables<a class="headerlink" href="#quantumvariables" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> is the central building block. It represents a quantum register - a named collection of qubits - together with encoding and decoding logic that maps between bitstrings and human-readable values. Gate operations are applied directly to variables or individual qubits within them:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span>
+
+<span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="c1"># Outcome: {&#39;000&#39;: 0.5, &#39;111&#39;: 0.5}</span>
+</pre></div>
+</div>
+<p>Under the hood, each QuantumVariable is registered in a <a class="reference internal" href="Core/QuantumSession.html"><span class="doc">QuantumSession</span></a> that manages its lifecycle - qubit allocation, gate application, compilation, and deallocation. A system of automatic <a class="reference internal" href="Core/Session%20Merging.html"><span class="doc">Session Merging</span></a> ensures that variables from different sessions are transparently unified when they interact, so in most cases the user never has to think about sessions at all.</p>
+</section>
+<section id="quantum-types">
+<h2>Quantum Types<a class="headerlink" href="#quantum-types" title="Link to this heading">#</a></h2>
+<p>Raw QuantumVariable instances are general-purpose but lack domain-specific semantics. Qrisp provides a <a class="reference internal" href="Quantum%20Types/index.html"><span class="doc">type system</span></a> built on Python’s class inheritance: any subclass of QuantumVariable that defines a custom <code class="docutils literal notranslate"><span class="pre">decoder</span></code> becomes a new quantum data type. Several types are built in:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> - Represents (fractional) numbers with configurable mantissa size, exponent, and sign. Supports full infix arithmetic (<code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">/</span></code>, comparisons).</p></li>
+<li><p><a class="reference internal" href="Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a> - A single-qubit boolean, often produced as the result of comparisons between quantum values.</p></li>
+<li><p><a class="reference internal" href="Quantum%20Types/QuantumModulus.html"><span class="doc">QuantumModulus</span></a> - Integers mod <span class="math notranslate nohighlight">\(N\)</span>, used in modular arithmetic for algorithms like Shor’s.</p></li>
+<li><p><a class="reference internal" href="Quantum%20Types/QuantumChar.html"><span class="doc">QuantumChar</span></a> / <a class="reference internal" href="Quantum%20Types/QuantumString.html"><span class="doc">QuantumString</span></a> - Character and string types for symbolic computation.</p></li>
+</ul>
+<p>Creating a custom quantum type is straightforward - inherit from QuantumVariable and override the <code class="docutils literal notranslate"><span class="pre">decoder</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantumDate</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">):</span>
+<span class="sd">&quot;&quot;&quot;A quantum variable that represents a date.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">starting_date</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starting_date</span> <span class="o">=</span> <span class="n">starting_date</span>
+        <span class="n">QuantumVariable</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">starting_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Quantum typing integrates with Python’s type hints, enabling self-documenting function signatures and type-based dispatch in the Jasp compilation pipeline.</p>
+</section>
+<section id="quantumarrays">
+<h2>QuantumArrays<a class="headerlink" href="#quantumarrays" title="Link to this heading">#</a></h2>
+<p>Multiple QuantumVariable instances of the same type can be organized into a <a class="reference internal" href="Core/QuantumArray.html"><span class="doc">QuantumArray</span></a> - an N-dimensional array that inherits from NumPy’s <code class="docutils literal notranslate"><span class="pre">ndarray</span></code>. This brings familiar operations like slicing, reshaping, transposing, and concatenation to quantum data, all operating as zero-cost views (zero-cost means that operations like slice do not allocate additional qubits but instead they “rearange” the access to the qubits of the original array). For arrays of type QuantumFloat, matrix multiplication and tensor contraction are available.</p>
+</section>
+<section id="quantum-environments">
+<h2>Quantum Environments<a class="headerlink" href="#quantum-environments" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="Quantum%20Environments/index.html"><span class="doc">Quantum environments</span></a> are context managers that modify how enclosed operations are compiled. They provide structured control flow without manual gate-level bookkeeping. Some of the most important environments:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Environment</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="Quantum%20Environments/ControlEnvironment.html"><span class="doc">ControlEnvironment</span></a></p></td>
+<td><p>Adds quantum or classical control qubits to all enclosed operations</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Quantum%20Environments/InversionEnvironment.html"><span class="doc">InversionEnvironment</span></a></p></td>
+<td><p>Reverses (daggers) the enclosed operations</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Quantum%20Environments/ConjugationEnvironment.html"><span class="doc">ConjugationEnvironment</span></a></p></td>
+<td><p>Applies <span class="math notranslate nohighlight">\(U \cdot \mathrm{body} \cdot U^\dagger\)</span> patterns</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Environments compose naturally. A controlled operation inside another ControlEnvironment is handled by Qrisp’s compiler intelligently - it does not naively synthesize a double-controlled version of every gate but instead leverages the structure for more efficient circuits.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">QFT</span><span class="p">,</span> <span class="n">h</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">QPE</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">precision</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">U</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</section>
+<section id="arithmetic">
+<h2>Arithmetic<a class="headerlink" href="#arithmetic" title="Link to this heading">#</a></h2>
+<p>Qrisp supports infix arithmetic on quantum types. Expressions like <code class="docutils literal notranslate"><span class="pre">qf_a</span> <span class="pre">+</span> <span class="pre">qf_b</span></code>, <code class="docutils literal notranslate"><span class="pre">qf</span> <span class="pre">*</span> <span class="pre">qf</span></code>, or <code class="docutils literal notranslate"><span class="pre">qf</span> <span class="pre">==</span> <span class="pre">0.25</span></code> are compiled into efficient reversible circuits, with intermediate ancilla qubits automatically managed and recycled:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">z</span>
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">is_quarter</span> <span class="o">=</span> <span class="p">(</span><span class="n">qf</span> <span class="o">*</span> <span class="n">qf</span> <span class="o">==</span> <span class="mf">0.25</span><span class="p">)</span>
+    <span class="n">z</span><span class="p">(</span><span class="n">is_quarter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator ensures that all temporary quantum variables created during the computation (the multiplication result, the comparison result) are properly reversed and their qubits freed - a critical requirement for algorithms like Grover’s where the search register must be disentangled before the diffuser acts.</p>
+<p>For cases requiring fine-grained control over precision and output types, the <a class="reference internal" href="Primitives/Prefix%20arithmetic.html"><span class="doc">prefix arithmetic</span></a> module offers explicit functions as an alternative to infix operators.</p>
+</section>
+<section id="memory-management">
+<h2>Memory Management<a class="headerlink" href="#memory-management" title="Link to this heading">#</a></h2>
+<p>Quantum resources are scarce and cannot be freed by simply discarding a reference - measurement would collapse entangled partners. Qrisp provides two mechanisms:</p>
+<ul class="simple">
+<li><p><strong>QuantumVariable.delete</strong> - Deallocates the qubits of a variable, freeing them for reuse. The variable must be in the <span class="math notranslate nohighlight">\(|0\rangle\)</span> state; with <code class="docutils literal notranslate"><span class="pre">verify=True</span></code>, Qrisp queries a simulator to confirm disentanglement before proceeding.</p></li>
+<li><p><strong>QuantumVariable.uncompute</strong> - Reverses the computation that created the variable (returning its qubits to <span class="math notranslate nohighlight">\(|0\rangle\)</span>) and then calls <code class="docutils literal notranslate"><span class="pre">delete</span></code>. This implements the <a class="reference external" href="https://github.com/eth-sri/Unqomp" rel="noreferrer" target="_blank">Unqomp algorithm</a>, which avoids redundant “un-uncomputation” steps for better gate efficiency. Phase-tolerant gates (e.g., the Margolus gate, requiring only 3 CNOTs instead of 6 for Toffoli) are automatically substituted where their extra phases cancel upon inversion.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator applies this logic to all local variables of a function, and the <code class="docutils literal notranslate"><span class="pre">recompute</span></code> option enables a qubit-vs-gate tradeoff: variables can be deallocated early and recomputed later if needed, reducing peak qubit count at the cost of additional gates.</p>
+<p>For a detailed discussion, see <a class="reference internal" href="Core/Uncomputation.html"><span class="doc">Uncomputation</span></a>.</p>
+</section>
+<section id="operators-module">
+<h2>Operators Module<a class="headerlink" href="#operators-module" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="Operators/index.html"><span class="doc">Operators</span></a> submodule provides a unified framework for describing, optimizing, and simulating quantum Hamiltonians:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="Operators/QubitOperator.html"><span class="doc">QubitOperator</span></a> - Hamiltonians expressed as weighted sums of Pauli strings.</p></li>
+<li><p><a class="reference internal" href="Operators/FermionicOperator.html"><span class="doc">FermionicOperator</span></a> - Hamiltonians using fermionic creation and annihilation operators, with automatic Jordan-Wigner transformation.</p></li>
+</ul>
+<p>These operators serve as inputs to variational algorithms (VQE, QAOA), Hamiltonian simulation, quantum phase estimation, and the block-encoding layer. Example applications span the Heisenberg model, electronic structure calculations, molecular potential energy curves, and the transverse-field Ising model.</p>
+</section>
+<section id="block-encodings">
+<h2>Block Encodings<a class="headerlink" href="#block-encodings" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> class is the abstraction layer for quantum linear algebra. It embeds a (possibly non-unitary) matrix <span class="math notranslate nohighlight">\(A\)</span> into a larger unitary as a subblock:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{pmatrix} A/\alpha &amp; \cdot \\ \cdot &amp; \cdot \end{pmatrix}\end{split}\]</div>
+<p>Besides the basic signature, three additional constructors cover different use cases:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BlockEncoding.from_array(A)</span></code> - from a NumPy array, for rapid prototyping.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BlockEncoding.from_operator(H)</span></code> - from a QubitOperator or FermionicOperator.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BlockEncoding.from_lcu(coeffs,</span> <span class="pre">unitaries)</span></code> - from a custom Linear Combination of Unitaries, typically the most resource-efficient option.</p></li>
+</ul>
+<p>Once encoded, operators can be manipulated with a NumPy-like syntax:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Classical: C = I + A - 2*A^2 + B^(-1)</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">A</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">@</span> <span class="n">A</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+
+<span class="c1"># Qrisp:</span>
+<span class="n">B_C</span> <span class="o">=</span> <span class="n">B_A</span><span class="o">.</span><span class="n">poly</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.</span><span class="p">])</span> <span class="o">+</span> <span class="n">B_B</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">epsilon</span><span class="p">,</span> <span class="n">kappa</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Two powerful paradigms are available:</p>
+<ul class="simple">
+<li><p><strong>Matrix arithmetic</strong> - Block encodings can be added, multiplied, scaled, and tensor-producted (<code class="docutils literal notranslate"><span class="pre">kron</span></code>), enabling modular construction of composite operators.</p></li>
+<li><p><strong>Spectral transformation</strong> - Polynomial filters and non-linear functions (matrix inversion via <code class="docutils literal notranslate"><span class="pre">.inv</span></code>, Hamiltonian simulation via <code class="docutils literal notranslate"><span class="pre">.sim</span></code>, arbitrary polynomials via <code class="docutils literal notranslate"><span class="pre">.poly</span></code>) are applied to an operator’s spectrum through Generalized Quantum Signal Processing (GQSP).</p></li>
+</ul>
+<p>Application to quantum states uses either <code class="docutils literal notranslate"><span class="pre">.apply</span></code> (deterministic, post-selection required) or <code class="docutils literal notranslate"><span class="pre">.apply_rus</span></code> (repeat-until-success protocol, fully automated), with resource estimation always available via <code class="docutils literal notranslate"><span class="pre">.resources</span></code>.</p>
+<p>For more details, see <a class="reference internal" href="Block%20Encodings/index.html"><span class="doc">Block Encodings</span></a>.</p>
+</section>
+<section id="backend-compatibility">
+<h2>Backend Compatibility<a class="headerlink" href="#backend-compatibility" title="Link to this heading">#</a></h2>
+<p>Qrisp circuits are portable by design. Measurement results can be obtained from any supported backend by passing it to <code class="docutils literal notranslate"><span class="pre">get_measurement</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">qv</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">my_backend</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Built-in backend classes include:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="Backend%20Interface/index.html"><span class="doc">IQMBackend</span></a></p></td>
+<td><p>IQM Resonance cloud</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Backend%20Interface/index.html"><span class="doc">QiskitBackend</span></a></p></td>
+<td><p>Any Qiskit-compatible backend (Aer, IBM hardware)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Backend%20Interface/index.html"><span class="doc">AQTBackend</span></a></p></td>
+<td><p>AQT Arnica cloud</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Backend%20Interface/index.html"><span class="doc">QiskitRuntimeBackend</span></a></p></td>
+<td><p>IBM Qiskit Runtime sessions</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Qrisp also supports direct export to Qiskit circuits and other circuit formats for seamless interoperability.</p>
+</section>
+<section id="jasp-the-next-gen-compilation-pipeline">
+<h2>Jasp - The Next-Gen Compilation Pipeline<a class="headerlink" href="#jasp-the-next-gen-compilation-pipeline" title="Link to this heading">#</a></h2>
+<p>Standard Python-based circuit construction hits a wall at scale: a 35-bit modular multiplication already takes ~20 seconds to compile, and typical RSA key sizes reach 2000 bits. Furthermore, many quantum algorithms require <em>real-time classical computation</em> - classical logic that executes during the quantum program, faster than decoherence - which an interpreted language fundamentally cannot provide.</p>
+<p>Jasp solves both problems by making Qrisp code traceable through <a class="reference external" href="https://docs.jax.dev/en/latest/" rel="noreferrer" target="_blank">JAX</a>, Google’s framework for high-performance numerical computing. Instead of executing a function with actual values, JAX sends <em>tracer</em> objects through it, recording operations into a functional intermediate representation (jaxpr). Jasp extends this with quantum primitives, producing a <code class="docutils literal notranslate"><span class="pre">Jaspr</span></code> - a JAX-compatible IR that captures both quantum operations (gate applications, measurements) and classical real-time computations (arithmetic, control flow, even neural network inference) in a single representation.</p>
+<section id="using-jasp">
+<h3>Using Jasp<a class="headerlink" href="#using-jasp" title="Link to this heading">#</a></h3>
+<p>For many use cases, adopting Jasp is a single decorator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspify</span>
+
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">terminal_sampling</span></code> option draws samples directly from the statevector instead of repeated single-shot simulation, offering large speedups for variational and sampling-based algorithms:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span><span class="p">(</span><span class="n">terminal_sampling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qaoa_optimization</span><span class="p">():</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="compilation-targets">
+<h3>Compilation Targets<a class="headerlink" href="#compilation-targets" title="Link to this heading">#</a></h3>
+<p>Because <code class="docutils literal notranslate"><span class="pre">Jaspr</span></code> objects are embedded in the JAX ecosystem, they can be lowered through multiple compilation paths:</p>
+<ul class="simple">
+<li><p><strong>QIR</strong> (Quantum Intermediate Representation) via Catalyst/MLIR - targeting the LLVM toolchain for optimized hybrid quantum-classical execution.</p></li>
+<li><p><strong>QuantumCircuit</strong> - standard circuit output for any gate-based backend.</p></li>
+<li><p><strong>MLIR</strong> / <strong>Catalyst MLIR</strong> - intermediate stages for advanced optimization passes.</p></li>
+</ul>
+</section>
+<section id="key-jasp-features">
+<h3>Key Jasp Features<a class="headerlink" href="#key-jasp-features" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>qache</strong> - A caching decorator that traces quantum functions only once per calling signature, then reuses the cached Jaspr. Functions called multiple times incur tracing cost only on the first invocation.</p></li>
+<li><p><strong>jrange</strong> - A traceable loop construct that replaces Python’s <code class="docutils literal notranslate"><span class="pre">range</span></code>, enabling dynamic iteration counts in compiled code.</p></li>
+<li><p><strong>Classical control flow</strong> - Measurement results are native integers (not opaque classical bits), so they can drive <code class="docutils literal notranslate"><span class="pre">if</span></code>/<code class="docutils literal notranslate"><span class="pre">else</span></code> branching, arithmetic, or any JAX operation in real time.</p></li>
+<li><p><strong>Repeat-until-success (&#64;RUS)</strong> - A decorator for trial-based quantum protocols that loops until a classical measurement condition is met.</p></li>
+<li><p><strong>sample / minimize</strong> - Traceable primitives for quantum sampling and classical optimization, enabling end-to-end compiled hybrid loops (e.g., full QAOA optimization without Python-level overhead).</p></li>
+<li><p><strong>Boolean simulation</strong> - A specialized fast-path for circuits composed entirely of boolean gates (X, CX, MCX). Jasp transforms the Jaspr into pure boolean JAX logic, then leverages XLA compilation for massive throughput - demonstrated at over a million quantum floating-point operations after a single compilation step.</p></li>
+</ul>
+</section>
+<section id="real-time-classical-computation">
+<h3>Real-Time Classical Computation<a class="headerlink" href="#real-time-classical-computation" title="Link to this heading">#</a></h3>
+<p>Jasp’s most distinctive capability is embedding arbitrary classical computation into the quantum program timeline. Because traced classical logic compiles to machine code (not interpreted Python), operations like syndrome decoding, neural network classification, or modular arithmetic can execute within coherence windows. The <a class="reference internal" href="Jasp/index.html#jasp"><span class="std std-ref">Jasp tutorial</span></a> demonstrates a neural network binary classifier running inside a repeat-until-success loop, where measurement outcomes feed into <code class="docutils literal notranslate"><span class="pre">jax.nn.sigmoid</span></code> and the result determines whether to continue or halt - all within a single compiled program.</p>
+</section>
+</section>
+<section id="algorithms">
+<h2>Algorithms<a class="headerlink" href="#algorithms" title="Link to this heading">#</a></h2>
+<p>Qrisp ships with implementations of major quantum algorithms, all built on the abstractions above:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/vqe/VQE.html#vqe"><span class="std std-ref">VQE</span></a></p></td>
+<td><p>Ground state energy of Hamiltonians</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/qaoa/QAOA.html#qaoa"><span class="std std-ref">QAOA</span></a></p></td>
+<td><p>Combinatorial optimization</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/Lanczos.html#lanczos-alg"><span class="std std-ref">Lanczos</span></a></p></td>
+<td><p>Ground state energy via Krylov subspace methods</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/CKS.html#cks"><span class="std std-ref">CKS</span></a></p></td>
+<td><p>Quantum linear systems</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/GQSP.html#gqsp"><span class="std std-ref">GQSP</span></a></p></td>
+<td><p>Quantum signal processing (eigenstate filtering, Hamiltonian simulation, linear systems)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/QuantumBacktrackingTree.html#quantumbacktrackingtree"><span class="std std-ref">Quantum Backtracking</span></a></p></td>
+<td><p>Constraint-satisfaction problems (3-SAT, TSP)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/QITE.html#qite"><span class="std std-ref">QITE</span></a></p></td>
+<td><p>Quantum imaginary-time evolution</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/qiro/QIRO.html#qiro"><span class="std std-ref">QIRO</span></a></p></td>
+<td><p>Combinatorial optimization with quantum-informed updates</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/Shor.html#shor"><span class="std std-ref">Shor’s Algorithm</span></a></p></td>
+<td><p>Integer factoring</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/Grover.html#grovers-alg"><span class="std std-ref">Grover’s Algorithm</span></a></p></td>
+<td><p>Unstructured search</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Algorithms/quantum_counting.html#qcounting"><span class="std std-ref">Quantum Counting</span></a></p></td>
+<td><p>Solution counting for Grover oracles</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="Algorithms/QMCI.html#qmci"><span class="std std-ref">QMCI</span></a></p></td>
+<td><p>Quantum Monte Carlo integration</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>These implementations benefit directly from Qrisp’s compilation infrastructure: Shor’s algorithm, for example, produces circuits with significantly reduced resource requirements compared to manual circuit-level implementations, demonstrating that systematic high-level development yields quantitative advantages.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Reference</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#framework-overview">Framework Overview</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantumvariables">QuantumVariables</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantum-types">Quantum Types</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantumarrays">QuantumArrays</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantum-environments">Quantum Environments</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#arithmetic">Arithmetic</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#memory-management">Memory Management</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#operators-module">Operators Module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-encodings">Block Encodings</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backend-compatibility">Backend Compatibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#jasp-the-next-gen-compilation-pipeline">Jasp - The Next-Gen Compilation Pipeline</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-jasp">Using Jasp</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compilation-targets">Compilation Targets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-jasp-features">Key Jasp Features</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#real-time-classical-computation">Real-Time Classical Computation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#algorithms">Algorithms</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

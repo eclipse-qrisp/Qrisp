@@ -1,0 +1,781 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.program_control.ev &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/program_control/ev';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/program_control/ev.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.program_control.ev</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.program_control.ev</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="n">quantum_kernel</span>
+
+<span class="c1"># The following function implements the expectation_value feature.</span>
+<span class="c1"># The basic functionality would be relatively straightforward to implement,</span>
+<span class="c1"># however there are some complications. The reason for that is that the resulting</span>
+<span class="c1"># jaxpr should be &quot;readable&quot; by the terminal sampling interpreter.</span>
+<span class="c1"># Terminal sampling means that instead of performing the simulations &quot;shots&quot;-times</span>
+<span class="c1"># it is performed once and the shots are then sampled from that distribution.</span>
+<span class="c1"># Naturally this implies a massive performance increase, which is why a lot</span>
+<span class="c1"># of effort is spent to realize a smooth implementation.</span>
+
+<span class="c1"># The underlying idea to make the feature easily &quot;readable&quot; by the terminal</span>
+<span class="c1"># sampling interpreter is to structure one iteration of sampling into three</span>
+<span class="c1"># steps.</span>
+
+<span class="c1"># 1. Evaluating the user function, which generates the distribution.</span>
+<span class="c1"># 2. Sampling from that distribution via the &quot;measure&quot; function.</span>
+<span class="c1"># 3. Decoding and postprocessing the measurement results.</span>
+
+<span class="c1"># For the final two steps we deploy some custom logic to realize the terminal</span>
+<span class="c1"># sampling behavior. To simplify the automatic processing of these steps,</span>
+<span class="c1"># we capture each into individual pjit calls.</span>
+
+<span class="c1"># The terminal sampling interpreter then identifies each steps via the</span>
+<span class="c1"># eqn.params[&quot;name&quot;] attribute and executes the custom logic.</span>
+
+
+<div class="viewcode-block" id="expectation_value">
+<a class="viewcode-back" href="../../../../reference/Jasp/Expectation%20Value.html#qrisp.jasp.expectation_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">expectation_value</span><span class="p">(</span><span class="n">state_prep</span><span class="p">,</span> <span class="n">shots</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">post_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The ``expectation_value`` function allows to estimate the expectation value</span>
+<span class="sd">    from a state that is specified by a preparation procedure. This preparation</span>
+<span class="sd">    procedure can be supplied via a Python function that returns one or</span>
+<span class="sd">    more :ref:`QuantumVariables &lt;QuantumVariable&gt;`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    state_prep : callable</span>
+<span class="sd">        A function returning one or more :ref:`QuantumVariables &lt;QuantumVariable&gt;`.</span>
+<span class="sd">        The expectation value from this state will be computed.</span>
+<span class="sd">        The state preparation function can only take classical values as arguments.</span>
+<span class="sd">        This is because a quantum value would need to be copied for each sampling</span>
+<span class="sd">        iteration, which is prohibited by the no-cloning theorem.</span>
+<span class="sd">    shots : int or jax.core.Tracer</span>
+<span class="sd">        The amount of samples to take to compute the expectation value.</span>
+<span class="sd">    post_processor : callable, optional</span>
+<span class="sd">        A classical Jax traceable function to apply to the results</span>
+<span class="sd">        directly after measuring. By default no post processing is applied.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    Exception</span>
+<span class="sd">        Tried to sample from state preparation function taking a quantum value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        A function returning a Jax array containing the expectation value.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We prepare the state</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \ket{\psi_k} = \frac{1}{\sqrt{2}} \left(\ket{0}\ket{0}\ket{\text{False}} + \ket{k}\ket{k}\ket{\text{True}}\right)</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.jasp import *</span>
+
+
+<span class="sd">        def state_prep(k):</span>
+<span class="sd">            a = QuantumFloat(4)</span>
+<span class="sd">            b = QuantumFloat(4)</span>
+
+<span class="sd">            qbl = QuantumBool()</span>
+<span class="sd">            h(qbl)</span>
+
+<span class="sd">            with control(qbl[0]):</span>
+<span class="sd">                a[:] = k</span>
+
+<span class="sd">            cx(a, b)</span>
+
+<span class="sd">            return a, b</span>
+
+<span class="sd">    And compute the expectation value of the QuantumFloats</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main(k):</span>
+
+<span class="sd">            ev_function = expectation_value(state_prep, shots = 50)</span>
+
+<span class="sd">            return ev_function(k)</span>
+
+<span class="sd">        print(main(3))</span>
+<span class="sd">        # Yields</span>
+<span class="sd">        # [1.44 1.44]</span>
+
+<span class="sd">    The true value 1.5 is not reached because of `shot noise &lt;https://en.wikipedia.org/wiki/Shot_noise&gt;`_.</span>
+<span class="sd">    To improve the approximation, feel free to increase the shots!</span>
+
+<span class="sd">    To demonstrate the ``post_processor`` keyword we define a simple post processing</span>
+<span class="sd">    function</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def post_processor(x, y):</span>
+<span class="sd">            return x*y</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main(k):</span>
+
+<span class="sd">            ev_function = expectation_value(state_prep, shots = 50)</span>
+
+<span class="sd">            return ev_function(k)</span>
+
+<span class="sd">        print(main(3))</span>
+<span class="sd">        # Yields</span>
+<span class="sd">        # 4.338</span>
+
+<span class="sd">    This result is expected because the inputs of ``post_processor`` are</span>
+<span class="sd">    either (0,0) or (3,3) with 50% probability, so we get</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        4.5 = \frac{3\cdot 3 + 0\cdot 0}{2}</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">measure</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_tracer</span><span class="p">,</span> <span class="n">qache</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shots</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">shots</span> <span class="o">=</span> <span class="n">make_tracer</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">post_processor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">identity</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">args</span>
+
+        <span class="n">post_processor</span> <span class="o">=</span> <span class="n">identity</span>
+
+    <span class="c1"># Qache the user function</span>
+    <span class="nd">@qache</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">user_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">state_prep</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="c1"># This function performs the logic to evaluate the expectation value</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expectation_value_eval_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to sample from state preparation function taking a quantum value&quot;</span><span class="p">)</span>
+
+        <span class="c1"># We now construct a loop to evaluate the expectation value via adding</span>
+        <span class="c1"># the decoded and postprocessed measurement result into an accumulator.</span>
+        <span class="c1"># The following function is the loop body, which is kernelized.</span>
+        <span class="nd">@quantum_kernel</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">sampling_body_func</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+
+            <span class="c1"># Evaluate the user function</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">qv_tuple</span> <span class="o">=</span> <span class="n">user_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv_tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">qv_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">qv_tuple</span><span class="p">,)</span>
+
+            <span class="c1"># Ensure all results are QuantumVariables</span>
+            <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_tuple</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to sample from function not returning a QuantumVariable&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Trace the DynamicQubitArray measurements</span>
+            <span class="c1"># Since we execute the measurements on the .reg attribute, no decoding</span>
+            <span class="c1"># is applied. The decoding happens in sampling_helper_2</span>
+            <span class="nd">@qache</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">sampling_helper_1</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+                <span class="n">res_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                    <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">measure</span><span class="p">(</span><span class="n">reg</span><span class="p">))</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">res_list</span><span class="p">)</span>
+
+            <span class="n">measurement_ints</span> <span class="o">=</span> <span class="n">sampling_helper_1</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_tuple</span><span class="p">])</span>
+
+            <span class="c1"># Trace the decoding</span>
+            <span class="nd">@jax</span><span class="o">.</span><span class="n">jit</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">sampling_helper_2</span><span class="p">(</span><span class="o">*</span><span class="n">meas_ints</span><span class="p">):</span>
+                <span class="n">res_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv_tuple</span><span class="p">)):</span>
+                    <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qv_tuple</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">jdecoder</span><span class="p">(</span><span class="n">meas_ints</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+                <span class="c1"># Apply the post processing</span>
+                <span class="k">return</span> <span class="n">post_processor</span><span class="p">(</span><span class="o">*</span><span class="n">res_list</span><span class="p">)</span>
+
+            <span class="n">decoded_values</span> <span class="o">=</span> <span class="n">sampling_helper_2</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">measurement_ints</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">decoded_values</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">decoded_values</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># Save the return amount (for more details check the comment of the)</span>
+                <span class="c1"># initialization command of return_amount</span>
+                <span class="n">return_amount</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">decoded_values</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">acc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">AuxException</span><span class="p">()</span>
+
+            <span class="c1"># Turn into jax array and add to the accumulator</span>
+            <span class="n">meas_res</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">decoded_values</span><span class="p">)</span>
+            <span class="n">acc</span> <span class="o">+=</span> <span class="n">meas_res</span>
+
+            <span class="c1"># Return the updated accumulator for the next loop iteration.</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+        <span class="c1"># This list captures the amount of return values. The strategy here is</span>
+        <span class="c1"># to initially assume only one QuantumVariable is returned, which is then</span>
+        <span class="c1"># added to the expectation value accumulator. If more than one is returned,</span>
+        <span class="c1"># the amount is saved in this list and an exception is raised, which</span>
+        <span class="c1"># subsequently causes another call but this time with the correct accumulator</span>
+        <span class="c1"># dimension.</span>
+
+        <span class="n">return_amount</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))</span>
+            <span class="n">loop_res</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shots</span><span class="p">,</span> <span class="n">sampling_body_func</span><span class="p">,</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">loop_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">shots</span>
+        <span class="k">except</span> <span class="n">AuxException</span><span class="p">:</span>
+            <span class="n">loop_res</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shots</span><span class="p">,</span> <span class="n">sampling_body_func</span><span class="p">,</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">return_amount</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">loop_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">shots</span>
+
+    <span class="k">if</span> <span class="n">return_dict</span><span class="p">:</span>
+        <span class="n">expectation_value_eval_function</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s2">&quot;dict_sampling_eval_function&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">expectation_value_eval_function</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">shots</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">return_function</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AuxException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

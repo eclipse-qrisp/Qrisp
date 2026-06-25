@@ -1,0 +1,1162 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.evaluation_tools.stim_extraction &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/evaluation_tools/stim_extraction';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/evaluation_tools/stim_extraction.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.evaluation_tools.stim_extraction</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.evaluation_tools.stim_extraction</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_unflatten</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.circuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">Clbit</span><span class="p">,</span> <span class="n">Qubit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaspr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParityHandle</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Numpy array subtypes for typed return values from extract_stim</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StimMeasurementHandles</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A numpy.ndarray subtype representing Stim measurement record indices.</span>
+
+<span class="sd">    This class behaves exactly like a regular numpy array (and can be used</span>
+<span class="sd">    directly for slicing sample arrays), but carries type information indicating</span>
+<span class="sd">    that the values represent measurement record indices in a Stim circuit.</span>
+
+<span class="sd">    The indices can be used to slice the results from `stim_circuit.compile_sampler().sample()`.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; meas_indices, stim_circuit = my_func()</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(meas_indices, StimMeasurementHandles)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; samples = stim_circuit.compile_sampler().sample(100)</span>
+<span class="sd">    &gt;&gt;&gt; my_results = samples[:, meas_indices]  # Direct slicing works</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StimDetectorHandles</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A numpy.ndarray subtype representing Stim detector indices.</span>
+
+<span class="sd">    This class behaves exactly like a regular numpy array (and can be used</span>
+<span class="sd">    directly for slicing detector sample arrays), but carries type information</span>
+<span class="sd">    indicating that the values represent detector indices in a Stim circuit.</span>
+
+<span class="sd">    The indices can be used to slice the results from</span>
+<span class="sd">    `stim_circuit.compile_detector_sampler().sample()`.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; det_indices, stim_circuit = my_func()</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(det_indices, StimDetectorHandles)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; samples = stim_circuit.compile_detector_sampler().sample(100)</span>
+<span class="sd">    &gt;&gt;&gt; my_results = samples[:, det_indices]  # Direct slicing works</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StimObservableHandles</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A numpy.ndarray subtype representing Stim observable indices.</span>
+
+<span class="sd">    This class behaves exactly like a regular numpy array (and can be used</span>
+<span class="sd">    directly for slicing observable results), but carries type information</span>
+<span class="sd">    indicating that the values represent observable indices in a Stim circuit.</span>
+
+<span class="sd">    The indices can be used to slice the results from</span>
+<span class="sd">    `stim_circuit.compile_detector_sampler().sample(separate_observables=True)`.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; obs_indices, stim_circuit = my_func()</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(obs_indices, StimObservableHandles)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; det_samples, obs_samples = stim_circuit.compile_detector_sampler().sample(100, separate_observables=True)</span>
+<span class="sd">    &gt;&gt;&gt; my_results = obs_samples[:, obs_indices]  # Direct slicing works</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StimQubitIndices</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A numpy.ndarray subtype representing Stim qubit indices.</span>
+
+<span class="sd">    This class behaves exactly like a regular numpy array, but carries type</span>
+<span class="sd">    information indicating that the values represent qubit indices in a Stim circuit.</span>
+
+<span class="sd">    These indices correspond to the qubit numbering used internally by Stim,</span>
+<span class="sd">    which can be useful for applying noise models or analyzing circuit structure.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; qubit_indices, stim_circuit = my_func()</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(qubit_indices, StimQubitIndices)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;Qubits used: {qubit_indices}&quot;)  # e.g., [0, 1, 2]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="extract_stim">
+<a class="viewcode-back" href="../../../../reference/Utilities/extract_stim_doc.html#qrisp.jasp.extract_stim">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_stim</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">detector_order</span><span class="o">=</span><span class="s2">&quot;chronological&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that extracts a Stim circuit from a Jasp-traceable function.</span>
+
+<span class="sd">    This decorator enables high-performance Clifford circuit simulation by converting</span>
+<span class="sd">    Jasp-traceable Qrisp functions into Stim circuits. It handles the translation of</span>
+<span class="sd">    quantum measurements, detectors, observables, and qubit references into Stim&#39;s</span>
+<span class="sd">    internal indices, allowing you to map simulation results back to the original</span>
+<span class="sd">    function&#39;s return values.</span>
+
+<span class="sd">    Return values are wrapped in typed numpy array subtypes for easy identification:</span>
+
+<span class="sd">    - :class:`StimMeasurementHandles` - measurement record indices (for slicing sampler results)</span>
+<span class="sd">    - :class:`StimDetectorHandles` - detector indices (for slicing detector sampler results)</span>
+<span class="sd">    - :class:`StimObservableHandles` - observable indices (for slicing observable results)</span>
+<span class="sd">    - :class:`StimQubitIndices` - qubit indices (for identifying which Stim qubits correspond to a QuantumVariable)</span>
+
+<span class="sd">    These typed arrays behave exactly like regular numpy arrays and can be used directly</span>
+<span class="sd">    for slicing sample arrays, while also carrying type information about what they represent.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Stim only supports Clifford operations. Functions containing non-Clifford</span>
+<span class="sd">        gates (e.g., T, RZ, RX) will raise an error during conversion.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        **Measurement post-processing limitation:** Advanced quantum types like</span>
+<span class="sd">        :ref:`QuantumFloat` apply post-processing to raw measurement results during</span>
+<span class="sd">        decoding. For example, a QuantumFloat might convert a raw integer into a fractional</span>
+<span class="sd">        value. This post-processing cannot be performed during the Stim extraction</span>
+<span class="sd">        because it requires transforming a list of classical bits in ways that involve</span>
+<span class="sd">        classical post-processing steps that can not be represented by the Stim circuit</span>
+<span class="sd">        format.</span>
+
+<span class="sd">        For this reason, it is **recommended to use** :ref:`QuantumVariable` **instead</span>
+<span class="sd">        of QuantumFloat** (or similar advanced types) when working with ``extract_stim``.</span>
+<span class="sd">        QuantumVariable&#39;s decoder returns raw integer values without post-processing,</span>
+<span class="sd">        making it fully compatible with Stim&#39;s measurement record. You can then apply</span>
+<span class="sd">        any necessary transformations manually after sampling. Values that have</span>
+<span class="sd">        been processed in this way are represented through the ``ProcessedMeasurement``</span>
+<span class="sd">        class, which acts as a dummy representative.</span>
+
+<span class="sd">        See the :meth:`Jaspr.to_qc &lt;qrisp.jasp.Jaspr.to_qc&gt;` documentation for more</span>
+<span class="sd">        details on this limitation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : callable</span>
+<span class="sd">        A Jasp-traceable function that manipulates quantum variables and returns</span>
+<span class="sd">        quantum measurement results, parity checks (detectors/observables),</span>
+<span class="sd">        QuantumVariables (for qubit indices), and/or classical values.</span>
+<span class="sd">    detector_order : str, optional</span>
+<span class="sd">        Specifies the ordering of detectors in the returned Stim circuit.</span>
+
+<span class="sd">        - ``&quot;chronological&quot;`` (default): Detectors appear in the circuit in the</span>
+<span class="sd">          order they appear in the code execution.</span>
+<span class="sd">        - ``&quot;return_order&quot;``: Reorders detectors based on the function&#39;s return</span>
+<span class="sd">          values. This analyzes all ``StimDetectorHandles`` in the return values,</span>
+<span class="sd">          flattens and concatenates them to form a permutation, then applies</span>
+<span class="sd">          :func:`~qrisp.misc.stim_tools.permute_detectors` to reorder the circuit</span>
+<span class="sd">          accordingly. The detector handle values are also adjusted to reflect</span>
+<span class="sd">          the new ordering.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        A decorated function that returns:</span>
+
+<span class="sd">        - **No return value:** If `func` returns nothing, returns just the</span>
+<span class="sd">          `stim.Circuit` object.</span>
+<span class="sd">        - **With return values:** If `func` returns n values, returns a tuple</span>
+<span class="sd">          of (n+1) elements:</span>
+
+<span class="sd">          * Elements 0 to n-1: The function&#39;s return values, where:</span>
+
+<span class="sd">            - **Classical values** (integers, floats, etc.) are returned as-is.</span>
+<span class="sd">            - **Quantum measurements** are returned as :class:`StimMeasurementHandles`</span>
+<span class="sd">              arrays containing measurement record indices. These can be used directly</span>
+<span class="sd">              to slice the results from ``stim_circuit.compile_sampler().sample()``.</span>
+<span class="sd">            - **Parity detectors** (from ``parity(..., expectation=0/1)``) are</span>
+<span class="sd">              returned as :class:`StimDetectorHandles` arrays containing detector indices.</span>
+<span class="sd">            - **Parity observables** (from ``parity(..., observable=True)``) are</span>
+<span class="sd">              returned as :class:`StimObservableHandles` arrays containing observable indices.</span>
+<span class="sd">            - **QuantumVariables** (unmeasured) are returned as :class:`StimQubitIndices`</span>
+<span class="sd">              arrays containing the Stim qubit indices for that variable.</span>
+
+<span class="sd">          * Element n: The `stim.Circuit` object.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    **Example 1: Single return value**</span>
+
+<span class="sd">    When the function has no return value, only the Stim circuit is returned:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, cx, measure</span>
+<span class="sd">        from qrisp.jasp import extract_stim</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def bell_state():</span>
+<span class="sd">            qv = QuantumVariable(2)</span>
+<span class="sd">            h(qv[0])</span>
+<span class="sd">            cx(qv[0], qv[1])</span>
+<span class="sd">            measure(qv)</span>
+
+<span class="sd">        stim_circuit = bell_state()</span>
+<span class="sd">        print(stim_circuit)</span>
+<span class="sd">        # Yields:</span>
+<span class="sd">        # H 0</span>
+<span class="sd">        # CX 0 1</span>
+<span class="sd">        # M 0 1</span>
+
+<span class="sd">    **Example 2: Multiple return values with measurement indices**</span>
+
+<span class="sd">    When returning one or more values, quantum measurements are returned as</span>
+<span class="sd">    :class:`StimMeasurementHandles` arrays, while classical values remain unchanged:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat, h, cx, measure</span>
+<span class="sd">        from qrisp.jasp import extract_stim</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def analyze_state(n):</span>
+<span class="sd">            qf = QuantumVariable(n)</span>
+<span class="sd">            h(qf)</span>
+
+<span class="sd">            # Mid-circuit measurement</span>
+<span class="sd">            first_qubit_result = measure(qf[0])</span>
+
+<span class="sd">            # Classical computation</span>
+<span class="sd">            classical_value = n * 2</span>
+
+<span class="sd">            # Final measurement</span>
+<span class="sd">            final_result = measure(qf)</span>
+
+<span class="sd">            return classical_value, first_qubit_result, final_result</span>
+
+<span class="sd">        classical_val, first_meas_idx, final_meas_indices, stim_circuit = analyze_state(3)</span>
+
+<span class="sd">        print(f&quot;Classical value: {classical_val}&quot;)  # 6 (unchanged)</span>
+<span class="sd">        print(f&quot;First qubit measurement index: {first_meas_idx}&quot;)  # StimMeasurementHandles([0])</span>
+<span class="sd">        print(f&quot;Final measurement indices: {final_meas_indices}&quot;)  # StimMeasurementHandles([1, 2, 3])</span>
+<span class="sd">        print(f&quot;Type: {type(final_meas_indices)}&quot;)  # &lt;class &#39;StimMeasurementHandles&#39;&gt;</span>
+
+<span class="sd">    **Example 3: Sampling and slicing results**</span>
+
+<span class="sd">    Use the measurement handles (which are numpy arrays) to slice results from Stim&#39;s samples:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def prepare_entangled_state():</span>
+<span class="sd">            qf1 = QuantumVariable(2)</span>
+<span class="sd">            qf2 = QuantumVariable(3)</span>
+
+<span class="sd">            # Prepare qf1 in superposition</span>
+<span class="sd">            h(qf1)</span>
+
+<span class="sd">            # Entangle qf2 with qf1[0]</span>
+<span class="sd">            for i in range(3):</span>
+<span class="sd">                cx(qf1[0], qf2[i])</span>
+
+<span class="sd">            result1 = measure(qf1)</span>
+<span class="sd">            result2 = measure(qf2)</span>
+
+<span class="sd">            return result1, result2</span>
+
+<span class="sd">        # Extract the circuit and measurement indices</span>
+<span class="sd">        qf1_indices, qf2_indices, stim_circuit = prepare_entangled_state()</span>
+
+<span class="sd">        print(f&quot;qf1 measured at positions: {qf1_indices}&quot;)  # StimMeasurementHandles([0, 1])</span>
+<span class="sd">        print(f&quot;qf2 measured at positions: {qf2_indices}&quot;)  # StimMeasurementHandles([2, 3, 4])</span>
+
+<span class="sd">        # Sample 1000 shots from the Stim circuit</span>
+<span class="sd">        sampler = stim_circuit.compile_sampler()</span>
+<span class="sd">        all_samples = sampler.sample(1000)  # Shape: (1000, 5) - 5 total measurements</span>
+
+<span class="sd">        # Slice the samples using the handle arrays directly (they are numpy arrays)</span>
+<span class="sd">        qf1_samples = all_samples[:, qf1_indices]  # Shape: (1000, 2)</span>
+<span class="sd">        qf2_samples = all_samples[:, qf2_indices]  # Shape: (1000, 3)</span>
+
+<span class="sd">        # Slice the samples using the handle arrays directly (they are numpy arrays)</span>
+<span class="sd">        qf1_samples = all_samples[:, qf1_indices]  # Shape: (1000, 2)</span>
+<span class="sd">        qf2_samples = all_samples[:, qf2_indices]  # Shape: (1000, 3)</span>
+
+<span class="sd">        # Convert bit arrays to integers (little-endian)</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        qf1_values = qf1_samples.dot(1 &lt;&lt; np.arange(qf1_samples.shape[1]))</span>
+<span class="sd">        qf2_values = qf2_samples.dot(1 &lt;&lt; np.arange(qf2_samples.shape[1]))</span>
+
+<span class="sd">        print(f&quot;First 10 qf1 values: {qf1_values[:10]}&quot;)</span>
+<span class="sd">        print(f&quot;First 10 qf2 values: {qf2_values[:10]}&quot;)</span>
+
+<span class="sd">        # Verify entanglement: when qf1[0]=0, all qf2 bits should be 0</span>
+<span class="sd">        qf1_first_bit = qf1_samples[:, 0]</span>
+<span class="sd">        assert np.all(qf2_samples[qf1_first_bit == 0] == 0)</span>
+
+<span class="sd">    **Example 4: Using parity checks (Detectors)**</span>
+
+<span class="sd">    You can use the :func:`~qrisp.jasp.parity` function to define parity checks within your circuit.</span>
+<span class="sd">    When extracted to Stim, these are converted into ``DETECTOR`` instructions and</span>
+<span class="sd">    returned as :class:`StimDetectorHandles` arrays:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, cx, measure</span>
+<span class="sd">        from qrisp.jasp import extract_stim, parity</span>
+<span class="sd">        from qrisp.misc.stim_tools import stim_noise</span>
+<span class="sd">        import stim</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def selective_noise_demo():</span>
+<span class="sd">            # Create two QuantumVariables for independent Bell pairs</span>
+<span class="sd">            bell_pair_1 = QuantumVariable(2)</span>
+<span class="sd">            bell_pair_2 = QuantumVariable(2)</span>
+
+<span class="sd">            h(bell_pair_1[0]); cx(bell_pair_1[0], bell_pair_1[1])</span>
+<span class="sd">            h(bell_pair_2[0]); cx(bell_pair_2[0], bell_pair_2[1])</span>
+
+<span class="sd">            # Apply deterministic X error to one of the qubits in the second pair</span>
+<span class="sd">            stim_noise(&quot;X_ERROR&quot;, 1.0, bell_pair_2[0])</span>
+
+<span class="sd">            m1_0 = measure(bell_pair_1[0]); m1_1 = measure(bell_pair_1[1])</span>
+<span class="sd">            m2_0 = measure(bell_pair_2[0]); m2_1 = measure(bell_pair_2[1])</span>
+
+<span class="sd">            # Detector 1: expectation=0 implies we expect even parity</span>
+<span class="sd">            d1 = parity(m1_0, m1_1, expectation=0)</span>
+
+<span class="sd">            # Detector 2: Checks parity of second, noisy pair</span>
+<span class="sd">            d2 = parity(m2_0, m2_1, expectation=0)</span>
+
+<span class="sd">            return d1, d2</span>
+
+<span class="sd">        d1, d2, stim_circuit = selective_noise_demo()</span>
+
+<span class="sd">        print(f&quot;Detector 1 index: {d1}&quot;)  # StimDetectorHandles([0])</span>
+<span class="sd">        print(f&quot;Detector 2 index: {d2}&quot;)  # StimDetectorHandles([1])</span>
+
+<span class="sd">        sampler = stim_circuit.compile_detector_sampler()</span>
+<span class="sd">        detector_samples = sampler.sample(1)</span>
+
+<span class="sd">        # Slice detector results using the handles</span>
+<span class="sd">        d1_result = detector_samples[:, d1]</span>
+<span class="sd">        d2_result = detector_samples[:, d2]</span>
+<span class="sd">        print(f&quot;D1: {d1_result}, D2: {d2_result}&quot;)  # [[False]] [[True]] (error in pair 2)</span>
+
+<span class="sd">    **Example 5: Defining Observables**</span>
+
+<span class="sd">    Similarly, :func:`~qrisp.jasp.parity` with ``observable=True`` defines logical observables</span>
+<span class="sd">    in Stim, returned as :class:`StimObservableHandles` arrays:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def observable_demo():</span>
+<span class="sd">            qv = QuantumVariable(2)</span>
+<span class="sd">            h(qv)</span>
+<span class="sd">            m0 = measure(qv[0]); m1 = measure(qv[1])</span>
+
+<span class="sd">            # Define an observable O = Z_0 Z_1</span>
+<span class="sd">            logical_obs = parity(m0, m1, observable=True)</span>
+<span class="sd">            return logical_obs</span>
+
+<span class="sd">        obs_idx, stim_circuit = observable_demo()</span>
+<span class="sd">        print(f&quot;Observable index: {obs_idx}&quot;)  # StimObservableHandles([0])</span>
+<span class="sd">        # stim_circuit contains OBSERVABLE_INCLUDE(0) ...</span>
+
+<span class="sd">    **Example 6: Returning qubit indices**</span>
+
+<span class="sd">    When returning an unmeasured QuantumVariable, you get :class:`StimQubitIndices` arrays</span>
+<span class="sd">    containing the Stim qubit indices for that variable:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @extract_stim</span>
+<span class="sd">        def qubit_index_demo():</span>
+<span class="sd">            qv1 = QuantumVariable(2)</span>
+<span class="sd">            qv2 = QuantumVariable(3)</span>
+<span class="sd">            h(qv1)</span>
+<span class="sd">            cx(qv1[0], qv2[0])</span>
+<span class="sd">            return qv1, qv2</span>
+
+<span class="sd">        qv1_indices, qv2_indices, stim_circuit = qubit_index_demo()</span>
+<span class="sd">        print(f&quot;qv1 uses Stim qubits: {qv1_indices}&quot;)  # StimQubitIndices([0, 1])</span>
+<span class="sd">        print(f&quot;qv2 uses Stim qubits: {qv2_indices}&quot;)  # StimQubitIndices([2, 3, 4])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate detector_order parameter</span>
+    <span class="k">if</span> <span class="n">detector_order</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;chronological&quot;</span><span class="p">,</span> <span class="s2">&quot;return_order&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;detector_order must be &#39;chronological&#39; or &#39;return_order&#39;, got &#39;</span><span class="si">{</span><span class="n">detector_order</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator that wraps the function to perform Stim extraction.&quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">return_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Inner function that performs the actual Stim extraction.</span>
+
+<span class="sd">            This function implements the conversion pipeline:</span>
+<span class="sd">            1. Creates a Jaspr (Jax-like representation) from the traced function</span>
+<span class="sd">            2. Converts the Jaspr to a QuantumCircuit via staticalization</span>
+<span class="sd">            3. Extracts the Stim circuit from the QuantumCircuit</span>
+<span class="sd">            4. Maps Qrisp Clbit objects to Stim measurement record indices</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c1"># Step 1: Create a Jaspr from the function with the given arguments</span>
+            <span class="c1"># The Jaspr is a traced representation of the quantum program, similar to Jax&#39;s jaxpr.</span>
+            <span class="c1"># This tracing process records the quantum operations without actually executing them.</span>
+            <span class="c1"># Use return_shape=True to capture the output PyTree structure so we can</span>
+            <span class="c1"># reconstruct nested return types (lists, dicts, etc.) after processing.</span>
+            <span class="n">jaspr</span><span class="p">,</span> <span class="n">out_tree</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_shape</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+            <span class="c1"># Step 2: Convert the Jaspr to a QuantumCircuit</span>
+            <span class="c1"># The &quot;staticalization&quot; process converts the traced representation back to a concrete</span>
+            <span class="c1"># quantum circuit. The to_qc method returns a tuple containing:</span>
+            <span class="c1"># - All return values from the original function (e.g., measured values, QuantumVariables)</span>
+            <span class="c1"># - The QuantumCircuit object (always the last element)</span>
+            <span class="c1"># So if the original function returns n values, staticalization_result has (n+1) elements.</span>
+            <span class="n">staticalization_result</span> <span class="o">=</span> <span class="n">jaspr</span><span class="o">.</span><span class="n">to_qc</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+            <span class="c1"># Handle the simple case: function returns no value (i.e. the staticalization returns just a qc)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">jaspr</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># For single return values, staticalization_result is just the QuantumCircuit.</span>
+                <span class="c1"># Convert it directly to Stim without needing to track the clbit mapping.</span>
+                <span class="k">return</span> <span class="n">staticalization_result</span><span class="o">.</span><span class="n">to_stim</span><span class="p">()</span>
+
+            <span class="c1"># Handle the complex case: function returns multiple values</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Extract the QuantumCircuit (always the last element of the tuple)</span>
+                <span class="n">qc</span> <span class="o">=</span> <span class="n">staticalization_result</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="c1"># Convert the QuantumCircuit to Stim with mapping enabled.</span>
+                <span class="c1"># - clbit_mapping: maps Clbit objects to Stim measurement record indices</span>
+                <span class="c1"># - detector_mapping: maps ParityHandle to Stim detector indices</span>
+                <span class="c1"># - observable_mapping: maps ParityHandle to Stim observable indices</span>
+                <span class="n">stim_circ</span><span class="p">,</span> <span class="n">clbit_mapping</span><span class="p">,</span> <span class="n">detector_mapping</span><span class="p">,</span> <span class="n">observable_mapping</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">to_stim</span><span class="p">(</span>
+                    <span class="n">return_measurement_map</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_detector_map</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">return_observable_map</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Create qubit mapping: Qubit -&gt; Stim qubit index</span>
+                <span class="n">qubit_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">qb</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">qb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">)}</span>
+
+                <span class="c1"># Helper function to convert a single value (Clbit, ParityHandle, or Qubit) to its index</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">convert_single_value</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">clbit_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="s2">&quot;measurement&quot;</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">detector_mapping</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">detector_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="s2">&quot;detector&quot;</span>
+                        <span class="k">elif</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">observable_mapping</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">observable_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="s2">&quot;observable&quot;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ParityHandle not found in detector or observable mapping: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">qubit_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="s2">&quot;qubit&quot;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="kc">None</span>
+
+                <span class="c1"># Process all return values except the QuantumCircuit (last element)</span>
+                <span class="c1"># We replace Clbit objects, ParityHandles, and Qubits with their corresponding Stim indices,</span>
+                <span class="c1"># wrapped in typed numpy array subtypes for identification.</span>
+                <span class="n">new_result</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">staticalization_result</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">staticalization_result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+                    <span class="c1"># Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits</span>
+                    <span class="c1"># Convert each element and wrap in appropriate typed array.</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span><span class="p">:</span>
+                        <span class="c1"># Flatten, convert, then reshape</span>
+                        <span class="n">flat</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">first_idx</span><span class="p">,</span> <span class="n">first_type</span> <span class="o">=</span> <span class="n">convert_single_value</span><span class="p">(</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">if</span> <span class="n">first_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="c1"># Convert all elements</span>
+                                <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">convert_single_value</span><span class="p">(</span><span class="n">v</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">flat</span><span class="p">]</span>
+                                <span class="n">result_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                                <span class="c1"># Wrap in appropriate type</span>
+                                <span class="k">if</span> <span class="n">first_type</span> <span class="o">==</span> <span class="s2">&quot;measurement&quot;</span><span class="p">:</span>
+                                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">result_array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimMeasurementHandles</span><span class="p">)</span>
+                                <span class="k">elif</span> <span class="n">first_type</span> <span class="o">==</span> <span class="s2">&quot;detector&quot;</span><span class="p">:</span>
+                                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">result_array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimDetectorHandles</span><span class="p">)</span>
+                                <span class="k">elif</span> <span class="n">first_type</span> <span class="o">==</span> <span class="s2">&quot;observable&quot;</span><span class="p">:</span>
+                                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">result_array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimObservableHandles</span><span class="p">)</span>
+                                <span class="k">elif</span> <span class="n">first_type</span> <span class="o">==</span> <span class="s2">&quot;qubit&quot;</span><span class="p">:</span>
+                                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">result_array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">new_val</span> <span class="o">=</span> <span class="n">val</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">new_val</span> <span class="o">=</span> <span class="n">val</span>
+
+                    <span class="c1"># Case 2: Value is a list of Clbit objects (e.g., from multi-qubit measurement)</span>
+                    <span class="c1"># Replace each Clbit with its corresponding Stim measurement index.</span>
+                    <span class="c1"># This happens when a QuantumFloat/QuantumVariable is measured and returns</span>
+                    <span class="c1"># a list of classical bits representing the measurement results.</span>
+                    <span class="c1"># Wrap in StimMeasurementHandles for type identification.</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Clbit</span><span class="p">):</span>
+                        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">clbit_mapping</span><span class="p">[</span><span class="n">clbit</span><span class="p">]</span> <span class="k">for</span> <span class="n">clbit</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimMeasurementHandles</span><span class="p">)</span>
+
+                    <span class="c1"># Case 3: Value is a list of Qubit objects</span>
+                    <span class="c1"># Replace each Qubit with its corresponding Stim qubit index.</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Qubit</span><span class="p">):</span>
+                        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">qubit_mapping</span><span class="p">[</span><span class="n">qb</span><span class="p">]</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+
+                    <span class="c1"># Case 4: Value is a single Clbit object</span>
+                    <span class="c1"># Replace it with its Stim measurement index as a 0-d StimMeasurementHandles array.</span>
+                    <span class="c1"># This happens when a single qubit is measured.</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Clbit</span><span class="p">):</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">clbit_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimMeasurementHandles</span><span class="p">)</span>
+
+                    <span class="c1"># Case 5: Value is a single Qubit object</span>
+                    <span class="c1"># Replace it with its Stim qubit index as a 0-d StimQubitIndices array.</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qubit_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+
+                    <span class="c1"># Case 6: Value is a ParityHandle (from parity operation)</span>
+                    <span class="c1"># Look up in detector or observable mapping and wrap accordingly.</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ParityHandle</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">detector_mapping</span><span class="p">:</span>
+                            <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">detector_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimDetectorHandles</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">observable_mapping</span><span class="p">:</span>
+                            <span class="n">new_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">observable_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimObservableHandles</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ParityHandle not found in detector or observable mapping: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                    <span class="c1"># Case 7: Value is something else (e.g., integer, float, ProcessedMeasurement)</span>
+                    <span class="c1"># Pass through unchanged. Classical values computed during the function</span>
+                    <span class="c1"># (not involving measurements) are returned as-is.</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">val</span>
+
+                    <span class="n">new_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+
+                <span class="c1"># Apply detector reordering if requested</span>
+                <span class="k">if</span> <span class="n">detector_order</span> <span class="o">==</span> <span class="s2">&quot;return_order&quot;</span><span class="p">:</span>
+                    <span class="c1"># Collect all StimDetectorHandles from the return values</span>
+                    <span class="n">detector_indices_list</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">new_result</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                            <span class="c1"># Check if this is a StimDetectorHandles array</span>
+                            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="n">StimDetectorHandles</span><span class="p">:</span>
+                                <span class="n">detector_indices_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+                    <span class="k">if</span> <span class="n">detector_indices_list</span><span class="p">:</span>
+                        <span class="c1"># Concatenate all detector indices to form the permutation</span>
+                        <span class="n">permutation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">detector_indices_list</span><span class="p">)</span>
+
+                        <span class="c1"># Import permute_detectors function</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.misc.stim_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permute_detectors</span>
+
+                        <span class="c1"># Apply permutation to stim circuit</span>
+                        <span class="n">stim_circ</span> <span class="o">=</span> <span class="n">permute_detectors</span><span class="p">(</span><span class="n">stim_circ</span><span class="p">,</span> <span class="n">permutation</span><span class="p">)</span>
+
+                        <span class="c1"># Create inverse mapping: old_idx -&gt; new_idx</span>
+                        <span class="c1"># If permutation[i] = k, then detector k in input becomes detector i in output</span>
+                        <span class="c1"># So inverse_perm[k] = i</span>
+                        <span class="n">inverse_perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+                        <span class="n">inverse_perm</span><span class="p">[</span><span class="n">permutation</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">permutation</span><span class="p">))</span>
+
+                        <span class="c1"># Update all detector handle values in new_result</span>
+                        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_result</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="n">StimDetectorHandles</span><span class="p">:</span>
+                                <span class="c1"># Map old indices to new indices</span>
+                                <span class="n">old_indices</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                                <span class="n">new_indices</span> <span class="o">=</span> <span class="n">inverse_perm</span><span class="p">[</span><span class="n">old_indices</span><span class="p">]</span>
+                                <span class="n">new_result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_indices</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimDetectorHandles</span><span class="p">)</span>
+
+                <span class="c1"># Reconstruct the original PyTree structure from the flat results</span>
+                <span class="n">reconstructed</span> <span class="o">=</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">out_tree</span><span class="p">,</span> <span class="n">new_result</span><span class="p">)</span>
+
+                <span class="c1"># Post-process: tree_unflatten may reconstruct QuantumVariable objects</span>
+                <span class="c1"># from StimQubitIndices leaves. Convert them back to StimQubitIndices.</span>
+                <span class="c1"># The QuantumVariable unflatten procedure is not built to work outside</span>
+                <span class="c1"># a tracing context, so we extract the qubit indices directly.</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic.dynamic_qubit_array</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">DynamicQubitArray</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">convert_qv</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                        <span class="n">reg</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">reg</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">DynamicQubitArray</span><span class="p">):</span>
+                            <span class="c1"># The tracer holds the numpy array of indices</span>
+                            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">tracer</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="n">arr</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">reg</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                            <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">qubit_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qb</span><span class="p">,</span> <span class="n">qb</span><span class="p">)</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">reg</span><span class="p">]</span>
+                            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">StimQubitIndices</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">val</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">convert_qv</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="p">[</span><span class="n">convert_qv</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">convert_qv</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="k">return</span> <span class="n">val</span>
+
+                <span class="n">reconstructed</span> <span class="o">=</span> <span class="n">convert_qv</span><span class="p">(</span><span class="n">reconstructed</span><span class="p">)</span>
+
+                <span class="c1"># Append the Stim circuit: unpack if the return was a tuple,</span>
+                <span class="c1"># otherwise wrap in a tuple with the stim circuit.</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reconstructed</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="n">reconstructed</span><span class="p">,</span> <span class="n">stim_circ</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="n">reconstructed</span><span class="p">,</span> <span class="n">stim_circ</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">return_func</span>
+
+    <span class="c1"># Handle both @extract_stim and @extract_stim(detector_order=...)</span>
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Called with arguments: @extract_stim(detector_order=&quot;...&quot;)</span>
+        <span class="k">return</span> <span class="n">decorator</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Called without arguments: @extract_stim</span>
+        <span class="k">return</span> <span class="n">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1048 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.interface.job &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/interface/job';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/interface/job.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.interface.job</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.interface.job</h1><div class="highlight"><pre>
+<span></span><span class="c1"># &quot;&quot;&quot;</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># * Copyright (c) 2026 the Qrisp authors</span>
+<span class="c1"># *</span>
+<span class="c1"># * This program and the accompanying materials are made available under the</span>
+<span class="c1"># * terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="c1"># * http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="c1"># *</span>
+<span class="c1"># * This Source Code may also be made available under the following Secondary</span>
+<span class="c1"># * Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="c1"># * Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="c1"># * with the GNU Classpath Exception which is</span>
+<span class="c1"># * available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="c1"># *</span>
+<span class="c1"># * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="c1"># ********************************************************************************</span>
+<span class="c1"># &quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;Abstract :class:`Job` interface and related types for representing and managing backend executions.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrEnum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">Backend</span>
+
+
+<div class="viewcode-block" id="JobStatus">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/JobStatus.html#qrisp.interface.JobStatus">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JobStatus</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration of possible lifecycle states for a :class:`Job`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    INITIALIZING :</span>
+<span class="sd">        The job object has been created but execution has not yet been handed off to the</span>
+<span class="sd">        backend. This is a transient state: a correctly implemented backend must ensure</span>
+<span class="sd">        that every job exits ``INITIALIZING`` before :meth:`~qrisp.interface.Backend.run_async`</span>
+<span class="sd">        returns.</span>
+<span class="sd">    QUEUED :</span>
+<span class="sd">        The job has been submitted and is waiting for execution resources.</span>
+<span class="sd">    RUNNING :</span>
+<span class="sd">        The job is currently being executed.</span>
+<span class="sd">    DONE :</span>
+<span class="sd">        The job completed successfully. Results are available.</span>
+<span class="sd">    CANCELLED :</span>
+<span class="sd">        The job was cancelled before or during execution.</span>
+<span class="sd">    ERROR :</span>
+<span class="sd">        The job failed due to an error during execution.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">INITIALIZING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">QUEUED</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">DONE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">CANCELLED</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+
+<div class="viewcode-block" id="JobStatus.final_states">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/JobStatus.html#qrisp.interface.JobStatus.final_states">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">final_states</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">JobStatus</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Terminal states: once a Job reaches one of these, its state won&#39;t change anymore.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">DONE</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">JOB_FINAL_STATES</span> <span class="o">=</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">final_states</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="JobFailureError">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/Job.html#qrisp.interface.JobFailureError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JobFailureError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised by :meth:`Job.result` when the job terminated in</span>
+<span class="sd">    :attr:`~JobStatus.ERROR` state.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="JobCancelledError">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/Job.html#qrisp.interface.JobCancelledError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JobCancelledError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised by :meth:`Job.result` when the job was cancelled</span>
+<span class="sd">    (:attr:`~JobStatus.CANCELLED`).</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="JobResult">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/JobResult.html#qrisp.interface.JobResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JobResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps the outcome of one or more circuit executions.</span>
+
+<span class="sd">    Counts are stored as a list with one dictionary per input circuit,</span>
+<span class="sd">    preserving the input order.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    counts : list[dict]</span>
+<span class="sd">        A list of measurement-outcome dictionaries, one per circuit.</span>
+<span class="sd">        Keys and values can be of any type, as determined by the user.</span>
+
+<span class="sd">    **kwargs</span>
+<span class="sd">        Optional backend-specific metadata associated with the execution.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Let&#39;s start with a simple example of a single circuit result:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp.interface.job import JobResult</span>
+<span class="sd">    &gt;&gt;&gt; result = JobResult([{&quot;00&quot;: 512, &quot;11&quot;: 512}])</span>
+<span class="sd">    &gt;&gt;&gt; result.get_counts()</span>
+<span class="sd">    {&quot;00&quot;: 512, &quot;11&quot;: 512}</span>
+
+<span class="sd">    For batch executions, we can store results for multiple circuits in a single object:</span>
+
+<span class="sd">    &gt;&gt;&gt; result = JobResult([{&quot;0&quot;: 800, &quot;1&quot;: 224}, {&quot;00&quot;: 500, &quot;11&quot;: 524}])</span>
+<span class="sd">    &gt;&gt;&gt; result.all_counts</span>
+<span class="sd">    [{&#39;0&#39;: 800, &#39;1&#39;: 224}, {&#39;00&#39;: 500, &#39;11&#39;: 524}]</span>
+
+<span class="sd">    Even in this case, we can access individual circuit results using the :meth:`get_counts` method:</span>
+
+<span class="sd">    &gt;&gt;&gt; result.get_counts(1)</span>
+<span class="sd">    {&#39;00&#39;: 500, &#39;11&#39;: 524}</span>
+
+<span class="sd">    Note that we can retrieve the number of circuits in the result using the :attr:`num_circuits` property:</span>
+
+<span class="sd">    &gt;&gt;&gt; result.num_circuits</span>
+<span class="sd">    2</span>
+
+<span class="sd">    Finally, we can print the result object to see a summary of its contents:</span>
+
+<span class="sd">    &gt;&gt;&gt; print(result)</span>
+<span class="sd">    JobResult(num_circuits=2, metadata={})</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="JobResult.__init__">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.JobResult.__init__.html#qrisp.interface.JobResult.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">counts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a JobResult instance.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;counts&#39; must be a sequence of dicts, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;counts&#39; must contain at least one dict&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Each item in &#39;counts&#39; must be a dict, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> at index </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">kwargs</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Properties</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All measurement-outcome counts, one dict per circuit.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counts</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_circuits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of circuits whose results are stored in this object.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_counts</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Methods</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="JobResult.get_counts">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.JobResult.get_counts.html#qrisp.interface.JobResult.get_counts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the measurement-outcome counts for a single circuit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Index of the circuit in the batch. Defaults to ``0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Mapping from bitstring outcome to observed count.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Result contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_counts</span><span class="p">)</span><span class="si">}</span><span class="s2"> circuit(s); index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> is out of range.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Dunder methods</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;JobResult(num_circuits=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_circuits</span><span class="si">}</span><span class="s2">, metadata=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="si">!r}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Job">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/Job.html#qrisp.interface.Job">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Job</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract handle for a (potentially asynchronous) backend execution.</span>
+
+<span class="sd">    A ``Job`` is returned by :meth:`Backend.run_async` immediately after</span>
+<span class="sd">    submission. The caller can then:</span>
+
+<span class="sd">    * call :meth:`result` to wait for the outcome and retrieve it, or</span>
+<span class="sd">    * poll :attr:`status` / :meth:`done` / :meth:`running` / :meth:`queued` / :meth:`cancelled`</span>
+<span class="sd">      to check the current state, or</span>
+<span class="sd">    * call :meth:`cancel` to attempt cancellation.</span>
+
+<span class="sd">    This follows the *Future* (or *Promise*) pattern: execution happens</span>
+<span class="sd">    independently of the caller, and the caller decides *when* to wait for</span>
+<span class="sd">    the outcome.</span>
+
+<span class="sd">    .. rubric:: Design contract</span>
+
+<span class="sd">    The ``Job`` base class defines *only the observable contract*. That is, the three</span>
+<span class="sd">    abstract methods that every concrete job must implement. It deliberately</span>
+<span class="sd">    prescribes no internal synchronisation mechanism (no threading, no</span>
+<span class="sd">    asyncio, no polling loop). Each concrete subclass chooses whatever</span>
+<span class="sd">    concurrency model suits its execution environment:</span>
+
+<span class="sd">    * A synchronous simulator may compute the result inline and make it</span>
+<span class="sd">      available before :meth:`result` is ever called.</span>
+
+<span class="sd">    * An asynchronous hardware backend may submit to a remote queue and</span>
+<span class="sd">      poll in a background thread until the result is ready.</span>
+
+<span class="sd">    From the caller&#39;s perspective, all of the above are used identically.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    backend : Backend</span>
+<span class="sd">        The backend that created this job.</span>
+
+<span class="sd">    job_id : str or None</span>
+<span class="sd">        Optional caller-supplied identifier (e.g. a remote job ID assigned</span>
+<span class="sd">        by a vendor API). If ``None``, the concrete subclass is responsible</span>
+<span class="sd">        for assigning one.</span>
+
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional backend-specific metadata to associate with this job.</span>
+<span class="sd">        It can be used by any backend implementation as needed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Job.__init__">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.__init__.html#qrisp.interface.Job.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span><span class="p">,</span> <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a Job instance.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">job_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span><span class="p">:</span> <span class="n">JobStatus</span> <span class="o">=</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">INITIALIZING</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_failure_cause</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">kwargs</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Properties</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Identifier for this job, or ``None`` if not yet assigned.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Backend&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The :class:`Backend` that created this job.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">last_known_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The most recently cached :class:`JobStatus` for this job.</span>
+
+<span class="sd">        This value is initialised to :attr:`~JobStatus.INITIALIZING` and is</span>
+<span class="sd">        updated at the following points:</span>
+
+<span class="sd">        * :meth:`status`: every live query updates the cache as a side effect.</span>
+<span class="sd">        * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or</span>
+<span class="sd">          ``ERROR`` when the job reaches a terminal state.</span>
+<span class="sd">        * :meth:`refresh`: explicitly fetches the live status and caches it</span>
+<span class="sd">          (semantically identical to calling :meth:`status`, but signals intent</span>
+<span class="sd">          clearly when the sole purpose is to refresh the cache).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Abstract methods</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Job.result">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.result.html#qrisp.interface.Job.result">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until the job reaches a terminal state and return its result.</span>
+
+<span class="sd">        This is a blocking call: it does not return until the job is in one</span>
+<span class="sd">        of the terminal states: :attr:`~JobStatus.DONE`,</span>
+<span class="sd">        :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`. The</span>
+<span class="sd">        internal synchronisation mechanism (threading, polling, asyncio,</span>
+<span class="sd">        etc.) is left entirely to the concrete implementation.</span>
+
+<span class="sd">        If the job is already in a terminal state when this method is</span>
+<span class="sd">        called, it must return (or raise) immediately without blocking.</span>
+
+<span class="sd">        Concrete implementations should call :meth:`_raise_for_status`</span>
+<span class="sd">        once the terminal state has been reached, before returning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeout : float or None, optional</span>
+<span class="sd">            Maximum number of seconds to wait for the job to finish.</span>
+<span class="sd">            ``None`` (default) waits indefinitely. Implementations that</span>
+<span class="sd">            support this parameter should raise ``TimeoutError`` when</span>
+<span class="sd">            the deadline expires.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        JobResult</span>
+<span class="sd">            The measurement results, if the job completed successfully</span>
+<span class="sd">            (:attr:`~JobStatus.DONE`).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        JobFailureError</span>
+<span class="sd">            If the job terminated in :attr:`~JobStatus.ERROR` state.</span>
+
+<span class="sd">        JobCancelledError</span>
+<span class="sd">            If the job was cancelled (:attr:`~JobStatus.CANCELLED`).</span>
+
+<span class="sd">        TimeoutError</span>
+<span class="sd">            If *timeout* is specified and the job does not finish in time.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Job.cancel">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.cancel.html#qrisp.interface.Job.cancel">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attempt to cancel the job.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            ``True`` if the cancellation was initiated: either the job is</span>
+<span class="sd">            already in :attr:`~JobStatus.CANCELLED` state (for synchronous</span>
+<span class="sd">            or in-process backends), or the cancel request has been</span>
+<span class="sd">            dispatched to the remote backend (for asynchronous hardware</span>
+<span class="sd">            backends, the transition to ``CANCELLED`` may not yet be</span>
+<span class="sd">            visible in :meth:`status`).</span>
+
+<span class="sd">            ``False`` if the job is already in a terminal state and no</span>
+<span class="sd">            action was taken.</span>
+
+<span class="sd">            .. note::</span>
+
+<span class="sd">                For asynchronous remote backends, ``True`` means the</span>
+<span class="sd">                cancel *request* was accepted by the server, not that</span>
+<span class="sd">                the job has confirmed cancellation.  Callers should check</span>
+<span class="sd">                :meth:`status` (or call :meth:`result`) to determine the</span>
+<span class="sd">                final outcome.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Job.status">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.status.html#qrisp.interface.Job.status">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Query and return the current :class:`JobStatus` of the job.</span>
+
+<span class="sd">        This is a *live query*: every call fetches the most up-to-date</span>
+<span class="sd">        status available, which for remote backends may involve a network</span>
+<span class="sd">        call. As a side effect, concrete implementations should store the</span>
+<span class="sd">        result in ``_last_known_status`` before returning, so that</span>
+<span class="sd">        :attr:`last_known_status` always reflects the most recently</span>
+<span class="sd">        observed state.</span>
+
+<span class="sd">        Callers that want to avoid the cost of a live query should read</span>
+<span class="sd">        :attr:`last_known_status` directly. Call :meth:`refresh` (or</span>
+<span class="sd">        :meth:`status`) when an explicit update is needed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        JobStatus</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Methods (derived from status)</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: every method in this block calls :meth:`status` on each</span>
+    <span class="c1"># invocation, which for remote backends may involve a network</span>
+    <span class="c1"># round-trip. Callers that need to minimise round-trips should read</span>
+    <span class="c1"># :attr:`last_known_status` directly after a single :meth:`status`</span>
+    <span class="c1"># or :meth:`refresh` call rather than using these helpers repeatedly.</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Job.done">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.done.html#qrisp.interface.Job.done">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if the job has completed successfully and results are available.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">DONE</span></div>
+
+
+<div class="viewcode-block" id="Job.running">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.running.html#qrisp.interface.Job.running">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if the job is currently executing.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">RUNNING</span></div>
+
+
+<div class="viewcode-block" id="Job.queued">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.queued.html#qrisp.interface.Job.queued">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">queued</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if the job is waiting in the backend queue.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">QUEUED</span></div>
+
+
+<div class="viewcode-block" id="Job.cancelled">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.cancelled.html#qrisp.interface.Job.cancelled">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if the job was cancelled.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">CANCELLED</span></div>
+
+
+<div class="viewcode-block" id="Job.in_final_state">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.in_final_state.html#qrisp.interface.Job.in_final_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">in_final_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if the job has reached a terminal state.</span>
+
+<span class="sd">        Terminal states are :attr:`~JobStatus.DONE`,</span>
+<span class="sd">        :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span> <span class="ow">in</span> <span class="n">JOB_FINAL_STATES</span></div>
+
+
+<div class="viewcode-block" id="Job.refresh">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job.refresh.html#qrisp.interface.Job.refresh">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch the latest status from the backend and return it.</span>
+
+<span class="sd">        Delegates to :meth:`status`, which already updates</span>
+<span class="sd">        :attr:`last_known_status` as a side effect.  This method exists as</span>
+<span class="sd">        a named alias that makes the intent explicit: the caller wants to</span>
+<span class="sd">        refresh the cached status, not merely query it.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        JobStatus</span>
+<span class="sd">            The freshly fetched status.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Helper for concrete implementations</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Job._raise_for_status">
+<a class="viewcode-back" href="../../../reference/Backend%20Interface/Abstract%20Backend%20Interface/generated/qrisp.interface.Job._raise_for_status.html#qrisp.interface.Job._raise_for_status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">JobStatus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Raise the appropriate exception if the job did not complete successfully.</span>
+
+<span class="sd">        Concrete implementations should call this inside :meth:`result`</span>
+<span class="sd">        *after* the job has reached a terminal state (i.e. after any</span>
+<span class="sd">        blocking wait).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        status : JobStatus or None, optional</span>
+<span class="sd">            The terminal :class:`JobStatus` that was already determined by</span>
+<span class="sd">            the caller&#39;s wait mechanism. When provided, this value is used</span>
+<span class="sd">            directly and no additional :meth:`status` call is made: which</span>
+<span class="sd">            avoids a redundant network round-trip on remote backends.</span>
+<span class="sd">            If omitted (or ``None``), :meth:`status` is called to obtain</span>
+<span class="sd">            the current state.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        JobFailureError</span>
+<span class="sd">            If *status* is ``ERROR``.</span>
+
+<span class="sd">        JobCancelledError</span>
+<span class="sd">            If *status* is ``CANCELLED``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">ERROR</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_failure_cause</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">JobFailureError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2"> failed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_failure_cause</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">self._failure_cause</span>
+            <span class="k">raise</span> <span class="n">JobFailureError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2"> terminated with status ERROR.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">JobCancelledError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2"> was cancelled.&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Dunder methods</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># Use last_known_status rather than calling status() here.</span>
+        <span class="c1"># status() is a live query that may involve a network round-trip</span>
+        <span class="c1"># on remote backends, and triggering it inside __repr__ (e.g. during</span>
+        <span class="c1"># logging, debugging, or pytest failure messages) would be</span>
+        <span class="c1"># surprising and potentially expensive. Callers that want the</span>
+        <span class="c1"># current status should call refresh() before printing.</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(job_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span><span class="si">!r}</span><span class="s2">, status=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_known_status</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

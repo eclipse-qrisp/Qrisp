@@ -1,0 +1,893 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.program_control.rus &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/program_control/rus';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/program_control/rus.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.program_control.rus</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.program_control.rus</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TracingQuantumSession</span><span class="p">,</span>
+    <span class="n">qache</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="RUS">
+<a class="viewcode-back" href="../../../../reference/Jasp/Control%20Flow/RUS.html#qrisp.jasp.RUS">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">RUS</span><span class="p">(</span><span class="o">*</span><span class="n">trial_function</span><span class="p">,</span> <span class="o">**</span><span class="n">jit_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Decorator to deploy repeat-until-success (RUS) components. At the core,</span>
+<span class="sd">    RUS repeats a given quantum subroutine followed by a qubit measurement until</span>
+<span class="sd">    the measurement returns the value ``1``. This step is prevalent</span>
+<span class="sd">    in many important algorithms, among them the</span>
+<span class="sd">    `HHL algorithm &lt;https://arxiv.org/abs/0811.3171&gt;`_ or the</span>
+<span class="sd">    `LCU procedure &lt;https://arxiv.org/abs/1202.5822&gt;`_.</span>
+
+<span class="sd">    Within Jasp, RUS steps can be realized by providing the quantum subroutine</span>
+<span class="sd">    as a &quot;trial function&quot;, which returns a boolean value (the repetition condition) and</span>
+<span class="sd">    possibly other return values.</span>
+
+<span class="sd">    It is important to note that the trial function can not receive quantum</span>
+<span class="sd">    arguments. This is because after each trial, a new copy of these arguments</span>
+<span class="sd">    would be required to perform the next iteration, which is prohibited by</span>
+<span class="sd">    the no-clone theorem. It is however legal to provide classical arguments.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The ``RUS`` decorator will automatically reset and deallocate any</span>
+<span class="sd">        QuantumVariables returned by the trial function, if the termination</span>
+<span class="sd">        bool is not ``True``.</span>
+<span class="sd">        It is however left up to the user to deallocate all LOCAL</span>
+<span class="sd">        QuantumVariables/QuantumArrays within the trial function that are not returned.</span>
+<span class="sd">        Any non-deallocated variables will accumulate over every iteration and</span>
+<span class="sd">        block their corresponding qubits indefinitely.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trial_function : callable</span>
+<span class="sd">        A function returning a boolean value as the first return value. More</span>
+<span class="sd">        return values are possible.</span>
+<span class="sd">    static_argnums : int or list[int], optional</span>
+<span class="sd">        A list of integers specifying which arguments are considered static in</span>
+<span class="sd">        the sense of `jax.jit &lt;https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html&gt;`_.</span>
+<span class="sd">        The first argument is indicated by 1, the second by 2, etc. The default</span>
+<span class="sd">        is ``[]``.</span>
+<span class="sd">    static_argnames : str or list[str], optional</span>
+<span class="sd">        A list of strings specifying which arguments are considered static in</span>
+<span class="sd">        the sense of `jax.jit &lt;https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html&gt;`_.</span>
+<span class="sd">        The default is ``[]``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        A function that performs the RUS protocol with the trial function. The</span>
+<span class="sd">        return values of this function are the return values of the trial function</span>
+<span class="sd">        WITHOUT the boolean value.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    To demonstrate the RUS behavior, we initialize a GHZ state</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \ket{\psi} = \frac{\ket{00000} + \ket{11111}}{\sqrt{2}}</span>
+
+<span class="sd">    and measure the first qubit into a boolean value. This will be the value</span>
+<span class="sd">    to cancel the repetition. This will collapse the GHZ state into either</span>
+<span class="sd">    $\ket{00000}$ (which will cause a new repetition) or $\ket{11111}$, which</span>
+<span class="sd">    cancels the loop. After the repetition is canceled we are therefore</span>
+<span class="sd">    guaranteed to have the latter state.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp import RUS, make_jaspr</span>
+<span class="sd">        from qrisp import QuantumFloat, h, cx, measure</span>
+
+<span class="sd">        @RUS</span>
+<span class="sd">        def rus_trial_function():</span>
+<span class="sd">            qf = QuantumFloat(5)</span>
+<span class="sd">            h(qf[0])</span>
+
+<span class="sd">            for i in range(1, 5):</span>
+<span class="sd">                cx(qf[0], qf[i])</span>
+
+<span class="sd">            cancelation_bool = measure(qf[0])</span>
+<span class="sd">            return cancelation_bool, qf</span>
+
+<span class="sd">        def call_RUS_example():</span>
+
+<span class="sd">            qf = rus_trial_function()</span>
+
+<span class="sd">            return measure(qf)</span>
+
+<span class="sd">    Create the ``jaspr`` and simulate:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        jaspr = make_jaspr(call_RUS_example)()</span>
+<span class="sd">        print(jaspr())</span>
+<span class="sd">        # Yields, 31 which is the decimal version of 11111</span>
+
+<span class="sd">    **Static arguments**</span>
+
+<span class="sd">    To demonstrate the specification of static arguments, we will realize implement a</span>
+<span class="sd">    simple `linear combination of unitaries &lt;https://arxiv.org/abs/1202.5822&gt;`_.</span>
+
+<span class="sd">    Our implementation initializes a state of the form</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \left( \sum_{i = 0}^N c_i U_i \right) \ket{0}.</span>
+
+<span class="sd">    We achieve this by specifying a set of unitaries $U_i$ in the form of a</span>
+<span class="sd">    tuple of functions, each processing a :ref:`QuantumFloat`.</span>
+
+<span class="sd">    The coefficients $c_i$ are specified through a function preparing the state</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \ket{\psi} = \sum_{i = 0}^N c_i \ket{i}</span>
+
+<span class="sd">    For the state preparation function we specify two options to experiment with.</span>
+<span class="sd">    A two qubit uniform superposition and a function that brings only the first</span>
+<span class="sd">    qubit into superpostion.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def state_prep_full(qv):</span>
+<span class="sd">            h(qv[0])</span>
+<span class="sd">            h(qv[1])</span>
+
+<span class="sd">        def state_prep_half(qv):</span>
+<span class="sd">            h(qv[0])</span>
+
+<span class="sd">    For the first one we have $c_0 = c_1 = c_2 = c_3 = \sqrt{0.25}$. The second one</span>
+<span class="sd">    gives $c_0 = c_1 = \sqrt{0.5}$ and $c_2 = c_3 = 0$.</span>
+
+<span class="sd">    The next step is to define the unitaries $U_i$ in the form of a tuple</span>
+<span class="sd">    of functions.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp.jasp import *</span>
+<span class="sd">        from qrisp import *</span>
+
+<span class="sd">        def case_function_0(x):</span>
+<span class="sd">            x += 3</span>
+
+<span class="sd">        def case_function_1(x):</span>
+<span class="sd">            x += 4</span>
+
+<span class="sd">        def case_function_2(x):</span>
+<span class="sd">            x += 5</span>
+
+<span class="sd">        def case_function_3(x):</span>
+<span class="sd">            x += 6</span>
+
+<span class="sd">        case_functions = (case_function_0,</span>
+<span class="sd">                          case_function_1,</span>
+<span class="sd">                          case_function_2,</span>
+<span class="sd">                          case_function_3)</span>
+
+
+<span class="sd">    These functions each represent the unitary:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        U_i \ket{0} = \ket{i+3}</span>
+
+<span class="sd">    Executing a linear combination of unitaries therefore gives</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \left( \sum_{i = 0}^N c_i U_i \right) \ket{0} = \sum_{i = 0}^N c_i \ket{i+3}</span>
+
+
+<span class="sd">    Now we implement the LCU procedure.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        # Specify the corresponding arguments of the block encoding as &quot;static&quot;,</span>
+<span class="sd">        # i.e. compile time constants.</span>
+
+<span class="sd">        @RUS(static_argnums = [2,3])</span>
+<span class="sd">        def block_encoding(return_size, state_preparation, case_functions):</span>
+
+<span class="sd">            # This QuantumFloat will be returned</span>
+<span class="sd">            qf = QuantumFloat(return_size)</span>
+
+<span class="sd">            # Specify the QuantumVariable that indicates, which</span>
+<span class="sd">            # case to execute</span>
+<span class="sd">            n = int(np.ceil(np.log2(len(case_functions))))</span>
+<span class="sd">            case_indicator = QuantumFloat(n)</span>
+
+<span class="sd">            # Turn into a list of qubits</span>
+<span class="sd">            case_indicator_qubits = [case_indicator[i] for i in range(n)]</span>
+
+<span class="sd">            # Perform the LCU protocoll</span>
+<span class="sd">            with conjugate(state_preparation)(case_indicator):</span>
+<span class="sd">                for i in range(len(case_functions)):</span>
+<span class="sd">                    with control(case_indicator_qubits, ctrl_state = i):</span>
+<span class="sd">                        case_functions[i](qf)</span>
+
+<span class="sd">            # Compute the success condition</span>
+<span class="sd">            success_bool = (measure(case_indicator) == 0)</span>
+
+<span class="sd">            return success_bool, qf</span>
+
+<span class="sd">    Finally, evaluate via the :ref:`terminal_sampling &lt;terminal_sampling&gt;`</span>
+<span class="sd">    feature:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+<span class="sd">            return block_encoding(4, state_prep_full, case_functions)</span>
+
+<span class="sd">        print(main())</span>
+<span class="sd">        # Yields: {3.0: 0.25, 4.0: 0.25, 5.0: 0.25, 6.0: 0.25}</span>
+
+<span class="sd">    Evaluate the other state preparation function</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+<span class="sd">            return block_encoding(4, state_prep_half, case_functions)</span>
+
+<span class="sd">        print(main())</span>
+<span class="sd">        # Yields: {3.0: 0.5, 4.0: 0.5}</span>
+
+<span class="sd">    As expected, the full state preparation function yields a state proportional</span>
+<span class="sd">    to</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \ket{3} + \ket{4} + \ket{5} + \ket{6}.</span>
+
+<span class="sd">    The second state preparation gives us</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \ket{3} + \ket{4}.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trial_function</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">RUS</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">jit_kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">trial_function</span> <span class="o">=</span> <span class="n">trial_function</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># The idea for implementing this feature is to execute the function once qached</span>
+    <span class="c1"># to collect the output QuantumVariable object.</span>
+    <span class="c1"># From the infered output signature the q_while_loop is constructed</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_function</span><span class="p">(</span><span class="o">*</span><span class="n">trial_args</span><span class="p">):</span>
+
+        <span class="c1"># Filter out the static arguments</span>
+        <span class="k">if</span> <span class="s2">&quot;static_argnums&quot;</span> <span class="ow">in</span> <span class="n">jit_kwargs</span><span class="p">:</span>
+            <span class="n">static_argnums</span> <span class="o">=</span> <span class="n">jit_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">static_argnums</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">static_argnums</span> <span class="o">=</span> <span class="p">[</span><span class="n">static_argnums</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">static_argnums</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;static_argnames&quot;</span> <span class="ow">in</span> <span class="n">jit_kwargs</span><span class="p">:</span>
+            <span class="n">argname_list</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">trial_function</span><span class="p">)</span><span class="o">.</span><span class="n">args</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">argname_list</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">argname_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">jit_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnames&quot;</span><span class="p">]:</span>
+                    <span class="n">static_argnums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">jit_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">static_argnums</span>
+            <span class="k">del</span> <span class="n">jit_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnames&quot;</span><span class="p">]</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursive_qv_search</span><span class="p">,</span> <span class="n">reset</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_cond</span><span class="p">,</span> <span class="n">q_while_loop</span>
+
+        <span class="c1"># Execute the function</span>
+        <span class="n">qached_function</span> <span class="o">=</span> <span class="n">qache</span><span class="p">(</span><span class="n">trial_function</span><span class="p">,</span> <span class="o">**</span><span class="n">jit_kwargs</span><span class="p">)</span>
+        <span class="n">first_iter_res</span> <span class="o">=</span> <span class="n">qached_function</span><span class="p">(</span><span class="o">*</span><span class="n">trial_args</span><span class="p">)</span>
+
+        <span class="n">dynamic_args</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trial_args</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">static_argnums</span><span class="p">:</span>
+                <span class="n">dynamic_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trial_args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">n_arg_vals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dynamic_args</span><span class="p">)</span>
+
+        <span class="c1"># Next we construct the body of the loop</span>
+        <span class="c1"># The q_while_loop receives a tuple of arguments and</span>
+        <span class="c1"># also returns a tuple with the same signature.</span>
+        <span class="c1"># We therefore combine the results of the first iteration with</span>
+        <span class="c1"># the arguments to execute the loop.</span>
+
+        <span class="n">combined_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dynamic_args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">first_iter_res</span><span class="p">))</span>
+
+        <span class="c1"># This is the body function of the while loop</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">body_fun</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+
+            <span class="c1"># The first step is to reset and delete the results</span>
+            <span class="c1"># from the previous iteration</span>
+            <span class="n">qv_results</span> <span class="o">=</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">n_arg_vals</span><span class="p">:])</span>
+
+            <span class="n">tr_qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qv_results</span><span class="p">:</span>
+                <span class="n">tr_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">reset</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+                <span class="n">qv</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+            <span class="c1"># We now construct the arguments for the function call of</span>
+            <span class="c1"># the current iteration.</span>
+            <span class="c1"># For this, we combine the dynamic arguments with the static</span>
+            <span class="c1"># arguments.</span>
+            <span class="n">dynamic_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">n_arg_vals</span><span class="p">])</span>
+
+            <span class="n">new_trial_args</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trial_args</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">static_argnums</span><span class="p">:</span>
+                    <span class="n">new_trial_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dynamic_args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_trial_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trial_args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="n">trial_res</span> <span class="o">=</span> <span class="n">qached_function</span><span class="p">(</span><span class="o">*</span><span class="n">new_trial_args</span><span class="p">)</span>
+
+            <span class="c1"># Update the tuple with initial args and the new results</span>
+            <span class="n">combined_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">n_arg_vals</span><span class="p">])</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">trial_res</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">combined_args</span>
+
+        <span class="c1"># This is the loop cancelation condition</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">cond_fun</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="c1"># The loop cancelation index is located at the second position of the</span>
+            <span class="c1"># return value tuple</span>
+            <span class="k">return</span> <span class="o">~</span><span class="n">val</span><span class="p">[</span><span class="n">n_arg_vals</span><span class="p">]</span>
+
+        <span class="c1"># We now evaluate the loop</span>
+
+        <span class="c1"># If the first iteration was already successful, we simply return the results</span>
+        <span class="c1"># To realize this behavior we use a q_cond primitive</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">true_fun</span><span class="p">(</span><span class="n">combined_args</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">combined_args</span>
+
+        <span class="c1"># If the first iteration was not successfull, we start the loop</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">false_fun</span><span class="p">(</span><span class="n">combined_args</span><span class="p">):</span>
+            <span class="c1"># Here is the while_loop</span>
+            <span class="k">return</span> <span class="n">q_while_loop</span><span class="p">(</span><span class="n">cond_fun</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="n">init_val</span><span class="o">=</span><span class="n">combined_args</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate everything</span>
+        <span class="n">combined_res</span> <span class="o">=</span> <span class="n">q_cond</span><span class="p">(</span><span class="n">first_iter_res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">true_fun</span><span class="p">,</span> <span class="n">false_fun</span><span class="p">,</span> <span class="n">combined_args</span><span class="p">)</span>
+
+        <span class="c1"># Return the results</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_iter_res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">combined_res</span><span class="p">[</span><span class="n">n_arg_vals</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">combined_res</span><span class="p">[</span><span class="n">n_arg_vals</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+
+    <span class="k">return</span> <span class="n">return_function</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

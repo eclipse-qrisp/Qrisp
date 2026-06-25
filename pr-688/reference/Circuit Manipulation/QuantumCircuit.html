@@ -1,0 +1,1027 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>QuantumCircuit &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Circuit Manipulation/QuantumCircuit';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Circuit%20Manipulation/QuantumCircuit.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qrisp.QuantumCircuit.append" href="generated/qrisp.QuantumCircuit.append.html" />
+    <link rel="prev" title="Circuit Manipulation" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Primitives/index.html">Primitives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Operators/index.html">Operators</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../Block%20Encodings/index.html">Block Encodings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp/index.html">Jasp</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Circuit Manipulation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">QuantumCircuit</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="Operation.html">Operation</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="Instruction.html">Instruction</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="Qubit.html">Qubit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Clbit.html">Clbit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ParityHandle.html">ParityHandle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pass%20Management/index.html">Pass Management</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Utilities/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Circuit Manipulation</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">QuantumCircuit</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="quantumcircuit">
+<span id="id1"></span><h1>QuantumCircuit<a class="headerlink" href="#quantumcircuit" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="qrisp.QuantumCircuit">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QuantumCircuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_qubits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_clbits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" rel="noreferrer" target="_blank" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/circuit/quantum_circuit.html#QuantumCircuit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.QuantumCircuit" title="Link to this definition">#</a></dt>
+<dd><p>This class describes quantum circuits. Many of the attribute and method names are
+oriented toward the <a class="reference external" href="https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.html" rel="noreferrer" target="_blank">Qiskit QuantumCircuit</a> class
+in order to provide a high degree of compatibility.</p>
+<p>QuantumCircuits can be visualized by calling <code class="docutils literal notranslate"><span class="pre">print</span></code> on them.</p>
+<p>Qrisp QuantumCircuits can be quickly generated out of existing Qiskit
+QuantumCircuits with the <a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit" title="qrisp.QuantumCircuit.from_qiskit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_qiskit</span></code></a>
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_qubits</strong><span class="classifier">int, optional</span></dt><dd><p>The amount of qubits this QuantumCircuit is initialized with. The default is 0.</p>
+</dd>
+<dt><strong>num_clbits</strong><span class="classifier">int, optional</span></dt><dd><p>The amount of classical bits. The default is 0.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We create a QuantumCircuit containing a so-called fan-out gate:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_0</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_0</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc_0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>qb_0: ──■────■────■──
+      ┌─┴─┐  │    │
+qb_1: ┤ X ├──┼────┼──
+      └───┘┌─┴─┐  │
+qb_2: ─────┤ X ├──┼──
+           └───┘┌─┴─┐
+qb_3: ──────────┤ X ├
+                └───┘
+</pre></div>
+</div>
+<p>Note that the <a class="reference internal" href="generated/qrisp.QuantumCircuit.cx.html#qrisp.QuantumCircuit.cx" title="qrisp.QuantumCircuit.cx"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cx</span> <span class="pre">gate</span> <span class="pre">appending</span> <span class="pre">method</span></code></a> (like all
+other gate appending methods) can be called with integers, Qubit objects,
+lists of integers or lists of Qubit objects.</p>
+<p>We now turn this QuantumCircuit into a gate and append to another QuantumCircuit to
+generate a GHZ state:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">h</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qc_0</span><span class="o">.</span><span class="n">to_gate</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;fan-out&quot;</span><span class="p">),</span> <span class="n">qc_1</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc_1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      ┌───┐┌──────────┐
+qb_4: ┤ H ├┤0         ├
+      └───┘│          │
+qb_5: ─────┤1         ├
+           │  fan-out │
+qb_6: ─────┤2         ├
+           │          │
+qb_7: ─────┤3         ├
+           └──────────┘
+</pre></div>
+</div>
+<p>Finally, we add a measurement and evaluate the circuit:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="n">qc_1</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc_1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      ┌───┐┌──────────┐┌─┐
+qb_4: ┤ H ├┤0         ├┤M├─────────
+      └───┘│          │└╥┘┌─┐
+qb_5: ─────┤1         ├─╫─┤M├──────
+           │  fan-out │ ║ └╥┘┌─┐
+qb_6: ─────┤2         ├─╫──╫─┤M├───
+           │          │ ║  ║ └╥┘┌─┐
+qb_7: ─────┤3         ├─╫──╫──╫─┤M├
+           └──────────┘ ║  ║  ║ └╥┘
+cb_0: ══════════════════╩══╬══╬══╬═
+                           ║  ║  ║
+cb_1: ═════════════════════╩══╬══╬═
+                              ║  ║
+cb_2: ════════════════════════╩══╬═
+                                 ║
+cb_3: ═══════════════════════════╩═
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">shots</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="go">{&#39;0000&#39;: 500, &#39;1111&#39;: 500}</span>
+</pre></div>
+</div>
+<p><strong>Converting from Qiskit</strong></p>
+<p>We construct the very same fan-out QuantumCircuit in Qiskit:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qiskit</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span> <span class="k">as</span> <span class="n">QiskitQuantumCircuit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_2</span> <span class="o">=</span> <span class="n">QiskitQuantumCircuit</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_2</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc_2</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>q_0: ──■────■────■──
+     ┌─┴─┐  │    │
+q_1: ┤ X ├──┼────┼──
+     └───┘┌─┴─┐  │
+q_2: ─────┤ X ├──┼──
+          └───┘┌─┴─┐
+q_3: ──────────┤ X ├
+               └───┘
+</pre></div>
+</div>
+<p>To acquire the Qrisp QuantumCircuit we call the
+<a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit" title="qrisp.QuantumCircuit.from_qiskit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_qiskit</span></code></a> method. Note that we don’t
+need to create a QuantumCircuit object first as this is a classmethod.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qrisp_qc_2</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">from_qiskit</span><span class="p">(</span><span class="n">qc_2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qrisp_qc_2</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span> qb_8: ──■────■────■──
+       ┌─┴─┐  │    │
+ qb_9: ┤ X ├──┼────┼──
+       └───┘┌─┴─┐  │
+qb_10: ─────┤ X ├──┼──
+            └───┘┌─┴─┐
+qb_11: ──────────┤ X ├
+                 └───┘
+</pre></div>
+</div>
+<p><strong>Abstract Parameters</strong></p>
+<p>Abstract parameters are represented by <a class="reference external" href="https://docs.sympy.org/latest/modules/core.html#module-sympy.core.symbol" rel="noreferrer" target="_blank">SymPy symbols</a>
+in Qrisp.</p>
+<p>We create a QuantumCircuit with some abstract parameters and bind them subsequently.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">symbols</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create some SymPy symbols and use them as abstract parameters for phase gates:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">abstract_parameters</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;a b c&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span> <span class="n">qc</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="n">abstract_parameters</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create the substitution dictionary and bind the parameters:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">subs_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">abstract_parameters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bound_qc</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">bound_qc</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      ┌──────┐
+qb_0: ┤ P(0) ├
+      ├──────┤
+qb_1: ┤ P(1) ├
+      ├──────┤
+qb_2: ┤ P(2) ├
+      └──────┘
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="methods">
+<h1>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h1>
+<section id="constructing-quantumcircuits">
+<h2>Constructing QuantumCircuits<a class="headerlink" href="#constructing-quantumcircuits" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.append.html#qrisp.QuantumCircuit.append" title="qrisp.QuantumCircuit.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.append</span></code></a>(operation_or_instruction)</p></td>
+<td><p>Append an <a class="reference internal" href="Operation.html#qrisp.Operation" title="qrisp.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code></a> or <a class="reference internal" href="Instruction.html#qrisp.Instruction" title="qrisp.Instruction"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instruction</span></code></a> to this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_op.html#qrisp.QuantumCircuit.to_op" title="qrisp.QuantumCircuit.to_op"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_op</span></code></a>([name])</p></td>
+<td><p>Method to return an Operation object generated out of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_gate.html#qrisp.QuantumCircuit.to_gate" title="qrisp.QuantumCircuit.to_gate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_gate</span></code></a>([name])</p></td>
+<td><p>Similar to <a class="reference internal" href="generated/qrisp.QuantumCircuit.to_op.html#qrisp.QuantumCircuit.to_op" title="qrisp.QuantumCircuit.to_op"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_op</span></code></a> but raises an exception if self contains classical bits (like the <a class="reference external" href="https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.to_gate.html" rel="noreferrer" target="_blank">Qiskit equivalent</a>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.add_qubit.html#qrisp.QuantumCircuit.add_qubit" title="qrisp.QuantumCircuit.add_qubit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.add_qubit</span></code></a>([qubit])</p></td>
+<td><p>Adds a Qubit to the QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.add_clbit.html#qrisp.QuantumCircuit.add_clbit" title="qrisp.QuantumCircuit.add_clbit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.add_clbit</span></code></a>([clbit])</p></td>
+<td><p>Adds a classical bit to the QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.copy.html#qrisp.QuantumCircuit.copy" title="qrisp.QuantumCircuit.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.copy</span></code></a>()</p></td>
+<td><p>Returns a copy of the given QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.clearcopy.html#qrisp.QuantumCircuit.clearcopy" title="qrisp.QuantumCircuit.clearcopy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.clearcopy</span></code></a>()</p></td>
+<td><p>Returns a copy of the given QuantumCircuit but without any data (i.e. just the Qubits and Clbits).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.inverse.html#qrisp.QuantumCircuit.inverse" title="qrisp.QuantumCircuit.inverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.inverse</span></code></a>()</p></td>
+<td><p>Generates the inverse of this QuantumCircuit by applying the inverse gates in reversed order.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.extend.html#qrisp.QuantumCircuit.extend" title="qrisp.QuantumCircuit.extend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.extend</span></code></a>(other[, translation_dic])</p></td>
+<td><p>Extends this QuantumCircuit in-place by appending instructions from another QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.bind_parameters.html#qrisp.QuantumCircuit.bind_parameters" title="qrisp.QuantumCircuit.bind_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.bind_parameters</span></code></a>(subs_dic)</p></td>
+<td><p>Returns a QuantumCircuit where the abstract parameters in <code class="docutils literal notranslate"><span class="pre">subs_dic</span></code> are bound to their specified values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.transpile.html#qrisp.QuantumCircuit.transpile" title="qrisp.QuantumCircuit.transpile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.transpile</span></code></a>([transpilation_level])</p></td>
+<td><p>Transpiles the QuantumCircuit in the sense that there are no longer any synthesized gate objects.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.control.html#qrisp.QuantumCircuit.control" title="qrisp.QuantumCircuit.control"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.control</span></code></a>(amount)</p></td>
+<td><p>Returns a controlled version of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.compose.html#qrisp.QuantumCircuit.compose" title="qrisp.QuantumCircuit.compose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.compose</span></code></a>(other[, qubits, ...])</p></td>
+<td><p>Composes this QuantumCircuit with another QuantumCircuit by appending the other to self.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="evaluating-quantumcircuits">
+<h2>Evaluating QuantumCircuits<a class="headerlink" href="#evaluating-quantumcircuits" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.run.html#qrisp.QuantumCircuit.run" title="qrisp.QuantumCircuit.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.run</span></code></a>([shots, backend])</p></td>
+<td><p>Executes a QuantumCircuit on a backend and returns the measurement results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.statevector_array.html#qrisp.QuantumCircuit.statevector_array" title="qrisp.QuantumCircuit.statevector_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.statevector_array</span></code></a>()</p></td>
+<td><p>Simulates the circuit and returns its statevector as a NumPy array of complex amplitudes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.depth.html#qrisp.QuantumCircuit.depth" title="qrisp.QuantumCircuit.depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.depth</span></code></a>([depth_indicator, ...])</p></td>
+<td><p>Returns the depth of the QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.t_depth.html#qrisp.QuantumCircuit.t_depth" title="qrisp.QuantumCircuit.t_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.t_depth</span></code></a>([epsilon])</p></td>
+<td><p>Estimates the T-depth of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cnot_depth.html#qrisp.QuantumCircuit.cnot_depth" title="qrisp.QuantumCircuit.cnot_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cnot_depth</span></code></a>()</p></td>
+<td><p>Returns the CNOT depth of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.num_qubits.html#qrisp.QuantumCircuit.num_qubits" title="qrisp.QuantumCircuit.num_qubits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.num_qubits</span></code></a>()</p></td>
+<td><p>Returns the number of qubits in this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.count_ops.html#qrisp.QuantumCircuit.count_ops" title="qrisp.QuantumCircuit.count_ops"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.count_ops</span></code></a>()</p></td>
+<td><p>Counts the amount of operations of each kind.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.get_unitary.html#qrisp.QuantumCircuit.get_unitary" title="qrisp.QuantumCircuit.get_unitary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.get_unitary</span></code></a>([decimals])</p></td>
+<td><p>Return the unitary matrix of this QuantumCircuit as a NumPy array.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.compare_unitary.html#qrisp.QuantumCircuit.compare_unitary" title="qrisp.QuantumCircuit.compare_unitary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.compare_unitary</span></code></a>(other[, ...])</p></td>
+<td><p>Compares the unitaries of two QuantumCircuits.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.get_depth_dic.html#qrisp.QuantumCircuit.get_depth_dic" title="qrisp.QuantumCircuit.get_depth_dic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.get_depth_dic</span></code></a>()</p></td>
+<td><p>Returns the depth of each qubit in this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cnot_count.html#qrisp.QuantumCircuit.cnot_count" title="qrisp.QuantumCircuit.cnot_count"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cnot_count</span></code></a>()</p></td>
+<td><p>Returns the number of two-qubit Pauli-axis controlled gates (CX, CY, CZ) in this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_latex.html#qrisp.QuantumCircuit.to_latex" title="qrisp.QuantumCircuit.to_latex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_latex</span></code></a>(**kwargs)</p></td>
+<td><p>Deploys the Qiskit circuit drawer to generate LaTeX output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_qasm2.html#qrisp.QuantumCircuit.to_qasm2" title="qrisp.QuantumCircuit.to_qasm2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_qasm2</span></code></a>([formatted, ...])</p></td>
+<td><p>Returns the <a class="reference external" href="https://en.wikipedia.org/wiki/OpenQASM" rel="noreferrer" target="_blank">OpenQASM 2.0</a> string of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_qasm3.html#qrisp.QuantumCircuit.to_qasm3" title="qrisp.QuantumCircuit.to_qasm3"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_qasm3</span></code></a>([formatted, ...])</p></td>
+<td><p>Returns the <a class="reference external" href="https://en.wikipedia.org/wiki/OpenQASM" rel="noreferrer" target="_blank">OpenQASM 3.0</a> string of this QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.qasm.html#qrisp.QuantumCircuit.qasm" title="qrisp.QuantumCircuit.qasm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.qasm</span></code></a>(**kwargs)</p></td>
+<td><p>Alias for <code class="xref py py-meth docutils literal notranslate"><span class="pre">to_qasm2()</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="interfacing">
+<h2>Interfacing<a class="headerlink" href="#interfacing" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit" title="qrisp.QuantumCircuit.from_qiskit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.from_qiskit</span></code></a>(qiskit_qc)</p></td>
+<td><p>Class method to create QuantumCircuits from Qiskit QuantumCircuits.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_qiskit.html#qrisp.QuantumCircuit.to_qiskit" title="qrisp.QuantumCircuit.to_qiskit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_qiskit</span></code></a>()</p></td>
+<td><p>Method to convert the given QuantumCircuit to a Qiskit QuantumCircuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_pennylane.html#qrisp.QuantumCircuit.to_pennylane" title="qrisp.QuantumCircuit.to_pennylane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_pennylane</span></code></a>()</p></td>
+<td><p>Method to convert the given QuantumCircuit to a <a class="reference external" href="https://pennylane.ai/" rel="noreferrer" target="_blank">Pennylane</a> Circuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_pytket.html#qrisp.QuantumCircuit.to_pytket" title="qrisp.QuantumCircuit.to_pytket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_pytket</span></code></a>()</p></td>
+<td><p>Method to convert the given QuantumCircuit to a <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/#" rel="noreferrer" target="_blank">PyTket</a> Circuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_stim.html#qrisp.QuantumCircuit.to_stim" title="qrisp.QuantumCircuit.to_stim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_stim</span></code></a>([...])</p></td>
+<td><p>Method to convert the given QuantumCircuit to a <a class="reference external" href="https://github.com/quantumlib/Stim/" rel="noreferrer" target="_blank">Stim</a> Circuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qasm_str.html#qrisp.QuantumCircuit.from_qasm_str" title="qrisp.QuantumCircuit.from_qasm_str"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.from_qasm_str</span></code></a>(qasm_string)</p></td>
+<td><p>Loads a QuantumCircuit from a QASM String.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qasm_file.html#qrisp.QuantumCircuit.from_qasm_file" title="qrisp.QuantumCircuit.from_qasm_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.from_qasm_file</span></code></a>(filename)</p></td>
+<td><p>Loads a QuantumCircuit from a QASM file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_cirq.html#qrisp.QuantumCircuit.to_cirq" title="qrisp.QuantumCircuit.to_cirq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_cirq</span></code></a>()</p></td>
+<td><p>Method to convert the given QuantumCircuit to a Cirq Circuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.from_cirq.html#qrisp.QuantumCircuit.from_cirq" title="qrisp.QuantumCircuit.from_cirq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.from_cirq</span></code></a>(cirq_circuit)</p></td>
+<td><p>Class method to create QuantumCircuits from Cirq Circuits.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="operation-application-methods">
+<h2>Operation application methods<a class="headerlink" href="#operation-application-methods" title="Link to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each Qubit and Clbit parameter in these methods can be replaced by an integer, a list of integers or a list of Qubit/Clbit objects.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumCircuit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc</span><span class="o">.</span><span class="n">x</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      ┌───┐┌───┐     ┌───┐┌───┐┌───┐
+qb_0: ┤ X ├┤ X ├─────┤ X ├┤ X ├┤ X ├
+      └─┬─┘└─┬─┘┌───┐└─┬─┘└─┬─┘└───┘
+qb_1: ──■────┼──┤ X ├──┼────┼───────
+             │  ├───┤  │    │
+qb_2: ───────■──┤ X ├──┼────┼───────
+                └───┘  │    │  ┌───┐
+qb_3: ─────────────────■────┼──┤ X ├
+                            │  └───┘
+qb_4: ──────────────────────■───────
+</pre></div>
+</div>
+</div>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.measure.html#qrisp.QuantumCircuit.measure" title="qrisp.QuantumCircuit.measure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.measure</span></code></a>(qubits[, clbits])</p></td>
+<td><p>Append a measurement instruction to the circuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.parity.html#qrisp.QuantumCircuit.parity" title="qrisp.QuantumCircuit.parity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.parity</span></code></a>(clbits[, expectation, ...])</p></td>
+<td><p>Append a parity (XOR) check over classical bits to the circuit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cx.html#qrisp.QuantumCircuit.cx" title="qrisp.QuantumCircuit.cx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cx</span></code></a>(qubits_0, qubits_1)</p></td>
+<td><p>Instruct a CX-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cy.html#qrisp.QuantumCircuit.cy" title="qrisp.QuantumCircuit.cy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cy</span></code></a>(qubits_0, qubits_1)</p></td>
+<td><p>Instruct a CY-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cz.html#qrisp.QuantumCircuit.cz" title="qrisp.QuantumCircuit.cz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cz</span></code></a>(qubits_0, qubits_1)</p></td>
+<td><p>Instruct a CZ-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.h.html#qrisp.QuantumCircuit.h" title="qrisp.QuantumCircuit.h"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.h</span></code></a>(qubits)</p></td>
+<td><p>Instruct a Hadamard-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.x.html#qrisp.QuantumCircuit.x" title="qrisp.QuantumCircuit.x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.x</span></code></a>(qubits)</p></td>
+<td><p>Instruct a Pauli-X-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.y.html#qrisp.QuantumCircuit.y" title="qrisp.QuantumCircuit.y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.y</span></code></a>(qubits)</p></td>
+<td><p>Instruct a Pauli-Y-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.z.html#qrisp.QuantumCircuit.z" title="qrisp.QuantumCircuit.z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.z</span></code></a>(qubits)</p></td>
+<td><p>Instruct a Pauli-Z-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.mcx.html#qrisp.QuantumCircuit.mcx" title="qrisp.QuantumCircuit.mcx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.mcx</span></code></a>(control_qubits, target_qubits)</p></td>
+<td><p>Instruct a multi-controlled X-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.ccx.html#qrisp.QuantumCircuit.ccx" title="qrisp.QuantumCircuit.ccx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.ccx</span></code></a>(ctrl_qubit_0, ...[, method])</p></td>
+<td><p>Instruct a Toffoli-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.rx.html#qrisp.QuantumCircuit.rx" title="qrisp.QuantumCircuit.rx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.rx</span></code></a>(phi, qubits)</p></td>
+<td><p>Instruct a parametrized RX-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.ry.html#qrisp.QuantumCircuit.ry" title="qrisp.QuantumCircuit.ry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.ry</span></code></a>(phi, qubits)</p></td>
+<td><p>Instruct a parametrized RY-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.rz.html#qrisp.QuantumCircuit.rz" title="qrisp.QuantumCircuit.rz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.rz</span></code></a>(phi, qubits)</p></td>
+<td><p>Instruct a parametrized RZ-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.p.html#qrisp.QuantumCircuit.p" title="qrisp.QuantumCircuit.p"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.p</span></code></a>(phi, qubits)</p></td>
+<td><p>Instruct a phase-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cp.html#qrisp.QuantumCircuit.cp" title="qrisp.QuantumCircuit.cp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cp</span></code></a>(phi, qubits_0, qubits_1)</p></td>
+<td><p>Instruct a controlled phase-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.u3.html#qrisp.QuantumCircuit.u3" title="qrisp.QuantumCircuit.u3"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.u3</span></code></a>(theta, phi, lam, qubits)</p></td>
+<td><p>Instruct a U3-gate from given Euler angles.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.swap.html#qrisp.QuantumCircuit.swap" title="qrisp.QuantumCircuit.swap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.swap</span></code></a>(qubits_0, qubits_1)</p></td>
+<td><p>Instruct a SWAP-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.t.html#qrisp.QuantumCircuit.t" title="qrisp.QuantumCircuit.t"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.t</span></code></a>(qubits)</p></td>
+<td><p>Instruct a T-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.t_dg.html#qrisp.QuantumCircuit.t_dg" title="qrisp.QuantumCircuit.t_dg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.t_dg</span></code></a>(qubits)</p></td>
+<td><p>Instruct a dagger T-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.s.html#qrisp.QuantumCircuit.s" title="qrisp.QuantumCircuit.s"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.s</span></code></a>(qubits)</p></td>
+<td><p>Instruct an S-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.s_dg.html#qrisp.QuantumCircuit.s_dg" title="qrisp.QuantumCircuit.s_dg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.s_dg</span></code></a>(qubits)</p></td>
+<td><p>Instruct a daggered S-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.sx.html#qrisp.QuantumCircuit.sx" title="qrisp.QuantumCircuit.sx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.sx</span></code></a>(qubits)</p></td>
+<td><p>Instruct a SX-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.sx_dg.html#qrisp.QuantumCircuit.sx_dg" title="qrisp.QuantumCircuit.sx_dg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.sx_dg</span></code></a>(qubits)</p></td>
+<td><p>Instruct a daggered SX-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.rxx.html#qrisp.QuantumCircuit.rxx" title="qrisp.QuantumCircuit.rxx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.rxx</span></code></a>(phi, qubits_0, qubits_1)</p></td>
+<td><p>Instruct an RXX-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.rzz.html#qrisp.QuantumCircuit.rzz" title="qrisp.QuantumCircuit.rzz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.rzz</span></code></a>(phi, qubits_0, qubits_1)</p></td>
+<td><p>Instruct an RZZ-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.xxyy.html#qrisp.QuantumCircuit.xxyy" title="qrisp.QuantumCircuit.xxyy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.xxyy</span></code></a>(phi, beta, qubits_0, ...)</p></td>
+<td><p>Instruct an XXYY-gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.reset.html#qrisp.QuantumCircuit.reset" title="qrisp.QuantumCircuit.reset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.reset</span></code></a>(qubits)</p></td>
+<td><p>Instruct a reset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.unitary.html#qrisp.QuantumCircuit.unitary" title="qrisp.QuantumCircuit.unitary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.unitary</span></code></a>(unitary_array, qubits)</p></td>
+<td><p>Instruct a gate from a given unitary matrix.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.gphase.html#qrisp.QuantumCircuit.gphase" title="qrisp.QuantumCircuit.gphase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.gphase</span></code></a>(phi, qubits)</p></td>
+<td><p>Instruct a global phase.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.id.html#qrisp.QuantumCircuit.id" title="qrisp.QuantumCircuit.id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.id</span></code></a>(qubits)</p></td>
+<td><p>Instruct an identity gate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.crx.html#qrisp.QuantumCircuit.crx" title="qrisp.QuantumCircuit.crx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.crx</span></code></a>(phi, qubits_0, qubits_1)</p></td>
+<td><p>Instruct a controlled RX-gate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.barrier.html#qrisp.QuantumCircuit.barrier" title="qrisp.QuantumCircuit.barrier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.barrier</span></code></a>([qubits])</p></td>
+<td><p>Instruct a Barrier onto the given Qubit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.r.html#qrisp.QuantumCircuit.r" title="qrisp.QuantumCircuit.r"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.r</span></code></a>(theta, phi, qubits)</p></td>
+<td><p>Instruct an R-gate.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./reference/Circuit Manipulation"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">QuantumCircuit</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.QuantumCircuit"><code class="docutils literal notranslate"><span class="pre">QuantumCircuit</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constructing-quantumcircuits">Constructing QuantumCircuits</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-quantumcircuits">Evaluating QuantumCircuits</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interfacing">Interfacing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#operation-application-methods">Operation application methods</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,882 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.vqe.problems.heisenberg &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/vqe/problems/heisenberg';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/vqe/problems/heisenberg.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.vqe.problems.heisenberg</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.vqe.problems.heisenberg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">cp</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">gphase</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">rz</span><span class="p">,</span> <span class="n">x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">conjugate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators.qubit</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">greedy_edge_coloring</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This methods computes an edge coloring of a given graph.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.Graph</span>
+<span class="sd">        The graph defining the lattice.</span>
+<span class="sd">    E : list, optional</span>
+<span class="sd">        A list of edges not to be considered for the first color.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    edge_coloring : list</span>
+<span class="sd">        An edge coloring of the graph.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">edge_coloring</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">E</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximal_matching</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+        <span class="n">edge_coloring</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximal_matching</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+        <span class="n">edge_coloring</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">edge_coloring</span>
+
+
+<span class="c1"># sing gate corresponding to the singlet state $\ket{10}-\ket{01} of two qubits</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sing</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+
+<span class="c1"># change of basis</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">conjugator</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+
+<span class="c1">#  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">heis</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">conjugator</span><span class="p">)(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">cp</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="n">gphase</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="create_heisenberg_hamiltonian">
+<a class="viewcode-back" href="../../../../reference/Algorithms/vqe/vqeProblems/heisenberg.html#qrisp.vqe.problems.heisenberg.create_heisenberg_hamiltonian">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_heisenberg_hamiltonian</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This method creates the Hamiltonian for the Heisenberg model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.Graph</span>
+<span class="sd">        The graph defining the lattice.</span>
+<span class="sd">    J : float</span>
+<span class="sd">        The positive coupling constant.</span>
+<span class="sd">    B : float</span>
+<span class="sd">        The magnetic field strength.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    H : :ref:`QubitOperator`</span>
+<span class="sd">        The quantum Hamiltonian.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">J</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">X</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">H</span></div>
+
+
+
+<div class="viewcode-block" id="create_heisenberg_ansatz">
+<a class="viewcode-back" href="../../../../reference/Algorithms/vqe/vqeProblems/heisenberg.html#qrisp.vqe.problems.heisenberg.create_heisenberg_ansatz">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_heisenberg_ansatz</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">ansatz_type</span><span class="o">=</span><span class="s2">&quot;per hamiltonian&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This method creates a function for applying one layer of the ansatz.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.Graph</span>
+<span class="sd">        The graph defining the lattice.</span>
+<span class="sd">    J : float</span>
+<span class="sd">        The positive coupling constant.</span>
+<span class="sd">    B : float</span>
+<span class="sd">        The magnetic field strength.</span>
+<span class="sd">    M : list</span>
+<span class="sd">        A list of edges corresponding to a maximal matching of ``G``.</span>
+<span class="sd">    C : list</span>
+<span class="sd">        An edge coloring of the graph ``G`` given by a list of lists of edges.</span>
+<span class="sd">    ansatz_type : string, optional</span>
+<span class="sd">        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``, ``per edge color``, ``per edge``.</span>
+<span class="sd">        The default is ``per hamiltonian``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ansatz : function</span>
+<span class="sd">        A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># per hamiltonian</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ansatz</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="c1"># apply H</span>
+        <span class="n">rz</span><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">heis</span><span class="p">(</span><span class="n">J</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="c1"># apply H_0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">M</span><span class="p">:</span>
+            <span class="n">heis</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="c1"># per edge color</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ansatz_per_edge_color</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="c1"># apply H</span>
+        <span class="n">rz</span><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">heis</span><span class="p">(</span><span class="n">J</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">2</span> <span class="o">+</span> <span class="n">count</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># apply H_0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">M</span><span class="p">:</span>
+            <span class="n">heis</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="c1"># per edge</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ansatz_per_edge</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="c1"># apply H</span>
+        <span class="n">rz</span><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">heis</span><span class="p">(</span><span class="n">J</span> <span class="o">*</span> <span class="n">theta</span><span class="p">[</span><span class="mi">2</span> <span class="o">+</span> <span class="n">count</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># apply H_0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">M</span><span class="p">:</span>
+            <span class="n">heis</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">ansatz_type</span> <span class="o">==</span> <span class="s2">&quot;per edge color&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ansatz_per_edge_color</span>
+    <span class="k">if</span> <span class="n">ansatz_type</span> <span class="o">==</span> <span class="s2">&quot;per edge&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ansatz_per_edge</span>
+    <span class="k">return</span> <span class="n">ansatz</span></div>
+
+
+
+<div class="viewcode-block" id="create_heisenberg_init_function">
+<a class="viewcode-back" href="../../../../reference/Algorithms/vqe/vqeProblems/heisenberg.html#qrisp.vqe.problems.heisenberg.create_heisenberg_init_function">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_heisenberg_init_function</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates the function that, when applied to a :ref:`QuantumVariable`, initializes a tensor product of singlet sates corresponding to a given matching.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    M : list</span>
+<span class="sd">        A list of edges corresponding to a maximal matching of ``G``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    init_function : function</span>
+<span class="sd">        A function that can be applied to a :ref:`QuantumVariable`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_function</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+
+        <span class="c1"># tensor product of singlet states</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">M</span><span class="p">:</span>
+            <span class="n">sing</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">init_function</span></div>
+
+
+
+<div class="viewcode-block" id="heisenberg_problem">
+<a class="viewcode-back" href="../../../../reference/Algorithms/vqe/vqeProblems/heisenberg.html#qrisp.vqe.problems.heisenberg.heisenberg_problem">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">heisenberg_problem</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">ansatz_type</span><span class="o">=</span><span class="s2">&quot;per hamiltonian&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates a VQE problem instance for an isotropic Heisenberg model defined by a graph $G=(V,E)$,</span>
+<span class="sd">    the coupling constant $J&gt;0$ (antiferromagnetic), and the magnetic field strength $B$. The model Hamiltonian is given by:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        H = J\sum\limits_{(i,j)\in E}(X_iX_j+Y_iY_j+Z_iZ_j)+B\sum\limits_{i\in V}Z_i</span>
+
+<span class="sd">    Each Hamiltonian $H_{i,j}=X_iX_j+Y_iY_j+Z_iZ_j$ has three eigenvectors for eigenvalue $+1$ (triplet states):</span>
+
+<span class="sd">    * $\ket{00}$</span>
+<span class="sd">    * $\ket{11}$</span>
+<span class="sd">    * $\frac{1}{\sqrt{2}}\left(\ket{10}+\ket{01}\right)$  </span>
+
+<span class="sd">    and one eigenvector for eigenvalue $-3$ (singlet state):</span>
+
+<span class="sd">    * $\frac{1}{\sqrt{2}}\left(\ket{10}-\ket{01}\right)$ </span>
+
+<span class="sd">    For the problem specific VQE ansatz, we choose a Hamiltonian Variational Ansatz as proposed `here &lt;https://arxiv.org/abs/2108.08086&gt;`_.</span>
+<span class="sd">    This ansatz is inspired by the adiabatic theorem of quantum mechanics: A system is prepared in the ground state of </span>
+<span class="sd">    an initial Hamiltonian $H_0$ and then slowly evolved under a time-dependet Hamiltoniam $H(t)$. Here, we set</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        H(t) = \left(1-\frac{t}{T}\right)H_0 + \frac{t}{T}H</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        H_0 = \sum\limits_{(i,j)\in M}(X_iX_j+Y_iY_j+Z_iZ_j)</span>
+
+<span class="sd">    for a maximal matching $M\subset E$ of the graph $G$. </span>
+
+<span class="sd">    For $J&gt;0$ the ground state of the initial Hamiltonian $H_0$ is given by a tensor product of</span>
+<span class="sd">    singlet states corresponding to the maximal matching $M$.</span>
+
+<span class="sd">    The time evolution of $H(t)$ is approximately implemented by trotterization, i.e., alternatingly applying </span>
+<span class="sd">    $e^{-iH_0\Delta t}$ and $e^{-iH\Delta t}$, and if necessary trotterizing $e^{-iH\Delta t}$.</span>
+
+<span class="sd">    In the scope of VQE, the short evolution times $\Delta t$ are replaced by parameters $\theta_i$ which are then optimized.</span>
+<span class="sd">    This yields the following unitary ansatz with $p$ layers:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        U(\theta) = \prod_{l=1}^{p}e^{-i\theta_{l,0}H_0}e^{-i\theta_{l,1}H}</span>
+
+<span class="sd">    The unitary $e^{-i\theta H}$ trotterized by:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        U_H(\theta) = e^{-i\theta H_B}\prod\limits_{k=1}^{q}\prod_{(i,j)\in E_k}e^{-i\theta H_{ij}}</span>
+
+<span class="sd">    where $E_1,\dotsc,E_q$ is an edge coloring of the graph $G$, and $H_B$ is the magnetic field Hamiltonian.</span>
+<span class="sd">    Then all unitaries $e^{-i\theta H_{ij}}$ for $(i,j)\in E_k$ commute. </span>
+<span class="sd">    For implementing such unitaries, note that each two-qubit `Heisenberg interaction unitary &lt;https://arxiv.org/abs/2108.02175&gt;`_</span>
+<span class="sd">    </span>
+<span class="sd">    .. math:: </span>
+
+<span class="sd">        \text{Heis}(\theta) \equiv e^{-i\theta/4}e^{-i\theta H_{ij}} = </span>
+<span class="sd">        \begin{pmatrix}</span>
+<span class="sd">        e^{-i\theta/2}&amp;0&amp;0&amp;0\\</span>
+<span class="sd">        0&amp;\cos(\theta/2)&amp;-i\sin(\theta/2)&amp;0\\</span>
+<span class="sd">        0&amp;-i\sin(\theta/2)&amp;\cos(\theta/2)&amp;0\\</span>
+<span class="sd">        0&amp;0&amp;0&amp;e^{-i\theta/2}</span>
+<span class="sd">        \end{pmatrix}</span>
+
+<span class="sd">    becomes diagonal in Bell basis, i.e., $e^{-i\theta/2}\text{diag}(1,1,1,e^{i\theta})$.</span>
+
+<span class="sd">    This ansatz can be further generalized by introducing parameters</span>
+
+<span class="sd">    * per edge color (one parameter for each color)</span>
+<span class="sd">    * per edge (one parameter for each edge)</span>
+
+<span class="sd">    in the unitary $U_H(\theta)$.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : nx.Graph</span>
+<span class="sd">        The graph defining the lattice.</span>
+<span class="sd">    J : float</span>
+<span class="sd">        The positive coupling constant.</span>
+<span class="sd">    B : float</span>
+<span class="sd">        fhe magnetic field strength.</span>
+<span class="sd">    ansatz_type : string, optional</span>
+<span class="sd">        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``, ``per edge color``, ``per edge``.</span>
+<span class="sd">        The default is ``per hamiltonian``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    VQEProblem</span>
+<span class="sd">        VQE problem instance for a specific isotropic Heisenberg model.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    ::</span>
+
+<span class="sd">        import networkx as nx</span>
+<span class="sd">        import matplotlib.pyplot as plt</span>
+
+<span class="sd">        # Create a graph</span>
+<span class="sd">        G = nx.Graph()</span>
+<span class="sd">        G.add_edges_from([(0,1),(1,2),(2,3),(0,3)])</span>
+
+<span class="sd">        # Draw the graph with labels</span>
+<span class="sd">        pos = nx.spring_layout(G)</span>
+<span class="sd">        nx.draw(G, pos, with_labels=True, node_size=700, node_color=&#39;lightblue&#39;)</span>
+<span class="sd">        nx.draw_networkx_labels(G, pos)</span>
+<span class="sd">        plt.show()</span>
+
+<span class="sd">    .. figure:: /_static/heisenberg_lattice.png</span>
+<span class="sd">        :scale: 80%</span>
+<span class="sd">        :align: center</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable</span>
+<span class="sd">        from qrisp.vqe.problems.heisenberg import *</span>
+
+<span class="sd">        vqe = heisenberg_problem(G,1,1)</span>
+<span class="sd">        vqe.set_callback()</span>
+<span class="sd">        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)</span>
+<span class="sd">        print(energy)</span>
+<span class="sd">        # Yields -8.0</span>
+<span class="sd">    </span>
+<span class="sd">    We visualize the optimization process:</span>
+
+<span class="sd">    &gt;&gt;&gt; vqe.visualize_energy(exact=True)</span>
+
+<span class="sd">    .. figure:: /_static/heisenberg_energy.png</span>
+<span class="sd">        :scale: 80%</span>
+<span class="sd">        :align: center  </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.vqe</span><span class="w"> </span><span class="kn">import</span> <span class="n">VQEProblem</span>
+
+    <span class="n">M</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximal_matching</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">greedy_edge_coloring</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
+    <span class="n">num_params</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">ansatz_type</span> <span class="o">==</span> <span class="s2">&quot;per edge color&quot;</span><span class="p">:</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ansatz_type</span> <span class="o">==</span> <span class="s2">&quot;per edge&quot;</span><span class="p">:</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">VQEProblem</span><span class="p">(</span>
+        <span class="n">create_heisenberg_hamiltonian</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span>
+        <span class="n">create_heisenberg_ansatz</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">ansatz_type</span><span class="o">=</span><span class="n">ansatz_type</span><span class="p">),</span>
+        <span class="n">num_params</span><span class="o">=</span><span class="n">num_params</span><span class="p">,</span>
+        <span class="n">init_function</span><span class="o">=</span><span class="n">create_heisenberg_init_function</span><span class="p">(</span><span class="n">M</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

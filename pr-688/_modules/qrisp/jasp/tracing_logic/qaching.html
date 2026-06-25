@@ -1,0 +1,860 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.tracing_logic.qaching &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/tracing_logic/qaching';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/tracing_logic/qaching.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.tracing_logic.qaching</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.tracing_logic.qaching</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursive_qa_search</span><span class="p">,</span> <span class="n">recursive_qv_search</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractQuantumState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TracingQuantumSession</span><span class="p">,</span>
+    <span class="n">check_for_tracing_mode</span><span class="p">,</span>
+    <span class="n">get_last_equation</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="qache">
+<a class="viewcode-back" href="../../../../reference/Jasp/qache.html#qrisp.jasp.qache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qache</span><span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This decorator allows you to mark a function as &quot;reusable&quot;. Reusable here means</span>
+<span class="sd">    that the jasp expression of this function will be cached and reused in the next</span>
+<span class="sd">    calls (if the function is called with the same signature).</span>
+
+<span class="sd">    A qached function therefore has to be traced by the Python interpreter only once</span>
+<span class="sd">    and after that the function can be called without any Python-interpreter induced</span>
+<span class="sd">    delay. This can significantly speed up the compilation process.</span>
+
+<span class="sd">    Using the ``qache`` decorator not only improves the compilation speed but also</span>
+<span class="sd">    enables the compiler to speed up transformation processes.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        Two important rules apply to the ``qache`` decorator to adhere to the</span>
+<span class="sd">        functional programming paradigm.</span>
+
+<span class="sd">        * It is illegal to have a qached function return a QuantumVariable that has been passed as an argument to the function.</span>
+<span class="sd">        * It is illegal to modify traced attributes of QuantumVariables that have been passed as an argument to the function.</span>
+
+<span class="sd">        See the examples section for representatives of these cases.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : callable</span>
+<span class="sd">        The function to be qached.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    qached_function : callable</span>
+<span class="sd">        A function that will be traced on it&#39;s first execution and retrieved from</span>
+<span class="sd">        the cache in any other call.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We create a simple function that is qached. To simulate an expensive compilation</span>
+<span class="sd">    task we insert a ``time.sleep`` command.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        import time</span>
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.jasp import qache</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def inner_function(qv):</span>
+<span class="sd">            h(qv[0])</span>
+<span class="sd">            cx(qv[0], qv[1])</span>
+<span class="sd">            res_bl = measure(qv[0])</span>
+
+<span class="sd">            # Simulate demanding compilation procedure by calling</span>
+<span class="sd">            time.sleep(1)</span>
+
+<span class="sd">            return res_bl</span>
+
+<span class="sd">        def main():</span>
+<span class="sd">            a = QuantumVariable(2)</span>
+<span class="sd">            b = QuantumFloat(2)</span>
+
+<span class="sd">            bl_0 = inner_function(a)</span>
+<span class="sd">            bl_1 = inner_function(b)</span>
+<span class="sd">            bl_2 = inner_function(a)</span>
+<span class="sd">            bl_3 = inner_function(b)</span>
+
+<span class="sd">            return bl_0 &amp; bl_1 &amp; bl_2 &amp; bl_3</span>
+
+<span class="sd">        # Measure the time required for tracing</span>
+<span class="sd">        t0 = time.time()</span>
+<span class="sd">        jaspr = make_jaspr(main)()</span>
+<span class="sd">        print(time.time() - t0) # 2.0225703716278076</span>
+
+<span class="sd">    Even though ``inner_function`` has been called 4 times, we only see a delay of 2 seconds.</span>
+<span class="sd">    This is because the function has been called with two different quantum types, implying it</span>
+<span class="sd">    has been traced twice and recalled from the cache twice. We take a look at the :ref:`jaspr`.</span>
+
+<span class="sd">    &gt;&gt;&gt; print(jaspr)</span>
+<span class="sd">    let inner_function = { lambda ; a:QuantumState b:QubitArray. let</span>
+<span class="sd">        c:Qubit = jasp.get_qubit b 0</span>
+<span class="sd">        d:QuantumState = jasp.h a c</span>
+<span class="sd">        e:Qubit = jasp.get_qubit b 1</span>
+<span class="sd">        f:QuantumState = jasp.cx d c e</span>
+<span class="sd">        g:QuantumState h:bool[] = jasp.measure f c</span>
+<span class="sd">      in (g, h) } in</span>
+<span class="sd">    let inner_function1 = { lambda ; i:QuantumState j:QubitArray k:i32[] l:bool[]. let</span>
+<span class="sd">        m:Qubit = jasp.get_qubit j 0</span>
+<span class="sd">        n:QuantumState = jasp.h i m</span>
+<span class="sd">        o:Qubit = jasp.get_qubit j 1</span>
+<span class="sd">        p:QuantumState = jasp.cx n m o</span>
+<span class="sd">        q:QuantumState r:bool[] = jasp.measure p m</span>
+<span class="sd">      in (q, r) } in</span>
+<span class="sd">    { lambda ; s:QuantumState. let</span>
+<span class="sd">        t:QuantumState u:QubitArray = jasp.create_qubits s 2</span>
+<span class="sd">        v:QuantumState w:QubitArray = jasp.create_qubits t 2</span>
+<span class="sd">        x:QuantumState y:bool[] = pjit[name=inner_function jaxpr=inner_function] v</span>
+<span class="sd">          u</span>
+<span class="sd">        z:QuantumState ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x</span>
+<span class="sd">          w 0 False</span>
+<span class="sd">        bb:QuantumState bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z</span>
+<span class="sd">          u</span>
+<span class="sd">        bd:QuantumState be:bool[] = pjit[</span>
+<span class="sd">          name=inner_function</span>
+<span class="sd">          jaxpr=inner_function1</span>
+<span class="sd">        ] bb w 0 False</span>
+<span class="sd">        bf:bool[] = and y ba</span>
+<span class="sd">        bg:bool[] = and bf bc</span>
+<span class="sd">        bh:bool[] = and bg be</span>
+<span class="sd">        bi:QuantumState = jasp.reset bd u</span>
+<span class="sd">        bj:QuantumState = jasp.delete_qubits bi u</span>
+<span class="sd">      in (bj, bh) }</span>
+
+<span class="sd">    As expected, we see three different function definitions:</span>
+
+<span class="sd">    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.</span>
+<span class="sd">    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` and ``.signed`` attribute are also passed to the function.</span>
+<span class="sd">    * The third function definition is ``outer_function``, which calls the previously defined functions.</span>
+
+<span class="sd">    **Illegal functions**</span>
+
+<span class="sd">    We will now demonstrate what type of functions can not be qached.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def inner_function(qv):</span>
+<span class="sd">            h(qv[0])</span>
+<span class="sd">            return qv</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main():</span>
+<span class="sd">            qf_0 = QuantumFloat(2)</span>
+<span class="sd">            qf_1 = inner_function(qf_0)</span>
+<span class="sd">            return measure(qf_1)</span>
+
+<span class="sd">        main()</span>
+<span class="sd">        # Yields: Exception: Found parameter QuantumVariable within returned results</span>
+
+<span class="sd">    ``inner_function`` returns a :ref:`QuantumVariable` that has been passed as an</span>
+<span class="sd">    argument and can therefore not be qached.</span>
+
+<span class="sd">    The second case of an illegal functions is a function that tries to modify</span>
+<span class="sd">    a traced attribute of a ``QuantumVariable`` that has been passed as an argument.</span>
+<span class="sd">    A traced attribute is for instance the ``exponent`` attribute of :ref:`QuantumFloat`.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @qache</span>
+<span class="sd">        def inner_function(qf):</span>
+<span class="sd">            qf.exponent += 1</span>
+
+<span class="sd">        @jaspify</span>
+<span class="sd">        def main():</span>
+<span class="sd">            qf = QuantumFloat(2)</span>
+<span class="sd">            inner_function(qf)</span>
+
+<span class="sd">        main()</span>
+<span class="sd">        # Yields: Exception: Found in-place parameter modification of QuantumVariable qf</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">func</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">qache_helper</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">func</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">qache_helper</span><span class="p">(</span><span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">qache_helper</span><span class="p">(</span><span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">{})</span></div>
+
+
+
+<span class="c1"># temp_list = [False]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qache_helper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">jax_kwargs</span><span class="p">):</span>
+
+    <span class="c1"># To achieve the desired behavior we leverage the Jax inbuild caching mechanism.</span>
+    <span class="c1"># This feature can be used by calling a jitted function in a tracing context.</span>
+    <span class="c1"># To cache the function we therefore simply need to wrap it with jit and</span>
+    <span class="c1"># it will be properly cached.</span>
+
+    <span class="c1"># if func.__name__ == &quot;jasp_qq_gidney_adder&quot;:</span>
+    <span class="c1"># if temp_list[0]:</span>
+    <span class="c1"># raise</span>
+    <span class="c1"># temp_list[0] = True</span>
+
+    <span class="c1"># There are however some more things to consider.</span>
+
+    <span class="c1"># The Qrisp function doesn&#39;t have the AbstractQuantumState object (which is carried by</span>
+    <span class="c1"># the tracing QuantumSession) in the signature.</span>
+
+    <span class="c1"># To make jax properly treat this, we modify the function signature</span>
+
+    <span class="c1"># This function performs the input function but also has the AbstractQuantumState</span>
+    <span class="c1"># in the signature.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ammended_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="n">abs_qst</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Set the given AbstractQuantumState as the</span>
+        <span class="c1"># one carried by the tracing QuantumSession</span>
+        <span class="n">tr_qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+        <span class="n">tr_qs</span><span class="o">.</span><span class="n">abs_qst</span> <span class="o">=</span> <span class="n">abs_qst</span>
+
+        <span class="c1"># We now iterate through the QuantumVariables of the signature to perform two steps:</span>
+        <span class="c1"># 1. The QuantumVariables from the signature went through a flatten/unflattening process.</span>
+        <span class="c1"># The unflattening creates a copy of the QuantumVariable object, which is however not</span>
+        <span class="c1"># registered in any QuantumSession. We therefore need to register them.</span>
+        <span class="c1"># 2. To prevent the user from performing any in-place modifications of traced QuantumVariable</span>
+        <span class="c1"># attributes, we collect the tracers to compare them after the function has concluded.</span>
+        <span class="n">arg_qvs</span> <span class="o">=</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">arg_qvs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">qa</span><span class="o">.</span><span class="n">qtype</span> <span class="k">for</span> <span class="n">qa</span> <span class="ow">in</span> <span class="n">recursive_qa_search</span><span class="p">(</span><span class="n">args</span><span class="p">)]</span>
+
+        <span class="n">flattened_qvs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg_qvs</span><span class="p">:</span>
+            <span class="n">tr_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">flattened_qvs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">flatten_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="c1"># Execute the function</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">res_qvs</span> <span class="o">=</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="c1"># It is not legal to return a QuantumVariable that was already given in the parameters.</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="nb">hash</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">res_qvs</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">([</span><span class="nb">hash</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg_qvs</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Found parameter QuantumVariable within returned results&quot;</span><span class="p">)</span>
+
+        <span class="n">res_qvs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">qa</span><span class="o">.</span><span class="n">qtype</span> <span class="k">for</span> <span class="n">qa</span> <span class="ow">in</span> <span class="n">recursive_qa_search</span><span class="p">(</span><span class="n">res</span><span class="p">)]</span>
+
+        <span class="c1"># Check whether there have been in-place modifications of traced attributes of QuantumVariables.</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg_qvs</span><span class="p">:</span>
+            <span class="n">flat_qv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">flatten_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_qv</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">flat_qv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">flattened_qvs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found in-place parameter modification of QuantumVariable </span><span class="si">{</span><span class="n">qv</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">new_abs_qst</span> <span class="o">=</span> <span class="n">tr_qs</span><span class="o">.</span><span class="n">abs_qst</span>
+        <span class="c1"># Return the result and the result AbstractQuantumState.</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">new_abs_qst</span>
+
+    <span class="c1"># Modify the name of the ammended function to reflect the input</span>
+    <span class="n">ammended_function</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="c1"># Wrap in jax.jit</span>
+    <span class="n">ammended_function</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">ammended_function</span><span class="p">,</span> <span class="o">**</span><span class="n">jax_kwargs</span><span class="p">)</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.tracing_logic</span><span class="w"> </span><span class="kn">import</span> <span class="n">flatten_qv</span>
+
+    <span class="c1"># We now prepare the return function</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># If we are not in tracing mode, simply execute the function</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Get the AbstractQuantumState for tracing</span>
+        <span class="n">tr_qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+        <span class="n">tr_qs</span><span class="o">.</span><span class="n">start_tracing</span><span class="p">(</span><span class="n">tr_qs</span><span class="o">.</span><span class="n">abs_qst</span><span class="p">)</span>
+
+        <span class="c1"># Make sure literals are 32 bit</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="c1"># for i in range(len(args)):</span>
+        <span class="c1">#     if isinstance(args[i], bool):</span>
+        <span class="c1">#         args[i] = jnp.array(args[i], dtype = jnp.bool)</span>
+        <span class="c1">#     elif isinstance(args[i], int):</span>
+        <span class="c1">#         args[i] = jnp.array(args[i], dtype = jnp.int64)</span>
+        <span class="c1">#     elif isinstance(args[i], float):</span>
+        <span class="c1">#         args[i] = jnp.array(args[i], dtype = jnp.float64)</span>
+        <span class="c1">#     elif isinstance(args[i], complex):</span>
+        <span class="c1">#         args[i] = jnp.array(args[i], dtype = jnp.complex)</span>
+
+        <span class="c1"># Excecute the function</span>
+        <span class="n">ammended_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ammended_kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tr_qs</span><span class="o">.</span><span class="n">abs_qst</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span><span class="p">,</span> <span class="n">abs_qst_new</span> <span class="o">=</span> <span class="n">ammended_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">ammended_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">tr_qs</span><span class="o">.</span><span class="n">conclude_tracing</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="n">tr_qs</span><span class="o">.</span><span class="n">conclude_tracing</span><span class="p">()</span>
+
+        <span class="c1"># Convert the jaxpr from the traced equation in to a Jaspr</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Jaspr</span>
+
+        <span class="n">eqn</span> <span class="o">=</span> <span class="n">get_last_equation</span><span class="p">()</span>
+
+        <span class="n">jaxpr</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">jaxpr</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+                    <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+                    <span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Jaspr</span><span class="o">.</span><span class="n">from_cache</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Update the AbstractQuantumState of the TracingQuantumSession</span>
+        <span class="n">tr_qs</span><span class="o">.</span><span class="n">abs_qst</span> <span class="o">=</span> <span class="n">abs_qst_new</span>
+
+        <span class="c1"># The QuantumVariables from the result went through a flatten/unflattening cycly.</span>
+        <span class="c1"># The unflattening creates a new QuantumVariable object, that is however not yet</span>
+        <span class="c1"># registered in any QuantumSession. We register these in the current QuantumSession.</span>
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+            <span class="n">tr_qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Return the result.</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">return</span> <span class="n">return_function</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

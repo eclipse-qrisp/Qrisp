@@ -1,0 +1,1084 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Using BigInteger to compile Shor’s algorithm at 2048 bit &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/BigInteger';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/BigInteger.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Simulating the dynamics of the $H_2$ molecule" href="H2.html" />
+    <link rel="prev" title="Fault-Tolerant compilation" href="FT_compilation.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Using-BigInteger-to-compile-Shor's-algorithm-at-2048-bit">
+<h1>Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit<a class="headerlink" href="#Using-BigInteger-to-compile-Shor's-algorithm-at-2048-bit" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Eric Kühnke</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>; <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>IQM Quantum Computers</span>.
+    </div>
+    <p>In the <a class="reference internal" href="Jasp.html"><span class="doc">Jasp tutorial</span></a>, we learned how Jasp allows us to use Qrisp to compile quantum algorithms at utility-scale. However, Jasp has a caveat that may not be immediately apparent to those coming from Python: it uses fixed-size integers. On the other hand, Python’s <code class="docutils literal notranslate"><span class="pre">int</span></code> supports arbitrary sizes. For example, let us create a large integer, parse it to Jasp, and return it to Python:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">64</span>
+
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">return_integer</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">i</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">return_integer</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">OverflowError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+An overflow was encountered while parsing an argument to a jitted computation, whose argument path is args[0].
+</pre></div></div>
+</div>
+<p>Here, Jasp checks the integer for its size before parsing it to the jitted computation and raises an error. However, not all internal computations are bounds-checked.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">40</span>
+
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_to_integer</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="mi">40</span>
+
+<span class="n">r_jasp</span> <span class="o">=</span> <span class="n">add_to_integer</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">r_python</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="mi">40</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Python:&quot;</span><span class="p">,</span> <span class="n">r_python</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Jasp:&quot;</span><span class="p">,</span> <span class="n">r_jasp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Python: 1208925819614629174706176
+Jasp: 0
+</pre></div></div>
+</div>
+<p>Here, we perform the same computation using Python and Jasp and get different results. Additionally, we are not alerted to the problem since Jasp does not check bound violations on all internal computations.</p>
+<p>This issue is known as <em>Integer overflow</em> and is a common pitfall in many programming languages and libraries with fixed-size integer types, such as numpy and jax.numpy. It is a direct consequence of setting the size of the integer to a static value, for example, 32- or 64-bit, and many other basic data types are handled the same way. Doing this allows for well-optimized operations and avoids additional overhead introduced by managing a dynamically-sized data container. In fact, we are not able
+to circumvent this restriction in general because of the limitations of Jasp. Still, to allow us to work with integers that are larger than the native 32- or 64-bit types, we provide the <a class="reference internal" href="../../reference/Jasp/Scalable%20Integer%20Type.html"><span class="doc">BigInteger</span></a> class.</p>
+<p>The idea of the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> class is easily explained: represent very large integers that do not fit into the default sizes. Internally, the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> uses an array of 32-bit integers to represent larger values. As required by Jasp, this array possesses a static size. Now, we will see how to work with this integer.</p>
+<section id="Working-classically-with-BigInteger">
+<h2>Working classically with <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code><a class="headerlink" href="#Working-classically-with-BigInteger" title="Link to this heading">#</a></h2>
+<p>To create an instance of the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> class, we can make use of the <code class="docutils literal notranslate"><span class="pre">create_static</span></code> or <code class="docutils literal notranslate"><span class="pre">create_dynamic</span></code> function. Where <code class="docutils literal notranslate"><span class="pre">create_static</span></code> can be used with Jasp, but the value argument must be a static Python integer, the function <code class="docutils literal notranslate"><span class="pre">create_dynamic</span></code> is written in terms of Jax primitives. This distinction showcases a key problem when working at the intersection of Python and Jasp. We cannot exactly create a BigInteger that is too large for the native Jax types when using
+<code class="docutils literal notranslate"><span class="pre">create_dynamic</span></code> as the used Jax functions require a size-limited integer. In these cases, we must use <code class="docutils literal notranslate"><span class="pre">create_static</span></code>. For example, let us create a 2048-bit integer.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_bi</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_dynamic</span><span class="p">(</span><span class="mi">123456</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span> <span class="c1"># Works because 123456 fits into 64 bits</span>
+
+<span class="n">bi_small</span> <span class="o">=</span> <span class="n">create_bi</span><span class="p">()</span>
+<span class="n">bi_large</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">1200</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span> <span class="c1"># Works because we use the static function</span>
+</pre></div>
+</div>
+</div>
+<p>For both functions, the first argument is the value of the integer and the second is the number of 32-bit digits (limbs) to allocate for the instance. Here, we choose 64 since <span class="math notranslate nohighlight">\(64\cdot 32 = 2048\)</span>. To obtain the value stored in the integer, we use the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method, which can be called by opening and closing brackets <code class="docutils literal notranslate"><span class="pre">()</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bi_large:&quot;</span><span class="p">,</span> <span class="n">bi_large</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Correct value:&quot;</span><span class="p">,</span> <span class="n">bi_large</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="o">**</span><span class="mi">1200</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+bi_large: 17218479456385750618067377696052635483579924745448689921733236816400740691241745619397484537236046173286370919031961587788584927290816661024991609882728717344659503471655990880884679896520055123906467064419056526231345685268240569209892573766037966584735183775739433978714578587782701380797240772477647874555986712746271362892227516205318914435913511141036261376
+Correct value: True
+</pre></div></div>
+</div>
+<p>In Python-mode, that is, outside any Jasp function, the method returns a Python integer of the value stored inside the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> instance. However, when using this method in Jasp-mode this is not possible, and thus the method returns an approximation of the value as a 64-bit float.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> class supports a wide range of operators to perform basic arithmetic operations, comparisons, and bit operations</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sub_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mul_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">div_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">//</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mod_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pow_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">**</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ge_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">&gt;=</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lt_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">eq_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lshift_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">&lt;&lt;</span> <span class="n">b</span>
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">xor_bi</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> <span class="k">return</span> <span class="n">a</span> <span class="o">^</span> <span class="n">b</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">1200</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="mi">3</span><span class="o">**</span><span class="mi">600</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x+y :&quot;</span><span class="p">,</span> <span class="n">add_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x-y :&quot;</span><span class="p">,</span> <span class="n">sub_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x*y :&quot;</span><span class="p">,</span> <span class="n">mul_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x//y :&quot;</span><span class="p">,</span> <span class="n">div_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x%y :&quot;</span><span class="p">,</span> <span class="n">mod_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;y**2 :&quot;</span><span class="p">,</span> <span class="n">pow_bi</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">2</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x&gt;=y :&quot;</span><span class="p">,</span> <span class="n">ge_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x&lt;y :&quot;</span><span class="p">,</span> <span class="n">lt_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x==y :&quot;</span><span class="p">,</span> <span class="n">eq_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x&lt;&lt;2 :&quot;</span><span class="p">,</span> <span class="n">lshift_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x^y :&quot;</span><span class="p">,</span> <span class="n">xor_bi</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+x+y : 17218479456385750618067377696052635483579924745448689921733236816400740691260484896436332477122800193206729042456270056819577708848783571008203520845886481023385623626125021737692410484491915034285536152112175577316485251485611204293277517379905996129992080893738042135558278052875995146630382082004344231698587579681960846663105331219780109273605735020941393377
+x-y : 17218479456385750618067377696052635483579924745448689921733236816400740691223006342358636597349292153366012795607653118757592145732849751041779698919570953665933383317186960024076949308548195213527397976725937475146206119050869934126507630152169937039478286657740825821870879122689407614964099462950951517413385845810581879121349701190857719598221287261131129375
+x*y : 8363043341027444121468938611480630920438942712615916971099048250985091232155340228727201791705502299888383881875681387012270433277369258018508202481320213865942876403283694718548430325199563774324634664985322015097449368736012632707454793872836804979502966058232705775174594927791988378804103528823307486074694407757752859346423687189738687937085494041821665016906739319817970991595818705089752426433833885847334826193246485433657352900937791689699763489342200641482664896266939237500050293551624503879020459645595552138163871675265042647676528875407712386956802671380877225851316361750472562783512551965714594922496
+x//y : 918844383414074045968575348083558964423128343767475725101947101203379853671
+x%y : 567443501804848684263867568372419602584406157008415718985486479189679803102714385922362990970552571926469119492957968150139064762720466707732357193438019999614751379667233506723806540970499381494123940386824026853994623001012337962375646992826849460106749720177738881956786415716835705
+y**2 : 351160503938693614343626853747071562171016188034295260095490111881784318374960146045355120758560422119505624375491533176393589903573845466689382216842197981277867514717013259791763929689440964343969395781792087124646063583944648684169111729145300510135702655848244592583122673432949987979858826614906829469635537237525614665196540272658828569629679791428934101079072719564710584542576589075082850692588439679596816834818341802539921621995225917260921044846812391894365530686773081140839348912145464664288336497209664739248364322768319800659209785240272285297767697234264001
+x&gt;=y : True
+x&lt;y : False
+x==y : False
+x&lt;&lt;2 : 68873917825543002472269510784210541934319698981794759686932947265602962764966982477589938148944184693145483676127846351154339709163266644099966439530914869378638013886623963523538719586080220495625868257676226104925382741072962276839570295064151866338940735102957735914858314351130805523188963089910591498223946850985085451568910064821275657743654044564145045504
+x^y : 17218479456385750618067377696052635483579924745448689921733236816400740691260484896436332477122800193206729042456270056819577708848783571008203520845886481023385623626125021737692410484491915034285536152112175577316485251485611204293277517379905996129992080893738042135558278052875995146630382082004344231698587579681960846663105331219780109273605735020941393377
+</pre></div></div>
+</div>
+<p>Here, we use functions with the <code class="docutils literal notranslate"><span class="pre">&#64;jaspify</span></code> annotation to showcase that the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> works in Jasp mode. For a complete list, see the documentation of the <a class="reference internal" href="../../reference/Jasp/Scalable%20Integer%20Type.html"><span class="doc">BigInteger</span></a>.</p>
+</section>
+<section id="Finding-the-order-of-a-BigInteger">
+<h2>Finding the order of a <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code><a class="headerlink" href="#Finding-the-order-of-a-BigInteger" title="Link to this heading">#</a></h2>
+<p>As we learned in the <a class="reference internal" href="Shor.html"><span class="doc">Shor tutorial</span></a>, the problem of factoring can be reduced to order-finding. Shor’s algorithm does exactly that and provides an efficient quantum algorithm for order-finding. Following the <a class="reference internal" href="FT_compilation.html"><span class="doc">fault-tolerant compilation tutorial</span></a>, we implement this</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_order</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">BigInteger</span><span class="p">,</span> <span class="n">N</span><span class="p">:</span> <span class="n">BigInteger</span><span class="p">):</span>
+    <span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">gidney_adder</span><span class="p">)</span>
+    <span class="n">qg</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">qg</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">qpe_res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="n">qg</span> <span class="o">*=</span> <span class="n">a</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="o">%</span><span class="k">N</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">measure_to_big_integer</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The function <code class="docutils literal notranslate"><span class="pre">find_order</span></code> provides a Jasp-compatible implementation of order-finding that makes use of the BigInteger class. Note that we use the function <code class="docutils literal notranslate"><span class="pre">measure_to_big_integer</span></code> instead of <code class="docutils literal notranslate"><span class="pre">measure</span></code> to return the measured value of the quantum variable as a big integer. This use case shows the importance of the <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> class, since a native Jax integer is limited to 64 bits. Only minimal modifications are required to make the implementation compatible with the new integer type.</p>
+<p>Of course, we cannot run this function for, say, 2048-bit integers on a classical computer. Still, we are able to perform resource estimation using this implementation. Here, we run resource estimation of 128-bit integers.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@count_ops</span><span class="p">(</span><span class="n">meas_behavior</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_order_count_ops</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">BigInteger</span><span class="p">,</span> <span class="n">N</span><span class="p">:</span> <span class="n">BigInteger</span><span class="p">):</span>
+    <span class="n">qg</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">gidney_adder</span><span class="p">)</span>
+    <span class="n">qg</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">qg</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">qpe_res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="n">qg</span> <span class="o">*=</span> <span class="n">a</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="o">%</span><span class="k">N</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">measure_to_big_integer</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">digits</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="mi">151557408999110657826917604970069258585</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="mi">10409234017673608357083055217615539999</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">ops_count</span> <span class="o">=</span> <span class="n">find_order_count_ops</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ops_count</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;s&#39;: 36607456, &#39;h&#39;: 110017188, &#39;cx&#39;: 386608045, &#39;t&#39;: 73506377, &#39;t_dg&#39;: 73603532, &#39;p&#39;: 97155, &#39;x&#39;: 1021, &#39;measure&#39;: 36607711}
+</pre></div></div>
+</div>
+</section>
+<section id="Parallel-resource-estimation-at-2048-bit">
+<h2>Parallel resource estimation at 2048 bit<a class="headerlink" href="#Parallel-resource-estimation-at-2048-bit" title="Link to this heading">#</a></h2>
+<p>The above approach works well for moderate bit sizes. However, for very large instances - such as 2048-bit integers - the sequential execution of the full QPE loop becomes prohibitively slow - even with the highly optimized XLA pipeline. To overcome this, we can decompose the resource estimation into independent chunks and evaluate them in parallel.</p>
+<p>The key insight is that the QPE control register can be split into non-overlapping <em>windows</em>. Each window covers a contiguous range of loop indices and generates an independent set of quantum gates. Since we are only counting operations (not simulating a quantum state), the gate counts from all windows can simply be summed.</p>
+<section id="How-the-parallelization-works">
+<h3>How the parallelization works<a class="headerlink" href="#How-the-parallelization-works" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Domain decomposition</strong>: The control register of size <span class="math notranslate nohighlight">\(2n\)</span> is divided into <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> chunks of roughly equal size.</p></li>
+<li><p><strong>Parallel tracing</strong>: Each chunk is assigned to a separate thread. Inside each thread, the full loop is iterated (to keep the classical squaring sequence <span class="math notranslate nohighlight">\(a \leftarrow a^2 \bmod N\)</span> consistent), but quantum gates are only emitted for indices within the thread’s assigned window.</p></li>
+<li><p><strong>GIL release</strong>: Qrisp’s <code class="docutils literal notranslate"><span class="pre">count_ops</span></code> uses <code class="docutils literal notranslate"><span class="pre">jax.jit</span></code> internally. JAX releases the Python Global Interpreter Lock (GIL) during compilation and execution, so the threads run in true parallel on the CPU.</p></li>
+<li><p><strong>Aggregation</strong>: The operation dictionaries from all threads are summed to produce the total gate count.</p></li>
+</ol>
+<p>We wrap this into a reusable function <code class="docutils literal notranslate"><span class="pre">estimate_shor_resources</span></code> that takes a bit size and returns the operation counts.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_shor_resources</span><span class="p">(</span><span class="n">bit_amount</span><span class="p">,</span> <span class="n">num_threads</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the quantum resource requirements of Shor&#39;s algorithm</span>
+<span class="sd">    for a given bit size using parallelized windowed tracing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bit_amount : int</span>
+<span class="sd">        The bit size of the integers to factor.</span>
+<span class="sd">    num_threads : int</span>
+<span class="sd">        Number of parallel threads for the windowed decomposition.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary mapping gate names to their total counts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Generate random integers of the specified bit size</span>
+    <span class="n">a_str</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bit_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">N_str</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bit_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">a_python</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">a_str</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">N_python</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N_str</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Ensure a &lt; N</span>
+    <span class="k">if</span> <span class="n">a_python</span> <span class="o">&gt;</span> <span class="n">N_python</span><span class="p">:</span>
+        <span class="n">a_python</span> <span class="o">=</span> <span class="n">a_python</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="nd">@count_ops</span><span class="p">(</span><span class="n">meas_behavior</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shor_ops_kernel</span><span class="p">(</span><span class="n">window_start</span><span class="p">,</span> <span class="n">window_end</span><span class="p">,</span> <span class="n">execute_qft</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace a partial circuit for Shor&#39;s algorithm covering a specific</span>
+<span class="sd">        window of QPE control indices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="n">N_python</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">bit_amount</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">BigInteger</span><span class="o">.</span><span class="n">create_static</span><span class="p">(</span><span class="n">a_python</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">bit_amount</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span>
+
+        <span class="n">qm</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">bit_amount</span><span class="p">)</span>
+
+        <span class="c1"># Only the first chunk applies the initial Hadamards</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">window_start</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">qpe_res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">active_window</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">window_start</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">window_end</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">active_window</span><span class="p">):</span>
+                <span class="c1"># Print progress every 10 iterations within the window</span>
+
+                <span class="c1"># Activate this for progress feedback during the resource computation.</span>
+                <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="n">jax</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">print</span><span class="p">(</span>
+                            <span class="s2">&quot;Thread [</span><span class="si">{s}</span><span class="s2">,</span><span class="si">{e}</span><span class="s2">) progress: </span><span class="si">{p:.1%}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="n">s</span><span class="o">=</span><span class="n">window_start</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">window_end</span><span class="p">,</span>
+                            <span class="n">p</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">window_start</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">window_end</span> <span class="o">-</span> <span class="n">window_start</span><span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">qm</span> <span class="o">*=</span> <span class="n">a</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span>
+
+        <span class="c1"># The last thread adds the inverse QFT and measurement</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">execute_qft</span><span class="p">):</span>
+            <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">measure</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+
+    <span class="c1"># Warm up the JIT cache on the main thread to avoid race conditions</span>
+    <span class="n">shor_ops_kernel</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">chunk_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">bit_amount</span><span class="p">)</span> <span class="o">//</span> <span class="n">num_threads</span>
+    <span class="n">futures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ops_dict</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimating resources for </span><span class="si">{</span><span class="n">bit_amount</span><span class="si">}</span><span class="s2">-bit Shor&#39;s algorithm &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">num_threads</span><span class="si">}</span><span class="s2"> threads)...&quot;</span><span class="p">)</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">num_threads</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_threads</span><span class="p">):</span>
+            <span class="n">window_start</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">chunk_size</span>
+            <span class="n">window_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">chunk_size</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">num_threads</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">bit_amount</span>
+            <span class="n">execute_qft</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">num_threads</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">shor_ops_kernel</span><span class="p">,</span> <span class="n">window_start</span><span class="p">,</span> <span class="n">window_end</span><span class="p">,</span> <span class="n">execute_qft</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">futures</span><span class="p">:</span>
+            <span class="n">result_dict</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">result_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">ops_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
+
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Done in </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s — </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ops_dict</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">ops_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We now call this function for increasing bit sizes. Note that the 2048-bit call may run for <strong>several hours</strong> depending on your hardware.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bit_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">2048</span><span class="p">]</span>
+<span class="n">all_resources</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">bit_size</span> <span class="ow">in</span> <span class="n">bit_sizes</span><span class="p">:</span>
+    <span class="n">all_resources</span><span class="p">[</span><span class="n">bit_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimate_shor_resources</span><span class="p">(</span><span class="n">bit_size</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Estimating resources for 128-bit Shor&#39;s algorithm (16 threads)...
+  Done in 0.1s — {&#39;x&#39;: 10475446, &#39;t_dg&#39;: 21342060, &#39;h&#39;: 31620386, &#39;t&#39;: 21243756, &#39;cz&#39;: 10474422, &#39;cx&#39;: 100151514, &#39;s&#39;: 10474422, &#39;measure&#39;: 10474678, &#39;p&#39;: 97920}
+Estimating resources for 256-bit Shor&#39;s algorithm (16 threads)...
+  Done in 0.8s — {&#39;x&#39;: 82315870, &#39;t_dg&#39;: 166200508, &#39;h&#39;: 247728922, &#39;t&#39;: 165807292, &#39;cz&#39;: 82313822, &#39;cx&#39;: 776941467, &#39;s&#39;: 82313822, &#39;measure&#39;: 82314334, &#39;p&#39;: 392448}
+Estimating resources for 512-bit Shor&#39;s algorithm (16 threads)...
+  Done in 92.8s — {&#39;x&#39;: 2408792974, &#39;t_dg&#39;: 4823869212, &#39;h&#39;: 7229514410, &#39;t&#39;: 4822296348, &#39;cz&#39;: 2408788878, &#39;cx&#39;: 25732409303, &#39;s&#39;: 2408788878, &#39;measure&#39;: 2408789902, &#39;p&#39;: 1571328}
+Estimating resources for 1024-bit Shor&#39;s algorithm (16 threads)...
+  Done in 432.5s — {&#39;x&#39;: 4774021466, &#39;t_dg&#39;: 9573192372, &#39;h&#39;: 14334626830, &#39;t&#39;: 9566900916, &#39;cz&#39;: 4774013274, &#39;cx&#39;: 44066531991, &#39;s&#39;: 4774013274, &#39;measure&#39;: 4774015322, &#39;p&#39;: 6288384}
+Estimating resources for 2048-bit Shor&#39;s algorithm (16 threads)...
+  Done in 6789.4s — {&#39;x&#39;: 40940580318, &#39;t_dg&#39;: 81981791164, &#39;h&#39;: 122872031642, &#39;t&#39;: 81956625340, &#39;cz&#39;: 40940563934, &#39;cx&#39;: 382861550572, &#39;s&#39;: 40940563934, &#39;measure&#39;: 40940568030, &#39;p&#39;: 25159680}
+</pre></div></div>
+</div>
+<p>We can now visualize how the gate counts scale with the bit size of the integers to be factored.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Formatted written output for manual inspection</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shor Resource Summary&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Bits&#39;</span><span class="si">:</span><span class="s2">&gt;6</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;T-gates&#39;</span><span class="si">:</span><span class="s2">&gt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;Measures&#39;</span><span class="si">:</span><span class="s2">&gt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;2Q-gates&#39;</span><span class="si">:</span><span class="s2">&gt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;P-gates&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">bit_size</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_resources</span><span class="p">):</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">all_resources</span><span class="p">[</span><span class="n">bit_size</span><span class="p">]</span>
+    <span class="n">t_gates</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;t_dg&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;measure&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">two_qubit</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">p_gates</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">bit_size</span><span class="si">:</span><span class="s2">&gt;6</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">t_gates</span><span class="si">:</span><span class="s2">&gt;15,</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">measures</span><span class="si">:</span><span class="s2">&gt;15,</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">two_qubit</span><span class="si">:</span><span class="s2">&gt;15,</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">p_gates</span><span class="si">:</span><span class="s2">&gt;12,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+
+<span class="n">style</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;T-gates&quot;</span><span class="p">:</span>         <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#0f172a&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="s2">&quot;linestyle&quot;</span><span class="p">:</span> <span class="s2">&quot;-&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;Measures&quot;</span><span class="p">:</span>        <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#2563eb&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;linestyle&quot;</span><span class="p">:</span> <span class="s2">&quot;--&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;Two-qubit-gates&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#7c3aed&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="s2">&quot;linestyle&quot;</span><span class="p">:</span> <span class="s2">&quot;-.&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;P-gates&quot;</span><span class="p">:</span>         <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#06b6d4&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;linestyle&quot;</span><span class="p">:</span> <span class="s2">&quot;:&quot;</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">categories</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;T-gates&quot;</span><span class="p">:</span>         <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;t_dg&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="s2">&quot;Measures&quot;</span><span class="p">:</span>        <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;measure&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="s2">&quot;Two-qubit-gates&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="s2">&quot;P-gates&quot;</span><span class="p">:</span>         <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">extractor</span> <span class="ow">in</span> <span class="n">categories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="n">bs</span><span class="p">:</span> <span class="n">extractor</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">for</span> <span class="n">bs</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">all_resources</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">style</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;marker&quot;</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;linestyle&quot;</span><span class="p">],</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Bit size&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Number of gates&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Resource estimation of order finding&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">&quot;bold&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+================================================================================
+Shor Resource Summary
+================================================================================
+  Bits |         T-gates |        Measures |        2Q-gates |      P-gates
+--------------------------------------------------------------------------------
+   128 |      42,585,816 |      10,474,678 |     110,625,936 |       97,920
+   256 |     332,007,800 |      82,314,334 |     859,255,289 |      392,448
+   512 |   9,646,165,560 |   2,408,789,902 |  28,141,198,181 |    1,571,328
+  1024 |  19,140,093,288 |   4,774,015,322 |  48,840,545,265 |    6,288,384
+  2048 | 163,938,416,504 |  40,940,568,030 | 423,802,114,506 |   25,159,680
+================================================================================
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/general_tutorial_BigInteger_20_1.png" src="../../_images/general_tutorial_BigInteger_20_1.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Working-classically-with-BigInteger">Working classically with <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Finding-the-order-of-a-BigInteger">Finding the order of a <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Parallel-resource-estimation-at-2048-bit">Parallel resource estimation at 2048 bit</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#How-the-parallelization-works">How the parallelization works</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/BigInteger.ipynb" download="BigInteger.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1036 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Max-\(\kappa\)-Colorable Subgraph QAOA Implementation &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QAOAtutorial/MkCS';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QAOAtutorial/MkCS.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Channelled Constrained Mixers" href="ConstrainedMixers.html" />
+    <link rel="prev" title="MaxCut QAOA Implementation" href="MaxCut.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Solving combinatorial optimization problems with QAOA</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Theoretical.html">Theoretical Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxCut.html">MaxCut QAOA Implementation</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ConstrainedMixers.html">Channelled Constrained Mixers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QUBO.html">QUBO as a QAOAProblem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PortfolioRebalancing.html">Portfolio rebalancing with constrained mixers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Solving combinatorial optimization problems with QAOA</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Max-\kappa-Colorable-Subgraph-QAOA-Implementation">
+<h1>Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation<a class="headerlink" href="#Max-\kappa-Colorable-Subgraph-QAOA-Implementation" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>The Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph involves finding the largest subgraph of a given graph that can be colored using <span class="math notranslate nohighlight">\(\kappa\)</span> colors, such that no two adjacent nodes share the same color.</p>
+<p>MaxCut is considered as a special case of graph coloring for <span class="math notranslate nohighlight">\(\kappa=2\)</span> and therefore, after solving it with QAOA in the previous tutorial, provides us with a solid starting point for understanding graph coloring. The skills and knowledge you’ve gained are directly applicable here, but we’ll also introduce new concepts and techniques to tackle the added complexity of using more than two colors.</p>
+<p>You will explore how to formulate the M-<span class="math notranslate nohighlight">\(\kappa\)</span>-CS problem, implement the algorithm, and interpret the results. Along the way you’ll likely realize that programming in Qrisp isn’t a mundane black-and-white task, but rather a vibrant experience offering a whole spectrum of possibilities.</p>
+<section id="From-QuantumVariable-to-QuantumColor">
+<h2>From QuantumVariable to QuantumColor<a class="headerlink" href="#From-QuantumVariable-to-QuantumColor" title="Link to this heading">#</a></h2>
+<p>We start the tutorial by coding the QuantumColor class, which is a custom <a class="reference internal" href="../../../reference/Quantum%20Types/index.html"><span class="doc">QuantumType</span></a> implemented and helps with tackling the Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable-Subgraph problem. It provides flexibility in choosing encoding methods and leverages efficient data structures like QuantumArrays to enhance computational performance. Here is how to create a custom QuantumVariable class yourself to help you make your problem more compact.</p>
+<p>In order to create your customized QuantumVariable, one first needs to import the <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a> class. As mentioned before, using the <a class="reference internal" href="../../../reference/Core/QuantumArray.html"><span class="doc">QuantumArray</span></a> class leads to some shortcuts so let’s import it as well. Before defining the class and functions within the class let’s think about how one can describe or encode colors using strings of bits:</p>
+<ul class="simple">
+<li><p>One approach is to represent colors as an array where only one element is 1 and the rest are 0. For instance, if there are four colors, red, green, blue, and yellow, they can be represented this way as [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], and [0, 0, 0, 1]. This is called the <strong>one-hot encoding</strong>.</p></li>
+<li><p>Another approach is to represent colors with a unique binary number. In the case of the same four colors, they can be represented, for example, as [0, 0], [0, 1], [1, 0], and [1, 1], respectively. This encoding scheme is called <strong>binary encoding</strong>.</p></li>
+</ul>
+<p>In the code block below, we can define the initialization function <code class="docutils literal notranslate"><span class="pre">__init__</span></code> as well as find a way to tell our quantum algorithm which color is encoded with our array. In other words, we need to define a decoder function that will decode the color for a given index <code class="docutils literal notranslate"><span class="pre">i</span></code>. In our case, we use the one-hot encoding scheme as default.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">QuantumVariable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantumColor</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_colors</span><span class="p">,</span> <span class="n">one_hot_enc</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_of_colors</span> <span class="o">=</span> <span class="n">list_of_colors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">one_hot_enc</span> <span class="o">=</span> <span class="n">one_hot_enc</span>
+
+        <span class="k">if</span> <span class="n">one_hot_enc</span><span class="p">:</span>
+            <span class="n">QuantumVariable</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_colors</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">QuantumVariable</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_colors</span><span class="p">))))</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot_enc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_colors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_power_of_two</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">is_power_of_two</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_colors</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">i</span><span class="p">))]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;undefined&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">else</span></code> condition returning “undefined” can come in extremely handy since it functions as an intuitive eye-test in the upcoming MkCS QAOA implementation. If any result of the simulation is “undefined”, like [1, 0, 1, 0] for example, we know that something went wrong within our code.</p>
+<p>The choice of encoding method has implications for how colors are represented in the quantum computation. Our simple QuantumColor class only needs a list of colors and a flag indicating the preferred encoding method as arguments. The breakdown above is meant to serve as inspiration for you, showcasing how custom QuantumVariables tailored to one specific problem can make life at least a little qubit more colorful.</p>
+<p>Having already implemented this custom QuantumVariable, you can also simply import it via <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">qrisp.qaoa</span> <span class="pre">import</span> <span class="pre">QuantumColor</span></code>. In the example above we define a quantum box of crayons containing different colors. If one would then like to draw a meadow, one can take the green one out of the box and initialize a color using <code class="docutils literal notranslate"><span class="pre">box_of_crayons[:]</span> <span class="pre">=</span> <span class="pre">&quot;green&quot;</span></code>.</p>
+<p>Run the code box below and see how that works with our custom QuantumVariable.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumColor</span>
+
+<span class="n">color_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span> <span class="s2">&quot;yellow&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;violet&quot;</span><span class="p">]</span>
+<span class="n">box_of_crayons</span> <span class="o">=</span> <span class="n">QuantumColor</span><span class="p">(</span><span class="n">color_list</span><span class="p">)</span>
+<span class="n">box_of_crayons</span><span class="p">[:]</span> <span class="o">=</span> <span class="s2">&quot;green&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">box_of_crayons</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QuantumCircuit:
+---------------
+box_of_crayons.0: ─────
+
+box_of_crayons.1: ─────
+
+box_of_crayons.2: ─────
+                  ┌───┐
+box_of_crayons.3: ┤ X ├
+                  └───┘
+box_of_crayons.4: ─────
+
+box_of_crayons.5: ─────
+
+Live QuantumVariables:
+----------------------
+QuantumColor box_of_crayons
+</pre></div></div>
+</div>
+<p>With the knowledge we obtained above under our sleeve the only thing left to do now is is to tackle the colorless Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph and implement QAOA in style!</p>
+</section>
+<section id="M\kappaCS-meets-QAOAProblem">
+<h2>M<span class="math notranslate nohighlight">\(\kappa\)</span>CS meets QAOAProblem<a class="headerlink" href="#M\kappaCS-meets-QAOAProblem" title="Link to this heading">#</a></h2>
+<p>Let’s revisit the recipe from the previous tutorial; to implement QAOA with <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem</span></a> one needs to <em>drumroll please…</em></p>
+<ol class="upperroman simple">
+<li><p>define the <strong>CLASSICAL COST FUNCTION</strong> of the problem,</p></li>
+<li><p>define the <strong>INITIAL STATE</strong> if it is not the superposition, which in the case of graph coloring indeed is not,</p></li>
+<li><p>define <strong>COST OPERATOR aka PHASE SEPARATOR</strong> (or use the ones specified in <a class="reference external" href="https://arxiv.org/abs/1709.03489" rel="noreferrer" target="_blank">From QAOA to QAOA</a>), and</p></li>
+<li><p>select <strong>MIXER</strong> from the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAMixers.html"><span class="doc">assortment we provide and list here</span></a>.</p></li>
+</ol>
+<p>Time to prepare the ingrediends starting with defining a graph and the available colors we’d like to color the graph with.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]])</span>
+<span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+<span class="n">color_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;yellow&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Before defining the classical cost function <code class="docutils literal notranslate"><span class="pre">cl_cost_function(meas_res)</span></code> for M<span class="math notranslate nohighlight">\(\kappa\)</span>CS we need to think about the objective (<code class="docutils literal notranslate"><span class="pre">mkcs_obj</span></code>). Since we’re trying to color a graph in a way to prevent neighboring nodes being the same color, we will reward the instances where they are in fact not the same color. To increase the contrast between optimal and less optimal solutions we shall use multiplicaton for the aforementioned reward instead of simple addition. This little trick can
+already improve the results significantly instead of using the standard approach.</p>
+<p>After iterating over all edges of graph <code class="docutils literal notranslate"><span class="pre">G</span></code>, the objective function <code class="docutils literal notranslate"><span class="pre">mkcs_obj</span></code> returns an integer value of the free energy objective function. The remaining of the definition</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">mkcs_obj</span><span class="p">(</span><span class="n">color_array</span><span class="p">,</span> <span class="n">G</span><span class="p">):</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+
+        <span class="k">if</span> <span class="n">color_array</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">!=</span> <span class="n">color_array</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]]:</span>
+            <span class="n">cost</span> <span class="o">*=</span> <span class="mi">4</span>
+            <span class="c1"># Instead of</span>
+            <span class="c1"># cost += 1</span>
+
+    <span class="k">return</span> <span class="o">-</span><span class="n">cost</span>
+</pre></div>
+</div>
+</div>
+<p>is similar to the one for MaxCut in the sense that calculates the relative energy in respect to the probability for each sample. Iteration over all items to calculate the objective function for current measurement is the same as in the MaxCut implementation, as is returning the energy calculated using the <code class="docutils literal notranslate"><span class="pre">mkcs_obj</span></code> objective funcion. Note that we don’t need to normalize, since the measurement results are probabilities rather than counts.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cl_cost_function</span><span class="p">(</span><span class="n">meas_res</span><span class="p">):</span>
+
+    <span class="n">energy</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">meas</span><span class="p">,</span> <span class="n">prob</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">meas_res</span><span class="o">.</span><span class="n">items</span><span class="p">())[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+
+        <span class="n">obj_for_meas</span> <span class="o">=</span> <span class="n">mkcs_obj</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+
+        <span class="n">energy</span> <span class="o">+=</span> <span class="n">obj_for_meas</span> <span class="o">*</span> <span class="n">prob</span>
+
+    <span class="k">return</span> <span class="n">energy</span>
+</pre></div>
+</div>
+</div>
+<p>As spoiled before, the superposition state is not the ideal initial state in this particular case. In principle a superposition state is viable, however, it needs to respect the one-hot encoding constraint. Instead we simply pick a random initial coloring of all the nodes and trust the QAOA to do the rest.</p>
+<p>To do this one first needs to import randomness and define the quantum argument <code class="docutils literal notranslate"><span class="pre">qarg</span></code>, which is in this case a QuantumArray of QuantumColors. After setting the initial set to a random coloring, we then define a function that sets all elements in <code class="docutils literal notranslate"><span class="pre">qarg</span></code> to the initial state.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumColor</span><span class="p">(</span><span class="n">color_list</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">num_nodes</span><span class="p">)</span>
+
+<span class="n">init_state</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">color_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">))]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">initial_state_mkcs</span><span class="p">(</span><span class="n">qarg</span><span class="p">):</span>
+    <span class="n">qarg</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">init_state</span>
+    <span class="k">return</span> <span class="n">qarg</span>
+</pre></div>
+</div>
+</div>
+<p>Following along with the recipe in hand is taking care of the coloring operator. For simplicity and code readability reasons we first define <code class="docutils literal notranslate"><span class="pre">apply_phase_if_eq</span></code>, which indeed applies a phase if the colors of two arguments are matching. Having defined this, constructing the coloring operator is as easy as going through the list of all edges in our graph.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">cp</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">mcp</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_phase_if_eq</span><span class="p">(</span><span class="n">qcolor_0</span><span class="p">,</span> <span class="n">qcolor_1</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">qcolor_0</span><span class="o">.</span><span class="n">one_hot_enc</span> <span class="o">!=</span> <span class="n">qcolor_1</span><span class="o">.</span><span class="n">one_hot_enc</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">qcolor_0</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qcolor_1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to compare QuantumColors with differing encodings&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">qcolor_0</span><span class="o">.</span><span class="n">one_hot_enc</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qcolor_0</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="c1"># If the i-th qubit is &quot;1&quot; for both variables they represent the same color</span>
+            <span class="c1"># In this case the cp gate applies a phase of 2*gamma</span>
+            <span class="n">cp</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">qcolor_0</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qcolor_1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If both quantum variables are in the same state the following cx gates will</span>
+        <span class="c1"># put qcolor_1 in the |0&gt; state</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qcolor_0</span><span class="p">,</span> <span class="n">qcolor_1</span><span class="p">)</span>
+        <span class="c1"># We apply the phase 2*gamma to the |0&gt; state using a multi-controlled phase gate</span>
+        <span class="n">mcp</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">qcolor_1</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Revert the action of the cx gate</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qcolor_0</span><span class="p">,</span> <span class="n">qcolor_1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coloring_operator</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">coloring_operator</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+            <span class="n">apply_phase_if_eq</span><span class="p">(</span>
+                <span class="n">quantumcolor_array</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">quantumcolor_array</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">gamma</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coloring_operator</span>
+</pre></div>
+</div>
+</div>
+<p>We can see the advantage of the one-hot encoding: It might require more qubits but the comparison of two colors only requires one <a class="reference internal" href="../../../reference/Primitives/generated/qrisp.cp.html"><span class="doc">cp</span></a> gate per color. The binary encoding requires significantly less qubits but also an <a class="reference internal" href="../../../reference/Primitives/generated/qrisp.mcp.html"><span class="doc">mcp</span></a> gate, which is more costly, especially on near-term hardware.</p>
+<p>To season everything we need to decide on which <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAMixers.html"><span class="doc">mixer</span></a> to choose to allow the transitions between different colorings. As proposed in <a class="reference external" href="https://arxiv.org/abs/1709.03489" rel="noreferrer" target="_blank">QAOAnsatz</a> we will use the XY mixer aka the parity ring mixer. As for the binary encoding the X mixer we used in MaxCut works fine as well.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">XY_mixer</span><span class="p">,</span> <span class="n">RX_mixer</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_XY_mixer</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">qcolor</span> <span class="ow">in</span> <span class="n">quantumcolor_array</span><span class="p">:</span>
+        <span class="n">XY_mixer</span><span class="p">(</span><span class="n">qcolor</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">quantumcolor_array</span>
+</pre></div>
+</div>
+</div>
+<p>Putting all the ingredients we just prepared into the methaphorical oven, which is in this case actually the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem</span></a> class, we can now simply run the algorithm following the same steps as in the previous tutorial before a marvelous masterpiece - the correctly colored graph - manifests into existence.</p>
+<p>Let’s speedrun through the steps we already got familiar with in the previous tutorial:</p>
+<ul class="simple">
+<li><p>define the depth <span class="math notranslate nohighlight">\(p\)</span> of our QAOA algorithm.</p></li>
+<li><p>create the <code class="docutils literal notranslate"><span class="pre">coloring</span> <span class="pre">operator</span></code></p></li>
+<li><p>create the <code class="docutils literal notranslate"><span class="pre">coloring_instance</span></code> problem instance with <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code></p></li>
+<li><p>set initial state using the <code class="docutils literal notranslate"><span class="pre">.set_init_function</span></code> method</p></li>
+<li><p>run QAOA using the <code class="docutils literal notranslate"><span class="pre">.run</span></code> method</p></li>
+<li><p>display the solution.</p></li>
+</ul>
+<p>And most importantly: whisper the magic word: <em>QRISPIFYYY</em></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAOAProblem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="n">coloring_operator</span> <span class="o">=</span> <span class="n">create_coloring_operator</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+<span class="n">coloring_instance</span> <span class="o">=</span> <span class="n">QAOAProblem</span><span class="p">(</span><span class="n">coloring_operator</span><span class="p">,</span> <span class="n">apply_XY_mixer</span><span class="p">,</span> <span class="n">cl_cost_function</span><span class="p">)</span>
+<span class="c1"># Use RX mixer for binary encoding</span>
+<span class="c1"># coloring_instance = QAOAProblem(coloring_operator, RX_mixer, cl_cost_function)</span>
+
+<span class="n">coloring_instance</span><span class="o">.</span><span class="n">set_init_function</span><span class="p">(</span><span class="n">initial_state_mkcs</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">coloring_instance</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+
+<span class="n">best_coloring</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="n">mkcs_obj</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">quantumcolor_array</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">quantumcolor_array</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">],</span>
+    <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best string: </span><span class="si">{</span><span class="n">best_solution</span><span class="si">}</span><span class="s2"> with coloring: </span><span class="si">{</span><span class="o">-</span><span class="n">best_coloring</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">best_coloring</span><span class="p">,</span> <span class="n">res_str</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="n">mkcs_obj</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">quantumcolor_array</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">quantumcolor_array</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">())[:</span><span class="mi">5</span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QAOA solution: &quot;</span><span class="p">,</span> <span class="n">res_str</span><span class="p">)</span>
+<span class="n">best_coloring</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="p">(</span><span class="n">mkcs_obj</span><span class="p">(</span><span class="n">res_str</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">res_str</span><span class="p">)</span>
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">res_str</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">font_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Best string: [&#39;red&#39; &#39;yellow&#39; &#39;green&#39; &#39;blue&#39;] with coloring: 4096
+QAOA solution:  [&#39;red&#39; &#39;yellow&#39; &#39;green&#39; &#39;blue&#39;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/general_tutorial_QAOAtutorial_MkCS_18_1.png" src="../../../_images/general_tutorial_QAOAtutorial_MkCS_18_1.png" />
+</div>
+</div>
+<p>🎉 aaand time! Whew, a new personal best! 🎉</p>
+<p>One can now benchmark the approach using the <a class="reference internal" href="../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.benchmark.html"><span class="doc">benchmark</span></a> method following the same procedure as explained in the MaxCut QAOA tutorial, and conquer a complex problem instance like the Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Coloring Subgraph using Qrisp and the plethora of useful functionalities and customizabilities it brings.</p>
+</section>
+<section id="Summary-and-motivation">
+<h2>Summary and motivation<a class="headerlink" href="#Summary-and-motivation" title="Link to this heading">#</a></h2>
+<p>To sum up:</p>
+<ul class="simple">
+<li><p>you created a colorful custom QuantumType known as QuantumColor;</p></li>
+<li><p>you explored two different color encoding techniques: one-hot encoding and binary encoding;</p></li>
+<li><p>a crucial step that cannot be overstated is the importance of elegantly specifying a complex problem instance using the four-step-recipe we provided before running QAOA using the <code class="docutils literal notranslate"><span class="pre">.run</span></code> method of the <code class="docutils literal notranslate"><span class="pre">QAOAProblem</span></code> class.</p></li>
+</ul>
+<p>It’s pedagogical to, similarly to what we have done in the previous MaxCut tutorial, provide a condensed code block of the full M<span class="math notranslate nohighlight">\(\kappa\)</span>CS QAOA implementation using our predefined functions and show how elegantly one can tackle this complex problem.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QuantumArray</span><span class="p">,</span>
+    <span class="n">QuantumColor</span><span class="p">,</span>
+    <span class="n">QAOAProblem</span><span class="p">,</span>
+    <span class="n">mkcs_obj</span><span class="p">,</span>
+    <span class="n">create_coloring_operator</span><span class="p">,</span>
+    <span class="n">create_coloring_cl_cost_function</span><span class="p">,</span>
+    <span class="n">apply_XY_mixer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+<span class="n">color_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;yellow&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">]</span>
+<span class="n">init_state</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">color_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">))]</span>
+
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumColor</span><span class="p">(</span><span class="n">color_list</span><span class="p">,</span> <span class="n">one_hot_enc</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">num_nodes</span><span class="p">)</span>
+<span class="n">mkcs_onehot</span> <span class="o">=</span> <span class="n">QAOAProblem</span><span class="p">(</span>
+    <span class="n">create_coloring_operator</span><span class="p">(</span><span class="n">G</span><span class="p">),</span> <span class="n">apply_XY_mixer</span><span class="p">,</span> <span class="n">create_coloring_cl_cost_function</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">mkcs_onehot</span><span class="o">.</span><span class="n">set_init_function</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">init_state</span><span class="p">))</span>
+
+<span class="n">res_onehot</span> <span class="o">=</span> <span class="n">mkcs_onehot</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+
+<span class="n">best_coloring</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="n">mkcs_obj</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">quantumcolor_array</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">quantumcolor_array</span> <span class="ow">in</span> <span class="n">res_onehot</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">],</span>
+    <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">best_coloring_onehot</span><span class="p">,</span> <span class="n">res_str_onehot</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="n">mkcs_obj</span><span class="p">(</span><span class="n">quantumcolor_array</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">quantumcolor_array</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">quantumcolor_array</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">res_onehot</span><span class="o">.</span><span class="n">keys</span><span class="p">())[:</span><span class="mi">5</span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">res_str_onehot</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">font_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/general_tutorial_QAOAtutorial_MkCS_20_1.png" src="../../../_images/general_tutorial_QAOAtutorial_MkCS_20_1.png" />
+</div>
+</div>
+<p>After successfully coloring the graph, you now possess the sacred knowledge of understanding how to implement QAOA in Qrisp to solve complex optimization problems.</p>
+<p>But wait, there’s more! Let us quickly invite you to continue with the next tutorial in this QAOA section titled Channelled Constrained Mixers where you will learn how to construct and utilize channelled constrained mixers for QAOA - a novel concept which will be detailed in an upcoming scientific publication. It also includes a cool intuitive comparison of the whole QAOA mixing process to the well known multi-slit experiment!</p>
+<p>Without further ado: let’s test Qrisp to its limits and MIX IT UP!</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/QAOAtutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#From-QuantumVariable-to-QuantumColor">From QuantumVariable to QuantumColor</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#M\kappaCS-meets-QAOAProblem">M<span class="math notranslate nohighlight">\(\kappa\)</span>CS meets QAOAProblem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Summary-and-motivation">Summary and motivation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/QAOAtutorial/MkCS.ipynb" download="MkCS.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

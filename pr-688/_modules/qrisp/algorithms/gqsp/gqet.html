@@ -1,0 +1,706 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.gqsp.gqet &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/gqsp/gqet';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/gqsp/gqet.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.gqsp.gqet</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.gqsp.gqet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.gqsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">GQSP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.gqsp_angles</span><span class="w"> </span><span class="kn">import</span> <span class="n">gqsp_angles</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.helper_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rescale_poly</span><span class="p">,</span> <span class="n">poly2cheb</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">FermionicOperator</span><span class="p">,</span> <span class="n">QubitOperator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qtypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<div class="viewcode-block" id="GQET">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.GQET.html#qrisp.gqsp.GQET">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">GQET</span><span class="p">(</span>
+    <span class="n">H</span><span class="p">:</span> <span class="n">BlockEncoding</span> <span class="o">|</span> <span class="n">FermionicOperator</span> <span class="o">|</span> <span class="n">QubitOperator</span><span class="p">,</span>
+    <span class="n">p</span><span class="p">:</span> <span class="s2">&quot;ArrayLike&quot;</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;Polynomial&quot;</span><span class="p">,</span> <span class="s2">&quot;Chebyshev&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Polynomial&quot;</span><span class="p">,</span>
+    <span class="n">rescale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockEncoding</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform &lt;https://arxiv.org/pdf/2312.00723&gt;`_.</span>
+
+<span class="sd">    For a block-encoded **Hermitian** operator $H$ and a (complex) polynomial $p(z)$, this method returns</span>
+<span class="sd">    a BlockEncoding of the operator $p(H)$.</span>
+
+<span class="sd">    The Quantum Eigenvalue Transform is described as follows:</span>
+
+<span class="sd">    * Given a Hermitian operator $H=\sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}$ where $\lambda_i\in\mathbb R$ are the eigenvalues for the eigenstates $\ket{\lambda_i}$,</span>
+<span class="sd">    * A quantum state $\ket{\psi}=\sum_i\alpha_i\ket{\lambda_i}$ where $\alpha_i\in\mathbb C$ are the amplitudes for the eigenstates $\ket{\lambda_i}$,</span>
+<span class="sd">    * A (complex) polynomial $p(z)$,</span>
+
+<span class="sd">    this transformation prepares a state proportional to</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(H)\ket{\psi}=\sum_i p(\lambda_i)\ket{\lambda_i}\bra{\lambda_i}\sum_j\alpha_j\ket{\lambda_j}=\sum_i p(\lambda_i)\alpha_i\ket{\lambda_i}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    H : BlockEncoding | FermionicOperator | QubitOperator</span>
+<span class="sd">        The Hermitian operator to be transformed.</span>
+<span class="sd">    p : ArrayLike</span>
+<span class="sd">        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.</span>
+<span class="sd">    kind : {&quot;Polynomial&quot;, &quot;Chebyshev&quot;}</span>
+<span class="sd">        The basis in which the coefficients are defined.</span>
+
+<span class="sd">        - ``&quot;Polynomial&quot;``: $p(x) = \sum c_i x^i$</span>
+
+<span class="sd">        - ``&quot;Chebyshev&quot;``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.</span>
+
+<span class="sd">        Default is ``&quot;Polynomial&quot;``.</span>
+<span class="sd">    rescale : bool</span>
+<span class="sd">        If True (default), the method returns a block-encoding of $p(H)$.</span>
+<span class="sd">        If False, the method returns a block-encoding of $p(H/\alpha)$ where $\alpha$ is the normalization factor for the block-encoding of the operator $H$.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BlockEncoding</span>
+<span class="sd">        A new BlockEncoding instance representing the transformed operator $p(H)$.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Define a Heisenberg Hamiltonian and apply a polynomial $p(H)$ to an initial system state.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.gqsp import *</span>
+<span class="sd">        from qrisp.operators import X, Y, Z</span>
+<span class="sd">        from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import networkx as nx</span>
+
+
+<span class="sd">        def generate_1D_chain_graph(L):</span>
+<span class="sd">            graph = nx.Graph()</span>
+<span class="sd">            graph.add_edges_from([(k, (k+1)%L) for k in range(L-1)])</span>
+<span class="sd">            return graph</span>
+
+
+<span class="sd">        # Define Heisenberg Hamiltonian</span>
+<span class="sd">        L = 10</span>
+<span class="sd">        G = generate_1D_chain_graph(L)</span>
+<span class="sd">        H = sum((X(i)*X(j) + Y(i)*Y(j) + Z(i)*Z(j)) for i,j in G.edges())</span>
+
+<span class="sd">        M = nx.maximal_matching(G)</span>
+<span class="sd">        U0 = create_heisenberg_init_function(M)</span>
+
+
+<span class="sd">        # Define initial state preparation function</span>
+<span class="sd">        def psi_prep():</span>
+<span class="sd">            operand = QuantumVariable(H.find_minimal_qubit_amount())</span>
+<span class="sd">            U0(operand)</span>
+<span class="sd">            return operand</span>
+
+
+<span class="sd">        # Calculate the energy</span>
+<span class="sd">        E = H.expectation_value(psi_prep, precision=0.001)()</span>
+<span class="sd">        print(E)</span>
+
+<span class="sd">    Define a polynomial and use GQET to obtain a BlockEncoding of $p(H)$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        poly = jnp.array([1., 2., 1.])</span>
+<span class="sd">        BE = GQET(H, poly, kind=&quot;Polynomial&quot;)</span>
+
+<span class="sd">        def transformed_psi_prep():</span>
+<span class="sd">            operand = BE.apply_rus(psi_prep)()</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">    Calculate the expectation value of $H$ for the transformed state $p(H)\ket{\psi}$.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @jaspify(terminal_sampling=True)</span>
+<span class="sd">        def main():</span>
+<span class="sd">            E = H.expectation_value(transformed_psi_prep, precision=0.001)()</span>
+<span class="sd">            return E</span>
+
+<span class="sd">        print(main())</span>
+<span class="sd">        # -16.67236953920006</span>
+
+<span class="sd">    Finally, we compare the quantum simulation to the classically calculated result:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        # Calculate energy for |psi_0&gt;</span>
+<span class="sd">        H_arr = H.to_array()</span>
+<span class="sd">        psi_0 = psi_prep().qs.statevector_array()</span>
+<span class="sd">        E_0 = (psi_0.conj() @ H_arr @ psi_0).real</span>
+<span class="sd">        print(&quot;E_0&quot;, E_0)</span>
+
+<span class="sd">        # Calculate energy for |psi&gt; = poly(H) |psi0&gt;</span>
+<span class="sd">        I = np.eye(H_arr.shape[0])</span>
+<span class="sd">        psi = (I + H_arr) @ (I + H_arr) @ psi_0</span>
+<span class="sd">        psi = psi / np.linalg.norm(psi)</span>
+<span class="sd">        E = (psi.conj() @ H_arr @ psi).real</span>
+<span class="sd">        print(&quot;E&quot;, E)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ALLOWED_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Polynomial&quot;</span><span class="p">,</span> <span class="s2">&quot;Chebyshev&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_KINDS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid kind specified: &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Allowed kinds are: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ALLOWED_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="p">(</span><span class="n">QubitOperator</span><span class="p">,</span> <span class="n">FermionicOperator</span><span class="p">)):</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+    <span class="c1"># Rescaling of the polynomial to account for scaling factor alpha of block-encoding</span>
+    <span class="k">if</span> <span class="n">rescale</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">_rescale_poly</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;Polynomial&quot;</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">poly2cheb</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">BE_walk</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">qubitization</span><span class="p">()</span>
+
+    <span class="n">angles</span><span class="p">,</span> <span class="n">new_alpha</span> <span class="o">=</span> <span class="n">gqsp_angles</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">GQSP</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">unitary</span><span class="o">=</span><span class="n">BE_walk</span><span class="o">.</span><span class="n">unitary</span><span class="p">,</span> <span class="n">angles</span><span class="o">=</span><span class="n">angles</span><span class="p">)</span>
+
+    <span class="n">new_anc_templates</span> <span class="o">=</span> <span class="p">[</span><span class="n">QuantumBool</span><span class="p">()</span><span class="o">.</span><span class="n">template</span><span class="p">()]</span> <span class="o">+</span> <span class="n">BE_walk</span><span class="o">.</span><span class="n">_anc_templates</span>
+    <span class="k">return</span> <span class="n">BlockEncoding</span><span class="p">(</span>
+        <span class="n">new_alpha</span><span class="p">,</span>
+        <span class="n">new_anc_templates</span><span class="p">,</span>
+        <span class="n">new_unitary</span><span class="p">,</span>
+        <span class="n">num_ops</span><span class="o">=</span><span class="n">BE_walk</span><span class="o">.</span><span class="n">num_ops</span><span class="p">,</span>
+        <span class="n">is_hermitian</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

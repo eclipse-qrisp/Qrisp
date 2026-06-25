@@ -1,0 +1,799 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.algorithms.gqsp.dalzell_inversion &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/algorithms/gqsp/dalzell_inversion';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/algorithms/gqsp/dalzell_inversion.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.algorithms.gqsp.dalzell_inversion</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.algorithms.gqsp.dalzell_inversion</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.polynomial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chebyshev</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.algorithms.gqsp.qsvt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QSVT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+
+<div class="viewcode-block" id="dalzell_inversion">
+<a class="viewcode-back" href="../../../../reference/Algorithms/generated/qrisp.gqsp.dalzell_inversion.html#qrisp.gqsp.dalzell_inversion">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dalzell_inversion</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">BlockEncoding</span><span class="p">,</span> <span class="n">prep_b</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockEncoding</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs the `Dalzell quantum algorithm &lt;https://arxiv.org/pdf/2406.12086&gt;`_</span>
+<span class="sd">    to solve the Quantum Linear System Problem (QSLP) $A\vec{x}=\vec{b}$, using kernel reflection.</span>
+<span class="sd">    When applied to a state $\ket{0}$, the algorithm prepares a state $\tilde{x}\propto A^{-1}\ket{b}$</span>
+<span class="sd">    within target precision $\epsilon$ of the ideal solution $\ket{x}$.</span>
+<span class="sd">    See also `Dalzell&#39;s talk &lt;https://www.youtube.com/watch?v=OwqhdCioj4Y&gt;`_ for more details.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The returned BlockEncoding must be applied to operands in state $\ket{0}$ (and not in state $\ket{b}$).</span>
+
+<span class="sd">    Instead of solving the system $Ax=b$ directly, we consider the augmented system $A_t x_t = b&#39;$, i.e.,</span>
+<span class="sd">    </span>
+<span class="sd">    .. math::</span>
+
+<span class="sd">            A_t = \begin{pmatrix} A &amp; 0 \\ 0 &amp; t^{-1} \end{pmatrix} \begin{pmatrix} x \\ t \end{pmatrix} = \begin{pmatrix} b \\ 1 \end{pmatrix} = b&#39;</span>
+
+<span class="sd">    Equivalently, we can write the augmented system as $A\ket{x_t}=\ket{b&#39;}$ where</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">    </span>
+<span class="sd">        A_t = \ket{0}_a\bra{0}_a \otimes A + t^{-1} \ket{1}_a\bra{1}_a \otimes \ket{0}_s\bra{0}_s,\\</span>
+<span class="sd">        \ket{b&#39;} \propto \ket{0}_a\ket{b}_s + \ket{1}_a\ket{0}_s, \quad \ket{x_t} \propto \|x\|_2\ket{0}_a\ket{x}_s + t\ket{1}_a\ket{0}_s</span>
+
+<span class="sd">    Here, $\ket{\cdot}_a$ denotes the state of the (1-qubit) ancilla variable, and $\ket{\cdot}_s$ denotes the state of the system variable.</span>
+
+<span class="sd">    If $A_t x_t = b&#39;$, then </span>
+<span class="sd">    </span>
+<span class="sd">    .. math:: </span>
+<span class="sd">    </span>
+<span class="sd">        G_tx_t=(\mathbb{I} - \ket{b&#39;}\bra{b&#39;})A_t x_t = (\mathbb{I} - \ket{b&#39;}\bra{b&#39;})\ket{b&#39;} = 0</span>
+<span class="sd">    </span>
+<span class="sd">    Hence, the solution state $\ket{x_t}$ is a kernel state (sigular value 0) of the operator $G_t=(\mathbb{I} - \ket{b&#39;}\bra{b&#39;})A_t$.</span>
+<span class="sd">    The **kernel reflection** operator $K(G_t)$ reflects about the solution state $\ket{x_t}$ to the augmented system, </span>
+<span class="sd">    and can be implemented via QSVT using a polynomial approximation of the kernel reflection function </span>
+<span class="sd">    $K(\sigma)\colon [0,1] \to [-1,1]$ which maps the sigular value 0 to 1 and all other singular values to -1.</span>
+
+<span class="sd">    The algorithm consists of the following steps:</span>
+
+<span class="sd">    - Introduce extra basis state $\ket{e_n}=\ket{1}_a\ket{0}_s$ and prepare it as the initial state.</span>
+<span class="sd">    - Choose $t\simeq \|x\|_2$ and form the augmented linear system $A_tx_t=b&#39;$.</span>
+<span class="sd">    - Apply the kernel reflection operator $K(G_t)$, which **reflects about the solution state to the augmented system**.</span>
+<span class="sd">    - Project the resulting state onto the $\ket{0}_a$ subspace to obtain $\ket{x}$.</span>
+
+<span class="sd">    The projection step can be implemented by post-selecting on the ancilla qubit being in state $\ket{0}$ after applying the kernel reflection.</span>
+<span class="sd">    The success probability of the algorithm depends on the choice of $t$. </span>
+<span class="sd">    If $t$ is chosen to be on the order of $\|x\|_2$, the algorithm succeeds with constant probability and only requires a constant number of repetitions.</span>
+
+<span class="sd">    .. image:: /_static/chebyshev_kernel_reflection.png</span>
+<span class="sd">       :align: center</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    A : BlockEncoding</span>
+<span class="sd">        The block-encoded matrix to be inverted. It is assumed that</span>
+<span class="sd">        the eigenvalues of $A/\alpha$ lie within $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.</span>
+<span class="sd">    prep_b : Callable</span>
+<span class="sd">        A function ``prep_b(*operands)`` preparing the right hand side $\ket{b}$.</span>
+<span class="sd">    t : float</span>
+<span class="sd">        An estimate $t$ for the norm $\|x\|_2=\|(A/\alpha)^{-1}b\|_2$ for normalized $\|b\|_2=1$.</span>
+<span class="sd">        The success probability depends on the the ratio $t/\|x\|_2$. </span>
+<span class="sd">        The optimal choice is $t=\|x\|_2$. The estimate must lie in the interval $[1, \kappa]$. See below for more details.</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        The target precision $\epsilon$.</span>
+<span class="sd">    kappa : float</span>
+<span class="sd">        An upper bound for the condition number $\kappa$ of $A$.</span>
+<span class="sd">        This value defines the &quot;gap&quot; around zero such that all sigular values (eigenvalues) of $A/\alpha$</span>
+<span class="sd">        lie in the domain $D_{\kappa}$.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BlockEncoding</span>
+<span class="sd">        A new BlockEncoding instance representing the kernel reflection operator.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - **Complexity**: The query complexitiy of the algorithm is determined by the polynomial degree and scales as $\mathcal O(\kappa\log(1/\epsilon))$.</span>
+<span class="sd">      The success probability of the algorithm depends on the choice of $t$ relative to $\|x\|_2$: </span>
+
+<span class="sd">      - If the norm is known up to a constant factor, the algorithm succeeds with constant probability, hence only requires a constant number of repetitions.</span>
+<span class="sd">      - If the norm is unknown, `methods for norm estimation &lt;https://arxiv.org/pdf/2406.12086&gt;`_ can be used to find a suitable $t$ with only a logarithmic overhead in the overall complexity.</span>
+
+<span class="sd">      For further insights, see `Constant Factor Analysis of Optimal Quantum Linear Solvers in Practice &lt;https://arxiv.org/abs/2604.22185&gt;`_,</span>
+<span class="sd">      and make sure to use :meth:`.resources() &lt;qrisp.block_encodings.BlockEncoding.resources&gt;` to compare the resources of different inversion methods in practice.</span>
+<span class="sd">    - The polynomial is applied to operator $G_t=(\mathbb I - \ket{b&#39;}\bra{b&#39;})A_t$.</span>
+<span class="sd">      Each application of $G_t$ requires 1 call to the block-encoding oracle for $A$</span>
+<span class="sd">      and 2 calls to the state preparation oracle for $b$. </span>
+<span class="sd">      Hence, in contrast to other :meth:`inversion` methods that only prepare the initial state once, </span>
+<span class="sd">      the overall circuit complexity scales multiplicatively with the complexity of the state preparation oracle.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        A = np.array([[ 0.78, -0.01, -0.16, -0.1 ],</span>
+<span class="sd">            [-0.01,  0.57, -0.03,  0.08],</span>
+<span class="sd">            [-0.16, -0.03,  0.69, -0.15],</span>
+<span class="sd">            [-0.1 ,  0.08, -0.15,  0.88]])</span>
+
+<span class="sd">        b = np.array([1, 1, 1, 1])</span>
+
+<span class="sd">        kappa = np.linalg.cond(A)</span>
+<span class="sd">        print(&quot;Condition number of A: &quot;, kappa)</span>
+<span class="sd">        # Condition number of A:  2.020268873491503</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.block_encodings import BlockEncoding</span>
+<span class="sd">        from qrisp.gqsp import dalzell_inversion</span>
+
+<span class="sd">        BA = BlockEncoding.from_array(A)</span>
+
+<span class="sd">        def prep_b(operand):</span>
+<span class="sd">            prepare(operand, b)</span>
+
+<span class="sd">        BA_inv = dalzell_inversion(BA, prep_b, 2.0, 0.01, 3.0)</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+<span class="sd">            # Prepare operand variable in state |0&gt;</span>
+<span class="sd">            operand = QuantumFloat(2)</span>
+<span class="sd">            ancillas = BA_inv.apply(operand)</span>
+<span class="sd">            return operand, *ancillas</span>
+
+<span class="sd">        res_dict = main()</span>
+
+<span class="sd">        # Post-selection on ancillas being in |0&gt; state</span>
+<span class="sd">        filtered_dict = {k[0]: p for k, p in res_dict.items() \</span>
+<span class="sd">                        if all(x == 0 for x in k[1:])}</span>
+<span class="sd">        success_prob = sum(filtered_dict.values())</span>
+<span class="sd">        print(&quot;Success probability:&quot;, success_prob)</span>
+<span class="sd">        filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}</span>
+
+<span class="sd">        amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)</span>
+
+<span class="sd">        print(&quot;QUANTUM SIMULATION\n&quot;, amps, &quot;\nCLASSICAL SOLUTION\n&quot;, c)</span>
+<span class="sd">        # QUANTUM SIMULATION</span>
+<span class="sd">        # [0.51718522 0.43564501 0.60746181 0.41680095] </span>
+<span class="sd">        # CLASSICAL SOLUTION</span>
+<span class="sd">        # [0.51643917 0.4380885  0.60597747 0.41732523]</span>
+
+<span class="sd">    Alternatively, use ``apply_rus`` to directly obtain the solution state without post-selection:</span>
+<span class="sd">        </span>
+<span class="sd">    ::</span>
+
+<span class="sd">        @terminal_sampling</span>
+<span class="sd">        def main():</span>
+<span class="sd">            operand = BA_inv.apply_rus(lambda: QuantumFloat(2))()</span>
+<span class="sd">            return operand</span>
+
+<span class="sd">        res_dict = main()</span>
+<span class="sd">        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])</span>
+<span class="sd">        print(amps)</span>
+<span class="sd">        # [0.51816163 0.43295659 0.60721322 0.4187472 ]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">x</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prep_b_ext</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ops_A</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">prep_b</span><span class="p">(</span><span class="o">*</span><span class="n">ops_A</span><span class="p">)</span>
+
+    <span class="c1"># Define BlockEncoding of A_t</span>
+    <span class="c1"># A_t = |0&gt;&lt;0| ⊗ A + (1 / t) |1&gt;&lt;1| ⊗ |0&gt;&lt;0|</span>
+    <span class="n">P0</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_projector</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">P10</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_projector</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">A_t</span> <span class="o">=</span> <span class="n">P0</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">P10</span>
+
+    <span class="c1"># Define BlockEncoding of the kernel projector I - |b_t&gt;&lt;b_t|</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_projector</span><span class="p">(</span><span class="n">prep_b_ext</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_ops</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Define BlockEncoding of G_t = (I - |b_t&gt;&lt;b_t|) A_t</span>
+    <span class="n">G_t</span> <span class="o">=</span> <span class="n">P</span> <span class="o">@</span> <span class="n">A_t</span>
+
+    <span class="c1"># Kernel Reflection</span>
+    <span class="c1"># Rescale kappa to account for larger normalization factor of A_t</span>
+    <span class="n">kappa_t</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">_kernel_reflection_cheb</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">kappa_t</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+    <span class="n">KR</span> <span class="o">=</span> <span class="n">QSVT</span><span class="p">(</span><span class="n">G_t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;Chebyshev&quot;</span><span class="p">,</span> <span class="n">parity</span><span class="o">=</span><span class="s2">&quot;even&quot;</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_unitary</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">anc_ext</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ancs_</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span> <span class="p">:</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">KR</span><span class="o">.</span><span class="n">num_ancs</span><span class="p">]</span>
+        <span class="n">args_</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">KR</span><span class="o">.</span><span class="n">num_ancs</span> <span class="p">:]</span>
+
+        <span class="n">x</span><span class="p">(</span><span class="n">anc_ext</span><span class="p">)</span>
+        <span class="n">KR</span><span class="o">.</span><span class="n">unitary</span><span class="p">(</span><span class="o">*</span><span class="n">ancs_</span><span class="p">,</span> <span class="n">anc_ext</span><span class="p">,</span> <span class="o">*</span><span class="n">args_</span><span class="p">)</span>
+
+    <span class="n">new_anc_templates</span> <span class="o">=</span> <span class="p">[</span><span class="n">QuantumBool</span><span class="p">()</span><span class="o">.</span><span class="n">template</span><span class="p">()]</span> <span class="o">+</span> <span class="n">KR</span><span class="o">.</span><span class="n">_anc_templates</span>
+    <span class="k">return</span> <span class="n">BlockEncoding</span><span class="p">(</span><span class="n">KR</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">new_anc_templates</span><span class="p">,</span> <span class="n">new_unitary</span><span class="p">,</span> <span class="n">num_ops</span><span class="o">=</span><span class="n">KR</span><span class="o">.</span><span class="n">num_ops</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_kernel_reflection_cheb</span><span class="p">(</span><span class="n">delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Constructs the Chebyshev polynomial for the Kernel Reflection</span>
+<span class="sd">    Polynomial $K_{\delta, \ell}(x)$ from `Dalzell (2024) &lt;https://arxiv.org/pdf/2406.12086&gt;`_ Eq 62.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        The spectral gap threshold ($0 &lt; \delta &lt; 1$).</span>
+<span class="sd">    eps : float</span>
+<span class="sd">        The maximum allowed error on the interval $[\delta, 1]$. Defaults to 1e-3.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray</span>
+<span class="sd">        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded</span>
+<span class="sd">        approximation of the kernel reflection, ordered from lowest order term to highest.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 1. Calculate the required degree parameter ell for the</span>
+    <span class="c1"># Kernel Reflection Polynomial to achieve a target error eps.</span>
+    <span class="c1"># Formula 51 (Dalzell 2024, arXiv:2406.12086):</span>
+    <span class="n">ell</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">delta</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)))</span>
+
+    <span class="c1"># 2. Calculate the Kernel Reflection Polynomial.</span>
+    <span class="c1"># Formula 62 (Dalzell 2024, arXiv:2406.12086):</span>
+    <span class="c1"># 2.1 Define the inner quadratic mapping z(x) in the Chebyshev basis:</span>
+    <span class="c1"># z(x) = (1 + delta^2 - 2x^2) / (1 - delta^2)</span>
+    <span class="c1"># Using the identity x^2 = 0.5*T_0(x) + 0.5*T_2(x), write z(x) exactly as:</span>
+    <span class="n">c_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">c_2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># Instantiate z(x) as a Chebyshev series object:</span>
+    <span class="n">z_cheb</span> <span class="o">=</span> <span class="n">Chebyshev</span><span class="p">([</span><span class="n">c_0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">c_2</span><span class="p">])</span>
+
+    <span class="c1"># 2.2 Define the outer Chebyshev polynomial T_ell(z).</span>
+    <span class="n">coeffs_T_ell</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ell</span> <span class="o">+</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span>
+    <span class="n">T_ell</span> <span class="o">=</span> <span class="n">Chebyshev</span><span class="p">(</span><span class="n">coeffs_T_ell</span><span class="p">)</span>
+
+    <span class="c1"># 2.3 Compose the polynomials: T_ell_z(x) = T_ell(z(x)).</span>
+    <span class="n">T_ell_z</span> <span class="o">=</span> <span class="n">T_ell</span><span class="p">(</span><span class="n">z_cheb</span><span class="p">)</span>
+
+    <span class="c1"># 2.4 Calculate the normalization constant.</span>
+    <span class="c1"># Evaluate T_ell at the scalar value z_0 = (1 + delta^2) / (1 - delta^2).</span>
+    <span class="n">z_0</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">T_ell_z0</span> <span class="o">=</span> <span class="n">T_ell</span><span class="p">(</span><span class="n">z_0</span><span class="p">)</span>
+
+    <span class="c1"># 2.5 Construct the final normalized Kernel Reflection Polynomial.</span>
+    <span class="n">K_cheb</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_ell_z</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">T_ell_z0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">K_cheb</span><span class="o">.</span><span class="n">coef</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

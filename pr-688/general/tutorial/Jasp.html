@@ -1,0 +1,1586 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>How to think in Jasp &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/Jasp';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/Jasp.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Building a QAOA implementation in Jasp" href="JaspQAOAtutorial.html" />
+    <link rel="prev" title="Quantum Monte Carlo Integration" href="QMCItutorial.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">How to think in Jasp</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="How-to-think-in-Jasp">
+<h1>How to think in Jasp<a class="headerlink" href="#How-to-think-in-Jasp" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <section id="What-is-Jasp-and-why-do-we-need-it?">
+<h2>What is Jasp and why do we need it?<a class="headerlink" href="#What-is-Jasp-and-why-do-we-need-it?" title="Link to this heading">#</a></h2>
+<p>Jasp is a submodule of Qrisp that allows you to scale up your Qrisp code to to practically relevant problem sizes. The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">19326409253</span>
+<span class="n">qm</span> <span class="o">=</span> <span class="n">QuantumModulus</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">inpl_adder</span><span class="o">=</span><span class="n">gidney_adder</span><span class="p">)</span>
+<span class="n">qm</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">293587334</span>
+<span class="n">qm</span> <span class="o">*=</span> <span class="mi">2345747462</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:2026-02-18 12:03:56,569:jax._src.xla_bridge:864: An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+</pre></div></div>
+</div>
+<p>This snippet demonstrates a 35 bit modular in-place multiplication which already takes ~20 seconds to compile. Considering typical RSA key sizes contain up to 2000 bits, compiling a circuit addressing practically relevant problem scales therefore seems unlikely. Note that this issue is not restricted to Qrisp. We can also observe the same in Qiskit.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qiskit.circuit.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">RGQFTMultiplier</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">multiplication_circuit</span> <span class="o">=</span> <span class="n">RGQFTMultiplier</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This snippet compiles a 50 bit (non-modular) multiplication circuit using Qiskit and also takes approximately 20 seconds. Using classical compilation infrastructure, a classical 64 bit multiplication can be compiled within micro-seconds, which hints at the large disparity in compilation speed.</p>
+<section id="Real-time-computations">
+<h3>Real-time computations<a class="headerlink" href="#Real-time-computations" title="Link to this heading">#</a></h3>
+<p>Apart from the compilation scaling issues, many frameworks (Qrisp included) suffer from the inability to integrate classical real-time computations. What is a real-time computation? A classical computation that happens during the quantum computation, while the quantum computer stays in superposition. This computation has to happen much faster than the coherence time, so performing that computation by waiting for the Python interpreter is impossible. Real-time computations are essential for many
+techniques in error correction, such as <a class="reference external" href="https://thesis.library.caltech.edu/2900/2/THESIS.pdf" rel="noreferrer" target="_blank">syndrom decoding</a> or <a class="reference external" href="https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.2.020341" rel="noreferrer" target="_blank">magic state distillation</a>. On the algorithmic level, real-time computations also become more popular since they are so much cheaper than the quantum equivalent. Examples are <a class="reference external" href="https://arxiv.org/abs/1709.06648" rel="noreferrer" target="_blank">Gidney’s adder</a> or repeat until success protocols like
+<a class="reference external" href="https://arxiv.org/abs/0811.3171" rel="noreferrer" target="_blank">HHL</a>.</p>
+<p>Within Qiskit, real-time computations are in principle achievable by preparing a look-up table using the <a class="reference external" href="https://docs.quantum.ibm.com/api/qiskit/qiskit.circuit.Instruction#c_if" rel="noreferrer" target="_blank">c_if</a> feature. Next to the clunkiness there are however scalability questions: For an error correction code that can extract <span class="math notranslate nohighlight">\(2^{100}\)</span> possible syndroms, a single round of error correction would require a look-up table with <span class="math notranslate nohighlight">\(2^{100}\)</span> entries, which is clearly not feasible. The <a class="reference external" href="https://arxiv.org/abs/2104.14722" rel="noreferrer" target="_blank">OpenQASM 3
+specification</a> elaborates the importance of real-time computations and defines the <code class="docutils literal notranslate"><span class="pre">extern</span></code> keyword. So far however neither Qiskit nor the OpenQASM demonstrate how the <code class="docutils literal notranslate"><span class="pre">extern</span></code> keyword can be used for executing classically established functions.</p>
+<p>A more promising approach is the <a class="reference external" href="https://www.qir-alliance.org/" rel="noreferrer" target="_blank">QIR specification</a> which integrates quantum related data-types into the widely used <a class="reference external" href="https://en.wikipedia.org/wiki/LLVM" rel="noreferrer" target="_blank">LLVM IR</a>. Compiling QIR not only has the advantage of incorporating a wide ecosystem of classically established code but also leveraging highly optimized compilation libraries.</p>
+<p>With Jasp, we therefore aim to tackle both problems - compilation speed and lack of real-time computations - by targeting the established LLVM toolchain.</p>
+<p>Ideally we want you to keep all your Qrisp code the same and simply enable the Jasp.</p>
+<blockquote>
+<div><p><strong>Note:</strong></p>
+<p>Does this make “regular” Qrisp old news? Absolutely not!</p>
+<p>As with many Pythonic <code class="docutils literal notranslate"><span class="pre">jit</span></code> compilation approaches, a vitally important feature is to execute the code in non-jitted mode for development/maintainance. This is because code introspection is much harder in <code class="docutils literal notranslate"><span class="pre">jit</span></code> mode since it is difficult to investigate intermediate results for bug-fixing purposes. The same applies to Jasp: Most Jasp and Qrisp code is interoperable, such that it is very easy to identify bugs using Qrisp mode. The relationship between the two compilation pipelines is
+therefore:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Qrisp</strong></p></th>
+<th class="head"><p><strong>Jasp</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Development</p></td>
+<td><p>Scalability</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maintainance</p></td>
+<td><p>Compilation performance</p></td>
+</tr>
+<tr class="row-even"><td><p>Fast prototyping</p></td>
+<td><p>Real-time computation embedding</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div></blockquote>
+</section>
+<section id="What-is-Jax?">
+<h3>What is Jax?<a class="headerlink" href="#What-is-Jax?" title="Link to this heading">#</a></h3>
+<p>To understand how to fully leverage the Jasp module, you need a basic understanding of <a class="reference external" href="https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html" rel="noreferrer" target="_blank">Jax</a>. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values,
+Jax sends so called Tracers through the function, which keep a “record” of what would have happened to the values. This record is a mini functional programming language called <a class="reference external" href="https://docs.jax.dev/en/latest/jaxpr.html" rel="noreferrer" target="_blank">Jaxpr</a>. Creating a Jaxprs can be achieved by calling the <code class="docutils literal notranslate"><span class="pre">make_jaxpr</span></code> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">*</span> <span class="n">z</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaxpr</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">make_jaxpr</span><span class="p">(</span><span class="n">test_f</span><span class="p">)(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{ <span class="ansi-blue-intense-fg ansi-bold">lambda </span>; a<span class="ansi-magenta-fg">:f64[3]</span>. <span class="ansi-blue-intense-fg ansi-bold">let
+    </span>b<span class="ansi-magenta-fg">:f64[3]</span> = add a 2.0:f64[]
+    c<span class="ansi-magenta-fg">:f64[3]</span> = sin b
+    d<span class="ansi-magenta-fg">:f64[3]</span> = mul b c
+  <span class="ansi-blue-intense-fg ansi-bold">in </span>(d,) }
+</pre></div></div>
+</div>
+<p>Note the <code class="docutils literal notranslate"><span class="pre">jax.numpy</span></code> import! This module is a <code class="docutils literal notranslate"><span class="pre">numpy</span></code> clone that is Jax traceable. This module is particularly helpful for Jasp algorithms, since it exposes the power of numpy for classical real-time computations in the middle of a quantum algorithm.</p>
+<p>Jax not only allows us to represent (classical) computations in a more simplified and easier-to-process form but also provides a <a class="reference external" href="https://www.educative.io/courses/intro-jax-deep-learning/awesome-jax-libraries" rel="noreferrer" target="_blank">matured ecosystem</a> of libraries.</p>
+</section>
+<section id="What-is-Jasp?">
+<h3>What is Jasp?<a class="headerlink" href="#What-is-Jasp?" title="Link to this heading">#</a></h3>
+<p>Jasp is a module that provides Jax primitives for Qrisp syntax and therefore makes Qrisp Jax-traceable. How does this work in practice? The central class here is the <a class="reference internal" href="../../reference/Jasp/Jaspr.html"><span class="doc">Jaspr</span></a>, which is a subtype of the ClosedJaxpr. Similarly to ClosedJaxprs, Jasprs can be created using the <code class="docutils literal notranslate"><span class="pre">make_jaspr</span></code> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">meas_float</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">meas_float</span>
+
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">main</span><span class="p">)(</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{ <span class="ansi-blue-intense-fg ansi-bold">lambda </span>; a<span class="ansi-magenta-fg">:i64[]</span> b<span class="ansi-magenta-fg">:QuantumState</span>. <span class="ansi-blue-intense-fg ansi-bold">let
+    </span>c<span class="ansi-magenta-fg">:QubitArray</span> d<span class="ansi-magenta-fg">:QuantumState</span> = jasp.create_qubits a b
+    e<span class="ansi-magenta-fg">:Qubit</span> = jasp.get_qubit c 0:i64[]
+    f<span class="ansi-magenta-fg">:QuantumState</span> = jasp.quantum_gate[gate=h] e d
+    g<span class="ansi-magenta-fg">:Qubit</span> = jasp.get_qubit c 1:i64[]
+    h<span class="ansi-magenta-fg">:QuantumState</span> = jasp.quantum_gate[gate=cx] e g f
+    i<span class="ansi-magenta-fg">:i64[]</span> j<span class="ansi-magenta-fg">:QuantumState</span> = jasp.measure c h
+    k<span class="ansi-magenta-fg">:f64[]</span> = integer_pow[y=0] 2.0:f64[]
+    l<span class="ansi-magenta-fg">:f64[]</span> = convert_element_type[new_dtype=float64 weak_type=False] i
+    m<span class="ansi-magenta-fg">:f64[]</span> = mul l k
+  <span class="ansi-blue-intense-fg ansi-bold">in </span>(m, j) }
+</pre></div></div>
+</div>
+<p>Jasp programs can be executed with the Jasp interpreter by calling them like a function</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">jaspr</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+
+<span class="c1"># Yields: 0 or 3</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+</pre></div></div>
+</div>
+<p>A quicker way to do this is to use the jaspify decorator. This decorator automatically transforms the function into a Jaspr and calls the simulator</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">meas_float</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">meas_float</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="c1"># Yields: 0 or 3</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3.0
+</pre></div></div>
+</div>
+<p>Jasp programs can be compiled to <a class="reference external" href="https://github.com/qir-alliance/qir-spec" rel="noreferrer" target="_blank">QIR</a>, which is one of the most popular low-level representations for quantum computers. This possible because Jasp has a deeply integrated support for <a class="reference external" href="https://docs.pennylane.ai/projects/catalyst/en/stable/index.html" rel="noreferrer" target="_blank">Catalyst</a>. In order to compile to QIR please install the package (only on Mac &amp; Linux).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">catalyst</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>pennylane-catalyst
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qir_string</span> <span class="o">=</span> <span class="n">jaspr</span><span class="o">.</span><span class="n">to_qir</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qir_string</span><span class="p">[:</span><span class="mi">2500</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+; ModuleID = &#39;LLVMDialectModule&#39;
+source_filename = &#34;LLVMDialectModule&#34;
+target datalayout = &#34;e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128&#34;
+target triple = &#34;x86_64-unknown-linux-gnu&#34;
+
+@&#34;{&#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&#34; = internal constant [54 x i8] c&#34;{&#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}\00&#34;
+@LightningSimulator = internal constant [19 x i8] c&#34;LightningSimulator\00&#34;
+@&#34;/home/positr0nium/miniforge3/envs/qrisp/lib/python3.11/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so&#34; = internal constant [120 x i8] c&#34;/home/positr0nium/miniforge3/envs/qrisp/lib/python3.11/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so\00&#34;
+@__constant_30xi64 = private constant [30 x i64] [i64 30, i64 29, i64 28, i64 27, i64 26, i64 25, i64 24, i64 23, i64 22, i64 21, i64 20, i64 19, i64 18, i64 17, i64 16, i64 15, i64 14, i64 13, i64 12, i64 11, i64 10, i64 9, i64 8, i64 7, i64 6, i64 5, i64 4, i64 3, i64 2, i64 1], align 64
+@__constant_xi64 = private constant i64 0, align 64
+
+declare void @__catalyst__rt__finalize()
+
+declare void @__catalyst__rt__initialize(ptr)
+
+declare ptr @__catalyst__qis__Measure(ptr, i32)
+
+declare void @__catalyst__qis__CNOT(ptr, ptr, ptr)
+
+declare void @__catalyst__qis__Hadamard(ptr, ptr)
+
+declare ptr @__catalyst__rt__array_get_element_ptr_1d(ptr, i64)
+
+declare ptr @__catalyst__rt__qubit_allocate_array(i64)
+
+declare void @__catalyst__rt__device_init(ptr, ptr, ptr, i64, i1)
+
+declare void @_mlir_memref_to_llvm_free(ptr)
+
+declare ptr @_mlir_memref_to_llvm_alloc(i64)
+
+define { ptr, ptr, i64 } @jit_jaspr_function(ptr %0, ptr %1, i64 %2) {
+  call void @__catalyst__rt__device_init(ptr @&#34;/home/positr0nium/miniforge3/envs/qrisp/lib/python3.11/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so&#34;, ptr @LightningSimulator, ptr @&#34;{&#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&#34;, i64 0, i1 true)
+  %4 = call ptr @__catalyst__rt__qubit_allocate_array(i64 20)
+  %5 = call ptr @_mlir_memref_to_llvm_alloc(i64 8256)
+  %6 = ptrtoint ptr %5 to i64
+  %7 = add i64 %6, 63
+  %8 = urem i64 %7, 64
+  %9 = sub i64 %7, %8
+  %10 = inttoptr i64 %9 to ptr
+  br label %11
+
+11:                                               ; preds = %14, %3
+  %12 = phi i64 [ %17, %14 ], [ 0, %3 ]
+  %13 = icmp slt i64 %12, 1024
+  br i1 %13, label %14, label %18
+
+14:                                               ; preds = %11
+  %15 = load i64, ptr @__constant_xi64, align 4
+  %16 = getelementptr inbou
+</pre></div></div>
+</div>
+<p>Here we printed only the first “few” lines since the entire string is very long.</p>
+</section>
+</section>
+<section id="The-Qache-decorator">
+<h2>The Qache decorator<a class="headerlink" href="#The-Qache-decorator" title="Link to this heading">#</a></h2>
+<p>One of the most powerful features of Jasp is that it is fully dynamic, allowing many functions to be cached and reused. For this we have the qache decorator. Qached functions are only excuted once (per calling signature) and otherwise retrieved from cache.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+
+<span class="nd">@qache</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inner_function</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="c1"># Complicated compilation, that takes a lot of time</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+
+<span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">main</span><span class="p">)(</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># 1.0196595191955566</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0098111629486084
+</pre></div></div>
+</div>
+<p>If a cached function is called with a different type (classical or quantum) the function will not be retrieved from cache but instead retraced. If called with the same signature, the appropriate implementation will be retrieved from the cache.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@qache</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inner_function</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+    <span class="n">inner_function</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+
+<span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">main</span><span class="p">)()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># 2.044877767562866</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.033168315887451
+</pre></div></div>
+</div>
+<p>We see 2 seconds now because the <code class="docutils literal notranslate"><span class="pre">inner_function</span></code> has been traced twice: Once for the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> and once for the <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a>.</p>
+<p>Another important concept are dynamic values. Dynamic values are values that are only known at runtime (i.e. when the program is actually executed). This could be because the value is coming from a quantum measurement. Every QuantumVariable and its <code class="docutils literal notranslate"><span class="pre">.size</span></code> attribute are dynamic. Furthermore classical values can also be dynamic. For classical values, we can use the Python native <code class="docutils literal notranslate"><span class="pre">isinstance</span></code> check for the <code class="docutils literal notranslate"><span class="pre">jax.core.Tracer</span></code> class, whether a variable is dynamic. Note that even though
+<code class="docutils literal notranslate"><span class="pre">QuantumVariables</span></code> behave dynamic, they are not tracers themselves.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">jax.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tracer</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;i is dynamic?: &quot;</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">))</span>
+
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">qf</span><span class="o">.</span><span class="n">size</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;j is dynamic?: &quot;</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">))</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;k is dynamic?: &quot;</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">))</span>
+
+    <span class="c1"># Regular Python integers are not dynamic</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;l is dynamic?: &quot;</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">))</span>
+
+    <span class="c1"># Arbitrary Python objects can be used within Jasp</span>
+    <span class="c1"># but they are not dynamic</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;G is dynamic?: &quot;</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">k</span>
+
+
+<span class="n">jaspr</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">main</span><span class="p">)(</span><span class="mi">5</span><span class="p">)</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># i is dynamic?:  True</span>
+<span class="c1"># j is dynamic?:  True</span>
+<span class="c1"># k is dynamic?:  True</span>
+<span class="c1"># l is dynamic?:  False</span>
+<span class="c1"># G is dynamic?:  False</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+i is dynamic?:  True
+j is dynamic?:  True
+k is dynamic?:  True
+l is dynamic?:  False
+G is dynamic?:  False
+</pre></div></div>
+</div>
+<p>What is the advantage of dynamic values? Dynamical code is <strong>scale invariant</strong>! For this we can use the <a class="reference internal" href="../../reference/Jasp/Control%20Flow/jrange.html"><span class="doc">jrange</span></a> iterator, which allows you to execute a dynamic amount of loop iterations. Some restrictions apply however (check the docs to see which).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="c1"># Brings a into uniform superposition via Hadamard</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="c1"># Excutes c iterations (i.e. depending the measurement outcome)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+
+        <span class="c1"># Performs a quantum incrementation on b based on the measurement outcome</span>
+        <span class="n">b</span> <span class="o">+=</span> <span class="n">c</span> <span class="o">//</span> <span class="mi">5</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+26.0
+</pre></div></div>
+</div>
+<p>It is possible to execute a multi-controlled X gate with a dynamic amount of controls.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="c1"># a[:j] is a dynamic amount of controls</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">a</span><span class="p">[:</span><span class="n">j</span><span class="p">],</span> <span class="n">qbl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This function encodes the integer <code class="docutils literal notranslate"><span class="pre">i</span></code> into a <code class="docutils literal notranslate"><span class="pre">QuantumFloat</span></code> and subsequently performs an MCX gate with control state <code class="docutils literal notranslate"><span class="pre">k</span></code>. Therefore, we expect the function to return <code class="docutils literal notranslate"><span class="pre">True</span></code> if <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">==</span> <span class="pre">k</span></code> and <code class="docutils literal notranslate"><span class="pre">j</span> <span class="pre">&gt;</span> <span class="pre">5</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+False
+False
+</pre></div></div>
+</div>
+</section>
+<section id="Classical-control-flow">
+<h2>Classical control flow<a class="headerlink" href="#Classical-control-flow" title="Link to this heading">#</a></h2>
+<p>Jasp code can be conditioned on classically known values. For that we simply use the control feature from base-Qrisp but with dynamical, classical bools. Some restrictions apply (check the docs for more details).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="c1"># This is a classical, dynamical int</span>
+    <span class="n">meas_res</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="c1"># This is a classical, dynamical bool</span>
+    <span class="n">ctrl_bl</span> <span class="o">=</span> <span class="n">meas_res</span> <span class="o">&gt;=</span> <span class="mi">4</span>
+
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">ctrl_bl</span><span class="p">):</span>
+        <span class="n">qf</span> <span class="o">-=</span> <span class="mi">4</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3.0
+1.0
+1.0
+1.0
+1.0
+</pre></div></div>
+</div>
+</section>
+<section id="The-Repeat-Until-Success-(RUS)-decorator">
+<h2>The Repeat-Until-Success (RUS) decorator<a class="headerlink" href="#The-Repeat-Until-Success-(RUS)-decorator" title="Link to this heading">#</a></h2>
+<p>RUS stands for Repeat-Until-Success and is an essential part for many quantum algorithms such as HHL or Linear Combination of Unitaries (LCU). As the name says the RUS component repeats a certain subroutine until a measurement yields <code class="docutils literal notranslate"><span class="pre">True</span></code>. The RUS decorator should be applied to a <code class="docutils literal notranslate"><span class="pre">trial_function</span></code>, which returns a classical bool as the first return value and some arbitrary other values. The trial function will be repeated until the classical bool is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+<p>To demonstrate the RUS behavior, we initialize a GHZ state</p>
+<p><span class="math notranslate nohighlight">\(\ket{\psi} = \frac{1}{\sqrt{2}} (\ket{00000} + \ket{11111})\)</span></p>
+<p>and measure the first qubit into a boolean value. This will be the value to cancel the repetition. This will collapse the GHZ state into either <span class="math notranslate nohighlight">\(\ket{00000}\)</span> (which will cause a new repetition) or <span class="math notranslate nohighlight">\(\ket{11111} = \ket{31}\)</span>, which cancels the loop. After the repetition is canceled we are therefore guaranteed to have the latter state.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">RUS</span><span class="p">,</span> <span class="n">make_jaspr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">measure</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">init_GHZ</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">qf</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+
+<span class="nd">@RUS</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rus_trial_function</span><span class="p">():</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="n">init_GHZ</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="n">cancelation_bool</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">cancelation_bool</span><span class="p">,</span> <span class="n">qf</span>
+
+
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">rus_trial_function</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># 31.0 (the decimal equivalent of 11111)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+31.0
+</pre></div></div>
+</div>
+</section>
+<section id="Terminal-sampling">
+<h2>Terminal sampling<a class="headerlink" href="#Terminal-sampling" title="Link to this heading">#</a></h2>
+<p>The <a class="reference internal" href="../../reference/Jasp/Simulation%20Tools/Jaspify.html"><span class="doc">jaspify</span></a> decorator executes one “shot”. For many quantum algorithms we however need the distribution of shots. In principle we could execute a bunch of “jaspified” function calls, which is however not as scalable. For this situation we have the <a class="reference internal" href="../../reference/Jasp/Simulation%20Tools/Terminal%20Sampling.html"><span class="doc">terminal_sampling</span></a> decorator. To use this decorator we need a function that returns a <code class="docutils literal notranslate"><span class="pre">QuantumVariable</span></code> (instead of a
+classical measurement result). The decorator will then perform a (hybrid) simulation of the given script and subsequently sample from the distribution at the end.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@RUS</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rus_trial_function</span><span class="p">():</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="n">init_GHZ</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+    <span class="n">cancelation_bool</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">cancelation_bool</span><span class="p">,</span> <span class="n">qf</span>
+
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">rus_trial_function</span><span class="p">()</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qf</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+<span class="c1"># Yields:</span>
+<span class="c1"># {30.0: 0.5, 31.0: 0.5}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{30.0: 0.5, 31.0: 0.5}
+</pre></div></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">terminal_sampling</span></code> decorator requires some care however. Remember that it only samples from the distribution at the end of the algorithm. This distribution can depend on random chances that happened during the execution. We demonstrate faulty use in the following example.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">measure</span><span class="p">,</span> <span class="n">control</span>
+
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># Bring qbl into superposition</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+
+    <span class="c1"># Perform a measure</span>
+    <span class="n">cl_bl</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+
+    <span class="c1"># Perform a conditional operation based on the measurement outcome</span>
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">cl_bl</span><span class="p">):</span>
+        <span class="n">qf</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qf</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+<span class="c1"># Yields either {0.0: 1.0} or {1.0: 0.5, 5.0: 0.5} (with a 50/50 probability)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.0: 1.0}
+{1.0: 0.5, 5.0: 0.5}
+{0.0: 1.0}
+{0.0: 1.0}
+{1.0: 0.5, 5.0: 0.5}
+</pre></div></div>
+</div>
+</section>
+<section id="Boolean-simulation">
+<h2>Boolean simulation<a class="headerlink" href="#Boolean-simulation" title="Link to this heading">#</a></h2>
+<p>The tight Jax integration of Jasp enables some powerful features such as a highly performant simulator of purely boolean circuits. This simulator works by transforming Jaspr objects that contain only X, CX, MCX etc. into boolean Jax logic. Subsequently this is inserted into the Jax pipeline, which yields a highly scalable simulator for purely classical Jasp functions.</p>
+<p>To call this simulator, we simply use the <code class="docutils literal notranslate"><span class="pre">boolean_simulation</span></code> decorator like we did with the <code class="docutils literal notranslate"><span class="pre">jaspify</span></code> decorator.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">quantum_mult</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span>
+
+
+<span class="nd">@boolean_simulation</span><span class="p">(</span><span class="n">bit_array_padding</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">11</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="n">a</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">b</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">j</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+
+        <span class="c1"># Compute the quantum product</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">quantum_mult</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="c1"># add into c</span>
+        <span class="n">c</span> <span class="o">+=</span> <span class="n">temp</span>
+
+        <span class="c1"># Uncompute the quantum product</span>
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="c1"># The &lt;&lt; operator &quot;injects&quot; the quantum variable into</span>
+            <span class="c1"># the function. This means that the quantum_mult</span>
+            <span class="c1"># function, which was originally out-of-place, is</span>
+            <span class="c1"># now an in-place function operating on temp.</span>
+
+            <span class="c1"># It can therefore be used for uncomputation</span>
+            <span class="c1"># Automatic uncomputation is not yet available within Jasp.</span>
+            <span class="p">(</span><span class="n">temp</span> <span class="o">&lt;&lt;</span> <span class="n">quantum_mult</span><span class="p">)(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="c1"># Delete temp</span>
+        <span class="n">temp</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Note the <a class="reference internal" href="../../reference/Core/Function%20Injection.html"><span class="doc">injection</span></a> operator, which allows us to transform the out-of-place multiplication function into an in-place version (required for uncomputation of the temporary result).</p>
+<p>The first call needs some time for compilation</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">main</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+8.847866535186768
+</pre></div></div>
+</div>
+<p>Any subsequent call is super fast</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">120</span><span class="p">))</span>  <span class="c1"># Expected to be 3*4*120 = 1440</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">}</span><span class="s2"> to simulate 120 iterations&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1440.0
+Took 0.09446215629577637 to simulate 120 iterations
+</pre></div></div>
+</div>
+<p>Compile and simulate A MILLION QFLOPs!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="mi">532</span><span class="p">,</span> <span class="mi">233</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+475690240.0
+</pre></div></div>
+</div>
+</section>
+<section id="Letting-a-classical-neural-network-decide-when-to-stop">
+<h2>Letting a classical neural network decide when to stop<a class="headerlink" href="#Letting-a-classical-neural-network-decide-when-to-stop" title="Link to this heading">#</a></h2>
+<p>The following example showcases how a simple neural network can decide (in real-time) whether to go on or break the RUS iteration. For that we create a simple binary classifier and train it on dummy data (disclaimer: ML code by ChatGPT). This is code is not really useful in anyway and the classifier is classifying random data, but it shows how such an algorithm can be constructed and evaluated.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">grad</span><span class="p">,</span> <span class="n">jit</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
+
+<span class="c1"># Define the model</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="n">W</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">params</span>
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+
+
+<span class="c1"># Define the loss function (binary cross-entropy)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">loss_fn</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">preds</span><span class="p">))</span>
+
+
+<span class="c1"># Initialize parameters</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">W</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="c1"># Create optimizer</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+<span class="c1"># Define training step</span>
+
+
+<span class="nd">@jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_step</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">loss</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">value_and_grad</span><span class="p">(</span><span class="n">loss_fn</span><span class="p">)(</span><span class="n">params</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">updates</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">params</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">loss</span>
+
+
+<span class="c1"># Generate some dummy data</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span>
+
+<span class="c1"># Training loop</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">loss</span> <span class="o">=</span> <span class="n">train_step</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Make predictions</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+<span class="n">accuracy</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">predictions</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Epoch 0, Loss: 0.7749125663431047
+Epoch 10, Loss: 0.752207599342647
+Epoch 20, Loss: 0.7357190668015756
+Epoch 30, Loss: 0.7236697723459776
+Epoch 40, Loss: 0.7139995273793222
+Epoch 50, Loss: 0.7066360749038392
+Epoch 60, Loss: 0.7014639493118732
+Epoch 70, Loss: 0.6979659677962347
+Epoch 80, Loss: 0.6957515243203838
+Epoch 90, Loss: 0.6944369929199118
+Final accuracy: 0.5029439926147461
+</pre></div></div>
+</div>
+<p>We can now use the <code class="docutils literal notranslate"><span class="pre">model</span></code> function to evaluate the classifier. Since this function is Jax-based it integrates seamlessly into Jasp.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="nd">@RUS</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rus_trial_function</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+
+    <span class="c1"># Sample data from two QuantumFloats.</span>
+    <span class="c1"># This is a placeholder for an arbitrary quantum algorithm.</span>
+    <span class="n">qf_0</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf_0</span><span class="p">)</span>
+
+    <span class="n">qf_1</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf_1</span><span class="p">)</span>
+
+    <span class="n">meas_res_0</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf_0</span><span class="p">)</span>
+    <span class="n">meas_res_1</span> <span class="o">=</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf_1</span><span class="p">)</span>
+
+    <span class="c1"># Garbage collect qf_1 (only qf_0 will be returned)</span>
+    <span class="n">reset</span><span class="p">(</span><span class="n">qf_1</span><span class="p">)</span>
+    <span class="n">qf_1</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="c1"># Turn the data into a Jax array</span>
+    <span class="c1"># For each run, this array is uniformly distributed on the interval [-0.5, 0.5)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">meas_res_0</span><span class="p">,</span> <span class="n">meas_res_1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="n">qf_0</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mf">0.5</span>
+
+    <span class="c1"># Evaluate the model</span>
+    <span class="n">model_res</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+
+    <span class="c1"># Determine the cancelation</span>
+    <span class="n">cancelation_bool</span> <span class="o">=</span> <span class="p">(</span><span class="n">model_res</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cancelation_bool</span><span class="p">,</span> <span class="n">qf_0</span>
+
+
+<span class="nd">@jaspify</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+
+    <span class="n">qf</span> <span class="o">=</span> <span class="n">rus_trial_function</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">measure</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">params</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+26.0
+</pre></div></div>
+</div>
+<p>This marks the end of this tutorial. Congratulations for making it until here! While the programming model of Jasp might differ in some ways from what you are used to with regular Qrisp, we believe that some of presented features will be of vital importance for making large scale quantum computing a reality from software side. If you haven’t already done so, check out the <a class="reference internal" href="../../reference/Jasp/index.html"><span class="doc">documentation</span></a> for more structured information to get your first Jasp algorithm up and
+running!</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What-is-Jasp-and-why-do-we-need-it?">What is Jasp and why do we need it?</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Real-time-computations">Real-time computations</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#What-is-Jax?">What is Jax?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#What-is-Jasp?">What is Jasp?</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Qache-decorator">The Qache decorator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Classical-control-flow">Classical control flow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Repeat-Until-Success-(RUS)-decorator">The Repeat-Until-Success (RUS) decorator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Terminal-sampling">Terminal sampling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Boolean-simulation">Boolean simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Letting-a-classical-neural-network-decide-when-to-stop">Letting a classical neural network decide when to stop</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/Jasp.ipynb" download="Jasp.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

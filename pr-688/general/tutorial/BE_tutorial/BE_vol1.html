@@ -1,0 +1,1294 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>BlockEncoding class 101: Block encoding, LCU, resource estimation &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/BE_tutorial/BE_vol1';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/BE_tutorial/BE_vol1.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP" href="BE_vol2.html" />
+    <link rel="prev" title="Quantum Linear Algebra with Qrisp" href="index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Quantum Linear Algebra with Qrisp</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">BlockEncoding class 101: Block encoding, LCU, resource estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BE_vol2.html">BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Quantum Linear Algebra with Qrisp</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">BlockEncoding class 101: Block encoding, LCU, resource estimation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="BlockEncoding-class-101:-Block-encoding,-LCU,-resource-estimation">
+<h1>BlockEncoding class 101: Block encoding, LCU, resource estimation<a class="headerlink" href="#BlockEncoding-class-101:-Block-encoding,-LCU,-resource-estimation" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='font-weight: 600; color: #222;'>René Zander</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>In classical computer science, we often perform operations directly on matrices, such as inversion, exponentiation, or polynomial transformations. In quantum computing, however, all physical operations must be strictly unitary (represented by matrices <span class="math notranslate nohighlight">\(U\)</span> such that <span class="math notranslate nohighlight">\(U^\dagger U = I\)</span>). This means they must be perfectly reversible and preserve the norm of the state vector.</p>
+<p>For closed quantum systems, this isn’t an issue: the system evolves via the complex exponential of its Hamiltonian (<span class="math notranslate nohighlight">\(e^{-iHt}\)</span>), which is inherently unitary. However, we frequently encounter scenarios where we must implement non-unitary operators on quantum hardware. Common motivations include:</p>
+<ul class="simple">
+<li><p>Algorithmic Approximations: When simulating dynamics, expanding the exponential <span class="math notranslate nohighlight">\(e^{-iHt}\)</span> (via Taylor series or Suzuki-Trotter expansions) and truncating it at a specific order leaves you with a non-unitary polynomial.</p></li>
+<li><p>Open Quantum Systems: When a quantum system interacts with an external environment, its effective Hamiltonian becomes non-Hermitian, meaning its evolution operator is no longer unitary.</p></li>
+<li><p>Linear Algebra Tasks: Algorithms that solve linear systems of equations (like HHL) require applying inherently non-unitary functions, such as matrix inversion (<span class="math notranslate nohighlight">\(A^{-1}\)</span>), directly to an operator.</p></li>
+</ul>
+<p>To solve this, modern quantum algorithms use block encodings to “embed” these non-unitary matrices into a larger, higher-dimensional unitary system. Once embedded, we can use Quantum Signal Processing (QSP) and its generalizations to manipulate the operator and apply arbitrary functional transformations.</p>
+<p>Here’s the breakdown of what you’ll learn in this tutorial:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Typical Use Case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array(arr)</span></a></p></td>
+<td><p>Encodes a NumPy matrix</p></td>
+<td><p>Quick prototyping of small, specific matrices</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator(op)</span></a></p></td>
+<td><p>Encodes a Hamiltonian</p></td>
+<td><p>Physics and Chemistry simulations</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu(coeffs, unitaries)</span></a></p></td>
+<td><p>Custom weighted sum of unitaries</p></td>
+<td><p>High-efficiency implementation</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources(qv)</span></a></p></td>
+<td><p>Estimates gate counts, depth, and qubits.</p></td>
+<td><p>Resource analysis and benchmarking</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply(qv)</span></a></p></td>
+<td><p>Applies a matrix to a quantum state</p></td>
+<td><p>NISQ hardware with manual post-selection</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus(prep_func)</span></a></p></td>
+<td><p>Applies a matrix to a quantum state</p></td>
+<td><p>Fault-tolerant / Repeat-Until-Success logic</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>, <code class="docutils literal notranslate"><span class="pre">.kron()</span></code></p></td>
+<td><p>Algebraic arithmetic on encodings</p></td>
+<td><p>Constructing complex composite systems</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Once all these concepts become second nature, we’ll build on them in the next tutorial, applying them for performing arbitrary polynomial transformations, solving linear systems, and Hamiltonian simulation. All by using methods of the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> class. Clean. Intuitive. Qrisp.</p>
+<div class="note docutils container">
+<p>It is important to note that while the evolution within the block encoding is unitary, the ultimate retrieval of the result typically involves a measurement on the ancilla qubits to “project” the system into the desired subspace. In the standard <a class="reference external" href="https://en.wikipedia.org/wiki/Copenhagen_interpretation" rel="noreferrer" target="_blank">Copenhagen interpretation</a>, this measurement is a non-unitary, non-reversible collapse that triggers the measurement problem—the philosophical and physical gap between smooth unitary
+evolution and the random nature of observation. While some (including myself) find the <a class="reference external" href="https://en.wikipedia.org/wiki/Many-worlds_interpretation" rel="noreferrer" target="_blank">Everettian (Many-Worlds) view</a> compelling; where the measurement is just a further unitary entanglement of the observer with the system, it remains a non-standard stance (for now…). Regardless of your preferred interpretation, the practical reality of current hardware requires us to treat measurement as a distinct, non-unitary step that defines
+the success of our block encoding.</p>
+</div>
+<section id="What-are-block-encodings?">
+<h2>What are block encodings?<a class="headerlink" href="#What-are-block-encodings?" title="Link to this heading">#</a></h2>
+<p>Block encoding is a foundational technique that allows a quantum computer to represent a general matrix <span class="math notranslate nohighlight">\(A\)</span> (where <span class="math notranslate nohighlight">\(\|A\|\leq1\)</span>) as the top-left block of a larger unitary matrix <span class="math notranslate nohighlight">\(U\)</span>.</p>
+<div class="note docutils container">
+<p>Because a unitary matrix <span class="math notranslate nohighlight">\(U\)</span> always has a spectral norm of <span class="math notranslate nohighlight">\(\|U\| = 1\)</span>, any sub-block within it must also have a norm <span class="math notranslate nohighlight">\(\leq 1\)</span>. Therefore, to encode a general matrix <span class="math notranslate nohighlight">\(A\)</span>, we must scale it by a factor <span class="math notranslate nohighlight">\(\alpha\)</span> such that <span class="math notranslate nohighlight">\(\|A/\alpha\| \leq 1\)</span>.</p>
+</div>
+<p>Following the standard definition (see <a class="reference external" href="https://arxiv.org/pdf/2201.08309" rel="noreferrer" target="_blank">Lin Lin, Chapter 8</a>), we say that a unitary <span class="math notranslate nohighlight">\(U\)</span> is an <span class="math notranslate nohighlight">\((\alpha, m, \epsilon)\)</span>-block-encoding of <span class="math notranslate nohighlight">\(A\)</span> if</p>
+<div class="math notranslate nohighlight">
+\[\| A - \alpha (\bra{G} \otimes I) U (\ket{G} \otimes I) \| \leq \epsilon,\]</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha\)</span> (Scaling Factor): Since <span class="math notranslate nohighlight">\(\|U\|=1\)</span>, we must scale <span class="math notranslate nohighlight">\(A\)</span> such that <span class="math notranslate nohighlight">\(\|A/\alpha\| \leq 1\)</span>. Usually, <span class="math notranslate nohighlight">\(\alpha\)</span> is related to the 1-norm of the coefficients in an LCU decomposition.</p></li>
+<li><p><span class="math notranslate nohighlight">\(m\)</span> (Ancilla Qubits): The number of additional qubits required to define the larger Hilbert space in which <span class="math notranslate nohighlight">\(U\)</span> acts.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\epsilon\)</span> (Precision): The error tolerance. In practice, our quantum circuit <span class="math notranslate nohighlight">\(U\)</span> only approximates <span class="math notranslate nohighlight">\(A\)</span> to a certain degree of accuracy.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\ket{G}\)</span> (Signal State): Often called the “ancilla state,” this is a specific basis state (typically <span class="math notranslate nohighlight">\(\ket{0}^{\otimes m}\)</span>) that defines the subspace where <span class="math notranslate nohighlight">\(A\)</span> is embedded.</p></li>
+</ul>
+<p>Visually, we essentially put a scaled, non-unitary matrix in the top-left block of a larger unitary matrix:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}U = \begin{pmatrix}\dfrac{A}{\alpha} &amp; * \\ * &amp; * \end{pmatrix}\end{split}\]</div>
+<p>By preparing the ancillas in state <span class="math notranslate nohighlight">\(\ket{G}\)</span> and then projecting back onto <span class="math notranslate nohighlight">\(\bra{G}\)</span> after applying <span class="math notranslate nohighlight">\(U\)</span>, we “isolate” the action of <span class="math notranslate nohighlight">\(A\)</span> on our target system.</p>
+<p>In Qrisp, we can construct a block encoding in four ways:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a> constructs a BlockEncoding from a numpy array,</p></li>
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator</span></a> constructs a BlockEncoding directly from a Hamiltonian constructed via QubitOperators, or FermionicOperators,</p></li>
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> constructs a BlockEncoding using the Linear Combination of Unitaries approach,</p></li>
+<li><p>Direct construction via the <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> class constructor allows you to manually define a new encoding by specifying the normalization factor <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, <code class="docutils literal notranslate"><span class="pre">ancillas</span></code> (as <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariables</span></a>), and a <code class="docutils literal notranslate"><span class="pre">unitary</span></code> function, and returning <code class="docutils literal notranslate"><span class="pre">BlockEncoding(alpha,</span> <span class="pre">ancillas,</span> <span class="pre">unitary)</span></code>.</p></li>
+</ul>
+<p>The first three options are rather self-explanatory, really… You (the user) provide the matrix and/or Hamiltonian you’d like to block encode, or, alternatively, the list of unitaries with the corresponding list of coefficients, invoke the appropriate method for your desired input and, whoosh, Qrisp block encodes it for ya.</p>
+<p>The Direct construction method is the route for academics with state-of-the-art custom block encodings up their sleeves, catered to the researchers that would like to implement their custom block encodings (and hopefully add them as methods for this class).</p>
+<p>Without getting ahead of ourselves, let’s first showcase the ready-to-go methods:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+              <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+              <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="n">B_A</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.2</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">B_H</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Think of a Pauli string as a multi-qubit instruction. It is a sequence of Pauli <a class="reference internal" href="../../../reference/Operators/QubitOperator.html"><span class="doc">operators</span></a> (matrices) <span class="math notranslate nohighlight">\(\mathbb{I}\)</span>, <span class="math notranslate nohighlight">\(X\leftrightarrow \sigma_X\)</span>, <span class="math notranslate nohighlight">\(Y\leftrightarrow\sigma_Y\)</span>, and <span class="math notranslate nohighlight">\(Z\leftrightarrow\sigma_Z\)</span>. Each individual Pauli matrix is a simple <span class="math notranslate nohighlight">\(2 \times 2\)</span> unitary matrix. When you have multiple qubits, you take the tensor product of these matrices. For example, a Pauli string for a 3-qubit system might look like
+<span class="math notranslate nohighlight">\(X \otimes Z \otimes I\)</span> (often shortened to <span class="math notranslate nohighlight">\(XZI\)</span>). Since Pauli strings are unitary and Hermitian, they’re a natural fit for quantum hardware. If you can break an operator down into Pauli strings, a quantum computer knows exactly how to execute it.</p>
+<p>And this is exactly what these methods do. The former takes an arbitrary square matrix and expresses it as a weighted sum of these Pauli strings (<span class="math notranslate nohighlight">\(A=\sum_j\alpha_j P_j\)</span>), where <span class="math notranslate nohighlight">\(\alpha_j\)</span> is a scalar coefficient (aka a number) and <span class="math notranslate nohighlight">\(P_j\)</span> is a Pauli string, while in the latter, we already provide the Hamiltonian in terms of these Pauli strings.</p>
+<p>Essentially, the third approach, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> , is the epitome of block encoding. I mean, what it does is actually in the acronym: Linear Combination of Unitaries (or for the academic practitioners among you: <span class="math notranslate nohighlight">\(A=\sum_i\alpha_i U_i\)</span>).</p>
+<p>If such a matrix <span class="math notranslate nohighlight">\(A\)</span> is expressed as shown above (as a weighted sum of unitaries), the LCU algorithmic primitive uses three (well, technically two) oracles:</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(\text{PREPARE}\)</span> <a class="reference internal" href="../../../reference/Primitives/prepare.html"><span class="doc">prepares</span></a> (as its name suggests) a superposition of index states weighted by the square roots of the coefficients <span class="math notranslate nohighlight">\(\alpha_i\)</span> in the ancillary variable:</p>
+<div class="math notranslate nohighlight">
+\[\text{PREP}\ket{0}_a=\sum_{i=0}^{m-1}\sqrt{\frac{\alpha_i}{\alpha}}\ket{i}_a\]</div>
+</li>
+<li><p><span class="math notranslate nohighlight">\(\text{SELECT}\)</span> applies the corresponding unitary <span class="math notranslate nohighlight">\(U_i\)</span> to the operand (target) variable, controlled by the ancillary variable:</p>
+<div class="math notranslate nohighlight">
+\[\text{SEL}=\sum_{i=0}^{m-1}\ket{i}\bra{i}_a\otimes U_i,\]</div>
+</li>
+<li><p>and finally, <span class="math notranslate nohighlight">\(\text{PREPARE}^\dagger\)</span>, which then essentially “unprepares” the ancillary variable.</p></li>
+</ul>
+<p>We have successfully applied <span class="math notranslate nohighlight">\(A\)</span> to our operand when the ancillary variable is measured in the <span class="math notranslate nohighlight">\(\ket{0}\)</span> state.</p>
+<p>For the visual learners, here is a figure that will (hopefully) tie everything you read so far together.</p>
+<img alt="Alt text" src="../../../_images/BE_bad_select.png" />
+<p>We could also define a block encoding as a pair of unitaries <span class="math notranslate nohighlight">\((U, G)\)</span> (<span class="math notranslate nohighlight">\(G\)</span> is another name for PREPARE, <span class="math notranslate nohighlight">\(U\)</span> is another name for SELECT). Their action on quantum states can be captured by the following expressions (don’t worry, we’ll also use words about what this means immediately after):</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(G\)</span> simply prepares the auxiliary variable in a superposition defined by the coefficients (or the weights) of the weighted sum of unitaries (LCU):</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[G\ket{0}_{index}=\ket{G}_{index}.\]</div>
+<p>Here, we’ve denoted the ancillary variable as <code class="docutils literal notranslate"><span class="pre">index</span></code>.</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(U\)</span>, on the other hand then selects “just the right amount” of each of the underlying unitaries in the weighted sum:</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[U\ket{i}_{index}\ket{\psi}_{operand}=\ket{i}_{index}U_i\ket{\psi}_{operand}.\]</div>
+<p>As seen in the figure above, this can be done via multiple controlled operations. In Qrisp, however, we use <a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a>, which is just another name for the select operator (multiplexor is another name found in literature for the same thing, btw). What’s so special about <a class="reference internal" href="../../../reference/Primitives/qswitch.html"><span class="doc">q_switch</span></a>? Well, we’ve implemented a massively more efficient approach about how to apply such a (quantum) switch case (hence the name)
+based on balanced binary trees. For further information about this, please refer to the paper from Khattar and Gidney, <a class="reference external" href="https://arxiv.org/pdf/2407.17966v1" rel="noreferrer" target="_blank">Rise of conditionally clean ancillae for efficient quantum circuit constructions</a>.</p>
+<p>How are we feeling? I assume that the researchers in the field could be portrayed with this emoji (😎), while people coming from outside of quantum can feel a bit overwhelmed (🥲). Let’s balance the target audiences by a relevant example that is the cornerstone of solving partial differential equations, where we also explain how to use the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> method (we went off on a bit of a tangent there, huh? Glad you’re still here - it’ll
+be worth it!).</p>
+<p>Before showing an example, let us first quickly showcase how to manually define a <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a>. Feel free to also skip to the next section, showing the example of block-encoding the discrete Laplacian.</p>
+<p>You have been warned, let’s get technical!</p>
+<p>To manually define a BlockEncoding, you need to provide the three core components:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha\)</span> (alpha): The normalization factor. Since a unitary has a spectral norm of 1, and your matrix <span class="math notranslate nohighlight">\(A\)</span> likely doesn’t, we encode <span class="math notranslate nohighlight">\(A/\alpha\)</span>.</p></li>
+<li><p>Ancilla templates: A list of <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariables</span></a> that serve as templates for the ancilla variables. For example, the <code class="docutils literal notranslate"><span class="pre">index</span></code> variable for the quantum switch case.</p></li>
+<li><p>The unitary: A function that takes the ancilla(s) and the operand(s), and applies the block encoding unitary.</p></li>
+</ul>
+<p>Below we give an example that essentially shows the inner workings of the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator</span></a> method:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">conjugate</span><span class="p">,</span> <span class="n">prepare</span><span class="p">,</span> <span class="n">q_switch</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.2</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Returns a list of unitaries, i.e., functions performing in-place operations</span>
+<span class="c1"># on the operand quantum variable, and a list of coefficients.</span>
+<span class="n">unitaries</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">unitaries</span><span class="p">()</span>
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unitaries</span><span class="p">)</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="c1"># Number of qubits for ancillary variable.</span>
+<span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span> <span class="c1"># Block encoding normalization factor.</span>
+
+<span class="c1"># Define block-encoding unitary using LCU = PREP SELECT PREP_dg.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">U</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">operand</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">prepare</span><span class="p">)(</span><span class="n">anc</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">):</span>
+        <span class="n">q_switch</span><span class="p">(</span><span class="n">anc</span><span class="p">,</span> <span class="n">unitaries</span><span class="p">,</span> <span class="n">operand</span><span class="p">)</span> <span class="c1"># quantum switch aka SELECT</span>
+
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="p">(</span>
+    <span class="n">alpha</span><span class="p">,</span>  <span class="c1"># Block encoding normalization factor.</span>
+    <span class="p">[</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="n">n</span><span class="p">)],</span>  <span class="c1"># Templates for ancilla variables.</span>
+    <span class="n">U</span><span class="p">,</span>  <span class="c1"># Block encoding unitary.</span>
+    <span class="n">num_ops</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Number of operand variables. The default is 1.</span>
+    <span class="n">is_hermitian</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Indicates whether the unitary is Hermitian.</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This should give you an idea about how to go around implementing your own custom block encodings with the class. If you’re interested, we would love to add your approaches as methods of our class in Qrisp - you can contribute your methods to the Qrisp GitHub repository (no pressure, of course, but highly encouraged, since… you know… open-source software development and all that jazz).</p>
+</section>
+<section id="Custom-BlockEncoding:-the-discrete-Laplacian-example">
+<h2>Custom BlockEncoding: the discrete Laplacian example<a class="headerlink" href="#Custom-BlockEncoding:-the-discrete-Laplacian-example" title="Link to this heading">#</a></h2>
+<p>In this example, we construct a block encoding of the 1D discrete Laplacian operator with periodic boundary conditions using the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> method. The discrete Laplace operator is central in numerical physics and differential equations, since it represents the second derivative on a grid.</p>
+<p>Let’s start by constructing the matrix in NumPy and visualize it so that everyone is on the same page about what we’ll be doing in this example.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">I</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">L</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">L</span><span class="p">[</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.]
+ [-1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2. -1.]
+ [-1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0. -1.  2.]]
+</pre></div></div>
+</div>
+<p>This is exactly the finite-difference Laplacian with wrap-around endpoints.</p>
+<p>We can, of course, use the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a> method you’re already a master of. Actually, let’s do that real quick:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">B_L</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Why even bother with <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> then? Fair question. The answer hides in what’s happening underneath, and the amount of <strong>quantum resources</strong> that these two methods use.</p>
+</section>
+<section id="Quantum-Resource-Estimation-w/-.resources">
+<h2>Quantum Resource Estimation w/ <a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources</span></a><a class="headerlink" href="#Quantum-Resource-Estimation-w/-.resources" title="Link to this heading">#</a></h2>
+<p>“Whoa, whoa, whoa?! Quantum resources? As in quantum resources in Quantum Resource Estimation?” you ask.</p>
+<p>“Yes.”, we answer.</p>
+<p>“But isn’t it currently a research endeavor about finding these exact resource estimates?!”</p>
+<p>“Yes. But… with Qrisp we made it as simple, clean, and qrispy (had to go for it), as calling the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources</span></a> method.”</p>
+<p>Let’s see what do we get as an output:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumFloat</span>
+
+<span class="c1"># Use a 4-qubit variable for a 2^4 by 2^4 matrix.</span>
+<span class="n">quantum_resources</span> <span class="o">=</span> <span class="n">B_L</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">quantum_resources</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;u3&#39;: 30, &#39;cy&#39;: 14, &#39;p&#39;: 7, &#39;t&#39;: 48, &#39;h&#39;: 32, &#39;t_dg&#39;: 64, &#39;cx&#39;: 156, &#39;x&#39;: 15, &#39;gphase&#39;: 2}, &#39;depth&#39;: 220, &#39;qubits&#39;: 12}
+</pre></div></div>
+</div>
+<p>Alright, it’s a dictionary with some letters (or a string of them), and a number. The former is the detailed <strong>gate count</strong>, or rather the number of every specific gate used in the application of the block encoding using <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a>. The second number is the <strong>depth</strong> of the circuit (for lack of a better word - we’re trying to eliminate the sacrilegious word “circuit” in qrisp), which is related to how long the calculation will
+take on an actual quantum computer. The longer it takes, the more likely that the qubits decohere, resulting in noisy results that tell us nothing. This is, of course, only a problem when executing on quantum hardware. alternatively, you can also avoid this by simulating your algorithms either with the built-in Qrisp simulator, or an alternative of your choice.</p>
+<p>Let’s get back on track. We’ve block encoded the Laplacian and gathered the resources… Let’s now do the exact same thing, but more efficiently by constructing a custom block encoding with <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a>.</p>
+<p>The Laplacian can be decomposed as <span class="math notranslate nohighlight">\(\Delta = 2\mathbb{I}-V-V^\dagger\)</span>, where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbb{I}\)</span> is the identity,</p></li>
+<li><p><span class="math notranslate nohighlight">\(V\)</span> is the forward shift operator: <span class="math notranslate nohighlight">\(V\ket{k}=-\ket{k+1 \mod N}\)</span>, and</p></li>
+<li><p><span class="math notranslate nohighlight">\(V^\dagger\)</span> is the backward shift <span class="math notranslate nohighlight">\(V^\dagger\ket{k}=-\ket{k-1\mod N}\)</span>.</p></li>
+</ul>
+<p>The negative sign matches the chosen finite-difference convention.</p>
+<p>This decomposition fits naturally into the LCU framework, because <span class="math notranslate nohighlight">\(\mathbb{I}\)</span>, <span class="math notranslate nohighlight">\(V\)</span>, and <span class="math notranslate nohighlight">\(V^\dagger\)</span> are themselves unitaries, afterall:</p>
+<div class="math notranslate nohighlight">
+\[\Delta=\sum_{i=0}^2\alpha_i U_i\propto 2\mathbb{I}-V-V^\dagger\]</div>
+<p>This can be easily implemented in Qrisp with the <a class="reference internal" href="../../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">built-in arithmetic</span></a> it allows:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">gphase</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">I</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Identity: do nothing</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">V</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Forward cyclic shift with a global phase -1</span>
+    <span class="n">qv</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">gphase</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># multiply by -1</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">V_dg</span><span class="p">(</span><span class="n">qv</span><span class="p">):</span>
+    <span class="c1"># Backward cyclic shift with a global phase -1</span>
+    <span class="n">qv</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">gphase</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>Now combine them as a linear combination of unitaries with coefficients [2, 1, 1]:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">unitaries</span> <span class="o">=</span> <span class="p">[</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">V_dg</span><span class="p">]</span>
+<span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>And thats it… that’s all the ingredients we need to define a custom block encoding with <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a>. We just provide the coefficients and the unitaries, and the BlockEncoding class does all the management of the coefficients, ancillary qubits, and whatever else under the sun. In future releases we also want it to be able do perform one’s taxes.</p>
+<p>All jokes aside, let’s block encode this Laplacian and check the resources if it’s actually more efficient (it is) before explaining why it’s more efficient.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_lcu</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">unitaries</span><span class="p">)</span>
+
+<span class="c1"># Use a 4-qubit variable for a 2^4 by 2^4 matrix.</span>
+<span class="n">quantum_resources</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">quantum_resources</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;u3&#39;: 6, &#39;s&#39;: 6, &#39;p&#39;: 2, &#39;t&#39;: 18, &#39;h&#39;: 22, &#39;t_dg&#39;: 20, &#39;cx&#39;: 72, &#39;x&#39;: 5, &#39;gphase&#39;: 2, &#39;measure&#39;: 6}, &#39;depth&#39;: 60, &#39;qubits&#39;: 11}
+</pre></div></div>
+</div>
+<p>Let’s now compare the outputs.</p>
+<p>{‘gate counts’: {‘x’: 15, ‘p’: 7, ‘t’: 48, ‘cy’: 14, ‘gphase’: 2, ‘t_dg’: 64, ‘u3’: 30, ‘cx’: 156, ‘h’: 32}, ‘depth’: 220, ‘qubits’: 12}</p>
+<p>{‘gate counts’: {‘x’: 5, ‘s’: 6, ‘p’: 2, ‘t’: 18, ‘gphase’: 2, ‘t_dg’: 20, ‘u3’: 6, ‘cx’: 72, ‘h’: 22, ‘measure’: 6}, ‘depth’: 60, ‘qubits’: 11}</p>
+<p>Even if you don’t know what any of the letters or strings actually mean, you can clearly see that the values of the bottom dictionary are lower than the one on the top. To say it in quantum jargon, the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> is (much) more efficient than <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a>, which is just a simpler interface to
+<a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator</span></a>. And the difference will grow for larger matrix size <span class="math notranslate nohighlight">\(N\)</span>.</p>
+<p>Why is that? Well, it all comes down to which unitaries and how many do we want to combine to construct the block encoding. In the custom block encoding it’s rather self apparent: we need three unitaries to construct the Laplacian, as seen above. The <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a> and <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator</span></a> methods, on the other hand, construct block encodings by decomposing the
+Hamiltonian into a linear combination of Pauli strings. If you’re asking what is a Pauli string, here’s a quick intuitive answer.</p>
+<div class="note docutils container">
+<p>Pauli <span class="math notranslate nohighlight">\(n\)</span>-strings form a basis for the operator space on n-qubits. So you can always write a <span class="math notranslate nohighlight">\(n\)</span>-qubit linear operator in terms of Paulis.</p>
+</div>
+<p>When you use a method like <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a>, the algorithm has no “intuition” about the structure of your matrix. It performs a systematic projection of your matrix onto every possible Pauli string. For an <span class="math notranslate nohighlight">\(n\)</span>-qubit system, there are <span class="math notranslate nohighlight">\(4^n\)</span> possible Pauli strings. If your matrix doesn’t happen to align perfectly with the Pauli basis, the decomposition results in a massive list of strings, many with tiny coefficients.</p>
+<p>In the case of our 1D Laplacian, Pauli Decomposition might require up to <span class="math notranslate nohighlight">\(4^4=256\)</span> (to be precise: <span class="math notranslate nohighlight">\(3\cdot2^n\)</span> for an <span class="math notranslate nohighlight">\(n\)</span>-qubit discrete Laplacian) different Pauli strings to represent the matrix. LCU, on the other hand, requires only 3 custom unitaries (like the ones we manually defined) to represent the exact same matrix.</p>
+<p>Building a block encoding requires a number of auxiliary qubits and gate operations proportional to the number of terms in your sum. The more terms, the more complex the circuit, leading to more credits it costs to execute on hardware, while also sometimes requiring more qubits.</p>
+<p>Having explored various approaches to constructing block encodings and analyzing their quantum resource requirements, this already sounds particularly valuable for researchers developing new methods to block-encode specific matrices. Once your custom block encoding is implemented in Qrisp, performing resource estimation becomes straightforward: simply call<a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources</span></a>. If you’d like assistance integrating your approach, please get
+in touch so we can include it in future releases. Our goal is to gather a wide range of block encoding techniques in one place, allowing users to easily select the most resource-efficient method for their particular problem.</p>
+<p>Let’s show how we can obtain the state we’ve successfully applied LCU onto, or run the simulation with the Repeat-Until-Success protocol.</p>
+</section>
+<section id="Applying-BlockEncodings-w/-.apply-&amp;-.apply_rus">
+<h2>Applying BlockEncodings w/ <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> &amp; <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a><a class="headerlink" href="#Applying-BlockEncodings-w/-.apply-&-.apply_rus" title="Link to this heading">#</a></h2>
+<p>Now that we’ve built our block encoding, we face the ultimate “So what?” moment. A block encoding is like having a high-performance car sitting in your garage. It’s impressive to look at, but eventually, you actually want to drive it. In our case, “driving” means applying that matrix to a quantum state.</p>
+<p>This is where <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> and <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a> come into play.</p>
+<section id="The-manual,-NISQy-way:-.apply">
+<h3>The manual, NISQy way: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a><a class="headerlink" href="#The-manual,-NISQy-way:-.apply" title="Link to this heading">#</a></h3>
+<p>The <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> method is the straightforward way to use your block encoding. It simply adds the necessary gates to your circuit to perform the unitary <span class="math notranslate nohighlight">\(U\)</span>. However, there’s a catch. Because we are block encoding a non-unitary matrix <span class="math notranslate nohighlight">\(A\)</span> inside a larger unitary <span class="math notranslate nohighlight">\(U\)</span>, the “math” only works out perfectly when our extra qubits (the ancillas) start in the <span class="math notranslate nohighlight">\(\ket{0}\)</span> state and end in the <span class="math notranslate nohighlight">\(\ket{0}\)</span> state. When you call
+<a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply(operand)</span></a>, Qrisp returns a list of these ancilla variables. To get the correct result, you have to perform post-selection. This is a fancy way of saying: “Run the experiment, measure the ancillas, and if they aren’t all zero, throw that result in the trash and try again”. As you can imagine, if your success probability is low, you’ll be throwing away a lot of data. It’s effective, but about as efficient as trying to win the
+lottery by buying one ticket at a time and waiting a week for the results.</p>
+<p>Since current quantum hardware often struggles with mid-circuit measurements and real-time feedback (the features required for <a class="reference internal" href="../../../reference/Jasp/Control%20Flow/RUS.html"><span class="doc">RUS</span></a>), we frequently have to fall back on post-selection. Essentially you run the experiment many times, but you only keep the actors who followed the script perfectly (i.e., the ancillas stayed in <span class="math notranslate nohighlight">\(\ket{0}\)</span>).</p>
+<p>Here is how you implement this for a Heisenberg Hamiltonian using a standard simulator (or your favorite NISQ hardware) backend.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">])</span>
+
+<span class="n">operand</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">prepare</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="n">ancillas</span> <span class="o">=</span> <span class="n">BE</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">operand</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>Utilize the Qrisp <a class="reference internal" href="../../../reference/Backend%20Interface/VirtualBackend.html"><span class="doc">Backend Interface</span></a> to define a backend. While this example uses the Qiskit Aer simulator, the interface also supports physical quantum backends.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">QiskitBackend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_aer</span><span class="w"> </span><span class="kn">import</span> <span class="n">AerSimulator</span>
+<span class="n">example_backend</span> <span class="o">=</span> <span class="n">QiskitBackend</span><span class="p">(</span><span class="n">backend</span> <span class="o">=</span> <span class="n">AerSimulator</span><span class="p">())</span>
+
+<span class="c1"># Use backend keyword to specify quantum backend</span>
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">operand</span><span class="p">]</span> <span class="o">+</span> <span class="n">ancillas</span><span class="p">,</span>
+                            <span class="n">shots</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span>
+                            <span class="n">backend</span><span class="o">=</span><span class="n">example_backend</span><span class="p">)</span>
+
+<span class="c1"># Post-selection on ancillas being in |0&gt; state</span>
+<span class="n">filtered_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> \
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">:])}</span>
+<span class="n">success_prob</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">filtered_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="n">filtered_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">p</span> <span class="o">/</span> <span class="n">success_prob</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">filtered_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">filtered_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">amps</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.13530449 0.35803649 0.13734249 0.22436625 0.31314236 0.26791179
+ 0.3113159  0.1362021  0.13198564 0.35721875 0.13490765 0.22399664
+ 0.31471053 0.26689103 0.31194153 0.13421943]
+</pre></div></div>
+</div>
+<p>Alright, we have obtained something. Let’s further figure out what that something actually is. Even before that, let’s run a classical comparison that will help us make sense of the output. Let us quickly perform some magic, what’s important here is the output, which is the classically obtained result for the same problem we’ve solved quantumly using <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> and post-selection.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">H_arr</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+
+<span class="n">psi</span> <span class="o">=</span> <span class="n">H_arr</span> <span class="o">@</span> <span class="n">b</span>
+<span class="n">psi</span> <span class="o">=</span> <span class="n">psi</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="o">-</span><span class="n">amps</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.13416408+0.j 0.35777088+0.j 0.13416408+0.j 0.2236068 +0.j
+ 0.31304952+0.j 0.26832816+0.j 0.31304952+0.j 0.13416408+0.j
+ 0.13416408+0.j 0.35777088+0.j 0.13416408+0.j 0.2236068 +0.j
+ 0.31304952+0.j 0.26832816+0.j 0.31304952+0.j 0.13416408+0.j]
+0.005585821626674829
+</pre></div></div>
+</div>
+<p>If we, again, compare the two results, as well as the variance, we see that the quantum results fluctuate by quite a lot. It is becasue of the probabilistic nature of quantum computation - if we would increase the number of shots, the variance would decrease, and the results won’t fluctuate that much.</p>
+<p>This is the NISQ way, post-selection based to solve this. We designed Qrisp as being forward thinking with a lot of the infrastructure required for the Fault Tolerance era already introduced, like real-time measurements and repeat until success procedures. Let’s show how to use the latter with our BlockEncodings, and see how the variance of the results looks like then.</p>
+</section>
+<section id="The-automatic,-FT-way:-.apply_rus">
+<h3>The automatic, FT way: <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a><a class="headerlink" href="#The-automatic,-FT-way:-.apply_rus" title="Link to this heading">#</a></h3>
+<p>If you don’t feel like manually filtering your data, you can instead use <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a>. The <a class="reference internal" href="../../../reference/Jasp/Control%20Flow/RUS.html"><span class="doc">RUS</span></a> stands for Repeat-Until-Success. This approach automatically handles the filtering at run time. While the same number of quantum shots are taken, unsuccessful ones are discarded dynamically.</p>
+<p>Instead of you manually checking the ancillas, the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a> method wraps the entire process into a loop:</p>
+<ul class="simple">
+<li><p>It prepares your input state.</p></li>
+<li><p>It applies the block encoding.</p></li>
+<li><p>It measures the ancillas.</p></li>
+<li><p>If the ancillas are not zero, it resets them and starts over automatically.</p></li>
+<li><p>If they are zero, it stops. You now have the exact state you wanted. If not, the loop repeats again.</p></li>
+</ul>
+<p>This protocol turns a probabilistic process into a deterministic one. From your perspective as a coder, it looks like the matrix was applied successfully 100% of the time. Let’s show that with the same example from above.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">Z</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">BE</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+<span class="c1"># Prepare initial system state</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">():</span>
+    <span class="n">operand</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">1.</span><span class="p">])</span>
+    <span class="n">prepare</span><span class="p">(</span><span class="n">operand</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">operand</span>
+
+<span class="c1"># Apply the operator to an initial system state</span>
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">BE</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">operand_prep</span><span class="p">)()</span>
+<span class="n">res_dict</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+
+<span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">([</span><span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">)])</span>
+
+<span class="n">H_arr</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+
+<span class="n">psi</span> <span class="o">=</span> <span class="n">H_arr</span> <span class="o">@</span> <span class="n">b</span>
+<span class="n">psi</span> <span class="o">=</span> <span class="n">psi</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">psi</span><span class="o">-</span><span class="n">amps</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.13416408+0.j 0.35777088+0.j 0.13416408+0.j 0.2236068 +0.j
+ 0.31304952+0.j 0.26832816+0.j 0.31304952+0.j 0.13416408+0.j
+ 0.13416408+0.j 0.35777088+0.j 0.13416408+0.j 0.2236068 +0.j
+ 0.31304952+0.j 0.26832816+0.j 0.31304952+0.j 0.13416408+0.j]
+1.234088245905326e-07
+</pre></div></div>
+</div>
+<p>A few things to note here. We pass the operand (the state we have prepared and want to apply the operator to) as a function, as oppossed as a <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a>. The second difference is the way we obtain the BlockEncoding and apply the <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a>, which is within a main function. This is because we use the <a class="reference internal" href="../../../reference/Jasp/index.html"><span class="doc">Jasp</span></a> compilation pipeline, which allows
+us to avoid the pythonic compilation bottleneck. You can learn more about it in the Jasp tutorial.</p>
+<p>Next, we invoke the <a class="reference internal" href="../../../reference/Jasp/Simulation%20Tools/Terminal%20Sampling.html"><span class="doc">&#64;terminal_sampling</span></a> decorator. Simply put, this decorator tells the compiler to simulate the quantum program using our fast state vector simulator and sample the final measurement distribution. Instead of manually writing a classical loop to execute the program repeatedly and gather measurement statistics, <a class="reference internal" href="../../../reference/Jasp/Simulation%20Tools/Terminal%20Sampling.html"><span class="doc">&#64;terminal_sampling</span></a>
+automatically handles the heavy lifting of sampling this probability. In the end, we obtain a result that is consistent when repeating the simulation.</p>
+<p>Before delving into the final section of this tutorial, let’s quickly recap. The <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> allows you to use block encodings on today’s NISQ hardware, or if you’re running on a state vector simulator and don’t want the overhead of the RUS loop logic.</p>
+<p>But for future “real-world” (or real-simulation) use cases, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a> is your best friend. It takes a function that prepares your qubits (operand_prep) and returns a new function that handles the messy “measure-reset-repeat” logic for you.</p>
+<p>Oh, and you can perform quantum resource estimation even before simulating. How nice, right?!</p>
+<div class="note docutils container">
+<p>The <code class="docutils literal notranslate"><span class="pre">.apply_rus</span></code> is just an <code class="docutils literal notranslate"><span class="pre">.apply</span></code> and post selection wrapped into a loop. From the software perspective the NISQ/FT distinctions don’t really make sense. This comparison is done by applying these considerations through the lense of the state of current hardware, which yet don’t allow for running real-time measurement protocols such as RUS.</p>
+</div>
+</section>
+</section>
+<section id="Constructing-new-BlockEncodings-using-+,--,-*,-&#64;,-.kron()">
+<h2>Constructing new BlockEncodings using <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>, <code class="docutils literal notranslate"><span class="pre">.kron()</span></code><a class="headerlink" href="#Constructing-new-BlockEncodings-using-+,--,-*,-@,-.kron()" title="Link to this heading">#</a></h2>
+<p>Up until now, we’ve treated Block Encodings as static objects: you build them, and you apply them. But in the real world (and especially in quantum chemistry or condensed matter physics), operators are rarely solitary. They are sums of interactions, products of symmetries, and scaled potentials.</p>
+<p>To handle this, Qrisp allows you to perform a full suite of algebraic operations directly on your <a class="reference internal" href="../../../reference/Block%20Encodings/BlockEncoding.html"><span class="doc">BlockEncoding</span></a> objects:</p>
+<ul class="simple">
+<li><p>Addition (<code class="docutils literal notranslate"><span class="pre">+</span></code>): Implements <span class="math notranslate nohighlight">\(A + B\)</span> via the LCU framework.</p></li>
+<li><p>Subtraction (<code class="docutils literal notranslate"><span class="pre">-</span></code>): Implements <span class="math notranslate nohighlight">\(A - B\)</span>.</p></li>
+<li><p>Scalar Multiplication (<code class="docutils literal notranslate"><span class="pre">*</span></code>): Scales an operator by a constant <span class="math notranslate nohighlight">\(c \cdot A\)</span>.</p></li>
+<li><p>Negation (<code class="docutils literal notranslate"><span class="pre">-A</span></code>): Flips the sign of the operator.</p></li>
+<li><p>Matrix Multiplication (<code class="docutils literal notranslate"><span class="pre">&#64;</span></code>): Composes two operators <span class="math notranslate nohighlight">\(A \cdot B\)</span>.</p></li>
+<li><p>Kronecker Product (<code class="docutils literal notranslate"><span class="pre">.kron()</span></code>): Performs the tensor product <span class="math notranslate nohighlight">\(A \otimes B\)</span> to expand the Hilbert space.</p></li>
+</ul>
+<p>We will expand this list in future releases, as well as implement more efficient ways for some of these operations. For those curious, we took inspiration from the paper <a class="reference external" href="https://arxiv.org/pdf/2509.15779" rel="noreferrer" target="_blank">Products between block-encodings</a> to implement the underlying logic.</p>
+<p>Why and how would this be useful, you might be wondering. Well, if you had to manually track the coefficients, normalization factors (<span class="math notranslate nohighlight">\(\alpha\)</span>), and ancilla registers every time you wanted to add two matrices together, you’d probably go back to classical computing by lunchtime. This is where the BlockEncoding arithmetic comes in. In Qrisp, we treat BlockEncoding objects as first-class programming abstractions.</p>
+<p>Think of it like this: When you write <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">1.5</span> <span class="pre">*</span> <span class="pre">y</span> <span class="pre">+</span> <span class="pre">2.0</span></code>, you don’t care how the CPU handles floating-point registers or carry bits. You care about the relationship between <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+<p>By using standard Python operators (<code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>) on BlockEncoding objects, you are:</p>
+<ul class="simple">
+<li><p>Automating LCU: Addition and subtraction automatically trigger the Linear Combination of Unitaries (LCU) framework behind the scenes.</p></li>
+<li><p>Managing Complexity: Qrisp keeps track of the expanding ancilla requirements and the cumulative normalization factor (<span class="math notranslate nohighlight">\(\alpha\)</span>) so you don’t have to.</p></li>
+<li><p>Mirroring the Math: Your code starts looking exactly like the physics paper you’re trying to implement.</p></li>
+</ul>
+<p><strong>Note of Caution:</strong> Just because you can add fifty block encodings together doesn’t mean you should. Each arithmetic operation adds circuit depth and ancilla qubits. For complex polynomials, Quantum Signal Processing (QSP) is usually the more efficient path (more on that on the other tutorial), but for building complex composite Hamiltonians, arithmetic is king. What do we mean by complex composite Hamiltonians? You could, for example, add a block-encoded discrete Laplcaian to another block
+encoded operator resulting in a linear combination of block encodings.</p>
+<p>Let’s go through some simple examples!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="c1"># Define two simple operators</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">Z</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="c1"># Perform arithmetic: 2.5 * A - B</span>
+<span class="c1"># Qrisp handles the LCU logic and the Z-gate for the sign flip automatically</span>
+<span class="c1"># In practice, use BlockEncoding.from_operator(2.5 * X(0) * X(1) - Z(0) * Z(1))</span>
+<span class="n">H_total</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="n">A</span> <span class="o">-</span> <span class="n">B</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prep_zeros</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_arithmetic</span><span class="p">():</span>
+    <span class="c1"># Use apply_rus to see the result of the combined operator</span>
+    <span class="k">return</span> <span class="n">H_total</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">prep_zeros</span><span class="p">)()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New Alpha: </span><span class="si">{</span><span class="n">H_total</span><span class="o">.</span><span class="n">alpha</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># Alpha is now 2.5 + 1.0 = 3.5</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resulting Distribution: </span><span class="si">{</span><span class="n">run_arithmetic</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+New Alpha: 3.5
+Resulting Distribution: {3: 0.8620689475330789, 0: 0.13793105246692108}
+</pre></div></div>
+</div>
+<p>In this example, we’ll build a composite operator <span class="math notranslate nohighlight">\(H_{total} = 2.5\cdot A - B\)</span>. This demonstrates how Qrisp handles both scalar multiplication and the sign flip of subtraction. Let’s do another one!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.block_encodings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEncoding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span>
+
+<span class="c1"># Create two 2-qubit block encodings</span>
+<span class="n">BE1</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">X</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">X</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">BE2</span> <span class="o">=</span> <span class="n">BlockEncoding</span><span class="o">.</span><span class="n">from_operator</span><span class="p">(</span><span class="n">Z</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">Z</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="c1"># 1. Expand the Hilbert space: BE1 (on qubits 0,1) tensor BE2 (on qubits 2,3)</span>
+<span class="c1"># The resulting BE acts on 4 qubits total.</span>
+<span class="n">BE_large</span> <span class="o">=</span> <span class="n">BE1</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="n">BE2</span><span class="p">)</span>
+
+<span class="c1"># 2. Composition: Multiply the large system by itself (A^2)</span>
+<span class="c1"># The &#39;@&#39; operator implements operator multiplication (matrix product)</span>
+<span class="n">BE_squared</span> <span class="o">=</span> <span class="n">BE_large</span> <span class="o">@</span> <span class="n">BE_large</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">operand_prep</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nd">@terminal_sampling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">BE_squared</span><span class="o">.</span><span class="n">apply_rus</span><span class="p">(</span><span class="n">operand_prep</span><span class="p">)()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">BE_squared</span><span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;gate counts&#39;: {&#39;x&#39;: 4, &#39;z&#39;: 4}, &#39;depth&#39;: 2, &#39;qubits&#39;: 4}
+</pre></div></div>
+</div>
+<p>Sometimes you want to build a large system by gluing smaller ones together. Here, we use <code class="docutils literal notranslate"><span class="pre">.kron()</span></code> to combine two 2-qubit systems into a 4-qubit system, and then use <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> to compose it with another operator.</p>
+</section>
+<section id="Recap">
+<h2>Recap<a class="headerlink" href="#Recap" title="Link to this heading">#</a></h2>
+<p>We have journeyed from the mathematical definition of Block Encodings to high-level arithmetic operations on quantum operators. Here is the distilled wisdom from this tutorial:</p>
+<ul class="simple">
+<li><p>The Bridge to Unitary: Block Encoding is the essential technique that allows us to run non-unitary math (like Hamiltonians or Laplacians) on quantum computers by embedding them into larger spaces.</p></li>
+<li><p>Flexibility in Construction: Qrisp meets you where you are. Use <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_array.html"><span class="doc">.from_array</span></a> for quick prototyping, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_operator.html"><span class="doc">.from_operator</span></a> for chemistry/physics Hamiltonians, or <a class="reference internal" href="../../../reference/Block%20Encodings/methods/from_lcu.html"><span class="doc">.from_lcu</span></a> when you need maximum efficiency and custom unitary definitions.</p></li>
+<li><p>Efficiency Matters: As demonstrated with the Laplacian, choosing the right encoding strategy (LCU vs. Pauli decomposition) can drastically reduce circuit depth and gate count. The <a class="reference internal" href="../../../reference/Block%20Encodings/methods/resources.html"><span class="doc">.resources</span></a> method is your built-in tool to verify this.</p></li>
+<li><p>Deterministic Execution: While <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply.html"><span class="doc">.apply</span></a> works for NISQ experiments via post-selection, <a class="reference internal" href="../../../reference/Block%20Encodings/methods/apply_rus.html"><span class="doc">.apply_rus</span></a> leverages the Repeat-Until-Success protocol to provide deterministic, Fault-Tolerant compatible execution.</p></li>
+<li><p>Composability: You can build complex operators using standard Python math (<code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>). Qrisp handles the heavy lifting of managing coefficients and ancilla qubits, letting you focus on the algorithm logic.</p></li>
+</ul>
+<p>By mastering Block Encodings in Qrisp, you aren’t just manipulating matrices; you are structuring quantum algorithms in a way that is modular, scalable, and ready for the future of fault-tolerant computing. Now, go forth and encode!</p>
+</section>
+<section id="Motivation-for-BE-201">
+<h2>Motivation for BE 201<a class="headerlink" href="#Motivation-for-BE-201" title="Link to this heading">#</a></h2>
+<p>Feeling like you mastered the BlockEncodings class? Good. Now let’s use it on some state-of-the-art research applications. In the next tutorial, we move from simple algebra to transforming a matrix’s entire spectrum using Quantum Signal Processing (QSP).</p>
+<p>The logic is elegant: by interleaving your block encoding with specific phase shifts, you can apply any polynomial <span class="math notranslate nohighlight">\(P(A)\)</span> to your matrix. While finding these “phase angles” is usually a classical nightmare, Qrisp calculates them for you internally.</p>
+<p>We’ve distilled these world-class techniques into three simple methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/poly.html"><span class="doc">.poly</span></a>: Apply custom polynomial transformations.</p></li>
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/inv.html"><span class="doc">.inv</span></a>: Perform matrix inversion via approximating by a linear combination of Chebyshev polynomials.</p></li>
+<li><p><a class="reference internal" href="../../../reference/Block%20Encodings/methods/sim.html"><span class="doc">.sim</span></a>: Execute Hamiltonian simulation with optimal scaling.</p></li>
+</ul>
+<p>Ready to see the magic? Journey onwards to the next tutorial to continue learning about quantum linear algebra and how Qrisp’s BlockEncoding interface makes it simple and intuitive!</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/BE_tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What-are-block-encodings?">What are block encodings?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Custom-BlockEncoding:-the-discrete-Laplacian-example">Custom BlockEncoding: the discrete Laplacian example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Quantum-Resource-Estimation-w/-.resources">Quantum Resource Estimation w/ .resources</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Applying-BlockEncodings-w/-.apply-&amp;-.apply_rus">Applying BlockEncodings w/ .apply &amp; .apply_rus</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#The-manual,-NISQy-way:-.apply">The manual, NISQy way: .apply</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#The-automatic,-FT-way:-.apply_rus">The automatic, FT way: .apply_rus</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Constructing-new-BlockEncodings-using-+,--,-*,-@,-.kron()">Constructing new BlockEncodings using <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">@</span></code>, <code class="docutils literal notranslate"><span class="pre">.kron()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Recap">Recap</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Motivation-for-BE-201">Motivation for BE 201</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/BE_tutorial/BE_vol1.ipynb" download="BE_vol1.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

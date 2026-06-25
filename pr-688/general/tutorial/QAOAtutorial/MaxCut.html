@@ -1,0 +1,1169 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MaxCut QAOA Implementation &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/QAOAtutorial/MaxCut';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/QAOAtutorial/MaxCut.html" />
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Max-\(\kappa\)-Colorable Subgraph QAOA Implementation" href="MkCS.html" />
+    <link rel="prev" title="Theoretical Overview" href="Theoretical.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Solving combinatorial optimization problems with QAOA</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Theoretical.html">Theoretical Overview</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">MaxCut QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MkCS.html">Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph QAOA Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ConstrainedMixers.html">Channelled Constrained Mixers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QUBO.html">QUBO as a QAOAProblem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PortfolioRebalancing.html">Portfolio rebalancing with constrained mixers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Solving combinatorial optimization problems with QAOA</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">MaxCut QAOA Implementation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="MaxCut-QAOA-Implementation">
+<h1>MaxCut QAOA Implementation<a class="headerlink" href="#MaxCut-QAOA-Implementation" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Matic Petrič</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>Welcome to our Quantum Approximate Optimization Algorithm (QAOA) implementation tutorial for the MaxCut problem! This tutorial is designed to provide you with a hands-on understanding of how to apply QAOA using Qrisp to solve the MaxCut optimization problem.</p>
+<p>To refresh your memory, <a class="reference external" href="https://en.wikipedia.org/wiki/Maximum_cut" rel="noreferrer" target="_blank">Maximum Cut, or MaxCut for short</a> involves dividing the nodes of a graph into two groups such that the number of edges between the groups is maximized. It has applications in various fields, including computer science, operations research, and statistical physics.</p>
+<p>In this interactive tutorial, we’ll first tackle the MaxCut problem to build a solid QAOA foundation. You’ll be guided to learn how to formulate the problem for QAOA, implement the actual algorithm, and interpret the results.</p>
+<p>Whether you’re a quantum computing novice or an experienced algorithm developer checking out this remarkable new framework, you may have observed that virtually every other quantum programming framework and their quantum grandmother has implemented QAOA for MaxCut in a similar manner (authors used irony, it was super effective). We’ll go one step further and showcase on why using the Qrisp QAOA module and its <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem class</span></a> <strong>is</strong> a
+no-brainer when it comes to simplicity of implementation as well as the speed of the optimization itself.</p>
+<section id="Your-very-first-QAOA-layer">
+<h2>Your very first QAOA layer<a class="headerlink" href="#Your-very-first-QAOA-layer" title="Link to this heading">#</a></h2>
+<p>Let’s start slowly with deepening the understanding of QAOA at its core - one layer of the algorithm and see how it looks like. We start with importing necessary quantum gates, as well as <code class="docutils literal notranslate"><span class="pre">networkx</span></code>, which is a package for creating and manipulating graphs. In this block of code you also define the angle parameters <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">barrier</span><span class="p">,</span> <span class="n">rz</span><span class="p">,</span> <span class="n">rx</span><span class="p">,</span> <span class="n">cx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Symbol</span>
+
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="c1"># nx.draw(G, with_labels=True)</span>
+<span class="n">N</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Feel free to play around with this block of code changing the graph through the number of nodes, the edges connecting them, and print the result by uncommenting <code class="docutils literal notranslate"><span class="pre">nx.draw(G,</span> <span class="pre">with_labels=True)</span></code>.</p>
+<p>Next thing on our list is defining the MaxCut cost operator and the mixer. Taking a peek in the appendices section of Hadfield’s paper, we see, the MaxCut phase separator we have to implement is defined as</p>
+<div class="math notranslate nohighlight">
+\[U_P=e^{-i\gamma_pH_P}=e^{-i\gamma_p\sum_{i,j\in E}(-Z_iZ_j)}\]</div>
+<p>Instead of using the <code class="docutils literal notranslate"><span class="pre">ZZ</span></code> gate, we will perform the same operation using only elementary gates.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gamma</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;γ&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_cost_operator</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">rz</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">qv</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">barrier</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+</pre></div>
+</div>
+</div>
+<p>The first line starts a loop over all edges in the graph <code class="docutils literal notranslate"><span class="pre">G</span></code>. Each edge is a pair of nodes, which we refer to as <code class="docutils literal notranslate"><span class="pre">pair[0]</span></code> and <code class="docutils literal notranslate"><span class="pre">pair[1]</span></code>. We then apply a controlled-X (CNOT) gate to the pair of qubits before applying a rotation around the Z-axis by an angle of <span class="math notranslate nohighlight">\(2\gamma\)</span> to the second qubit in the pair. At the end we apply another CNOT gate to the pair of qubits.</p>
+<p>As suggested in the table of our QAOA theoretical overview, we are using the <code class="docutils literal notranslate"><span class="pre">rx</span></code> gate as the mixer.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">beta</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;β&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_mixer</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+        <span class="n">rx</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">beta</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">barrier</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+</pre></div>
+</div>
+</div>
+<p>With these two functions at our disposal we can now implement our first QAOA layer and <code class="docutils literal notranslate"><span class="pre">print(qv.qs)</span></code> it.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qv_1</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">h</span><span class="p">(</span><span class="n">qv_1</span><span class="p">)</span>
+<span class="n">apply_cost_operator</span><span class="p">(</span><span class="n">qv_1</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+<span class="n">apply_mixer</span><span class="p">(</span><span class="n">qv_1</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qv_1</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QuantumCircuit:
+---------------
+        ┌───┐                      ░                       ░                 »
+qv_1.0: ┤ H ├──■───────────────■───░───■───────────────■───░─────────────────»
+        ├───┤  │               │   ░   │               │   ░ ┌───┐┌─────────┐»
+qv_1.1: ┤ H ├──┼───────────────┼───░───┼───────────────┼───░─┤ X ├┤ Rz(2*γ) ├»
+        ├───┤  │               │   ░   │               │   ░ └─┬─┘└─────────┘»
+qv_1.2: ┤ H ├──┼───────────────┼───░───┼───────────────┼───░───┼─────────────»
+        ├───┤┌─┴─┐┌─────────┐┌─┴─┐ ░   │               │   ░   │             »
+qv_1.3: ┤ H ├┤ X ├┤ Rz(2*γ) ├┤ X ├─░───┼───────────────┼───░───■─────────────»
+        ├───┤└───┘└─────────┘└───┘ ░ ┌─┴─┐┌─────────┐┌─┴─┐ ░                 »
+qv_1.4: ┤ H ├──────────────────────░─┤ X ├┤ Rz(2*γ) ├┤ X ├─░─────────────────»
+        └───┘                      ░ └───┘└─────────┘└───┘ ░                 »
+«              ░                       ░                       ░      »
+«qv_1.0: ──────░───────────────────────░───────────────────────░──────»
+«        ┌───┐ ░                       ░ ┌───┐┌─────────┐┌───┐ ░      »
+«qv_1.1: ┤ X ├─░───────────────────────░─┤ X ├┤ Rz(2*γ) ├┤ X ├─░──────»
+«        └─┬─┘ ░ ┌───┐┌─────────┐┌───┐ ░ └─┬─┘└─────────┘└─┬─┘ ░ ┌───┐»
+«qv_1.2: ──┼───░─┤ X ├┤ Rz(2*γ) ├┤ X ├─░───┼───────────────┼───░─┤ X ├»
+«          │   ░ └─┬─┘└─────────┘└─┬─┘ ░   │               │   ░ └─┬─┘»
+«qv_1.3: ──■───░───■───────────────■───░───┼───────────────┼───░───┼──»
+«              ░                       ░   │               │   ░   │  »
+«qv_1.4: ──────░───────────────────────░───■───────────────■───░───■──»
+«              ░                       ░                       ░      »
+«                         ░ ┌─────────┐ ░
+«qv_1.0: ─────────────────░─┤ Rx(2*β) ├─░─
+«                         ░ ├─────────┤ ░
+«qv_1.1: ─────────────────░─┤ Rx(2*β) ├─░─
+«        ┌─────────┐┌───┐ ░ ├─────────┤ ░
+«qv_1.2: ┤ Rz(2*γ) ├┤ X ├─░─┤ Rx(2*β) ├─░─
+«        └─────────┘└─┬─┘ ░ ├─────────┤ ░
+«qv_1.3: ─────────────┼───░─┤ Rx(2*β) ├─░─
+«                     │   ░ ├─────────┤ ░
+«qv_1.4: ─────────────■───░─┤ Rx(2*β) ├─░─
+«                         ░ └─────────┘ ░
+Live QuantumVariables:
+----------------------
+QuantumVariable qv_1
+</pre></div></div>
+</div>
+<p>Applying hadamard gates on <code class="docutils literal notranslate"><span class="pre">qv</span></code> prepares the initial state for our system - the superposition state <span class="math notranslate nohighlight">\(|s\rangle\)</span> .</p>
+<p>If you have executed all the preceding cells correctly, you should have been able to print and examine the circuit of the initial QAOA layer. You may notice a pattern in the phase separator section of the circuit, which links two qubits corresponding to a specific pair of nodes in <code class="docutils literal notranslate"><span class="pre">G</span></code> that are connected by an edge (commencing flashback: <code class="docutils literal notranslate"><span class="pre">G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])</span></code>). The use of barriers between such pairs facilitates a more intuitive understanding of the phase
+separator unitary’s inner workings.</p>
+<p>We’ve used the parameters <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> symbolically, without assigning specific numerical values to them. In the next section we will build on top of the first layer, assign values to the angle parameters and iteratively optimize their value with each additional layer (SPOILER ALERT).</p>
+<p>As we add more layers to our QAOA circuit, the values of <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> are refined, leading us closer to the optimal solution. This iterative improvement is the core of what makes QAOA such a powerful tool.</p>
+</section>
+<section id="MaxCut-QAOA-implementation">
+<h2>MaxCut QAOA implementation<a class="headerlink" href="#MaxCut-QAOA-implementation" title="Link to this heading">#</a></h2>
+<p>Putting focus on the problem at hand (MaxCut if you’re just scrolling through and not paying that much attention) it is reasonable to ask ourselves what will be the objective that we want to optimize.</p>
+<p>As the name suggests, we are looking for a cut going through as much edges as possible. It’s therefore crucial to count the amount of cuts we cut through (I’ll cut it out now) by checking if the nodes <code class="docutils literal notranslate"><span class="pre">i</span></code> and <code class="docutils literal notranslate"><span class="pre">j</span></code> belong to different groups. If they are, the edge <span class="math notranslate nohighlight">\((i,j)\)</span> is cut and added to the total.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">maxcut_obj</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">cut</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">cut</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">cut</span>
+</pre></div>
+</div>
+</div>
+<p>This optimization objective is important for the last building blocks described in the theoretical overview we haven’t mentioned yet - the cost function. The cost function is important for keeping track of the energy of the system:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">maxcut_cost_funct</span><span class="p">(</span><span class="n">meas_res</span><span class="p">):</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">meas</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">meas_res</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">obj_for_meas</span> <span class="o">=</span> <span class="n">maxcut_obj</span><span class="p">(</span><span class="n">meas</span><span class="p">)</span>
+        <span class="n">energy</span> <span class="o">+=</span> <span class="n">obj_for_meas</span> <span class="o">*</span> <span class="n">p</span>
+    <span class="k">return</span> <span class="n">energy</span>
+</pre></div>
+</div>
+</div>
+<p>We loop over the measurement in <code class="docutils literal notranslate"><span class="pre">meas_res</span></code>. Each solution is represented by a string of 1 and 0 in <code class="docutils literal notranslate"><span class="pre">meas</span></code> with probability <code class="docutils literal notranslate"><span class="pre">p</span></code> keeping score in how likely a particular solution appears.</p>
+<p>For each such solution the cost is calculated using the <code class="docutils literal notranslate"><span class="pre">maxcut_obj</span></code> returning the number of cut edges. At the end, <code class="docutils literal notranslate"><span class="pre">maxcut_cost_funct</span></code> calculates the average “quality” of a set of solutions to the MaxCut problem. A lower average energy means that, on average, the solutions are better - they cut more edges.</p>
+<p>This is now nearly all the building blocks we need in order to run QAOA and start optimizing. Well, after we add more layers to our algorithm, that is.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_p_layers</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="n">apply_cost_operator</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">apply_mixer</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">beta</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">barrier</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">qv</span>
+</pre></div>
+</div>
+</div>
+<p>With our <span class="math notranslate nohighlight">\(p\)</span>-layered algorithm in hand there is one last piece of the puzzle: the objective function, which we need to generate in order to calculate the average energy of the resulting solutions. Oh, and it features the angle parameters <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span>, which we combine in one list <code class="docutils literal notranslate"><span class="pre">theta</span></code>. The solutions we get depend on the values of the angle parameters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">quantum_objective</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">qv_p</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[:</span><span class="n">p</span><span class="p">]</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="n">p</span><span class="p">:]</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">apply_p_layers</span><span class="p">(</span><span class="n">qv_p</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">qv</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">maxcut_cost_funct</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can finally finish combine all the pieces of the mosaic and have it appraised by a professional - a classical optimizer. Running it online might take a second so we would like to encourage you to download Qrisp and try out for yourself!</p>
+<p>We first reset the initial state and randomize it in a list where the first <span class="math notranslate nohighlight">\(p\)</span> values correspond to <span class="math notranslate nohighlight">\(\beta\)</span> and the second one to <span class="math notranslate nohighlight">\(\gamma\)</span>. It has finally come the time to inclute the COBYLA optimiser, which will return the optimal parameters that minimze our objective function. This is done using the <code class="docutils literal notranslate"><span class="pre">minimize</span></code> method, which adjusts the parameters iteratively until it finds the best ones.</p>
+<p>Then, once we have our optimal parameters, we apply QAOA one more time to get our final set of solutions (<code class="docutils literal notranslate"><span class="pre">results</span></code>), before finding the best solution by looking for the one with the lowest energy. Finally, we visualize our solution by coloring the nodes of our graph according to which group they belong to in the best solution.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+
+<span class="n">init_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span>
+
+<span class="n">res_sample</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+    <span class="n">quantum_objective</span><span class="p">,</span> <span class="n">init_point</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">optimal_theta</span> <span class="o">=</span> <span class="n">res_sample</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+<span class="n">qv_p</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="n">qv</span> <span class="o">=</span> <span class="n">apply_p_layers</span><span class="p">(</span><span class="n">qv_p</span><span class="p">,</span> <span class="n">optimal_theta</span><span class="p">[:</span><span class="n">p</span><span class="p">],</span> <span class="n">optimal_theta</span><span class="p">[</span><span class="n">p</span><span class="p">:])</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">qv_p</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+
+<span class="n">best_cut</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[(</span><span class="n">maxcut_obj</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best string: </span><span class="si">{</span><span class="n">best_solution</span><span class="si">}</span><span class="s2"> with cut: </span><span class="si">{</span><span class="o">-</span><span class="n">best_cut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;r&quot;</span> <span class="k">if</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span> <span class="k">else</span> <span class="s2">&quot;b&quot;</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span><span class="p">]</span>
+<span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">font_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="n">node_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span>
+    <span class="n">pos</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">bipartite_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span> <span class="k">if</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">]),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Best string: 11100 with cut: 6
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/general_tutorial_QAOAtutorial_MaxCut_19_1.png" src="../../../_images/general_tutorial_QAOAtutorial_MaxCut_19_1.png" />
+</div>
+</div>
+<p>And voila! We just solved the MaxCut problem using a relatively straightforward brute force approach. While this method can be effective, it’s not the most efficient or elegant way to tackle this problem, and other problem instances with more complex objectives, mixers, or both.</p>
+<p>That’s where our QAOAProblem class comes in. This class simplifies the process of running QAOA by introducing modularity, without sacrificing the generality of whichever problem instance we’re dealing with. As we move forward in this tutorial, you’ll have the opportunity to try it out for yourself.</p>
+</section>
+<section id="QAOAProblem.-Enough-said.">
+<h2>QAOAProblem. Enough said.<a class="headerlink" href="#QAOAProblem.-Enough-said." title="Link to this heading">#</a></h2>
+<p>🎶 Enough chit chat, you ain’t got all day - let’s get to it: QAOAProblem, lead the way! 🎶</p>
+<p>Taking the essential building blocks from <a class="reference external" href="https://arxiv.org/abs/1709.03489" rel="noreferrer" target="_blank">QAOAnsatz</a> into account, we built the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAProblem.html"><span class="doc">QAOAProblem class</span></a> with modularity in mind. We gathered and improved the functions shown in the example above and created a powerfull architecture with which it’s easy to implement various problem instances of varying complexity. In this tutorial we focus on using QAOAProblem, with extensive documentation being available
+<a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOA.html"><span class="doc">here</span></a>.</p>
+<p>We start with renaming our quantum argument <code class="docutils literal notranslate"><span class="pre">qv</span></code> to a more general <code class="docutils literal notranslate"><span class="pre">qarg</span></code> because more often than not we’ll combine <a class="reference internal" href="../../../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariables</span></a> into a <a class="reference internal" href="../../../reference/Core/QuantumArray.html"><span class="doc">QuantumArray</span></a> to make implementations of other problem instances more efficient.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</div>
+<p>BEHOLD, THE POWER OF QRISP!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAOAProblem</span><span class="p">,</span> <span class="n">RX_mixer</span>
+
+<span class="n">maxcut_instance</span> <span class="o">=</span> <span class="n">QAOAProblem</span><span class="p">(</span><span class="n">apply_cost_operator</span><span class="p">,</span> <span class="n">RX_mixer</span><span class="p">,</span> <span class="n">maxcut_cost_funct</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">maxcut_instance</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>  <span class="c1"># runs the simulation</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>And that’s pretty much it, really. Apart from visualizing the results again.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_cut</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[(</span><span class="n">maxcut_obj</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best string: </span><span class="si">{</span><span class="n">best_solution</span><span class="si">}</span><span class="s2"> with cut: </span><span class="si">{</span><span class="o">-</span><span class="n">best_cut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">res_str</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QAOA solution: &quot;</span><span class="p">,</span> <span class="n">res_str</span><span class="p">)</span>
+<span class="n">best_cut</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxcut_obj</span><span class="p">(</span><span class="n">res_str</span><span class="p">),</span> <span class="n">res_str</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">colors = [&quot;r&quot; if best_solution[node] == &quot;0&quot; else &quot;b&quot; for node in G]</span>
+<span class="sd">nx.draw(</span>
+<span class="sd">    G,</span>
+<span class="sd">    with_labels=True,</span>
+<span class="sd">    font_color=&quot;white&quot;,</span>
+<span class="sd">    node_size=1000,</span>
+<span class="sd">    font_size=22,</span>
+<span class="sd">    node_color=colors,</span>
+<span class="sd">    pos=nx.bipartite_layout(G, [node for node in G if best_solution[node] == &quot;0&quot;]),</span>
+<span class="sd">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Best string: 11100 with cut: 6
+QAOA solution:  11100
+</pre></div></div>
+</div>
+<p>After thorough comparison certainly made after running both approaches for different graph topologies you are in position to be the judge regarding which approach is qrispier.</p>
+</section>
+<section id="Benchmarking-the-performance">
+<h2>Benchmarking the performance<a class="headerlink" href="#Benchmarking-the-performance" title="Link to this heading">#</a></h2>
+<p>Lucky for you, the tutorial is not over since there is one more important functionality we would like to show you - the <a class="reference internal" href="../../../reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.benchmark.html"><span class="doc">benchmark</span></a> method of our QAOA module. This method allows you to observe the performance of your simulation:</p>
+<ul class="simple">
+<li><p>get insights about the approximation ratio for each run together with the average approximation ratio with its variance,</p></li>
+<li><p>obtain total circuit depth,</p></li>
+<li><p>obtain the overall quantum volume,</p></li>
+<li><p>and rank the results for different depths, amount of shots, as well as iterations.</p></li>
+</ul>
+<p>Let’s show how easy benchmarking QAOA is using Qrisp:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RND&quot;</span><span class="p">)</span>
+
+<span class="n">benchmark_data</span> <span class="o">=</span> <span class="n">maxcut_instance</span><span class="o">.</span><span class="n">benchmark</span><span class="p">(</span>
+    <span class="n">qarg</span><span class="o">=</span><span class="n">QuantumVariable</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">)),</span>
+    <span class="n">depth_range</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+    <span class="n">shot_range</span><span class="o">=</span><span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">],</span>
+    <span class="n">iter_range</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">],</span>
+    <span class="n">optimal_solution</span><span class="o">=</span><span class="s2">&quot;00011&quot;</span><span class="p">,</span>
+    <span class="n">repetitions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">temp</span> <span class="o">=</span> <span class="n">benchmark_data</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">print_res</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">rndFO</span> <span class="o">=</span> <span class="n">benchmark_data</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Approximation ratio: &quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">rndFO</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">rndFO</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variance: &quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">rndFO</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RND
+Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations
+============================================================================
+0     0.978e+0     5.4000e+8    5    54         5         10000   200
+1     0.939e+0     2.2000e+8    4    44         5         10000   100
+2     0.930e+0     2.2000e+7    4    44         5         1000    100
+3     0.927e+0     2.7000e+7    5    54         5         1000    100
+4     0.919e+0     2.7000e+8    5    54         5         10000   100
+5     0.911e+0     5.4000e+7    5    54         5         1000    200
+6     0.908e+0     1.7000e+7    3    34         5         1000    100
+7     0.906e+0     4.4000e+8    4    44         5         10000   200
+8     0.881e+0     3.4000e+8    3    34         5         10000   200
+9     0.881e+0     1.7000e+8    3    34         5         10000   100
+10    0.871e+0     3.4000e+7    3    34         5         1000    200
+11    0.839e+0     4.4000e+7    4    44         5         1000    200
+12    0.773e+0     2.4000e+7    2    24         5         1000    200
+13    0.765e+0     2.4000e+8    2    24         5         10000   200
+14    0.764e+0     1.2000e+8    2    24         5         10000   100
+15    0.721e+0     1.4000e+7    1    14         5         1000    200
+16    0.718e+0     1.2000e+7    2    24         5         1000    100
+17    0.718e+0     1.4000e+8    1    14         5         10000   200
+18    0.716e+0     7.0000e+7    1    14         5         10000   100
+19    0.695e+0     7.0000e+6    1    14         5         1000    100
+Approximation ratio:  0.8380908333333332
+Variance:  0.008241925124305553
+</pre></div></div>
+</div>
+<p>In the above example we obtain the list of results for the approximation ratio for various depths of QAOA ranging from 1 to 5. We run the benchmark for both 1000, and 10000 shots (the latter number is to avoid sampling of the solution); and for 100 and 200 iterations of the optimizer. Since QAOA is probabilistic every run is unique so it’s important to run more repetitions for clearer insights.</p>
+<p>It is important to note that in order to do the benchmark, one has to already know the optimal solution in order to calculate the optimal energy, and through that, the approximation ratio.</p>
+<p>As expected, on average the runs with higher depths yield better approximation ratio (with some outliers, of course).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">print('RND')</span></code> was used because we have also included the <a class="reference external" href="https://arxiv.org/abs/2101.05742" rel="noreferrer" target="_blank">TQA warm-start initialization</a>, which can be used within the <code class="docutils literal notranslate"><span class="pre">benchmark</span></code> method by setting <code class="docutils literal notranslate"><span class="pre">init_type='tqa'</span></code>. Let’s try benchmarking this approach as well:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TQA&quot;</span><span class="p">)</span>
+
+<span class="n">benchmark_data</span> <span class="o">=</span> <span class="n">maxcut_instance</span><span class="o">.</span><span class="n">benchmark</span><span class="p">(</span>
+    <span class="n">qarg</span><span class="o">=</span><span class="n">QuantumVariable</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">)),</span>
+    <span class="n">depth_range</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+    <span class="n">shot_range</span><span class="o">=</span><span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">],</span>
+    <span class="n">iter_range</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">],</span>
+    <span class="n">optimal_solution</span><span class="o">=</span><span class="s2">&quot;00011&quot;</span><span class="p">,</span>
+    <span class="n">repetitions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">init_type</span><span class="o">=</span><span class="s2">&quot;tqa&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">temp</span> <span class="o">=</span> <span class="n">benchmark_data</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">print_res</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">tqaFO</span> <span class="o">=</span> <span class="n">benchmark_data</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Approximation ratio: &quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">tqaFO</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">tqaFO</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variance: &quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">tqaFO</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TQA
+Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations
+============================================================================
+0     0.992e+0     2.7000e+7    5    54         5         1000    100
+1     0.990e+0     1.7000e+8    3    34         5         10000   100
+2     0.986e+0     2.2000e+8    4    44         5         10000   100
+3     0.984e+0     4.4000e+8    4    44         5         10000   200
+4     0.975e+0     5.4000e+8    5    54         5         10000   200
+5     0.971e+0     2.2000e+7    4    44         5         1000    100
+6     0.968e+0     4.4000e+7    4    44         5         1000    200
+7     0.966e+0     2.7000e+8    5    54         5         10000   100
+8     0.963e+0     1.7000e+7    3    34         5         1000    100
+9     0.961e+0     5.4000e+7    5    54         5         1000    200
+10    0.960e+0     3.4000e+8    3    34         5         10000   200
+11    0.941e+0     3.4000e+7    3    34         5         1000    200
+12    0.931e+0     2.4000e+8    2    24         5         10000   200
+13    0.930e+0     1.2000e+8    2    24         5         10000   100
+14    0.928e+0     1.2000e+7    2    24         5         1000    100
+15    0.921e+0     2.4000e+7    2    24         5         1000    200
+16    0.716e+0     1.4000e+8    1    14         5         10000   200
+17    0.715e+0     7.0000e+7    1    14         5         10000   100
+18    0.715e+0     7.0000e+6    1    14         5         1000    100
+19    0.706e+0     1.4000e+7    1    14         5         1000    200
+Approximation ratio:  0.9110216666666666
+Variance:  0.010240983530555543
+</pre></div></div>
+</div>
+<p>Again, since QAOA is probabilistic, every run returns different results.</p>
+<p>As we can see, the TQA initialization tends to return better approximation ratios more consistently. Feel free to play around with the <code class="docutils literal notranslate"><span class="pre">benchmark</span></code> method (or leave it running over night) to try and compare the two approaches further.</p>
+</section>
+<section id="Summary-and-motivation">
+<h2>Summary and motivation<a class="headerlink" href="#Summary-and-motivation" title="Link to this heading">#</a></h2>
+<p>To shortly summarize, in order to implement QAOA with QAOAProblem one needs to specify the problem using the following recipe</p>
+<ol class="upperroman simple">
+<li><p>define <strong>CLASSICAL COST FUNCTION</strong> of the problem you want to implement: <code class="docutils literal notranslate"><span class="pre">maxcut_cost_funct(counts)</span></code>,</p></li>
+<li><p>define the <strong>INITIAL STATE</strong> if it is not the superposition, which is set by default,</p></li>
+<li><p>define <strong>COST OPERATOR aka PHASE SEPARATOR</strong> (or use the ones specified in <a class="reference external" href="https://arxiv.org/abs/1709.03489" rel="noreferrer" target="_blank">From QAOA to QAOA</a>) like <code class="docutils literal notranslate"><span class="pre">apply_cost_operator</span></code> above, and</p></li>
+<li><p>select <strong>MIXER</strong> from the <a class="reference internal" href="../../../reference/Algorithms/qaoa/QAOAMixers.html"><span class="doc">assortment we provide and list here</span></a>.</p></li>
+</ol>
+<p>Let’s condense all of the above, and implement QAOA for MaxCut one last time in one block of code</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qaoa</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QAOAProblem</span><span class="p">,</span>
+    <span class="n">maxcut_obj</span><span class="p">,</span>
+    <span class="n">create_maxcut_cl_cost_function</span><span class="p">,</span>
+    <span class="n">create_maxcut_cost_operator</span><span class="p">,</span>
+    <span class="n">RX_mixer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+
+<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+
+<span class="n">qarg</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">maxcut_instance</span> <span class="o">=</span> <span class="n">QAOAProblem</span><span class="p">(</span>
+    <span class="n">create_maxcut_cost_operator</span><span class="p">(</span><span class="n">G</span><span class="p">),</span> <span class="n">RX_mixer</span><span class="p">,</span> <span class="n">create_maxcut_cl_cost_function</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">maxcut_instance</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qarg</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="n">best_cut</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+    <span class="p">[(</span><span class="n">maxcut_obj</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">res_str</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QAOA solution: &quot;</span><span class="p">,</span> <span class="n">res_str</span><span class="p">)</span>
+<span class="n">best_cut</span><span class="p">,</span> <span class="n">best_solution</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxcut_obj</span><span class="p">(</span><span class="n">res_str</span><span class="p">,</span> <span class="n">G</span><span class="p">),</span> <span class="n">res_str</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">colors = [&quot;r&quot; if best_solution[node] == &quot;0&quot; else &quot;b&quot; for node in G]</span>
+<span class="sd">nx.draw(</span>
+<span class="sd">    G,</span>
+<span class="sd">    with_labels=True,</span>
+<span class="sd">    font_color=&quot;white&quot;,</span>
+<span class="sd">    node_size=1000,</span>
+<span class="sd">    font_size=22,</span>
+<span class="sd">    node_color=colors,</span>
+<span class="sd">    pos=nx.bipartite_layout(G, [node for node in G if best_solution[node] == &quot;0&quot;]),</span>
+<span class="sd">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+QAOA solution:  11100
+</pre></div></div>
+</div>
+<p>You’ve got to admit that this is pretty cool, clean and qrispy, right?!</p>
+<p>If you are still not convinced, we provide a more complex problem instance in the next tutorial while also showcasing and putting some unique functionalities of Qrisp to the test. Let’s make this transition a little more dramatic by saying that it’s time to put our money where out mouths are (this is funny, because Qrisp is open source) and put this recipe to the test tackling the problem class which generalizes MaxCut: Max-<span class="math notranslate nohighlight">\(\kappa\)</span>-Colorable Subgraph.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial/QAOAtutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Your-very-first-QAOA-layer">Your very first QAOA layer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#MaxCut-QAOA-implementation">MaxCut QAOA implementation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#QAOAProblem.-Enough-said.">QAOAProblem. Enough said.</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Benchmarking-the-performance">Benchmarking the performance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Summary-and-motivation">Summary and motivation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/QAOAtutorial/MaxCut.ipynb" download="MaxCut.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,2342 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.jasp_expression.centerclass &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/jasp_expression/centerclass';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/jasp_expression/centerclass.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.jasp_expression.centerclass</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.jasp_expression.centerclass</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_jaxpr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.extend.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClosedJaxpr</span><span class="p">,</span> <span class="n">Jaxpr</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_flatten</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp._cache_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">qrisp_lru_compilation_cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">eval_jaxpr</span><span class="p">,</span>
+    <span class="n">extract_invalues</span><span class="p">,</span>
+    <span class="n">flatten_environments</span><span class="p">,</span>
+    <span class="n">insert_outvalues</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ProcessedMeasurement</span><span class="p">,</span>  <span class="c1"># noqa: F401 — re-exported via qrisp.jasp.jasp_expression</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.jasp_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_environments</span><span class="p">,</span> <span class="n">invert_jaspr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AbstractQuantumState</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="Jaspr">
+<a class="viewcode-back" href="../../../../reference/Jasp/Jaspr.html#qrisp.jasp.Jaspr">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Jaspr</span><span class="p">(</span><span class="n">ClosedJaxpr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The ``Jaspr`` class enables an efficient representations of a wide variety</span>
+<span class="sd">    of (hybrid) algorithms. For many applications, the representation is agnostic</span>
+<span class="sd">    to the scale of the problem, implying function calls with 10 or 10000 qubits</span>
+<span class="sd">    can be represented by the same object. The actual unfolding to a circuit-level</span>
+<span class="sd">    description is outsourced to</span>
+<span class="sd">    `established, classical compilation infrastructure &lt;https://mlir.llvm.org/&gt;`_,</span>
+<span class="sd">    implying state-of-the-art compilation speed can be reached.</span>
+
+<span class="sd">    As a subtype of ``jax.extend.core.ClosedJaxpr``, Jasprs are embedded into the well matured</span>
+<span class="sd">    `Jax ecosystem &lt;https://github.com/n2cholas/awesome-jax&gt;`_,</span>
+<span class="sd">    which facilitates the compilation of classical `real-time computation &lt;https://arxiv.org/abs/2206.12950&gt;`_</span>
+<span class="sd">    using some of the most advanced libraries in the world such as</span>
+<span class="sd">    `CUDA &lt;https://jax.readthedocs.io/en/latest/Custom_Operation_for_GPUs.html&gt;`_.</span>
+<span class="sd">    Especially `machine learning &lt;https://ai.google.dev/gemma/docs/jax_inference&gt;`_</span>
+<span class="sd">    and other scientific computations tasks are particularly well supported.</span>
+
+<span class="sd">    To get a better understanding of the syntax and semantics of Jaxpr (and with</span>
+<span class="sd">    that also Jaspr) please check `this link &lt;https://jax.readthedocs.io/en/latest/jaxpr.html&gt;`__.</span>
+
+<span class="sd">    Similar to Jaxpr, Jaspr objects represent (hybrid) quantum</span>
+<span class="sd">    algorithms in the form of a `functional programming language &lt;https://en.wikipedia.org/wiki/Functional_programming&gt;`_</span>
+<span class="sd">    in `SSA-form &lt;https://en.wikipedia.org/wiki/Static_single-assignment_form&gt;`_.</span>
+
+<span class="sd">    It is possible to compile Jaspr objects into QIR, which is facilitated by the</span>
+<span class="sd">    `Catalyst framework &lt;https://docs.pennylane.ai/projects/catalyst/en/stable/index.html&gt;`__</span>
+<span class="sd">    (check :meth:`qrisp.jasp.jaspr.to_qir` for more details).</span>
+
+<span class="sd">    Qrisp scripts can be turned into Jaspr objects by</span>
+<span class="sd">    calling the ``make_jaspr`` function, which has similar semantics as</span>
+<span class="sd">    `jax.make_jaxpr &lt;https://jax.readthedocs.io/en/latest/_autosummary/jax.make_jaxpr.html&gt;`_.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import *</span>
+<span class="sd">        from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">        def test_fun(i):</span>
+
+<span class="sd">            qv = QuantumFloat(i, -1)</span>
+<span class="sd">            x(qv[0])</span>
+<span class="sd">            cx(qv[0], qv[i-1])</span>
+<span class="sd">            meas_res = measure(qv)</span>
+<span class="sd">            meas_res += 1</span>
+<span class="sd">            return meas_res</span>
+
+
+<span class="sd">        jaspr = make_jaspr(test_fun)(4)</span>
+<span class="sd">        print(jaspr)</span>
+
+<span class="sd">    This will give you the following output:</span>
+
+<span class="sd">    .. code-block::</span>
+
+<span class="sd">        { lambda ; a:QuantumState b:i32[]. let</span>
+<span class="sd">            c:QuantumState d:QubitArray = create_qubits a b</span>
+<span class="sd">            e:Qubit = get_qubit d 0</span>
+<span class="sd">            f:QuantumState = x c e</span>
+<span class="sd">            g:i32[] = sub b 1</span>
+<span class="sd">            h:Qubit = get_qubit d g</span>
+<span class="sd">            i:QuantumState = cx f e h</span>
+<span class="sd">            j:QuantumState k:i32[] = measure i d</span>
+<span class="sd">            l:f32[] = convert_element_type[new_dtype=float64 weak_type=True] k</span>
+<span class="sd">            m:f32[] = mul l 0.5</span>
+<span class="sd">            n:f32[] = add m 1.0</span>
+<span class="sd">          in (j, n) }</span>
+
+
+<span class="sd">    A defining feature of the Jaspr class is that the first input and the</span>
+<span class="sd">    first output are always of QuantumState type. Therefore, Jaspr objects always</span>
+<span class="sd">    represent some (hybrid) quantum operation.</span>
+
+<span class="sd">    Qrisp comes with a built-in Jaspr interpreter. For that you simply have to</span>
+<span class="sd">    call the object like a function:</span>
+
+
+<span class="sd">    &gt;&gt;&gt; print(jaspr(2))</span>
+<span class="sd">    2.5</span>
+<span class="sd">    &gt;&gt;&gt; print(jaspr(4))</span>
+<span class="sd">    5.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;permeability&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;isqfree&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hashvalue&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ctrl_jaspr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inv_jaspr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;envs_flattened&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">permeability</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">isqfree</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ctrl_jaspr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">inv_jaspr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Jaxpr</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tried to call the Jaspr constructor with two arguments and signature </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2"> (allowed is (Jaxpr, list))&quot;</span>
+                <span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ClosedJaxpr</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tried to call the Jaspr constructor with one argument and signature </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2"> (allowed is (ClosedJaxpr))&quot;</span>
+                <span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">jaxpr</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">consts</span>
+
+        <span class="k">if</span> <span class="s2">&quot;jaxpr&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">ClosedJaxpr</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;consts&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">consts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;constvars&quot;</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to create Jaspr with constvars but no constants&quot;</span><span class="p">)</span>
+                <span class="n">consts</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">ClosedJaxpr</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jaxpr</span><span class="o">=</span><span class="n">Jaxpr</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">consts</span><span class="o">=</span><span class="n">consts</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashvalue</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">permeability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">permeability</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constvars</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">invars</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">Literal</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">permeability</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">isqfree</span> <span class="o">=</span> <span class="n">isqfree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span> <span class="o">=</span> <span class="n">ctrl_jaspr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv_jaspr</span> <span class="o">=</span> <span class="n">inv_jaspr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envs_flattened</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Tried to create a Jaspr from data that doesn&#39;t have a QuantumState the last argument (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="n">AbstractQuantumState</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Tried to create a Jaspr from data that doesn&#39;t have a QuantumState the last entry of return type (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead)&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">constvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">constvars</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eqns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">eqns</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">invars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">outvars</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">debug_info</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashvalue</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Jaxpr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ctrl_jaspr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctrl_jaspr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">permeability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">permeability</span><span class="p">,</span>
+            <span class="n">isqfree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">isqfree</span><span class="p">,</span>
+            <span class="n">ctrl_jaspr</span><span class="o">=</span><span class="n">ctrl_jaspr</span><span class="p">,</span>
+            <span class="n">constvars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constvars</span><span class="p">),</span>
+            <span class="n">invars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invars</span><span class="p">),</span>
+            <span class="n">outvars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">),</span>
+            <span class="n">eqns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eqns</span><span class="p">),</span>
+            <span class="n">effects</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">,</span>
+            <span class="n">debug_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug_info</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;consts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">Jaspr</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">res</span><span class="o">.</span><span class="n">envs_flattened</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envs_flattened</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+<div class="viewcode-block" id="Jaspr.inverse">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.inverse.html#qrisp.jasp.Jaspr.inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the inverse Jaspr (if applicable). For Jaspr that contain realtime</span>
+<span class="sd">        computations or measurements, the inverse does not exist.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Jaspr</span>
+<span class="sd">            The daggered Jaspr.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the daggered version:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumVariable(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                return qv</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+
+<span class="sd">            print(jaspr.inverse())</span>
+<span class="sd">            # Yields</span>
+<span class="sd">            # { lambda ; a:QuantumState b:i32[]. let</span>
+<span class="sd">            #     c:QuantumState d:QubitArray = create_qubits a b</span>
+<span class="sd">            #     e:Qubit = get_qubit d 0</span>
+<span class="sd">            #     f:Qubit = get_qubit d 1</span>
+<span class="sd">            #     g:QuantumState = t_dg c f</span>
+<span class="sd">            #     h:QuantumState = cx g e f</span>
+<span class="sd">            #   in (h, d) }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">invert_jaspr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.control">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.control.html#qrisp.jasp.Jaspr.control">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">control</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_ctrl</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the controlled version of the Jaspr. The control qubits are added</span>
+<span class="sd">        to the signature of the Jaspr as the arguments after the QuantumState.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_ctrl : int</span>
+<span class="sd">            The amount of controls to be added.</span>
+<span class="sd">        ctrl_state : int of str, optional</span>
+<span class="sd">            The control state on which to activate. The default is -1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Jaspr</span>
+<span class="sd">            The controlled Jaspr.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the controlled version:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumVariable(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                return qv</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+
+<span class="sd">            print(jaspr.control(2))</span>
+<span class="sd">            # Yields</span>
+<span class="sd">            # { lambda ; a:QuantumState b:Qubit c:Qubit d:i32[]. let</span>
+<span class="sd">            #     e:QuantumState f:QubitArray = create_qubits a 1</span>
+<span class="sd">            #     g:Qubit = get_qubit f 0</span>
+<span class="sd">            #     h:QuantumState = ccx e b c g</span>
+<span class="sd">            #     i:QuantumState j:QubitArray = create_qubits h d</span>
+<span class="sd">            #     k:Qubit = get_qubit j 0</span>
+<span class="sd">            #     l:Qubit = get_qubit j 1</span>
+<span class="sd">            #     m:QuantumState = ccx i g k l</span>
+<span class="sd">            #     n:QuantumState = ct m g l</span>
+<span class="sd">            #     o:QuantumState = ccx n b c g</span>
+<span class="sd">            #   in (o, j) }</span>
+
+<span class="sd">        We see that the control qubits are part of the function signature</span>
+<span class="sd">        (``a`` and ``b``)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_ctrl</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ctrl_state</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">ControlledJaspr</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ctrl_state</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ctrl_state</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ctrl_state</span> <span class="o">+=</span> <span class="mi">2</span><span class="o">**</span><span class="n">num_ctrl</span>
+
+            <span class="n">ctrl_state</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">(</span><span class="n">ctrl_state</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">num_ctrl</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctrl_state</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ctrl_state</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ControlledJaspr</span><span class="o">.</span><span class="n">from_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.to_qc">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_qc.html#qrisp.jasp.Jaspr.to_qc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_qc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the Jaspr into a :ref:`QuantumCircuit` if applicable. Circuit</span>
+<span class="sd">        conversion of algorithms involving realtime computations is not possible.</span>
+
+<span class="sd">        Any computations that perform classical postprocessing of measurements</span>
+<span class="sd">        can not be reflected within the QuantumCircuit object itself and will</span>
+<span class="sd">        generate an object of type ``ProcessedMeasurement``. These objects hold</span>
+<span class="sd">        no further information and are simply used as placeholders to emulate</span>
+<span class="sd">        the computation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : tuple</span>
+<span class="sd">            The arguments to call the Jaspr with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        return_values : tuple</span>
+<span class="sd">            The return values of the Jaspr. QuantumVariable return types are</span>
+<span class="sd">            returned as lists of Qubits.</span>
+<span class="sd">        :ref:`QuantumCircuit`</span>
+<span class="sd">            The resulting QuantumCircuit.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the QuantumCircuit:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumVariable(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                return qv</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+
+<span class="sd">            qb_list, qc = jaspr.to_qc(2)</span>
+<span class="sd">            print(qc)</span>
+<span class="sd">            # Yields</span>
+<span class="sd">            # qb_0: ──■───────</span>
+<span class="sd">            #       ┌─┴─┐┌───┐</span>
+<span class="sd">            # qb_1: ┤ X ├┤ T ├</span>
+<span class="sd">            #       └───┘└───┘</span>
+
+<span class="sd">        To demonstrate the behavior under measurement post-processing, we build</span>
+<span class="sd">        a similar script:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import ProcessedMeasurement</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qf = QuantumFloat(i)</span>
+<span class="sd">                cx(qf[0], qf[1])</span>
+<span class="sd">                t(qf[1])</span>
+
+<span class="sd">                meas_res = measure(qf)</span>
+<span class="sd">                # Perform classical post processing</span>
+<span class="sd">                meas_res *= 2</span>
+<span class="sd">                return meas_res</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+
+<span class="sd">            meas_res, qc = jaspr.to_qc(2)</span>
+<span class="sd">            print(isinstance(meas_res, ProcessedMeasurement))</span>
+<span class="sd">            # True</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspr_to_qc</span>
+
+        <span class="k">return</span> <span class="n">jaspr_to_qc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.extract_post_processing">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.extract_post_processing.html#qrisp.jasp.Jaspr.extract_post_processing">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extracts the post-processing logic from this Jaspr and returns a function</span>
+<span class="sd">        that performs the post-processing on measurement results.</span>
+
+<span class="sd">        This method is useful for separating the quantum circuit from the classical</span>
+<span class="sd">        post-processing of measurement results. The quantum circuit can be executed</span>
+<span class="sd">        on a NISQ-style backend to obtain measurement results, and then the post-processing</span>
+<span class="sd">        function can be applied to those results to obtain the final output.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            It is not possible to extract QuantumCircuits from Jaspr objects</span>
+<span class="sd">            involving real-time computation, but it is possible to extract a post</span>
+<span class="sd">            processing function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : tuple</span>
+<span class="sd">            The static argument values that were used for circuit extraction.</span>
+<span class="sd">            These will be bound into the post-processing function as Literals.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        callable</span>
+<span class="sd">            A function that takes measurement results and returns the post-processed results.</span>
+<span class="sd">            Accepts either a string of &#39;0&#39; and &#39;1&#39; characters or a JAX array of booleans</span>
+<span class="sd">            with shape (n,). String inputs are automatically converted to boolean arrays.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a Jaspr that performs post-processing on measurement results:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            import jax.numpy as jnp</span>
+
+<span class="sd">            @make_jaspr</span>
+<span class="sd">            def example_function(i):</span>
+<span class="sd">                qv = QuantumFloat(5)</span>
+<span class="sd">                # First measurement</span>
+<span class="sd">                meas_1 = measure(qv[i])</span>
+<span class="sd">                h(qv[1])</span>
+<span class="sd">                # Second measurement</span>
+<span class="sd">                meas_2 = measure(qv[1])</span>
+<span class="sd">                # Classical post-processing</span>
+<span class="sd">                return meas_1 + 2, meas_2</span>
+
+<span class="sd">            jaspr = example_function(1)</span>
+
+<span class="sd">            # Extract the quantum circuit</span>
+<span class="sd">            a, b, qc = jaspr.to_qc(1)</span>
+
+<span class="sd">            # Extract the post-processing function with the SAME arguments</span>
+<span class="sd">            post_proc = jaspr.extract_post_processing(1)</span>
+
+<span class="sd">            # Execute qc on a backend to get measurement results</span>
+<span class="sd">            results = qc.run()</span>
+
+<span class="sd">            # Apply post-processing to each result</span>
+<span class="sd">            for bitstring, count in results.items():</span>
+<span class="sd">                processed = post_proc(bitstring)</span>
+<span class="sd">                print(f&quot;{bitstring} -&gt; {processed}&quot;)</span>
+
+<span class="sd">            # Yields:</span>
+<span class="sd">            # 00 -&gt; (Array(2, dtype=int64), Array(False, dtype=bool))</span>
+<span class="sd">            # 01 -&gt; (Array(2, dtype=int64), Array(True, dtype=bool))</span>
+
+<span class="sd">            # Can also use with array input (useful for JAX jitting):</span>
+<span class="sd">            import jax.numpy as jnp</span>
+<span class="sd">            meas_array = jnp.array([False, True])</span>
+<span class="sd">            processed = post_proc(meas_array)</span>
+
+<span class="sd">        Note that the static arguments (in this case `1`) must be the same as those</span>
+<span class="sd">        used for circuit extraction, since they affect the structure of both the</span>
+<span class="sd">        quantum circuit and the post-processing logic.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_post_processing</span>
+
+        <span class="k">return</span> <span class="n">extract_post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">eqn_evaluator</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">flatten_environments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flattens all environments by applying the corresponding compilation</span>
+<span class="sd">        routines such that no more ``q_env`` primitives are left.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Jaspr</span>
+<span class="sd">            The Jaspr with flattened environments.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a Jaspr containing an :ref:`InversionEnvironment` and flatten:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">                def test_function(i):</span>
+<span class="sd">                        qv = QuantumVariable(i)</span>
+
+<span class="sd">                        with invert():</span>
+<span class="sd">                                t(qv[0])</span>
+<span class="sd">                                cx(qv[0], qv[1])</span>
+
+<span class="sd">                        return qv</span>
+
+<span class="sd">                jaspr = make_jaspr(test_function)(2)</span>
+<span class="sd">                print(jaspr)</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">                { lambda ; a:QuantumState b:i32[]. let</span>
+<span class="sd">                        c:QuantumState d:QubitArray = create_qubits a b</span>
+<span class="sd">                        e:QuantumState = q_env[</span>
+<span class="sd">                        jaspr={ lambda ; f:QuantumState d:QubitArray. let</span>
+<span class="sd">                  g:Qubit = get_qubit d 0</span>
+<span class="sd">                  h:QuantumState = t f g</span>
+<span class="sd">                  i:Qubit = get_qubit d 1</span>
+<span class="sd">                  j:QuantumState = cx h g i</span>
+<span class="sd">                in (j,) }</span>
+<span class="sd">                        type=InversionEnvironment</span>
+<span class="sd">                        ] c d</span>
+<span class="sd">                  in (e, d) }</span>
+
+<span class="sd">        You can see how the body of the :ref:`InversionEnvironment` is __collected__</span>
+<span class="sd">        into another Jaspr. This reflects the fact that at their core,</span>
+<span class="sd">        :ref:`QuantumEnvironment &lt;QuantumEnvironment&gt;` describe `higher-order</span>
+<span class="sd">        quantum functions &lt;https://en.wikipedia.org/wiki/Higher-order_function&gt;`_</span>
+<span class="sd">        (ie. functions that operate on functions). In order to apply the</span>
+<span class="sd">        transformations induced by the QuantumEnvironment, we can call</span>
+<span class="sd">        ``jaspr.flatten_environments``:</span>
+
+<span class="sd">        &gt;&gt;&gt; print(jaspr.flatten_environments)</span>
+<span class="sd">        { lambda ; a:QuantumState b:i32[]. let</span>
+<span class="sd">            c:QuantumState d:QubitArray = create_qubits a b</span>
+<span class="sd">            e:Qubit = get_qubit d 0</span>
+<span class="sd">            f:Qubit = get_qubit d 1</span>
+<span class="sd">            g:QuantumState = cx c e f</span>
+<span class="sd">            h:QuantumState = t_dg g e</span>
+<span class="sd">          in (h, d) }</span>
+
+<span class="sd">        We see that as expected, the order of the ``cx`` and the ``t`` gate has been switched and the ``t`` gate has been turned into a ``t_dg``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">flatten_environments</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">ctrl_jaspr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_jaspr</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_jaspr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_jaspr</span><span class="o">.</span><span class="n">envs_flattened</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">inv_jaspr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_jaspr</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">inv_jaspr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_jaspr</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">inv_jaspr</span><span class="o">.</span><span class="n">inv_jaspr</span> <span class="o">=</span> <span class="n">res</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools.jaspification</span><span class="w"> </span><span class="kn">import</span> <span class="n">simulate_jaspr</span>
+
+        <span class="k">return</span> <span class="n">simulate_jaspr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.simulator</span><span class="w"> </span><span class="kn">import</span> <span class="n">BufferedQuantumState</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">BufferedQuantumState</span><span class="p">()]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">tree_flatten</span><span class="p">(</span><span class="n">args</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_jaxpr</span>
+
+        <span class="n">flattened_jaspr</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">eqn_evaluator</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;jit&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;expectation_value_eval_function&quot;</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.program_control</span><span class="w"> </span><span class="kn">import</span> <span class="n">sampling_evaluator</span>
+
+                    <span class="n">sampling_evaluator</span><span class="p">(</span><span class="s2">&quot;ev&quot;</span><span class="p">)(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">eqn_evaluator</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+                <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sampling_eval_function&quot;</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.program_control</span><span class="w"> </span><span class="kn">import</span> <span class="n">sampling_evaluator</span>
+
+                    <span class="n">sampling_evaluator</span><span class="p">(</span><span class="s2">&quot;array&quot;</span><span class="p">)(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">eqn_evaluator</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+                <span class="n">invalues</span> <span class="o">=</span> <span class="n">extract_invalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">)</span>
+                <span class="n">outvalues</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">],</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">eqn_evaluator</span><span class="p">)(</span><span class="o">*</span><span class="n">invalues</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outvalues</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="n">outvalues</span> <span class="o">=</span> <span class="p">[</span><span class="n">outvalues</span><span class="p">]</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">outvalues</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;jasp.create_quantum_kernel&quot;</span><span class="p">:</span>
+                <span class="n">insert_outvalues</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">context_dic</span><span class="p">,</span> <span class="n">BufferedQuantumState</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="n">flattened_jaspr</span><span class="p">,</span> <span class="n">eqn_evaluator</span><span class="o">=</span><span class="n">eqn_evaluator</span><span class="p">)(</span><span class="o">*</span><span class="p">(</span><span class="n">args</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">inline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span>
+
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+        <span class="n">abs_qst</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">abs_qst</span>
+
+        <span class="n">ammended_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">abs_qst</span><span class="p">]</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="o">*</span><span class="n">ammended_args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">new_abs_qst</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_abs_qst</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">abs_qst</span> <span class="o">=</span> <span class="n">new_abs_qst</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile_jaspr</span>
+
+        <span class="k">return</span> <span class="n">profile_jaspr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;count_ops&quot;</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="n">callback_threshold</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">max_qubits</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile_jaspr</span>
+
+        <span class="k">return</span> <span class="n">profile_jaspr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">max_qubits</span><span class="o">=</span><span class="n">max_qubits</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="n">callback_threshold</span>
+        <span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">max_allocations</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile_jaspr</span>
+
+        <span class="k">return</span> <span class="n">profile_jaspr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;num_qubits&quot;</span><span class="p">,</span> <span class="n">meas_behavior</span><span class="p">,</span> <span class="n">max_allocations</span><span class="o">=</span><span class="n">max_allocations</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="n">callback_threshold</span>
+        <span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">embedd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingQuantumSession</span><span class="p">,</span> <span class="n">get_last_equation</span>
+
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+        <span class="n">abs_qst</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">abs_qst</span>
+
+        <span class="n">ammended_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">abs_qst</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">inline</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">eval_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="p">))(</span><span class="o">*</span><span class="n">ammended_args</span><span class="p">)</span>
+
+            <span class="n">eqn</span> <span class="o">=</span> <span class="n">get_last_equation</span><span class="p">()</span>
+
+            <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;jaxpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">eqn</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="o">*</span><span class="n">ammended_args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">new_abs_qst</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_abs_qst</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">abs_qst</span> <span class="o">=</span> <span class="n">new_abs_qst</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+<div class="viewcode-block" id="Jaspr.qjit">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.qjit.html#qrisp.jasp.Jaspr.qjit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">qjit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="s2">&quot;jaspr_function&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Leverages the Catalyst pipeline to compile a QIR representation of</span>
+<span class="sd">        this function and executes that function using the Catalyst QIR runtime.</span>
+<span class="sd">        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : iterable</span>
+<span class="sd">            The arguments to call the function with.</span>
+<span class="sd">        device : object</span>
+<span class="sd">            The `PennyLane device &lt;https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html&gt;`_ to execute the function.</span>
+<span class="sd">            The default device is `&quot;lightning.qubit&quot; &lt;https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html&gt;`_,</span>
+<span class="sd">            a fast state-vector qubit simulator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            The values returned by the compiled, executed function.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flattened_jaspr</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools.catalyst_interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">jaspr_to_catalyst_qjit</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">qjit_obj</span> <span class="o">=</span> <span class="n">jaspr_to_catalyst_qjit</span><span class="p">(</span><span class="n">flattened_jaspr</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">function_name</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">qjit_obj</span><span class="o">.</span><span class="n">compiled_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span></div>
+
+
+    <span class="c1"># LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var</span>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@qrisp_lru_compilation_cache</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cache</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">closed_jaxpr</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">Jaspr</span><span class="p">(</span><span class="n">jaxpr</span><span class="o">=</span><span class="n">closed_jaxpr</span><span class="o">.</span><span class="n">jaxpr</span><span class="p">,</span> <span class="n">consts</span><span class="o">=</span><span class="n">closed_jaxpr</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
+        <span class="n">remove_redundant_allocations</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_eqns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eqns</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Jaspr</span><span class="p">(</span>
+            <span class="n">constvars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constvars</span><span class="p">),</span>
+            <span class="n">invars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invars</span><span class="p">),</span>
+            <span class="n">outvars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">),</span>
+            <span class="n">eqns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">eqns</span><span class="p">),</span>
+            <span class="n">consts</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">),</span>
+            <span class="n">debug_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug_info</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Jaspr.to_qir">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_qir.html#qrisp.jasp.Jaspr.to_qir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_qir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compiles the Jaspr to QIR using the `Catalyst framework &lt;https://docs.pennylane.ai/projects/catalyst/en/stable/index.html&gt;`__.</span>
+<span class="sd">        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            The QIR string.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the QIR string:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumFloat(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                meas_res = measure(qv)</span>
+<span class="sd">                meas_res += 1</span>
+<span class="sd">                return meas_res</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+<span class="sd">            print(jaspr.to_qir())</span>
+
+<span class="sd">        Yields</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">            ; ModuleID = &#39;LLVMDialectModule&#39;</span>
+<span class="sd">            source_filename = &quot;LLVMDialectModule&quot;</span>
+
+<span class="sd">            @&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot; = internal constant [66 x i8] c&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot;</span>
+<span class="sd">            @lightning.qubit = internal constant [16 x i8] c&quot;lightning.qubit&quot;</span>
+<span class="sd">            @&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot; = internal constant [111 x i8] c&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot;</span>
+
+<span class="sd">            declare void @__catalyst__rt__finalize() local_unnamed_addr</span>
+
+<span class="sd">            declare void @__catalyst__rt__initialize() local_unnamed_addr</span>
+
+<span class="sd">            declare ptr @__catalyst__qis__Measure(ptr, i32) local_unnamed_addr</span>
+
+<span class="sd">            declare void @__catalyst__qis__T(ptr, ptr) local_unnamed_addr</span>
+
+<span class="sd">            declare void @__catalyst__qis__CNOT(ptr, ptr, ptr) local_unnamed_addr</span>
+
+<span class="sd">            declare ptr @__catalyst__rt__array_get_element_ptr_1d(ptr, i64) local_unnamed_addr</span>
+
+<span class="sd">            declare ptr @__catalyst__rt__qubit_allocate_array(i64) local_unnamed_addr</span>
+
+<span class="sd">            declare void @__catalyst__rt__device_init(ptr, ptr, ptr) local_unnamed_addr</span>
+
+<span class="sd">            declare void @_mlir_memref_to_llvm_free(ptr) local_unnamed_addr</span>
+
+<span class="sd">            declare ptr @_mlir_memref_to_llvm_alloc(i64) local_unnamed_addr</span>
+
+<span class="sd">            define { ptr, ptr, i64 } @jit_jaspr_function(ptr nocapture readnone %0, ptr nocapture readonly %1, i64 %2) local_unnamed_addr {</span>
+<span class="sd">              tail call void @__catalyst__rt__device_init(ptr nonnull @&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot;, ptr nonnull @lightning.qubit, ptr nonnull @&quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot;)</span>
+<span class="sd">              %4 = tail call ptr @__catalyst__rt__qubit_allocate_array(i64 20)</span>
+<span class="sd">              %5 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 0)</span>
+<span class="sd">              %6 = load ptr, ptr %5, align 8</span>
+<span class="sd">              %7 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 1)</span>
+<span class="sd">              %8 = load ptr, ptr %7, align 8</span>
+<span class="sd">              tail call void @__catalyst__qis__CNOT(ptr %6, ptr %8, ptr null)</span>
+<span class="sd">              %9 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 1)</span>
+<span class="sd">              %10 = load ptr, ptr %9, align 8</span>
+<span class="sd">              tail call void @__catalyst__qis__T(ptr %10, ptr null)</span>
+<span class="sd">              %11 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 65)</span>
+<span class="sd">              %12 = ptrtoint ptr %11 to i64</span>
+<span class="sd">              %13 = add i64 %12, 63</span>
+<span class="sd">              %14 = and i64 %13, -64</span>
+<span class="sd">              %15 = inttoptr i64 %14 to ptr</span>
+<span class="sd">              %16 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 65)</span>
+<span class="sd">              %17 = ptrtoint ptr %16 to i64</span>
+<span class="sd">              %18 = add i64 %17, 63</span>
+<span class="sd">              %19 = and i64 %18, -64</span>
+<span class="sd">              %20 = inttoptr i64 %19 to ptr</span>
+<span class="sd">              %21 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %22 = ptrtoint ptr %21 to i64</span>
+<span class="sd">              %23 = add i64 %22, 63</span>
+<span class="sd">              %24 = and i64 %23, -64</span>
+<span class="sd">              %25 = inttoptr i64 %24 to ptr</span>
+<span class="sd">              %26 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %27 = ptrtoint ptr %26 to i64</span>
+<span class="sd">              %28 = add i64 %27, 63</span>
+<span class="sd">              %29 = and i64 %28, -64</span>
+<span class="sd">              %30 = inttoptr i64 %29 to ptr</span>
+<span class="sd">              %31 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %32 = ptrtoint ptr %31 to i64</span>
+<span class="sd">              %33 = add i64 %32, 63</span>
+<span class="sd">              %34 = and i64 %33, -64</span>
+<span class="sd">              %35 = inttoptr i64 %34 to ptr</span>
+<span class="sd">              %36 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %37 = ptrtoint ptr %36 to i64</span>
+<span class="sd">              %38 = add i64 %37, 63</span>
+<span class="sd">              %39 = and i64 %38, -64</span>
+<span class="sd">              %40 = inttoptr i64 %39 to ptr</span>
+<span class="sd">              %41 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              store i64 0, ptr %41, align 1</span>
+<span class="sd">              %42 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              store i64 0, ptr %42, align 1</span>
+<span class="sd">              %43 = load i64, ptr %1, align 4</span>
+<span class="sd">              %44 = icmp slt i64 %43, 1</span>
+<span class="sd">              store i1 %44, ptr %15, align 64</span>
+<span class="sd">              %45 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %46 = load i64, ptr %42, align 1</span>
+<span class="sd">              store i64 %46, ptr %45, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %42)</span>
+<span class="sd">              %47 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %48 = load i64, ptr %41, align 1</span>
+<span class="sd">              store i64 %48, ptr %47, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %41)</span>
+<span class="sd">              br i1 %44, label %.lr.ph, label %._crit_edge</span>
+
+<span class="sd">            .lr.ph:                                           ; preds = %3, %.lr.ph</span>
+<span class="sd">              %49 = phi ptr [ %87, %.lr.ph ], [ %47, %3 ]</span>
+<span class="sd">              %50 = phi ptr [ %85, %.lr.ph ], [ %45, %3 ]</span>
+<span class="sd">              %51 = load i64, ptr %50, align 4</span>
+<span class="sd">              %52 = tail call ptr @__catalyst__rt__array_get_element_ptr_1d(ptr %4, i64 %51)</span>
+<span class="sd">              %53 = load ptr, ptr %52, align 8</span>
+<span class="sd">              %54 = tail call ptr @__catalyst__qis__Measure(ptr %53, i32 -1)</span>
+<span class="sd">              %55 = load i1, ptr %54, align 1</span>
+<span class="sd">              store i1 %55, ptr %20, align 64</span>
+<span class="sd">              %56 = load i64, ptr %50, align 4</span>
+<span class="sd">              store i64 %56, ptr %25, align 64</span>
+<span class="sd">              %57 = shl i64 2, %56</span>
+<span class="sd">              %58 = icmp ult i64 %56, 64</span>
+<span class="sd">              %59 = select i1 %58, i64 %57, i64 0</span>
+<span class="sd">              store i64 %59, ptr %30, align 64</span>
+<span class="sd">              %60 = load i1, ptr %20, align 64</span>
+<span class="sd">              %61 = zext i1 %60 to i64</span>
+<span class="sd">              store i64 %61, ptr %35, align 64</span>
+<span class="sd">              %62 = load i64, ptr %30, align 64</span>
+<span class="sd">              %63 = select i1 %60, i64 %62, i64 0</span>
+<span class="sd">              store i64 %63, ptr %40, align 64</span>
+<span class="sd">              %64 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %65 = ptrtoint ptr %64 to i64</span>
+<span class="sd">              %66 = add i64 %65, 63</span>
+<span class="sd">              %67 = and i64 %66, -64</span>
+<span class="sd">              %68 = inttoptr i64 %67 to ptr</span>
+<span class="sd">              %69 = load i64, ptr %49, align 4</span>
+<span class="sd">              %70 = load i64, ptr %40, align 64</span>
+<span class="sd">              %71 = add i64 %70, %69</span>
+<span class="sd">              store i64 %71, ptr %68, align 64</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %49)</span>
+<span class="sd">              %72 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 72)</span>
+<span class="sd">              %73 = ptrtoint ptr %72 to i64</span>
+<span class="sd">              %74 = add i64 %73, 63</span>
+<span class="sd">              %75 = and i64 %74, -64</span>
+<span class="sd">              %76 = inttoptr i64 %75 to ptr</span>
+<span class="sd">              %77 = load i64, ptr %50, align 4</span>
+<span class="sd">              %78 = add i64 %77, 1</span>
+<span class="sd">              store i64 %78, ptr %76, align 64</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %50)</span>
+<span class="sd">              %79 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %80 = load i64, ptr %68, align 64</span>
+<span class="sd">              store i64 %80, ptr %79, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %64)</span>
+<span class="sd">              %81 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %82 = load i64, ptr %76, align 64</span>
+<span class="sd">              store i64 %82, ptr %81, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %72)</span>
+<span class="sd">              %.pre = load i64, ptr %81, align 4</span>
+<span class="sd">              %83 = load i64, ptr %1, align 4</span>
+<span class="sd">              %84 = icmp sge i64 %.pre, %83</span>
+<span class="sd">              store i1 %84, ptr %15, align 64</span>
+<span class="sd">              %85 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %86 = load i64, ptr %81, align 1</span>
+<span class="sd">              store i64 %86, ptr %85, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %81)</span>
+<span class="sd">              %87 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 8)</span>
+<span class="sd">              %88 = load i64, ptr %79, align 1</span>
+<span class="sd">              store i64 %88, ptr %87, align 1</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %79)</span>
+<span class="sd">              br i1 %84, label %.lr.ph, label %._crit_edge</span>
+
+<span class="sd">            ._crit_edge:                                      ; preds = %.lr.ph, %3</span>
+<span class="sd">              %.lcssa20 = phi ptr [ %45, %3 ], [ %85, %.lr.ph ]</span>
+<span class="sd">              %.lcssa = phi ptr [ %47, %3 ], [ %87, %.lr.ph ]</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %.lcssa20)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %36)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %31)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %26)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %21)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %16)</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %11)</span>
+<span class="sd">              %89 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 68)</span>
+<span class="sd">              %90 = ptrtoint ptr %89 to i64</span>
+<span class="sd">              %91 = add i64 %90, 63</span>
+<span class="sd">              %92 = and i64 %91, -64</span>
+<span class="sd">              %93 = inttoptr i64 %92 to ptr</span>
+<span class="sd">              %94 = load i64, ptr %.lcssa, align 4</span>
+<span class="sd">              %95 = trunc i64 %94 to i32</span>
+<span class="sd">              store i32 %95, ptr %93, align 64</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr nonnull %.lcssa)</span>
+<span class="sd">              %96 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 68)</span>
+<span class="sd">              %97 = ptrtoint ptr %96 to i64</span>
+<span class="sd">              %98 = add i64 %97, 63</span>
+<span class="sd">              %99 = and i64 %98, -64</span>
+<span class="sd">              %100 = inttoptr i64 %99 to ptr</span>
+<span class="sd">              %101 = load i32, ptr %93, align 64</span>
+<span class="sd">              %102 = add i32 %101, 1</span>
+<span class="sd">              store i32 %102, ptr %100, align 64</span>
+<span class="sd">              tail call void @_mlir_memref_to_llvm_free(ptr %89)</span>
+<span class="sd">              %103 = icmp eq ptr %96, inttoptr (i64 3735928559 to ptr)</span>
+<span class="sd">              br i1 %103, label %104, label %107</span>
+
+<span class="sd">            104:                                              ; preds = %._crit_edge</span>
+<span class="sd">              %105 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 4)</span>
+<span class="sd">              %106 = load i32, ptr %100, align 64</span>
+<span class="sd">              store i32 %106, ptr %105, align 1</span>
+<span class="sd">              br label %107</span>
+
+<span class="sd">            107:                                              ; preds = %104, %._crit_edge</span>
+<span class="sd">              %.pn16 = phi ptr [ %105, %104 ], [ %96, %._crit_edge ]</span>
+<span class="sd">              %.pn14 = phi ptr [ %105, %104 ], [ %100, %._crit_edge ]</span>
+<span class="sd">              %.pn13 = insertvalue { ptr, ptr, i64 } undef, ptr %.pn16, 0</span>
+<span class="sd">              %.pn = insertvalue { ptr, ptr, i64 } %.pn13, ptr %.pn14, 1</span>
+<span class="sd">              %108 = insertvalue { ptr, ptr, i64 } %.pn, i64 0, 2</span>
+<span class="sd">              ret { ptr, ptr, i64 } %108</span>
+<span class="sd">            }</span>
+
+<span class="sd">            define void @_catalyst_pyface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {</span>
+<span class="sd">              %.unpack = load ptr, ptr %1, align 8</span>
+<span class="sd">              %.elt1.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %.unpack, i64 0, i32 1</span>
+<span class="sd">              %.unpack2.i = load ptr, ptr %.elt1.i, align 8</span>
+<span class="sd">              %3 = tail call { ptr, ptr, i64 } @jit_jaspr_function(ptr poison, ptr %.unpack2.i, i64 poison)</span>
+<span class="sd">              %.elt.i = extractvalue { ptr, ptr, i64 } %3, 0</span>
+<span class="sd">              store ptr %.elt.i, ptr %0, align 8</span>
+<span class="sd">              %.repack5.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 1</span>
+<span class="sd">              %.elt6.i = extractvalue { ptr, ptr, i64 } %3, 1</span>
+<span class="sd">              store ptr %.elt6.i, ptr %.repack5.i, align 8</span>
+<span class="sd">              %.repack7.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 2</span>
+<span class="sd">              %.elt8.i = extractvalue { ptr, ptr, i64 } %3, 2</span>
+<span class="sd">              store i64 %.elt8.i, ptr %.repack7.i, align 8</span>
+<span class="sd">              ret void</span>
+<span class="sd">            }</span>
+
+<span class="sd">            define void @_catalyst_ciface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {</span>
+<span class="sd">              %.elt1 = getelementptr inbounds { ptr, ptr, i64 }, ptr %1, i64 0, i32 1</span>
+<span class="sd">              %.unpack2 = load ptr, ptr %.elt1, align 8</span>
+<span class="sd">              %3 = tail call { ptr, ptr, i64 } @jit_jaspr_function(ptr poison, ptr %.unpack2, i64 poison)</span>
+<span class="sd">              %.elt = extractvalue { ptr, ptr, i64 } %3, 0</span>
+<span class="sd">              store ptr %.elt, ptr %0, align 8</span>
+<span class="sd">              %.repack5 = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 1</span>
+<span class="sd">              %.elt6 = extractvalue { ptr, ptr, i64 } %3, 1</span>
+<span class="sd">              store ptr %.elt6, ptr %.repack5, align 8</span>
+<span class="sd">              %.repack7 = getelementptr inbounds { ptr, ptr, i64 }, ptr %0, i64 0, i32 2</span>
+<span class="sd">              %.elt8 = extractvalue { ptr, ptr, i64 } %3, 2</span>
+<span class="sd">              store i64 %.elt8, ptr %.repack7, align 8</span>
+<span class="sd">              ret void</span>
+<span class="sd">            }</span>
+
+<span class="sd">            define void @setup() local_unnamed_addr {</span>
+<span class="sd">              tail call void @__catalyst__rt__initialize()</span>
+<span class="sd">              ret void</span>
+<span class="sd">            }</span>
+
+<span class="sd">            define void @teardown() local_unnamed_addr {</span>
+<span class="sd">              tail call void @__catalyst__rt__finalize()</span>
+<span class="sd">              ret void</span>
+<span class="sd">            }</span>
+
+<span class="sd">            !llvm.module.flags = !{!0}</span>
+
+<span class="sd">            !0 = !{i32 2, !&quot;Debug Info Version&quot;, i32 3}</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools.catalyst_interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspr_to_qir</span>
+
+        <span class="k">return</span> <span class="n">jaspr_to_qir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.to_mlir">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_mlir.html#qrisp.jasp.Jaspr.to_mlir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_mlir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lower_stablehlo</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compiles the Jaspr to an xDSL module using the Jasp Dialect.</span>
+<span class="sd">        Requires the xDSL package to be installed (``pip install qrisp[xdsl]``).</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            An xDSL module can be visualized via:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                print(xdsl_module)</span>
+
+<span class="sd">            and serialized to a string using:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                from xdsl.printer import Printer</span>
+<span class="sd">                Printer().print_op(xdsl_module)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lower_stablehlo : bool, optional</span>
+<span class="sd">            If True, runs additional MLIR passes to lower StableHLO operations</span>
+<span class="sd">            (like arithmetic and data operations) to lower-level dialects such</span>
+<span class="sd">            as linalg, arith, and tensor. StableHLO control flow involving</span>
+<span class="sd">            quantum types is preserved and rewritten to SCF by xDSL.</span>
+<span class="sd">            The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        xdsl.dialects.builtin.ModuleOp</span>
+<span class="sd">            An xDSL module representing the quantum computation.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the MLIR string:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumVariable(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                meas_res = measure(qv)</span>
+<span class="sd">                meas_res += 1</span>
+<span class="sd">                return meas_res</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+<span class="sd">            print(jaspr.to_mlir())</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">            builtin.module @jasp_module {</span>
+<span class="sd">              func.func public @main(%arg0 : tensor&lt;i64&gt;, %arg1 : !jasp.QuantumState) -&gt; (tensor&lt;i64&gt;, !jasp.QuantumState) {</span>
+<span class="sd">                %0, %1 = &quot;jasp.create_qubits&quot;(%arg0, %arg1) : (tensor&lt;i64&gt;, !jasp.QuantumState) -&gt; (!jasp.QubitArray, !jasp.QuantumState)</span>
+<span class="sd">                %2 = &quot;stablehlo.constant&quot;() &lt;{value = dense&lt;0&gt; : tensor&lt;i64&gt;}&gt; : () -&gt; tensor&lt;i64&gt;</span>
+<span class="sd">                %3 = &quot;jasp.get_qubit&quot;(%0, %2) : (!jasp.QubitArray, tensor&lt;i64&gt;) -&gt; !jasp.Qubit</span>
+<span class="sd">                %4 = &quot;stablehlo.constant&quot;() &lt;{value = dense&lt;1&gt; : tensor&lt;i64&gt;}&gt; : () -&gt; tensor&lt;i64&gt;</span>
+<span class="sd">                %5 = &quot;jasp.get_qubit&quot;(%0, %4) : (!jasp.QubitArray, tensor&lt;i64&gt;) -&gt; !jasp.Qubit</span>
+<span class="sd">                %6 = &quot;jasp.quantum_gate&quot;(%3, %5, %1) {gate_type = &quot;cx&quot;} : (!jasp.Qubit, !jasp.Qubit, !jasp.QuantumState) -&gt; !jasp.QuantumState</span>
+<span class="sd">                %7 = &quot;jasp.quantum_gate&quot;(%5, %6) {gate_type = &quot;t&quot;} : (!jasp.Qubit, !jasp.QuantumState) -&gt; !jasp.QuantumState</span>
+<span class="sd">                %8, %9 = &quot;jasp.measure&quot;(%0, %7) : (!jasp.QubitArray, !jasp.QuantumState) -&gt; (tensor&lt;i64&gt;, !jasp.QuantumState)</span>
+<span class="sd">                %10 = &quot;stablehlo.add&quot;(%8, %4) : (tensor&lt;i64&gt;, tensor&lt;i64&gt;) -&gt; tensor&lt;i64&gt;</span>
+<span class="sd">                %11 = &quot;jasp.reset&quot;(%0, %9) : (!jasp.QubitArray, !jasp.QuantumState) -&gt; !jasp.QuantumState</span>
+<span class="sd">                %12 = &quot;jasp.delete_qubits&quot;(%0, %11) : (!jasp.QubitArray, !jasp.QuantumState) -&gt; !jasp.QuantumState</span>
+<span class="sd">                func.return %10, %12 : tensor&lt;i64&gt;, !jasp.QuantumState</span>
+<span class="sd">              }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.mlir</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspr_to_mlir</span>
+
+        <span class="k">return</span> <span class="n">jaspr_to_mlir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lower_stablehlo</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.to_catalyst_mlir">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_catalyst_mlir.html#qrisp.jasp.Jaspr.to_catalyst_mlir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_catalyst_mlir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compiles the Jaspr to MLIR using the `Catalyst dialect &lt;https://docs.pennylane.ai/projects/catalyst/en/stable/index.html&gt;`__.</span>
+<span class="sd">        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            The MLIR string.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the MLIR string:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumFloat(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                meas_res = measure(qv)</span>
+<span class="sd">                meas_res += 1</span>
+<span class="sd">                return meas_res</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+<span class="sd">            print(jaspr.to_catalyst_mlir())</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">                        module @jaspr_function {</span>
+<span class="sd">              func.func public @jit_jaspr_function(%arg0: tensor&lt;i64&gt;) -&gt; tensor&lt;i32&gt; attributes {llvm.emit_c_interface} {</span>
+<span class="sd">                %0 = stablehlo.constant dense&lt;1&gt; : tensor&lt;i32&gt;</span>
+<span class="sd">                %1 = stablehlo.constant dense&lt;2&gt; : tensor&lt;i64&gt;</span>
+<span class="sd">                %2 = stablehlo.constant dense&lt;1&gt; : tensor&lt;i64&gt;</span>
+<span class="sd">                %3 = stablehlo.constant dense&lt;0&gt; : tensor&lt;i64&gt;</span>
+<span class="sd">                quantum.device[&quot;/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so&quot;, &quot;lightning.qubit&quot;, &quot;{&#39;shots&#39;: 0, &#39;mcmc&#39;: False, &#39;num_burnin&#39;: 0, &#39;kernel_name&#39;: None}&quot;]</span>
+<span class="sd">                %4 = quantum.alloc( 20) : !quantum.reg</span>
+<span class="sd">                %5 = quantum.extract %4[ 0] : !quantum.reg -&gt; !quantum.bit</span>
+<span class="sd">                %6 = quantum.extract %4[ 1] : !quantum.reg -&gt; !quantum.bit</span>
+<span class="sd">                %out_qubits:2 = quantum.custom &quot;CNOT&quot;() %5, %6 : !quantum.bit, !quantum.bit</span>
+<span class="sd">                %7 = quantum.insert %4[ 0], %out_qubits#0 : !quantum.reg, !quantum.bit</span>
+<span class="sd">                %8 = quantum.insert %7[ 1], %out_qubits#1 : !quantum.reg, !quantum.bit</span>
+<span class="sd">                %9 = quantum.extract %8[ 1] : !quantum.reg -&gt; !quantum.bit</span>
+<span class="sd">                %out_qubits_0 = quantum.custom &quot;T&quot;() %9 : !quantum.bit</span>
+<span class="sd">                %10 = quantum.insert %8[ 1], %out_qubits_0 : !quantum.reg, !quantum.bit</span>
+<span class="sd">                %11 = stablehlo.add %3, %arg0 : tensor&lt;i64&gt;</span>
+<span class="sd">                %12:3 = scf.while (%arg1 = %3, %arg2 = %3, %arg3 = %10) : (tensor&lt;i64&gt;, tensor&lt;i64&gt;, !quantum.reg) -&gt; (tensor&lt;i64&gt;, tensor&lt;i64&gt;, !quantum.reg) {</span>
+<span class="sd">                  %16 = stablehlo.compare  GE, %arg1, %11,  SIGNED : (tensor&lt;i64&gt;, tensor&lt;i64&gt;) -&gt; tensor&lt;i1&gt;</span>
+<span class="sd">                  %extracted = tensor.extract %16[] : tensor&lt;i1&gt;</span>
+<span class="sd">                  scf.condition(%extracted) %arg1, %arg2, %arg3 : tensor&lt;i64&gt;, tensor&lt;i64&gt;, !quantum.reg</span>
+<span class="sd">                } do {</span>
+<span class="sd">                ^bb0(%arg1: tensor&lt;i64&gt;, %arg2: tensor&lt;i64&gt;, %arg3: !quantum.reg):</span>
+<span class="sd">                  %extracted = tensor.extract %arg1[] : tensor&lt;i64&gt;</span>
+<span class="sd">                  %16 = quantum.extract %arg3[%extracted] : !quantum.reg -&gt; !quantum.bit</span>
+<span class="sd">                  %mres, %out_qubit = quantum.measure %16 : i1, !quantum.bit</span>
+<span class="sd">                  %from_elements = tensor.from_elements %mres : tensor&lt;i1&gt;</span>
+<span class="sd">                  %extracted_1 = tensor.extract %arg1[] : tensor&lt;i64&gt;</span>
+<span class="sd">                  %17 = quantum.insert %arg3[%extracted_1], %out_qubit : !quantum.reg, !quantum.bit</span>
+<span class="sd">                  %18 = stablehlo.subtract %arg1, %3 : tensor&lt;i64&gt;</span>
+<span class="sd">                  %19 = stablehlo.shift_left %1, %18 : tensor&lt;i64&gt;</span>
+<span class="sd">                  %20 = stablehlo.convert %from_elements : (tensor&lt;i1&gt;) -&gt; tensor&lt;i64&gt;</span>
+<span class="sd">                  %21 = stablehlo.multiply %19, %20 : tensor&lt;i64&gt;</span>
+<span class="sd">                  %22 = stablehlo.add %arg2, %21 : tensor&lt;i64&gt;</span>
+<span class="sd">                  %23 = stablehlo.add %arg1, %2 : tensor&lt;i64&gt;</span>
+<span class="sd">                  scf.yield %23, %22, %17 : tensor&lt;i64&gt;, tensor&lt;i64&gt;, !quantum.reg</span>
+<span class="sd">                }</span>
+<span class="sd">                %13 = stablehlo.convert %12#1 : (tensor&lt;i64&gt;) -&gt; tensor&lt;i32&gt;</span>
+<span class="sd">                %14 = stablehlo.multiply %13, %0 : tensor&lt;i32&gt;</span>
+<span class="sd">                %15 = stablehlo.add %14, %0 : tensor&lt;i32&gt;</span>
+<span class="sd">                return %15 : tensor&lt;i32&gt;</span>
+<span class="sd">              }</span>
+<span class="sd">              func.func @setup() {</span>
+<span class="sd">                quantum.init</span>
+<span class="sd">                return</span>
+<span class="sd">              }</span>
+<span class="sd">              func.func @teardown() {</span>
+<span class="sd">                quantum.finalize</span>
+<span class="sd">                return</span>
+<span class="sd">              }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools.catalyst_interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">jaspr_to_mlir</span>
+
+        <span class="k">return</span> <span class="n">jaspr_to_mlir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.to_qasm">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_qasm.html#qrisp.jasp.Jaspr.to_qasm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_qasm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible</span>
+<span class="sd">        as long as no computations on the measurement results are performed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : list</span>
+<span class="sd">            The arguments to call the :ref:`QuantumCircuit` evaluation with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            The OpenQASM 2 string.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the QASM 2 string:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def main(i):</span>
+
+<span class="sd">                qv = QuantumVariable(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                return qv</span>
+
+<span class="sd">            jaspr = make_jaspr(main)(2)</span>
+
+<span class="sd">            qasm_str = jaspr.to_qasm(2)</span>
+<span class="sd">            print(qasm_str)</span>
+<span class="sd">            # Yields</span>
+
+<span class="sd">            # OPENQASM 2.0;</span>
+<span class="sd">            # include &quot;qelib1.inc&quot;;</span>
+<span class="sd">            # qreg qb_59[1];</span>
+<span class="sd">            # qreg qb_60[1];</span>
+<span class="sd">            # cx qb_59[0],qb_60[0];</span>
+<span class="sd">            # t qb_60[0];</span>
+
+
+<span class="sd">        It is also possible to compile simple real-time control features:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            def main(phi):</span>
+
+<span class="sd">                qf = QuantumFloat(5)</span>
+<span class="sd">                h(qf)</span>
+<span class="sd">                bl = measure(qf[0])</span>
+
+<span class="sd">                with control(bl):</span>
+<span class="sd">                    rz(phi, qf[1])</span>
+<span class="sd">                    x(qf[1])</span>
+
+<span class="sd">                return</span>
+
+<span class="sd">            jaspr = make_jaspr(main)(0.5)</span>
+<span class="sd">            print(jaspr.to_qasm(0.5))</span>
+
+<span class="sd">        This gives:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            OPENQASM 2.0;</span>
+<span class="sd">            include &quot;qelib1.inc&quot;;</span>
+<span class="sd">            qreg qb_59[1];</span>
+<span class="sd">            qreg qb_60[1];</span>
+<span class="sd">            qreg qb_61[1];</span>
+<span class="sd">            qreg qb_62[1];</span>
+<span class="sd">            qreg qb_63[1];</span>
+<span class="sd">            creg cb_0[1];</span>
+<span class="sd">            h qb_59[0];</span>
+<span class="sd">            h qb_60[0];</span>
+<span class="sd">            h qb_61[0];</span>
+<span class="sd">            reset qb_61[0];</span>
+<span class="sd">            h qb_62[0];</span>
+<span class="sd">            reset qb_62[0];</span>
+<span class="sd">            h qb_63[0];</span>
+<span class="sd">            reset qb_63[0];</span>
+<span class="sd">            measure qb_59[0] -&gt; cb_0[0];</span>
+<span class="sd">            reset qb_59[0];</span>
+<span class="sd">            if(cb_0==1) rz(0.5) qb_60[0];</span>
+<span class="sd">            if(cb_0==1) x qb_60[0];</span>
+<span class="sd">            reset qb_60[0];</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_qc</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="p">]</span>
+        <span class="n">qrisp_qc</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">qrisp_qc</span><span class="o">.</span><span class="n">qasm</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Jaspr.to_catalyst_jaxpr">
+<a class="viewcode-back" href="../../../../reference/Jasp/generated/qrisp.jasp.Jaspr.to_catalyst_jaxpr.html#qrisp.jasp.Jaspr.to_catalyst_jaxpr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_catalyst_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compiles the jaspr to the corresponding `Catalyst jaxpr &lt;https://docs.pennylane.ai/projects/catalyst/en/stable/index.html&gt;`__.</span>
+<span class="sd">        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : tuple</span>
+<span class="sd">            The arguments to call the jaspr with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jax.core.Jaxpr</span>
+<span class="sd">            The Jaxpr using Catalyst primitives.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        We create a simple script and inspect the Catalyst Jaxpr:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            from qrisp import *</span>
+<span class="sd">            from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">            def example_function(i):</span>
+
+<span class="sd">                qv = QuantumFloat(i)</span>
+<span class="sd">                cx(qv[0], qv[1])</span>
+<span class="sd">                t(qv[1])</span>
+<span class="sd">                meas_res = measure(qv)</span>
+<span class="sd">                meas_res += 1</span>
+<span class="sd">                return meas_res</span>
+
+<span class="sd">            jaspr = make_jaspr(example_function)(2)</span>
+
+<span class="sd">            print(jaspr.to_catalyst_jaxpr())</span>
+<span class="sd">            # Yields</span>
+<span class="sd">            # { lambda ; a:AbstractQreg() b:i64[] c:i32[]. let</span>
+<span class="sd">            #   d:i64[] = convert_element_type[new_dtype=int64 weak_type=True] c</span>
+<span class="sd">            #   e:i64[] = add b d</span>
+<span class="sd">            #   f:i64[] = add b 0</span>
+<span class="sd">            #   g:i64[] = add b 1</span>
+<span class="sd">            #   h:AbstractQbit() = qextract a f</span>
+<span class="sd">            #   i:AbstractQbit() = qextract a g</span>
+<span class="sd">            #   j:AbstractQbit() k:AbstractQbit() = qinst[op=CNOT qubits_len=2] h i</span>
+<span class="sd">            #   l:AbstractQreg() = qinsert a f j</span>
+<span class="sd">            #   m:AbstractQreg() = qinsert l g k</span>
+<span class="sd">            #   n:AbstractQbit() = qextract m g</span>
+<span class="sd">            #   o:AbstractQbit() = qinst[op=T qubits_len=1] n</span>
+<span class="sd">            #   p:AbstractQreg() = qinsert m g o</span>
+<span class="sd">            #   q:i64[] = convert_element_type[new_dtype=int64 weak_type=True] c</span>
+<span class="sd">            #   r:i64[] = add b q</span>
+<span class="sd">            #   _:i64[] s:i64[] t:AbstractQreg() _:i64[] _:i64[] = while_loop[</span>
+<span class="sd">            #     body_jaxpr={ lambda ; u:i64[] v:i64[] w:AbstractQreg() x:i64[] y:i64[]. let</span>
+<span class="sd">            #         z:AbstractQbit() = qextract w u</span>
+<span class="sd">            #         ba:bool[] bb:AbstractQbit() = qmeasure z</span>
+<span class="sd">            #         bc:AbstractQreg() = qinsert w u bb</span>
+<span class="sd">            #         bd:i64[] = sub u x</span>
+<span class="sd">            #         be:i64[] = shift_left 2 bd</span>
+<span class="sd">            #         bf:i64[] = convert_element_type[new_dtype=int64 weak_type=True] ba</span>
+<span class="sd">            #         bg:i64[] = mul be bf</span>
+<span class="sd">            #         bh:i64[] = add v bg</span>
+<span class="sd">            #         bi:i64[] = add u 1</span>
+<span class="sd">            #       in (bi, bh, bc, x, y) }</span>
+<span class="sd">            #     body_nconsts=0</span>
+<span class="sd">            #     cond_jaxpr={ lambda ; bj:i64[] bk:i64[] bl:AbstractQreg() bm:i64[] bn:i64[]. let</span>
+<span class="sd">            #         bo:bool[] = ge bj bn</span>
+<span class="sd">            #       in (bo,) }</span>
+<span class="sd">            #     cond_nconsts=0</span>
+<span class="sd">            #     nimplicit=0</span>
+<span class="sd">            #     preserve_dimensions=True</span>
+<span class="sd">            #   ] b 0 p b r</span>
+<span class="sd">            #   bp:i32[] = convert_element_type[new_dtype=int64 weak_type=False] s</span>
+<span class="sd">            #   bq:i32[] = mul bp 1</span>
+<span class="sd">            #   br:i32[] = add bq 1</span>
+<span class="sd">            # in (t, e, br) }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.evaluation_tools.catalyst_interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">jaspr_to_catalyst_jaxpr</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">jaspr_to_catalyst_jaxpr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">())</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_jaxpr_mod</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">static_argnums</span><span class="o">=</span><span class="p">(),</span> <span class="n">return_shape</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">abstracted_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a function that produces the jaxpr of a traced function.</span>
+
+<span class="sd">    This is a modified version of JAX&#39;s ``make_jaxpr`` that supports</span>
+<span class="sd">    ``return_shape=True`` even when the function returns custom abstract</span>
+<span class="sd">    types that don&#39;t have ``shape``/``dtype`` attributes (such as</span>
+<span class="sd">    ``AbstractQuantumState``).</span>
+
+<span class="sd">    The interface is identical to ``jax.make_jaxpr``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fun : Callable</span>
+<span class="sd">        The function whose jaxpr is to be computed.</span>
+<span class="sd">    static_argnums : int or Sequence[int], optional</span>
+<span class="sd">        Indices of arguments that should be treated as static (not traced).</span>
+<span class="sd">        Default is ``()``.</span>
+<span class="sd">    return_shape : bool, optional</span>
+<span class="sd">        If True, the returned function produces a tuple ``(jaxpr, out_tree)``</span>
+<span class="sd">        where ``out_tree`` is a PyTreeDef representing the structure of the</span>
+<span class="sd">        output. This can be used to reconstruct PyTree objects from flat</span>
+<span class="sd">        output lists using ``jax.tree_util.tree_unflatten``.</span>
+<span class="sd">        Default is False.</span>
+<span class="sd">    abstracted_axes : optional</span>
+<span class="sd">        Specification for which axes to abstract over. Default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Callable</span>
+<span class="sd">        A function that, when called with example arguments, returns either:</span>
+<span class="sd">        - A ClosedJaxpr representation of ``fun`` (if ``return_shape=False``)</span>
+<span class="sd">        - A tuple ``(ClosedJaxpr, out_tree)`` (if ``return_shape=True``)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    JAX&#39;s native ``make_jaxpr(return_shape=True)`` fails on custom abstract</span>
+<span class="sd">    types because it tries to create ``ShapeDtypeStruct`` objects from the</span>
+<span class="sd">    outputs, which requires ``shape`` and ``dtype`` attributes. This function</span>
+<span class="sd">    avoids that by using ``jit(...).trace()`` to directly access the output</span>
+<span class="sd">    tree structure.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; def f(x):</span>
+<span class="sd">    ...     return {&quot;a&quot;: x + 1, &quot;b&quot;: x * 2}</span>
+<span class="sd">    &gt;&gt;&gt; jaxpr, out_tree = make_jaxpr_mod(f, return_shape=True)(1.0)</span>
+<span class="sd">    &gt;&gt;&gt; # out_tree can be used with tree_unflatten to reconstruct the dict</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax._src.interpreters</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial_eval</span> <span class="k">as</span> <span class="n">pe</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax._src.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">split_list</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">jaxpr_creator</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">return_shape</span><span class="p">:</span>
+            <span class="c1"># Use jit(...).trace() directly to get access to _out_tree</span>
+            <span class="c1"># This avoids JAX&#39;s make_jaxpr return_shape logic which fails on</span>
+            <span class="c1"># custom abstract types that don&#39;t have shape/dtype attributes.</span>
+            <span class="n">traced</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">static_argnums</span><span class="o">=</span><span class="n">static_argnums</span><span class="p">,</span> <span class="n">abstracted_axes</span><span class="o">=</span><span class="n">abstracted_axes</span><span class="p">)</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Extract the jaxpr, handling constants if needed</span>
+            <span class="c1"># (same logic as JAX&#39;s make_jaxpr)</span>
+            <span class="k">if</span> <span class="n">traced</span><span class="o">.</span><span class="n">_num_consts</span><span class="p">:</span>
+                <span class="n">consts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split_list</span><span class="p">(</span><span class="n">traced</span><span class="o">.</span><span class="n">_args_flat</span><span class="p">,</span> <span class="p">[</span><span class="n">traced</span><span class="o">.</span><span class="n">_num_consts</span><span class="p">])</span>
+                <span class="n">jaxpr_</span> <span class="o">=</span> <span class="n">pe</span><span class="o">.</span><span class="n">convert_invars_to_constvars</span><span class="p">(</span><span class="n">traced</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">jaxpr</span><span class="p">,</span> <span class="n">traced</span><span class="o">.</span><span class="n">_num_consts</span><span class="p">)</span>
+                <span class="n">closed_jaxpr</span> <span class="o">=</span> <span class="n">ClosedJaxpr</span><span class="p">(</span><span class="n">jaxpr_</span><span class="p">,</span> <span class="n">consts</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">closed_jaxpr</span> <span class="o">=</span> <span class="n">traced</span><span class="o">.</span><span class="n">jaxpr</span>
+
+            <span class="k">return</span> <span class="n">closed_jaxpr</span><span class="p">,</span> <span class="n">traced</span><span class="o">.</span><span class="n">_out_tree</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">make_jaxpr</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">static_argnums</span><span class="o">=</span><span class="n">static_argnums</span><span class="p">,</span> <span class="n">abstracted_axes</span><span class="o">=</span><span class="n">abstracted_axes</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jaxpr_creator</span>
+
+
+<div class="viewcode-block" id="make_jaspr">
+<a class="viewcode-back" href="../../../../reference/Jasp/Jaspr.html#qrisp.jasp.make_jaspr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_jaspr</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">flatten_envs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_shape</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">jax_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a function that returns the Jaspr representation of a quantum function.</span>
+
+<span class="sd">    This function is analogous to JAX&#39;s ``make_jaxpr``, but produces a Jaspr</span>
+<span class="sd">    (a Jaxpr enhanced with quantum primitives) from a Qrisp quantum function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fun : Callable</span>
+<span class="sd">        The quantum function whose Jaspr is to be computed.</span>
+<span class="sd">    flatten_envs : bool, optional</span>
+<span class="sd">        If True (default), flatten quantum environments in the resulting Jaspr.</span>
+<span class="sd">    return_shape : bool, optional</span>
+<span class="sd">        If True, the returned function produces a tuple ``(jaspr, out_tree)``</span>
+<span class="sd">        where ``out_tree`` is a PyTreeDef representing the structure of the</span>
+<span class="sd">        output of ``fun``. This can be used to reconstruct PyTree objects</span>
+<span class="sd">        from flat output lists using ``jax.tree_util.tree_unflatten``.</span>
+<span class="sd">        Default is False.</span>
+<span class="sd">    **jax_kwargs</span>
+<span class="sd">        Additional keyword arguments passed to ``jax.make_jaxpr``, such as</span>
+<span class="sd">        ``static_argnums``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Callable</span>
+<span class="sd">        A function that, when called with example arguments, returns either:</span>
+<span class="sd">        - A Jaspr representation of ``fun`` (if ``return_shape=False``)</span>
+<span class="sd">        - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    **Basic quantum circuit with measurement**</span>
+
+<span class="sd">    Create a Jaspr for a simple Bell state circuit:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, cx, measure</span>
+<span class="sd">        from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">        def simple_circuit():</span>
+<span class="sd">            qv = QuantumVariable(2)</span>
+<span class="sd">            h(qv[0])</span>
+<span class="sd">            cx(qv[0], qv[1])</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(simple_circuit)()</span>
+<span class="sd">        result = jaspr()  # Returns 0 or 3 with equal probability</span>
+
+<span class="sd">    **Parameterized quantum circuit**</span>
+
+<span class="sd">    Create a Jaspr with parameterized gates that can be executed with different parameters:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, p, measure</span>
+<span class="sd">        from qrisp.jasp import make_jaspr</span>
+
+<span class="sd">        def rotation_circuit(angle):</span>
+<span class="sd">            qv = QuantumVariable(1)</span>
+<span class="sd">            h(qv)</span>
+<span class="sd">            p(angle, qv)</span>
+<span class="sd">            return measure(qv)</span>
+
+<span class="sd">        jaspr = make_jaspr(rotation_circuit)(0.5)</span>
+<span class="sd">        result1 = jaspr(0.5)  # Execute with angle=0.5</span>
+<span class="sd">        result2 = jaspr(1.0)  # Execute with angle=1.0</span>
+
+<span class="sd">    **Using return_shape for PyTree reconstruction**</span>
+
+<span class="sd">    Retrieve the output tree structure alongside the Jaspr for reconstructing</span>
+<span class="sd">    complex return values:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, h, cx, x, measure</span>
+<span class="sd">        from qrisp.jasp import make_jaspr</span>
+<span class="sd">        from jax.tree_util import tree_unflatten, tree_flatten</span>
+
+<span class="sd">        def multi_output_circuit():</span>
+<span class="sd">            qa = QuantumVariable(2)</span>
+<span class="sd">            qb = QuantumVariable(2)</span>
+<span class="sd">            h(qa[0])</span>
+<span class="sd">            cx(qa[0], qa[1])</span>
+<span class="sd">            x(qb)</span>
+<span class="sd">            return measure(qa), measure(qb)</span>
+
+<span class="sd">        jaspr, out_tree = make_jaspr(multi_output_circuit, return_shape=True)()</span>
+<span class="sd">        result_a, result_b = jaspr()</span>
+
+<span class="sd">        # Use out_tree to reconstruct the output structure</span>
+<span class="sd">        flat_results, _ = tree_flatten((result_a, result_b))</span>
+<span class="sd">        reconstructed = tree_unflatten(out_tree, flat_results)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursive_qv_search</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">AbstractQuantumState</span><span class="p">,</span>
+        <span class="n">TracingQuantumSession</span><span class="p">,</span>
+        <span class="n">check_for_tracing_mode</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Handle static_argnums adjustment for the ammended function</span>
+    <span class="n">adjusted_jax_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">jax_kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;static_argnums&quot;</span> <span class="ow">in</span> <span class="n">adjusted_jax_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">])):</span>
+                <span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">adjusted_jax_kwargs</span><span class="p">[</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">jaspr_creator</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">TracingQuantumSession</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+
+        <span class="c1"># Close any tracing quantum sessions that might have not been</span>
+        <span class="c1"># properly closed due to whatever reason.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_tracing_mode</span><span class="p">():</span>
+            <span class="k">while</span> <span class="n">qs</span><span class="o">.</span><span class="n">abs_qst</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">qs</span><span class="o">.</span><span class="n">conclude_tracing</span><span class="p">()</span>
+
+        <span class="c1"># This function will be traced by Jax.</span>
+        <span class="c1"># Note that we add the abs_qst keyword as the tracing quantum circuit</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">ammended_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+            <span class="n">abs_qst</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span>
+
+            <span class="n">qs</span><span class="o">.</span><span class="n">start_tracing</span><span class="p">(</span><span class="n">abs_qst</span><span class="p">)</span>
+
+            <span class="c1"># If the signature contains QuantumVariables, these QuantumVariables went</span>
+            <span class="c1"># through a flattening/unflattening procedure. The unflattening creates</span>
+            <span class="c1"># a copy of the QuantumVariable object, which is however not yet registered in any</span>
+            <span class="c1"># QuantumSession. We register these QuantumVariables in the current QuantumSession.</span>
+            <span class="n">arg_qvs</span> <span class="o">=</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg_qvs</span><span class="p">:</span>
+                <span class="n">qs</span><span class="o">.</span><span class="n">register_qv</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">qs</span><span class="o">.</span><span class="n">conclude_tracing</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="n">e</span>
+
+            <span class="n">res_qc</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">conclude_tracing</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">res_qc</span>
+
+        <span class="n">ammended_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ammended_kwargs</span><span class="p">[</span><span class="mi">10</span> <span class="o">*</span> <span class="s2">&quot;~&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AbstractQuantumState</span><span class="p">()</span>
+
+        <span class="c1"># Use make_jaxpr_mod to trace the function</span>
+        <span class="c1"># Pass return_shape through to get the output tree if requested</span>
+        <span class="n">static_argnums</span> <span class="o">=</span> <span class="n">adjusted_jax_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;static_argnums&quot;</span><span class="p">,</span> <span class="p">())</span>
+        <span class="n">abstracted_axes</span> <span class="o">=</span> <span class="n">adjusted_jax_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;abstracted_axes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">make_jaxpr_mod</span><span class="p">(</span>
+            <span class="n">ammended_function</span><span class="p">,</span>
+            <span class="n">static_argnums</span><span class="o">=</span><span class="n">static_argnums</span><span class="p">,</span>
+            <span class="n">return_shape</span><span class="o">=</span><span class="n">return_shape</span><span class="p">,</span>
+            <span class="n">abstracted_axes</span><span class="o">=</span><span class="n">abstracted_axes</span><span class="p">,</span>
+        <span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">ammended_kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_shape</span><span class="p">:</span>
+            <span class="n">closed_jaxpr</span><span class="p">,</span> <span class="n">full_out_tree</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="c1"># full_out_tree is a PyTreeDef for (res, res_qc)</span>
+            <span class="c1"># We use .children() to get the subtrees, and take the first one (res)</span>
+            <span class="n">user_out_tree</span> <span class="o">=</span> <span class="n">full_out_tree</span><span class="o">.</span><span class="n">children</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">closed_jaxpr</span> <span class="o">=</span> <span class="n">result</span>
+
+        <span class="c1"># Collect the environments</span>
+        <span class="c1"># This means that the quantum environments no longer appear as</span>
+        <span class="c1"># enter/exit primitives but as primitive that &quot;call&quot; a certain Jaspr.</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">Jaspr</span><span class="o">.</span><span class="n">from_cache</span><span class="p">(</span><span class="n">collect_environments</span><span class="p">(</span><span class="n">closed_jaxpr</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">flatten_envs</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">flatten_environments</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">return_shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">user_out_tree</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">return</span> <span class="n">jaspr_creator</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_aval_equivalence</span><span class="p">(</span><span class="n">invars_1</span><span class="p">,</span> <span class="n">invars_2</span><span class="p">):</span>
+    <span class="n">avals_1</span> <span class="o">=</span> <span class="p">[</span><span class="n">invar</span><span class="o">.</span><span class="n">aval</span> <span class="k">for</span> <span class="n">invar</span> <span class="ow">in</span> <span class="n">invars_1</span><span class="p">]</span>
+    <span class="n">avals_2</span> <span class="o">=</span> <span class="p">[</span><span class="n">invar</span><span class="o">.</span><span class="n">aval</span> <span class="k">for</span> <span class="n">invar</span> <span class="ow">in</span> <span class="n">invars_2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">avals_1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">avals_2</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">avals_1</span><span class="p">))])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">remove_redundant_allocations</span><span class="p">(</span><span class="n">closed_jaxpr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Optimizes the Jaspr by removing redundant qubit allocations.</span>
+
+<span class="sd">    Strategy:</span>
+<span class="sd">    1.  Map usages of all variables to identify how QubitArrays are consumed.</span>
+<span class="sd">    2.  Identify `jasp.create_qubits` operations that are redundant. An allocation is redundant if:</span>
+<span class="sd">        -   The resulting QubitArray is not returned by the function.</span>
+<span class="sd">        -   The QubitArray is either unused (DropVar) or ONLY used by `free` primitives</span>
+<span class="sd">            (like `get_size`, `delete_qubits`) that don&#39;t actually require the physical qubits</span>
+<span class="sd">            if we know the allocation parameters.</span>
+<span class="sd">    3.  Plan removals and replacements:</span>
+<span class="sd">        -   Mark redundant `create_qubits` equations for removal.</span>
+<span class="sd">        -   Mark dependent `get_size`, `reset`, `delete_qubits` equations for removal.</span>
+<span class="sd">        -   Map the output circuit of removed equations to their input circuit (bypassing the operation).</span>
+<span class="sd">        -   Map the output of `get_size` to the size input of the `create_qubits` equation.</span>
+<span class="sd">    4.  Rewrite the Jaxpr:</span>
+<span class="sd">        -   Filter out removed equations.</span>
+<span class="sd">        -   Update variable references in remaining equations and output variables using the replacement map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jax.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DropVar</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">jax.extend.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">jax.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+    <span class="n">jaxpr</span> <span class="o">=</span> <span class="n">closed_jaxpr</span><span class="o">.</span><span class="n">jaxpr</span>
+    <span class="n">eqns</span> <span class="o">=</span> <span class="n">jaxpr</span><span class="o">.</span><span class="n">eqns</span>
+
+    <span class="n">usages</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># 1. Build usage map</span>
+    <span class="c1"># We iterate over all equations and record which equation uses which input variable.</span>
+    <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">eqns</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">DropVar</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">Literal</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">usages</span><span class="p">:</span>
+                <span class="n">usages</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">usages</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span>
+
+    <span class="c1"># Identify variables that are returned by the function, as these cannot be optimized away.</span>
+    <span class="n">returned_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">jaxpr</span><span class="o">.</span><span class="n">outvars</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">DropVar</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">Literal</span><span class="p">):</span>
+            <span class="n">returned_vars</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+
+    <span class="n">replacements</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">eqns_to_remove</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># Primitives that are &quot;safe&quot; to exist on a redundant qubit array.</span>
+    <span class="c1"># These operations can be resolved without the actual qubits if the allocation is known.</span>
+    <span class="n">allowed_primitives</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;jasp.get_size&quot;</span><span class="p">,</span> <span class="s2">&quot;jasp.delete_qubits&quot;</span><span class="p">}</span>
+
+    <span class="c1"># 2. Identify and plan removals</span>
+    <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">eqns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;jasp.create_qubits&quot;</span><span class="p">:</span>
+            <span class="n">out_qa</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">out_qc</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># If the QubitArray is part of the output, we must keep it.</span>
+            <span class="k">if</span> <span class="n">out_qa</span> <span class="ow">in</span> <span class="n">returned_vars</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Check if out_qa is only used by allowed primitives or not at all</span>
+            <span class="n">is_redundant</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_qa</span><span class="p">,</span> <span class="n">DropVar</span><span class="p">)</span> <span class="ow">or</span> <span class="n">out_qa</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">usages</span><span class="p">:</span>
+                <span class="n">is_redundant</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">only_allowed_usages</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">for</span> <span class="n">u_eqn</span> <span class="ow">in</span> <span class="n">usages</span><span class="p">[</span><span class="n">out_qa</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">u_eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_primitives</span><span class="p">:</span>
+                        <span class="c1"># Found a usage (e.g., gate) that requires real qubits.</span>
+                        <span class="n">only_allowed_usages</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">only_allowed_usages</span><span class="p">:</span>
+                    <span class="n">is_redundant</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">is_redundant</span><span class="p">:</span>
+                <span class="n">eqns_to_remove</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">eqn</span><span class="p">))</span>
+
+                <span class="c1"># Rewire circuit: Bypass the allocation by mapping output circuit to input circuit.</span>
+                <span class="n">replacements</span><span class="p">[</span><span class="n">out_qc</span><span class="p">]</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="c1"># Handle dependent equations (safe primitives)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_qa</span><span class="p">,</span> <span class="n">DropVar</span><span class="p">)</span> <span class="ow">and</span> <span class="n">out_qa</span> <span class="ow">in</span> <span class="n">usages</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">u_eqn</span> <span class="ow">in</span> <span class="n">usages</span><span class="p">[</span><span class="n">out_qa</span><span class="p">]:</span>
+                        <span class="n">eqns_to_remove</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">u_eqn</span><span class="p">))</span>
+
+                        <span class="k">if</span> <span class="n">u_eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;jasp.get_size&quot;</span><span class="p">:</span>
+                            <span class="c1"># Optimize get_size: Use the input size from create_qubits directly.</span>
+                            <span class="n">replacements</span><span class="p">[</span><span class="n">u_eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="n">u_eqn</span><span class="o">.</span><span class="n">primitive</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;jasp.delete_qubits&quot;</span><span class="p">:</span>
+                            <span class="c1"># Bypass cleanup: Map the cleanup&#39;s output circuit to its input circuit.</span>
+                            <span class="n">replacements</span><span class="p">[</span><span class="n">u_eqn</span><span class="o">.</span><span class="n">outvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">u_eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">eqns_to_remove</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># 3. Apply replacements</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">var</span><span class="p">):</span>
+        <span class="c1"># Literals are not hashable and cannot be in replacements</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">Literal</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">var</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Resolving chains of replacements</span>
+            <span class="k">while</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">replacements</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="n">replacements</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># Handle other potentially unhashable types</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">var</span>
+
+    <span class="n">new_eqns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">eqns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span> <span class="ow">in</span> <span class="n">eqns_to_remove</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Update inputs of remaining equations using the replacement map</span>
+        <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">resolve</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">eqn</span><span class="o">.</span><span class="n">invars</span><span class="p">]</span>
+        <span class="n">new_eqns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span>
+
+    <span class="c1"># Update the equations list in-place</span>
+    <span class="n">jaxpr</span><span class="o">.</span><span class="n">eqns</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_eqns</span>
+    <span class="c1"># Update the output variables of the jaxpr</span>
+    <span class="n">jaxpr</span><span class="o">.</span><span class="n">outvars</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">resolve</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">jaxpr</span><span class="o">.</span><span class="n">outvars</span><span class="p">]</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

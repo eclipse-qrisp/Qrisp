@@ -1,0 +1,1355 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Solving the Traveling Salesman Problem &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/TSP';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/TSP.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Solving combinatorial optimization problems with QAOA" href="QAOAtutorial/index.html" />
+    <link rel="prev" title="Factoring integers using Shor’s Algorithm" href="Shor.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Solving the Traveling Salesman Problem</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Solving-the-Traveling-Salesman-Problem">
+<h1>Solving the Traveling Salesman Problem<a class="headerlink" href="#Solving-the-Traveling-Salesman-Problem" title="Link to this heading">#</a></h1>
+
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        <span style='font-weight: 600; color: #222;'>Raphael Seidel</span>, <span style='color: #666; font-style: italic;'>Fraunhofer FOKUS</span>.
+    </div>
+    <p>While the previous examples contained a complexity, that could in principle still be managed with a low level QuantumCircuit creation framework, our next problem contains much more conceptual complexity. We believe that this example clearly displays the neccessity of a higher-level language like Qrisp in order to tackle problems of similar or even higher complexity.</p>
+<p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Travelling_salesman_problem" rel="noreferrer" target="_blank">traveling salesman problem</a> is a common example of an NP-hard problem. The task is to find the shortest round trip through a set of cities, which are described by a weighted graph. As shown in <a class="reference external" href="https://qiskit.org/documentation/optimization/tutorials/06_examples_max_cut_and_tsp.html" rel="noreferrer" target="_blank">this tutorial</a> the traveling salesman problem can be reformulated in terms of a <a class="reference external" href="https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization" rel="noreferrer" target="_blank">QUBO
+problem</a> instance and then solved using either VQE or QAOA. A certain disadvantage of this approach is that the amount of binary variables grows as <span class="math notranslate nohighlight">\(\mathcal{O}(n^2)\)</span> where <span class="math notranslate nohighlight">\(n\)</span> is the amount of cities. Another approach has been demonstrated <a class="reference external" href="https://arxiv.org/pdf/1805.10928.pdf" rel="noreferrer" target="_blank">in this paper</a> (which has also been implemented in a <a class="reference external" href="https://qiskit.org/textbook/ch-paper-implementations/tsp.html" rel="noreferrer" target="_blank">Qiskit
+tutorial</a>). The idea is to use quantum phase estimation on successive diagonal operators to retrieve the route distance. The amount of qubits here grows as <span class="math notranslate nohighlight">\(\mathcal{O}(n log(n))\)</span>. Unfortunately the paper provides no details on how to perform the actual quantum search.</p>
+<p>We will now introduce a solution that resembles the second method including the quantum search. This involves creating a superposition of all possible routes (excluding those that repeat cities), assessing the distance of the routes, and determining whether the distance is below a certain threshold. The use of Qrisp’s high-level language features simplifies many of these steps. Moreover, employing Qrisp not only streamlines the process, but also greatly improves resource efficiency: The
+presented code includes more than 10 distinct QuantumVariables distributed across 41 qubits which compiles into a QuantumCircuit that uses only 23 qubits.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">city_amount</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">distance_matrix</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.25</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.625</span><span class="p">,</span> <span class="mf">0.375</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.625</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.375</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="o">/</span> <span class="n">city_amount</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Setting-up-a-superposition-of-all-routes">
+<h2>Setting up a superposition of all routes<a class="headerlink" href="#Setting-up-a-superposition-of-all-routes" title="Link to this heading">#</a></h2>
+<p>Unlike Qiskit’s solution, we will not search the space of <strong>every</strong> combination of cities but only the permutations (ie. the combinations, which contain each city only once). To do this we need to set up a superposition, where only the permutations are present. We achieve this by bringing a set of QuantumVariables <span class="math notranslate nohighlight">\(s_0, s_1, .. s_k\)</span>, which we call <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> into uniform superposition. Each computational basis-state of these variables specifies a permutation. We then call a
+function <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>, which creates a <a class="reference internal" href="../../reference/Core/QuantumArray.html"><span class="doc">QuantumArray</span></a> containing that permutation.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}U_{\text{eval perm}} \sum_{s_0 = 0}^n \sum_{s_1 = 0}^n \dotsc \sum_{s_k = 0}^n \left( \bigotimes_{i = 0}^k \ket{s_i} \right) \ket{0}\\
+= \sum_{s_0 = 0}^n \sum_{s_1 = 0}^n \dotsc \sum_{s_k = 0}^n \left( \bigotimes_{i = 0}^k \ket{s_i} \right) \ket{\text{eval perm}(s_0, s_1, \dotsc s_n)}\end{split}\]</div>
+<p>The first task in creating the oracle is therefore to code the function <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>. The idea here is to use “reverse” <a class="reference external" href="https://en.wikipedia.org/wiki/Selection_sort" rel="noreferrer" target="_blank">selection sort</a>. What does that mean? A sorting algorithm is basically a procedure that reverts every permutation to its ordered state. The reversal of this procedure therefore transforms the ordered state (ie. (1,2,3..)) to a permutation, based on a set of variables. For selection sort this set of variables is the index of the
+minimum element of each iteration. This index specifies, which element is swapped to the first position. Swapping a QuantumArray entry specified by a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> to the first position can be achieved by inverting the <a class="reference internal" href="../../reference/Primitives/demux.html"><span class="doc">demux</span></a> function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Receives a QuantumArray qa and a QuantumFloat index and</span>
+<span class="c1"># then swaps the entry specified by index to the first position of the QuantumArray</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swap_to_front</span><span class="p">(</span><span class="n">qa</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+        <span class="n">demux</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">qa</span><span class="p">,</span> <span class="n">permit_mismatching_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can now define <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Receives a list of QuantumFloats, which specify a permuation</span>
+<span class="c1"># and then returns QuantumArray holding that permutation</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">):</span>
+
+    <span class="c1"># Specify the size of the QuantumFloats, which will represent the cities</span>
+    <span class="n">city_specifier_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)))</span>
+
+    <span class="c1"># Create the QuantumArray, which will hold the permutations</span>
+    <span class="n">qa</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="n">city_specifier_size</span><span class="p">),</span> <span class="n">city_amount</span><span class="p">)</span>
+
+    <span class="c1"># Initialize the QuantumArray with the identity permutation, ie. (0,1,2..)</span>
+    <span class="n">qa</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+    <span class="c1"># Iteratively swap</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">swap_to_front</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="n">i</span><span class="p">:],</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qa</span>
+</pre></div>
+</div>
+</div>
+<p>In this function we first determine, how big the QuantumFloat needs to be in order to represent every city. If we had <span class="math notranslate nohighlight">\(8 = 2^3\)</span> cities, we would need 3 qubits. We then create a QuantumArray with qtype QuantumFloat and size <code class="docutils literal notranslate"><span class="pre">city_amount</span></code>. This array will hold the resulting permutation, which is why we initialize the identity permutation. The final part of the function is to iterate through the array and swap the entry specified by <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> to the i-th entry.</p>
+<p>Before we test this function, we create another helper function, which creates the <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Function that returns a list of QuantumFloats,</span>
+<span class="c1"># specifying the permutations (these will be in uniform superposition)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+
+    <span class="n">perm_specifiers</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+
+        <span class="n">qf_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">city_amount</span> <span class="o">-</span> <span class="n">i</span><span class="p">)))</span>
+
+        <span class="n">temp_qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">qf_size</span><span class="p">)</span>
+
+        <span class="n">perm_specifiers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">perm_specifiers</span>
+</pre></div>
+</div>
+</div>
+<p>Note that we dynamically redetermine the size of the QuantumFloat before each iteration. To understand why we can do this, consider the last iteration of <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>. Here we treat a QuantumArray with only 2 entries. Therefore the last specifier only needs the size of a single qubit.</p>
+<p>We can now test our results so far:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">perm_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">perm_specifiers</span><span class="p">:</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="n">perm</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+<span class="n">multi_measurement</span><span class="p">(</span><span class="n">perm_specifiers</span> <span class="o">+</span> <span class="p">[</span><span class="n">perm</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(0, 0, 0, OutcomeArray([0, 1, 2, 3])): 0.03125,
+ (0, 0, 1, OutcomeArray([0, 1, 3, 2])): 0.03125,
+ (0, 1, 0, OutcomeArray([0, 2, 1, 3])): 0.03125,
+ (0, 1, 1, OutcomeArray([0, 2, 3, 1])): 0.03125,
+ (0, 2, 0, OutcomeArray([0, 3, 2, 1])): 0.03125,
+ (0, 2, 1, OutcomeArray([0, 3, 1, 2])): 0.03125,
+ (0, 3, 0, OutcomeArray([0, 3, 1, 2])): 0.03125,
+ (0, 3, 1, OutcomeArray([0, 3, 2, 1])): 0.03125,
+ (1, 0, 0, OutcomeArray([1, 0, 3, 2])): 0.03125,
+ (1, 0, 1, OutcomeArray([1, 0, 2, 3])): 0.03125,
+ (1, 1, 0, OutcomeArray([1, 3, 0, 2])): 0.03125,
+ (1, 1, 1, OutcomeArray([1, 3, 2, 0])): 0.03125,
+ (1, 2, 0, OutcomeArray([1, 2, 3, 0])): 0.03125,
+ (1, 2, 1, OutcomeArray([1, 2, 0, 3])): 0.03125,
+ (1, 3, 0, OutcomeArray([1, 2, 0, 3])): 0.03125,
+ (1, 3, 1, OutcomeArray([1, 2, 3, 0])): 0.03125,
+ (2, 0, 0, OutcomeArray([2, 1, 0, 3])): 0.03125,
+ (2, 0, 1, OutcomeArray([2, 1, 3, 0])): 0.03125,
+ (2, 1, 0, OutcomeArray([2, 0, 1, 3])): 0.03125,
+ (2, 1, 1, OutcomeArray([2, 0, 3, 1])): 0.03125,
+ (2, 2, 0, OutcomeArray([2, 3, 0, 1])): 0.03125,
+ (2, 2, 1, OutcomeArray([2, 3, 1, 0])): 0.03125,
+ (2, 3, 0, OutcomeArray([2, 3, 1, 0])): 0.03125,
+ (2, 3, 1, OutcomeArray([2, 3, 0, 1])): 0.03125,
+ (3, 0, 0, OutcomeArray([3, 0, 1, 2])): 0.03125,
+ (3, 0, 1, OutcomeArray([3, 0, 2, 1])): 0.03125,
+ (3, 1, 0, OutcomeArray([3, 1, 0, 2])): 0.03125,
+ (3, 1, 1, OutcomeArray([3, 1, 2, 0])): 0.03125,
+ (3, 2, 0, OutcomeArray([3, 2, 1, 0])): 0.03125,
+ (3, 2, 1, OutcomeArray([3, 2, 0, 1])): 0.03125,
+ (3, 3, 0, OutcomeArray([3, 2, 0, 1])): 0.03125,
+ (3, 3, 1, OutcomeArray([3, 2, 1, 0])): 0.03125}
+</pre></div></div>
+</div>
+<p>In this code snipped, we first create the <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> and set them to uniform superposition by applying an H gate onto every participating qubit. We then call the <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code> function to receive a QuantumArray containing the corresponding permutations. Finally we measure all of these variables together using the <code class="docutils literal notranslate"><span class="pre">multi_measurement</span></code> method. This function allows to measure multiple QuantumVariables at once and returns the results as a dictionary of tuples.</p>
+<p>The first 3 numbers within the keys of this dictionary are the permutation specifiers. We see that the 3rd number only varies between 0 and 1, which is due to the previously mentioned dynamic size determination. The values denoted with <code class="docutils literal notranslate"><span class="pre">OutcomeArray</span></code> denote the permutation. Note that these permutations indeed never contain the same city twice.</p>
+</section>
+<section id="Evaluating-route-distance">
+<h2>Evaluating route distance<a class="headerlink" href="#Evaluating-route-distance" title="Link to this heading">#</a></h2>
+<p>Now that we have a superposition of states describing every possible route, we have to evaluate the distance of them.</p>
+<p>On a classical computer, this function is rather simple</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cl_route_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">):</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">city_amount</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<p>We present two approaches to perform this function on a quantum computer. One is based one quantum phase estimation and the other one on loading the distance matrix from a <a class="reference internal" href="../../reference/Core/QuantumDictionary.html"><span class="doc">QuantumDictionary</span></a>.</p>
+<p><strong>Quantum Phase Estimation based evaluation</strong></p>
+<p>The idea here is to make use of <a class="reference internal" href="../../reference/Primitives/QPE.html"><span class="doc">Quantum Phase Estimation</span></a> while abusing the additive properties of successive phase functions.</p>
+<p>We realize these phase functions using the <a class="reference internal" href="../../reference/Utilities/as_hamiltonian.html"><span class="doc">as_hamiltonian</span></a> decorator. This decorator turns Python functions of ordinary variables into functions of QuantumVariables. The effect of these functions is to apply the result of the original function as a phase onto the quantum state.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@as_hamiltonian</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">trip_distance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="nb">iter</span>
+</pre></div>
+</div>
+</div>
+<p>In mathematical terms, this function performs the following operation</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{U}_{\text{trip distance}} \ket{i} \ket{j} = \exp(i \cdot \text{trip distance}(i, j, \text{iter})) \ket{i} \ket{j}\]</div>
+<p>Therefore, having several of these applied iteratively yields the summed distance as a phase:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}} \ket{\sigma(0)} \ket{\sigma(1)} \ket{\sigma(2)} \ket{\sigma(3)}\\
+= \exp(i \sum_{i = 0}^{3} \text{trip distance}(\sigma(i), \sigma((i+1)\%4), \text{iter})) \ket{\sigma(0)} \ket{\sigma(1)} \ket{\sigma(2)} \ket{\sigma(3)}\end{split}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\sigma\)</span> is the permutation.</p>
+<p>We set up the function for performing the successive phase application</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">phase_apply_summed_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">itinerary</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">trip_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span><span class="p">],</span> <span class="nb">iter</span><span class="o">=</span><span class="nb">iter</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This function can now be used as an input for the quantum phase estimation algorithm.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@lifted</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">QPE</span><span class="p">(</span>
+        <span class="n">itinerary</span><span class="p">,</span> <span class="n">phase_apply_summed_distance</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span> <span class="n">iter_spec</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Note the keyword <code class="docutils literal notranslate"><span class="pre">iter_spec</span></code> which indicates that, instead of repeatedly evaluating <code class="docutils literal notranslate"><span class="pre">phase_apply_summed_distance</span></code>, the algorithm supplies the amount of iterations as the keyword <code class="docutils literal notranslate"><span class="pre">iter</span></code>. This reduces the required resources significantly. Of further interest is the <a class="reference internal" href="../../reference/Utilities/lifted.html"><span class="doc">lifted</span></a> decorator. This decorator tells the compiler that this function is <code class="docutils literal notranslate"><span class="pre">qfree</span></code> and permeable on its inputs and thus can be automatically uncomputed, even though it contains
+subroutines (QFT!) which aren’t <code class="docutils literal notranslate"><span class="pre">qfree</span></code>.</p>
+<p>To verify our results we evaluate our function on a randomly chosen itinerary and compare with the classical result:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_itinerary</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">test_itinerary</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">cl_route_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="o">.</span><span class="n">most_likely</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+np.float64(0.53125)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_res</span> <span class="o">=</span> <span class="n">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.53125: 1.0}
+</pre></div></div>
+</div>
+<p><strong>Quantum Dictionary based evaluation</strong></p>
+<p>Another approach to evaluate the route distance is to load the data of the distance matrix into the superposition using a QuantumDictionary.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="c1"># A QuantumFloat with n qubits and exponent -n</span>
+    <span class="c1"># can represent values between 0 and 1</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="c1"># Fill QuantumDictionary with values</span>
+    <span class="n">qd</span> <span class="o">=</span> <span class="n">QuantumDictionary</span><span class="p">(</span><span class="n">return_type</span><span class="o">=</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+            <span class="n">qd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+    <span class="c1"># Evaluate result</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="n">trip_distance</span> <span class="o">=</span> <span class="n">qd</span><span class="p">[</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">city_amount</span><span class="p">]]</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">trip_distance</span>
+        <span class="n">trip_distance</span><span class="o">.</span><span class="n">uncompute</span><span class="p">(</span><span class="n">recompute</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> is a QuantumFloat which contains the distance between the i-th city and its successor. This QuantumFloat then gets added to the result and afterwards uncomputed. The uncomputation allows the qubit manager to reuse the qubits of <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> after each iteration.</p>
+<blockquote>
+<div><p><strong>Note</strong>: The keyword <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> is a bit more involved: Since this function will be embedded into an oracle, the result will be uncomputed at some later point. There are now two ways to deal with the uncomputation of the <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> QuantumVariables inside the uncomputation of the <code class="docutils literal notranslate"><span class="pre">res</span></code> QuantumVariable.</p>
+<ul class="simple">
+<li><p>Delay the uncomputation of <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> such that the information can be used to uncompute <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p></li>
+<li><p>Recompute <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> and use the recomputed value for the uncomputation of <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p></li>
+</ul>
+<p>There is pros and cons for both strategies. By default the underlying algorithm of Qrisp’s automatic uncomputation will always go for option 1. The main drawback of this approach is that delaying the uncomputation blocks the involved qubits for the time of the delay. This implies that the qubits of the <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> QuantumFloat from each iteration will be blocked, which is not the behavior we want. Much rather we would like to reuse the qubits of iteration 0 for iteration 1 and so on.
+Because of this, we set <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> which will perform the uncomputation immediately and automatically recompute if needed at a later point. All of this might seem complicated but simply setting <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> is enough - the rest is handled by the compiler. Once you reach the end of the tutorial, we invite you to compare the qubit count when setting this keyword to <code class="docutils literal notranslate"><span class="pre">False</span></code>!</p>
+</div></blockquote>
+<p>We verify our function on our established example.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_itinerary</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span><span class="o">=</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">test_itinerary</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">qdict_res</span> <span class="o">=</span> <span class="n">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">qdict_res</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0.53125: 1.0}
+</pre></div></div>
+</div>
+<p>We can now compare the required resources for both approaches. We do this by calling the <a class="reference internal" href="../../reference/Core/generated/qrisp.QuantumSession.compile.html"><span class="doc">compile</span></a> method of the <a class="reference internal" href="../../reference/Core/QuantumSession.html"><span class="doc">QuantumSession</span></a>, the result is registered in. This method dynamically (de)allocates qubits and returns a <a class="reference internal" href="../../reference/Circuit%20Manipulation/QuantumCircuit.html"><span class="doc">QuantumCircuit</span></a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span> <span class="o">=</span> <span class="n">qdict_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+428
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+299
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+18
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_compiled_qc</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+626
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+731
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+13
+</pre></div></div>
+</div>
+<p>We see that the QuantumDictionary based function is about twice as fast, takes a comparable amount of CNOT gates and needs about 50% more qubits. The qubit overhead is due to the fact that during each iteration, the QuantumFloat <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> is allocated and eventually uncomputed. These extra qubits are not present in the QPE based approach.</p>
+</section>
+<section id="Creating-the-oracle">
+<h2>Creating the oracle<a class="headerlink" href="#Creating-the-oracle" title="Link to this heading">#</a></h2>
+<p>The next step is to create the oracle function. For this, we put everything together we have create so far:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qrisp</span><span class="w"> </span><span class="kn">import</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">z</span>
+
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">eval_distance_threshold</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;qpe&quot;</span><span class="p">):</span>
+
+    <span class="n">itinerary</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;qdict&quot;</span><span class="p">:</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;qpe&quot;</span><span class="p">:</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Don&#39;t know method </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">is_below_treshold</span> <span class="o">=</span> <span class="n">distance</span> <span class="o">&lt;=</span> <span class="n">threshold</span>
+
+    <span class="n">z</span><span class="p">(</span><span class="n">is_below_treshold</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The line <code class="docutils literal notranslate"><span class="pre">distance</span> <span class="pre">&lt;=</span> <span class="pre">threshold</span></code> returns a <a class="reference internal" href="../../reference/Quantum%20Types/QuantumBool.html"><span class="doc">QuantumBool</span></a> that is in the state <span class="math notranslate nohighlight">\(\ket{\text{True}}\)</span> if the condition is met. The last line applies a z-gate, to perform the necessary phase flip. Note the <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator, which all local QuantumVariables that have been created inside this function.</p>
+</section>
+<section id="Evaluating-the-oracle">
+<h2>Evaluating the oracle<a class="headerlink" href="#Evaluating-the-oracle" title="Link to this heading">#</a></h2>
+<p>Finally, we can evaluate the oracle and find a solution to our pet problem. We do this by calling the prebuild <a class="reference internal" href="../../reference/Algorithms/Grover.html"><span class="doc">Grover’s algorithm</span></a> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create permutation specifiers</span>
+<span class="n">perm_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">factorial</span>
+
+<span class="c1"># Determine an estimate for the amount of winner states</span>
+<span class="c1"># (Average number of computational basis states per permutation) * (4 cyclic shifts)*(2 directions)</span>
+<span class="n">winner_state_amount</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">perm_specifiers</span><span class="p">])</span> <span class="o">/</span> <span class="n">factorial</span><span class="p">(</span><span class="n">city_amount</span><span class="p">))</span>
+    <span class="o">*</span> <span class="n">city_amount</span>
+    <span class="o">*</span> <span class="mi">2</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.grover</span><span class="w"> </span><span class="kn">import</span> <span class="n">grovers_alg</span>
+
+<span class="c1"># Evaluate Grovers algorithm</span>
+<span class="n">grovers_alg</span><span class="p">(</span>
+    <span class="n">perm_specifiers</span><span class="p">,</span>  <span class="c1"># Permutation specifiers</span>
+    <span class="n">eval_distance_threshold</span><span class="p">,</span>  <span class="c1"># Oracle function</span>
+    <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
+        <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;qpe&quot;</span><span class="p">,</span>
+    <span class="p">},</span>  <span class="c1"># Specify the keyword arguments for the Oracle</span>
+    <span class="n">winner_state_amount</span><span class="o">=</span><span class="n">winner_state_amount</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># Specify the estimated amount of winners</span>
+
+<span class="c1"># Retrieve measurement</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+<span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(0, 0, 1): 0.09570338281353126,
+ (0, 1, 1): 0.09570338281353126,
+ (1, 0, 1): 0.09570338281353126,
+ (1, 1, 1): 0.09570338281353126,
+ (2, 1, 0): 0.09570338281353126,
+ (2, 2, 1): 0.09570338281353126,
+ (2, 3, 0): 0.09570338281353126,
+ (3, 1, 0): 0.09570338281353126,
+ (3, 2, 1): 0.09570338281353126,
+ (3, 3, 0): 0.09570338281353126,
+ (0, 0, 0): 0.0019530078120312485,
+ (0, 1, 0): 0.0019530078120312485,
+ (0, 2, 0): 0.0019530078120312485,
+ (0, 2, 1): 0.0019530078120312485,
+ (0, 3, 0): 0.0019530078120312485,
+ (0, 3, 1): 0.0019530078120312485,
+ (1, 0, 0): 0.0019530078120312485,
+ (1, 1, 0): 0.0019530078120312485,
+ (1, 2, 0): 0.0019530078120312485,
+ (1, 2, 1): 0.0019530078120312485,
+ (1, 3, 0): 0.0019530078120312485,
+ (1, 3, 1): 0.0019530078120312485,
+ (2, 0, 0): 0.0019530078120312485,
+ (2, 0, 1): 0.0019530078120312485,
+ (2, 1, 1): 0.0019530078120312485,
+ (2, 2, 0): 0.0019530078120312485,
+ (2, 3, 1): 0.0019530078120312485,
+ (3, 0, 0): 0.0019530078120312485,
+ (3, 0, 1): 0.0019530078120312485,
+ (3, 1, 1): 0.0019530078120312485,
+ (3, 2, 0): 0.0019530078120312485,
+ (3, 3, 1): 0.0019530078120312485}
+</pre></div></div>
+</div>
+<p>We see that we have 10 states that have been amplified. This is no surprise as different permutations can represent the same route (and therefore result in the same travel distance). Indeed our estimate for the amount of winner states was pretty good:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">winner_state_amount</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+10.666666666666666
+</pre></div></div>
+</div>
+<p>To extract the final solution, we need to evaluate the permuation given by one of the solutions for the <code class="docutils literal notranslate"><span class="pre">permutation_specifiers</span></code>. A resource efficient possibility would be to recreate the algorithm classically, however we will just evaluate it once more on the simulator</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">winning_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">1</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">2</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">winning_itinerary</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">winning_specifiers</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">winning_itinerary</span><span class="o">.</span><span class="n">most_likely</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+OutcomeArray([0, 1, 3, 2])
+</pre></div></div>
+</div>
+</section>
+<section id="Benchmarking-Performance">
+<h2>Benchmarking Performance<a class="headerlink" href="#Benchmarking-Performance" title="Link to this heading">#</a></h2>
+<p>Last but not least, we evaluate some performance indicators. For this, we again compile the QuantumSession to a QuantumCircuit.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_compiled_qc</span> <span class="o">=</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1989
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1804
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+18
+</pre></div></div>
+</div>
+<p>These are the values for the quantum phase estimation based approach. To evaluate the QuantumDictionary based algorithm, we set <code class="docutils literal notranslate"><span class="pre">&quot;method&quot;</span> <span class="pre">:</span> <span class="pre">&quot;qdict&quot;</span></code> in the <code class="docutils literal notranslate"><span class="pre">grovers_alg</span></code> call.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span> <span class="o">=</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1989
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1804
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+21
+</pre></div></div>
+</div>
+<p>If you are interested in ways to improve the performance even further, we recommend checking the <a class="reference internal" href="../../reference/Examples/EfficientTSP.html"><span class="doc">efficient solution for the TSP</span></a>. This solution slightly tweeks the one presented here but roughly halves the required resources.</p>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setting-up-a-superposition-of-all-routes">Setting up a superposition of all routes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Evaluating-route-distance">Evaluating route distance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-the-oracle">Creating the oracle</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Evaluating-the-oracle">Evaluating the oracle</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Benchmarking-Performance">Benchmarking Performance</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/TSP.ipynb" download="TSP.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

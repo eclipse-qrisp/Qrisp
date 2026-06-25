@@ -1,0 +1,824 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.jasp.evaluation_tools.boolean_simulation &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/jasp/evaluation_tools/boolean_simulation';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/jasp/evaluation_tools/boolean_simulation.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.jasp.evaluation_tools.boolean_simulation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.jasp.evaluation_tools.boolean_simulation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Boolean Simulation Decorator</span>
+<span class="sd">============================</span>
+
+<span class="sd">This module provides the ``boolean_simulation`` decorator, which enables efficient</span>
+<span class="sd">classical simulation of quantum programs that contain only boolean/classical logic.</span>
+
+<span class="sd">The decorator transforms Jasp functions into pure JAX expressions, allowing them to</span>
+<span class="sd">be JIT-compiled and executed without any quantum simulation overhead. This is </span>
+<span class="sd">particularly useful for:</span>
+
+<span class="sd">1. **Verifying uncomputation correctness**: The simulation checks that all deleted</span>
+<span class="sd">   qubits are properly uncomputed (in the |0⟩ state) and warns otherwise.</span>
+
+<span class="sd">2. **Testing classical quantum algorithms at scale**: Algorithms like adders,</span>
+<span class="sd">   multipliers, and other arithmetic circuits can be tested with large inputs.</span>
+
+<span class="sd">3. **Performance benchmarking**: Since the simulation compiles to efficient JAX</span>
+<span class="sd">   code, it can be used to benchmark the classical logic portion of algorithms.</span>
+
+<span class="sd">Supported Operations:</span>
+<span class="sd">- X, SWAP gates (unconditional bit operations)</span>
+<span class="sd">- Controlled variants: CX, CCX, CSWAP, multi-controlled X, etc.</span>
+<span class="sd">- Phase gates (Z, S, T, RZ, P): These are no-ops in classical simulation</span>
+<span class="sd">- Measurement: Returns the current classical bit values</span>
+
+<span class="sd">Unsupported Operations:</span>
+<span class="sd">- Any gate creating superposition: H, RX, RY, SX, etc.</span>
+<span class="sd">- These will raise an exception during simulation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_unflatten</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractQubit</span><span class="p">,</span> <span class="n">AbstractQubitArray</span><span class="p">,</span> <span class="n">Jaspr</span><span class="p">,</span> <span class="n">make_jaspr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Jlist</span><span class="p">,</span> <span class="n">eval_jaxpr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.call_graph_analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">analyze_call_graph</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">jaspr_to_cl_func_jaxpr</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="boolean_simulation">
+<a class="viewcode-back" href="../../../../reference/Jasp/Simulation%20Tools/Boolean%20Simulation.html#qrisp.jasp.boolean_simulation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">boolean_simulation</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">bit_array_padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">,</span>
+    <span class="n">callback_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).</span>
+
+<span class="sd">    This decorator transforms the function into a JAX expression without any</span>
+<span class="sd">    quantum primitives and leverages the JAX compilation pipeline to compile</span>
+<span class="sd">    a highly efficient simulation.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        The ``boolean_simulation`` decorator will check if deleted</span>
+<span class="sd">        :ref:`QuantumVariables &lt;QuantumVariable&gt;`</span>
+<span class="sd">        have been properly uncomputed and submit a warning otherwise.</span>
+<span class="sd">        It therefore provides a valuable tool for verifying the correctness</span>
+<span class="sd">        of your algorithms at scale.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable</span>
+<span class="sd">        A Python function performing Jasp logic.</span>
+<span class="sd">    bit_array_padding : int, optional</span>
+<span class="sd">        An integer specifying the size of the classical array containing the</span>
+<span class="sd">        (classical) bits which are simulated. Since JAX doesn&#39;t allow dynamically</span>
+<span class="sd">        sized arrays but Jasp supports dynamically sized QuantumVariables, the</span>
+<span class="sd">        array has to be &quot;padded&quot;. The padding therefore indicates an upper boundary</span>
+<span class="sd">        for how many qubits are required to execute ``func``. A large padding</span>
+<span class="sd">        slows down the simulation but prevents overflow errors.The default is</span>
+<span class="sd">        ``2**16``. The minimum value is 64. This threshold describes the maximum</span>
+<span class="sd">        OVERALL amount of qubits that can appear in the simulation. The maximum</span>
+<span class="sd">        amount per QuantumVariable/per QuantumArray is tied to this number</span>
+<span class="sd">        and will always be ``1/64`` of the ``bit_array_padding``.</span>
+<span class="sd">        The default here is therefore ``2**16/2**6 = 1024``.</span>
+
+<span class="sd">    callback_threshold : int or None, optional</span>
+<span class="sd">        For very large algorithms, compile time can blow up due to aggressive</span>
+<span class="sd">        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate</span>
+<span class="sd">        this by trading compilation speed for execution speed.</span>
+<span class="sd">        ``None`` (default) disables callbacks (fastest execution).</span>
+<span class="sd">        ``0`` wraps every reused subroutine (fastest compilation).</span>
+<span class="sd">        ``500`` is a good middle ground for many large algorithms.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Callable</span>
+<span class="sd">        A function performing the simulation for the given input parameters.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    Exception</span>
+<span class="sd">        If ``bit_array_padding`` is less than 64.</span>
+<span class="sd">    Exception</span>
+<span class="sd">        If the function returns a quantum value (must measure before returning).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We create a simple script that demonstrates the functionality:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumFloat, measure</span>
+<span class="sd">        from qrisp.jasp import boolean_simulation, jrange</span>
+
+<span class="sd">        @boolean_simulation</span>
+<span class="sd">        def main(i, j):</span>
+
+<span class="sd">            a = QuantumFloat(10)</span>
+
+<span class="sd">            b = QuantumFloat(10)</span>
+
+<span class="sd">            a[:] = i</span>
+<span class="sd">            b[:] = j</span>
+
+<span class="sd">            c = QuantumFloat(30)</span>
+
+<span class="sd">            for i in jrange(150):</span>
+<span class="sd">                c += a*b</span>
+
+<span class="sd">            return measure(c)</span>
+
+<span class="sd">    This script evaluates the multiplication of the two inputs 150 times and adds</span>
+<span class="sd">    them into the same QuantumFloat. The respected result is therefore ``i*j*150``.</span>
+
+<span class="sd">    &gt;&gt;&gt; main(1,2)</span>
+<span class="sd">    Array(300., dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; main(3,4)</span>
+<span class="sd">    Array(1800., dtype=float64)</span>
+
+<span class="sd">    Next we demonstrate the behavior under a faulty uncomputation:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @boolean_simulation</span>
+<span class="sd">        def main(i):</span>
+
+<span class="sd">            a = QuantumFloat(10)</span>
+<span class="sd">            a[:] = i</span>
+<span class="sd">            a.delete()</span>
+<span class="sd">            return</span>
+
+
+<span class="sd">    &gt;&gt;&gt; main(0)</span>
+<span class="sd">    &gt;&gt;&gt; main(1)</span>
+<span class="sd">    WARNING: Faulty uncomputation found during simulation.</span>
+<span class="sd">    &gt;&gt;&gt; main(3)</span>
+<span class="sd">    WARNING: Faulty uncomputation found during simulation.</span>
+<span class="sd">    WARNING: Faulty uncomputation found during simulation.</span>
+
+<span class="sd">    For the first case, the deletion is valid, because ``a`` is initialized in the</span>
+<span class="sd">    $\\ket{0}$ state. For the second case, the first qubit is in the $\\ket{1}$</span>
+<span class="sd">    state, so the deletion is not valid. The third case has both the first and</span>
+<span class="sd">    the second qubit in the $\\ket{1}$ state (because 3 = ``11`` in binary) so</span>
+<span class="sd">    there are two warnings.</span>
+
+<span class="sd">    **Padding**</span>
+
+<span class="sd">    We demonstrate the effects of the padding feature. For this we recreate the</span>
+<span class="sd">    above script but with different padding selections.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        @boolean_simulation(bit_array_padding = 64)</span>
+<span class="sd">        def main(i, j):</span>
+
+<span class="sd">            a = QuantumFloat(10)</span>
+
+<span class="sd">            b = QuantumFloat(10)</span>
+
+<span class="sd">            a[:] = i</span>
+<span class="sd">            b[:] = j</span>
+
+<span class="sd">            c = QuantumFloat(30)</span>
+
+<span class="sd">            for i in jrange(150):</span>
+<span class="sd">                c += a*b</span>
+
+<span class="sd">            return measure(c)</span>
+
+<span class="sd">    &gt;&gt;&gt; main(1,2)</span>
+<span class="sd">    Array(8.92323439e+08, dtype=float64)</span>
+
+<span class="sd">    A faulty result because the script needs more than 64 qubits.</span>
+
+<span class="sd">    Increasing the padding ensures that enough qubits are available at the cost</span>
+<span class="sd">    of simulation speed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Handle both @boolean_simulation and @boolean_simulation(...) syntax</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">func</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Called with arguments: @boolean_simulation(bit_array_padding=...)</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">boolean_simulation</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">bit_array_padding</span><span class="o">=</span><span class="n">bit_array_padding</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="o">=</span><span class="n">callback_threshold</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Called without arguments: @boolean_simulation</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">bit_array_padding</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize boolean_simulation with less than 512 bits&quot;</span><span class="p">)</span>
+
+    <span class="nd">@jit</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;JIT-compiled simulation function that transforms and executes the quantum program.</span>
+
+<span class="sd">        This inner function:</span>
+<span class="sd">        1. Creates a Jaspr from the decorated function (with output tree structure)</span>
+<span class="sd">        2. Validates that no quantum values are returned (must be measured first)</span>
+<span class="sd">        3. Transforms the Jaspr to a classical Jaxpr</span>
+<span class="sd">        4. Initializes the boolean quantum circuit state (bit array + free qubit pool)</span>
+<span class="sd">        5. Executes the classical Jaxpr and reconstructs the PyTree structure</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args : Any</span>
+<span class="sd">            Arguments to pass to the original function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Any</span>
+<span class="sd">            The result of the simulation, with the original PyTree structure preserved:</span>
+<span class="sd">            - None if the function has no return value</span>
+<span class="sd">            - dict, list, tuple, or nested structure matching the original return type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create the Jaspr representation of the quantum program</span>
+        <span class="c1"># Use return_shape=True to capture the output PyTree structure</span>
+        <span class="n">jaspr</span><span class="p">:</span> <span class="n">Jaspr</span>
+        <span class="n">jaspr</span><span class="p">,</span> <span class="n">out_tree</span> <span class="o">=</span> <span class="n">make_jaspr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">return_shape</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="c1"># Validate that no quantum values are returned</span>
+        <span class="c1"># (quantum values must be measured before returning from boolean simulation)</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">jaspr</span><span class="o">.</span><span class="n">outvars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">aval</span><span class="p">,</span> <span class="p">(</span><span class="n">AbstractQubitArray</span><span class="p">,</span> <span class="n">AbstractQubit</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to perform boolean simulation of a function returning &quot;</span>
+                    <span class="s2">&quot;a quantum value (please measure before returning)&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Analyze the call graph to identify reused sub-jaxprs.</span>
+        <span class="c1"># Reused sub-jaxprs are wrapped in jax.pure_callback to prevent</span>
+        <span class="c1"># XLA&#39;s flatten-call-graph pass from duplicating them.</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">call_graph_stats</span> <span class="o">=</span> <span class="n">analyze_call_graph</span><span class="p">(</span><span class="n">jaspr</span><span class="p">)</span>
+
+        <span class="n">cl_func_jaxpr</span> <span class="o">=</span> <span class="n">jaspr_to_cl_func_jaxpr</span><span class="p">(</span><span class="n">jaspr</span><span class="p">,</span> <span class="n">bit_array_padding</span><span class="p">,</span> <span class="n">call_graph_stats</span><span class="p">,</span> <span class="n">callback_threshold</span><span class="p">)</span>
+
+        <span class="c1"># Initialize the boolean quantum circuit representation:</span>
+        <span class="c1"># - bit_array: packed uint64 array storing qubit states (all zeros initially)</span>
+        <span class="c1"># - free_qubit_list: Jlist containing all available qubit indices</span>
+        <span class="n">aval</span> <span class="o">=</span> <span class="n">cl_func_jaxpr</span><span class="o">.</span><span class="n">jaxpr</span><span class="o">.</span><span class="n">invars</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">aval</span>
+        <span class="n">bit_array</span><span class="p">:</span> <span class="n">Array</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">aval</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">aval</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="c1"># Create the free qubit pool as a flattened Jlist</span>
+        <span class="n">free_qubit_list</span> <span class="o">=</span> <span class="n">Jlist</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">bit_array_padding</span><span class="p">),</span> <span class="n">max_size</span><span class="o">=</span><span class="n">bit_array_padding</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># The boolean quantum circuit is represented as a tuple:</span>
+        <span class="c1"># (bit_array, jlist_array, jlist_counter)</span>
+        <span class="n">boolean_quantum_circuit</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bit_array</span><span class="p">,</span> <span class="o">*</span><span class="n">free_qubit_list</span><span class="p">)</span>
+
+        <span class="c1"># Combine user arguments with the quantum circuit state</span>
+        <span class="n">ammended_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">boolean_quantum_circuit</span><span class="p">)</span>
+
+        <span class="c1"># Execute the classical Jaxpr</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">eval_jaxpr</span><span class="p">(</span><span class="n">cl_func_jaxpr</span><span class="p">)(</span><span class="o">*</span><span class="n">ammended_args</span><span class="p">)</span>
+
+        <span class="c1"># Extract the return values from the result</span>
+        <span class="c1"># The result always contains 3 trailing elements for quantum circuit state:</span>
+        <span class="c1"># (bit_array, jlist_array, jlist_counter)</span>
+        <span class="c1"># The leading elements are the actual return values from the user&#39;s function.</span>
+        <span class="n">num_output_values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span>
+
+        <span class="k">if</span> <span class="n">num_output_values</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Function returns nothing (only quantum circuit state)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Extract user return values and reconstruct the PyTree structure</span>
+            <span class="n">flat_results</span> <span class="o">=</span> <span class="n">res</span><span class="p">[:</span><span class="n">num_output_values</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">out_tree</span><span class="p">,</span> <span class="n">flat_results</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">return_function</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

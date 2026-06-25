@@ -1,0 +1,932 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.alg_primitives.arithmetic.arithmetic_tools &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/alg_primitives/arithmetic/arithmetic_tools';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/alg_primitives/arithmetic/arithmetic_tools.html" />
+    <link rel="icon" href="../../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../general/imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">qrisp.alg_primitives.arithmetic.arithmetic_tools</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for qrisp.alg_primitives.arithmetic.arithmetic_tools</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;********************************************************************************</span>
+<span class="sd">* Copyright (c) 2026 the Qrisp authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
+<span class="sd">*</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qubit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.core.gate_application_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">cx</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.environments</span><span class="w"> </span><span class="kn">import</span> <span class="n">conjugate</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">invert</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.jasp</span><span class="w"> </span><span class="kn">import</span> <span class="n">jnp</span><span class="p">,</span> <span class="n">jrange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qrisp.qtypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+
+
+<div class="viewcode-block" id="q_max">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_max.html#qrisp.q_max">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_max</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the maximum of two QuantumFloats ``a`` and ``b``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+<span class="sd">    b : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">        The maximum value between ``a`` and ``b``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; a += 2</span>
+<span class="sd">    &gt;&gt;&gt; h(a[0])</span>
+<span class="sd">    &gt;&gt;&gt; b+=1</span>
+<span class="sd">    &gt;&gt;&gt; res_max = q_max(a,b)</span>
+<span class="sd">    &gt;&gt;&gt; multi_measurement([a,b,res_max])</span>
+<span class="sd">    {(2, 1, 2): 0.5, (3, 1, 3): 0.5}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_mshape</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="p">]</span>
+    <span class="n">new_msize</span> <span class="o">=</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">new_exponent</span> <span class="o">=</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">new_msize</span><span class="p">,</span> <span class="n">new_exponent</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">signed</span> <span class="o">|</span> <span class="n">b</span><span class="o">.</span><span class="n">signed</span><span class="p">)</span>
+
+    <span class="c1"># We calculate the overlap of bits with the same significance of a and b.</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="n">compare_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">y</span>
+    <span class="n">injecteted_comp_func</span> <span class="o">=</span> <span class="n">c</span> <span class="o">&lt;&lt;</span> <span class="n">compare_func</span>
+
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">injecteted_comp_func</span><span class="p">)(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">])</span>
+
+        <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">cx</span><span class="p">)(</span><span class="n">a</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">]):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">cx</span><span class="p">(</span>
+                    <span class="n">b</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+                <span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="n">up_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">],</span> <span class="n">res</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">])</span>
+            <span class="n">lw_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">msize</span><span class="p">],</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">sign</span><span class="p">(),</span> <span class="n">res</span><span class="o">.</span><span class="n">sign</span><span class="p">())</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">up_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">b</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">],</span> <span class="n">res</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">])</span>
+            <span class="n">lw_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">msize</span><span class="p">],</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">sign</span><span class="p">(),</span> <span class="n">res</span><span class="o">.</span><span class="n">sign</span><span class="p">())</span>
+
+    <span class="n">c</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="q_min">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_min.html#qrisp.q_min">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_min</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the minimum of two QuantumFloats ``a`` and ``b``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+<span class="sd">    b : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">        The minimum value between ``a`` and ``b``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; a += 2</span>
+<span class="sd">    &gt;&gt;&gt; h(a[0])</span>
+<span class="sd">    &gt;&gt;&gt; b+=1</span>
+<span class="sd">    &gt;&gt;&gt; res_min = q_min(a,b)</span>
+<span class="sd">    &gt;&gt;&gt; multi_measurement([a,b,res_min])</span>
+<span class="sd">    {(2, 1, 1): 0.5, (3, 1, 1): 0.5}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_mshape</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="p">]</span>
+    <span class="n">new_msize</span> <span class="o">=</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">new_exponent</span> <span class="o">=</span> <span class="n">res_mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">new_msize</span><span class="p">,</span> <span class="n">new_exponent</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">signed</span> <span class="o">|</span> <span class="n">b</span><span class="o">.</span><span class="n">signed</span><span class="p">)</span>
+
+    <span class="c1"># We calculate the overlap of bits with the same significance of a and b.</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="n">compare_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">y</span>
+    <span class="n">injecteted_comp_func</span> <span class="o">=</span> <span class="n">c</span> <span class="o">&lt;&lt;</span> <span class="n">compare_func</span>
+
+    <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">injecteted_comp_func</span><span class="p">)(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">])</span>
+
+        <span class="k">with</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">cx</span><span class="p">)(</span><span class="n">a</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">]):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">cx</span><span class="p">(</span>
+                    <span class="n">b</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">r</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+                <span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="n">up_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">l</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">],</span> <span class="n">res</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">])</span>
+            <span class="n">lw_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span>
+                <span class="n">a</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">msize</span><span class="p">],</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">sign</span><span class="p">(),</span> <span class="n">res</span><span class="o">.</span><span class="n">sign</span><span class="p">())</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">up_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">l</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">b</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">],</span> <span class="n">res</span><span class="p">[:</span><span class="n">up_bd</span><span class="p">])</span>
+            <span class="n">lw_bd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">exponent</span> <span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">msize</span><span class="p">],</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">lw_bd</span> <span class="o">-</span> <span class="n">new_exponent</span> <span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_exponent</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">sign</span><span class="p">(),</span> <span class="n">res</span><span class="o">.</span><span class="n">sign</span><span class="p">())</span>
+
+    <span class="n">c</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="q_floor">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_floor.html#qrisp.q_floor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes out-of-place the floor of a QuantumFloat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">        The floor of ``a``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4,-2)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}</span>
+<span class="sd">    &gt;&gt;&gt; b = q_floor(a)</span>
+<span class="sd">    &gt;&gt;&gt; b.get_measurement()</span>
+<span class="sd">    {1.0: 0.75, 0.0: 0.25}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">b</span></div>
+
+
+
+<div class="viewcode-block" id="q_ceil">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_ceil.html#qrisp.q_ceil">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_ceil</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes out-of-place the ceiling of a QuantumFloat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">        The ceiling of ``a``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4,-2)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}</span>
+<span class="sd">    &gt;&gt;&gt; b = q_ceil(a)</span>
+<span class="sd">    &gt;&gt;&gt; b.get_measurement()</span>
+<span class="sd">    {2.0: 0.75, 1.0: 0.25}</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        Ceiling operations that would result in overflow, raise no errors. Instead, the operations</span>
+<span class="sd">        are performed `modular &lt;https://en.wikipedia.org/wiki/Modular_arithmetic&gt;`_.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Logical OR on the fractional part</span>
+        <span class="n">logical_OR</span><span class="p">(</span><span class="n">a</span><span class="p">[:</span> <span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">flag</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">flag</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logical_OR</span><span class="p">(</span><span class="n">a</span><span class="p">[:</span> <span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span><span class="p">],</span> <span class="n">flag</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">flag</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">b</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">logical_OR</span><span class="p">(</span><span class="n">operands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Qubit</span><span class="p">],</span> <span class="n">flag</span><span class="p">:</span> <span class="n">Qubit</span><span class="p">):</span>
+    <span class="c1"># handle the case fo an empty list</span>
+    <span class="c1"># Implement the case of a Quantum Variable with more the 2 qubits</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">operands</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+    <span class="n">mcx</span><span class="p">(</span><span class="n">operands</span><span class="p">,</span> <span class="n">flag</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">operands</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="q_round">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_round.html#qrisp.q_round">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_round</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes out-of-place the rounding of a QuantumFloat to the first significant digit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">       The rounding of ``a``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4,-2)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}</span>
+<span class="sd">    &gt;&gt;&gt; b = q_round(a)</span>
+<span class="sd">    &gt;&gt;&gt; b.get_measurement()</span>
+<span class="sd">    {2.0: 0.75, 0.0: 0.25}</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        Rounding operations that would result in overflow, raise no errors. Instead, the operations</span>
+<span class="sd">        are performed `modular &lt;https://en.wikipedia.org/wiki/Modular_arithmetic&gt;`_.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">exponent</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
+            <span class="c1"># Control on the first fractional bit (the one holding the value b*0.5)</span>
+            <span class="c1"># specifies if the number is rounded up or down.</span>
+            <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">b</span></div>
+
+
+
+<div class="viewcode-block" id="q_fractional">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_fractional.html#qrisp.q_fractional">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_fractional</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantumFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes out-of-place the fractional part of a QuantumFloat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantumFloat</span>
+<span class="sd">       The fractional part of ``a``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4,-2)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}</span>
+<span class="sd">    &gt;&gt;&gt; b = q_fractional(a)</span>
+<span class="sd">    &gt;&gt;&gt; b.get_measurement()</span>
+<span class="sd">    {0.75: 0.75, 0.25: 0.25}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jrange</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">flag</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">flag</span><span class="p">):</span>
+            <span class="c1"># If the QuantumFloat is signed and the value negative: substract the ceiling</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">q_ceil</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">b</span> <span class="o">-=</span> <span class="n">c</span>
+            <span class="n">injected_qceil</span> <span class="o">=</span> <span class="n">c</span> <span class="o">&lt;&lt;</span> <span class="n">q_ceil</span>
+            <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+                <span class="n">injected_qceil</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># If the QuantumFloat is signed and the value positive: substract the floor</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">b</span> <span class="o">-=</span> <span class="n">c</span>
+            <span class="n">injected_qfloor</span> <span class="o">=</span> <span class="n">c</span> <span class="o">&lt;&lt;</span> <span class="n">q_floor</span>
+            <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+                <span class="n">injected_qfloor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">flag</span><span class="p">)</span>
+        <span class="n">flag</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">a</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="c1"># If the QuantumFloat is unsigned: substract the floor</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">-=</span> <span class="n">c</span>
+        <span class="n">injected_qfloor</span> <span class="o">=</span> <span class="n">c</span> <span class="o">&lt;&lt;</span> <span class="n">q_floor</span>
+        <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+            <span class="n">injected_qfloor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">b</span></div>
+
+
+
+<div class="viewcode-block" id="q_modf">
+<a class="viewcode-back" href="../../../../reference/Primitives/generated/qrisp.q_modf.html#qrisp.q_modf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">q_modf</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">QuantumFloat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes out-of-place the integer and fractional parts of a QuantumFloat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : QuantumFloat</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tuple[QuantumFloat, QuantumFloat]</span>
+<span class="sd">        A pair `(i, f)` where:</span>
+
+<span class="sd">        - `i =` :func:`q_floor(a) &lt;qrisp.q_floor&gt;` is the integer part</span>
+<span class="sd">        - `f =` :func:`q_fractional(a) &lt;qrisp.q_fractional&gt;` is the fractional part</span>
+
+<span class="sd">        Both are new QuantumFloats with the same configuration as ``a``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import *</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4, -2)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}</span>
+<span class="sd">    &gt;&gt;&gt; i, f = qmodf(a)</span>
+<span class="sd">    &gt;&gt;&gt; i.get_measurement()</span>
+<span class="sd">    {1.0: 0.75, 0.0: 0.25}</span>
+<span class="sd">    &gt;&gt;&gt; f.get_measurement()</span>
+<span class="sd">    {0.75: 0.75, 0.25: 0.25}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">q_floor</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">q_fractional</span><span class="p">(</span><span class="n">a</span><span class="p">))</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

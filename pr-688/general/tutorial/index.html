@@ -1,0 +1,909 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tutorials &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial/index';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial/index.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Getting familiar with Qrisp" href="tutorial.html" />
+    <link rel="prev" title="Key Features" href="../../index.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../papers/index.html">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting familiar with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Shor.html">Factoring integers using Shor’s Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TSP.html">Solving the Traveling Salesman Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QAOAtutorial/index.html">Solving combinatorial optimization problems with QAOA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QIROtutorial.html">Quantum-Informed Recursive Optimization</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="CD.html">Counterdiabatic Driving Protocols</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Sudoku.html">Solving Sudoku using Quantum Backtracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QMCItutorial.html">Quantum Monte Carlo Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Jasp.html">How to think in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="JaspQAOAtutorial.html">Building a QAOA implementation in Jasp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FT_compilation.html">Fault-Tolerant compilation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BigInteger.html">Using <code class="docutils literal notranslate"><span class="pre">BigInteger</span></code> to compile Shor’s algorithm at 2048 bit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="H2.html">Simulating the dynamics of the $H_2$ molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BE_tutorial/index.html">Quantum Linear Algebra with Qrisp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GQSP_filtering.html">Eigenstate filtering using quantum signal processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HHL.html">Solving linear system problems with HHL</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Tutorials</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="tutorials">
+<span id="tutorial"></span><h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">#</a></h1>
+<p>Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with <a class="reference internal" href="../../reference/Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariables</span></a>, Qrisp allows you to express complex logic with ease.</p>
+<p>The tutorials are organized into four topics, each containing multiple hands-on examples that build on each other:</p>
+<ul class="simple">
+<li><p><strong>Foundations and first Steps</strong>: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor’s and Grover’s.</p></li>
+<li><p><strong>Optimization and Numerics</strong>: Explore how to solve combinatorial optimization problems in logistics and scheduling using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation.</p></li>
+<li><p><strong>High-Performance Compilation and Execution with Jasp</strong>: Leverage the JAX-based Jasp pipeline to enable hybrid real-time control flow, while scaling your code and estimating quantum resources for real-world-sized applications.</p></li>
+<li><p><strong>Scientific Computing and Quantum Numerical Linear Algebra</strong>: Dive into high-level abstractions for quantum chemistry, physics and linear systems using our new <a class="reference internal" href="../../reference/Block%20Encodings/BlockEncoding.html#blockencoding"><span class="std std-ref">BlockEncoding</span></a> class.</p></li>
+</ul>
+<p>If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.</p>
+<p>By the end of these tutorials, you’ll have a solid foundation of our high-level framework and be ready to tackle more complex projects. So let’s get <strong>started</strong>!</p>
+<section id="foundations-and-first-steps">
+<h2>Foundations and First Steps<a class="headerlink" href="#foundations-and-first-steps" title="Link to this heading">#</a></h2>
+<p>Kickstart your quantum programming journey here! This section is designed to familiarize you with Qrisp’s core philosophy:
+shifting away from low-level circuit manipulation and toward intuitive, high-level programming using QuantumVariables.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./tutorial.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Solve a quadratic equation using Grover's algorithm and get acquainted with Quantum Phase Estimation.</p>
+</div>
+</a><img alt="Qrisp Tutorial" src="../../_images/hello_world.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Getting familiar with Qrisp</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./Shor.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Factor numbers and experiment with encrypting and decrypting hidden messages using our state-of-the-art implementation.</p>
+</div>
+</a><img alt="Shor Tutorial" src="../../_images/period_finding.svg" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Factoring integers using Shor’s algorithm</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="optimization-and-numerics">
+<h2>Optimization and Numerics<a class="headerlink" href="#optimization-and-numerics" title="Link to this heading">#</a></h2>
+<p>Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into famous computational challenges using a diverse range of quantum algorithms.
+Learn how to optimize solutions across a variety of real-world domains using hybrid variational models, backtracking, and counterdiabatic driving.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./TSP.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Set up a superposition of all routes, evaluate route distance, and create a Grover's oracle to evaluate it.</p>
+</div>
+</a><img alt="Traveling Salesperson Problem Tutorial" src="../../_images/tsp.svg" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Solving the Traveling Salesman Problem</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./QAOAtutorial/index.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Implement QAOA for the MaxCut problem, graph coloring, and explore a new constrained mixer type to reduce search space.</p>
+</div>
+</a><img alt="QAOA Tutorial" src="../../_images/maxcut_tutorial.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Solving combinatorial optimization problems with QAOA</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./QIROtutorial.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Discover a variational algorithm that dynamically updates the problem structure after each optimization round to solve the Maximal Independent Set problem.</p>
+</div>
+</a><img alt="QIRO Tutorial" src="../../_images/maxIndepSet.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Quantum-Informed Recursive Optimization</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./CD.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Solve a QUBO problem with local counterdiabatic driving and counterdiabatic optimized local driving.</p>
+</div>
+</a><img alt="Counteradiabatic Driving Tutorial" src="../../_images/cold.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Counterdiabatic Driving Protocols</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./Sudoku.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Learn how to efficiently implement quantum oracles for Sudoku and apply Qrisp's general Quantum Backtracking algorithm.</p>
+</div>
+</a><img alt="Quantum Backtracking Tutorial" src="../../_images/backtracking.svg" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Solving Sudoku using Quantum Backtracking</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./QMCItutorial.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Numerically calculate integrals with Quantum Monte Carlo Integration using Iterative Quantum Amplitude Estimation.</p>
+</div>
+</a><img alt="Quantum Monte Carlo Integration Tutorial" src="../../_images/qmci.svg" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Quantum Monte Carlo Integration</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="high-performance-compilation-and-execution-with-jasp">
+<h2>High-Performance Compilation and Execution with Jasp<a class="headerlink" href="#high-performance-compilation-and-execution-with-jasp" title="Link to this heading">#</a></h2>
+<p>Scale your quantum algorithms to practically relevant problem sizes by bypassing Python’s performance bottlenecks.
+By targeting the MLIR toolchain and QIR specification, Jasp enables high-speed compilation and seamless real-time control, allowing classical logic to execute within the quantum coherence window.
+Explore the Jasp pipeline to build highly performant algorithms, and ensure your code is ready for next-generation, fault-tolerant hardware.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./Jasp.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for hybrid real-time computations.</p>
+</div>
+</a><a class="reference internal image-reference" href="../../_images/hybrid_realtime.png"><img alt="Hybrid Realtime Tutorial" src="../../_images/hybrid_realtime.png" style="width: 180px;" />
+</a>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Hybrid real-time algorithm control with Jasp</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./JaspQAOAtutorial.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a JAX-traceable objective function for the MaxCut problem.</p>
+</div>
+</a><img alt="MaxCut QAOA Tutorial" src="../../_images/maxcut_jasp.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Building a QAOA implementation in Jasp</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./FT_compilation.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Compile for fault-tolerant quantum devices, exploring specialized techniques that set this stage apart from NISQ environments.</p>
+</div>
+</a><img alt="Fault-Tolerant Compilation Tutorial" src="../../_images/torus.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Fault-Tolerant compilation</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./BigInteger.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Use the BigInteger class to avoid integer overflow in JAX and perform resource estimation of large-scale quantum algorithms.</p>
+</div>
+</a><img alt="Shor Quantum Resource Estimation Tutorial" src="../../_images/order_finding_qre.svg" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Using BigInteger to compile Shor’s at 2048 bit</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="scientific-computing-and-quantum-numerical-linear-algebra">
+<h2>Scientific Computing and Quantum Numerical Linear Algebra<a class="headerlink" href="#scientific-computing-and-quantum-numerical-linear-algebra" title="Link to this heading">#</a></h2>
+<p>Unlock the potential of quantum computers for scientific discovery and advanced mathematics.
+Here, you will use Qrisp’s high-level abstractions to tackle complex problems in quantum chemistry and physics.
+This track demonstrates how to bridge the gap between complex scientific theory and executable quantum code using features like block encodings as programming abstractions and quantum signal processing.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./H2.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data.</p>
+</div>
+</a><img alt="Hydrogen Molecule Tutorial" src="../../_images/hydrogen.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Simulate the dynamics of the hydrogen molecule</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body d-flex justify-content-center align-items-center docutils">
+<a href="./BE_tutorial/index.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Use block encodings as programming abstractions to perform Quantum Linear Algebra using a NumPy-like interface.</p>
+</div>
+</a><img alt="Block Encoding Tutorial" class="align-center" src="../../_images/BE_thumbnail.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Quantum Linear Algebra</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./GQSP_filtering.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Prepare ground states of lattice models by applying a Gaussian filter to enhance the overlap of the initial state with the ground state using quantum signal processing.</p>
+</div>
+</a><img alt="QSP Filtering Tutorial" src="../../_images/filtering_thumb_placeholder.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Eigenstate filtering using quantum signal processing</strong></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<a href="./HHL.html">
+<div class="example-img-plot-overlay">
+<p class="sd-card-text">Explore hybrid quantum-classical workflows using Catalyst and Qrisp to solve linear system problems.</p>
+</div>
+</a><img alt="HHL Algorithm diagram" src="../../_images/HHL.png" />
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text"><strong>Solving systems of linear equations via HHL</strong></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic.
+From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.</p>
+<p>The quantum landscape is evolving rapidly. By mastering these tutorials, you’re no longer just a spectator, you’re an architect of the next generation of algorithms.
+So, take these concepts, experiment, and start building the future of quantum computing with intuitive, clean, and qrispy code.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/tutorial"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#foundations-and-first-steps">Foundations and First Steps</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimization-and-numerics">Optimization and Numerics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#high-performance-compilation-and-execution-with-jasp">High-Performance Compilation and Execution with Jasp</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scientific-computing-and-quantum-numerical-linear-algebra">Scientific Computing and Quantum Numerical Linear Algebra</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+
+
+
+
+
+    
+    
+        
+        
+        
+        
+        
+    
+
+
+
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    
+    <a href="/general/tutorial/index.ipynb" download="index.ipynb" target="_blank" class="sidebar-button sidebar-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

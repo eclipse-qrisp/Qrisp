@@ -1,0 +1,1066 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Research &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom09.css?v=de0b2c6a" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = "div.input_area"; const thebe_selector_input = "pre"; const thebe_selector_output = "span.go"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/papers/index';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://qrisp.eu/general/papers/index.html" />
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Changelog" href="../changelog/index.html" />
+    <link rel="prev" title="Setup" href="../setup.html" />
+<meta property="og:title" content="Eclipse Qrisp" />
+<meta property="og:description" content="The next generation of quantum algorithm development." />
+<meta property="og:image" content="https://www.qrisp.eu/_static/qrisp_logo.png" />
+<meta property="og:url" content="https://www.qrisp.eu/" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="  documentation - Home"/>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-dark pst-js-only" alt="  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Research
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorial/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/Development%20Guide/index.html">
+    Development Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../setup.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Research
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog/index.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../imprint.html">
+    Imprint
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Research</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="research">
+<span id="id1"></span><h1>Research<a class="headerlink" href="#research" title="Link to this heading">#</a></h1>
+<p>Below, we present a collection of scientific papers and articles that have either contributed to the development of Qrisp or highlight its applications and advantages in the field of quantum computing. These citations provide a foundation for understanding the theoretical underpinnings and practical implications of Qrisp. We encourage researchers, developers, and enthusiasts to explore these resources to gain a deeper insight into the capabilities and potential of Qrisp.</p>
+<section id="research-from-within-the-qrisp-community">
+<h2>Research from within the Qrisp community<a class="headerlink" href="#research-from-within-the-qrisp-community" title="Link to this heading">#</a></h2>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers</div>
+<div class="line-block">
+<div class="line">Raphael Seidel, Sebastian Bock, René Zander, Matic Petrič, Niklas Steinmann, Nikolay Tcholtchev, Manfred Hauswirth</div>
+<div class="line"><a class="reference external" href="https://arxiv.org/abs/2406.14792" rel="noreferrer" target="_blank">ArXiv, 2024</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">While significant progress has been made on the hardware side of quantum computing,
+support for high-level quantum programming abstractions remains underdeveloped compared to classical programming languages.
+In this article, we introduce Qrisp, a framework designed to bridge several gaps between high-level programming paradigms in
+state-of-the-art software engineering and the physical reality of today’s quantum hardware. The framework aims to provide a systematic
+approach to quantum algorithm development such that they can be effortlessly implemented, maintained and improved. We propose a number of
+programming abstractions that are inspired by classical paradigms, yet consistently focus on the particular needs of a quantum developer.
+Unlike many other high-level language approaches, Qrisp’s standout feature is its ability to compile programs to the circuit level, making
+them executable on most existing physical backends. The introduced abstractions enable the Qrisp compiler to leverage algorithm structure
+for increased compilation efficiency. Finally, we present a set of code examples, including an implementation of Shor’s factoring
+algorithm. For the latter, the resulting circuit shows significantly reduced quantum resource requirements, strongly supporting the claim that
+systematic quantum algorithm development can give quantitative benefits.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Double-Bracket Quantum Algorithms for Quantum Imaginary-Time Evolution</div>
+<div class="line-block">
+<div class="line">Marek Gluza, Jeongrak Son, Bi Hong Tiang, René Zander, Raphael Seidel, Yudai Suzuki, Zoë Holmes, Nelly H. Y. Ng</div>
+<div class="line"><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-032-03924-8_11" rel="noreferrer" target="_blank">Physical Review Letters, 2026</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Efficiently preparing approximate ground states of large, strongly correlated systems on quantum hardware is challenging, and yet, nature is innately adept at this.
+This has motivated the study of thermodynamically inspired approaches to ground-state preparation that aim to replicate cooling processes via imaginary-time evolution.
+However, synthesizing quantum circuits that efficiently implement imaginary-time evolution is itself difficult,
+with prior proposals generally adopting heuristic variational approaches or using deep block encodings.
+Here, we use the insight that quantum imaginary-time evolution is a solution of Brockett’s double-bracket flow
+and synthesize circuits that implement double-bracket flows coherently on the quantum computer.
+We prove that our double-bracket quantum imaginary-time evolution (DB-QITE) algorithm inherits the cooling guarantees of imaginary-time evolution.
+Concretely, each step is guaranteed to (i) decrease the energy of an initial approximate ground state by an amount proportional to the energy fluctuations of the initial state
+and (ii) increase the fidelity with the ground state. We provide gate counts for DB-QITE through numerical simulations in qrisp that demonstrate scenarios where DB-QITE outperforms quantum phase estimation.
+Thus, DB-QITE provides a means to systematically improve the approximation of a ground state using shallow circuits.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Methods and Tools for Secure Quantum Clouds with a specific Case Study on Homomorphic Encryption</div>
+<div class="line-block">
+<div class="line">Aurelia Kusumastuti, Nikolay Tcholtchev, Philipp Lämmel, Sebastian Bock, Manfred Hauswirth</div>
+<div class="line"><a class="reference external" href="https://arxiv.org/abs/2512.17748" rel="noreferrer" target="_blank">ArXIv, 2025</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The rise of quantum computing/technology potentially introduces significant security challenges to cloud computing,
+necessitating quantum-resistant encryption strategies as well as protection schemes and methods for cloud infrastructures offering quantum computing time and services (i.e. quantum clouds).
+This research explores various options for securing quantum clouds and ensuring privacy, especially focussing on the integration of homomorphic encryption (HE) into Eclipse Qrisp,
+a high-level quantum computing framework, to enhance the security of quantum cloud platforms. The study addresses the technical feasibility of integrating HE with Qrisp,
+evaluates performance trade-offs, and assesses the potential impact on future quantum cloud architectures.
+The successful implementation and Qrisp integration of three post-quantum cryptographic (PQC) algorithms demonstrates the feasibility of integrating HE with quantum computing frameworks.
+The findings indicate that while the Quantum One-Time Pad (QOTP) offers simplicity and low overhead,
+other algorithms like Chen and Gentry-Sahai-Waters (GSW) present performance trade-offs in terms of runtime and memory consumption.
+The study results in an overall set of recommendations for securing quantum clouds, e.g. implementing HE at data storage and processing levels,
+developing Quantum Key Distribution (QKD), and enforcing stringent access control and authentication mechanisms as well as participating in PQC standardization efforts.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Role of Riemannian geometry in double-bracket quantum imaginary-time evolution</div>
+<div class="line-block">
+<div class="line">René Zander, Raphael Seidel, Li Xiaoyue, Marek Gluza</div>
+<div class="line"><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-032-03924-8_11" rel="noreferrer" target="_blank">International Conference on Geometric Science of Information, 2025</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Double-bracket quantum imaginary-time evolution (DB-QITE) is a quantum algorithm which coherently implements steps in the Riemannian steepest-descent direction for the energy cost function.
+DB-QITE is derived from Brockett’s double-bracket flow which exhibits saddle points where gradients vanish.
+In this work, we perform numerical simulations of DB-QITE and describe signatures of transitioning through the vicinity of such saddle points.
+We provide an explicit gate count analysis using quantum compilation programmed in Qrisp.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+End-to-end compilable implementation of quantum elliptic curve logarithm in Qrisp</div>
+<div class="line-block">
+<div class="line">Diego Polimeni, Raphael Seidel</div>
+<div class="line"><a class="reference external" href="https://arxiv.org/abs/2501.10228" rel="noreferrer" target="_blank">ArXiv, 2025</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Elliptic curve cryptography (ECC) is a widely established cryptographic technique, recognized for its effectiveness and
+reliability across a broad range of applications such as securing telecommunications or safeguarding cryptocurrency wallets.
+Although being more robust than RSA, ECC is, nevertheless, also threatened by attacks based on Shor’s algorithm, which made it
+a popular field of study in quantum information science. A variety of techniques have been proposed to perform EC arithmetic in quantum devices;
+however, software support for compiling these algorithms into executables is extremely limited. Within this work, we leverage
+the Qrisp programming language to realize one of the first fully compilable implementations of EC arithmetic and verify its correctness
+using Qrisp’s built-in sparse matrix simulator.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Designing a Meta-Model for the Eclipse Qrisp eDSL for High-Level Quantum Programming</div>
+<div class="line-block">
+<div class="line">Sebastian Bock, Raphael Seidel, Matic Petrič , Nikolay Tcholtchev, Andreas Hoffmann and Niklas Porges</div>
+<div class="line"><a class="reference external" href="https://www.scitepress.org/Papers/2025/131210/131210.pdf" rel="noreferrer" target="_blank">MODELSWARD 2025, 13th International Conference on Model-Based Software and Systems Engineering.</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Eclipse Qrisp is a high-level programming language designed to simplify quantum programming and make it accessible to a wider range of developers and end users.
+Initially developed at Fraunhofer FOKUS and now part of the Eclipse Foundation, Eclipse Qrisp abstracts complex quantum operations into user-friendly constructs,
+enhancing code readability structure. Currently, Eclipse Qrisp is realized as an extension of the Python programming language, in the form of an embedded Domain Specific Language (eDSL),
+allowing to develop hybrid quantum algorithms, while at the same time utilizing the potential of the overall Python ecosystem in terms of libraries and available developer resources.
+We firmly believe that the eDSL approach to high-level quantum programming will prevail over the idea of defining specific languages-with their own grammar and ecosystem-due to its ease of integration within available ICT products and services.
+However, in order to reach higher levels of scalability and market penetration, the Eclipse Qrisp eDSL should be available for various platforms and programming languages beyond Python,
+e.g. C/C++, Java or Rust. In order to provide the means for implementing Eclipse Qrisp in other programming languages, this paper specifies a meta-model, thereby outlining the pursued design philosophy,
+architecture, and key features, including compatibility with existing frameworks. The purpose of such a Qrisp meta-model is two-fold: On one hand it formalizes and standardizes the Eclipse Qrisp programming model.
+On the other hand, such a meta-model can be used to formally extend other programming languages and platforms by the capabilities and concepts specified and implemented within Eclipse Qrisp.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Automatic quantum function parallelization and memory management in Qrisp</div>
+<div class="line-block">
+<div class="line">Raphael Seidel</div>
+<div class="line"><a class="reference external" href="https://quantum-compilers.github.io/iwqc2024/papers/IWQC2024_paper_16.pdf" rel="noreferrer" target="_blank">6th International Workshop on Quantum Compilation, 2024</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Automated optimization of quantum programs has gathered significant attention amidst
+the recent advances of hardware manufacturers. In this work we introduce a novel data-
+structure for representing quantum programs called permeability DAG, which captures several useful properties of quantum programs
+across multiple levels of abstraction. Operating on this representation facilitates a variety of powerful transformations such as
+automatic parallelization, memory management and synthesis of uncomputation. More potential use-cases are listed in the outlook section.
+At the core, our representation abstracts away a class of non-trivial commutation relations,
+which stem from a feature called permeability. Both memory management and parallelization
+can be made sensitive to execution speed details of each particular quantum gate, implying our
+compilation methods are not only retargetable between NISQ/FT but even for individual device instances.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Solving the Product Breakdown Structure Problem with constrained QAOA</div>
+<div class="line-block">
+<div class="line">René Zander, Raphael Seidel, Matteo Inajetovic, Niklas Steinmann, Matic Petrič</div>
+<div class="line"><a class="reference external" href="https://arxiv.org/abs/2406.15228" rel="noreferrer" target="_blank">ArXiv, 2024</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Constrained optimization problems, where
+not all possible variable assignments are feasible solutions, comprise numerous practically
+relevant optimization problems such as the
+Traveling Salesman Problem (TSP), or portfolio optimization. Established methods such
+as quantum annealing or vanilla QAOA usually transform the problem statement into a
+QUBO (Quadratic Unconstrained Binary Optimization) form, where the constraints are
+enforced by auxiliary terms in the QUBO objective. Consequently, such approaches fail to
+utilize the additional structure provided by the
+constraints.
+In this paper, we present a method for solving the industry relevant Product Breakdown
+Structure problem. Our solution is based
+on constrained QAOA, which by construction
+never explores the part of the Hilbert space
+that represents solutions forbidden by the problem constraints. The size of the search space is
+thereby reduced significantly. We experimentally show that this approach has not only a
+very favorable scaling behavior, but also appears to suppress the negative effects of Barren
+Plateaus.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<strong>Quantum Backtracking in Qrisp Applied to Sudoku Problems</strong></div>
+<div class="line-block">
+<div class="line">Raphael Seidel, René Zander, Matic Petrič, Niklas Steinmann, David Q.Liu, Nikolay Tcholtchev, Manfred Hauswirth</div>
+<div class="line"><a class="reference external" href="https://arxiv.org/abs/2402.10060" rel="noreferrer" target="_blank">ArXiv, 2024</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The quantum backtracking algorithm proposed by Ashley Montanaro raised considerable interest, as it provides a
+quantum speed-up for a large class of classical optimization algorithms. It does not suffer from Barren-Plateaus
+and transfers well into the fault-tolerant era, as it requires only a limited number of arbitrary angle gates.
+Despite its potential, the algorithm has seen limited implementation efforts, presumably due to its abstract
+formulation. In this work, we provide a detailed instruction on implementing the quantum step operator for
+arbitrary backtracking instances. For a single controlled diffuser of a binary backtracking tree with depth n,
+our implementation requires only 6n+14 CX gates. We detail the process of constructing accept and reject
+oracles for Sudoku problems using our interface to quantum backtracking. The presented code is written using
+Qrisp, a high-level quantum programming language, making it executable on most current physical backends and
+simulators. Subsequently, we perform several simulator based experiments and demonstrate solving 4x4 Sudoku
+instances with up to 9 empty fields. This is, to the best of our knowledge, the first instance of a compilable
+implementation of this generality, marking a significant and exciting step forward in quantum software engineering.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Uncomputation in the Qrisp high-level Quantum Programming Framework</div>
+<div class="line-block">
+<div class="line">Raphael Seidel, Nikolay Tcholtchev, Sebastian Bock, Manfred Hauswirth</div>
+<div class="line"><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-031-38100-3_11" rel="noreferrer" target="_blank">International Conference on Reversible Computation, 2023</a></div>
+</div>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header sd-bg-primary sd-bg-text-primary">
+<span class="sd-summary-text"><span class="fa fa-eye me-1"></span> Abstract</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Uncomputation is an essential part of reversible computing and plays a vital role in quantum computing.
+Using this technique, memory resources can be safely deallocated without performing a nonreversible deletion process.
+For the case of quantum computing, several algorithms depend on this as they require disentangled states in the course of
+their execution. Thus, uncomputation is not only about resource management, but is also required from an algorithmic point
+of view. However, synthesizing uncomputation circuits is tedious and can be automated. In this paper, we describe the
+interface for automated generation of uncomputation circuits in our Qrisp framework. Our algorithm for synthesizing uncomputation
+circuits in Qrisp is based on an improved version of “Unqomp”, a solution presented by Paradis et. al. Our paper also presents some
+improvements to the original algorithm, in order to make it suitable for the needs of a high-level programming framework. Qrisp
+itself is a fully compilable, high-level programming language/framework for gate-based quantum computers, which abstracts from
+many of the underlying hardware details. Qrisp’s goal is to support a high-level programming paradigm as known from classical software development.</p>
+</div>
+</details></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="external-research-utilizing-or-citing-qrisp">
+<h2>External research utilizing or citing Qrisp<a class="headerlink" href="#external-research-utilizing-or-citing-qrisp" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 55.6%" />
+<col style="width: 33.3%" />
+<col style="width: 11.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Title</p></th>
+<th class="head"><p>Authors</p></th>
+<th class="head"><p>Year</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://dl.acm.org/doi/full/10.1145/3773656.3773658" rel="noreferrer" target="_blank">Integrating Quantum Software Tools with (in) MLIR</a></p></td>
+<td><p>P. Hopf, E. Ochoa, Y. Stade, D. Rovara, N. Quetschlich, I. A. Florea, J. Izaac, R. Wille, L. Burgholzer</p></td>
+<td><p>2026</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S2214157X26001759" rel="noreferrer" target="_blank">Leveraging quantum computing for heat conduction analysis: A case study in thermal engineering</a></p></td>
+<td><p>P. Asinari, M. M. Piredda, G. Barletta, P. De Angelis, N. Alghamdi, G. Trezza, M. Provenzano, M. Fasano, E. Chiavazzo</p></td>
+<td><p>2026</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2601.16779" rel="noreferrer" target="_blank">Investigating Retargetability Claims for Quantum Compilers</a></p></td>
+<td><p>L. Southall, J. Ammermann, R. Kelmendi, D. Eichhorn, I. Schaefer</p></td>
+<td><p>2026</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2511.09124" rel="noreferrer" target="_blank">The grand challenge of quantum applications</a></p></td>
+<td><p>R. Babbush, R. King, S. Boixo, W. Huggins, T. Khattar, G. H. Low, J. R. McClean, T. O’Brien, N. C. Rubin</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.mdpi.com/2079-9292/14/23/4707" rel="noreferrer" target="_blank">Analysis of Surface Code Algorithms on Quantum Hardware Using the Qrisp Framework</a></p></td>
+<td><p>J. Krzyszkowski, M. Niemiec</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/pdf/2507.12603" rel="noreferrer" target="_blank">Qrisp Implementation and Resource Analysis of a T-Count-Optimized Non-Restoring Quantum Square-Root Circuit</a></p></td>
+<td><p>H. Kupryianau, M. Niemiec</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/11134329" rel="noreferrer" target="_blank">“A Framework for Debugging Quantum Programs</a></p></td>
+<td><p>D. Rovara, L. Burgholzer, R. Wille</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/11044846" rel="noreferrer" target="_blank">“Pilot-Quantum: A Middleware for Quantum-HPC Resource, Workload and Task Management</a></p></td>
+<td><p>P. Mantha, F. J. Kiwit, N. Saurabh. S. Jha. A. Luckow</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/document/11285931" rel="noreferrer" target="_blank">Quantum Computing Today: A Status Overview</a></p></td>
+<td><p>Y. Liu</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.computer.org/csdl/proceedings-article/qsw/2025/672000a206/29zHhWKtMUU" rel="noreferrer" target="_blank">Provideq: A quantum optimization toolbox</a></p></td>
+<td><p>D. Eichhorn, N. Poser, M. Schweikart, I. Schaefer</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/document/11285931" rel="noreferrer" target="_blank">Qwerty: A Basis-Oriented Quantum Programming Language</a></p></td>
+<td><p>A. J. Adams, S. Khan, A. S. Bhamra, R. R. Abusaada, T. S. Humble, J. S. Young, T. M. Conte</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/11134334" rel="noreferrer" target="_blank">QML-Essentials–A Framework for Working with Quantum Fourier Models</a></p></td>
+<td><p>M. Strobl, M. Franz, E. Kuehn, W. Mauerer, A. Streit</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2506.03846" rel="noreferrer" target="_blank">SLURM Heterogeneous Jobs for Hybrid Classical-Quantum Workflows</a></p></td>
+<td><p>Y. Liu</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://dl.acm.org/doi/full/10.1145/3731599.3767551" rel="noreferrer" target="_blank">First Practical Experiences Integrating Quantum Computers with HPC Resources: A Case Study With a 20-qubit Superconducting Quantum Computer</a></p></td>
+<td><p>E. Mansfield, S. Seegerer, P. Vesanen, J. Echavarria, M. N. Farooqi, B. Mete, L. Schulz</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.lfdr.de/Publications/2025/StFrKu+25.pdf" rel="noreferrer" target="_blank">QML-ESSENTIALS-A Framework for Working with Quantum Fourier Models</a></p></td>
+<td><p>M. Strobl, M. Franz, E. Kuehn, W. Mauerer, A. Streit</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://ceur-ws.org/Vol-3962/paper43.pdf" rel="noreferrer" target="_blank">The Internet of Quantum Things (IoQT)-A New Frontier in Quantum Emulation and Simulation</a></p></td>
+<td><p>I. Kefaloukos, N. Tcholtchev, M.A. Kourtis, G. Oikonomakis</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2504.15410" rel="noreferrer" target="_blank">Verifiable End-to-End Delegated Variational Quantum Algorithms</a></p></td>
+<td><p>M. Inajetovic, P. Wallten, A. Pappa</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2504.08876v2" rel="noreferrer" target="_blank">Is Productivity in Quantum Programming Equivalent to Expressiveness?</a></p></td>
+<td><p>F. Corrales-Garro, D. Valerio-Ramírez, et al.</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2503.22564" rel="noreferrer" target="_blank">Exploration of Design Alternatives for Reducing Idle Time in Shor’s Algorithm: A Study on Monolithic and Distributed Quantum Systems</a></p></td>
+<td><p>M. Schmidt, A. Kole, L. Wichette, R. Drechsler, F. Kirchner, E. Mounzer</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2503.00822" rel="noreferrer" target="_blank">Scalable Memory Recycling for Large Quantum Programs</a></p></td>
+<td><p>I. Reichental, R. Alon, L. Preminger, M. Vax</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2502.05160" rel="noreferrer" target="_blank">A parameter study for LLL and BKZ with application to shortest vector problems</a></p></td>
+<td><p>T. Köppl, R. Zander, L. Henkel, N. Tcholtchev</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2501.18432" rel="noreferrer" target="_blank">Solving Drone Routing Problems with Quantum Computing: A Hybrid Approach Combining Quantum Annealing and Gate-Based Paradigms</a></p></td>
+<td><p>E. Osaba, P. Miranda-Rodriguez, A. Oikonomakis</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-031-82703-7_3" rel="noreferrer" target="_blank">A Static Analysis of Entanglement</a></p></td>
+<td><p>N. Assolini, A. Di Pierro, I. Mastroeni</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.thi.uni-hannover.de/fileadmin/thi/abschlussarbeiten/2025/Bachelorarbeit_Lennart_Binkowski_Website.pdf" rel="noreferrer" target="_blank">CQ: A high-level imperative classical-quantum programming language</a></p></td>
+<td><p>L. Binkowski, H. Vollmer</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-031-74776-2_1" rel="noreferrer" target="_blank">Static Analysis of Quantum Programs</a></p></td>
+<td><p>N. Assolini, A. Di Pierro, I. Mastroeni</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3704842" rel="noreferrer" target="_blank">Qurts: Automatic Quantum Uncomputation by Affine Types with Lifetime</a></p></td>
+<td><p>K. Hirata, C. Heunen</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/10820320" rel="noreferrer" target="_blank">D-Wave’s Nonlinear-Program Hybrid Solver: Description and Performance Analysis</a></p></td>
+<td><p>E. Osaba, P. Miranda-Rodriguez</p></td>
+<td><p>2025</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/document/10821037" rel="noreferrer" target="_blank">Improving Quantum Developer Experience with Kubernetes and Jupyter Notebooks</a></p></td>
+<td><p>O. Kinaen, A. D. Muñoz-Moller, V. Stirbu et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2412.12269" rel="noreferrer" target="_blank">A Framework for Debugging Quantum Programs</a></p></td>
+<td><p>D. Rovara, L. Burgholzer, R. Wille</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/document/10733570" rel="noreferrer" target="_blank">Resilience of lattice-based Cryptosystems to Quantum Attacks</a></p></td>
+<td><p>T. Köppl, R. Zander, N. Tcholtchev</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3679007.3685063" rel="noreferrer" target="_blank">Quff: A Dynamically Typed Hybrid Quantum-Classical Programming Language</a></p></td>
+<td><p>C. J. Wright, M. Luján, P. Petoumenos et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3643667.3648225?casa_token=b2839-ZSiG8AAAAA:IW2Fb22kgZlzyuvK8gFIs7ZprzZwsRZGbwWMdTbho1Keh3u2Ul39GuFgU2h9b4mXdQmaD5Cd1Dg1Fw" rel="noreferrer" target="_blank">Quantum types: going beyond qubits and quantum gates</a></p></td>
+<td><p>T. Varga, Y. Aragonés-Soria, M. Oriol</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S1877050924012286" rel="noreferrer" target="_blank">Towards Continuous Development for Quantum Programming in Decentralized IoT environments</a></p></td>
+<td><p>M. Kourtis, N. Tcholtchev, I.D. Gheorghe-Pop et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://dl.acm.org/doi/full/10.1145/3656339" rel="noreferrer" target="_blank">Testing multi-subroutine quantum programs: From unit testing to integration testing</a></p></td>
+<td><p>P. Long, J. Zhao</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3656397" rel="noreferrer" target="_blank">The T-Complexity Costs of Error Correction for Control Flow in Quantum Computation</a></p></td>
+<td><p>C. Yuan, M. Carbin</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2405.20173" rel="noreferrer" target="_blank">Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts</a></p></td>
+<td><p>E. Osaba, M. Petrič, I.Oregi et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2405.13918" rel="noreferrer" target="_blank">An Abstraction Hierarchy Toward Productive Quantum Programming</a></p></td>
+<td><p>O. Di Matteo, S. Núñez-Corrales, M. Stęchły et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2405.13244" rel="noreferrer" target="_blank">Quantum Software Ecosystem Design</a></p></td>
+<td><p>A. Basermann, M. Epping et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://arxiv.org/abs/2405.09115" rel="noreferrer" target="_blank">Hybrid Meta-Solving for Practical Quantum Computing</a></p></td>
+<td><p>D. Eichhorn, M. Schweikart, N. Poser et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://arxiv.org/abs/2405.08810" rel="noreferrer" target="_blank">Quantum computing with Qiskit</a></p></td>
+<td><p>A. Javadi-Abhari, M. Treinish, K. Krsulich et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/10497082" rel="noreferrer" target="_blank">UAV Swarm Management Platform for Autonomous Area and Infrastructure Inspection</a></p></td>
+<td><p>M. Batistatos; A. Mazilu et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://link.springer.com/article/10.1007/s10515-024-00436-x" rel="noreferrer" target="_blank">Automated Software Engineering (2024) 31:36</a></p></td>
+<td><p>A. Sarkar</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://link.springer.com/chapter/10.1007/978-981-97-0989-2_13" rel="noreferrer" target="_blank">Towards Higher Abstraction Levels in Quantum Computing</a></p></td>
+<td><p>H. Fürntratt, P. Schnabel et al.</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.researchgate.net/publication/378066784_Quantum_Software_Ecosystem_Stakeholders_Interactions_and_Challenges" rel="noreferrer" target="_blank">Quantum Software Ecosystem: Stakeholders, Interactions and Challenges</a></p></td>
+<td><p>V. Stirbu, T. Mikkonen</p></td>
+<td><p>2024</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.research-collection.ethz.ch/handle/20.500.11850/634879" rel="noreferrer" target="_blank">High-Level Quantum Programming</a></p></td>
+<td><p>B. Bichsel</p></td>
+<td><p>2023</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details" rel="noreferrer" target="_blank">A Testing Pipeline for Quantum Computing Applications</a></p></td>
+<td><p>C. Becker, I.D. Gheorghe-Pop, N. Tcholtchev</p></td>
+<td><p>2023</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "thebe_branch",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./general/papers"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#research-from-within-the-qrisp-community">Research from within the Qrisp community</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#external-research-utilizing-or-citing-qrisp">External research utilizing or citing Qrisp</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://discord.gg/v5np7DeBaq">Discord Server.</a></p>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
