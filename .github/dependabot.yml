@@ -8,6 +8,8 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    labels:
+      - "dependabot-dependency-upgrade"
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: "direct"
@@ -21,6 +23,8 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    labels:
+      - "dependabot-dependency-upgrade"
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: "direct"
