@@ -200,7 +200,8 @@ MaxCut module refactored (`PR #542 <https://github.com/eclipse-qrisp/Qrisp/pull/
 benchmarking callback threshold (`PR #505 <https://github.com/eclipse-qrisp/Qrisp/pull/505>`_);
 depth metric negative slicing (`PR #451 <https://github.com/eclipse-qrisp/Qrisp/pull/451>`_);
 controlled-U3 compilation fixes (`PR #551 <https://github.com/eclipse-qrisp/Qrisp/pull/551>`_);
-Catalyst 0.15 compatibility (`PR #568 <https://github.com/eclipse-qrisp/Qrisp/pull/568>`_).
+Catalyst 0.15 compatibility (`PR #568 <https://github.com/eclipse-qrisp/Qrisp/pull/568>`_);
+deprecated Aer API updated to ``AerSimulator`` in landing page and examples (`PR #690 <https://github.com/eclipse-qrisp/Qrisp/pull/690>`_).
 
 Compatibility
 -------------

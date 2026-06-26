@@ -314,7 +314,7 @@ Qrisp enables developers to express quantum algorithms in substantially fewer li
          
 		from qiskit import (QuantumCircuit, QuantumRegister,
 		ClassicalRegister, transpile)
-		from qiskit_aer import Aer
+		from qiskit_aer import AerSimulator
 		from qiskit.circuit.library import RGQFTMultiplier
 		n = 6
 		a = QuantumRegister(n)
@@ -329,7 +329,7 @@ Qrisp enables developers to express quantum algorithms in substantially fewer li
 		qc.append(RGQFTMultiplier(n, 2*n),
 		list(a) + list(b) + list(res))
 		qc.measure(res, cl_res)
-		backend = Aer.get_backend('qasm_simulator')
+		backend = AerSimulator()
 		qc = transpile(qc, backend)
 		counts_dic = backend.run(qc).result().get_counts()
 		print({int(k, 2) : v for k, v in counts_dic.items()})
