@@ -100,7 +100,7 @@ from xdsl.ir import (
 )
 from xdsl.rewriter import Rewriter
 
-from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
+from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
     AllocaVeqOp,
     ConcatOp,
     DeallocOp,
@@ -115,7 +115,7 @@ from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
     VeqSizeOp,
     make_gate_op,
 )
-from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
+from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
 from qrisp.jasp.mlir.xdsl_dialect import (
     ConsumeQuantumKernelOp,
     CreateQuantumKernelOp,

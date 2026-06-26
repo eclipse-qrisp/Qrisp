@@ -384,7 +384,7 @@ def make_gate_op(
     IRDLOperation | None
         A new Quake gate op instance, or *None* if the gate is not supported.
     """
-    from qrisp.jasp.mlir.quake_lowering.gate_mapping import GATE_MAP
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import GATE_MAP
 
     gate_info = GATE_MAP.get(gate_name)
     if gate_info is None:

@@ -79,7 +79,7 @@ class GateInfo:
 
 def _emit_sx(controls, params, targets):
     """sx(q) = H(q) · S(q) · H(q)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t = targets[0]
     return [
@@ -91,7 +91,7 @@ def _emit_sx(controls, params, targets):
 
 def _emit_sx_dg(controls, params, targets):
     """sx†(q) = H(q) · S†(q) · H(q)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t = targets[0]
     return [
@@ -103,7 +103,7 @@ def _emit_sx_dg(controls, params, targets):
 
 def _emit_rzz(controls, params, targets):
     """rzz(ϕ) between q0 and q1 = CX(q0, q1) · RZ(ϕ, q1) · CX(q0, q1)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi = params[0]  # SSAValue of type f64
@@ -117,7 +117,7 @@ def _emit_rzz(controls, params, targets):
 
 def _emit_rzz_dg(controls, params, targets):
     """rzz†(ϕ) = CX(q0,q1) · RZ(-ϕ, q1) · CX(q0,q1)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi = params[0]  # SSAValue of type f64
@@ -133,7 +133,7 @@ def _emit_rzz_dg(controls, params, targets):
 
 def _emit_rxx(controls, params, targets):
     """rxx(ϕ) between q0 and q1 = H(q0) · H(q1) · CX(q0, q1) · RZ(ϕ, q1) · CX(q0, q1) · H(q0) · H(q1)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi = params[0]  # SSAValue of type f64
@@ -151,7 +151,7 @@ def _emit_rxx(controls, params, targets):
 
 def _emit_rxx_dg(controls, params, targets):
     """rxx†(ϕ) = H(q0) · H(q1) · CX(q0, q1) · RZ(-ϕ, q1) · CX(q0, q1) · H(q0) · H(q1)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi = params[0]  # SSAValue of type f64
@@ -170,7 +170,7 @@ def _emit_rxx_dg(controls, params, targets):
 
 
 def _emit_xxyy(controls, params, targets):
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi, beta = params  # SSAValue of type f64
@@ -209,7 +209,7 @@ def _emit_xxyy(controls, params, targets):
 
 
 def _emit_xxyy_dg(controls, params, targets):
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi, beta = params  # SSAValue of type f64
@@ -247,7 +247,7 @@ def _emit_xxyy_dg(controls, params, targets):
 
 def _emit_cgphase(controls, params, targets):
     """cgphase(ϕ) between targets q0 and q1 = p(ϕ, q0)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0, t1 = targets
     phi = params[0]
@@ -258,7 +258,7 @@ def _emit_cgphase(controls, params, targets):
 
 def _emit_gphase(controls, params, targets):
     """gphase(ϕ) on target q0 = p(ϕ, q0)"""
-    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import make_gate_op
 
     t0 = targets[0]
     phi = params[0]

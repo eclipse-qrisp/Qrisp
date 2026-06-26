@@ -64,7 +64,7 @@ from xdsl.context import Context
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr
-from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_quake
+from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
