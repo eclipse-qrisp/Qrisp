@@ -1,0 +1,96 @@
+name: Changelog Check
+
+# Trigger on PR events targeting main
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+
+permissions:
+  pull-requests: write  # needed to post/update PR comments
+
+# Cancel in-progress runs for the same ref (e.g., on new pushes to a PR)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      # Checkout full history so git diff against the base ref works
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Check whether the changelog file was modified in this PR's diff
+      - name: Check changelog-dev.rst for entries
+        id: check
+        run: |
+          if git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | \
+             grep -q "documentation/source/general/changelog/changelog-dev.rst"; then
+            echo "modified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "modified=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Look for a previous bot comment so we can update it in place
+      - name: Find existing changelog comment
+        id: find
+        uses: peter-evans/find-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: "CHANGELOG_CHECK_MARKER"
+
+      # Post (or update) a reminder if no changelog entry was found
+      - name: Post reminder comment
+        if: steps.check.outputs.modified == 'false'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            <!-- CHANGELOG_CHECK_MARKER -->
+
+            :memo: **Please update the developer changelog**
+
+            It looks like this PR does not include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
+
+            Make sure your entry covers all of the following:
+
+            - [ ] **Section** - placed under the right heading (feature section, Additional Updates, or Compatibility)
+            - [ ] **First-time contributor?** - add yourself under First Time Contributors
+            - [ ] **Description** - a concise explanation of what changed and why
+            - [ ] **PR link** - reference the PR using `PR #NNN <URL>`
+            - [ ] **Component** - which class/module/function was affected (use :class: / :func: roles)
+            - [ ] **Deprecations** - if applicable, what replaces the old API
+
+            See changelog-dev.rst for the full section layout.
+          edit-mode: replace
+
+      # Post (or update) an acknowledgment if the changelog was updated
+      - name: Post acknowledgment comment
+        if: steps.check.outputs.modified == 'true'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            <!-- CHANGELOG_CHECK_MARKER -->
+
+            :white_check_mark: **Changelog entry confirmed**
+
+            Thanks for adding an entry to `documentation/source/general/changelog/changelog-dev.rst`!
+          edit-mode: replace
+
+      # Mark CI as failed to enforce the changelog requirement
+      - name: Fail if no changelog entry
+        if: steps.check.outputs.modified == 'false'
+        run: exit 1

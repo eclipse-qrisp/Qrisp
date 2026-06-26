@@ -53,7 +53,7 @@ If yes, describe the impact and migration path:
 - [ ] I have added/updated tests (referencing issue Test-IDs)
 - [ ] All tests pass locally and in CI
 - [ ] I have updated the documentation
-- [ ] I have added a changelog entry
+- [ ] I have added a changelog entry to `changelog-dev.rst`
 - [ ] Breaking changes are documented with migration path
 
 ## Reviewer Notes
