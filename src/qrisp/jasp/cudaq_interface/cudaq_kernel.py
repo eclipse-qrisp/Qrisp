@@ -149,15 +149,12 @@ def _get_llvm_attributes() -> tuple:
 
         data_layout_str, target_triple_str = defaults
         warnings.warn(
-            f"Could not extract llvm.data_layout from CUDA-Q; "
-            f"using platform default for {key}.",
+            f"Could not extract llvm.data_layout from CUDA-Q; using platform default for {key}.",
             stacklevel=3,
         )
 
     data_layout_attr = f'llvm.data_layout = "{data_layout_str}"'
-    target_triple_attr = (
-        f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
-    )
+    target_triple_attr = f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
     return data_layout_attr, target_triple_attr
 
 
@@ -166,9 +163,7 @@ def _get_llvm_attributes() -> tuple:
 # ------------------------------------------------------------------ #
 
 
-def cudaq_kernel_from_mlir(
-    mlir_str: str, execution_mode: Literal["run", "sample"] = "run"
-) -> PyKernelDecorator:
+def cudaq_kernel_from_mlir(mlir_str: str, execution_mode: Literal["run", "sample"] = "run") -> PyKernelDecorator:
     """
     Compiles a Quake MLIR string into a native ``PyKernelDecorator``.
 
@@ -309,11 +304,7 @@ def cudaq_kernel_from_mlir(
         mod_attributes.append(data_layout_attr)
         if target_triple_attr:
             mod_attributes.append(target_triple_attr)
-        mod_attributes.append(
-            f"quake.mangled_name_map = {{\n"
-            f'    {func_name} = "{entry_point}"\n'
-            f"  }}"
-        )
+        mod_attributes.append(f'quake.mangled_name_map = {{\n    {func_name} = "{entry_point}"\n  }}')
         attributes_str = ",\n  ".join(mod_attributes)
 
         adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
@@ -378,17 +369,14 @@ def cudaq_kernel_from_mlir(
             for i, (val, typ) in enumerate(zip(return_values, return_types)):
                 next_name = f"%__qrisp_tuple_{i + 1}"
                 insert_lines.append(
-                    f"{next_name} = cc.insert_value {prev}[{i}], {val}"
-                    f" : ({struct_type}, {typ}) -> {struct_type}"
+                    f"{next_name} = cc.insert_value {prev}[{i}], {val} : ({struct_type}, {typ}) -> {struct_type}"
                 )
                 prev = next_name
 
             insert_block = "\n    ".join(insert_lines)
             final_struct = prev  # last SSA value holding the fully-populated struct
 
-            return_re = re.compile(
-                r"func\.return\s+(?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*\s*:\s*.+"
-            )
+            return_re = re.compile(r"func\.return\s+(?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*\s*:\s*.+")
             # Main function body: replace multi-return with single struct return.
             main_func_body = return_re.sub(
                 f"{insert_block}\n    func.return {final_struct} : {struct_type}",
@@ -436,10 +424,7 @@ def cudaq_kernel_from_mlir(
     run_attrs += "}"
     adapted_mlir += f"  func.func @{run_func_name}{param_list} attributes {run_attrs} {{\n    {run_body}\n  }}\n"
 
-    adapted_mlir += (
-        f"  func.func @{run_entry_name}{param_list} attributes {{no_this}} {{\n    return\n  }}\n"
-        f"}}\n"
-    )
+    adapted_mlir += f"  func.func @{run_entry_name}{param_list} attributes {{no_this}} {{\n    return\n  }}\n}}\n"
 
     with kernel.ctx:
         try:
@@ -553,9 +538,7 @@ _ANNOTATION_TO_DUMMY = {
 }
 
 
-def cudaq_kernel(
-    func: Callable | None = None, execution_mode: Literal["run", "sample"] = "run"
-) -> PyKernelDecorator:
+def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "sample"] = "run") -> PyKernelDecorator:
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
@@ -717,11 +700,7 @@ def cudaq_kernel(
             )
 
     try:
-        mlir_str = jaspr_to_quake_mlir(
-            make_jaspr(func)(*dummy_args), execution_mode=execution_mode
-        )
+        mlir_str = jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args), execution_mode=execution_mode)
     except Exception as e:
-        raise RuntimeError(
-            f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
-        )
+        raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}")
     return cudaq_kernel_from_mlir(mlir_str, execution_mode=execution_mode)

@@ -316,9 +316,7 @@ GATE_MAP: dict[str, GateInfo] = {
     # "rzz_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz_dg, num_params=1),
     # "rxx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx, num_params=1),
     # "rxx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx_dg, num_params=1),
-    "cgphase": GateInfo(
-        num_controls=0, quake_gate="", emit=_emit_cgphase, num_params=1
-    ),
+    "cgphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_cgphase, num_params=1),
     # ---- 2-qubit, 1-param, DECOMPOSED ------------------------------------
     # "xxyy":    GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy, num_params=2),
     # "xxyy_dg": GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy_dg, num_params=2),

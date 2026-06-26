@@ -132,7 +132,7 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     verify_no_ranked_tensor_linalg(module)
 
     # Step 1 – PASS 1: QuantumState elimination + Jasp → Quake rewriting.
-    lower_jasp_to_quake(module, execution_mode = execution_mode)
+    lower_jasp_to_quake(module, execution_mode=execution_mode)
 
     # Step 2 – PASS 2: SCF → CC lowering.
     lower_scf_to_cc(module)

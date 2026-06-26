@@ -62,9 +62,7 @@ _MLIR_DYNAMIC = -9223372036854775808
 def lower_array_to_stdvec(module: ModuleOp) -> None:
     """In-place pass: Rewrite entrypoint array pointer args to stdvec with immediate cast-back."""
     walker = PatternRewriteWalker(
-        GreedyRewritePatternApplier([
-            EntrypointArrayToStdVecPattern()
-        ]),
+        GreedyRewritePatternApplier([EntrypointArrayToStdVecPattern()]),
         walk_regions_first=False,
     )
     walker.rewrite_module(module)

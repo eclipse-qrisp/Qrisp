@@ -70,8 +70,7 @@ class FixedShapeNDArray:
     def __init__(self, dtype: type, size: int):
         if dtype not in self._DTYPE_MAP:
             raise TypeError(
-                f"FixedShapeNDArray: unsupported dtype '{dtype}'. "
-                f"Supported: {list(self._DTYPE_MAP.keys())}."
+                f"FixedShapeNDArray: unsupported dtype '{dtype}'. Supported: {list(self._DTYPE_MAP.keys())}."
             )
         if not isinstance(size, int) or size <= 0:
             raise ValueError("FixedShapeNDArray: size must be a positive integer.")

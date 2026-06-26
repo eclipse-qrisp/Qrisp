@@ -195,11 +195,7 @@ def _quake_type_for(jasp_type: Attribute) -> Attribute | None:
 
 def _is_qubit_type(t: Attribute) -> bool:
     """Return True if *t* is any qubit/veq type (Jasp or Quake)."""
-    return (
-        isinstance(t, (QuakeRefType, QuakeVeqType))
-        or _is_qubit(t)
-        or _is_qubit_array(t)
-    )
+    return isinstance(t, (QuakeRefType, QuakeVeqType)) or _is_qubit(t) or _is_qubit_array(t)
 
 
 def _is_numeric_type(t: Attribute) -> bool:
@@ -256,9 +252,7 @@ def _coerce_to_f64(val: SSAValue, block: Block, insert_before: Operation) -> SSA
     raise ValueError(f"Cannot coerce {scalar.type} to f64")
 
 
-def _normalize_index_for_veq(
-    veq: SSAValue, idx: SSAValue, block: Block, insert_before_op: Operation
-) -> SSAValue:
+def _normalize_index_for_veq(veq: SSAValue, idx: SSAValue, block: Block, insert_before_op: Operation) -> SSAValue:
     """Implement Python-style negative indexing on a veq index.
 
     If idx < 0, return idx + size(veq), else idx.
@@ -286,9 +280,7 @@ def _normalize_index_for_veq(
 # ---------------------------------------------------------------------------
 
 
-def _extract_scalar(
-    val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op: Operation
-) -> SSAValue:
+def _extract_scalar(val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op: Operation) -> SSAValue:
     """Insert a ``tensor.extract %val[] : tensor<T>`` op and return the result.
 
     If *val* is already of *scalar_type* (not a tensor), return it unchanged.
@@ -300,9 +292,7 @@ def _extract_scalar(
     return extract.result
 
 
-def _wrap_scalar(
-    val: SSAValue, tensor_type: Attribute, block: Block, insert_before_op: Operation
-) -> SSAValue:
+def _wrap_scalar(val: SSAValue, tensor_type: Attribute, block: Block, insert_before_op: Operation) -> SSAValue:
     """Insert ``tensor.from_elements %val : tensor<T>`` and return the result.
 
     If *val* is already of *tensor_type*, return it unchanged.
@@ -372,9 +362,7 @@ def _fix_func_signature(func_op: func.FuncOp, mark_cudaq_kernel: bool = False, e
     if execution_mode == "sample" and func_op.sym_name.data == "main":
         new_outputs = []
     else:
-        new_outputs = [
-            _quake_type_for(t) or t for t in old_ftype.outputs.data if not _is_qst(t)
-        ]
+        new_outputs = [_quake_type_for(t) or t for t in old_ftype.outputs.data if not _is_qst(t)]
 
     new_ftype = FunctionType.from_lists(new_inputs, new_outputs)
     func_op.function_type = new_ftype
@@ -537,9 +525,7 @@ def _lower_consume_quantum_kernel(op: ConsumeQuantumKernelOp, block: Block) -> N
     """``jasp.consume_quantum_kernel`` → dropped; replace bool result with True."""
     # Result is tensor<i1> – replace with constant True
     if op.results:
-        true_const = arith.ConstantOp(
-            DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1])
-        )
+        true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
         block.insert_ops_before([true_const], op)
         op.results[0].replace_all_uses_with(true_const.result)
     Rewriter.erase_op(op)
@@ -763,9 +749,7 @@ def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run")
 
     # Determine what type we need to output
     meas_result = op.results[0]  # tensor<i1> or tensor<i64>
-    is_array = _is_qubit_array(qubit_val.type) or isinstance(
-        qubit_val.type, QuakeVeqType
-    )
+    is_array = _is_qubit_array(qubit_val.type) or isinstance(qubit_val.type, QuakeVeqType)
 
     if not is_array and execution_mode != "sample":
         # Run execution_mode, single qubit: discriminate → i1, then wrap to tensor<i1>
@@ -781,9 +765,7 @@ def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run")
         # Sample execution_mode, single qubit: emit raw quake.mz (→ !quake.measure) and
         # use a zero i1 placeholder to keep SSA valid.
         block.insert_ops_before(new_ops, op)
-        zero_const = arith.ConstantOp(
-            DenseIntOrFPElementsAttr.from_list(meas_result.type, [0])
-        )
+        zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
         block.insert_ops_before([zero_const], op)
         meas_result.replace_all_uses_with(zero_const.result)
     elif execution_mode == "sample":
@@ -793,9 +775,7 @@ def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run")
         # SSA valid for all downstream passes; _fix_return_op will strip it from
         # the function return so the kernel ends up returning void.
         block.insert_ops_before(new_ops, op)
-        zero_const = arith.ConstantOp(
-            DenseIntOrFPElementsAttr.from_list(meas_result.type, [0])
-        )
+        zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
         block.insert_ops_before([zero_const], op)
         meas_result.replace_all_uses_with(zero_const.result)
     else:
@@ -835,9 +815,7 @@ def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run")
         loop_body.add_ops([extract, mz_single, disc, extui, shift, new_acc, yield_op])
 
         # 5. Create the scf.for loop
-        for_op = scf.ForOp(
-            c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body])
-        )
+        for_op = scf.ForOp(c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body]))
         block.insert_ops_before([for_op], op)
 
         # 6. Wrap the final packed i64 back to tensor<i64> for downstream compatibility
@@ -874,7 +852,7 @@ def _update_non_qst_block_arg_types(block: Block) -> None:
 
 def _rebuild_scf_op_without_qst(op: Operation, rebuild_fn: Callable[..., Operation]) -> None:
     """Generic helper to remove QuantumState from an SCF op and reconstruct it.
-    
+
     Handles the boilerplate of:
     1. Stripping QST from nested block arguments, yields, and conditions.
     2. Detaching regions safely.
@@ -887,7 +865,7 @@ def _rebuild_scf_op_without_qst(op: Operation, rebuild_fn: Callable[..., Operati
             for arg in list(b.args):
                 if _is_qst(arg.type):
                     b.erase_arg(arg, safe_erase=False)
-            
+
             # Remove qst from scf.yield / scf.condition operands
             for inner_op in b.ops:
                 if isinstance(inner_op, (YieldOp, ConditionOp)):
@@ -895,18 +873,14 @@ def _rebuild_scf_op_without_qst(op: Operation, rebuild_fn: Callable[..., Operati
                     inner_op.operands = non_qst
 
     # 2. Check if reconstruction is actually needed
-    has_qst = any(_is_qst(v.type) for v in op.operands) or any(
-        _is_qst(t) for t in op.result_types
-    )
+    has_qst = any(_is_qst(v.type) for v in op.operands) or any(_is_qst(t) for t in op.result_types)
     if not has_qst:
         return
 
     # 3. Determine new result types (convert Qubit arrays to Quake, drop qst)
-    non_qst_res_types = [
-        _quake_type_for(t) or t for t in op.result_types if not _is_qst(t)
-    ]
+    non_qst_res_types = [_quake_type_for(t) or t for t in op.result_types if not _is_qst(t)]
 
-    # 4. Safely detach all regions 
+    # 4. Safely detach all regions
     # (Detaching mutates the tuple, so we strictly pop from index 0)
     detached_regions = []
     while len(op.regions) > 0:
@@ -935,6 +909,7 @@ def _rebuild_scf_op_without_qst(op: Operation, rebuild_fn: Callable[..., Operati
 
 def _strip_qst_from_while(while_op: WhileOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.while`` and reconstruct without it."""
+
     def rebuild(old_op, regions, res_types):
         non_qst_ops = [v for v in old_op.arguments if not _is_qst(v.type)]
         return WhileOp(non_qst_ops, res_types, regions[0], regions[1])
@@ -965,6 +940,7 @@ def _process_scf_while(while_op: WhileOp, outer_block: Block, execution_mode: st
 
 def _strip_qst_from_if(if_op: IfOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.if`` and reconstruct without it."""
+
     def rebuild(old_op, regions, res_types):
         return IfOp(old_op.operands[0], res_types, regions[0], regions[1])
 
@@ -995,6 +971,7 @@ def _process_scf_if(if_op: IfOp, outer_block: Block, execution_mode: str = "run"
 
 def _strip_qst_from_for(for_op: ForOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.for`` and reconstruct without it."""
+
     def rebuild(old_op, regions, res_types):
         # scf.for operands: [lb, ub, step, init_args...]
         non_qst_init_args = [v for v in list(old_op.operands)[3:] if not _is_qst(v.type)]
@@ -1025,6 +1002,7 @@ def _process_scf_for(for_op: ForOp, outer_block: Block, execution_mode: str = "r
 # ---------------------------------------------------------------------------
 # SCF index switch
 # ---------------------------------------------------------------------------
+
 
 def _process_scf_index_switch(op: IndexSwitchOp, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.index_switch`` op by recursing into its regions."""

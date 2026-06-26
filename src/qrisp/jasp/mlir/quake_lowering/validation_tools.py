@@ -28,9 +28,7 @@ import re
 def assert_no_jasp(mlir_str: str) -> None:
     """Assert that no ``!jasp.*`` types remain in *mlir_str*."""
     jasp_types = re.findall(r"!jasp\.\w+", mlir_str)
-    assert (
-        not jasp_types
-    ), f"Expected no !jasp.* types in Quake output, but found: {set(jasp_types)}"
+    assert not jasp_types, f"Expected no !jasp.* types in Quake output, but found: {set(jasp_types)}"
 
 
 def assert_no_linalg(mlir_str: str) -> None:
@@ -38,9 +36,7 @@ def assert_no_linalg(mlir_str: str) -> None:
     import re
 
     linalg_usage = re.findall(r"\blinalg\.\S+", mlir_str)
-    assert (
-        not linalg_usage
-    ), f"Expected no linalg operations in Quake output, but found: {set(linalg_usage)}"
+    assert not linalg_usage, f"Expected no linalg operations in Quake output, but found: {set(linalg_usage)}"
 
 
 def assert_no_scf(mlir_str: str) -> None:
@@ -48,18 +44,14 @@ def assert_no_scf(mlir_str: str) -> None:
     import re
 
     scf_usage = re.findall(r"\bscf\.\S+", mlir_str)
-    assert (
-        not scf_usage
-    ), f"Expected no scf operations in Quake output, but found: {set(scf_usage)}"
+    assert not scf_usage, f"Expected no scf operations in Quake output, but found: {set(scf_usage)}"
 
 
 def assert_no_tensor(mlir_str: str) -> None:
     """Assert that no tensor types or operations remain in *mlir_str*."""
     # Matches both tensor<...> types and tensor.xyz operations
     tensor_usage = re.findall(r"\btensor[<.]\S+", mlir_str)
-    assert (
-        not tensor_usage
-    ), f"Expected no tensor types or operations in Quake output, but found: {set(tensor_usage)}"
+    assert not tensor_usage, f"Expected no tensor types or operations in Quake output, but found: {set(tensor_usage)}"
 
 
 # ---------------------------------------------------------------------------
@@ -122,8 +114,6 @@ def validate_quake_mlir(mlir_str: str) -> Module:
         try:
             module = Module.parse(mlir_str, ctx)
         except Exception as exc:
-            raise ValueError(
-                f"Invalid Quake MLIR — parsing/verification failed:\n{exc}"
-            ) from exc
+            raise ValueError(f"Invalid Quake MLIR — parsing/verification failed:\n{exc}") from exc
 
     return module

@@ -105,9 +105,7 @@ class UnwrapFuncAndReturn(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: func_dialect.ReturnOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: func_dialect.ReturnOp, rewriter: PatternRewriter) -> None:
         func_op = op.parent_op()
         if not isinstance(func_op, func_dialect.FuncOp):
             return
@@ -139,9 +137,7 @@ class UnwrapFuncAndReturn(RewritePattern):
 
         # 2. Update the function signature
         old_ftype = func_op.properties["function_type"]
-        func_op.properties["function_type"] = FunctionType.from_lists(
-            list(old_ftype.inputs), new_return_types
-        )
+        func_op.properties["function_type"] = FunctionType.from_lists(list(old_ftype.inputs), new_return_types)
 
 
 class UnwrapFuncArgs(RewritePattern):
@@ -150,18 +146,12 @@ class UnwrapFuncArgs(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: func_dialect.FuncOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
         if not op.body.blocks:
             return
 
         # Safely get function_type across different xDSL versions
-        ftype = (
-            op.function_type
-            if hasattr(op, "function_type")
-            else op.properties.get("function_type")
-        )
+        ftype = op.function_type if hasattr(op, "function_type") else op.properties.get("function_type")
         if not ftype:
             return
 
@@ -199,9 +189,7 @@ class UnwrapFuncArgs(RewritePattern):
 
             # 2. Create the from_elements op to bridge the gap
             #    (Takes the NEW scalar arg, outputs the OLD tensor type)
-            from_elem = tensor.FromElementsOp.create(
-                operands=[new_arg], result_types=[old_type]
-            )
+            from_elem = tensor.FromElementsOp.create(operands=[new_arg], result_types=[old_type])
 
             # 3. Insert it at the top of the block
             if block.first_op is not None:
@@ -222,9 +210,7 @@ class UnwrapCall(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: func_dialect.CallOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: func_dialect.CallOp, rewriter: PatternRewriter) -> None:
         changed = False
 
         new_operands = []
@@ -264,9 +250,7 @@ class UnwrapCall(RewritePattern):
         replacements = []
         for old_res, new_res in zip(op.results, new_call.results):
             if old_res.type != new_res.type:
-                from_elem = tensor.FromElementsOp.create(
-                    operands=[new_res], result_types=[old_res.type]
-                )
+                from_elem = tensor.FromElementsOp.create(operands=[new_res], result_types=[old_res.type])
                 ops_to_insert_after.append(from_elem)
                 replacements.append(from_elem.results[0])
             else:
@@ -288,9 +272,7 @@ class FoldExtractOfDenseConstant(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.ExtractOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
         if len(op.indices) != 0:
             return
 
@@ -319,9 +301,7 @@ class FoldExtractOfFromElements(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.ExtractOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
         if len(op.indices) != 0:
             return
 
@@ -337,9 +317,7 @@ class FoldExtractOfScalar(RewritePattern):
     """Eliminate a tensor.extract whose source is already a scalar."""
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.ExtractOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
         if len(op.indices) != 0:
             return
         if not isinstance(op.tensor.type, TensorType):
@@ -353,9 +331,7 @@ class EraseDeadTensorConstant(RewritePattern):
     """Erase arith.constant dense<...> : tensor<T> ops with no uses."""
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: arith.ConstantOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: arith.ConstantOp, rewriter: PatternRewriter) -> None:
         if isinstance(op.result.type, TensorType) and not any(op.result.uses):
             rewriter.erase_op(op)
 
@@ -364,9 +340,7 @@ class EraseDeadFromElements(RewritePattern):
     """Erase tensor.from_elements ops with no uses."""
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.FromElementsOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
         if not any(op.result.uses):
             rewriter.erase_op(op)
 

@@ -42,12 +42,8 @@ def verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
         if not isinstance(current_op, linalg.GenericOp):
             continue
 
-        operand_has_ranked_tensor = any(
-            _is_ranked_tensor_type(operand.type) for operand in current_op.operands
-        )
-        result_has_ranked_tensor = any(
-            _is_ranked_tensor_type(result.type) for result in current_op.results
-        )
+        operand_has_ranked_tensor = any(_is_ranked_tensor_type(operand.type) for operand in current_op.operands)
+        result_has_ranked_tensor = any(_is_ranked_tensor_type(result.type) for result in current_op.results)
 
         if operand_has_ranked_tensor or result_has_ranked_tensor:
             location = getattr(current_op, "location", None)

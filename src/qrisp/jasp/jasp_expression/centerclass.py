@@ -14,6 +14,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
 from typing import Literal as TypingLiteral
 
 import jax
@@ -1208,7 +1209,7 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_mlir
 
         return jaspr_to_mlir(self.flatten_environments())
-    
+
     def to_quake_mlir(self, execution_mode: TypingLiteral["run", "sample"] = "run"):
         """
         Compiles the Jaspr to MLIR using the `Quake dialect <https://nvidia.github.io/cuda-quantum/latest/specification/quake-dialect.html>`__.

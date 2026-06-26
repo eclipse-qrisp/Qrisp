@@ -57,7 +57,7 @@ from xdsl.pattern_rewriter import (
     PatternRewriter,
     op_type_rewrite_pattern,
     PatternRewriteWalker,
-    GreedyRewritePatternApplier
+    GreedyRewritePatternApplier,
 )
 
 from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
@@ -75,12 +75,14 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 def lower_scf_to_cc(module: ModuleOp) -> None:
     """In-place PASS 2: lower SCF structured control flow to the CC dialect using Pattern Rewriters."""
     walker = PatternRewriteWalker(
-        GreedyRewritePatternApplier([
-            ScfIfPattern(),
-            ScfWhilePattern(),
-            ScfForPattern(),
-        ]),
-        walk_regions_first=True  # Enables bottom-up traversal (replaces manual _process_region recursion)
+        GreedyRewritePatternApplier(
+            [
+                ScfIfPattern(),
+                ScfWhilePattern(),
+                ScfForPattern(),
+            ]
+        ),
+        walk_regions_first=True,  # Enables bottom-up traversal (replaces manual _process_region recursion)
     )
     walker.rewrite_module(module)
 
@@ -239,11 +241,7 @@ class ScfIfPattern(RewritePattern):
 
         # Detach regions
         true_region = if_op.detach_region(if_op.regions[0])
-        false_region = (
-            if_op.detach_region(if_op.regions[0])
-            if len(if_op.regions) > 0
-            else Region([Block()])
-        )
+        false_region = if_op.detach_region(if_op.regions[0]) if len(if_op.regions) > 0 else Region([Block()])
 
         # Replace scf.yield → cc.continue (with unwrapped operands) inside detached regions
         for region in (true_region, false_region):
@@ -395,7 +393,7 @@ class ScfWhilePattern(RewritePattern):
         _apply_cudaq_while_hotfix(before_block)
 
         cond_op = _find_condition_op(before_block)
-        
+
         cond_val = cond_op.operands[0]
         forwarded = list(cond_op.operands)[1:]
         unwrapped_forwarded = [_unwrap(f, cond_op) for f in forwarded]
@@ -408,7 +406,7 @@ class ScfWhilePattern(RewritePattern):
         after_block = after_region.blocks[0]
 
         yield_op = _find_trailing_yield(after_block)
-        
+
         unwrapped_yields = [_unwrap(v, yield_op) for v in yield_op.operands]
         step_arg_types = [u.type for u in unwrapped_yields]
         cc_continue = CcContinueOp(*unwrapped_yields)
