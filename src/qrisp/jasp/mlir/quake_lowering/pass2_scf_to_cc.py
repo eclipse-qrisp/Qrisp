@@ -39,9 +39,9 @@ Pass 3 (tensor unwrap).
 
 CUDA-Q Hotfix
 -------------
-A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``) in
+A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``, ``sle``) in
 ``cc.loop`` while-conditions to terminate prematurely.  The hotfix rewrites
-``A sge B`` to ``A sgt (B-1)`` before emitting the condition.
+``A sge B`` to ``A sgt (B-1)`` and ``A sle B`` to ``A slt (B+1)`` before emitting the condition.
 """
 
 from typing import Optional, List, Any
@@ -190,10 +190,11 @@ def _rewrite_region_args_for_tensors(region: Region) -> Region:
 
 
 def _apply_cudaq_while_hotfix(block: Block) -> None:
-    """Rewrite ``A sge B`` → ``A sgt (B-1)`` to work around a CUDA-Q bug.
+    """Rewrite ``A sge B`` → ``A sgt (B-1)`` and ``A sle B`` → ``A slt (B+1)`` to work around a CUDA-Q bug.
 
-    The CUDA-Q compiler mishandles inclusive loop bounds (``sge``) in
+    The CUDA-Q compiler mishandles inclusive loop bounds (``sge``, ``sle``) in
     ``cc.loop`` while-conditions, causing premature loop termination.
+    Fixed by: https://github.com/NVIDIA/cuda-quantum/pull/4412 (not yet in 0.14.2)
     """
     for op in list(block.ops):
         if isinstance(op, arith.CmpiOp):
@@ -212,6 +213,18 @@ def _apply_cudaq_while_hotfix(block: Block) -> None:
                 one = arith.ConstantOp(IntegerAttr(1, i64))
                 rhs_new = arith.SubiOp(rhs, one.result)
                 new_cmp = arith.CmpiOp(lhs, rhs_new.result, "sgt")
+
+                block.insert_ops_before([one, rhs_new, new_cmp], op)
+                op.results[0].replace_all_uses_with(new_cmp.results[0])
+                Rewriter.erase_op(op, safe_erase=False)
+
+            if pred_val == 3 or "sle" in pred_val_str:
+                lhs = op.operands[0]
+                rhs = op.operands[1]
+
+                one = arith.ConstantOp(IntegerAttr(1, i64))
+                rhs_new = arith.AddiOp(rhs, one.result)
+                new_cmp = arith.CmpiOp(lhs, rhs_new.result, "slt")
 
                 block.insert_ops_before([one, rhs_new, new_cmp], op)
                 op.results[0].replace_all_uses_with(new_cmp.results[0])
