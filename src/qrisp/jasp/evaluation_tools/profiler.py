@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -89,7 +88,6 @@ METRIC_DISPATCH = {
 
 def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """Normalize the measurement behavior into a callable."""
-
     if isinstance(meas_behavior, str):
         if meas_behavior == "0":
             return always_zero
@@ -97,9 +95,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
             return always_one
         if meas_behavior == "sim":
             return simulation
-        raise ValueError(
-            f"Don't know how to compute required resources via method {meas_behavior}"
-        )
+        raise ValueError(f"Don't know how to compute required resources via method {meas_behavior}")
 
     if callable(meas_behavior):
         return meas_behavior
@@ -111,9 +107,8 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 # Keeping them here for now to avoid circular imports.
 
 
-def count_ops(meas_behavior: str | Callable) -> Callable:
-    """
-    Decorator to determine resources of large scale quantum computations.
+def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
+    """Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
@@ -149,6 +144,13 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
         A string or callable indicating the behavior of the resource computation
         when measurements are performed. Available strings are ``"0"``, ``"1"``, and ``"sim"``.
 
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
 
     Returns
     -------
@@ -157,7 +159,6 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
 
     Examples
     --------
-
     We compute the resources required to perform a large scale integer multiplication.
 
     ::
@@ -269,16 +270,14 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior
+                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
             )
 
         return ops_counter
@@ -286,9 +285,12 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
     return count_ops_decorator
 
 
-def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
-    """
-    Decorator to determine the depth of large scale quantum computations.
+def depth(
+    meas_behavior: str | Callable,
+    max_qubits: int = 1024,
+    callback_threshold: int | None = None,
+) -> Callable:
+    """Decorator to determine the depth of large scale quantum computations.
 
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the circuit depth required. The decorated function returns
@@ -309,6 +311,14 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
         The maximum number of qubits supported for depth computation.
         Default is 1024.
 
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
+
     Returns
     -------
     depth decorator : Callable
@@ -316,7 +326,6 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
     Examples
     --------
-
     Let's consider a simple circuit:
 
     ::
@@ -409,16 +418,14 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].depth(
-                *args, meas_behavior=meas_behavior, max_qubits=max_qubits
+                *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
             )
 
         return depth_counter
@@ -426,9 +433,12 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     return depth_decorator
 
 
-def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Callable:
-    """
-    Decorator to track qubit allocation and deallocation events during a quantum computation.
+def num_qubits(
+    meas_behavior: str | Callable,
+    max_allocations: int = 1000,
+    callback_threshold: int | None = None,
+) -> Callable:
+    """Decorator to track qubit allocation and deallocation events during a quantum computation.
 
     This decorator compiles a Jasp-compatible quantum function into a resource-analysis
     function that tracks qubit allocation and deallocation events throughout the computation.
@@ -461,6 +471,14 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
         The maximum number of allocation/deallocation events supported for tracking.
         Default is 1000. This is necessary as JAX requires static shapes for JIT compilation.
 
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
+
     Returns
     -------
     Callable
@@ -469,7 +487,6 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
 
     Examples
     --------
-
     Let's consider a simple circuit in which the number of allocated
     qubits depends on the measurement outcome:
 
@@ -577,16 +594,17 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].num_qubits(
-                *args, meas_behavior=meas_behavior, max_allocations=max_allocations
+                *args,
+                meas_behavior=meas_behavior,
+                max_allocations=max_allocations,
+                callback_threshold=callback_threshold,
             )
 
         return qubits_counter
@@ -594,11 +612,8 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
     return num_qubits_decorator
 
 
-def profile_jaspr(
-    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any
-) -> Callable:
-    """
-    Profile a Jaspr according to a given metric mode.
+def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any) -> Callable:
+    """Profile a Jaspr according to a given metric mode.
 
     Parameters
     ----------
@@ -624,14 +639,10 @@ def profile_jaspr(
         arguments as the original Jaspr.
 
     """
-
     meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
 
-    if (
-        meas_behavior_callable.__name__ == "simulation"
-        and metric_spec.simulate_fallback is not None
-    ):
+    if meas_behavior_callable.__name__ == "simulation" and metric_spec.simulate_fallback is not None:
 
         @wraps(metric_spec.simulate_fallback)
         def simulation_wrapper(*args):

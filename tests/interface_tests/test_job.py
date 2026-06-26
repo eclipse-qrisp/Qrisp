@@ -211,10 +211,6 @@ class TestJobAbstractInterface:
         with pytest.raises(TypeError):
             Job(backend=None)
 
-    def test_submit_is_abstract(self):
-        """Test that submit() is declared as an abstract method."""
-        assert getattr(Job.submit, "__isabstractmethod__", False)
-
     def test_result_is_abstract(self):
         """Test that result() is declared as an abstract method."""
         assert getattr(Job.result, "__isabstractmethod__", False)
@@ -311,32 +307,23 @@ class TestJobConcreteHelpers:
 
     def test_done_returns_false_for_cancelled_and_error(self, backend):
         """Test that done() returns False for CANCELLED and ERROR."""
-
         # done() means 'completed successfully' — it is not a synonym for
         # in_final_state(). Use in_final_state() to test for any terminal state.
         assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
         assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 
-    @pytest.mark.parametrize(
-        "status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING]
-    )
+    @pytest.mark.parametrize("status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING])
     def test_done_returns_false_for_non_terminal_states(self, backend, status):
         """Test that done() returns False for all non-terminal states."""
         assert self._job_with_status(backend, status).done() is False
 
-    @pytest.mark.parametrize(
-        "status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR]
-    )
+    @pytest.mark.parametrize("status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR])
     def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
         """Test that in_final_state() returns True for all three terminal states."""
         assert self._job_with_status(backend, status).in_final_state() is True
 
-    @pytest.mark.parametrize(
-        "status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING]
-    )
-    def test_in_final_state_returns_false_for_non_terminal_states(
-        self, backend, status
-    ):
+    @pytest.mark.parametrize("status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING])
+    def test_in_final_state_returns_false_for_non_terminal_states(self, backend, status):
         """Test that in_final_state() returns False for all non-terminal states."""
         assert self._job_with_status(backend, status).in_final_state() is False
 

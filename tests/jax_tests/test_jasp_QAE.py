@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,59 +15,115 @@
 ********************************************************************************
 """
 
-def test_jasp_QAE():
-    from qrisp import QuantumFloat, ry, z, QAE
-    from qrisp.jasp import terminal_sampling
-    import numpy as np
+import numpy as np
+
+from qrisp import (
+    QAE,
+    QuantumArray,
+    QuantumBool,
+    QuantumFloat,
+    control,
+    h,
+    ry,
+    z,
+)
+from qrisp.jasp import jrange, terminal_sampling
+
+
+def test_jasp_QAE_single_variable():
+    """Tests QAE with a single QuantumVariable."""
 
     def state_function(qb):
-        ry(np.pi/4,qb)
+        ry(np.pi / 4, qb)
 
-    def oracle_function(qb):   
+    def oracle_function(qb):
         z(qb)
 
     @terminal_sampling
-    def main():
-        qb = QuantumFloat(1)
+    def main_jasp():
+        qb = QuantumBool()
         res = QAE([qb], state_function, oracle_function, precision=3)
         return res
 
-    meas_res = main()
-    
-    assert np.round(meas_res[0.125],2) == 0.5
-    assert np.round(meas_res[0.875],2) == 0.5
+    mes_res = main_jasp()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
 
 
-def test_QAE_integration():
-    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
-    from qrisp.jasp import terminal_sampling, jrange
-    import numpy as np
+def test_jasp_QAE_quantum_array():
+    """Test that QAE correctly handles QuantumArray inputs."""
 
-    # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
+    def state_function(qa):
+        ry(np.pi / 4, qa[0])
+
+    def oracle_function(qa):
+        z(qa[0])
+
+    @terminal_sampling
+    def main_jasp():
+        qa = QuantumArray(QuantumBool(), shape=(2,))
+        res = QAE(qa, state_function, oracle_function, precision=3)
+        return res
+
+    mes_res = main_jasp()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
+
+
+def test_jasp_QAE_multiple_variables():
+    """Tests that QAE correctly handles lists of separate variables."""
+
+    def state_function(qb0, qb1):
+        ry(np.pi / 4, qb0)
+
+    def oracle_function(qb0, qb1):
+        z(qb0)
+
+    @terminal_sampling
+    def main_jasp():
+        qb0 = QuantumBool()
+        qb1 = QuantumBool()
+        res = QAE([qb0, qb1], state_function, oracle_function, precision=3)
+        return res
+
+    mes_res = main_jasp()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
+
+
+def test_jasp_QAE_integration():
+    """Tests QAE on a more complex scenario: computing the integral of f(x) = (sin(x))^2."""
+
     def state_function(inp, tar):
-        h(inp) # Distribution
-    
+        h(inp)  # Distribution
+
         N = 2**inp.size
         for k in jrange(inp.size):
             with control(inp[k]):
-                ry(2**(k+1)/N,tar)
-    
+                ry(2 ** (k + 1) / N, tar)
+
     def oracle_function(inp, tar):
         z(tar)
 
     @terminal_sampling
-    def main():
-        n = 6 # 2^n sampling points for integration
-        inp = QuantumFloat(n,-n)
+    def main_jasp():
+        n = 6  # 2^n sampling points for integration
+        inp = QuantumFloat(n, -n)
         tar = QuantumFloat(1)
         input_list = [inp, tar]
 
-        prec = 6 # precision
+        prec = 6  # precision
         res = QAE(input_list, state_function, oracle_function, precision=prec)
         return res
-    
-    meas_res = main()
-    theta = np.pi*max(meas_res, key=meas_res.get)
-    a = np.sin(theta)**2  
 
-    assert np.abs(a-0.26430) < 1e-4
+    meas_res = main_jasp()
+
+    # Get the most probable state and calculate the amplitude
+    theta = np.pi * max(meas_res, key=meas_res.get)
+    a = np.sin(theta) ** 2
+
+    # Verify the integral matches the analytical expectation within tolerance
+    assert np.abs(a - 0.26430) < 1e-4

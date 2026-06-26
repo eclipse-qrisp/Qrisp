@@ -1,0 +1,906 @@
+"""********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import jax.numpy as jnp
+from jax.numpy import bitwise_count
+
+from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
+from qrisp.environments import control, custom_control
+from qrisp.jasp import check_for_tracing_mode
+from qrisp.qtypes import QuantumBool
+
+# BigInteger is only used in type hints (lazy-evaluated strings thanks to
+# from __future__ import annotations) and never at runtime.
+# Importing it at module level triggers a circular import:
+#
+#   gidney_adder -> BigInteger (from jasp_bigintiger)
+#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
+#     -> gidney_adder  (circular!)
+#
+# The TYPE_CHECKING guard keeps the runtime import-free while satisfying
+# static type checkers.
+if TYPE_CHECKING:  # noqa
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )  # noqa
+
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
+
+
+def bit_inverted_mcx(
+    parity_check_ctrl: QuantumVariable,
+    simple_ctrl: QuantumVariable,
+    target: QuantumVariable,
+    b: bool,
+    ctrl: QuantumVariable | None = None,
+) -> None:
+    """Fig. 1 left: Toffoli with one inverted (Z⊕b) control and one normal control.
+    Done by flipping the parity-check qubit, running a Toffoli gate, then flipping it back.
+
+    - When b is 0: flip the target qubit if both the parity-check qubit and the simple control qubit are in the one
+      state. This is a normal MCX gate controlled on 11.
+    - When b is 1: flip the target qubit if the parity-check qubit is in the zero state and the simple control qubit is
+      in the one state. This is an MCX gate controlled on 01, i.e. one inverted control and one normal control.
+
+    .. warning::
+
+       *ctrl* only decides whether *parity_check_ctrl* gets flipped before the MCX.
+       When *ctrl* = |0⟩ the flip is skipped (same as *b* = 0), but the MCX still runs
+       and can fire if *parity_check_ctrl* and *simple_ctrl* are both |1⟩.
+
+    Circuit diagram — two X gates conditioned on classical b wrap a standard MCX:
+
+    .. code-block:: text
+
+        parity_check_ctrl: ───[X^b]──•──[X^b]──
+                                     │
+        simple_ctrl: ────────────────•─────────
+                                     │
+        target: ─────────────────────X─────────
+
+    Used in the carry chain when the classical addend bit decides whether the control fires on zero or one.
+    """
+    with control(b):
+        if ctrl is None:
+            x(parity_check_ctrl)
+        else:
+            cx(ctrl, parity_check_ctrl)
+
+    # ctrl is not added to the MCX — it only conditions the X-flips on parity_check_ctrl.
+    # When ctrl=0 and b=1, cx(ctrl, parity_check_ctrl) is a no-op, so parity_check_ctrl
+    # stays unchanged and the MCX acts as if b=0.
+    mcx([parity_check_ctrl, simple_ctrl], target)
+
+    with control(b):
+        if ctrl is None:
+            x(parity_check_ctrl)
+        else:
+            cx(ctrl, parity_check_ctrl)
+
+
+def zz_mcx(
+    z0_left: QuantumVariable,
+    z1_left: QuantumVariable,
+    control: QuantumVariable,
+    target: QuantumVariable,
+) -> None:
+    """Fig. 1 middle: Toffoli with one normal control and one ZZ-parity control.
+
+    Flips the target qubit if the two Z-box qubits are different from each other and the control qubit is in the one state.
+
+    The ZZ pair (z0_left, z1_left) acts as a single control that fires when
+    the two qubits disagree.  z1_left is temporarily modified by a CX and
+    restored, so both Z-box qubits are returned to their original state.
+
+    Circuit diagram — three columns (CX, MCX, CX):
+
+    .. code-block:: text
+
+        z0_left:   ──•──────────────────────•──
+                     │                      │
+        z1_left:   ──X─────•────────────────X──
+                           │
+        control: ──────────•────────────────────
+                           │
+        target: ───────────X────────────────────
+
+    Used in the carry XOR chains to check whether two qubits disagree instead
+    of checking if they are in the one state.
+    """
+    cx(z0_left, z1_left)  # collect parity into z1_left
+    mcx([z1_left, control], target)
+    cx(z0_left, z1_left)  # restore z1_left
+
+
+def zz_zz_mcx(
+    z_left: QuantumVariable,
+    z_left_right: QuantumVariable,
+    z_right: QuantumVariable,
+    target: QuantumVariable,
+) -> None:
+    """Fig. 1 right: Toffoli controlled on AND of two ZZ-parity checks.
+
+    Flips the target qubit if the two Z qubits on the left are different
+    from each other AND the two Z qubits on the right are different from
+    each other. The middle qubit (z_left_right) belongs to both pairs.
+
+    Circuit diagram — five columns (CX, CX, MCX, CX, CX):
+
+    .. code-block:: text
+
+        z_left:       ──X───────────•───────────X──
+                        │           │           │
+        z_left_right: ──•─────•───────────•─────•──
+                              │     │     │
+        z_right:      ────────X─────•─────X────────
+                                    │
+        target:       ──────────────X────────────────
+
+    All three Z qubits are restored after the operation.
+
+    Used in the carry XOR block to check two conditions at once: whether the
+    incoming carry and the target bit disagree with their neighbours.
+    """
+    cx(z_left_right, z_left)  # z_left    ← left parity
+    cx(z_left_right, z_right)  # z_right   ← right parity
+    mcx([z_left, z_right], target)
+    cx(z_left_right, z_right)  # restore z_right
+    cx(z_left_right, z_left)  # restore z_left
+
+
+def bit_inverted_zz_zz_mcx(
+    parity_ctrl1: QuantumVariable,
+    parity_ctrl2: QuantumVariable,
+    target: QuantumVariable,
+    b: bool,
+    ctrl: QuantumVariable | None = None,
+) -> None:
+    """MCX with two inverted controls. Flips the parity qubits before and after the
+    Toffoli so the control condition depends on the classical bit b.
+
+    - When b is 0: flip the target qubit if both parity controls are in the one state (MCX on 11).
+    - When b is 1: flip the target qubit if both parity controls are in the zero state (MCX on 00).
+
+    .. warning::
+
+       Same as :func:`bit_inverted_mcx`: *ctrl* only decides whether *parity_ctrl1* and
+       *parity_ctrl2* get flipped before the MCX.  When *ctrl* = |0⟩ the flips are skipped
+       (same as *b* = 0), but the MCX still runs and can fire if both parity controls
+       are |1⟩.
+
+    Circuit diagram — two X gates on each control wrap a standard MCX:
+
+    .. code-block:: text
+
+        parity_ctrl1: ──[X^b]──•──[X^b]──
+                               │
+        parity_ctrl2: ──[X^b]──•──[X^b]──
+                               │
+        target:      ──────────X──────────
+
+    This gate is not explicitly defined as a standalone circuit in the paper
+    but appears as a building block of the carry-xor block in Fig. 3.
+
+    Used in the carry XOR block for the first slot, where the classical addend decides whether to flip both controls.
+    """
+    with control(b):
+        if ctrl is None:
+            x(parity_ctrl1)
+            x(parity_ctrl2)
+        else:
+            cx(ctrl, parity_ctrl1)
+            cx(ctrl, parity_ctrl2)
+
+    # Same as bit_inverted_mcx: ctrl only conditions the X-flips, not the MCX.
+    mcx([parity_ctrl1, parity_ctrl2], target)
+
+    with control(b):
+        if ctrl is None:
+            x(parity_ctrl1)
+            x(parity_ctrl2)
+        else:
+            cx(ctrl, parity_ctrl1)
+            cx(ctrl, parity_ctrl2)
+
+
+def carry_venting_adder(
+    d: int | BigInteger,
+    target: QuantumVariable,
+    ancilla: QuantumVariable,
+    c_in: QuantumBool | None = None,
+    carry_xor_target: QuantumVariable | None = None,
+    ctrl: QuantumVariable | None = None,
+    vent_final: bool = True,
+    c_out: QuantumBool | None = None,
+) -> tuple[int, int]:
+    r"""Fig. 2 — carry-venting CQ in-place adder.
+
+    :math:`\text{target} \rightarrow (\text{target} + d + c_{\text{in}}) \bmod 2^n`
+
+    Instead of propagating carries across all bits with many Toffoli gates,
+    each carry is measured in the X-basis (vented) as soon as it is no longer
+    needed.  Measurement results are packed into an integer bitmask (ventmask)
+    and used later for phase correction.
+
+    Two provided clean ancillae alternate roles: one holds the current carry,
+    the other receives the next carry.  After each bit the current carry
+    ancilla is vented and reset, becoming available two steps later.
+
+    When *carry_xor_target* is provided, each carry is also copied into the
+    corresponding dirty workspace qubit via CX before being vented.  This
+    implements the combined first carry-xor and carry vernting pass used
+    by dirty_ancillae_adder (Fig. 4) at no extra gate cost.
+
+    Parameters
+    ----------
+    target : QuantumVariable
+        Target register, little-endian (index 0 = LSB). Modified in place.
+    d : int
+        Classical addend (compile-time constant).
+    ancilla : QuantumVariable
+        2-qubit clean ancilla register for the streaming carry chain.
+    c_in : QuantumBool | None
+        Quantum carry-in.  ``None`` is treated as ``|0⟩``.
+    carry_xor_target : QuantumVariable | None
+        Optional dirty workspace register used for the fused carry-xor pass
+        (Fig. 4 in the paper).  The carry into bit i is XORed into
+        ``carry_xor_target[i-1]``.
+
+    Returns
+    -------
+    ventmask : int
+        Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.
+    num_vents : int
+        Number of vents written to the bitmask (helps callers reconstruct
+        the vent layout without knowing internal bit-indexing details).
+
+    """
+    from qrisp.jasp import jlen, jrange, q_fori_loop
+
+    num_qubits = jlen(target)
+
+    clean_anc = ancilla
+
+    if c_in is None:
+        carry_in = None
+    else:
+        try:
+            carry_in = c_in[0]
+        except (TypeError, AttributeError, IndexError):
+            carry_in = c_in
+
+    # Bitmask that records the measurement outcome of each vented carry.
+    # The k-th bit of ventmask stores the vent measurement at position k.
+    ventmask = jnp.zeros((), dtype=jnp.int64)
+
+    # Counter for carry_xor_target writes — advances on each write so slots
+    # are always filled consecutively, eliminating index-collision bugs
+    # (e.g. n=3 where the first-block write and final-block write would
+    # both target index 0 without this counter).
+    carry_xor_cnt = 0
+
+    # Initial setup: X^{d_i} on all target bits
+    # Flip each target bit if the corresponding classical addend bit is 1.
+    # This bakes the classical addend into the target register so the carry
+    # chain only needs the register and carry-in to compute the sum.
+    for i in jrange(num_qubits):
+        d_i = _extract_bit(d, i)
+        with control(d_i):
+            if ctrl is None:
+                x(target[i])
+            else:
+                cx(ctrl, target[i])
+
+    # First building block (bits 0 and 1) that have to be handled before the loop
+    # The remaining bits are handled by a loop that applies the same gate
+    # pattern to each bit position.
+    d0 = _extract_bit(d, 0)
+    d1 = _extract_bit(d, 1)
+
+    if carry_in is not None:
+        bit_inverted_mcx(carry_in, target[0], clean_anc[1], d0, ctrl=ctrl)
+        cx(carry_in, target[0])
+    else:
+        bit_inverted_mcx(clean_anc[0], target[0], clean_anc[1], d0, ctrl=ctrl)
+
+    # X on clean_anc[1] when d0=1: corrects the carry for the flipped
+    # target[0] bit so the carry chain still computes the right value.
+    with control(d0):
+        if ctrl is None:
+            x(clean_anc[1])
+        else:
+            cx(ctrl, clean_anc[1])
+
+    bit_inverted_mcx(clean_anc[1], target[1], clean_anc[0], d1, ctrl=ctrl)
+    cx(clean_anc[1], target[1])
+
+    # Fused first carry-xor: write carry at clean_anc[1] into carry_xor_target.
+    # clean_anc[1] holds the carry into bit 1 at this point (computed by the
+    # first building block above, before it gets vented).  A single CX copies
+    # it to carry_xor_target at no extra Toffoli cost.
+    if carry_xor_target is not None:
+        cx(clean_anc[1], carry_xor_target[carry_xor_cnt])
+        carry_xor_cnt = carry_xor_cnt + 1
+
+    # Vent clean_anc[1] (carry into bit 1) — X-basis measurement
+    h(clean_anc[1])
+    m0 = measure(clean_anc[1])
+    reset(clean_anc[1])
+    # Record the vent measurement at bit position 0 of the ventmask
+    ventmask = ventmask + (m0.astype(jnp.int64) << 0)
+
+    # Normal repeated blocks (bits 2 .. n-3)
+    # Each iteration handles one bit: holds the current carry, computes the
+    # next carry, then vents and resets.  The two ancilla qubits alternate so
+    # each gets reused every other step.
+    #
+    # Before computing the next carry, we flip the current carry qubit if the
+    # previous addend bit was 1.  This corrects for the effect of the initial
+    # X gates on the carry computation.
+
+    def process_middle_bit(j, val):
+        target, clean_anc, ventmask, carry_xor_cnt = val
+        i = j + 2
+        d_i = _extract_bit(d, i)
+        d_prev = _extract_bit(d, i - 1)
+
+        current_carry = clean_anc[i % 2]
+        next_carry = clean_anc[(i + 1) % 2]
+
+        with control(d_prev):
+            if ctrl is None:
+                x(current_carry)
+            else:
+                cx(ctrl, current_carry)
+
+        bit_inverted_mcx(current_carry, target[i], next_carry, d_i, ctrl=ctrl)
+        cx(current_carry, target[i])
+
+        if carry_xor_target is not None:
+            cx(current_carry, carry_xor_target[carry_xor_cnt])
+            carry_xor_cnt = carry_xor_cnt + 1
+
+        h(current_carry)
+        m_i = measure(current_carry)
+        reset(current_carry)
+        # Record the vent measurement at bit position (j+1) of the ventmask
+        ventmask = ventmask + (m_i.astype(jnp.int64) << (j + 1))
+
+        return target, clean_anc, ventmask, carry_xor_cnt
+
+    num_main = jnp.maximum(0, num_qubits - 4)
+    target, clean_anc, ventmask, carry_xor_cnt = q_fori_loop(
+        0, num_main, process_middle_bit, (target, clean_anc, ventmask, carry_xor_cnt)
+    )
+
+    # Write the final carry into the most significant bit
+    # The carry out of the second-to-last bit becomes the most significant
+    # bit of the result.  It is not vented (no follow-up bit needs it).
+
+    # Three cases:
+    # 2 qubits: nothing to do (bits 0 and 1 handled by the first block)
+    # 3 qubits: the carry is already computed in clean_anc[0]; just CX it into target[2], then vent clean_anc[0].
+    # 4+ qubits: use the full gate sequence to compute and write the final carry into the top bit.
+    #
+    # q_cond is used because ventmask is an integer that is modified inside
+    # the branch and read outside.
+    def write_final_carry_to_msb(target, clean_anc, ventmask, carry_xor_cnt):
+        last_i = num_qubits - 2
+        d_last = _extract_bit(d, last_i)
+        current_carry = clean_anc[num_main % 2]  # carry lives in the alternator that didn't just vent
+
+        # Correction: X^{d_{last_i-1}} on current_carry to account for d's effect on
+        # the previous step's carry computation.
+        d_correction = _extract_bit(d, jnp.maximum(1, num_qubits - 3))
+        with control(d_correction):
+            if ctrl is None:
+                x(current_carry)
+            else:
+                cx(ctrl, current_carry)
+
+        # For n=3, the carry into bit 2 is already in clean_anc[0] (computed by the
+        # first block).  Just CX it into target[2] — no MCX needed.
+        with control(num_qubits == 3):
+            cx(current_carry, target[last_i + 1])
+
+        # Full MCX-based last block: write the carry into target[n-1].
+        with control(num_qubits > 3):
+            bit_inverted_mcx(current_carry, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
+            cx(current_carry, target[last_i])
+
+        # Fused carry-xor: write the last carry into the next unwritten slot.
+        # Guared by counter vs. dirty count so it naturally skips when all
+        # slots are already filled (e.g. n=3 where the first block already
+        # wrote the only slot).  No need for a num_qubits > 3 guard.
+        if carry_xor_target is not None:
+            still_needed = carry_xor_cnt < jlen(carry_xor_target)
+            with control(still_needed):
+                cx(current_carry, carry_xor_target[carry_xor_cnt])
+            carry_xor_cnt = carry_xor_cnt + still_needed.astype(jnp.int64)
+        else:
+            pass
+
+        # XOR the final carry into c_out before venting it.
+        if c_out is not None:
+            cx(current_carry, c_out[0])
+
+        # Vent (common to both paths) — X-basis measurement
+        h(current_carry)
+        m_last = measure(current_carry)
+        reset(current_carry)
+        # Record the vent measurement at bit position (1 + num_main) of the ventmask
+        ventmask = ventmask + (m_last.astype(jnp.int64) << (1 + num_main))
+
+        # Final X^{d_last} on target[n-1] (only for n>=4 — for n=3, target[2]
+        # was never X^{d} in the initial setup because d_last = d_2).
+        with control(num_qubits > 3):
+            with control(d_last):
+                if ctrl is None:
+                    x(target[num_qubits - 1])
+                else:
+                    cx(ctrl, target[num_qubits - 1])
+
+        return target, clean_anc, ventmask, carry_xor_cnt
+
+    def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
+        if c_out is not None:
+            cx(clean_anc[0], c_out[0])
+        if vent_final:
+            h(clean_anc[0])
+            m_i = measure(clean_anc[0])
+            reset(clean_anc[0])
+            ventmask = ventmask + (m_i.astype(jnp.int64) << 1)
+        return target, clean_anc, ventmask, carry_xor_cnt
+
+    from qrisp.jasp.program_control.prefix_control import q_cond
+
+    target, clean_anc, ventmask, carry_xor_cnt = q_cond(
+        num_qubits > 2,
+        write_final_carry_to_msb,
+        skip_final_block,
+        target,
+        clean_anc,
+        ventmask,
+        carry_xor_cnt,
+    )
+
+    # Count the number of vents for the caller (used in ventmask recombination).
+    # When num_qubits <= 2 the final block is skipped (q_cond with num_qubits > 2),
+    # so only m0 from the first block is vented → 1 vent.
+    # When num_qubits >= 3 all three sources fire: m0 + middle + m_last.
+    num_vents = 1 + jnp.where(num_qubits > 2, 1 + jnp.maximum(0, num_qubits - 4), 0)
+
+    return ventmask, num_vents
+
+
+def carry_xor_block(
+    d: int | BigInteger,
+    dirty_ancillas: QuantumVariable,
+    target: QuantumVariable,
+    c_in: QuantumBool | None = None,
+    ctrl: QuantumVariable | None = None,
+) -> None:
+    """Fig. 3 — carry-XOR block: second pass of the two-pass phase correction.
+
+    The target register holds the sum result.  The dirty workspace already
+    contains carries from the first pass (fused into carry_venting_adder).
+    Recompute the carries from the sum and XOR them into the dirty workspace.
+    After this block the dirty workspace should return to all zeros (up to
+    Z-phase corrections from surrounding CZ gates).
+
+    The computation has four phases:
+      1. Reverse order — walk dirty qubits from most significant bit to
+         least significant bit, computing the carry into each position
+         and XORing it in.
+      2. Flip each dirty qubit if the corresponding addend bit is 1.
+      3. If there is a carry-in, handle the first dirty qubit using a
+         parity-checking gate.
+      4. Forward order — walk dirty qubits from least significant bit to
+         most significant bit, computing the carry into each position
+         and XORing it in.
+
+    Steps 3-4 use parity-checking gates because the dirty workspace stores
+    carries differently from the clean ancilla chain.
+    """
+    from qrisp.jasp import jlen, jrange
+
+    num_dirty_qubits = jlen(dirty_ancillas)
+
+    if c_in is None:
+        carry_in = None
+    else:
+        try:
+            carry_in = c_in[0]
+        except (TypeError, AttributeError, IndexError):
+            carry_in = c_in
+
+    # Reverse chain
+    # Walk the dirty qubits from most significant bit to least significant bit.
+    # For each slot, combine the
+    # corresponding target bit and the previous dirty qubit (as carry-in) to
+    # recompute the carry, then flip the current dirty qubit if the addend
+    # bit is 1.  This propagates carries downward from high to low bits.
+    for j in jrange(num_dirty_qubits - 1):
+        i = (num_dirty_qubits - 1) - j
+        bit_i = _extract_bit(d, i)
+        bit_inverted_mcx(target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i, ctrl=ctrl)
+
+    # Flip each dirty qubit if the addend bit is 1
+    for i in jrange(num_dirty_qubits):
+        bit_i = _extract_bit(d, i)
+        with control(bit_i):
+            if ctrl is None:
+                x(dirty_ancillas[i])
+            else:
+                cx(ctrl, dirty_ancillas[i])
+
+    if carry_in is not None:
+        d0 = _extract_bit(d, 0)
+        bit_inverted_zz_zz_mcx(carry_in, target[0], dirty_ancillas[0], d0, ctrl=ctrl)
+    else:
+        d0 = _extract_bit(d, 0)
+        with control(d0):
+            x(target[0])
+            cx(target[0], dirty_ancillas[0])
+            x(target[0])
+
+    # Forward chain
+    # Walk dirty qubits from least significant bit to most significant bit.
+    for j in jrange(num_dirty_qubits - 1):
+        i = j + 1
+        bit_i = _extract_bit(d, i)
+        bit_inverted_zz_zz_mcx(dirty_ancillas[i - 1], target[i], dirty_ancillas[i], bit_i, ctrl=ctrl)
+
+
+def dirty_ancillae_adder(
+    d: int | BigInteger,
+    target: QuantumVariable,
+    dirty_ancillas: QuantumVariable,
+    ancilla: QuantumVariable,
+    c_in: QuantumBool | None = None,
+    c_out: QuantumBool | None = None,
+    ctrl: QuantumVariable | None = None,
+) -> int:
+    r"""Fig. 4 — dirty-ancilla CQ in-place adder.
+
+    :math:`\text{target} \rightarrow (\text{target} + d + c_{\text{in}}) \bmod 2^n`
+
+    Uses 2 clean ancillae for the streaming carry chain plus n-2 dirty
+    workspace qubits that are restored to their original state.
+
+    Algorithm (two passes):
+      1. Vented addition (carry_venting_adder) with fused carry-xor pass.
+         Each carry is also written into the dirty workspace as it is vented.
+         After this, target contains the sum and dirty contains the carries.
+      2. Phase correction — a sandwich of X, CZ, carry_xor_block, CZ, X
+          that fixes the Z-phase from the vented measurements and returns
+          the dirty qubits to all zeros.
+
+    Parameters
+    ----------
+    target : QuantumVariable
+        Target register, little-endian (index 0 = LSB). Modified in place.
+    d : int
+        Classical addend (compile-time constant).
+    dirty_ancillas : QuantumVariable
+        n-2 dirty workspace qubits.
+    ancilla : QuantumVariable
+        2-qubit clean ancilla register for the streaming carry chain.
+    c_in : QuantumBool | None
+        Quantum carry-in.  ``None`` is treated as ``|0⟩``.
+
+    Returns
+    -------
+    int
+        Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.
+
+    """
+    from qrisp.jasp import jlen, jrange
+
+    num_targets = jlen(target)
+
+    dirty_qubits = dirty_ancillas
+    num_dirty = jlen(dirty_qubits)
+
+    # Step 1: Vented addition with fused first carry-xor.
+    # Suppress the final vent (vent_final=False) — for small targets the
+    # excess vent has no corresponding dirty qubit and would leave an
+    # uncorrected Z-phase error.
+    ventmask, _ = carry_venting_adder(
+        d,
+        target,
+        ancilla=ancilla,
+        c_in=c_in,
+        carry_xor_target=dirty_qubits,
+        ctrl=ctrl,
+        vent_final=False,
+        c_out=c_out,
+    )
+
+    # Step 2: Phase correction
+    for i in jrange(num_targets):
+        x(target[i])
+
+    # XOR excess vent bits (beyond num_dirty) into the last dirty slot's
+    # correction so their Z-phase errors are not left uncorrected.
+    excess = ventmask >> num_dirty
+    ventmask_fixed = (ventmask & ((1 << num_dirty) - 1)) ^ ((bitwise_count(excess) & 1) << (num_dirty - 1))
+
+    # CZ pass 1: correct Z-phases using ventmask (excess XORed into last slot)
+    for k in jrange(num_dirty):
+        with control((ventmask_fixed >> k) & 1):
+            z(dirty_qubits[k])
+
+    # Second carry-xor pass: recompute carries against the flipped sum
+    carry_xor_block(d, dirty_qubits, target[:-1], c_in, ctrl=ctrl)
+
+    # CZ pass 2: correct Z-phases again
+    for k in jrange(num_dirty):
+        with control((ventmask_fixed >> k) & 1):
+            z(dirty_qubits[k])
+
+    # Restore target
+    for i in jrange(num_targets):
+        x(target[i])
+
+    return ventmask
+
+
+@custom_control
+def gidney_cq_venting_adder(
+    d: int | BigInteger,
+    target: QuantumVariable,
+    c_in: QuantumBool | None = None,
+    c_out: QuantumBool | None = None,
+    ctrl: QuantumVariable | QuantumBool | None = None,
+) -> None:
+    r"""In-place classical-quantum adder using Gidney's carry-venting technique.
+
+    Adds a classical integer :math:`d` and an optional carry-in :math:`c_{\text{in}}`
+    to a quantum register, storing the result back in the same register.
+
+    Uses 3 clean ancillae (allocated internally) and no external dirty workspace.
+    The target register is split in half — each half serves as dirty storage for
+    the other half's carry chain — keeping the total qubit count to ``n + 3``.
+    For registers with fewer than 6 qubits the split-half path is replaced by
+    :func:`gidney_adder` (unitary, no vents), which avoids a nested-q_cond
+    tracing-session issue for n=5.  This matches the paper's strategy of using
+    a clean adder when enough ancillae are available.
+
+    Heavily adapted from the reference implementation released with
+    `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_ at https://zenodo.org/records/15866587.
+
+    .. warning::
+
+       This function requires dynamic (JASP) mode and does **not** work in static
+       circuit generation, because it relies on mid-circuit measurements (venting)
+       whose outcomes determine subsequent operations.
+
+    Parameters
+    ----------
+    target : QuantumVariable
+        Target register, little-endian (index 0 = LSB). Modified in place.
+    d : int or BigInteger
+        Classical addend (compile-time constant).
+    c_in : QuantumBool | None
+        Quantum carry-in. None is treated as :math:`\ket{0}`.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    TypeError
+        If ``d`` is a :class:`QuantumVariable` or list (must be a classical integer).
+    TypeError
+        If ``target`` is not a :class:`QuantumVariable`.
+    RuntimeError
+        If called outside dynamic (JASP) tracing mode.
+
+    Examples
+    --------
+    Basic addition in dynamic (JASP) mode::
+
+        from qrisp import QuantumFloat, measure, gidney_cq_venting_adder
+        from qrisp.jasp import jaspify
+
+        @jaspify
+        def main():
+            target = QuantumFloat(5)
+            target[:] = 2
+            gidney_cq_venting_adder(7, target)
+            return measure(target)
+
+        result = main()
+        # result is 9 (2 + 7 = 9)
+
+    Addition with a carry-in qubit::
+
+        @jaspify
+        def main():
+            target = QuantumFloat(4)
+            target[:] = 5
+            c_in = QuantumFloat(1)
+            c_in[:] = 1
+            gidney_cq_venting_adder(2, target, c_in=c_in[0])
+            return measure(target)
+
+        result = main()
+        # result is 8 (5 + 2 + carry_in = 8)
+
+    Controlled addition (zero extra Toffoli cost)::
+
+        from qrisp import control, QuantumBool
+
+        @jaspify
+        def main():
+            target = QuantumFloat(5)
+            target[:] = 10
+            ctrl = QuantumBool()
+            ctrl[:] = 1
+            with control(ctrl):
+                gidney_cq_venting_adder(5, target)
+            return measure(target)
+
+        result = main()
+        # result is 15 (10 + 5 = 15)
+        # when ctrl is not provided, target stays unchanged
+
+    """
+    from qrisp.jasp import jlen, jrange
+
+    if isinstance(d, (QuantumVariable, list)):
+        raise TypeError("The first argument must be a classical integer.")
+    if not isinstance(target, QuantumVariable):
+        raise TypeError("The second argument must be a QuantumVariable.")
+
+    if not check_for_tracing_mode():
+        raise RuntimeError("The Gidney Classical-Quantum adder does not work in standard python execution mode.")
+
+    from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+    from qrisp.jasp.program_control.prefix_control import q_cond
+
+    num_targets = jlen(target)
+    n_half = (num_targets - 1) >> 1
+
+    # ---- Path selection ---------------------------------------------------
+    # n < 6 → gidney_path (gidney_adder, unitary, no vents).
+    #   The paper's reference (_add_3_clean.py lines 57-64) uses a clean
+    #   adder when 3 clean qubits suffice for the full register (n <= 5).
+    #   We extend this to n < 6 because q_cond wrapping split_path (which
+    #   calls carry_venting_adder, itself using q_cond internally) creates
+    #   nested tracing sessions that interfere for n=5.
+    #
+    # n >= 6 → split_path (split-half carry-venting, Fig. 2-4).
+    #   The paper enters the split-half for n >= 6 (line 66+).  Sub-halves
+    #   may still use clean adders when they fit (lines 79-84, 101-107);
+    #   carry-venting (Fig. 2) only activates when a sub-half exceeds the
+    #   clean-adder budget (n >= 10).
+
+    d_lo = d & ((1 << n_half) - 1)
+    d_hi = d >> n_half
+
+    def gidney_path(target, clean_anc):
+        """Clean unitary adder for n < 6 (no vents, no phase correction).
+
+        Delegates to gidney_adder (arXiv:1709.06648), which uses no mid-circuit
+        measurements and is therefore deterministic under @terminal_sampling.
+        The 3 clean ancillae are unused (gidney_adder allocates its own).
+        """
+        gidney_adder(d, target, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        clean_anc.delete()
+
+    def split_path(target, clean_anc):
+        """Split-half carry-venting adder for n >= 6 (paper's main circuit).
+
+        Implements Fig. 2-4 of arXiv:2507.23079 using 3 clean ancillae.
+        The target is split at h = (n-1)>>1.  The bottom half is added via
+        carry_venting_adder (Fig. 2, vents carries in the X-basis).  The top
+        half is added via dirty_ancillae_adder (Fig. 4, uses bottom-half
+        qubits as dirty workspace).  The low half's vented Z-phases are
+        corrected by a CZ sandwich with two carry_xor passes (Fig. 3).
+        n_half, d_lo, and d_hi are closed over from the outer scope.
+        """
+        clean0 = clean_anc[0]  # mid-carry ancilla (clean0 in paper notation)
+
+        # Step 1: Place clean0 into target[n_half].
+        # Three CNOTs implement a SWAP so that carry_venting_adder on the
+        # (n_half+1)-bit slice target[:n_half+1] writes the carry out of
+        # bit n_half-1 into clean0 (as its final carry).
+        cx(clean0, target[n_half])
+        cx(target[n_half], clean0)
+        cx(clean0, target[n_half])
+
+        # Step 2: Vented addition on bottom half (Fig. 2).
+        # carry_venting_adder vents carries in the X-basis and returns
+        # an integer ventmask whose k-th bit holds the k-th vent outcome.
+        ventmask_lo, _ = carry_venting_adder(d_lo, target[: n_half + 1], clean_anc[1:], c_in=c_in, ctrl=ctrl)
+
+        # Step 3: Swap clean0 back out — clean0 now holds the carry into
+        # the top half (the carry out of the bottom half).
+        cx(clean0, target[n_half])
+        cx(target[n_half], clean0)
+        cx(clean0, target[n_half])
+
+        # Step 4: Top half addition using dirty ancillas (Fig. 4).
+        # target[n_half:] is the top half with clean0 as carry-in.
+        # target[:max(1, n-n_half-2)] are borrowed as dirty workspace.
+        dirty_ancillae_adder(
+            d_hi,
+            target[n_half:],
+            dirty_ancillas=target[: jnp.maximum(1, jlen(target) - n_half - 2)],
+            ancilla=clean_anc[1:],
+            c_in=clean0,
+            ctrl=ctrl,
+            c_out=c_out,
+        )
+
+        # Step 5: MX measurement on clean0 (X-basis: H then Z-measurement).
+        h(clean0)
+        m_clean0 = measure(clean0)
+        reset(clean0)
+
+        # Combine ventmask_lo with m_clean0 to get the full ventmask for
+        # the bottom-half phase correction.
+        ventmask_lo_mask = (1 << (n_half - 1)) - 1
+        high_vent_bits = ventmask_lo >> (n_half - 1)
+        full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
+            ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64) << (n_half - 1)
+        )
+
+        # Step 6: Phase correction for bottom half vents (CZ sandwich +
+        # two carry_xor passes, Fig. 3).
+        workspace = target[n_half : 2 * n_half]
+        bottom = target[:n_half]
+
+        # 6a — Complement bottom half: NOT(bottom)
+        for i in jrange(n_half):
+            x(bottom[i])
+        # 6b — CZ(workspace[k], vent[k+1]): correct Z-phases from vents
+        for k in jrange(n_half):
+            with control((full_ventmask >> k) & 1):
+                z(workspace[k])
+        # 6c — First carry_xor pass (second-pass carries into workspace)
+        carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
+        # 6d — CZ again
+        for k in jrange(n_half):
+            with control((full_ventmask >> k) & 1):
+                z(workspace[k])
+        # 6e — Second carry_xor pass (restore workspace)
+        carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
+        # 6f — Restore bottom half: NOT cancels the complement from 6a
+        for i in jrange(n_half):
+            x(bottom[i])
+
+        clean_anc.delete()
+
+    # initialize 3 clean ancillae
+    clean_anc = QuantumVariable(3, name="gidney_anc*")
+    # clean0, clean1, clean2 — mid-carry and streaming-carry ancillae
+
+    # Select path based on register size.
+    # n < 6 → gidney_path (clean Gidney carry-lookahead, no vents).
+    #   n=5 is included because q_cond + split_path + carry_venting_adder's
+    #   internal q_cond creates nested tracing sessions that interfere.
+    # n >= 6 → split_path  (split-half carry-venting, faithful to the paper)
+    q_cond(num_targets < 6, gidney_path, split_path, target, clean_anc)

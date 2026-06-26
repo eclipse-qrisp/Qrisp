@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,29 +16,19 @@
 """
 
 from typing import Union
-import math
 
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
+from qrisp.core import cx, swap, x
+from qrisp.environments import control, custom_control, invert
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange, q_cond
 from qrisp.qtypes import QuantumFloat, QuantumModulus
-from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
-from qrisp.environments import control, invert, custom_control
-from qrisp.core import swap, cx, x
 
 from .jasp_bigintiger import BigInteger
-from .jasp_mod_tools import (
-    montgomery_encoder,
-    montgomery_decoder,
-    modinv,
-    best_montgomery_shift,
-    smallest_power_of_two
-)
+from .jasp_mod_tools import best_montgomery_shift, modinv, montgomery_decoder, montgomery_encoder, smallest_power_of_two
 
 
-def q_montgomery_reduction(
-    qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder
-):
-    """
-    Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
+def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder):
+    """Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
 
     Implements the quantum Montgomery reduction from Rines & Chuang (2018),
     https://arxiv.org/abs/1801.01081.
@@ -50,7 +39,7 @@ def q_montgomery_reduction(
     - aux has m+1 qubits (for u-tilde including the folded sign bit),
     - res has n qubits (holds the reduced result).
 
-    Algorithm 
+    Algorithm
     ---------
     - Estimation (m steps): For each LSB, conditionally subtract floor(N/2) on the
       truncated slice (implicit right-shift).
@@ -67,6 +56,7 @@ def q_montgomery_reduction(
         Exponent m of the auxiliary radix R = 2^m.
     inpl_adder : Callable
         In-place adder to use during computation (defaults to gidney_adder).
+
     """
     if check_for_tracing_mode():
         xrange = jrange
@@ -100,8 +90,7 @@ def cq_montgomery_multiply(
     x_is_montgomery: bool = False,
     res=None,
 ):
-    """
-    Montgomery product of a classical X and a QuantumFloat y: X*y*R^{-1} mod N.
+    """Montgomery product of a classical X and a QuantumFloat y: X*y*R^{-1} mod N.
 
     Outline
     -------
@@ -140,6 +129,7 @@ def cq_montgomery_multiply(
     -------
     QuantumFloat
         The Montgomery product X*y mod N in standard representation.
+
     """
     # Build R = 2^m with width matching X if BigInteger
     if isinstance(X, BigInteger):
@@ -193,8 +183,7 @@ def cq_montgomery_multiply_inplace(
     x_is_montgomery: bool = False,
     ctrl=None,
 ):
-    """
-    Montgomery product of a classical X and a QuantumFloat y, in-place on y.
+    """Montgomery product of a classical X and a QuantumFloat y, in-place on y.
 
     Notes
     -----
@@ -216,8 +205,8 @@ def cq_montgomery_multiply_inplace(
         If the classical input X is already in Montgomery form. Defaults to False.
     ctrl : QuantumBit or None
         Optional external control for the in-place operation.
-    """
 
+    """
     with control(X != 1):
         tmp = QuantumFloat(y.size)
 
@@ -259,11 +248,8 @@ def cq_montgomery_multiply_inplace(
         tmp.delete()
 
 
-def qq_montgomery_multiply(
-    x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder
-):
-    """
-    Perform the montgomery product of two QuantumFloats. Note that both QuantumFloats must be in montgomery form.
+def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
+    """Perform the montgomery product of two QuantumFloats. Note that both QuantumFloats must be in montgomery form.
 
     Parameters
     ----------
@@ -279,11 +265,11 @@ def qq_montgomery_multiply(
         In-place adder to use during computation
 
     Returns
-    ----------
+    -------
     QuantumFloat
         The mongomery product of the inputs.
-    """
 
+    """
     if check_for_tracing_mode():
         xrange = jrange
     else:
@@ -316,8 +302,7 @@ def qq_montgomery_multiply(
 
 
 def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
-    """
-    Perform the montgomery product of two QuantumModuli.
+    """Perform the montgomery product of two QuantumModuli.
     Compatible with ``montgomery_mod_mul``: inputs can be in any Montgomery
     representation (including standard form where ``m=0``).
 
@@ -335,12 +320,13 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
         Second factor of the montgomery product.
 
     Returns
-    ----------
+    -------
     QuantumModulus
         The montgomery product of the inputs.
-    """
 
+    """
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
@@ -416,14 +402,10 @@ def cq_montgomery_mat_multiply(A, B, out):
                 def true_fun():
                     best_montgomery_shift(B[k, j], A[i, k].modulus)
                     shift = best_montgomery_shift(B[k, j], A[i, k].modulus)
-                    aux = cq_montgomery_multiply(
-                        B[k, j], A[i, k], A[i, k].modulus, shift
-                    )
+                    aux = cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift)
                     out[i, j] += aux
                     with invert():
-                        cq_montgomery_multiply(
-                            B[k, j], A[i, k], A[i, k].modulus, shift, res=aux
-                        )
+                        cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift, res=aux)
                     aux.delete()
 
                 x_cond(B[k, j] != 0, true_fun, lambda: None)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
+import networkx as nx
 import numba as nb
 import numpy as np
-import networkx as nx
 
 
 def multi_hamiltonian_measurement(
@@ -33,8 +32,7 @@ def multi_hamiltonian_measurement(
     precompiled_qc=None,
     _measurements=None,
 ):
-    r"""
-    This method returns the expected value of a list of Hamiltonians for the state of a quantum argument.
+    r"""This method returns the expected value of a list of Hamiltonians for the state of a quantum argument.
 
     Parameters
     ----------
@@ -71,7 +69,6 @@ def multi_hamiltonian_measurement(
         The expected value of the Hamiltonians.
 
     """
-
     expectations = []
     n = len(hamiltonians)
     for i in range(n):
@@ -114,9 +111,7 @@ def rlf_coloring(num_vertices, adjacency_matrix):
             colors[vertex] = current_color
 
         # Remove colored vertices from the list of uncolored vertices
-        uncolored_vertices = np.array(
-            [v for v in uncolored_vertices if v not in independent_set]
-        )
+        uncolored_vertices = np.array([v for v in uncolored_vertices if v not in independent_set])
 
         current_color += 1
 
@@ -158,10 +153,7 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
         # Find the lowest available color for this vertex
         used_colors = set()
         for neighbor in range(num_vertices):
-            if (
-                adjacency_matrix[max_saturation_vertex, neighbor] == 1
-                and colors[neighbor] != -1
-            ):
+            if adjacency_matrix[max_saturation_vertex, neighbor] == 1 and colors[neighbor] != -1:
                 used_colors.add(colors[neighbor])
 
         available_color = 0
@@ -181,9 +173,7 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
                 saturation_degrees[neighbor] = len(neighbor_colors)
 
         # Remove the colored vertex from uncolored_vertices
-        uncolored_vertices = uncolored_vertices[
-            uncolored_vertices != max_saturation_vertex
-        ]
+        uncolored_vertices = uncolored_vertices[uncolored_vertices != max_saturation_vertex]
 
     return colors
 

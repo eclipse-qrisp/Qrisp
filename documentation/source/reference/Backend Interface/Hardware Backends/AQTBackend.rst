@@ -8,3 +8,5 @@ AQTBackend
 .. autoclass:: AQTBackend
    :members:
 
+.. automethod:: AQTBackend.run_async
+

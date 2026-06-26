@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, QuantumBool, x, mcx
+from qrisp import QuantumBool, QuantumVariable, mcx, x
 from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 
 def create_min_set_cover_mixer(sets, universe):
-    r"""
-    Creates the ``controlled_RX_mixer`` for an instance of the minimum set cover problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the ``controlled_RX_mixer`` for an instance of the minimum set cover problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped out of the solution.
 
@@ -40,11 +38,7 @@ def create_min_set_cover_mixer(sets, universe):
         This function performs the application of the mixer associated to the problem instance.
 
     """
-
-    membership_dict = {
-        element: [i for i, subset in enumerate(sets) if element in subset]
-        for element in universe
-    }
+    membership_dict = {element: [i for i, subset in enumerate(sets) if element in subset] for element in universe}
 
     def predicate(qv, i):
         anc = QuantumVariable(len(sets[i]))
@@ -66,8 +60,7 @@ def create_min_set_cover_mixer(sets, universe):
 
 
 def create_min_set_cover_cl_cost_function(sets, universe):
-    """
-    Creates the classical cost function for an instance of the minimum set cover problem.
+    """Creates the classical cost function for an instance of the minimum set cover problem.
 
     Parameters
     ----------
@@ -99,8 +92,7 @@ def create_min_set_cover_cl_cost_function(sets, universe):
 
 
 def min_set_cover_init_function(qv):
-    r"""
-    Prepares the initial state $\ket{1}^{\otimes n}$.
+    r"""Prepares the initial state $\ket{1}^{\otimes n}$.
 
     Parameters
     ----------
@@ -112,8 +104,7 @@ def min_set_cover_init_function(qv):
 
 
 def min_set_cover_problem(sets, universe):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

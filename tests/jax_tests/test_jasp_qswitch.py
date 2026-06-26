@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,10 +17,12 @@
 
 # qswitch is deprecated, use q_switch instead
 
+
 def test_jasp_qswitch_case_hamiltonian_simulation():
-    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
     import numpy as np
-    from qrisp.operators import X, Y, Z
+
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
+    from qrisp.operators import Y, Z
 
     H1 = Z(0) * Z(1)
     H2 = Y(0) + Y(1)
@@ -56,9 +57,10 @@ def test_jasp_qswitch_case_hamiltonian_simulation():
 
 def test_jasp_qswitch_inversion():
 
-    from qrisp import QuantumFloat, qswitch, jaspify, measure
     import jax.numpy as jnp
     from jax import jit
+
+    from qrisp import QuantumFloat, jaspify, measure, qswitch
 
     @jit
     def extract_boolean_digit(integer, digit):
@@ -87,7 +89,7 @@ def test_jasp_qswitch_inversion():
 
 
 def test_jasp_qswitch_function():
-    from qrisp import QuantumFloat, qswitch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, qswitch
 
     # tree
     @boolean_simulation
@@ -137,7 +139,7 @@ def test_jasp_qswitch_function():
 
 
 def test_jasp_qswitch_function_control():
-    from qrisp import QuantumFloat, qswitch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, qswitch
 
     # tree
     @boolean_simulation
@@ -195,7 +197,7 @@ def test_jasp_qswitch_function_control():
 
 
 def test_jasp_qswitch_tree_list():
-    from qrisp import QuantumFloat, qswitch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, qswitch
 
     def case_function(i, operand):
         operand += i
@@ -242,7 +244,7 @@ def test_jasp_qswitch_tree_list():
 
 
 def test_jasp_qswitch_tree_list_control():
-    from qrisp import QuantumFloat, qswitch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, qswitch
 
     def case_function(i, operand):
         operand += i

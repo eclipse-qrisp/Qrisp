@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumChar, QuantumString
+from qrisp import QuantumString
 
-q_str = QuantumString()
-q_str_2 = QuantumString()
-q_ch = QuantumChar()
+q_str = QuantumString(size=len("hello"))
+q_str_2 = QuantumString(size=len("world"))
 
 q_str[:] = "hello"
-q_ch[:] = " "
 q_str_2[:] = "world"
-q_str += q_ch
+q_str += " "
 q_str += q_str_2
 q_str += "! "
 q_str_3 = q_str.duplicate(init=True)

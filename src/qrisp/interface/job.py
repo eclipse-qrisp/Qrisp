@@ -16,9 +16,7 @@
 # ********************************************************************************
 # """
 
-"""
-Abstract :class:`Job` interface and related types for representing and managing backend executions.
-"""
+"""Abstract :class:`Job` interface and related types for representing and managing backend executions."""
 
 from __future__ import annotations
 
@@ -32,14 +30,15 @@ if TYPE_CHECKING:
 
 
 class JobStatus(StrEnum):
-    """
-    Enumeration of possible lifecycle states for a :class:`Job`.
+    """Enumeration of possible lifecycle states for a :class:`Job`.
 
     Attributes
     ----------
-
     INITIALIZING :
-        The job has been created but not yet submitted to the backend.
+        The job object has been created but execution has not yet been handed off to the
+        backend. This is a transient state: a correctly implemented backend must ensure
+        that every job exits ``INITIALIZING`` before :meth:`~qrisp.interface.Backend.run_async`
+        returns.
     QUEUED :
         The job has been submitted and is waiting for execution resources.
     RUNNING :
@@ -50,6 +49,7 @@ class JobStatus(StrEnum):
         The job was cancelled before or during execution.
     ERROR :
         The job failed due to an error during execution.
+
     """
 
     INITIALIZING = auto()
@@ -69,22 +69,19 @@ JOB_FINAL_STATES = JobStatus.final_states()
 
 
 class JobFailureError(RuntimeError):
-    """
-    Raised by :meth:`Job.result` when the job terminated in
+    """Raised by :meth:`Job.result` when the job terminated in
     :attr:`~JobStatus.ERROR` state.
     """
 
 
 class JobCancelledError(RuntimeError):
-    """
-    Raised by :meth:`Job.result` when the job was cancelled
+    """Raised by :meth:`Job.result` when the job was cancelled
     (:attr:`~JobStatus.CANCELLED`).
     """
 
 
 class JobResult:
-    """
-    Wraps the outcome of one or more circuit executions.
+    """Wraps the outcome of one or more circuit executions.
 
     Counts are stored as a list with one dictionary per input circuit,
     preserving the input order.
@@ -127,24 +124,20 @@ class JobResult:
 
     >>> print(result)
     JobResult(num_circuits=2, metadata={})
+
     """
 
     def __init__(self, counts: Sequence[dict], **kwargs):
         """Initialize a JobResult instance."""
-
         if not isinstance(counts, Sequence) or isinstance(counts, (str, bytes)):
-            raise TypeError(
-                f"'counts' must be a sequence of dicts, got {type(counts).__name__}"
-            )
+            raise TypeError(f"'counts' must be a sequence of dicts, got {type(counts).__name__}")
 
         if len(counts) == 0:
             raise ValueError("'counts' must contain at least one dict")
 
         for i, count in enumerate(counts):
             if not isinstance(count, dict):
-                raise TypeError(
-                    f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}"
-                )
+                raise TypeError(f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}")
 
         self._counts = list(counts)
         self.metadata = kwargs
@@ -168,8 +161,7 @@ class JobResult:
     # ------------------------------------------------------------------
 
     def get_counts(self, index: int = 0) -> dict:
-        """
-        Return the measurement-outcome counts for a single circuit.
+        """Return the measurement-outcome counts for a single circuit.
 
         Parameters
         ----------
@@ -185,25 +177,18 @@ class JobResult:
         try:
             return self._counts[index]
         except IndexError as exc:
-            raise IndexError(
-                f"Result contains {len(self._counts)} circuit(s); "
-                f"index {index} is out of range."
-            ) from exc
+            raise IndexError(f"Result contains {len(self._counts)} circuit(s); index {index} is out of range.") from exc
 
     # ------------------------------------------------------------------
     # Dunder methods
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return (
-            f"JobResult(num_circuits={self.num_circuits}, "
-            f"metadata={self.metadata!r})"
-        )
+        return f"JobResult(num_circuits={self.num_circuits}, metadata={self.metadata!r})"
 
 
 class Job(ABC):
-    """
-    Abstract handle for a (potentially asynchronous) backend execution.
+    """Abstract handle for a (potentially asynchronous) backend execution.
 
     A ``Job`` is returned by :meth:`Backend.run_async` immediately after
     submission. The caller can then:
@@ -219,7 +204,7 @@ class Job(ABC):
 
     .. rubric:: Design contract
 
-    The ``Job`` base class defines *only the observable contract*. That is, the four
+    The ``Job`` base class defines *only the observable contract*. That is, the three
     abstract methods that every concrete job must implement. It deliberately
     prescribes no internal synchronisation mechanism (no threading, no
     asyncio, no polling loop). Each concrete subclass chooses whatever
@@ -251,7 +236,6 @@ class Job(ABC):
 
     def __init__(self, backend: Backend, job_id: str | None = None, **kwargs):
         """Initialize a Job instance."""
-
         self._backend: Backend = backend
         self._job_id: str | None = job_id
         self._last_known_status: JobStatus = JobStatus.INITIALIZING
@@ -274,15 +258,12 @@ class Job(ABC):
 
     @property
     def last_known_status(self) -> JobStatus:
-        """
-        The most recently cached :class:`JobStatus` for this job.
+        """The most recently cached :class:`JobStatus` for this job.
 
         This value is initialised to :attr:`~JobStatus.INITIALIZING` and is
         updated at the following points:
 
         * :meth:`status`: every live query updates the cache as a side effect.
-        * :meth:`submit`: transitions to ``QUEUED`` (or ``RUNNING`` for
-          synchronous backends) once execution has been handed off.
         * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or
           ``ERROR`` when the job reaches a terminal state.
         * :meth:`refresh`: explicitly fetches the live status and caches it
@@ -296,38 +277,8 @@ class Job(ABC):
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def submit(self) -> None:
-        """
-        Move the job out of ``INITIALIZING``.
-
-        This method is called by :meth:`~qrisp.interface.Backend.run_async`
-        immediately after the job object has been constructed. Its
-        responsibility is to signal that execution has been handed off to the
-        backend by transitioning the job out of ``INITIALIZING``.
-
-        The target state depends on the backend type:
-
-        * ``QUEUED``: the job has been registered with a remote or local queue
-          and is waiting for execution resources.
-
-        * ``RUNNING``: for synchronous backends that begin execution
-          immediately inside this method.
-
-        For backends where submission to the vendor SDK already happened
-        inside :meth:`~qrisp.interface.Backend.run_async` before this method
-        is called (e.g. because the vendor SDK returns a job handle
-        immediately), no additional network call is needed. However,
-        the vendor is responsible for ensuring that the job's status is
-        updated appropriately via :attr:`last_known_status` to reflect
-        that the job is no longer ``INITIALIZING`` (at minimum ``QUEUED``).
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
     def result(self, timeout: float | None = None) -> JobResult:
-        """
-        Block until the job reaches a terminal state and return its result.
+        """Block until the job reaches a terminal state and return its result.
 
         This is a blocking call: it does not return until the job is in one
         of the terminal states: :attr:`~JobStatus.DONE`,
@@ -365,14 +316,13 @@ class Job(ABC):
 
         TimeoutError
             If *timeout* is specified and the job does not finish in time.
-        """
 
+        """
         raise NotImplementedError
 
     @abstractmethod
     def cancel(self) -> bool:
-        """
-        Attempt to cancel the job.
+        """Attempt to cancel the job.
 
         Returns
         -------
@@ -396,13 +346,11 @@ class Job(ABC):
                 final outcome.
 
         """
-
         raise NotImplementedError
 
     @abstractmethod
     def status(self) -> JobStatus:
-        """
-        Query and return the current :class:`JobStatus` of the job.
+        """Query and return the current :class:`JobStatus` of the job.
 
         This is a *live query*: every call fetches the most up-to-date
         status available, which for remote backends may involve a network
@@ -420,7 +368,6 @@ class Job(ABC):
         JobStatus
 
         """
-
         raise NotImplementedError
 
     # ------------------------------------------------------------------
@@ -434,9 +381,7 @@ class Job(ABC):
     # ------------------------------------------------------------------
 
     def done(self) -> bool:
-        """
-        Return ``True`` if the job has completed successfully and results are available.
-        """
+        """Return ``True`` if the job has completed successfully and results are available."""
         return self.status() == JobStatus.DONE
 
     def running(self) -> bool:
@@ -452,8 +397,7 @@ class Job(ABC):
         return self.status() == JobStatus.CANCELLED
 
     def in_final_state(self) -> bool:
-        """
-        Return ``True`` if the job has reached a terminal state.
+        """Return ``True`` if the job has reached a terminal state.
 
         Terminal states are :attr:`~JobStatus.DONE`,
         :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
@@ -461,8 +405,7 @@ class Job(ABC):
         return self.status() in JOB_FINAL_STATES
 
     def refresh(self) -> JobStatus:
-        """
-        Fetch the latest status from the backend and return it.
+        """Fetch the latest status from the backend and return it.
 
         Delegates to :meth:`status`, which already updates
         :attr:`last_known_status` as a side effect.  This method exists as
@@ -473,6 +416,7 @@ class Job(ABC):
         -------
         JobStatus
             The freshly fetched status.
+
         """
         return self.status()
 
@@ -481,8 +425,7 @@ class Job(ABC):
     # ------------------------------------------------------------------
 
     def _raise_for_status(self, status: JobStatus | None = None) -> None:
-        """
-        Raise the appropriate exception if the job did not complete successfully.
+        """Raise the appropriate exception if the job did not complete successfully.
 
         Concrete implementations should call this inside :meth:`result`
         *after* the job has reached a terminal state (i.e. after any
@@ -505,14 +448,13 @@ class Job(ABC):
 
         JobCancelledError
             If *status* is ``CANCELLED``.
+
         """
         if status is None:
             status = self.status()
         if status == JobStatus.ERROR:
             if self._failure_cause is not None:
-                raise JobFailureError(
-                    f"Job {self._job_id!r} failed: {self._failure_cause}"
-                ) from self._failure_cause
+                raise JobFailureError(f"Job {self._job_id!r} failed: {self._failure_cause}") from self._failure_cause
             raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
         if status == JobStatus.CANCELLED:
             raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
@@ -528,8 +470,4 @@ class Job(ABC):
         # logging, debugging, or pytest failure messages) would be
         # surprising and potentially expensive. Callers that want the
         # current status should call refresh() before printing.
-        return (
-            f"{self.__class__.__name__}("
-            f"job_id={self._job_id!r}, "
-            f"status={self._last_known_status.name})"
-        )
+        return f"{self.__class__.__name__}(job_id={self._job_id!r}, status={self._last_known_status.name})"

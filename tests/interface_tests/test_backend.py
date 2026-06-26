@@ -52,8 +52,7 @@ class ExecutionMode:
 
 
 class JobTest(Job):
-    """
-    Concrete :class:`Job` produced by :class:`BackendTest`.
+    """Concrete :class:`Job` produced by :class:`BackendTest`.
 
     Demonstrates how a backend author implements the Job contract using
     internal threading, without any threading in the abstract base class.
@@ -84,9 +83,7 @@ class JobTest(Job):
     def result(self, timeout=None) -> JobResult:
         """Block until the job finishes and return the JobResult, or raise on failure."""
         if not self._done_event.wait(timeout=timeout):
-            raise TimeoutError(
-                f"Job '{self._job_id}' did not complete within {timeout}s."
-            )
+            raise TimeoutError(f"Job '{self._job_id}' did not complete within {timeout}s.")
         # Pass the already-known terminal status so _raise_for_status
         # does not make a redundant status() call.
         self._raise_for_status(self._last_known_status)
@@ -134,9 +131,7 @@ class JobTest(Job):
 
     def _set_error(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and fire all registered callbacks."""
-        self._failure_cause = (
-            error  # base-class attribute, chained by _raise_for_status
-        )
+        self._failure_cause = error  # base-class attribute, chained by _raise_for_status
         self._last_known_status = JobStatus.ERROR
         self._done_event.set()
         for cb in self._callbacks:
@@ -157,8 +152,7 @@ class JobTest(Job):
 
 
 class BackendTest(Backend):
-    """
-    Full-featured fake backend used by the integration tests.
+    """Full-featured fake backend used by the integration tests.
 
     Supports four execution modes (sync, async, error, cancel) and generates
     fake measurement counts using a NumPy multinomial draw over all
@@ -213,7 +207,6 @@ class BackendTest(Backend):
 
     def run_async(self, circuits, shots: int | list[int] | None = None) -> JobTest:
         """Submit one or more circuits and return a JobTest according to the current mode."""
-
         # We use a different check for list/tuple here to allow
         # other iterable types (e.g. generators) to be accepted as batches.
         if not isinstance(circuits, (list, tuple)):
@@ -224,8 +217,6 @@ class BackendTest(Backend):
         n_shots = shots if shots is not None else self._options["shots"]
         job = JobTest(circuits=circuits, shots=n_shots, backend=self)
 
-        # Honour the lifecycle contract: every run_async implementation
-        # must call submit() so the job transitions out of INITIALIZING.
         job.submit()  # INITIALIZING → QUEUED
 
         if self.mode == ExecutionMode.SYNC:
@@ -237,24 +228,16 @@ class BackendTest(Backend):
             if self.async_delay == 0:
                 self._run_error_sync(job)  # QUEUED → RUNNING → ERROR
             else:
-                threading.Thread(
-                    target=self._run_error_async, args=(job,), daemon=True
-                ).start()
+                threading.Thread(target=self._run_error_async, args=(job,), daemon=True).start()
         elif self.mode == ExecutionMode.CANCEL:
-            threading.Thread(
-                target=self._run_cancellable, args=(job,), daemon=True
-            ).start()
+            threading.Thread(target=self._run_cancellable, args=(job,), daemon=True).start()
         return job
 
     def _fake_counts(self, shots: int) -> dict[str, int]:
         """Generate a sparse dict of fake measurement counts using a multinomial draw."""
         n = 2**self._num_qubits
         raw = self._rng.multinomial(shots, np.ones(n) / n)
-        return {
-            format(i, f"0{self._num_qubits}b"): int(c)
-            for i, c in enumerate(raw)
-            if c > 0
-        }
+        return {format(i, f"0{self._num_qubits}b"): int(c) for i, c in enumerate(raw) if c > 0}
 
     def _run_sync(self, job: JobTest) -> None:
         """Execute all circuits synchronously and resolve the job before returning."""
@@ -295,8 +278,7 @@ class BackendTest(Backend):
 
 
 class DummyBackend(Backend):
-    """
-    Minimal subclass of Backend for unit tests.
+    """Minimal subclass of Backend for unit tests.
 
     The run() method returns a plain dict so tests can inspect the
     arguments that were passed to it without any Job machinery.
@@ -594,17 +576,13 @@ class TestSyncExecution:
 
     def test_batch_of_five_is_done_immediately(self):
         """Ensure a batch of five circuits reaches DONE status before run() returns."""
-        job = BackendTest(mode=ExecutionMode.SYNC, seed=1).run_async(
-            ["c0", "c1", "c2", "c3", "c4"]
-        )
+        job = BackendTest(mode=ExecutionMode.SYNC, seed=1).run_async(["c0", "c1", "c2", "c3", "c4"])
         assert job.status() == JobStatus.DONE
 
     def test_batch_result_has_one_dict_per_circuit(self):
         """Ensure a batch result contains exactly one counts dict per submitted circuit."""
         result = (
-            BackendTest(mode=ExecutionMode.SYNC, seed=1)
-            .run_async(["c0", "c1", "c2", "c3", "c4"], shots=100)
-            .result()
+            BackendTest(mode=ExecutionMode.SYNC, seed=1).run_async(["c0", "c1", "c2", "c3", "c4"], shots=100).result()
         )
         assert result.num_circuits == 5
 
@@ -617,21 +595,13 @@ class TestSyncExecution:
 
     def test_batch_index_out_of_range_raises(self):
         """Ensure get_counts() raises IndexError for an out-of-range index."""
-        result = (
-            BackendTest(mode=ExecutionMode.SYNC, seed=0)
-            .run_async(["c0", "c1"])
-            .result()
-        )
+        result = BackendTest(mode=ExecutionMode.SYNC, seed=0).run_async(["c0", "c1"]).result()
         with pytest.raises(IndexError):
             result.get_counts(2)
 
     def test_single_circuit_normalised_to_one_result(self):
         """Ensure a single circuit submitted as a non-list yields num_circuits == 1."""
-        result = (
-            BackendTest(mode=ExecutionMode.SYNC, seed=0)
-            .run_async("single", shots=512)
-            .result()
-        )
+        result = BackendTest(mode=ExecutionMode.SYNC, seed=0).run_async("single", shots=512).result()
         assert result.num_circuits == 1
 
     def test_shots_override_respected(self):
@@ -661,32 +631,20 @@ class TestSyncExecution:
     def test_different_seeds_give_different_counts(self):
         """Ensure two backends with different seeds produce different count distributions."""
         counts_a = (
-            BackendTest(mode=ExecutionMode.SYNC, num_qubits=3, seed=0)
-            .run_async("c", shots=1024)
-            .result()
-            .get_counts()
+            BackendTest(mode=ExecutionMode.SYNC, num_qubits=3, seed=0).run_async("c", shots=1024).result().get_counts()
         )
         counts_b = (
-            BackendTest(mode=ExecutionMode.SYNC, num_qubits=3, seed=99)
-            .run_async("c", shots=1024)
-            .result()
-            .get_counts()
+            BackendTest(mode=ExecutionMode.SYNC, num_qubits=3, seed=99).run_async("c", shots=1024).result().get_counts()
         )
         assert counts_a != counts_b
 
     def test_same_seed_gives_same_counts(self):
         """Ensure two backends with the same seed produce identical count distributions."""
         counts_a = (
-            BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=42)
-            .run_async("c", shots=512)
-            .result()
-            .get_counts()
+            BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=42).run_async("c", shots=512).result().get_counts()
         )
         counts_b = (
-            BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=42)
-            .run_async("c", shots=512)
-            .result()
-            .get_counts()
+            BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=42).run_async("c", shots=512).result().get_counts()
         )
         assert counts_a == counts_b
 
@@ -715,9 +673,7 @@ class TestSyncExecution:
 
     def test_result_still_accessible_after_late_cancel(self):
         """Ensure result() remains accessible even if cancel() is called after completion."""
-        job = BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=0).run_async(
-            "c", shots=256
-        )
+        job = BackendTest(mode=ExecutionMode.SYNC, num_qubits=2, seed=0).run_async("c", shots=256)
         job.cancel()
         assert job.result().num_circuits == 1
 
@@ -818,23 +774,17 @@ class TestAsyncExecution:
 
     def test_run_returns_before_job_is_done(self):
         """Ensure run() returns immediately before the async job has completed."""
-        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run_async("c")
         assert not job.done()
 
     def test_status_is_queued_or_running_immediately_after_run(self):
         """Ensure the job status is QUEUED or RUNNING right after an async run() call."""
-        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run_async("c")
         assert job.status() in (JobStatus.QUEUED, JobStatus.RUNNING)
 
     def test_result_blocks_and_returns(self):
         """Ensure result() blocks until the async job completes and returns valid counts."""
-        backend = BackendTest(
-            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0
-        )
+        backend = BackendTest(mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0)
         result = backend.run_async("c", shots=256).result()
         assert result.num_circuits == 1
         assert sum(result.get_counts().values()) == 256
@@ -848,9 +798,7 @@ class TestAsyncExecution:
 
     def test_async_batch_all_circuits_in_result(self):
         """Ensure an async batch result contains one counts dict per submitted circuit."""
-        backend = BackendTest(
-            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=1
-        )
+        backend = BackendTest(mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=1)
         result = backend.run_async(["c0", "c1", "c2", "c3", "c4"], shots=100).result()
         assert result.num_circuits == 5
         for i in range(5):
@@ -858,11 +806,7 @@ class TestAsyncExecution:
 
     def test_metadata_contains_async_mode(self):
         """Ensure the result metadata carries the mode key set by the async worker."""
-        result = (
-            BackendTest(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
-            .run_async("c")
-            .result()
-        )
+        result = BackendTest(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0).run_async("c").result()
         assert result.metadata.get("mode") == "async"
 
     def test_callback_fires_when_job_completes(self):
@@ -902,9 +846,7 @@ class TestAsyncExecution:
 
     def test_multiple_concurrent_jobs(self):
         """Ensure multiple async jobs submitted concurrently all complete successfully."""
-        backend = BackendTest(
-            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0
-        )
+        backend = BackendTest(mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0)
         jobs = [backend.run_async(f"c{i}", shots=100) for i in range(4)]
         results = [job.result() for job in jobs]
         for result in results:
@@ -916,9 +858,7 @@ class TestAsyncExecution:
         This guards against implementations that clear or overwrite the stored
         result on first access, which would cause a race condition.
         """
-        backend = BackendTest(
-            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=7
-        )
+        backend = BackendTest(mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=7)
         job = backend.run_async("c", shots=100)
         results = []
         errors = []
@@ -946,17 +886,13 @@ class TestTimeoutBehaviour:
 
     def test_timeout_raises_timeout_error(self):
         """Ensure result(timeout=...) raises TimeoutError when the deadline expires."""
-        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run_async("c")
         with pytest.raises(TimeoutError):
             job.result(timeout=0.1)
 
     def test_job_still_running_after_timeout(self):
         """Ensure the job continues executing after a TimeoutError from result()."""
-        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run_async("c")
         try:
             job.result(timeout=0.1)
         except TimeoutError:
@@ -965,9 +901,7 @@ class TestTimeoutBehaviour:
 
     def test_result_accessible_after_timeout_once_complete(self):
         """Ensure result() can be called again successfully after a prior TimeoutError."""
-        backend = BackendTest(
-            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.4, seed=0
-        )
+        backend = BackendTest(mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.4, seed=0)
         job = backend.run_async("c", shots=128)
         try:
             job.result(timeout=0.05)  # too short, will time out
@@ -982,39 +916,29 @@ class TestErrorBehaviour:
 
     def test_sync_error_job_status_is_error(self):
         """Ensure a synchronous error immediately sets the job status to ERROR."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         assert job.status() == JobStatus.ERROR
 
     def test_sync_error_result_raises_runtime_error(self):
         """Ensure result() raises RuntimeError for a synchronously failed job."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         with pytest.raises(RuntimeError):
             job.result()
 
     def test_async_error_job_not_done_immediately(self):
         """Ensure an async error job is not yet in a terminal state right after run()."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.5, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.5, seed=0).run_async("c")
         assert not job.done()
 
     def test_async_error_result_raises_runtime_error(self):
         """Ensure result() raises RuntimeError after an async error has been set."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async("c")
         with pytest.raises(RuntimeError):
             job.result()
 
     def test_async_error_status_is_error_after_result(self):
         """Ensure the job status is ERROR after result() has raised on an async failure."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async("c")
         try:
             job.result()
         except RuntimeError:
@@ -1027,24 +951,18 @@ class TestErrorBehaviour:
         Note that done() returns False because it means "completed successfully",
         not "reached any terminal state".
         """
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         assert job.done() is False  # done() means success only
         assert job.in_final_state() is True  # in_final_state() covers ERROR too
 
     def test_error_job_cancel_returns_false(self):
         """Ensure cancel() returns False on a job that has already failed."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         assert job.cancel() is False
 
     def test_error_in_batch_affects_whole_job(self):
         """Ensure that a hardware fault in a batch job marks the entire job as ERROR."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            ["c0", "c1", "c2"]
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(["c0", "c1", "c2"])
         assert job.status() == JobStatus.ERROR
 
     def test_callback_fires_on_error(self):
@@ -1067,9 +985,7 @@ class TestErrorBehaviour:
         JobFailureError is a RuntimeError subclass, so existing ``except RuntimeError``
         blocks continue to work.
         """
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         with pytest.raises(JobFailureError):
             job.result()
 
@@ -1089,17 +1005,13 @@ class TestCancellation:
 
     def test_cancel_returns_true_on_running_job(self):
         """Ensure cancel() returns True when called on a running job."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         assert job.cancel() is True
 
     def test_cancel_job_reaches_cancelled_status(self):
         """Ensure the job status reaches CANCELLED after a successful cancel() call."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
         try:
@@ -1110,9 +1022,7 @@ class TestCancellation:
 
     def test_cancel_result_raises_runtime_error(self):
         """Ensure result() raises RuntimeError after the job has been cancelled."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
         with pytest.raises(RuntimeError):
@@ -1124,9 +1034,7 @@ class TestCancellation:
         Note that done() returns False because it means "completed successfully",
         not "reached any terminal state".
         """
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
         try:
@@ -1138,17 +1046,13 @@ class TestCancellation:
 
     def test_cancel_returns_false_on_finished_job(self):
         """Ensure cancel() returns False when the job has already completed successfully."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=0.3, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=0.3, seed=0).run_async("c")
         job.result()
         assert job.cancel() is False
 
     def test_cancel_returns_false_on_already_cancelled_job(self):
         """Ensure cancel() returns False when called a second time on an already-cancelled job."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
         try:
@@ -1159,25 +1063,19 @@ class TestCancellation:
 
     def test_natural_completion_without_cancellation(self):
         """Ensure a CANCEL-mode job completes normally if cancel() is never called."""
-        backend = BackendTest(
-            mode=ExecutionMode.CANCEL, num_qubits=2, async_delay=0.5, seed=3
-        )
+        backend = BackendTest(mode=ExecutionMode.CANCEL, num_qubits=2, async_delay=0.5, seed=3)
         result = backend.run_async("c", shots=128).result()
         assert sum(result.get_counts().values()) == 128
 
     def test_cancel_batch_job(self):
         """Ensure cancel() returns True when called on a running batch job."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            ["c0", "c1", "c2", "c3", "c4"]
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(["c0", "c1", "c2", "c3", "c4"])
         time.sleep(0.6)
         assert job.cancel() is True
 
     def test_callback_fires_on_cancellation(self):
         """Ensure a registered callback is invoked with CANCELLED status after cancellation."""
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         fired = []
         job.add_callback(lambda j: fired.append(j.status()))
         time.sleep(0.6)
@@ -1195,9 +1093,7 @@ class TestCancellation:
         fault. JobCancelledError is a RuntimeError subclass, so existing
         ``except RuntimeError`` blocks continue to work.
         """
-        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
         with pytest.raises(JobCancelledError):
@@ -1218,13 +1114,13 @@ class JobTestLifecycle:
     """Tests that the job lifecycle contract is honoured.
 
     The only hard guarantee is that a job must exit INITIALIZING before
-    run_async() returns. The exact post-submit state depends on the backend:
+    run_async() returns. The exact state after that depends on the backend:
     asynchronous backends transition to QUEUED. Synchronous simulators may
-    go directly to RUNNING or DONE inside submit().
+    go directly to RUNNING or DONE.
     """
 
     def test_job_starts_in_initializing_state(self):
-        """A newly constructed job must start in INITIALIZING before submit() is called."""
+        """A newly constructed job must start in INITIALIZING state."""
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
         assert job.status() == JobStatus.INITIALIZING
@@ -1247,10 +1143,7 @@ class JobTestLifecycle:
         assert job.status() == JobStatus.QUEUED
 
     def test_run_async_does_not_leave_job_in_initializing(self):
-        """After run_async() returns, the job must no longer be in INITIALIZING state.
-
-        This guards against backends that forget to call submit() before returning.
-        """
+        """After run_async() returns, the job must no longer be in INITIALIZING state."""
         backend = MinimalBackend()
         job = backend.run_async("c")
         assert job.status() != JobStatus.INITIALIZING
@@ -1324,9 +1217,7 @@ class JobTestRepr:
         """repr(job) must not invoke status() — it must read last_known_status instead."""
         backend = MinimalBackend()
         job = backend.run_async("c")
-        with unittest.mock.patch.object(
-            type(job), "status", wraps=job.status
-        ) as mock_status:
+        with unittest.mock.patch.object(type(job), "status", wraps=job.status) as mock_status:
             _ = repr(job)
             mock_status.assert_not_called()
 
@@ -1567,27 +1458,21 @@ class JobTestFailureCause:
 
     def test_sync_failure_cause_is_chained(self):
         """The original hardware exception must be the __cause__ of JobFailureError."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert exc_info.value.__cause__ is not None
 
     def test_sync_failure_cause_preserves_original_message(self):
         """The __cause__ must carry the original exception message."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert "Simulated hardware fault" in str(exc_info.value.__cause__)
 
     def test_async_failure_cause_is_chained(self):
         """Cause chaining must work for async (threaded) failures too."""
-        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async(
-            "c"
-        )
+        job = BackendTest(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async("c")
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert exc_info.value.__cause__ is not None
@@ -1671,9 +1556,7 @@ class BackendTestLikeProtocol:
             BackendNoDefaultOptions(),
             BackendWithChildDefaultOptions(),
         ]:
-            assert isinstance(
-                backend, BackendLike
-            ), f"{type(backend).__name__} does not satisfy BackendLike"
+            assert isinstance(backend, BackendLike), f"{type(backend).__name__} does not satisfy BackendLike"
 
     def test_batched_backend_is_not_backend_subclass(self):
         """BatchedBackend must NOT be a subclass of Backend — that is the LSP design decision."""

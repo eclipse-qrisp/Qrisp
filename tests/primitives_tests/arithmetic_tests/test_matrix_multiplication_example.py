@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,11 @@
 """
 
 # Created by ann81984 at 06.05.2022
-from qrisp import QuantumFloat, QuantumArray, tensordot, dot
 import numpy as np
+
+from qrisp import QuantumArray, QuantumFloat, dot, tensordot
+
+np.random.seed(42)  # Deterministic for reproducible test results
 
 
 def test_matrix_multiplication_example():
@@ -32,9 +34,9 @@ def test_matrix_multiplication_example():
     # h(test_1)
     # h(test_2)
     print(test_1)
-    assert (
-        type(test_1[0]).__name__ and type(test_1[1]).__name__
-    ) == "QuantumFloat" and type(test_1).__name__ == "QuantumArray"
+    assert (type(test_1[0]).__name__ and type(test_1[1]).__name__) == "QuantumFloat" and type(
+        test_1
+    ).__name__ == "QuantumArray"
     assert str(test_1[0]) == "{2: 1.0}" and str(test_1[1]) == "{3: 1.0}"
     # test_1 = QuantumArray(qf, 3)
     # test_1.init_state([(np.array([1,2,3]), 1), (np.array([1,2,2]), 1j)])
@@ -69,7 +71,7 @@ def test_matrix_multiplication_example():
     test_0 = np.round(np.random.rand(3, 4) * 5)
     test_1 = np.round(np.random.rand(4, 2) * 5)
 
-    q_array = QuantumArray(qtype=qtype, shape = test_1.shape)
+    q_array = QuantumArray(qtype=qtype, shape=test_1.shape)
 
     q_array[:] = test_1
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -38,9 +37,7 @@ class DynamicQubitArray:
     def __getitem__(self, key):
         if isinstance(key, slice):
             if key.step is not None and key.step != 1:
-                raise NotImplementedError(
-                    "Slicing with DynamicQubitArray only supports step=1"
-                )
+                raise NotImplementedError("Slicing with DynamicQubitArray only supports step=1")
             start = key.start if key.start is not None else 0
             stop = key.stop if key.stop is not None else get_size(self.tracer)
             return DynamicQubitArray(slice_qb_array(self.tracer, start, stop))
@@ -51,7 +48,7 @@ class DynamicQubitArray:
 
         qs = TracingQuantumSession.get_instance()
         id_tuple = (id(self.tracer), id(key))
-        if not id_tuple in qs.qubit_cache:
+        if id_tuple not in qs.qubit_cache:
             qs.qubit_cache[id_tuple] = get_qubit(self.tracer, key)
         return qs.qubit_cache[id_tuple]
 
@@ -65,7 +62,7 @@ class DynamicQubitArray:
         if isinstance(other, list):
             temp = self
             for x in other:
-                if not isinstance(other, AbstractQubit):
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
@@ -77,14 +74,14 @@ class DynamicQubitArray:
         if isinstance(other, DynamicQubitArray):
             other = other.tracer
         if isinstance(other, list):
-            temp = self
-            for x in other[::-1]:
-                if not isinstance(other, AbstractQubit):
+            for x in other:
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
-                temp += x
-            return temp
+            for x in reversed(other):
+                self = DynamicQubitArray(fuse_qb_array(x, self.tracer))
+            return self
 
         return DynamicQubitArray(fuse_qb_array(other, self.tracer))
 

@@ -15,17 +15,31 @@ Constructors
 
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_array`
      - Constructs a BlockEncoding from a 2-D array.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
+     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_lcu`
      - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_operator`
      - Constructs a BlockEncoding from an operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator`
+     - Constructs a BlockEncoding from an operator using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep`
+     - Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
+     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
+     - Constructs a BlockEncoding of a projector.
 
 .. toctree:: 
    :hidden:
 
    methods/from_array
+   methods/from_eye
    methods/from_lcu
    methods/from_operator
+   methods/from_foqcs_lcu_operator
+   methods/from_foqcs_lcu_prep
+   methods/from_projector
 
 Utilities
 ---------
@@ -42,6 +56,8 @@ Utilities
      - Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.create_ancillas`
      - Returns a list of ancilla QuantumVariables for the BlockEncoding.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.dagger`
+     - Returns a BlockEncoding representing the Hermitian conjugate of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.expectation_value`
      - Measures the expectation value of the operator using the Hadamard test protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.qubitization`
@@ -56,6 +72,7 @@ Utilities
    methods/apply_rus
    methods/chebyshev
    methods/create_ancillas
+   methods/dagger
    methods/expectation_value
    methods/qubitization
    methods/resources
@@ -101,12 +118,18 @@ Algorithms & Applications
      - Returns a BlockEncoding approximating the matrix inversion of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.poly`
      - Returns a BlockEncoding representing a polynomial transformation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.pseudo_inv`
+     - Returns a BlockEncoding approximating the threshold matrix pseudoinverse of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.sim`
      - Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.svt`
+     - Returns a BlockEncoding representing a singular value transformation of the operator.
 
 .. toctree::
    :hidden:
 
    methods/inv
    methods/poly
+   methods/pseudo_inv
    methods/sim
+   methods/svt

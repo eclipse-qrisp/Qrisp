@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.circuit import fast_append
 from qrisp.core.gate_application_functions import p, rz, x, z
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
+from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import (
     find_calling_line,
     perm_lock,
@@ -28,8 +29,6 @@ from qrisp.misc import (
     redirect_qfunction,
     unlock,
 )
-from qrisp.circuit import fast_append
-from qrisp.jasp import check_for_tracing_mode
 
 
 def quantum_condition(function):
@@ -51,9 +50,7 @@ def quantum_condition(function):
 # Finally, the function evaluating the truth value will be uncomputed and
 # the environment is reset for it's next use.
 class ConditionEnvironment(QuantumEnvironment):
-    r"""
-
-    This class enables the usage of *if*-conditionals as we are used to from
+    r"""This class enables the usage of *if*-conditionals as we are used to from
     classical programming: ::
 
         from qrisp import QuantumChar, QuantumFloat, h, multi_measurement
@@ -124,7 +121,6 @@ class ConditionEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We will now demonstrate how a ConditionEnvironment, that evaluates the equality of
     two :ref:`QuantumVariables <QuantumVariable>` can be constructed: ::
 
@@ -347,9 +343,9 @@ class ConditionEnvironment(QuantumEnvironment):
 
     def __exit__(self, exception_type, exception_value, traceback):
         from qrisp.environments import (
+            ConjugationEnvironment,
             ControlEnvironment,
             InversionEnvironment,
-            ConjugationEnvironment,
         )
 
         # We determine the parent condition environment
@@ -362,17 +358,16 @@ class ConditionEnvironment(QuantumEnvironment):
                 self.parent_cond_env = env
                 break
             if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
-
                 if not type(env) == QuantumEnvironment:
                     break
 
     # Compile method
     def compile(self):
-        from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.environments.control_environment import (
             ControlEnvironment,
             convert_to_custom_control,
         )
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -418,9 +413,7 @@ class ConditionEnvironment(QuantumEnvironment):
                 # Without any parent environment we can simply synhesize the
                 # truth value of the quantum condition into it's qubit
 
-                redirect_qfunction(self.cond_eval_function)(
-                    *self.args, target=self.qbool, **self.kwargs
-                )
+                redirect_qfunction(self.cond_eval_function)(*self.args, target=self.qbool, **self.kwargs)
 
                 if isinstance(self.env_qs.data[-1], QuantumEnvironment):
                     env = self.env_qs.data.pop(-1)
@@ -441,9 +434,7 @@ class ConditionEnvironment(QuantumEnvironment):
             # from the subcondition environments do not need to be controlled,
             # since their compile method compiles their condition truth value based
             # on the truth value of the parent environment.
-            subcondition_truth_values = [
-                env.condition_truth_value for env in self.sub_condition_envs
-            ]
+            subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
 
             # Now we need to recover the instructions from the data list and
             # perform their controlled version on the condition_truth_value qubit
@@ -454,9 +445,7 @@ class ConditionEnvironment(QuantumEnvironment):
                 if isinstance(instruction, (ControlEnvironment, ConditionEnvironment)):
                     instruction.compile()
 
-                    subcondition_truth_values = [
-                        env.condition_truth_value for env in self.sub_condition_envs
-                    ]
+                    subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
                     continue
 
                 # If the instruction == general environment, compile the instruction and
@@ -470,9 +459,7 @@ class ConditionEnvironment(QuantumEnvironment):
                     self.env_qs.clear_data()
                     self.env_qs.data.extend(temp_data_list)
 
-                    subcondition_truth_values = [
-                        env.condition_truth_value for env in self.sub_condition_envs
-                    ]
+                    subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
                     continue
 
                 if instruction.op.name in ["qb_alloc", "qb_dealloc"]:
@@ -498,17 +485,12 @@ class ConditionEnvironment(QuantumEnvironment):
                         z(self.condition_truth_value)
                     else:
                         raise Exception(
-                            "Tried to perform invalid operations"
-                            "on condition truth value (allowed are x, p, z, rz)"
+                            "Tried to perform invalid operationson condition truth value (allowed are x, p, z, rz)"
                         )
                     continue
 
                 if self.condition_truth_value in instruction.qubits:
-                    self.env_qs.append(
-                        convert_to_custom_control(
-                            instruction, self.condition_truth_value
-                        )
-                    )
+                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value))
                     continue
 
                 else:
@@ -516,9 +498,7 @@ class ConditionEnvironment(QuantumEnvironment):
                     instruction.op = instruction.op.control(num_ctrl_qubits=1)
 
                     # Add condition truth value qubit to the instruction qubit list
-                    instruction.qubits = [self.condition_truth_value] + list(
-                        instruction.qubits
-                    )
+                    instruction.qubits = [self.condition_truth_value] + list(instruction.qubits)
                 # Append instruction
                 self.env_qs.append(instruction)
 
@@ -535,9 +515,7 @@ class ConditionEnvironment(QuantumEnvironment):
             # "actual truth value", i.e. the mcx of the parent and
             # this environments truth value
             if self.parent_cond_env is not None:
-                self.parent_cond_env.sub_condition_envs.extend(
-                    self.sub_condition_envs + [self]
-                )
+                self.parent_cond_env.sub_condition_envs.extend(self.sub_condition_envs + [self])
                 mcx(toffoli_qb_list, self.qbool, method="gray_pt_inv")
                 self.qbool.delete()
 
@@ -565,9 +543,7 @@ class ConditionEnvironment(QuantumEnvironment):
             if recompute:
                 with invert():
                     redirected_qfunction = redirect_qfunction(self.cond_eval_function)
-                    redirected_qfunction(
-                        *self.args, target=cond_eval_bool, **self.kwargs
-                    )
+                    redirected_qfunction(*self.args, target=cond_eval_bool, **self.kwargs)
 
                 if isinstance(self.env_qs.data[-1], QuantumEnvironment):
                     env = self.env_qs.data.pop(-1)
@@ -630,16 +606,13 @@ def adaptive_condition(cond_eval_function):
 
 @adaptive_condition
 def q_eq(input_0, input_1, invert=False):
-    from qrisp import mcx, cx, conjugate, QuantumBool
+    from qrisp import QuantumBool, conjugate, cx, mcx
 
     res = QuantumBool(name="eq_cond*", qs=input_0[0].qs())
 
     if isinstance(input_1, QuantumVariable):
         if input_0.size != input_1.size:
-            raise Exception(
-                "Tried to evaluate equality conditional"
-                "for QuantumVariables of differing size"
-            )
+            raise Exception("Tried to evaluate equality conditionalfor QuantumVariables of differing size")
 
         def multi_cx(input_0, input_1):
             for i in range(len(input_0)):

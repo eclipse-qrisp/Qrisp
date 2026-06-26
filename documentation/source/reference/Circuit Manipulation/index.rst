@@ -32,6 +32,13 @@ There are 6 important classes here:
 
 * The :doc:`ParityHandle` class, which represents parity computation results in quantum error correction workflows.
 
+In addition, Qrisp provides a :doc:`pass management framework <Pass Management/index>` for
+composing and applying circuit transformation passes. The :doc:`CircuitPass <Pass Management/CircuitPass>`
+decorator ensures type safety, while the :doc:`PassManager <Pass Management/PassManager>`
+chains passes together into a reusable compilation pipeline. A library of
+:doc:`built-in passes <Pass Management/Passes/index>` handles common tasks such as canceling inverse gates,
+commuting SWAPs, converting to native gate sets, and more.
+
 .. note::
    In order to allow an easy transition, this module's architecture and naming is close to Qiskit.
 
@@ -45,3 +52,4 @@ There are 6 important classes here:
    Qubit
    Clbit
    ParityHandle
+   Pass Management/index

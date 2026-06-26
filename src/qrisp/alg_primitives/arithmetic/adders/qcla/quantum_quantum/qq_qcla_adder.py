@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,18 +17,17 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import (
     qq_calc_carry,
 )
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import (
-    qq_sum_path_direct_uncomputation,
     qq_sum_path,
+    qq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
-from qrisp.environments import QuantumEnvironment, invert
 from qrisp.core import QuantumVariable
-from qrisp.circuit import fast_append
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.environments import QuantumEnvironment, invert
 from qrisp.misc.utility import redirect_qfunction
 
 verify_manual_uncomputations = np.zeros(1)
@@ -43,57 +41,51 @@ verify_manual_uncomputations = np.zeros(1)
 def qq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True):
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
-    with fast_append():
-        # if True:
-        R = radix_base**radix_exponent
+    R = radix_base**radix_exponent
 
-        # The case that a only has a single qubit is simple.
-        if len(b) == 1:
-            cx(a[0], b[0])
-            return
-        elif len(b) <= R:
-            qcla_anc = QuantumVariable(len(b) - len(a), name="qcla_anc*", qs=b[0].qs())
-            gidney_adder(list(a) + list(qcla_anc), b)
-            qcla_anc.delete(verify=bool(verify_manual_uncomputations[0]))
-            return
+    # The case that a only has a single qubit is simple.
+    if len(b) == 1:
+        cx(a[0], b[0])
+        return
+    elif len(b) <= R:
+        qcla_anc = QuantumVariable(len(b) - len(a), name="qcla_anc*")
+        gidney_adder(list(a) + list(qcla_anc), b)
+        qcla_anc.delete(verify=bool(verify_manual_uncomputations[0]))
+        return
 
-        # Calculate the carry
-        # Executing within a QuantumEnvironemnt accelerates the uncomputation algorithm
-        # because it doesn't have to consider the operations appended outside of this function
-        with QuantumEnvironment():
-            c = qq_calc_carry(a, b, radix_base, radix_exponent)
+    # Calculate the carry
+    # Executing within a QuantumEnvironemnt accelerates the uncomputation algorithm
+    # because it doesn't have to consider the operations appended outside of this function
+    with QuantumEnvironment():
+        c = qq_calc_carry(a, b, radix_base, radix_exponent)
 
-        if t_depth_reduction:
-            qq_sum_path_direct_uncomputation(a, b, c, R)
-        else:
-            qq_sum_path(a, b, c, R)
+    if t_depth_reduction:
+        qq_sum_path_direct_uncomputation(a, b, c, R)
+    else:
+        qq_sum_path(a, b, c, R)
 
-            # To uncompute the carry we use Drapers strategy
-            # CARRY(A,B) = CARRY(A, NOT(A+B))
-            # We therefore bitflip the sum
-            x(b)
+        # To uncompute the carry we use Drapers strategy
+        # CARRY(A,B) = CARRY(A, NOT(A+B))
+        # We therefore bitflip the sum
+        x(b)
 
-            # Contrary to Draper's adder we don't need to uncompute every carry digit.
-            # Because of the above equivalence, the carries agree on every digit, so especially
-            # on the digits representing the output of the calc_carry function. We can therefore
-            # uncompute using calc_carry (even with higher radix) by inverting calc_carry.
+        # Contrary to Draper's adder we don't need to uncompute every carry digit.
+        # Because of the above equivalence, the carries agree on every digit, so especially
+        # on the digits representing the output of the calc_carry function. We can therefore
+        # uncompute using calc_carry (even with higher radix) by inverting calc_carry.
 
-            with invert():
-                # We use the redirect_qfunction decorator to steer the function onto c
-                redirect_qfunction(qq_calc_carry)(
-                    a, b, radix_base, radix_exponent, target=c
-                )
+        with invert():
+            # We use the redirect_qfunction decorator to steer the function onto c
+            redirect_qfunction(qq_calc_carry)(a, b, radix_base, radix_exponent, target=c)
 
-            # Flip the sum back
-            x(b)
+        # Flip the sum back
+        x(b)
 
-        # In the case R = 1 we can use automatic uncomputation which seems to perform better
-        if R == 1:
-            c.uncompute()
-            return
-        # Delete c
-        c.delete(verify=bool(verify_manual_uncomputations[0]))
+    # In the case R = 1 we can use automatic uncomputation which seems to perform better
+    if R == 1:
+        c.uncompute()
+        return
+    # Delete c
+    c.delete(verify=bool(verify_manual_uncomputations[0]))

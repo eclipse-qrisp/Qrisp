@@ -23,7 +23,6 @@ Abstract Methods
 .. autosummary::
    :toctree: generated/
 
-   Job.submit
    Job.result
    Job.cancel
    Job.status

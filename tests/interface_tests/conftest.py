@@ -28,8 +28,7 @@ from qrisp.interface.job import Job, JobResult, JobStatus
 
 
 class MinimalJob(Job):
-    """
-    The smallest possible concrete `Job` class that can be instantiated.
+    """The smallest possible concrete `Job` class that can be instantiated.
 
     Used to unit-test the base class behaviour in isolation.
     All state is managed directly via private attributes.
@@ -38,27 +37,20 @@ class MinimalJob(Job):
     detail of this test helper (not a requirement of the base class).
     """
 
-    def __init__(
-        self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs
-    ):
+    def __init__(self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs):
         super().__init__(backend=backend, job_id=job_id, **kwargs)
         self._last_known_status = initial_status
         self._result_data = None
         self._error = None
         self._done_event = threading.Event()
 
-    # ── Abstract interface ────────────────────────────────────────────
-
     def submit(self) -> None:
-        # Honour the INITIALIZING → QUEUED transition so the lifecycle
-        # contract is visible even in this minimal helper.
+        """Transition from INITIALIZING to QUEUED."""
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult | None:
         if not self._done_event.wait(timeout=timeout):
-            raise TimeoutError(
-                f"Job '{self._job_id}' did not complete within {timeout}s."
-            )
+            raise TimeoutError(f"Job '{self._job_id}' did not complete within {timeout}s.")
         # Pass the already-known terminal status to avoid a redundant
         # live status() call inside _raise_for_status.
         self._raise_for_status(self._last_known_status)
@@ -84,9 +76,7 @@ class MinimalJob(Job):
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as failed."""
-        self._failure_cause = (
-            error  # base-class attribute; chained by _raise_for_status
-        )
+        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
         self._last_known_status = JobStatus.ERROR
         self._done_event.set()
 
@@ -95,8 +85,7 @@ class MinimalJob(Job):
 
 
 class MinimalBackend(Backend):
-    """
-    The smallest possible concrete `Backend` class that can be instantiated.
+    """The smallest possible concrete `Backend` class that can be instantiated.
 
     Executes synchronously and returns a `MinimalJob` that is
     already `JobStatus.DONE` before `run` returns.
@@ -110,8 +99,8 @@ class MinimalBackend(Backend):
             circuits = list(circuits)
         n_shots = shots if shots is not None else self.options.get("shots", 1024)
         job = MinimalJob(backend=self)
-        job.submit()  # INITIALIZING → QUEUED
-        job._set_status(JobStatus.RUNNING)  # QUEUED → RUNNING
+        job.submit()
+        job._set_status(JobStatus.RUNNING)
         counts = [{"0": n_shots} for _ in circuits]
         job._resolve(JobResult(counts))  # RUNNING → DONE
         return job
@@ -130,6 +119,7 @@ class CountingWrapper(Backend):
 
     shots_received : list
         The ``shots`` argument passed on each ``run_async`` call, in order.
+
     """
 
     def __init__(self, inner: Backend):

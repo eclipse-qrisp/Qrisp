@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,20 +22,17 @@ import networkx as nx
 import numpy as np
 
 from qrisp.circuit import (
-    QuantumCircuit,
-    fast_append,
-    Instruction,
-    Qubit,
-    QubitDealloc,
-    QubitAlloc,
     ControlledOperation,
+    Instruction,
+    QuantumCircuit,
+    QubitAlloc,
+    fast_append,
 )
 from qrisp.permeability.type_checker import is_permeable
 
 
 def get_perm_dic(gate):
-    """
-    This function takes an Operation object and returns a dictionary indicating the
+    """This function takes an Operation object and returns a dictionary indicating the
     permeability status of that Operation on each of it's qubits.
 
     Parameters
@@ -50,7 +46,6 @@ def get_perm_dic(gate):
         A dictionary of the type {qubit_index : permeability_type}.
 
     """
-
     # If the gate is known to be X-permeable return the corresponding dict
     if gate.name in ["x", "rx", "rxx"]:
         return {i: "X" for i in range(gate.num_qubits)}
@@ -161,7 +156,6 @@ class InstructionNode(UnqompNode):
 # As a subclass of networkx's DiGraph, it can be processed by
 # many of networkx's algorithms.
 class PermeabilityGraph(nx.DiGraph):
-
     def __init__(self, qc, remove_artificials=False):
 
         nx.DiGraph.__init__(self)
@@ -171,14 +165,11 @@ class PermeabilityGraph(nx.DiGraph):
         # which describes which nodes represent the
         # operations that have been carried ot most
         # recently on the corresponding Qubit.
-        self.recent_node_dic = dag_from_qc(
-            self, qc, remove_artificials=remove_artificials
-        )
+        self.recent_node_dic = dag_from_qc(self, qc, remove_artificials=remove_artificials)
 
     # Visualizes the DAG
     def draw(self, layout_seed=None):
-        """
-        Visualizes the PermeabilityGraph.
+        """Visualizes the PermeabilityGraph.
 
         Parameters
         ----------
@@ -189,8 +180,7 @@ class PermeabilityGraph(nx.DiGraph):
         visualize_dag(self, layout_seed)
 
     def to_qc(self, topo_sort=None):
-        """
-        Turns the PermeabilityGraph into a QuantumCircuit, using a given topological sort algorithm.
+        """Turns the PermeabilityGraph into a QuantumCircuit, using a given topological sort algorithm.
 
         Parameters
         ----------
@@ -203,7 +193,6 @@ class PermeabilityGraph(nx.DiGraph):
             DESCRIPTION.
 
         """
-
         if topo_sort is None:
             topo_sort = nx.topological_sort
         res_qc = self.original_qc.clearcopy()
@@ -218,8 +207,7 @@ class PermeabilityGraph(nx.DiGraph):
         return res_qc
 
     def add_edge(self, in_node, out_node, edge_type, qubits=[]):
-        """
-        Adds an edge (in-place) to the PermeabilityGraph.
+        """Adds an edge (in-place) to the PermeabilityGraph.
 
         Parameters
         ----------
@@ -235,20 +223,16 @@ class PermeabilityGraph(nx.DiGraph):
             The default is [].
 
         """
-
         if in_node == out_node:
             return
 
         if self.has_edge(in_node, out_node):
             nx.DiGraph.get_edge_data(self, in_node, out_node)["qubits"].extend(qubits)
         else:
-            nx.DiGraph.add_edge(
-                self, in_node, out_node, edge_type=edge_type, qubits=list(qubits)
-            )
+            nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type, qubits=list(qubits))
 
     def get_target_qubits(self, node):
-        """
-        Returns the target qubits of a node, i.e. the qubits that have either neutral or X-permeability.
+        """Returns the target qubits of a node, i.e. the qubits that have either neutral or X-permeability.
 
         Parameters
         ----------
@@ -279,8 +263,7 @@ class PermeabilityGraph(nx.DiGraph):
         return target_qubits
 
     def get_control_qubits(self, node):
-        """
-        Returns the control qubits of a node, i.e. the qubits that have Z-permeability.
+        """Returns the control qubits of a node, i.e. the qubits that have Z-permeability.
 
         Parameters
         ----------
@@ -314,8 +297,7 @@ class PermeabilityGraph(nx.DiGraph):
         return control_qubits
 
     def get_control_nodes(self, node):
-        """
-        Returns the list of control nodes of a node, i.e. the nodes that are connected via an
+        """Returns the list of control nodes of a node, i.e. the nodes that are connected via an
         outgoing edge with Z-permeability type.
 
         Parameters
@@ -347,8 +329,7 @@ class PermeabilityGraph(nx.DiGraph):
         return control_nodes
 
     def get_target_nodes(self, node):
-        """
-        Returns the list of control nodes of a node, i.e. the nodes that are connected via an
+        """Returns the list of control nodes of a node, i.e. the nodes that are connected via an
         outgoing edge with X-permeability or neutral type.
 
         Parameters
@@ -380,8 +361,7 @@ class PermeabilityGraph(nx.DiGraph):
         return target_nodes
 
     def get_edge_qubits(self, in_node, out_node):
-        """
-        Returns the list of qubits that a given edge is representing.
+        """Returns the list of qubits that a given edge is representing.
 
         Parameters
         ----------
@@ -405,9 +385,7 @@ class PermeabilityGraph(nx.DiGraph):
 
     def get_streak_children(self, node, qb):
         successors = self.successors(node)
-        return [
-            suc for suc in successors if qb in self.get_edge_data(node, suc)["qubits"]
-        ]
+        return [suc for suc in successors if qb in self.get_edge_data(node, suc)["qubits"]]
 
     def get_edge_type(self, node_out, node_in):
         return self.get_edge_data(node_out, node_in)["edge_type"]
@@ -420,8 +398,7 @@ class PermeabilityGraph(nx.DiGraph):
 
 
 def dag_from_qc(dag, qc, remove_artificials=False):
-    """
-    This function receives an (empty) PermeabilityGraph and builds up the corresponding
+    """This function receives an (empty) PermeabilityGraph and builds up the corresponding
     nodes/edges according to the given QuantumCircuit.
 
     Parameters
@@ -438,7 +415,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
         applied to a given Qubit.
 
     """
-
     # This dictionary keeps track of the most recent instruction that was
     # applied to a given Qubit
     recent_node_dic = {}
@@ -455,22 +431,18 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
     # We iterate through the QuantumCircuit and process each Instruction
     for i in range(len(qc.data)):
-
         # Set alias
         instr = qc.data[i]
 
         # We check whether the relevant Qubit already have an allocation node.
         for qb in instr.qubits:
             if qb not in recent_node_dic:
-
                 # If the qubit has not been allocated yet but the first instruction being
                 # executed is not an allocation, we insert and "artificial" allocation node
                 is_artificial = instr.op.name != "qb_alloc"
 
                 # Create the allocation node.
-                alloc_node = AllocNode(
-                    instr=Instruction(QubitAlloc(), [qb]), artificial=is_artificial
-                )
+                alloc_node = AllocNode(instr=Instruction(QubitAlloc(), [qb]), artificial=is_artificial)
 
                 if alloc_node.artificial:
                     artificial_init_nodes.append(alloc_node)
@@ -527,7 +499,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
         # To connect the edges, we iterate over each qubit
         for j in range(len(instr.qubits)):
-
             # Set alias
             qb = instr.qubits[j]
 
@@ -536,26 +507,18 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
             # Case streak is continued
             if streak_dic[qb] == edge_type and edge_type != "neutral":
-                dag.add_edge(
-                    recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb]
-                )
+                dag.add_edge(recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb])
 
             # Case streak is terminated or edge_type is neutral
             else:
-
                 # If the streak has more than one member, we insert a terminator node.
                 # For that, we get the successors and filter out the edges that don't
                 # describe the relevant qubit
                 successors = list(dag.successors(recent_node_dic[qb]))
-                streak_members = [
-                    s
-                    for s in successors
-                    if qb in dag.get_edge_qubits(recent_node_dic[qb], s)
-                ]
+                streak_members = [s for s in successors if qb in dag.get_edge_qubits(recent_node_dic[qb], s)]
 
                 # Insert the terminator if there are more than one streak_member to our qubit
                 if len(streak_members) > 1:
-
                     # Create the TerminatorNode
                     terminator = TerminatorNode(qb)
                     # dag.add_node(terminator)
@@ -570,11 +533,8 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     # successor with the hight value layer and increase it by one.
                     value_layers = []
                     for s in streak_members:
-
                         # Add anti-depedency edge
-                        dag.add_edge(
-                            s, terminator, edge_type="anti_dependency", qubits=[qb]
-                        )
+                        dag.add_edge(s, terminator, edge_type="anti_dependency", qubits=[qb])
                         value_layers.append(s.value_layer)
 
                     terminator.value_layer = max(value_layers) + 1
@@ -589,9 +549,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     recent_node_dic[qb] = streak_members[0]
 
                 # Add the edge to the dag
-                dag.add_edge(
-                    recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb]
-                )
+                dag.add_edge(recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb])
 
                 # Increase the value layer
                 value_layer[qb] += 1
@@ -617,8 +575,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
 
 def visualize_dag(G, layout_seed=None):
-    """
-    Visualizes a PermeabilityGraph, coloring edges and nodes according to their types.
+    """Visualizes a PermeabilityGraph, coloring edges and nodes according to their types.
 
     Parameters
     ----------
@@ -628,7 +585,6 @@ def visualize_dag(G, layout_seed=None):
         An integer representing a random seed that can (slightly) modify the plot layout. The default is None.
 
     """
-
     # The subset_key dictionary groups the nodes according to their value_layers.
     # This dictionary will then be used to generate the plot layout via the nx.multipartite_layout
     subset_key = {}
@@ -690,15 +646,9 @@ def visualize_dag(G, layout_seed=None):
         labels[node] = node.__repr__()
 
     # Draw the nodes
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=allocation_nodes, node_color="tab:blue", node_size=750
-    )
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=instruction_nodes, node_color="grey", node_size=750
-    )
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=terminator_nodes, node_color="orange", node_size=750
-    )
+    nx.draw_networkx_nodes(G, pos, nodelist=allocation_nodes, node_color="tab:blue", node_size=750)
+    nx.draw_networkx_nodes(G, pos, nodelist=instruction_nodes, node_color="grey", node_size=750)
+    nx.draw_networkx_nodes(G, pos, nodelist=terminator_nodes, node_color="orange", node_size=750)
 
     # Define node and edge colors
     edge_colors = {
@@ -709,11 +659,7 @@ def visualize_dag(G, layout_seed=None):
     }
     # Draw edges with colors based on their type
     for edge_type, color in edge_colors.items():
-        edges = [
-            (u, v)
-            for u, v, attr in G.edges(data=True)
-            if attr.get("edge_type") == edge_type
-        ]
+        edges = [(u, v) for u, v, attr in G.edges(data=True) if attr.get("edge_type") == edge_type]
 
         # Draw the edges
         nx.draw_networkx_edges(

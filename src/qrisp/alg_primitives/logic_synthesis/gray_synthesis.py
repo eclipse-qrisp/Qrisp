@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,14 +18,14 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.misc import array_as_int, gate_wrap, int_as_array
 from qrisp.circuit import (
-    QuantumCircuit,
+    ControlledOperation,
     Operation,
     PTControlledOperation,
-    ControlledOperation,
+    QuantumCircuit,
     fast_append,
 )
+from qrisp.misc import array_as_int, gate_wrap, int_as_array
 
 use_gray_code = False
 try:
@@ -85,15 +84,13 @@ def hamming_tsp(location_list, bit_amount):
     # Keep track of some stats
     empty_steps = 0
 
-    while len(location_list):
+    while location_list:
         # Move first salesman
 
         # Find closest location
         best_distance = np.inf
         for i in range(len(location_list)):
-            trial_distance = hamming_d(
-                salesman_1[-1], location_list[i], bit_amount
-            )  # *len(location_list)
+            trial_distance = hamming_d(salesman_1[-1], location_list[i], bit_amount)  # *len(location_list)
             # trial_distance += hamming_d(salesman_1[-1],
             # salesman_2[-1], n)/len(location_list)
 
@@ -102,10 +99,7 @@ def hamming_tsp(location_list, bit_amount):
                 best_candidate_index = i
 
         # Count steps which do not visit a relevant parity operator
-        empty_steps += (
-            hamming_d(salesman_1[-1], location_list[best_candidate_index], bit_amount)
-            - 1
-        )
+        empty_steps += hamming_d(salesman_1[-1], location_list[best_candidate_index], bit_amount) - 1
 
         # Remove target location from the location list
         target_location = location_list.pop(best_candidate_index)
@@ -121,9 +115,7 @@ def hamming_tsp(location_list, bit_amount):
 
         best_distance = np.inf
         for i in range(len(location_list)):
-            trial_distance = hamming_d(
-                salesman_2[-1], location_list[i], bit_amount
-            )  # *len(location_list)
+            trial_distance = hamming_d(salesman_2[-1], location_list[i], bit_amount)  # *len(location_list)
             # trial_distance += hamming_d(salesman_1[-1],
             # location_list[i], n)#/len(location_list)
 
@@ -131,10 +123,7 @@ def hamming_tsp(location_list, bit_amount):
                 best_distance = trial_distance
                 best_candidate_index = i
 
-        empty_steps += (
-            hamming_d(salesman_2[-1], location_list[best_candidate_index], bit_amount)
-            - 1
-        )
+        empty_steps += hamming_d(salesman_2[-1], location_list[best_candidate_index], bit_amount) - 1
         target_location = location_list.pop(best_candidate_index)
 
         salesman_2 += hamming_movement(salesman_2[-1], target_location, bit_amount)
@@ -164,16 +153,12 @@ def hamming_movement(init, target, bit_amount):
     salesman = [init]
     distance = hamming_d(init, target, bit_amount)
     while distance:
-        distance_array = (
-            int_as_array(salesman[-1], bit_amount) + int_as_array(target, bit_amount)
-        ) % 2
+        distance_array = (int_as_array(salesman[-1], bit_amount) + int_as_array(target, bit_amount)) % 2
         movement_index = np.argmax(distance_array)
         movement_array = np.zeros(distance_array.shape)
         movement_array[movement_index] = 1
 
-        salesman.append(
-            array_as_int((int_as_array(salesman[-1], bit_amount) + movement_array) % 2)
-        )
+        salesman.append(array_as_int((int_as_array(salesman[-1], bit_amount) + movement_array) % 2))
         distance = hamming_d(salesman[-1], target, bit_amount)
     # print((init, target))
     # print(salesman[1:])
@@ -305,17 +290,12 @@ def multi_qb_traversal(locations, bit_amount):
         # Convert the traversal locations into single qubit traversal routes
         # (for instance 4,5,7, is the traversal 0,1,3 on the qubit with significance 4)
         if operation_bit != 0:
-            single_qb_locations = [
-                x % 2 ** (operation_bit)
-                for x in single_qb_traversal_locations[operation_bit]
-            ]
+            single_qb_locations = [x % 2 ** (operation_bit) for x in single_qb_traversal_locations[operation_bit]]
         else:
             single_qb_locations = single_qb_traversal_locations[operation_bit]
 
         # Find single qubit traversal routes
-        control_seq, p_op_temp = single_qb_traversal(
-            [0] + single_qb_locations, operation_bit + 1
-        )
+        control_seq, p_op_temp = single_qb_traversal([0] + single_qb_locations, operation_bit + 1)
 
         # Append to CNOT list
         cnot_seq += [(x, operation_bit) for x in control_seq]
@@ -351,10 +331,9 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
         if target_phases_id in compiled_gates:
             temp = compiled_gates[target_phases_id]
             return temp
-    else:
-        if target_phases_id in compiled_pt_gates:
-            temp = compiled_pt_gates[target_phases_id]
-            return temp
+    elif target_phases_id in compiled_pt_gates:
+        temp = compiled_pt_gates[target_phases_id]
+        return temp
 
     qc = QuantumCircuit(bit_amount)
 
@@ -412,9 +391,7 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
             pass
 
     if not phase_tolerant and not flip_bit_order and len(qc.qubits) < 9:
-        definition_reversed_bit = gray_synth_qc(
-            target_phases, phase_tolerant, flip_bit_order=True
-        )
+        definition_reversed_bit = gray_synth_qc(target_phases, phase_tolerant, flip_bit_order=True)
         if qc.depth() > definition_reversed_bit.depth():
             definition_reversed_bit.qubits.reverse()
             qc = definition_reversed_bit
@@ -428,7 +405,6 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
 
 
 class GraySynthGate(Operation):
-
     def __init__(self, target_phases, phase_tolerant=False):
 
         definition = gray_synth_qc(target_phases, phase_tolerant)
@@ -446,9 +422,7 @@ class GraySynthGate(Operation):
         self.abstract_params = set()
         for i in range(len(target_phases)):
             if isinstance(target_phases[i], sp.Expr):
-                self.abstract_params = self.abstract_params.union(
-                    target_phases[i].free_symbols
-                )
+                self.abstract_params = self.abstract_params.union(target_phases[i].free_symbols)
 
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
 
@@ -533,9 +507,7 @@ def gray_phase_synth_qb_list(qc, qb_list, target_phases, phase_tolerant=False):
 @gate_wrap(is_qfree=True, permeability=[0])
 def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=False):
     if input_var.size != tt.bit_amount:
-        raise Exception(
-            "Input variable does not contain enough qubits to encode truth table"
-        )
+        raise Exception("Input variable does not contain enough qubits to encode truth table")
 
     if tt.shape[1] != 1:
         raise Exception("This function can only encode single column truth tables")
@@ -563,7 +535,6 @@ def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=
         (input_var.reg + [output_var[qb_nr]]),
     )
     h(output_var[qb_nr])
-    return
 
 
 # This function uses it's single qubit version iteratively to synthesize
@@ -571,19 +542,13 @@ def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=
 @gate_wrap(is_qfree=True, permeability=[0])
 def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=False):
     if len(input_var) != tt.bit_amount:
-        raise Exception(
-            "Input variable does not contain enough qubits to encode truth table"
-        )
+        raise Exception("Input variable does not contain enough qubits to encode truth table")
 
     if len(output_var) != tt.shape[1]:
-        raise Exception(
-            "output variable does not contain enough qubits to encode truth table"
-        )
+        raise Exception("output variable does not contain enough qubits to encode truth table")
 
     if len(output_var) == 1:
-        gray_logic_synth_single_qb(
-            input_var, output_var, 0, tt.sub_table(0), phase_tolerant=False
-        )
+        gray_logic_synth_single_qb(input_var, output_var, 0, tt.sub_table(0), phase_tolerant=False)
         return
 
     input_var_dupl = input_var.duplicate()
@@ -592,9 +557,7 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
     residual_phases = np.zeros(tt.shape[0])
 
     for i in range(tt.shape[1]):
-        gray_logic_synth_single_qb(
-            input_var_dupl, output_var_dupl, i, tt.sub_table(i), phase_tolerant=True
-        )
+        gray_logic_synth_single_qb(input_var_dupl, output_var_dupl, i, tt.sub_table(i), phase_tolerant=True)
 
         temp = (tt.sub_table(i).n_rep - 1 / 2) * np.pi / 2
         temp = temp.transpose()[0]
