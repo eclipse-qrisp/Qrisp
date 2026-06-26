@@ -112,9 +112,7 @@ def _lower(circuit_fn, *trace_args) -> str:
 def assert_return_type(mlir: str, expected_type: str):
     """Assert the MLIR contains a func.return with the given type."""
     pattern = rf"func\.return\s+%\w+\s*:\s*{re.escape(expected_type)}"
-    assert re.search(
-        pattern, mlir
-    ), f"Expected return type '{expected_type}', not found in:\n{mlir}"
+    assert re.search(pattern, mlir), f"Expected return type '{expected_type}', not found in:\n{mlir}"
 
 
 # ---------------------------------------------------------------------------
@@ -157,13 +155,13 @@ def test_extract_ref_functional_type_format():
     # The correct format includes parentheses and the index type
     assert "quake.extract_ref" in mlir
     # Must NOT have the bare (pre-fix) format "!quake.veq<?> -> !quake.ref"
-    assert (
-        "!quake.veq<?> -> !quake.ref" not in mlir
-    ), "extract_ref should use functional-type format, not bare 'veq -> ref'"
+    assert "!quake.veq<?> -> !quake.ref" not in mlir, (
+        "extract_ref should use functional-type format, not bare 'veq -> ref'"
+    )
     # Must have the functional-type format with both input types in parens
-    assert (
-        "(!quake.veq<?>" in mlir
-    ), "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
+    assert "(!quake.veq<?>" in mlir, (
+        "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
+    )
     assert "-> !quake.ref" in mlir
     validate_quake_mlir(mlir)
 
@@ -184,19 +182,15 @@ def test_gate_type_signature_no_bracket_prefix():
     mlir = _lower(circuit)
     # H gate: single target, no controls
     assert "quake.h" in mlir
-    assert (
-        "(!quake.ref) -> ()" in mlir
-    ), "H gate should have '(!quake.ref) -> ()' type sig"
+    assert "(!quake.ref) -> ()" in mlir, "H gate should have '(!quake.ref) -> ()' type sig"
     # CX gate: control + target, both refs → flat list
     assert "quake.x" in mlir
     # Should NOT have the old bracket prefix format [!quake.ref](!quake.ref)
-    assert (
-        "[!quake.ref]" not in mlir
-    ), "Gate type signatures must not use [ctrl-types] prefix — use flat functional-type"
+    assert "[!quake.ref]" not in mlir, (
+        "Gate type signatures must not use [ctrl-types] prefix — use flat functional-type"
+    )
     # Should have flat format for CX: (!quake.ref, !quake.ref)
-    assert (
-        "(!quake.ref, !quake.ref) -> ()" in mlir
-    ), "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
+    assert "(!quake.ref, !quake.ref) -> ()" in mlir, "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
     validate_quake_mlir(mlir)
 
 
@@ -211,9 +205,7 @@ def test_parameterized_gate_functional_type():
     mlir = _lower(circuit)
     assert "quake.rz" in mlir
     # The type signature must include both the f64 param and the quake.ref target
-    assert (
-        "(f64, !quake.ref) -> ()" in mlir
-    ), "rz gate should have '(f64, !quake.ref) -> ()' type sig"
+    assert "(f64, !quake.ref) -> ()" in mlir, "rz gate should have '(f64, !quake.ref) -> ()' type sig"
     validate_quake_mlir(mlir)
 
 
@@ -229,9 +221,7 @@ def test_veq_size_functional_type():
     mlir = _lower(circuit)
     # veq_size op should use functional-type with parens if present
     if "quake.veq_size" in mlir:
-        assert (
-            "(!quake.veq<?>) -> i64" in mlir
-        ), "veq_size should use functional-type: (!quake.veq<?>) -> i64"
+        assert "(!quake.veq<?>) -> i64" in mlir, "veq_size should use functional-type: (!quake.veq<?>) -> i64"
     validate_quake_mlir(mlir)
 
 
@@ -244,9 +234,7 @@ def test_alloca_veq_format():
 
     mlir = _lower(circuit)
     # The alloca must print the type first, then size in brackets
-    assert (
-        "quake.alloca !quake.veq<?>[" in mlir
-    ), "alloca format should be '!quake.veq<?>[%n : i64]'"
+    assert "quake.alloca !quake.veq<?>[" in mlir, "alloca format should be '!quake.veq<?>[%n : i64]'"
     validate_quake_mlir(mlir)
 
 
@@ -305,9 +293,7 @@ def test_quake_types_present():
         return measure(qv)
 
     mlir = _lower(circuit)
-    assert (
-        "!quake.veq<?>" in mlir or "!quake.ref" in mlir
-    ), "Expected Quake qubit types in output"
+    assert "!quake.veq<?>" in mlir or "!quake.ref" in mlir, "Expected Quake qubit types in output"
     assert "quake." in mlir, "Expected Quake ops in output"
     validate_quake_mlir(mlir)
 
@@ -431,9 +417,7 @@ def test_decomposed_gates_sx():
     # Check that the expected sequence of ops for sx/sx_dg is present
     assert "quake.h" in mlir, "Expected quake.h in output for sx decomposition"
     assert "quake.s" in mlir, "Expected quake.s in output for sx decomposition"
-    assert (
-        "quake.s<adj>" in mlir
-    ), "Expected quake.s<adj> in output for sx_dg decomposition"
+    assert "quake.s<adj>" in mlir, "Expected quake.s<adj> in output for sx_dg decomposition"
     validate_quake_mlir(mlir)
 
 
@@ -468,9 +452,7 @@ def test_parameterized_gate():
         qv = QuantumVariable(2)
         rz(0.5, qv[0])
         rx(1.0, qv[1])
-        rx(
-            1, qv[1]
-        )  # Test that integer literals are also accepted as parameters and correctly typed as f64
+        rx(1, qv[1])  # Test that integer literals are also accepted as parameters and correctly typed as f64
         return qv
 
     mlir = _lower(circuit)
@@ -515,9 +497,9 @@ def test_swap_gate():
     mlir = _lower(circuit)
     assert "quake.x" in mlir
     # Both qubits should be present as operands
-    assert (
-        "(!quake.ref, !quake.ref) -> ()" in mlir
-    ), "Expected quake.x to have '(!quake.ref, !quake.ref) -> ()' type sig"
+    assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
+        "Expected quake.x to have '(!quake.ref, !quake.ref) -> ()' type sig"
+    )
     validate_quake_mlir(mlir)
 
 
@@ -549,9 +531,7 @@ def test_negative_indexing():
     assert "quake.x" in mlir, "Expected quake.x in output"
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        1
-    ], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
+    assert result == 10 * [1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
 
 
 def test_math():
@@ -924,9 +904,7 @@ def test_single_gate_application_quantum_variable():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        1023
-    ], f"Expected all qubits measured as 1 (1023), got {result}"
+    assert result == 10 * [1023], f"Expected all qubits measured as 1 (1023), got {result}"
 
 
 def test_gate_application_quantum_variable_slice():
@@ -942,9 +920,7 @@ def test_gate_application_quantum_variable_slice():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        31
-    ], f"Expected lower 5 qubits measured as 1 (31), got {result}"
+    assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
     """Gate application function (x) applied to a slice of QuantumVariable with negative upper bound"""
 
@@ -958,9 +934,7 @@ def test_gate_application_quantum_variable_slice():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        31
-    ], f"Expected lower 5 qubits measured as 1 (31), got {result}"
+    assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
 
 def test_gate_application_quantum_variable():
@@ -1026,9 +1000,7 @@ def test_mcx(method):
     mlir = _lower(circuit)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        7
-    ], f"Expected target qubit flipped to 1 when both controls are 1 (7), got {result}"
+    assert result == 10 * [7], f"Expected target qubit flipped to 1 when both controls are 1 (7), got {result}"
 
     def circuit():
         """Test mcx with 9 controls and 1 target."""
@@ -1040,9 +1012,7 @@ def test_mcx(method):
     mlir = _lower(circuit)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        1023
-    ], f"Expected target qubit flipped to 1 when all 9 controls are 1 (1023), got {result}"
+    assert result == 10 * [1023], f"Expected target qubit flipped to 1 when all 9 controls are 1 (1023), got {result}"
 
 
 # ---------------------------------------------------------------------------
@@ -1069,9 +1039,9 @@ def test_bell_circuit_full_format():
     assert "quake.alloca !quake.veq<?>[" in mlir
 
     # extract_ref with functional-type
-    assert (
-        "(!quake.veq<?>" in mlir and "-> !quake.ref" in mlir
-    ), "extract_ref must use functional-type format: (!quake.veq<?>, idx) -> !quake.ref"
+    assert "(!quake.veq<?>" in mlir and "-> !quake.ref" in mlir, (
+        "extract_ref must use functional-type format: (!quake.veq<?>, idx) -> !quake.ref"
+    )
 
     # H gate
     assert "(!quake.ref) -> ()" in mlir
@@ -1104,9 +1074,7 @@ def test_amplitude_amplification():
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert (
-        np.mean(result) >= 0.8
-    ), f"Expected amplitude amplification to yield mostly 1s, got {result}"
+    assert np.mean(result) >= 0.8, f"Expected amplitude amplification to yield mostly 1s, got {result}"
 
 
 def test_quantum_fourier_transform():
@@ -1162,9 +1130,7 @@ def test_trotterization():
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
     # We can't predict the exact result, but we can check that it's a valid measurement (0, 1, 2, or 3)
-    assert all(
-        0 <= r <= 3 for r in result
-    ), f"Expected valid measurement results (0-3), got {result}"
+    assert all(0 <= r <= 3 for r in result), f"Expected valid measurement results (0-3), got {result}"
 
 
 @pytest.mark.parametrize("method", ["tree", "sequential"])
@@ -1275,9 +1241,7 @@ def test_array_dynamic_index_return():
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=5)
-    assert all(
-        abs(r - 1.57) < 1e-6 for r in result
-    ), f"Expected all shots to return 1.57, got {result}"
+    assert all(abs(r - 1.57) < 1e-6 for r in result), f"Expected all shots to return 1.57, got {result}"
 
 
 def test_array_dynamic_index_gate_angle():
@@ -1355,9 +1319,9 @@ def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, 
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        expected
-    ], f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    assert result == 10 * [expected], (
+        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    )
 
 
 ops_inpl = [operator.iadd, operator.isub]
@@ -1372,9 +1336,7 @@ instances = [
 @pytest.mark.parametrize("op", ops_inpl)
 @pytest.mark.parametrize("rhs_type", rhs_type)
 @pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
-def test_quantum_float_arithmetic_inpl(
-    op, rhs_type, size1, exp1, val1, size2, exp2, val2
-):
+def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
     """In-place arithmetic operations on QuantumFloat."""
 
     def main():
@@ -1395,9 +1357,9 @@ def test_quantum_float_arithmetic_inpl(
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10 * [
-        expected
-    ], f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    assert result == 10 * [expected], (
+        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    )
 
 
 ops_comp = [
@@ -1423,9 +1385,7 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
     """Comparison operations on QuantumFloat with classical or quantum RHS."""
 
     if op in (operator.eq, operator.ne):
-        pytest.skip(
-            "Equality and inequality comparisons on QuantumFloat are not supported."
-        )
+        pytest.skip("Equality and inequality comparisons on QuantumFloat are not supported.")
 
     def main():
         a = QuantumFloat(size1, exponent=exp1)
@@ -1445,9 +1405,9 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=1)
-    assert result == 1 * [
-        expected
-    ], f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    assert result == 1 * [expected], (
+        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -48,9 +48,8 @@ from qrisp import (
     rz,
     measure,
     control,
-
 )
-from qrisp.jasp import  q_while_loop, q_cond, qache
+from qrisp.jasp import q_while_loop, q_cond, qache
 
 try:
     import cudaq
@@ -421,14 +420,14 @@ def test_dynamic_index_into_array_parameter_in_cond_in_loop():
 
         def body_fun(val):
             i, qv = val
-            
+
             q_cond(angles[i] > 0.5, true_fun, false_fun, qv, angles, i)
-            return i+1, qv
+            return i + 1, qv
 
         q_while_loop(cond_fun, body_fun, (0, qv))
 
         return measure(qv)
-    
+
     angles = np.array([1.57, 0.78, 0.39, 0.25, 0.12])
     result = cudaq.run(main, angles, shots_count=10)
     assert result is not None
@@ -446,9 +445,7 @@ def test_static_index_into_array_parameter():
                 rx(2.0 * beta, qv[i])
         return measure(qv)
 
-    results = cudaq.run(
-        ansatz_kernel, np.array([1.57, 0.78, 0.39, 0.25]), shots_count=10
-    )
+    results = cudaq.run(ansatz_kernel, np.array([1.57, 0.78, 0.39, 0.25]), shots_count=10)
     assert results is not None
 
 
