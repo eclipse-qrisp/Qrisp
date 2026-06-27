@@ -33,6 +33,7 @@ from xdsl.ir import (
 from xdsl.pattern_rewriter import (
     PatternRewriter,
 )
+from xdsl.rewriter import InsertPoint
 
 from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
     QuakeRefType,
@@ -124,12 +125,12 @@ def _coerce_to_f64_for_rewriter(val: SSAValue, rewriter: PatternRewriter) -> SSA
 
     if _is_float_type(scalar.type):
         cast = arith.ExtFOp(scalar, f64)
-        rewriter.insert_op_before_matched_op(cast)
+        rewriter.insert_op(cast, InsertPoint.before(rewriter.current_operation))
         return cast.result
 
     if isinstance(scalar.type, IntegerType):
         cast = arith.SIToFPOp(scalar, f64)
-        rewriter.insert_op_before_matched_op(cast)
+        rewriter.insert_op(cast, InsertPoint.before(rewriter.current_operation))
         return cast.result
 
     raise ValueError(f"Cannot coerce {scalar.type} to f64")
@@ -143,7 +144,10 @@ def _normalize_index_for_veq_rewriter(veq: SSAValue, idx: SSAValue, rewriter: Pa
     idx_plus_size = arith.AddiOp(idx, size.result)
     norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
 
-    rewriter.insert_op_before_matched_op([size, zero, is_neg, idx_plus_size, norm])
+    rewriter.insert_op(
+        [size, zero, is_neg, idx_plus_size, norm],
+        InsertPoint.before(rewriter.current_operation),
+    )
     return norm.result
 
 
@@ -157,7 +161,7 @@ def _extract_scalar_for_rewriter(val: SSAValue, scalar_type: Attribute, rewriter
     if val.type == scalar_type:
         return val
     extract = tensor.ExtractOp(val, [], scalar_type)
-    rewriter.insert_op_before_matched_op(extract)
+    rewriter.insert_op(extract, InsertPoint.before(rewriter.current_operation))
     return extract.result
 
 
@@ -166,5 +170,5 @@ def _wrap_scalar_for_rewriter(val: SSAValue, tensor_type: Attribute, rewriter: P
     if val.type == tensor_type:
         return val
     from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
-    rewriter.insert_op_before_matched_op(from_elem)
+    rewriter.insert_op(from_elem, InsertPoint.before(rewriter.current_operation))
     return from_elem.result

@@ -64,6 +64,7 @@ from xdsl.pattern_rewriter import (
     RewritePattern,
     op_type_rewrite_pattern,
 )
+from xdsl.rewriter import InsertPoint
 
 from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
     AllocaVeqOp,
@@ -177,7 +178,7 @@ class LowerCreateQuantumKernel(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: CreateQuantumKernelOp, rewriter: PatternRewriter) -> None:
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerConsumeQuantumKernel(RewritePattern):
@@ -188,8 +189,8 @@ class LowerConsumeQuantumKernel(RewritePattern):
         if op.results:
             true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
             op.results[0].replace_all_uses_with(true_const.result)
-            rewriter.insert_op_before_matched_op(true_const)
-        rewriter.erase_matched_op(safe_erase=False)
+            rewriter.insert_op(true_const, InsertPoint.before(rewriter.current_operation))
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerCreateQubits(RewritePattern):
@@ -201,14 +202,14 @@ class LowerCreateQubits(RewritePattern):
         n = _extract_scalar_for_rewriter(amount_tensor, i64, rewriter)
 
         alloca = AllocaVeqOp(n)
-        rewriter.insert_op_before_matched_op(alloca)
+        rewriter.insert_op(alloca, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:
             if _is_qubit_array(r.type):
                 r.replace_all_uses_with(alloca.result)
 
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerGetQubit(RewritePattern):
@@ -223,13 +224,13 @@ class LowerGetQubit(RewritePattern):
         norm_idx = _normalize_index_for_veq_rewriter(arr, idx, rewriter)
 
         extract = ExtractRefOp(arr, norm_idx)
-        rewriter.insert_op_before_matched_op(extract)
+        rewriter.insert_op(extract, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:
             if _is_qubit(r.type):
                 r.replace_all_uses_with(extract.result)
 
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerGetSize(RewritePattern):
@@ -239,13 +240,13 @@ class LowerGetSize(RewritePattern):
     def match_and_rewrite(self, op: GetSizeOp, rewriter: PatternRewriter) -> None:
         arr = op.operands[0]
         veq_size = VeqSizeOp(arr)
-        rewriter.insert_op_before_matched_op(veq_size)
+        rewriter.insert_op(veq_size, InsertPoint.before(rewriter.current_operation))
 
         result_tensor_type = op.results[0].type
         wrapped = _wrap_scalar_for_rewriter(veq_size.result, result_tensor_type, rewriter)
 
         op.results[0].replace_all_uses_with(wrapped)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerSlice(RewritePattern):
@@ -272,16 +273,16 @@ class LowerSlice(RewritePattern):
         # Exclusive → inclusive: hi_inclusive = hi_norm - 1
         one = arith.ConstantOp(IntegerAttr(1, 64))
         hi_inclusive = arith.SubiOp(hi_norm, one.result)
-        rewriter.insert_op_before_matched_op([one, hi_inclusive])
+        rewriter.insert_op([one, hi_inclusive], InsertPoint.before(rewriter.current_operation))
 
         subveq = SubVeqOp(arr, lo, hi_inclusive.result)
-        rewriter.insert_op_before_matched_op(subveq)
+        rewriter.insert_op(subveq, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:
             if _is_qubit_array(r.type):
                 r.replace_all_uses_with(subveq.result)
 
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerFuse(RewritePattern):
@@ -291,13 +292,13 @@ class LowerFuse(RewritePattern):
     def match_and_rewrite(self, op: FuseOp, rewriter: PatternRewriter) -> None:
         operands = [v for v in op.operands if not _is_qst(v.type)]
         concat = ConcatOp(operands)
-        rewriter.insert_op_before_matched_op(concat)
+        rewriter.insert_op(concat, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:
             if _is_qubit_array(r.type):
                 r.replace_all_uses_with(concat.result)
 
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerDeleteQubits(RewritePattern):
@@ -307,10 +308,10 @@ class LowerDeleteQubits(RewritePattern):
     def match_and_rewrite(self, op: DeleteQubitsOp, rewriter: PatternRewriter) -> None:
         arr = op.operands[0]
         dealloc = DeallocOp(arr)
-        rewriter.insert_op_before_matched_op(dealloc)
+        rewriter.insert_op(dealloc, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerQuantumGate(RewritePattern):
@@ -352,15 +353,15 @@ class LowerQuantumGate(RewritePattern):
             ops = gate_info.emit(controls, final_params, targets)
             if not ops:
                 raise RuntimeError(f"Gate '{gate_name}' emit() returned empty list.")
-            rewriter.insert_op_before_matched_op(ops)
+            rewriter.insert_op(ops, InsertPoint.before(rewriter.current_operation))
         else:
             gate_op = make_gate_op(gate_name, controls, final_params, targets)
             if gate_op is None:
                 raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
-            rewriter.insert_op_before_matched_op(gate_op)
+            rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
 
 class LowerMeasure(RewritePattern):
@@ -410,32 +411,32 @@ class LowerMeasure(RewritePattern):
             self._lower_array_run(qubit_val, meas_result, rewriter)
 
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
 
     def _lower_single_qubit_run(self, qubit_val, meas_result, rewriter):
         mz = MzOp(qubit_val)
         disc = DiscriminateOp(mz.result)
-        rewriter.insert_op_before_matched_op([mz, disc])
+        rewriter.insert_op([mz, disc], InsertPoint.before(rewriter.current_operation))
         wrapped = _wrap_scalar_for_rewriter(disc.result, meas_result.type, rewriter)
         meas_result.replace_all_uses_with(wrapped)
 
     def _lower_single_qubit_sample(self, qubit_val, meas_result, rewriter):
         mz = MzOp(qubit_val)
         zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
-        rewriter.insert_op_before_matched_op([mz, zero_const])
+        rewriter.insert_op([mz, zero_const], InsertPoint.before(rewriter.current_operation))
         meas_result.replace_all_uses_with(zero_const.result)
 
     def _lower_array_sample(self, qubit_val, meas_result, rewriter):
         mz = MzOp(qubit_val)
         zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
-        rewriter.insert_op_before_matched_op([mz, zero_const])
+        rewriter.insert_op([mz, zero_const], InsertPoint.before(rewriter.current_operation))
         meas_result.replace_all_uses_with(zero_const.result)
 
     def _lower_array_run(self, qubit_val, meas_result, rewriter):
         veq_size = VeqSizeOp(qubit_val)
         c0 = arith.ConstantOp(IntegerAttr(0, 64))
         c1 = arith.ConstantOp(IntegerAttr(1, 64))
-        rewriter.insert_op_before_matched_op([veq_size, c0, c1])
+        rewriter.insert_op([veq_size, c0, c1], InsertPoint.before(rewriter.current_operation))
 
         loop_body = Block(arg_types=[i64, i64])
         iv, acc = loop_body.args
@@ -451,7 +452,7 @@ class LowerMeasure(RewritePattern):
         loop_body.add_ops([extract, mz_single, disc, extui, shift, new_acc, yield_op])
 
         for_op = scf.ForOp(c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body]))
-        rewriter.insert_op_before_matched_op(for_op)
+        rewriter.insert_op(for_op, InsertPoint.before(rewriter.current_operation))
 
         wrapped = _wrap_scalar_for_rewriter(for_op.results[0], meas_result.type, rewriter)
         meas_result.replace_all_uses_with(wrapped)
@@ -464,7 +465,7 @@ class LowerReset(RewritePattern):
     def match_and_rewrite(self, op: JaspResetOp, rewriter: PatternRewriter) -> None:
         qubit_val = op.operands[0]
         reset_op = ResetOp(qubit_val)
-        rewriter.insert_op_before_matched_op(reset_op)
+        rewriter.insert_op(reset_op, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_matched_op(safe_erase=False)
+        rewriter.erase_op(op, safe_erase=False)
