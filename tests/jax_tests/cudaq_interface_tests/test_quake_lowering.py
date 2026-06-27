@@ -316,7 +316,11 @@ def test_gate_mapping_standard_gates():
         "y",
         "z",
         "s",
+        "s_dg",
+        "sx",
+        "sx_dg",
         "t",
+        "t_dg",
         "rx",
         "ry",
         "rz",
@@ -325,8 +329,9 @@ def test_gate_mapping_standard_gates():
         "cx",
         "cy",
         "cz",
-        "swap",
         "u3",
+        "gphase",
+        "cgphase",
     }
     for gate in expected_gates:
         info = get_gate_info(gate)
