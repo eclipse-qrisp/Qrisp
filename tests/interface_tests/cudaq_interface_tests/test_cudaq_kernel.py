@@ -34,6 +34,8 @@ Coverage
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from importlib import metadata
+import re
 
 from qrisp import (
     QuantumVariable,
@@ -60,6 +62,30 @@ try:
 except ImportError as exc:
     # Skip the entire test file if the import fails
     pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
+
+def _version_leq(version, limit):
+    def _normalize(v):
+        parts = []
+        for token in v.split("."):
+            match = re.match(r"\d+", token)
+            if not match:
+                break
+            parts.append(int(match.group(0)))
+        return tuple((parts + [0, 0, 0])[:3])
+
+    return _normalize(version) <= _normalize(limit)
+
+
+try:
+    cudaq_version = metadata.version("cudaq")
+except metadata.PackageNotFoundError:
+    cudaq_version = None
+
+if cudaq_version and _version_leq(cudaq_version, "0.14.2"):
+    pytest.skip(
+        f"cudaq {cudaq_version} segfaults when executing qrisp @cudaq_kernel tests on CI runners",
+        allow_module_level=True,
+    )
 
 
 # ---------------------------------------------------------------------------
