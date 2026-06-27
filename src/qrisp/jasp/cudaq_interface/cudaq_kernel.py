@@ -44,6 +44,7 @@ import re
 import sys
 from typing import Callable, Literal
 import warnings
+import threading
 
 import numpy as np
 
@@ -59,6 +60,14 @@ from cudaq.mlir.dialects import quake, cc
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
+
+
+# Module-level lock for all CUDA-Q interactions
+_CUDAQ_LOCK = threading.Lock()
+
+# Cache LLVM attributes (immutable per process)
+_LLVM_ATTRIBUTES_CACHE = None
+_LLVM_ATTRIBUTES_LOCK = threading.Lock()
 
 # ------------------------------------------------------------------ #
 # Platform-aware LLVM attribute defaults
@@ -115,47 +124,57 @@ def _get_llvm_attributes() -> tuple:
     RuntimeError
         If neither extraction nor platform defaults succeed.
     """
-    data_layout_str = None
-    target_triple_str = None
+    global _LLVM_ATTRIBUTES_CACHE
+    if _LLVM_ATTRIBUTES_CACHE is not None:
+        return _LLVM_ATTRIBUTES_CACHE
 
-    try:
+    with _LLVM_ATTRIBUTES_LOCK:
+        # Double-check after acquiring lock
+        if _LLVM_ATTRIBUTES_CACHE is not None:
+            return _LLVM_ATTRIBUTES_CACHE
 
-        @cudaq.kernel
-        def _dummy_extractor():
+        data_layout_str = None
+        target_triple_str = None
+
+        try:
+
+            @cudaq.kernel
+            def _dummy_extractor():
+                pass
+
+            dummy_mlir = str(_dummy_extractor)
+            dl_match = re.search(r'llvm\.data_layout\s*=\s*"([^"]+)"', dummy_mlir)
+            tt_match = re.search(r'llvm\.target_triple\s*=\s*"([^"]+)"', dummy_mlir)
+
+            if dl_match:
+                data_layout_str = dl_match.group(1)
+            if tt_match:
+                target_triple_str = tt_match.group(1)
+        except Exception:
             pass
 
-        dummy_mlir = str(_dummy_extractor)
-        dl_match = re.search(r'llvm\.data_layout\s*=\s*"([^"]+)"', dummy_mlir)
-        tt_match = re.search(r'llvm\.target_triple\s*=\s*"([^"]+)"', dummy_mlir)
+        if data_layout_str is None:
+            key = _detect_platform_key()
+            defaults = _PLATFORM_DEFAULTS.get(key)
 
-        if dl_match:
-            data_layout_str = dl_match.group(1)
-        if tt_match:
-            target_triple_str = tt_match.group(1)
-    except Exception:
-        pass
+            if defaults is None:
+                raise RuntimeError(
+                    f"Failed to extract llvm.data_layout from the active "
+                    f"CUDA-Q environment, and no platform default is available "
+                    f"for {key}.  Supported platforms: "
+                    f"{list(_PLATFORM_DEFAULTS.keys())}"
+                )
 
-    if data_layout_str is None:
-        key = _detect_platform_key()
-        defaults = _PLATFORM_DEFAULTS.get(key)
-
-        if defaults is None:
-            raise RuntimeError(
-                f"Failed to extract llvm.data_layout from the active "
-                f"CUDA-Q environment, and no platform default is available "
-                f"for {key}.  Supported platforms: "
-                f"{list(_PLATFORM_DEFAULTS.keys())}"
+            data_layout_str, target_triple_str = defaults
+            warnings.warn(
+                f"Could not extract llvm.data_layout from CUDA-Q; using platform default for {key}.",
+                stacklevel=3,
             )
 
-        data_layout_str, target_triple_str = defaults
-        warnings.warn(
-            f"Could not extract llvm.data_layout from CUDA-Q; using platform default for {key}.",
-            stacklevel=3,
-        )
-
-    data_layout_attr = f'llvm.data_layout = "{data_layout_str}"'
-    target_triple_attr = f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
-    return data_layout_attr, target_triple_attr
+        data_layout_attr = f'llvm.data_layout = "{data_layout_str}"'
+        target_triple_attr = f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
+        _LLVM_ATTRIBUTES_CACHE = (data_layout_attr, target_triple_attr)
+        return _LLVM_ATTRIBUTES_CACHE
 
 
 # ------------------------------------------------------------------ #
@@ -223,98 +242,209 @@ def cudaq_kernel_from_mlir(mlir_str: str, execution_mode: Literal["run", "sample
         print(cudaq.run(kernel, shots_count=100))
 
     """
-    kernel = cudaq.make_kernel()
-    func_name = kernel.funcName
-    entry_point = kernel.funcNameEntryPoint
-    uniq_name = func_name.replace("__nvqpp__mlirgen__", "")
+    with _CUDAQ_LOCK:
+        kernel = cudaq.make_kernel()
+        func_name = kernel.funcName
+        entry_point = kernel.funcNameEntryPoint
+        uniq_name = func_name.replace("__nvqpp__mlirgen__", "")
 
-    data_layout_attr, target_triple_attr = _get_llvm_attributes()
+        data_layout_attr, target_triple_attr = _get_llvm_attributes()
 
-    func_start = mlir_str.find("func.func")
-    last_brace = mlir_str.rfind("}")
-    inner_mlir = mlir_str[func_start:last_brace].strip()
+        func_start = mlir_str.find("func.func")
+        last_brace = mlir_str.rfind("}")
+        inner_mlir = mlir_str[func_start:last_brace].strip()
 
-    main_match = re.search(r"func\.func\s+(?:public\s+)?@main", inner_mlir)
-    if not main_match:
-        raise ValueError("Could not find @main function in MLIR string.")
+        main_match = re.search(r"func\.func\s+(?:public\s+)?@main", inner_mlir)
+        if not main_match:
+            raise ValueError("Could not find @main function in MLIR string.")
 
-    anchor = main_match.end()
-    search_idx = anchor
-    body_start_idx = -1
+        anchor = main_match.end()
+        search_idx = anchor
+        body_start_idx = -1
 
-    while search_idx < len(inner_mlir):
-        if inner_mlir[search_idx] == "{":
-            text_before = inner_mlir[anchor:search_idx].strip()
-            if text_before.endswith("attributes"):
-                depth = 1
-                search_idx += 1
-                while search_idx < len(inner_mlir) and depth > 0:
-                    if inner_mlir[search_idx] == "{":
-                        depth += 1
-                    elif inner_mlir[search_idx] == "}":
-                        depth -= 1
+        while search_idx < len(inner_mlir):
+            if inner_mlir[search_idx] == "{":
+                text_before = inner_mlir[anchor:search_idx].strip()
+                if text_before.endswith("attributes"):
+                    depth = 1
                     search_idx += 1
-                anchor = search_idx
-                continue
-            else:
-                body_start_idx = search_idx
-                break
-        search_idx += 1
+                    while search_idx < len(inner_mlir) and depth > 0:
+                        if inner_mlir[search_idx] == "{":
+                            depth += 1
+                        elif inner_mlir[search_idx] == "}":
+                            depth -= 1
+                        search_idx += 1
+                    anchor = search_idx
+                    continue
+                else:
+                    body_start_idx = search_idx
+                    break
+            search_idx += 1
 
-    if body_start_idx == -1:
-        raise ValueError("Could not find body for @main.")
+        if body_start_idx == -1:
+            raise ValueError("Could not find body for @main.")
 
-    depth = 0
-    end_idx = -1
-    for i in range(body_start_idx, len(inner_mlir)):
-        if inner_mlir[i] == "{":
-            depth += 1
-        elif inner_mlir[i] == "}":
-            depth -= 1
-            if depth == 0:
-                end_idx = i
-                break
-
-    main_func_body = inner_mlir[body_start_idx + 1 : end_idx].strip()
-    other_functions = inner_mlir[: main_match.start()] + inner_mlir[end_idx + 1 :]
-
-    header_raw = inner_mlir[main_match.end() : body_start_idx]
-    first_paren = header_raw.find("(")
-    param_list = ""
-    if first_paren != -1:
         depth = 0
-        for i, ch in enumerate(header_raw[first_paren:], first_paren):
-            if ch == "(":
+        end_idx = -1
+        for i in range(body_start_idx, len(inner_mlir)):
+            if inner_mlir[i] == "{":
                 depth += 1
-            elif ch == ")":
+            elif inner_mlir[i] == "}":
                 depth -= 1
                 if depth == 0:
-                    param_list = header_raw[first_paren : i + 1]
+                    end_idx = i
                     break
 
-    # ------------------------------------------------------------------
-    # Sample mode: simple void-return kernel, no .run/.run.entry variants.
-    # ------------------------------------------------------------------
-    if execution_mode == "sample":
-        # Convert bare "func.return" (operands already stripped by pass1)
-        # to the plain "return" form expected by the CUDAQ MLIR frontend.
-        sample_body = main_func_body.replace("func.return", "return")
+        main_func_body = inner_mlir[body_start_idx + 1 : end_idx].strip()
+        other_functions = inner_mlir[: main_match.start()] + inner_mlir[end_idx + 1 :]
+
+        header_raw = inner_mlir[main_match.end() : body_start_idx]
+        first_paren = header_raw.find("(")
+        param_list = ""
+        if first_paren != -1:
+            depth = 0
+            for i, ch in enumerate(header_raw[first_paren:], first_paren):
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        param_list = header_raw[first_paren : i + 1]
+                        break
+
+        # ------------------------------------------------------------------
+        # Sample mode: simple void-return kernel, no .run/.run.entry variants.
+        # ------------------------------------------------------------------
+        if execution_mode == "sample":
+            # Convert bare "func.return" (operands already stripped by pass1)
+            # to the plain "return" form expected by the CUDAQ MLIR frontend.
+            sample_body = main_func_body.replace("func.return", "return")
+
+            mod_attributes = [f'cc.python_uniqued = "{uniq_name}"']
+            mod_attributes.append(data_layout_attr)
+            if target_triple_attr:
+                mod_attributes.append(target_triple_attr)
+            mod_attributes.append(f'quake.mangled_name_map = {{\n    {func_name} = "{entry_point}"\n  }}')
+            attributes_str = ",\n  ".join(mod_attributes)
+
+            adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
+            if other_functions.strip():
+                adapted_mlir += f"  {other_functions.strip()}\n\n"
+            adapted_mlir += (
+                f"  func.func @{func_name}{param_list} attributes "
+                f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {sample_body}\n  }}\n'
+                f"}}\n"
+            )
+
+            with kernel.ctx:
+                try:
+                    new_module = Module.parse(adapted_mlir, kernel.ctx)
+                except Exception:
+                    quake.register_dialect(context=kernel.ctx)
+                    cc.register_dialect(context=kernel.ctx)
+                    new_module = Module.parse(adapted_mlir, kernel.ctx)
+
+                kernel.module = new_module
+                NoneType.get(context=kernel.ctx)
+
+            return PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
+
+        # ------------------------------------------------------------------
+        # Run mode (default): cc.log_output + .run / .run.entry variants.
+        # ------------------------------------------------------------------
+        run_body = main_func_body
+
+        # Match single or multi-value func.return:
+        #   single: func.return %a : T
+        #   multi:  func.return %a, %b, %c : T1, T2, T3
+        return_match = re.search(
+            r"func\.return\s+((?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*)\s*:\s*(.+)",
+            main_func_body,
+        )
+        if return_match:
+            return_values = [v.strip() for v in return_match.group(1).split(",")]
+            return_types = [t.strip() for t in return_match.group(2).split(",")]
+
+            if len(return_values) == 1:
+                # Single return value — original behaviour.
+                return_type_str = return_types[0]
+                return_sig = f" -> {return_type_str}"
+                run_body = re.sub(
+                    r"func\.return\s+(?:%[\w.]+)\s*:\s*(.+)",
+                    r"cc.log_output " + return_values[0] + r" : \1\n    return",
+                    main_func_body,
+                )
+            else:
+                # Multiple return values: pack into !cc.struct<"tuple" {T1, T2, ...}>
+                # This matches the MLIR emitted by native @cudaq.kernel for Tuple[...] returns.
+                types_joined = ", ".join(return_types)
+                struct_type = f'!cc.struct<"tuple" {{{types_joined}}}>'
+                return_type_str = struct_type
+                return_sig = f" -> {struct_type}"
+
+                # Build struct-packing ops to inject before func.return.
+                # cc.insert_value syntax: %result = cc.insert_value %prev[i], %val : (S, T) -> S
+                insert_lines = [f"%__qrisp_tuple_0 = cc.undef {struct_type}"]
+                prev = "%__qrisp_tuple_0"
+                for i, (val, typ) in enumerate(zip(return_values, return_types)):
+                    next_name = f"%__qrisp_tuple_{i + 1}"
+                    insert_lines.append(
+                        f"{next_name} = cc.insert_value {prev}[{i}], {val} : ({struct_type}, {typ}) -> {struct_type}"
+                    )
+                    prev = next_name
+
+                insert_block = "\n    ".join(insert_lines)
+                final_struct = prev  # last SSA value holding the fully-populated struct
+
+                return_re = re.compile(r"func\.return\s+(?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*\s*:\s*.+")
+                # Main function body: replace multi-return with single struct return.
+                main_func_body = return_re.sub(
+                    f"{insert_block}\n    func.return {final_struct} : {struct_type}",
+                    main_func_body,
+                )
+                # .run function body: log the struct, then void return.
+                # run_body still holds the original body (before main_func_body was rebound).
+                run_body = return_re.sub(
+                    f"{insert_block}\n    cc.log_output {final_struct} : {struct_type}\n    return",
+                    run_body,
+                )
+        else:
+            return_type_str = None
+            return_sig = ""
+
+        run_func_name = func_name + ".run"
+        run_entry_name = func_name + ".run.entry"
 
         mod_attributes = [f'cc.python_uniqued = "{uniq_name}"']
         mod_attributes.append(data_layout_attr)
         if target_triple_attr:
             mod_attributes.append(target_triple_attr)
-        mod_attributes.append(f'quake.mangled_name_map = {{\n    {func_name} = "{entry_point}"\n  }}')
+
+        mod_attributes.append(
+            f"quake.mangled_name_map = {{\n"
+            f'    {func_name} = "{entry_point}",\n'
+            f'    {run_func_name} = "{run_entry_name}"\n'
+            f"  }}"
+        )
         attributes_str = ",\n  ".join(mod_attributes)
 
         adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
+
         if other_functions.strip():
             adapted_mlir += f"  {other_functions.strip()}\n\n"
+
         adapted_mlir += (
-            f"  func.func @{func_name}{param_list} attributes "
-            f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {sample_body}\n  }}\n'
-            f"}}\n"
+            f"  func.func @{func_name}{param_list}{return_sig} attributes "
+            f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {main_func_body}\n  }}\n'
         )
+
+        run_attrs = f'{{"cudaq-entrypoint", "cudaq-kernel", no_this'
+        if return_type_str:
+            run_attrs += f", quake.cudaq_run = [{return_type_str}]"
+        run_attrs += "}"
+        adapted_mlir += f"  func.func @{run_func_name}{param_list} attributes {run_attrs} {{\n    {run_body}\n  }}\n"
+
+        adapted_mlir += f"  func.func @{run_entry_name}{param_list} attributes {{no_this}} {{\n    return\n  }}\n}}\n"
 
         with kernel.ctx:
             try:
@@ -327,118 +457,8 @@ def cudaq_kernel_from_mlir(mlir_str: str, execution_mode: Literal["run", "sample
             kernel.module = new_module
             NoneType.get(context=kernel.ctx)
 
-        return PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
-
-    # ------------------------------------------------------------------
-    # Run mode (default): cc.log_output + .run / .run.entry variants.
-    # ------------------------------------------------------------------
-    run_body = main_func_body
-
-    # Match single or multi-value func.return:
-    #   single: func.return %a : T
-    #   multi:  func.return %a, %b, %c : T1, T2, T3
-    return_match = re.search(
-        r"func\.return\s+((?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*)\s*:\s*(.+)",
-        main_func_body,
-    )
-    if return_match:
-        return_values = [v.strip() for v in return_match.group(1).split(",")]
-        return_types = [t.strip() for t in return_match.group(2).split(",")]
-
-        if len(return_values) == 1:
-            # Single return value — original behaviour.
-            return_type_str = return_types[0]
-            return_sig = f" -> {return_type_str}"
-            run_body = re.sub(
-                r"func\.return\s+(?:%[\w.]+)\s*:\s*(.+)",
-                r"cc.log_output " + return_values[0] + r" : \1\n    return",
-                main_func_body,
-            )
-        else:
-            # Multiple return values: pack into !cc.struct<"tuple" {T1, T2, ...}>
-            # This matches the MLIR emitted by native @cudaq.kernel for Tuple[...] returns.
-            types_joined = ", ".join(return_types)
-            struct_type = f'!cc.struct<"tuple" {{{types_joined}}}>'
-            return_type_str = struct_type
-            return_sig = f" -> {struct_type}"
-
-            # Build struct-packing ops to inject before func.return.
-            # cc.insert_value syntax: %result = cc.insert_value %prev[i], %val : (S, T) -> S
-            insert_lines = [f"%__qrisp_tuple_0 = cc.undef {struct_type}"]
-            prev = "%__qrisp_tuple_0"
-            for i, (val, typ) in enumerate(zip(return_values, return_types)):
-                next_name = f"%__qrisp_tuple_{i + 1}"
-                insert_lines.append(
-                    f"{next_name} = cc.insert_value {prev}[{i}], {val} : ({struct_type}, {typ}) -> {struct_type}"
-                )
-                prev = next_name
-
-            insert_block = "\n    ".join(insert_lines)
-            final_struct = prev  # last SSA value holding the fully-populated struct
-
-            return_re = re.compile(r"func\.return\s+(?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*\s*:\s*.+")
-            # Main function body: replace multi-return with single struct return.
-            main_func_body = return_re.sub(
-                f"{insert_block}\n    func.return {final_struct} : {struct_type}",
-                main_func_body,
-            )
-            # .run function body: log the struct, then void return.
-            # run_body still holds the original body (before main_func_body was rebound).
-            run_body = return_re.sub(
-                f"{insert_block}\n    cc.log_output {final_struct} : {struct_type}\n    return",
-                run_body,
-            )
-    else:
-        return_type_str = None
-        return_sig = ""
-
-    run_func_name = func_name + ".run"
-    run_entry_name = func_name + ".run.entry"
-
-    mod_attributes = [f'cc.python_uniqued = "{uniq_name}"']
-    mod_attributes.append(data_layout_attr)
-    if target_triple_attr:
-        mod_attributes.append(target_triple_attr)
-
-    mod_attributes.append(
-        f"quake.mangled_name_map = {{\n"
-        f'    {func_name} = "{entry_point}",\n'
-        f'    {run_func_name} = "{run_entry_name}"\n'
-        f"  }}"
-    )
-    attributes_str = ",\n  ".join(mod_attributes)
-
-    adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
-
-    if other_functions.strip():
-        adapted_mlir += f"  {other_functions.strip()}\n\n"
-
-    adapted_mlir += (
-        f"  func.func @{func_name}{param_list}{return_sig} attributes "
-        f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {main_func_body}\n  }}\n'
-    )
-
-    run_attrs = f'{{"cudaq-entrypoint", "cudaq-kernel", no_this'
-    if return_type_str:
-        run_attrs += f", quake.cudaq_run = [{return_type_str}]"
-    run_attrs += "}"
-    adapted_mlir += f"  func.func @{run_func_name}{param_list} attributes {run_attrs} {{\n    {run_body}\n  }}\n"
-
-    adapted_mlir += f"  func.func @{run_entry_name}{param_list} attributes {{no_this}} {{\n    return\n  }}\n}}\n"
-
-    with kernel.ctx:
-        try:
-            new_module = Module.parse(adapted_mlir, kernel.ctx)
-        except Exception:
-            quake.register_dialect(context=kernel.ctx)
-            cc.register_dialect(context=kernel.ctx)
-            new_module = Module.parse(adapted_mlir, kernel.ctx)
-
-        kernel.module = new_module
-        NoneType.get(context=kernel.ctx)
-
-    pykd = PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
-    return pykd
+        pykd = PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
+        return pykd
 
 
 def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
@@ -479,7 +499,8 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 
     """
     pykd = cudaq_kernel_from_mlir(mlir_str, execution_mode="run")
-    return cudaq.run(pykd, shots_count=shots)
+    with _CUDAQ_LOCK:
+        return cudaq.run(pykd, shots_count=shots)
 
 
 def sample_quake_mlir(mlir_str: str, shots: int = 100) -> dict[str, int]:
@@ -520,11 +541,9 @@ def sample_quake_mlir(mlir_str: str, shots: int = 100) -> dict[str, int]:
 
     """
     pykd = cudaq_kernel_from_mlir(mlir_str, execution_mode="sample")
-    result = cudaq.sample(pykd, shots_count=shots)
-    result_dict = dict()
-    for key, value in result.items():
-        result_dict[key] = value
-    return result_dict
+    with _CUDAQ_LOCK:
+        result = cudaq.sample(pykd, shots_count=shots)
+        return {key: value for key, value in result.items()}
 
 
 # ------------------------------------------------------------------ #
