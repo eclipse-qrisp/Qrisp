@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -29,9 +28,10 @@ from xdsl.dialects.builtin import (
 )
 from xdsl.ir import (
     Attribute,
-    Block,
-    Operation,
     SSAValue,
+)
+from xdsl.pattern_rewriter import (
+    PatternRewriter,
 )
 
 from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
@@ -109,82 +109,62 @@ def _scalar_type_of(t: Attribute) -> Attribute:
     return t
 
 
-def _coerce_to_f64(val: SSAValue, block: Block, insert_before: Operation) -> SSAValue:
-    """Extract from tensor if needed, then cast int→f64 if needed.
+# ---------------------------------------------------------------------------
+# Numeric-type helpers for rewriter
+# ---------------------------------------------------------------------------
 
-    Returns an SSAValue of type f64.
-    """
 
-    # Step 1: unwrap rank-0 tensor → scalar
+def _coerce_to_f64_for_rewriter(val: SSAValue, rewriter: PatternRewriter) -> SSAValue:
+    """Extract from tensor if needed, then cast to f64."""
     scalar_type = _scalar_type_of(val.type)
-    scalar = _extract_scalar(val, scalar_type, block, insert_before)
+    scalar = _extract_scalar_for_rewriter(val, scalar_type, rewriter)
 
-    # Step 2: already f64 → done
     if scalar.type == f64:
         return scalar
 
-    # Step 3: other float → fpext/fptrunc to f64
     if _is_float_type(scalar.type):
-        cast = arith.ExtFOp(scalar, f64)  # or SIToFPOp etc.
-        block.insert_ops_before([cast], insert_before)
+        cast = arith.ExtFOp(scalar, f64)
+        rewriter.insert_op_before_matched_op(cast)
         return cast.result
 
-    # Step 4: integer → sitofp to f64
     if isinstance(scalar.type, IntegerType):
         cast = arith.SIToFPOp(scalar, f64)
-        block.insert_ops_before([cast], insert_before)
+        rewriter.insert_op_before_matched_op(cast)
         return cast.result
 
     raise ValueError(f"Cannot coerce {scalar.type} to f64")
 
 
-def _normalize_index_for_veq(veq: SSAValue, idx: SSAValue, block: Block, insert_before_op: Operation) -> SSAValue:
-    """Implement Python-style negative indexing on a veq index.
-
-    If idx < 0, return idx + size(veq), else idx.
-
-    All ops are inserted before `insert_before_op`.
-    Assumes `idx` is an i64 scalar.
-    """
-    # len = quake.veq_size %veq
+def _normalize_index_for_veq_rewriter(veq: SSAValue, idx: SSAValue, rewriter: PatternRewriter) -> SSAValue:
+    """Python-style negative indexing: if idx < 0, return idx + size(veq)."""
     size = VeqSizeOp(veq)
-
     zero = arith.ConstantOp(IntegerAttr(0, 64))
-    is_neg = arith.CmpiOp(idx, zero.result, "slt")  # idx < 0 ?
-    idx_plus_size = arith.AddiOp(idx, size.result)  # idx + len
+    is_neg = arith.CmpiOp(idx, zero.result, "slt")
+    idx_plus_size = arith.AddiOp(idx, size.result)
     norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
 
-    block.insert_ops_before(
-        [size, zero, is_neg, idx_plus_size, norm],
-        insert_before_op,
-    )
+    rewriter.insert_op_before_matched_op([size, zero, is_neg, idx_plus_size, norm])
     return norm.result
 
 
 # ---------------------------------------------------------------------------
-# Tensor-extract helper
+# Tensor-extract helpers for rewriter
 # ---------------------------------------------------------------------------
 
 
-def _extract_scalar(val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op: Operation) -> SSAValue:
-    """Insert a ``tensor.extract %val[] : tensor<T>`` op and return the result.
-
-    If *val* is already of *scalar_type* (not a tensor), return it unchanged.
-    """
+def _extract_scalar_for_rewriter(val: SSAValue, scalar_type: Attribute, rewriter: PatternRewriter) -> SSAValue:
+    """Insert ``tensor.extract`` if val is a tensor; return scalar SSAValue."""
     if val.type == scalar_type:
         return val
     extract = tensor.ExtractOp(val, [], scalar_type)
-    block.insert_ops_before([extract], insert_before_op)
+    rewriter.insert_op_before_matched_op(extract)
     return extract.result
 
 
-def _wrap_scalar(val: SSAValue, tensor_type: Attribute, block: Block, insert_before_op: Operation) -> SSAValue:
-    """Insert ``tensor.from_elements %val : tensor<T>`` and return the result.
-
-    If *val* is already of *tensor_type*, return it unchanged.
-    """
+def _wrap_scalar_for_rewriter(val: SSAValue, tensor_type: Attribute, rewriter: PatternRewriter) -> SSAValue:
+    """Insert ``tensor.from_elements`` to wrap scalar into tensor."""
     if val.type == tensor_type:
         return val
     from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
-    block.insert_ops_before([from_elem], insert_before_op)
+    rewriter.insert_op_before_matched_op(from_elem)
     return from_elem.result

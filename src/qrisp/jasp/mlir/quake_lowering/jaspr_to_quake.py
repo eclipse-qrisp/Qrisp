@@ -64,7 +64,9 @@ from xdsl.context import Context
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
+
+# from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
+from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
@@ -132,7 +134,7 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     verify_no_ranked_tensor_linalg(module)
 
     # Step 1 – PASS 1: QuantumState elimination + Jasp → Quake rewriting.
-    lower_jasp_to_quake(module, execution_mode=execution_mode)
+    jasp_to_quake(module, execution_mode=execution_mode)
 
     # Step 2 – PASS 2: SCF → CC lowering.
     lower_scf_to_cc(module)
