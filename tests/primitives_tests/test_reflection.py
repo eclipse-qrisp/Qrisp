@@ -58,18 +58,6 @@ def test_reflection_quantum_array():
     assert res == {OutcomeArray([0, 0, 0]): 1.0}
 
 
-def test_reflection_quantum_array():
-    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with QuantumArray input."""
-    qa = QuantumArray(QuantumFloat(3), shape=(3,))
-    x(qa)
-    res = qa.get_measurement()
-    assert res == {OutcomeArray([7, 7, 7]): 1.0}
-
-    reflection(qa, ghz)
-    res = qa.get_measurement()
-    assert res == {OutcomeArray([0, 0, 0]): 1.0}
-
-
 def test_reflection_list_quantum_variable():
     """Tests that the reflection primitive correctly applies a reflection around a GHZ state with list of QuantumVariable input."""
     qv_list = [QuantumVariable(3), QuantumVariable(2)]
