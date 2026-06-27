@@ -32,6 +32,7 @@ Evaluation
    Jaspr.to_mlir
    Jaspr.to_catalyst_jaxpr
    Jaspr.to_catalyst_mlir
+   Jaspr.to_quake_mlir
    Jaspr.to_qir
    
 

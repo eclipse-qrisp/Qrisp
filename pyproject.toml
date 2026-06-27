@@ -80,6 +80,7 @@ dev-testing = [
     "pyscf",
     "cirq",
     "tqecd",
+    "cudaq",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",

@@ -219,19 +219,16 @@ def GQSP(
         rz(-2 * theta, qubit)
         rx(-2 * phi, qubit)
 
-    theta = theta[::-1]
-    phi = phi[::-1]
-
     for i in jrange(d - k):
-        R(theta[i], phi[i], anc)
+        R(theta[d - i], phi[d - i], anc)
         with control(anc, ctrl_state=0):
             unitary(*qargs, **kwargs)
 
     for i in jrange(k):
-        R(theta[d - k + i], phi[d - k + i], anc)
+        R(theta[k - i], phi[k - i], anc)
         with control(anc, ctrl_state=1):
             with invert():
                 unitary(*qargs, **kwargs)
 
-    R(theta[d], phi[d], anc)
+    R(theta[0], phi[0], anc)
     rz(-2 * lambda_, anc)
