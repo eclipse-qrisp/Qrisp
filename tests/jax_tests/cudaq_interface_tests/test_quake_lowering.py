@@ -80,6 +80,7 @@ from qrisp.jasp import (
     q_cond,
     q_fori_loop,
     qache,
+    quantum_kernel,
     terminal_sampling,
 )
 from qrisp.operators import X, Y, Z
@@ -358,6 +359,23 @@ def test_func_call_lowering():
     assert "quake.alloca" in mlir, "Expected quake.alloca in output for test function"
     assert "quake.veq" in mlir, "Expected quake.veq type in output for test function"
     # No jasp types should be present in the output
+    validate_quake_mlir(mlir)
+
+
+def test_quantum_kernel_lowering():
+    """Test that a function decorated with @quantum_kernel is correctly lowered."""
+
+    @quantum_kernel
+    def test_kernel():
+        qv = QuantumVariable(3)
+        return measure(qv[0])
+
+    def main():
+        res = test_kernel()
+        return res
+
+    mlir = _lower(main)
+    assert "cudaq.kernel" in mlir
     validate_quake_mlir(mlir)
 
 

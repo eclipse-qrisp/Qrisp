@@ -22,8 +22,7 @@ Replaces all ``jasp.*`` ops with their Quake equivalents using a
 ``PatternRewriteWalker``.  QuantumState values are threaded backwards
 (``qst_out.replace_all_uses_with(qst_in)``) inside each pattern, making
 all QST values dead.  The actual *structural* removal of QST from SCF ops
-and function signatures is handled by the separate PASS 1b
-(:mod:`pass1b_strip_qst`).
+and function signatures is handled by the separate PASS 1b.
 
 Op mapping:
 
@@ -39,8 +38,8 @@ Jasp op                   Quake op(s)
 ``jasp.quantum_gate``     ``quake.<gate>``  (dispatched via gate_mapping)
 ``jasp.measure``          ``quake.mz`` + ``quake.discriminate``
 ``jasp.reset``            ``quake.reset``
-``jasp.create_qk``        *(dropped)*
-``jasp.consume_qk``       *(dropped; result → constant True)*
+``jasp.create_quantum_kernel``        dropped in PASS 1b
+``jasp.consume_quantum_kernel``       dropped in PASS 1b
 ========================  ==========================================
 """
 
@@ -81,8 +80,6 @@ from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
 )
 from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
 from qrisp.jasp.mlir.xdsl_dialect import (
-    ConsumeQuantumKernelOp,
-    CreateQuantumKernelOp,
     CreateQubitsOp,
     DeleteQubitsOp,
     FuseOp,
@@ -129,8 +126,6 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
     """
 
     patterns: list[RewritePattern] = [
-        LowerCreateQuantumKernel(),
-        LowerConsumeQuantumKernel(),
         LowerCreateQubits(),
         LowerGetQubit(),
         LowerGetSize(),
@@ -170,28 +165,6 @@ def _thread_qst(op: Operation) -> None:
 # ===========================================================================
 # Rewrite Patterns
 # ===========================================================================
-
-
-class LowerCreateQuantumKernel(RewritePattern):
-    """``jasp.create_quantum_kernel`` → dropped."""
-
-    @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: CreateQuantumKernelOp, rewriter: PatternRewriter) -> None:
-        qst_outputs = [r for r in op.results if _is_qst(r.type)]
-        if any(r.uses for r in qst_outputs):
-            return
-        rewriter.erase_op(op)
-
-class LowerConsumeQuantumKernel(RewritePattern):
-    """``jasp.consume_quantum_kernel`` → constant True tensor."""
-
-    @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: ConsumeQuantumKernelOp, rewriter: PatternRewriter) -> None:
-        if op.results:
-            true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
-            op.results[0].replace_all_uses_with(true_const.result)
-            rewriter.insert_op(true_const, InsertPoint.before(rewriter.current_operation))
-        rewriter.erase_op(op)
 
 
 class LowerCreateQubits(RewritePattern):

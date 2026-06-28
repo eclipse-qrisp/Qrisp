@@ -19,8 +19,20 @@
 PASS 1b – QuantumState structural elimination.
 
 After PASS 1a has lowered all ``jasp.*`` ops and threaded QST backwards
-(making all QST values dead), this pass removes the now-dead
-``!jasp.QuantumState`` from:
+(making all QST values dead), excecpt for the quantum kernel creation/consumption ops, this pass
+removes all remaining structural traces of ``!jasp.QuantumState`` from the IR.
+
+Quantum kernels are handled specially: the ``jasp.create_quantum_kernel`` op is dropped, and the
+``jasp.consume_quantum_kernel`` op is replaced with a constant True tensor. 
+A ``jasp.create_quantum_kernel`` op has a single result of type ``!jasp.QuantumState``. 
+A ``jasp.consume_quantum_kernel`` op has a single operand of type ``!jasp.QuantumState``and a single result of type ``tensor<i1>``.
+Both ops enclose a ``func.call`` marking the quantum kernel function:
+
+    %0 = jasp.create_quantum_kernel -> !jasp.QuantumState
+    %1, %2 = func.call @quantum_kernel(%0) : (!jasp.QuantumState) -> (tensor<i1>, !jasp.QuantumState)
+    %3 = jasp.consume_quantum_kernel %2 : !jasp.QuantumState -> tensor<i1>
+
+This pass removes the remaining structural traces of ``!jasp.QuantumState`` from:
 
 - ``scf.while`` init operands, block arguments, yields, conditions, and results
 - ``scf.if`` yields and results
@@ -30,12 +42,11 @@ After PASS 1a has lowered all ``jasp.*`` ops and threaded QST backwards
 - ``func.return`` operands
 - ``func.func`` argument lists, return types, and attributes
 
-All patterns fire unconditionally (no ``_region_has_jasp_ops`` check needed
-because PASS 1a guarantees no ``jasp.*`` ops remain).
 """
 
-from xdsl.dialects import func
+from xdsl.dialects import arith, func
 from xdsl.dialects.builtin import (
+    DenseIntOrFPElementsAttr,
     FunctionType,
     ModuleOp,
     StringAttr,
@@ -48,6 +59,7 @@ from xdsl.ir import (
     SSAValue,
 )
 from xdsl.pattern_rewriter import (
+    InsertPoint,
     GreedyRewritePatternApplier,
     PatternRewriter,
     PatternRewriteWalker,
@@ -65,6 +77,10 @@ from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.helper_functions import (
     _is_qubit_array,
     _is_qubit,
     _quake_type_for,
+)
+from qrisp.jasp.mlir.xdsl_dialect import (
+    ConsumeQuantumKernelOp,
+    CreateQuantumKernelOp,
 )
 
 
@@ -85,6 +101,8 @@ def strip_qst(module: ModuleOp, execution_mode: str = "run") -> None:
         ``"run"`` or ``"sample"`` — affects function return type handling.
     """
     patterns: list[RewritePattern] = [
+        LowerCreateQuantumKernel(),
+        LowerConsumeQuantumKernel(),
         StripQSTFromWhile(),
         StripQSTFromIf(),
         StripQSTFromFor(),
@@ -145,6 +163,34 @@ def _build_result_mapping(old_results, new_results_iter) -> list[SSAValue | None
             mapping.append(new_results_iter[new_idx])
             new_idx += 1
     return mapping
+
+
+# ===========================================================================
+# Quantum Kernel Patterns
+# ===========================================================================
+
+
+class LowerCreateQuantumKernel(RewritePattern):
+    """``jasp.create_quantum_kernel`` → dropped (after QST uses are gone)."""
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: CreateQuantumKernelOp, rewriter: PatternRewriter) -> None:
+        qst_outputs = [r for r in op.results if _is_qst(r.type)]
+        if any(r.uses for r in qst_outputs):
+            return  # Not ready yet — wait for StripQSTFromCall to fire
+        rewriter.erase_op(op)
+
+
+class LowerConsumeQuantumKernel(RewritePattern):
+    """``jasp.consume_quantum_kernel`` → constant True tensor."""
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: ConsumeQuantumKernelOp, rewriter: PatternRewriter) -> None:
+        if op.results:
+            true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
+            op.results[0].replace_all_uses_with(true_const.result)
+            rewriter.insert_op(true_const, InsertPoint.before(rewriter.current_operation))
+        rewriter.erase_op(op)
 
 
 # ===========================================================================
