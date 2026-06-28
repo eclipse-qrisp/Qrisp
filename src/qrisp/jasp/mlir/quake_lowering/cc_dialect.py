@@ -18,9 +18,14 @@
 """
 xDSL dialect definitions for the CUDA-Q Classical Control (CC) dialect.
 
-Covers both structured control-flow ops (cc.if, cc.loop, cc.condition,
-cc.continue, cc.break) and local memory ops (cc.alloca, cc.store, cc.load)
-needed by the Jasp→Quake lowering pipeline.
+Covers:
+- Types (!cc.ptr<T>, !cc.array<T x N>, !cc.stdvec<T>, !cc.struct<"name" {T1, T2, ...}>)
+- Local memory ops (cc.alloca, cc.store, cc.load)
+- Structured control-flow ops (cc.if, cc.loop, cc.condition, cc.continue, cc.break)
+- Pointer arithmetic ops (cc.compute_ptr, cc.cast)
+- StdVec ops (cc.stdvec_data)
+- Struct ops (cc.undef, cc.insert_value, cc.log_output) — used by CUDA-Q
+  preparation for multi-return packing and .run variant synthesis.
 
 Control-flow semantics (matching native CUDA-Q output):
 
@@ -39,7 +44,7 @@ https://github.com/NVIDIA/cuda-quantum/tree/main/lib/Optimizer/Dialect/CC
 
 from typing import Sequence
 
-from xdsl.dialects.builtin import i1
+from xdsl.dialects.builtin import ArrayAttr, IntegerAttr, i1, i64, StringAttr
 from xdsl.ir import (
     Attribute,
     Block,
@@ -69,6 +74,43 @@ from xdsl.printer import Printer
 
 
 @irdl_attr_definition
+class CcArrayType(ParametrizedAttribute, TypeAttribute):
+    """Fixed-size or dynamic-size array type: ``!cc.array<T x N>`` or ``!cc.array<T x ?>``.
+
+    Use size=-1 to represent dynamic size (prints as ``?``).
+    """
+
+    name = "cc.array"
+
+    element_type: Attribute
+    size: IntegerAttr
+
+    def __init__(self, element_type: Attribute, size: int) -> None:
+        super().__init__(element_type, IntegerAttr(size, i64))
+
+    def print_parameters(self, printer: Printer) -> None:
+        size_val = self.size.value.data
+        printer.print_string("<")
+        printer.print_attribute(self.element_type)
+        if size_val < 0:
+            printer.print_string(" x ?>")
+        else:
+            printer.print_string(f" x {size_val}>")
+
+
+@irdl_attr_definition
+class CcPtrType(ParametrizedAttribute, TypeAttribute):
+    """Pointer type: ``!cc.ptr<T>``."""
+
+    name = "cc.ptr"
+
+    element_type: Attribute
+
+    def __init__(self, element_type: Attribute) -> None:
+        super().__init__(element_type)
+
+
+@irdl_attr_definition
 class CcStdVecType(ParametrizedAttribute, TypeAttribute):
     """CUDA-Q CC ``!cc.stdvec<T>`` type.
 
@@ -86,13 +128,10 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
     def __init__(self, element_type: Attribute | None = None) -> None:
         if element_type is None:
             # Sentinel: use a StringAttr to mark "quake.measure" without importing it
-            from xdsl.dialects.builtin import StringAttr
-
             element_type = StringAttr("!quake.measure")
         super().__init__(element_type)
 
     def print_parameters(self, printer: Printer) -> None:
-        from xdsl.dialects.builtin import StringAttr
 
         if isinstance(self.element_type, StringAttr):
             # Legacy: print as <!quake.measure>
@@ -106,15 +145,40 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
 
 
 @irdl_attr_definition
-class CcPtrType(ParametrizedAttribute, TypeAttribute):
-    """Pointer type: ``!cc.ptr<T>``."""
+class CcStructType(ParametrizedAttribute, TypeAttribute):
+    """Struct type: ``!cc.struct<"name" {T1, T2, ...}>``.
 
-    name = "cc.ptr"
+    Used by CUDA-Q to pack multiple return values into a single SSA value
+    for the .run execution mode.
 
-    element_type: Attribute
+    Examples
+    --------
+    ::
 
-    def __init__(self, element_type: Attribute) -> None:
-        super().__init__(element_type)
+        !cc.struct<"tuple" {i64, f64}>
+        !cc.struct<"tuple" {i64, i64, i64}>
+    """
+
+    name = "cc.struct"
+
+    struct_name: Attribute  # StringAttr
+    field_types: Attribute  # ArrayAttr
+
+    def __init__(self, struct_name: str, field_types: Sequence[Attribute]) -> None:
+
+        super().__init__(StringAttr(struct_name), ArrayAttr(list(field_types)))
+
+    def print_parameters(self, printer: Printer) -> None:
+
+        printer.print_string('<"')
+        printer.print_string(self.struct_name.data)
+        printer.print_string('" {')
+        fields = list(self.field_types.data)
+        for i, f in enumerate(fields):
+            if i > 0:
+                printer.print_string(", ")
+            printer.print_attribute(f)
+        printer.print_string("}>")
 
 
 # ---------------------------------------------------------------------------
@@ -394,35 +458,8 @@ class CcConditionOp(IRDLOperation):
 
 
 # ---------------------------------------------------------------------------
-# CC Array type and pointer arithmetic ops
+# Pointer arithmetic ops
 # ---------------------------------------------------------------------------
-
-from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
-
-
-@irdl_attr_definition
-class CcArrayType(ParametrizedAttribute, TypeAttribute):
-    """Fixed-size or dynamic-size array type: ``!cc.array<T x N>`` or ``!cc.array<T x ?>``.
-
-    Use size=-1 to represent dynamic size (prints as ``?``).
-    """
-
-    name = "cc.array"
-
-    element_type: Attribute
-    size: IntegerAttr
-
-    def __init__(self, element_type: Attribute, size: int) -> None:
-        super().__init__(element_type, IntegerAttr(size, i64_type))
-
-    def print_parameters(self, printer: Printer) -> None:
-        size_val = self.size.value.data
-        printer.print_string("<")
-        printer.print_attribute(self.element_type)
-        if size_val < 0:
-            printer.print_string(" x ?>")
-        else:
-            printer.print_string(f" x {size_val}>")
 
 
 @irdl_op_definition
@@ -455,13 +492,12 @@ class CcComputePtrOp(IRDLOperation):
         element_type : Attribute
             The element type (T) for the result pointer type.
         """
-        from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
 
         if isinstance(index, int):
             # Static index
             super().__init__(
                 operands=[base, []],
-                attributes={"static_index": IntegerAttr(index, i64_type)},
+                attributes={"static_index": IntegerAttr(index, i64)},
                 result_types=[CcPtrType(element_type)],
             )
         else:
@@ -542,6 +578,95 @@ class CcStdVecDataOp(IRDLOperation):
         printer.print_attribute(self.result.type)
 
 
+# ===========================================================================
+# Struct / value ops (used by pass6 CUDA-Q preparation)
+# ===========================================================================
+
+
+@irdl_op_definition
+class CcUndefOp(IRDLOperation):
+    """Create an undefined value of a given type.
+
+    Typically used to create an uninitialized struct that is then populated
+    with ``cc.insert_value``::
+
+        %s = cc.undef !cc.struct<"tuple" {i64, f64}>
+    """
+
+    name = "cc.undef"
+    result = result_def(AnyAttr())
+
+    def __init__(self, result_type: Attribute) -> None:
+        super().__init__(result_types=[result_type])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_attribute(self.result.type)
+
+
+@irdl_op_definition
+class CcInsertValueOp(IRDLOperation):
+    """Insert a value into a struct at a given index.
+
+    ::
+
+        %new = cc.insert_value %struct[0], %val : (!cc.struct<"tuple" {i64, f64}>, i64) -> !cc.struct<"tuple" {i64, f64}>
+
+    The result type is always the same as the struct type.
+    """
+
+    name = "cc.insert_value"
+    struct = operand_def(AnyAttr())
+    value = operand_def(AnyAttr())
+    index = attr_def(IntegerAttr)
+    result = result_def(AnyAttr())
+
+    def __init__(self, struct: SSAValue, index: int, value: SSAValue) -> None:
+        super().__init__(
+            operands=[struct, value],
+            attributes={"index": IntegerAttr(index, i64_type)},
+            result_types=[struct.type],
+        )
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.struct)
+        idx_val = self.index.value.data
+        printer.print_string(f"[{idx_val}], ")
+        printer.print_ssa_value(self.value)
+        printer.print_string(" : (")
+        printer.print_attribute(self.struct.type)
+        printer.print_string(", ")
+        printer.print_attribute(self.value.type)
+        printer.print_string(") -> ")
+        printer.print_attribute(self.result.type)
+
+
+@irdl_op_definition
+class CcLogOutputOp(IRDLOperation):
+    """Log a classical value for retrieval by ``cudaq.run``.
+
+    ::
+
+        cc.log_output %val : i64
+
+    This op is a side-effecting terminator-like op that records the value
+    for the CUDA-Q runtime to collect across shots. It has no results.
+    """
+
+    name = "cc.log_output"
+    value = operand_def(AnyAttr())
+
+    def __init__(self, value: SSAValue) -> None:
+        super().__init__(operands=[value])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.value)
+        printer.print_string(" : ")
+        printer.print_attribute(self.value.type)
+
+
 # ---------------------------------------------------------------------------
 # Dialect registration
 # ---------------------------------------------------------------------------
@@ -552,16 +677,24 @@ class CcDialect(Dialect):
 
     name = "cc"
     operations = [
+        # Control flow
         CcIfOp,
         CcLoopOp,
         CcBreakOp,
         CcContinueOp,
         CcConditionOp,
+        # Memory
         CcAllocaOp,
         CcStoreOp,
         CcLoadOp,
+        # Pointer arithmetic
         CcComputePtrOp,
         CcCastOp,
+        # StdVec
         CcStdVecDataOp,
+        # Struct / value
+        CcUndefOp,
+        CcInsertValueOp,
+        CcLogOutputOp,
     ]
-    attributes = [CcStdVecType, CcPtrType, CcArrayType]
+    attributes = [CcArrayType, CcPtrType, CcStdVecType, CcStructType]
