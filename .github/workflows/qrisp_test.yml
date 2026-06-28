@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test-core:
     name: Test Py${{ matrix.python-version }} (${{ matrix.test-group.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -29,8 +29,10 @@ jobs:
         test-group:
           - name: core
             paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
+            extras: "dev,catalyst,xdsl,cudaq"
           - name: algorithms-and-integrations
             paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+            extras: "dev,catalyst,xdsl,iqm"
 
     steps:
       - uses: actions/checkout@v7
@@ -42,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,catalyst,xdsl,iqm]"
+          pip install -e ".[${{ matrix.test-group.extras }}]"
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
           pytest ${{ matrix.test-group.paths }}
