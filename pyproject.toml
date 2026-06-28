@@ -56,6 +56,7 @@ iqm = [
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+cudaq = ["cudaq>=0.14.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
@@ -80,7 +81,6 @@ dev-testing = [
     "pyscf",
     "cirq",
     "tqecd",
-    "cudaq",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
