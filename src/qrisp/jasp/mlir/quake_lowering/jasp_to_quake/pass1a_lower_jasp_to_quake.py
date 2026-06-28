@@ -177,9 +177,10 @@ class LowerCreateQuantumKernel(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: CreateQuantumKernelOp, rewriter: PatternRewriter) -> None:
-        _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
-
+        qst_outputs = [r for r in op.results if _is_qst(r.type)]
+        if any(r.uses for r in qst_outputs):
+            return
+        rewriter.erase_op(op)
 
 class LowerConsumeQuantumKernel(RewritePattern):
     """``jasp.consume_quantum_kernel`` → constant True tensor."""
@@ -190,7 +191,7 @@ class LowerConsumeQuantumKernel(RewritePattern):
             true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
             op.results[0].replace_all_uses_with(true_const.result)
             rewriter.insert_op(true_const, InsertPoint.before(rewriter.current_operation))
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerCreateQubits(RewritePattern):
@@ -209,7 +210,7 @@ class LowerCreateQubits(RewritePattern):
                 r.replace_all_uses_with(alloca.result)
 
         _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerGetQubit(RewritePattern):
@@ -230,7 +231,7 @@ class LowerGetQubit(RewritePattern):
             if _is_qubit(r.type):
                 r.replace_all_uses_with(extract.result)
 
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerGetSize(RewritePattern):
@@ -246,7 +247,7 @@ class LowerGetSize(RewritePattern):
         wrapped = _wrap_scalar_for_rewriter(veq_size.result, result_tensor_type, rewriter)
 
         op.results[0].replace_all_uses_with(wrapped)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerSlice(RewritePattern):
@@ -282,7 +283,7 @@ class LowerSlice(RewritePattern):
             if _is_qubit_array(r.type):
                 r.replace_all_uses_with(subveq.result)
 
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerFuse(RewritePattern):
@@ -298,7 +299,7 @@ class LowerFuse(RewritePattern):
             if _is_qubit_array(r.type):
                 r.replace_all_uses_with(concat.result)
 
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerDeleteQubits(RewritePattern):
@@ -311,7 +312,7 @@ class LowerDeleteQubits(RewritePattern):
         rewriter.insert_op(dealloc, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerQuantumGate(RewritePattern):
@@ -361,7 +362,7 @@ class LowerQuantumGate(RewritePattern):
             rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 class LowerMeasure(RewritePattern):
@@ -411,7 +412,7 @@ class LowerMeasure(RewritePattern):
             self._lower_array_run(qubit_val, meas_result, rewriter)
 
         _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
     def _lower_single_qubit_run(self, qubit_val, meas_result, rewriter):
         mz = MzOp(qubit_val)
@@ -468,4 +469,4 @@ class LowerReset(RewritePattern):
         rewriter.insert_op(reset_op, InsertPoint.before(rewriter.current_operation))
 
         _thread_qst(op)
-        rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
