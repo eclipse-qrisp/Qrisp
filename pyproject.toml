@@ -81,7 +81,7 @@ dev-testing-windows = [
     "tqecd",
 ]
 dev-testing = [
-    qrisp[dev-testing-windows],
+    "qrisp[dev-testing-windows]",
     "pyscf",
 
 ]
