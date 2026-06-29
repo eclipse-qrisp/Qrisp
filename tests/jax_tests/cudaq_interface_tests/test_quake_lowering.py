@@ -30,12 +30,9 @@ Coverage
 - Negative test: unsupported gate emits a warning and is left in place.
 """
 
-from collections import Counter
 import warnings
-import jax
 import jax.numpy as jnp
 import numpy as np
-import operator
 import pytest
 import re
 
@@ -72,20 +69,11 @@ from qrisp import (
     invert,
     conjugate,
 )
-from qrisp.alg_primitives import amplitude_amplification, q_switch, QPE, QFT
-from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import (
     make_jaspr,
-    jrange,
-    q_while_loop,
-    q_cond,
-    q_fori_loop,
     qache,
     quantum_kernel,
-    terminal_sampling,
 )
-from qrisp.operators import X, Y, Z
-
 from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 

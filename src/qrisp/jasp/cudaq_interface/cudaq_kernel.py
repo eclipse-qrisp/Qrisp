@@ -27,17 +27,15 @@ to the format CUDA-Q's parser expects (e.g. `builtin.module` → `module`,
 `func.return` → `return`).
 """
 
+from collections.abc import Callable
+from typing import Literal
 import inspect
 import platform
 import re
 import sys
-from typing import Callable, Literal
 import warnings
 
-import numpy as np
-
 import cudaq
-from cudaq import cudaq_runtime
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
 from cudaq.mlir.ir import Module, NoneType
 from cudaq.mlir.dialects import quake as cudaq_quake_dialect, cc as cudaq_cc_dialect
@@ -249,24 +247,6 @@ def cudaq_kernel_from_mlir(
         NoneType.get(context=kernel.ctx)
 
     return PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
-
-
-# ------------------------------------------------------------------ #
-# Convenience functions
-# ------------------------------------------------------------------ #
-
-
-def run_quake_mlir(xdsl_module: ModuleOp, shots: int = 100) -> list:
-    """Execute a Quake MLIR string via cudaq.run."""
-    pykd = cudaq_kernel_from_mlir(xdsl_module, execution_mode="run")
-    return cudaq.run(pykd, shots_count=shots)
-
-
-def sample_quake_mlir(xdsl_module: ModuleOp, shots: int = 100) -> dict[str, int]:
-    """Execute a Quake MLIR string via cudaq.sample."""
-    pykd = cudaq_kernel_from_mlir(xdsl_module, execution_mode="sample")
-    result = cudaq.sample(pykd, shots_count=shots)
-    return {key: value for key, value in result.items()}
 
 
 # ------------------------------------------------------------------ #
