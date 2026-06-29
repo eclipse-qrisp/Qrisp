@@ -91,6 +91,7 @@ def _get_llvm_attributes() -> tuple[str, str | None]:
     target_triple_str = None
 
     try:
+
         @cudaq.kernel
         def _dummy_extractor():
             pass
@@ -115,8 +116,7 @@ def _get_llvm_attributes() -> tuple[str, str | None]:
             )
         data_layout_str, target_triple_str = defaults
         warnings.warn(
-            f"Could not extract llvm.data_layout from CUDA-Q; "
-            f"using platform default for {key}.",
+            f"Could not extract llvm.data_layout from CUDA-Q; using platform default for {key}.",
             stacklevel=3,
         )
 
@@ -153,8 +153,8 @@ def _normalize_xdsl_to_cudaq(mlir_str: str) -> str:
     # Match `-> (` followed by a type (no comma) followed by `)`
     # This regex is safe: it only matches single-type returns
     mlir_str = re.sub(
-        r'->\s*\(([^,\)]+)\)',
-        r'-> \1',
+        r"->\s*\(([^,\)]+)\)",
+        r"-> \1",
         mlir_str,
     )
 
@@ -190,8 +190,7 @@ def cudaq_kernel_from_mlir(
     # Accept either string or xDSL module
     if isinstance(xdsl_module, str):
         raise NotImplementedError(
-            "String-based MLIR parsing is not yet implemented. "
-            "Please provide an xDSL ModuleOp instead." 
+            "String-based MLIR parsing is not yet implemented. Please provide an xDSL ModuleOp instead."
         )
     #    from xdsl.context import Context
     #    from xdsl.parser import Parser
@@ -210,7 +209,7 @@ def cudaq_kernel_from_mlir(
     #    ctx.load_dialect(CcDialect)
     #    parser = Parser(ctx, mlir_input)
     #    module = parser.parse_module()
-    #else:
+    # else:
     #    module = mlir_input
 
     # Get CUDA-Q naming from a dummy kernel
@@ -314,12 +313,8 @@ def cudaq_kernel(
             )
 
     try:
-        mlir_module = jaspr_to_quake_mlir(
-            make_jaspr(func_arg)(*dummy_args), execution_mode=execution_mode
-        )
+        mlir_module = jaspr_to_quake_mlir(make_jaspr(func_arg)(*dummy_args), execution_mode=execution_mode)
     except Exception as e:
-        raise RuntimeError(
-            f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}"
-        )
+        raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}")
 
     return cudaq_kernel_from_mlir(mlir_module, execution_mode=execution_mode)

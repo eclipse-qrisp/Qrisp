@@ -81,6 +81,7 @@ from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
 
+
 def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     """Lower a :class:`~qrisp.jasp.Jaspr` to a Quake+CC ``builtin.ModuleOp``.
 

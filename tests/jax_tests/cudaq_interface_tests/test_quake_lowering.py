@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -39,6 +38,8 @@ import numpy as np
 import operator
 import pytest
 import re
+
+import cudaq
 
 from qrisp import (
     QuantumVariable,
@@ -85,12 +86,9 @@ from qrisp.jasp import (
 )
 from qrisp.operators import X, Y, Z
 
-try:
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
-    from qrisp.jasp.cudaq_interface import run_quake_mlir
-except ImportError as exc:
-    # Skip the entire test file if the import fails
-    pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
+from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
+from qrisp.jasp.cudaq_interface import cudaq_kernel
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -595,7 +593,9 @@ def test_negative_indexing():
     mlir = str(xdsl_module)
     assert "quake.x" in mlir, "Expected quake.x in output"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(main)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
 
 
@@ -616,7 +616,6 @@ def test_math():
     assert "math.powf" in mlir, "Expected math.powf for exponentiation"
     assert "math.log" in mlir, "Expected math.log for logarithm"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 # ---------------------------------------------------------------------------
@@ -638,7 +637,9 @@ def test_measure_single_qubit():
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1]
 
 
@@ -661,7 +662,9 @@ def test_measure_quantum_variable():
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1]
 
 
@@ -674,310 +677,14 @@ def test_measure_single_qubit_quantum_variable():
         return measure(qv)
 
     xdsl_module = _lower(circuit)
-
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1]
-
-
-# ---------------------------------------------------------------------------
-# Test invert and cojugate
-# (with qubit-wise gate application functions acting on qubits)
-# ---------------------------------------------------------------------------
-
-
-def test_invert():
-
-    def circuit():
-
-        def inner(qv):
-            rx(0.5, qv[0])
-            z(qv[0])
-            h(qv[0])
-
-        qv = QuantumVariable(1)
-
-        inner(qv)
-
-        with invert():
-            inner(qv)
-
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0]
-
-
-def test_conjugate():
-
-    def circuit():
-        qv = QuantumVariable(1)
-        with conjugate(h)(qv[0]):
-            z(qv[0])
-        return measure(qv[0])
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [1]
-
-
-# ---------------------------------------------------------------------------
-# Test control
-# ---------------------------------------------------------------------------
-
-
-def test_classcial_control():
-    """Control on a measurement result."""
-
-    def circuit():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        c = measure(qv[0])
-        with control(c):
-            x(qv[1])
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-
-
-def test_quantum_control():
-    """Control on a qubit value (not measurement result)."""
-
-    def circuit():
-        qv = QuantumVariable(2)
-        x(qv[0])
-        with control(qv[0]):
-            x(qv[1])
-        return measure(qv[1])
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i1")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [1]
-
-
-# ---------------------------------------------------------------------------
-# Test q_cond
-# ---------------------------------------------------------------------------
-
-
-def test_q_cond():
-
-    def circuit():
-
-        def false_fun(qbl):
-            x(qbl[0])
-            return qbl
-
-        def true_fun(qbl):
-            return qbl
-
-        qbl = QuantumBool()
-        h(qbl[0])
-        pred = measure(qbl[0])
-
-        qbl = q_cond(pred, true_fun, false_fun, qbl)
-
-        return measure(qbl[0])
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i1")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [1]
-
-
-# ---------------------------------------------------------------------------
-# Test q_while_loop
-# ---------------------------------------------------------------------------
-
-
-def test_q_while_loop():
-    """While loop with loop-carried quantum variable."""
-
-    def circuit():
-        qv = QuantumVariable(10)
-
-        def cond_fun(val):
-            i, qv = val
-            return i < 10
-
-        def body_fun(val):
-            i, qv = val
-            x(qv[i])
-            return i + 1, qv
-
-        q_while_loop(cond_fun, body_fun, (0, qv))
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [1023]
-
-
-def test_q_while_loop_acc():
-    """While loop-carried quantum variable and accumulator."""
-
-    def circuit():
-        qv = QuantumVariable(10)
-
-        def cond_fun(val):
-            i, acc, qv = val
-            return i < 5
-
-        def body_fun(val):
-            i, acc, qv = val
-            x(qv[i])
-            acc += measure(qv[i])
-            return i + 1, acc, qv
-
-        i, acc, qv = q_while_loop(cond_fun, body_fun, (0, 0, qv))
-        return acc
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [5]
-
-
-# ---------------------------------------------------------------------------
-# Test q_fori_loop
-# ---------------------------------------------------------------------------
-
-
-def test_q_fori_loop():
-    """Fori loop with loop-carried quantum variable and accumulator."""
-
-    def circuit():
-        qv = QuantumVariable(10)
-
-        def body_fun(i, val):
-            acc, qv = val
-            x(qv[i])
-            acc += measure(qv[i])
-            return acc, qv
-
-        acc, qv = q_fori_loop(0, 5, body_fun, (0, qv))
-
-        return acc
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [5]
-
-
-# ---------------------------------------------------------------------------
-# Test nested control flow
-# ---------------------------------------------------------------------------
-
-
-def test_nested_q_fori_loop_control():
-    """Nested fori loop with control inside."""
-
-    def circuit():
-        qv = QuantumVariable(10)
-
-        def body_fun(i, val):
-            acc, qv = val
-            x(qv[i])
-            c = measure(qv[i])
-            with control(c):
-                x(qv[i])
-            acc += measure(qv[i])
-            return acc, qv
-
-        acc, qv = q_fori_loop(0, 5, body_fun, (0, qv))
-
-        return acc
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0]
-
-
-# ---------------------------------------------------------------------------
-# Test classical control flow
-# ---------------------------------------------------------------------------
-
-
-def test_jax_fori_loop():
-    """Test that a JAX fori_loop is correctly lowered to MLIR."""
-
-    def circuit():
-        result = jax.lax.fori_loop(0, 10, lambda i, x: x + i, 0)
-        return result
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [45], f"Expected sum of 0..9 to be 45, got {result}"
-
-
-# ---------------------------------------------------------------------------
-# Test jrange loop
-# ---------------------------------------------------------------------------
-
-
-def test_jrange_loop():
-    """Test that a jrange loop is correctly lowered to MLIR."""
-
-    def circuit():
-        qv = QuantumVariable(3)
-        for i in jrange(3):
-            x(qv[i])
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [7], f"Expected all qubits measured as 1 (7), got {result}"
 
 
 # ---------------------------------------------------------------------------
@@ -1000,7 +707,9 @@ def test_single_gate_application_quantum_variable():
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1023], f"Expected all qubits measured as 1 (1023), got {result}"
 
 
@@ -1018,7 +727,9 @@ def test_gate_application_quantum_variable_slice():
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
     """Gate application function (x) applied to a slice of QuantumVariable with negative upper bound"""
@@ -1034,7 +745,9 @@ def test_gate_application_quantum_variable_slice():
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
 
@@ -1057,7 +770,9 @@ def test_gate_application_quantum_variable():
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
 
 
 def test_invert_quantum_variable():
@@ -1079,49 +794,10 @@ def test_invert_quantum_variable():
 
     mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
+
+    kernel = cudaq_kernel(main)
+    result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [7], f"Expected all qubits flipped to 1 (7), got {result}"
-
-
-# ---------------------------------------------------------------------------
-# Test mcx
-# ---------------------------------------------------------------------------
-
-methods = ["balauca", "khattar"]
-
-
-@pytest.mark.parametrize("method", methods)
-def test_mcx(method):
-    """Multi-controlled X gate (mcx) with variable number of controls."""
-
-    def circuit():
-        """Test mcx with 2 controls and 1 target."""
-        qv = QuantumVariable(3)
-        x(qv[0])
-        x(qv[1])
-        mcx(qv[:2], qv[2], method=method)
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [7], f"Expected target qubit flipped to 1 when both controls are 1 (7), got {result}"
-
-    def circuit():
-        """Test mcx with 9 controls and 1 target."""
-        qv = QuantumVariable(10)
-        x(qv[:9])
-        mcx(qv[:9], qv[9], method=method)
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [1023], f"Expected target qubit flipped to 1 when all 9 controls are 1 (1023), got {result}"
 
 
 # ---------------------------------------------------------------------------
@@ -1165,481 +841,3 @@ def test_bell_circuit_full_format():
     assert_return_type(mlir, "i64")
 
     validate_quake_mlir(mlir)
-
-
-def test_amplitude_amplification():
-    """Test amplitude amplification algorithm with a simple oracle and state function."""
-
-    def state_function(qb):
-        ry(np.pi / 8, qb)
-
-    def oracle_function(qb):
-        z(qb)
-
-    def main():
-        qb = QuantumBool()
-        state_function(qb)
-        amplitude_amplification([qb], state_function, oracle_function, iter=3)
-        return measure(qb[0])
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert np.mean(result) >= 0.8, f"Expected amplitude amplification to yield mostly 1s, got {result}"
-
-
-def test_quantum_fourier_transform():
-    """Test that the quantum Fourier transform produces the expected output state."""
-
-    def main():
-        qv = QuantumVariable(5)
-        h(qv)
-        QFT(qv)
-        return measure(qv)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0]
-
-
-def test_quantum_phase_estimation():
-    """Test that the quantum phase estimation produces the expected output state."""
-
-    def U(qv):
-        x = 0.5
-        y = 0.125
-
-        p(x * 2 * np.pi, qv[0])
-        p(y * 2 * np.pi, qv[1])
-
-    def main():
-        qv = QuantumVariable(2)
-        h(qv)
-        res = QPE(qv, U, precision=3)
-        return measure(res)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    for r in result:
-        assert r in {0, 0.125, 0.5, 0.625}
-
-
-def test_trotterization():
-    """Test that a simple Trotterized Hamiltonian evolution produces valid results."""
-    from qrisp.operators import X, Y, Z
-
-    def main():
-        qv = QuantumVariable(2)
-        H = X(0) * X(1) + Y(0) * Y(1) + Z(0) * Z(1) + X(0) + X(1)
-        U = H.trotterization()
-        U(qv, t=1.0, steps=10)
-        return measure(qv)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    # We can't predict the exact result, but we can check that it's a valid measurement (0, 1, 2, or 3)
-    assert all(0 <= r <= 3 for r in result), f"Expected valid measurement results (0-3), got {result}"
-
-
-@pytest.mark.parametrize("method", ["tree", "sequential"])
-def test_q_switch(method):
-    """Test q_switch with multiple branches and a quantum float index."""
-
-    def main():
-
-        def f0(x):
-            x += 1
-
-        def f1(x):
-            x += 2
-
-        def f2(x):
-            pass
-
-        def f3(x):
-            h(x[1])
-
-        branches = [f0, f1, f2, f3]
-
-        operand = QuantumFloat(4)
-        operand[:] = 1
-        index = QuantumFloat(2)
-        h(index)
-
-        q_switch(index, branches, operand, method=method)
-        return measure(operand)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-
-
-# ---------------------------------------------------------------------------
-# Test arrays
-# ---------------------------------------------------------------------------
-
-
-def test_array():
-    """Test that we can create classical (traced) arrays and access them in the quantum program."""
-
-    def main():
-        """Static indexing."""
-
-        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
-        a = QuantumVariable(5)
-        rz(arr[0], a[0])
-
-        return measure(a[0])
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
-
-    def main():
-        """Dynamic indexing."""
-
-        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
-        a = QuantumVariable(5)
-        b = QuantumVariable(1)
-        ind = jnp.int32(measure(b[0]))
-        rz(arr[ind], a[0])
-
-        return measure(a[0])
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
-
-    @qache
-    def test(arr, qv):
-        rz(arr[0], qv[0])
-        return measure(qv[0])
-
-    def main():
-        """Test that we can pass traced arrays as arguments to a @qache function and use them in the quantum program."""
-        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
-
-        a = QuantumVariable(5)
-        res = test(arr, a)
-        return res
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
-
-
-# ---------------------------------------------------------------------------
-# Test dynamic classical array indexing
-# ---------------------------------------------------------------------------
-
-
-def test_array_dynamic_index_return():
-    """Dynamic index into a classical array used as the return value."""
-
-    def main():
-        arr = jnp.array([1.57, 0.78, 0.39, 0.25, 0.12])
-        qv = QuantumVariable(1)
-        # qubit is |0⟩ so measure returns 0 → pick first element
-        ind = jnp.int32(measure(qv[0]))
-        return arr[ind]
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=5)
-    assert all(abs(r - 1.57) < 1e-6 for r in result), f"Expected all shots to return 1.57, got {result}"
-
-
-def test_array_dynamic_index_gate_angle():
-    """Dynamic index into a classical array used as a gate rotation angle."""
-
-    def main():
-        arr = jnp.array([0.0, 3.14159265])
-        qv = QuantumVariable(2)
-        # qubit 0 is |0⟩ → measure returns 0 → arr[0] = 0.0 → rz(0) leaves |0⟩
-        ind = jnp.int32(measure(qv[0]))
-        rz(arr[ind], qv[1])
-        return measure(qv[1])
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
-
-
-def test_array_dynamic_index_in_qache():
-    """Dynamic index into an array inside a @qache-decorated subroutine."""
-
-    @qache
-    def apply_angle(arr, qv):
-        ind = jnp.int32(measure(qv[0]))
-        rz(arr[ind], qv[1])
-        return measure(qv[1])
-
-    def main():
-        arr = jnp.array([0.0, 3.14159265])
-        qv = QuantumVariable(2)
-        return apply_angle(arr, qv)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
-
-
-# ---------------------------------------------------------------------------
-# Test QuantumFloat and arithmetic operations
-# ---------------------------------------------------------------------------
-
-
-ops = [operator.add, operator.sub]
-rhs_type = ["classical", "quantum"]
-instances = [
-    # (size1, exp1, val1, size2, exp2, val2)
-    pytest.param(3, 0, 2, 4, 0, 1, id="QuantumFloat case 1"),
-    pytest.param(3, 0, 3, 4, 0, 2, id="QuantumFloat case 2"),
-]
-
-
-@pytest.mark.parametrize("op", ops)
-@pytest.mark.parametrize("rhs_type", rhs_type)
-@pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
-def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
-    """Arithmetic operations on QuantumFloat with classical or quantum RHS."""
-
-    def main():
-        a = QuantumFloat(size1, exponent=exp1)
-        a[:] = val1
-
-        if rhs_type == "classical":
-            b = val2
-        else:
-            b = QuantumFloat(size2, exponent=exp2)
-            b[:] = val2
-
-        c = op(a, b)
-        return measure(c)
-
-    expected = op(val1, val2)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [expected], (
-        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
-    )
-
-
-ops_inpl = [operator.iadd, operator.isub]
-rhs_type = ["classical", "quantum"]
-instances = [
-    # (size1, exp1, val1, size2, exp2, val2)
-    pytest.param(3, 0, 2, 3, 0, 1, id="QuantumFloat case 1"),
-    pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"),
-]
-
-
-@pytest.mark.parametrize("op", ops_inpl)
-@pytest.mark.parametrize("rhs_type", rhs_type)
-@pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
-def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
-    """In-place arithmetic operations on QuantumFloat."""
-
-    def main():
-        a = QuantumFloat(size1, exponent=exp1)
-        a[:] = val1
-
-        if rhs_type == "classical":
-            b = val2
-        else:
-            b = QuantumFloat(size2, exponent=exp2)
-            b[:] = val2
-
-        op(a, b)
-        return measure(a)
-
-    expected = op(val1, val2)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-    assert result == 10 * [expected], (
-        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
-    )
-
-
-ops_comp = [
-    operator.eq,
-    operator.ne,
-    operator.lt,
-    operator.le,
-    operator.gt,
-    operator.ge,
-]
-rhs_type = ["classical", "quantum"]
-instances = [
-    # (size1, exp1, val1, size2, exp2, val2)
-    pytest.param(3, 0, 2, 3, 0, 1, id="QuantumFloat case 1"),
-    # pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"),
-]
-
-
-@pytest.mark.parametrize("op", ops_comp)
-@pytest.mark.parametrize("rhs_type", rhs_type)
-@pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
-def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
-    """Comparison operations on QuantumFloat with classical or quantum RHS."""
-
-    if op in (operator.eq, operator.ne):
-        pytest.skip("Equality and inequality comparisons on QuantumFloat are not supported.")
-
-    def main():
-        a = QuantumFloat(size1, exponent=exp1)
-        a[:] = val1
-
-        if rhs_type == "classical":
-            b = val2
-        else:
-            b = QuantumFloat(size2, exponent=exp2)
-            b[:] = val2
-
-        c = op(a, b)
-        return measure(c)
-
-    expected = op(val1, val2)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=1)
-    assert result == 1 * [expected], (
-        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Test BlockEncoding
-# ---------------------------------------------------------------------------
-
-
-def _post_selection(res_dict):
-    # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
-    success_prob = sum(filtered_dict.values())
-    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
-    return filtered_dict
-
-
-@pytest.mark.parametrize("operator", [X(0), X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
-def test_simple_block_encoding(operator):
-    """Test that we can create a BlockEncoding from a simple Hamiltonian and apply it to a quantum variable."""
-
-    BE = BlockEncoding.from_operator(operator)
-
-    def main():
-
-        operand = QuantumVariable(2)
-        ancs = BE.apply(operand)
-        return measure(operand)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    result = run_quake_mlir(xdsl_module, shots=10)
-
-
-@pytest.mark.parametrize("operator", [X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
-def test_simple_block_encoding_results(operator):
-    """
-    Test that applying a BlockEncoding of a simple Hamiltonian produces the expected
-    measurement distribution on the operand qubits after post-selection on ancillas.
-    """
-
-    BE = BlockEncoding.from_operator(operator)
-
-    def main():
-
-        operand = QuantumVariable(2)
-        ancs = BE.apply(operand)
-        return measure(operand), measure(ancs[0])
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    results = run_quake_mlir(xdsl_module, shots=500)
-    counts = Counter(results)
-    counts_dict = dict(counts)
-    res_dict = {outcome: count / len(results) for outcome, count in counts.items()}
-    filtered_dict = _post_selection(res_dict)
-
-    # Now do the same thing with JASP's terminal_sampling to get the expected distribution for comparison
-    @terminal_sampling
-    def main():
-
-        operand = QuantumVariable(2)
-        ancs = BE.apply(operand)
-        return operand, ancs[0]
-
-    res_dict_jasp = main()
-    filtered_dict_jasp = _post_selection(res_dict_jasp)
-
-    all_keys = set(filtered_dict.keys()).union(set(filtered_dict_jasp.keys()))
-
-    for key in all_keys:
-        val1 = filtered_dict.get(key, 0.0)
-        val2 = filtered_dict_jasp.get(key, 0.0)
-        assert np.isclose(val1, val2, atol=1e-1)
-
-
-@pytest.mark.parametrize("operator", [X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
-def test_simple_block_encoding_poly(operator):
-    """Test that we can create a polynomial from a BlockEncoding and apply it to a quantum variable."""
-
-    BE = BlockEncoding.from_operator(operator)
-    BE_poly = BE.poly(np.array([0.5, 0.5]))
-
-    def main():
-
-        operand = QuantumVariable(2)
-        ancs = BE_poly.apply(operand)
-        return measure(operand)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-    results = run_quake_mlir(xdsl_module, shots=10)

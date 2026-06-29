@@ -186,9 +186,7 @@ def _pass_pack_multi_return(func_op: func.FuncOp):
 
     # Update function type
     input_types = list(func_op.function_type.inputs.data)
-    func_op.properties["function_type"] = FunctionType.from_lists(
-        input_types, [struct_type]
-    )
+    func_op.properties["function_type"] = FunctionType.from_lists(input_types, [struct_type])
     return struct_type
 
 

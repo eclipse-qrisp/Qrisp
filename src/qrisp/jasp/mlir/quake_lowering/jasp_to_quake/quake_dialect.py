@@ -97,8 +97,8 @@ _QubitOrVeq = AnyAttr()  # accepts both QuakeRefType and QuakeVeqType
 # ---------------------------------------------------------------------------
 
 
-#@irdl_op_definition
-#class AllocaRefOp(IRDLOperation):
+# @irdl_op_definition
+# class AllocaRefOp(IRDLOperation):
 #    """Allocate a single qubit: ``quake.alloca !quake.ref``."""
 #
 #    name = "quake.alloca"
@@ -111,8 +111,8 @@ _QubitOrVeq = AnyAttr()  # accepts both QuakeRefType and QuakeVeqType
 #        printer.print_string(" !quake.ref")
 
 
-#@irdl_op_definition
-#class AllocaVeqOp(IRDLOperation):
+# @irdl_op_definition
+# class AllocaVeqOp(IRDLOperation):
 #    """Allocate *n* qubits: ``quake.alloca !quake.veq<?>[%n : i64]``."""
 #
 #    name = "quake.alloca"
@@ -143,7 +143,7 @@ class AllocaOp(IRDLOperation):
 
     name = "quake.alloca"
     size = var_operand_def(AnyAttr())  # empty for single qubit, [i64] for veq
-    result = result_def(AnyAttr())     # QuakeRefType or QuakeVeqType
+    result = result_def(AnyAttr())  # QuakeRefType or QuakeVeqType
 
     def __init__(self, size: SSAValue | None = None) -> None:
         if size is None:
@@ -536,8 +536,8 @@ class QuakeDialect(Dialect):
 
     name = "quake"
     operations = [
-        #AllocaRefOp,
-        #AllocaVeqOp,
+        # AllocaRefOp,
+        # AllocaVeqOp,
         AllocaOp,
         DeallocOp,
         ExtractRefOp,
