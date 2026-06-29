@@ -46,7 +46,7 @@ jobs:
               name: core
               paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
             pip-extras: "[dev,xdsl,iqm]"
-            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_qubit_array_fusion'"
           
           - os: windows-latest
             python-version: "3.11.*"
@@ -54,7 +54,7 @@ jobs:
               name: algorithms-and-integrations
               paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
             pip-extras: "[dev,xdsl,iqm]"
-            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+            pytest-flags: "-k 'not test_converter_qrisp_to_qml'"
 
           - os: windows-latest
             python-version: "3.12.*"
@@ -62,7 +62,7 @@ jobs:
               name: core
               paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
             pip-extras: "[dev,xdsl,iqm]"
-            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_qubit_array_fusion'"
           
           - os: windows-latest
             python-version: "3.12.*"
@@ -70,9 +70,9 @@ jobs:
               name: algorithms-and-integrations
               paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
             pip-extras: "[dev,xdsl,iqm]"
-            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+            pytest-flags: "-k 'not test_converter_qrisp_to_qml'"
 
-    steps:
+    steps:  
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
