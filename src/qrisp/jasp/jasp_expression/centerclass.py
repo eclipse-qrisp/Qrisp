@@ -1242,8 +1242,8 @@ class Jaspr(ClosedJaxpr):
 
         Returns
         -------
-        str
-            The MLIR string.
+        xdsl.dialects.builtin.ModuleOp
+            An xDSL module representing the quantum computation in Quake and CC dialects.
 
         Examples
         --------
@@ -1265,7 +1265,8 @@ class Jaspr(ClosedJaxpr):
                 return meas_res
 
             jaspr = make_jaspr(example_function)(2)
-            print(jaspr.to_quake_mlir())
+            xdsl_module = jaspr.to_quake_mlir()
+            print(xdsl_module)
 
         .. code-block:: none
 

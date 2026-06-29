@@ -185,6 +185,8 @@ def cudaq_kernel_from_xdsl_module(
         A compiled, callable CUDA-Q kernel.
     """
 
+    module = xdsl_module.clone()
+
     # Get CUDA-Q naming from a dummy kernel
     kernel = cudaq.make_kernel()
     func_name = kernel.funcName
@@ -196,7 +198,7 @@ def cudaq_kernel_from_xdsl_module(
 
     # Apply all structural passes (in-place on the xDSL module)
     prepare_module_for_cudaq(
-        xdsl_module,
+        module,
         func_name=func_name,
         entry_point=entry_point,
         uniq_name=uniq_name,
@@ -206,7 +208,7 @@ def cudaq_kernel_from_xdsl_module(
     )
 
     # Serialize to string exactly once, then normalize for CUDA-Q
-    raw_mlir = str(xdsl_module)
+    raw_mlir = str(module)
     adapted_mlir = _normalize_xdsl_to_cudaq(raw_mlir)
 
     # Parse into CUDA-Q
