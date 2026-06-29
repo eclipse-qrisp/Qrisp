@@ -66,7 +66,7 @@ from xdsl.pattern_rewriter import (
 from xdsl.rewriter import InsertPoint
 
 from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
-    AllocaVeqOp,
+    AllocaOp,
     ConcatOp,
     DeallocOp,
     DiscriminateOp,
@@ -175,7 +175,7 @@ class LowerCreateQubits(RewritePattern):
         amount_tensor = op.operands[0]
         n = _extract_scalar_for_rewriter(amount_tensor, i64, rewriter)
 
-        alloca = AllocaVeqOp(n)
+        alloca = AllocaOp(n)
         rewriter.insert_op(alloca, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:

@@ -624,7 +624,7 @@ class CcInsertValueOp(IRDLOperation):
     def __init__(self, struct: SSAValue, index: int, value: SSAValue) -> None:
         super().__init__(
             operands=[struct, value],
-            attributes={"index": IntegerAttr(index, i64_type)},
+            attributes={"index": IntegerAttr(index, i64)},
             result_types=[struct.type],
         )
 

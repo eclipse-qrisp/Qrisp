@@ -81,7 +81,6 @@ from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
 
-
 def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     """Lower a :class:`~qrisp.jasp.Jaspr` to a Quake+CC ``builtin.ModuleOp``.
 
@@ -115,8 +114,8 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
 
     Returns
     -------
-    str
-        A string representation of an xDSL module containing Quake (memory-semantics) + CC ops.
+    xdsl.dialects.builtin.ModuleOp
+        An xDSL module representing the quantum computation in Quake and CC dialects.
 
     Raises
     ------
@@ -148,4 +147,4 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     # Step 5 – PASS 5: array ptr params → stdvec (CUDA-Q runtime compatibility).
     lower_array_to_stdvec(module)
 
-    return str(module)
+    return module

@@ -97,17 +97,17 @@ except ImportError as exc:
 # ---------------------------------------------------------------------------
 
 
-def _lower(circuit_fn, *trace_args) -> str:
+def _lower(circuit_fn, *trace_args):
     """Build the Jaspr for *circuit_fn* and lower it to Quake MLIR.
 
-    Returns the MLIR as a string.  Deprecation warnings from xDSL internals
+    Returns the xDSL module. Deprecation warnings from xDSL internals
     are silenced.
     """
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        mlir_str = jaspr_to_quake_mlir(jaspr)
-    return mlir_str
+        xdsl_module = jaspr_to_quake_mlir(jaspr)
+    return xdsl_module
 
 
 def assert_return_type(mlir: str, expected_type: str):
@@ -128,7 +128,9 @@ def test_alloc_and_dealloc():
         qv = QuantumVariable(3)
         return qv  # implicitly deallocated at end of jaspr scope
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.alloca" in mlir, "Expected quake.alloca in output"
     validate_quake_mlir(mlir)
 
@@ -152,7 +154,9 @@ def test_extract_ref_functional_type_format():
         h(qv[0])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # The correct format includes parentheses and the index type
     assert "quake.extract_ref" in mlir
     # Must NOT have the bare (pre-fix) format "!quake.veq<?> -> !quake.ref"
@@ -180,7 +184,9 @@ def test_gate_type_signature_no_bracket_prefix():
         cx(qv[0], qv[1])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # H gate: single target, no controls
     assert "quake.h" in mlir
     assert "(!quake.ref) -> ()" in mlir, "H gate should have '(!quake.ref) -> ()' type sig"
@@ -203,7 +209,9 @@ def test_parameterized_gate_functional_type():
         rz(0.5, qv[0])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.rz" in mlir
     # The type signature must include both the f64 param and the quake.ref target
     assert "(f64, !quake.ref) -> ()" in mlir, "rz gate should have '(f64, !quake.ref) -> ()' type sig"
@@ -219,7 +227,9 @@ def test_veq_size_functional_type():
         h(qv[qv.size - 1])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # veq_size op should use functional-type with parens if present
     if "quake.veq_size" in mlir:
         assert "(!quake.veq<?>) -> i64" in mlir, "veq_size should use functional-type: (!quake.veq<?>) -> i64"
@@ -233,7 +243,9 @@ def test_alloca_veq_format():
         qv = QuantumVariable(4)
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # The alloca must print the type first, then size in brackets
     assert "quake.alloca !quake.veq<?>[" in mlir, "alloca format should be '!quake.veq<?>[%n : i64]'"
     validate_quake_mlir(mlir)
@@ -253,7 +265,9 @@ def test_extract_ref():
         cx(qv[0], qv[2])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
     validate_quake_mlir(mlir)
 
@@ -267,7 +281,9 @@ def test_no_jasp_types_in_output():
         cx(qv[0], qv[1])
         return measure(qv)
 
-    mlir = _lower(bell)
+    xdsl_module = _lower(bell)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
 
 
@@ -279,7 +295,9 @@ def test_cudaq_kernel_attribute():
         h(qv[0])
         return measure(qv)
 
-    mlir = _lower(simple)
+    xdsl_module = _lower(simple)
+
+    mlir = str(xdsl_module)
     assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
     assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
     validate_quake_mlir(mlir)
@@ -293,7 +311,9 @@ def test_quake_types_present():
         h(qv[0])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "!quake.veq<?>" in mlir or "!quake.ref" in mlir, "Expected Quake qubit types in output"
     assert "quake." in mlir, "Expected Quake ops in output"
     validate_quake_mlir(mlir)
@@ -354,7 +374,9 @@ def test_func_call_lowering():
         qv = test()
         return qv
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     assert "test" in mlir, "Expected call to 'test' function in output"
     assert "quake.alloca" in mlir, "Expected quake.alloca in output for test function"
     assert "quake.veq" in mlir, "Expected quake.veq type in output for test function"
@@ -374,7 +396,9 @@ def test_quantum_kernel_lowering():
         res = test_kernel()
         return res
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     assert "cudaq.kernel" in mlir
     validate_quake_mlir(mlir)
 
@@ -395,7 +419,9 @@ def test_multi_qubit_alloc():
         x(qv2[0])
         return measure(qv1[0]), measure(qv2[0])
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # At least two alloca ops
     alloca_count = mlir.count("quake.alloca")
     assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
@@ -420,7 +446,9 @@ def test_single_qubit_gates():
         t(qv[1])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
@@ -436,7 +464,9 @@ def test_decomposed_gates_sx():
             sx(qv[0])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     # Check that the expected sequence of ops for sx/sx_dg is present
     assert "quake.h" in mlir, "Expected quake.h in output for sx decomposition"
     assert "quake.s" in mlir, "Expected quake.s in output for sx decomposition"
@@ -464,7 +494,9 @@ def test_decomposed_gates():
 
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
 
 
@@ -478,7 +510,9 @@ def test_parameterized_gate():
         rx(1, qv[1])  # Test that integer literals are also accepted as parameters and correctly typed as f64
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.rz" in mlir, "Expected quake.rz in output"
     assert "quake.rx" in mlir, "Expected quake.rx in output"
     # Parameters should appear as f64 scalars
@@ -498,7 +532,9 @@ def test_controlled_gates():
         cp(0.5, qv[0], qv[1])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.h" in mlir
     assert "quake.x" in mlir
     assert "quake.y" in mlir
@@ -517,7 +553,9 @@ def test_swap_gate():
         swap(qv[0], qv[1])
         return qv
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.x" in mlir
     # Both qubits should be present as operands
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
@@ -538,7 +576,9 @@ def test_cgphase_gate():
         h(qv[0])
         return measure(qv[0])  # P(0) = P(1) = 0.5
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     assert "quake.r1" in mlir, "Expected quake.r1 in output"
     validate_quake_mlir(mlir)
 
@@ -550,10 +590,12 @@ def test_negative_indexing():
         x(qv[-1])
         return measure(qv[2])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     assert "quake.x" in mlir, "Expected quake.x in output"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
 
 
@@ -568,11 +610,13 @@ def test_math():
         d = jnp.log(c)
         return d
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     assert "math.powf" in mlir, "Expected math.powf for exponentiation"
     assert "math.log" in mlir, "Expected math.log for logarithm"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 # ---------------------------------------------------------------------------
@@ -588,11 +632,13 @@ def test_measure_single_qubit():
         x(qv[0])
         return measure(qv[0])
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -609,11 +655,13 @@ def test_measure_quantum_variable():
         x(qv[0])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -625,11 +673,13 @@ def test_measure_single_qubit_quantum_variable():
         x(qv[0])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -657,9 +707,11 @@ def test_invert():
 
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0]
 
 
@@ -671,9 +723,11 @@ def test_conjugate():
             z(qv[0])
         return measure(qv[0])
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -693,11 +747,13 @@ def test_classcial_control():
             x(qv[1])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 def test_quantum_control():
@@ -710,11 +766,13 @@ def test_quantum_control():
             x(qv[1])
         return measure(qv[1])
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -742,11 +800,13 @@ def test_q_cond():
 
         return measure(qbl[0])
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1]
 
 
@@ -773,11 +833,13 @@ def test_q_while_loop():
         q_while_loop(cond_fun, body_fun, (0, qv))
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1023]
 
 
@@ -800,11 +862,13 @@ def test_q_while_loop_acc():
         i, acc, qv = q_while_loop(cond_fun, body_fun, (0, 0, qv))
         return acc
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [5]
 
 
@@ -829,11 +893,13 @@ def test_q_fori_loop():
 
         return acc
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [5]
 
 
@@ -861,11 +927,13 @@ def test_nested_q_fori_loop_control():
 
         return acc
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0]
 
 
@@ -881,10 +949,12 @@ def test_jax_fori_loop():
         result = jax.lax.fori_loop(0, 10, lambda i, x: x + i, 0)
         return result
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [45], f"Expected sum of 0..9 to be 45, got {result}"
 
 
@@ -902,9 +972,11 @@ def test_jrange_loop():
             x(qv[i])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [7], f"Expected all qubits measured as 1 (7), got {result}"
 
 
@@ -922,11 +994,13 @@ def test_single_gate_application_quantum_variable():
         x(qv)
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1023], f"Expected all qubits measured as 1 (1023), got {result}"
 
 
@@ -938,11 +1012,13 @@ def test_gate_application_quantum_variable_slice():
         x(qv[:5])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
     """Gate application function (x) applied to a slice of QuantumVariable with negative upper bound"""
@@ -952,11 +1028,13 @@ def test_gate_application_quantum_variable_slice():
         x(qv[:-5])
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
 
@@ -973,11 +1051,13 @@ def test_gate_application_quantum_variable():
         t(qv)
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 def test_invert_quantum_variable():
@@ -995,9 +1075,11 @@ def test_invert_quantum_variable():
             x(qv)
         return measure(qv)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [7], f"Expected all qubits flipped to 1 (7), got {result}"
 
 
@@ -1020,9 +1102,11 @@ def test_mcx(method):
         mcx(qv[:2], qv[2], method=method)
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [7], f"Expected target qubit flipped to 1 when both controls are 1 (7), got {result}"
 
     def circuit():
@@ -1032,9 +1116,11 @@ def test_mcx(method):
         mcx(qv[:9], qv[9], method=method)
         return measure(qv)
 
-    mlir = _lower(circuit)
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [1023], f"Expected target qubit flipped to 1 when all 9 controls are 1 (1023), got {result}"
 
 
@@ -1052,7 +1138,9 @@ def test_bell_circuit_full_format():
         cx(qv[0], qv[1])
         return measure(qv)
 
-    mlir = _lower(bell)
+    xdsl_module = _lower(bell)
+
+    mlir = str(xdsl_module)
 
     # Function attributes
     assert 'cudaq.kernel = "true"' in mlir
@@ -1094,9 +1182,11 @@ def test_amplitude_amplification():
         amplitude_amplification([qb], state_function, oracle_function, iter=3)
         return measure(qb[0])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert np.mean(result) >= 0.8, f"Expected amplitude amplification to yield mostly 1s, got {result}"
 
 
@@ -1109,9 +1199,11 @@ def test_quantum_fourier_transform():
         QFT(qv)
         return measure(qv)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0]
 
 
@@ -1131,9 +1223,11 @@ def test_quantum_phase_estimation():
         res = QPE(qv, U, precision=3)
         return measure(res)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     for r in result:
         assert r in {0, 0.125, 0.5, 0.625}
 
@@ -1149,9 +1243,11 @@ def test_trotterization():
         U(qv, t=1.0, steps=10)
         return measure(qv)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     # We can't predict the exact result, but we can check that it's a valid measurement (0, 1, 2, or 3)
     assert all(0 <= r <= 3 for r in result), f"Expected valid measurement results (0-3), got {result}"
 
@@ -1184,9 +1280,11 @@ def test_q_switch(method):
         q_switch(index, branches, operand, method=method)
         return measure(operand)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 # ---------------------------------------------------------------------------
@@ -1206,9 +1304,11 @@ def test_array():
 
         return measure(a[0])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
 
     def main():
@@ -1222,9 +1322,11 @@ def test_array():
 
         return measure(a[0])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
 
     @qache
@@ -1240,9 +1342,11 @@ def test_array():
         res = test(arr, a)
         return res
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0], f"Expected a measurement result of 0, got {result}"
 
 
@@ -1261,9 +1365,11 @@ def test_array_dynamic_index_return():
         ind = jnp.int32(measure(qv[0]))
         return arr[ind]
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=5)
+    result = run_quake_mlir(xdsl_module, shots=5)
     assert all(abs(r - 1.57) < 1e-6 for r in result), f"Expected all shots to return 1.57, got {result}"
 
 
@@ -1278,9 +1384,11 @@ def test_array_dynamic_index_gate_angle():
         rz(arr[ind], qv[1])
         return measure(qv[1])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
 
 
@@ -1298,9 +1406,11 @@ def test_array_dynamic_index_in_qache():
         qv = QuantumVariable(2)
         return apply_angle(arr, qv)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
 
 
@@ -1339,9 +1449,11 @@ def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, 
 
     expected = op(val1, val2)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
     )
@@ -1377,9 +1489,11 @@ def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, e
 
     expected = op(val1, val2)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
     assert result == 10 * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
     )
@@ -1425,9 +1539,11 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
 
     expected = op(val1, val2)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=1)
+    result = run_quake_mlir(xdsl_module, shots=1)
     assert result == 1 * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
     )
@@ -1458,9 +1574,11 @@ def test_simple_block_encoding(operator):
         ancs = BE.apply(operand)
         return measure(operand)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    result = run_quake_mlir(mlir, shots=10)
+    result = run_quake_mlir(xdsl_module, shots=10)
 
 
 @pytest.mark.parametrize("operator", [X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
@@ -1478,9 +1596,11 @@ def test_simple_block_encoding_results(operator):
         ancs = BE.apply(operand)
         return measure(operand), measure(ancs[0])
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    results = run_quake_mlir(mlir, shots=500)
+    results = run_quake_mlir(xdsl_module, shots=500)
     counts = Counter(results)
     counts_dict = dict(counts)
     res_dict = {outcome: count / len(results) for outcome, count in counts.items()}
@@ -1518,13 +1638,8 @@ def test_simple_block_encoding_poly(operator):
         ancs = BE_poly.apply(operand)
         return measure(operand)
 
-    mlir = _lower(main)
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
     validate_quake_mlir(mlir)
-    results = run_quake_mlir(mlir, shots=10)
-
-
-# ---------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    results = run_quake_mlir(xdsl_module, shots=10)

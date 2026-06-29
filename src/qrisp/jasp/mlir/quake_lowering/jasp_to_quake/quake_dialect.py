@@ -97,35 +97,68 @@ _QubitOrVeq = AnyAttr()  # accepts both QuakeRefType and QuakeVeqType
 # ---------------------------------------------------------------------------
 
 
+#@irdl_op_definition
+#class AllocaRefOp(IRDLOperation):
+#    """Allocate a single qubit: ``quake.alloca !quake.ref``."""
+#
+#    name = "quake.alloca"
+#    result = result_def(QuakeRefType)
+#
+#    def __init__(self) -> None:
+#        super().__init__(result_types=[QuakeRefType()])
+#
+#    def print(self, printer: Printer) -> None:
+#        printer.print_string(" !quake.ref")
+
+
+#@irdl_op_definition
+#class AllocaVeqOp(IRDLOperation):
+#    """Allocate *n* qubits: ``quake.alloca !quake.veq<?>[%n : i64]``."""
+#
+#    name = "quake.alloca"
+#    size = operand_def(i64)
+#    result = result_def(QuakeVeqType)
+#
+#    def __init__(self, size: SSAValue) -> None:
+#        super().__init__(operands=[size], result_types=[QuakeVeqType()])
+#
+#    def print(self, printer: Printer) -> None:
+#        printer.print_string(" !quake.veq<?>[")
+#        printer.print_ssa_value(self.size)
+#        printer.print_string(" : i64]")
+
+
 @irdl_op_definition
-class AllocaRefOp(IRDLOperation):
-    """Allocate a single qubit: ``quake.alloca !quake.ref``."""
+class AllocaOp(IRDLOperation):
+    """Allocate qubits.
+
+    Single qubit::
+
+        %ref = quake.alloca !quake.ref
+
+    Register::
+
+        %veq = quake.alloca !quake.veq<?>[%n : i64]
+    """
 
     name = "quake.alloca"
-    result = result_def(QuakeRefType)
+    size = var_operand_def(AnyAttr())  # empty for single qubit, [i64] for veq
+    result = result_def(AnyAttr())     # QuakeRefType or QuakeVeqType
 
-    def __init__(self) -> None:
-        super().__init__(result_types=[QuakeRefType()])
-
-    def print(self, printer: Printer) -> None:
-        printer.print_string(" !quake.ref")
-
-
-@irdl_op_definition
-class AllocaVeqOp(IRDLOperation):
-    """Allocate *n* qubits: ``quake.alloca !quake.veq<?>[%n : i64]``."""
-
-    name = "quake.alloca"
-    size = operand_def(i64)
-    result = result_def(QuakeVeqType)
-
-    def __init__(self, size: SSAValue) -> None:
-        super().__init__(operands=[size], result_types=[QuakeVeqType()])
+    def __init__(self, size: SSAValue | None = None) -> None:
+        if size is None:
+            super().__init__(operands=[[]], result_types=[QuakeRefType()])
+        else:
+            super().__init__(operands=[[size]], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
-        printer.print_string(" !quake.veq<?>[")
-        printer.print_ssa_value(self.size)
-        printer.print_string(" : i64]")
+        size_ops = list(self.size)
+        if size_ops:
+            printer.print_string(" !quake.veq<?>[")
+            printer.print_ssa_value(size_ops[0])
+            printer.print_string(" : i64]")
+        else:
+            printer.print_string(" !quake.ref")
 
 
 @irdl_op_definition
@@ -503,8 +536,9 @@ class QuakeDialect(Dialect):
 
     name = "quake"
     operations = [
-        AllocaRefOp,
-        AllocaVeqOp,
+        #AllocaRefOp,
+        #AllocaVeqOp,
+        AllocaOp,
         DeallocOp,
         ExtractRefOp,
         VeqSizeOp,

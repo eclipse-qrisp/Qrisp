@@ -523,7 +523,3 @@ def test_traced_jax_array_arithmetic_triggers_helpful_safeguard_error():
             arr3 = arr1 + arr2
             rx(arr3[0], qv[0])
             return measure(qv[0]) + k
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
