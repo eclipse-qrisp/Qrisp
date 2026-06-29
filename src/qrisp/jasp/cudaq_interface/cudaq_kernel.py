@@ -45,7 +45,7 @@ from xdsl.dialects.builtin import ModuleOp
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
-from qrisp.jasp.cudaq_interface.pass6_cudaq_prep import prepare_module_for_cudaq
+from qrisp.jasp.cudaq_interface.cudaq_prep import prepare_module_for_cudaq
 
 
 # ------------------------------------------------------------------ #
@@ -164,8 +164,8 @@ def _normalize_xdsl_to_cudaq(mlir_str: str) -> str:
 # ------------------------------------------------------------------ #
 
 
-def cudaq_kernel_from_mlir(
-    xdsl_module: str | ModuleOp,
+def cudaq_kernel_from_xdsl_module(
+    xdsl_module: ModuleOp,
     execution_mode: Literal["run", "sample"] = "run",
 ) -> PyKernelDecorator:
     """
@@ -173,9 +173,8 @@ def cudaq_kernel_from_mlir(
 
     Parameters
     ----------
-    mlir_input : str | ModuleOp
-        Either a Quake MLIR source string or an already-parsed xDSL ModuleOp.
-        Must contain a @main function.
+    xdsl_module : ModuleOp
+        An xDSL ModuleOp containing a @main function.
     execution_mode : "run" | "sample"
         "run" — synthesizes .run/.run.entry for cudaq.run.
         "sample" — void-return kernel for cudaq.sample.
@@ -185,30 +184,6 @@ def cudaq_kernel_from_mlir(
     PyKernelDecorator
         A compiled, callable CUDA-Q kernel.
     """
-    # Accept either string or xDSL module
-    if isinstance(xdsl_module, str):
-        raise NotImplementedError(
-            "String-based MLIR parsing is not yet implemented. Please provide an xDSL ModuleOp instead."
-        )
-    #    from xdsl.context import Context
-    #    from xdsl.parser import Parser
-    #    from xdsl.dialects import builtin, func, arith, math
-    #    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import QuakeDialect
-    #    from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcDialect
-
-    #    ctx = Context()
-    #    # Load standard dialects that the MLIR string uses
-    #    ctx.load_dialect(builtin.Builtin)
-    #    ctx.load_dialect(func.Func)
-    #    ctx.load_dialect(arith.Arith)
-    #    ctx.load_dialect(math.Math)
-    #    # Load custom dialects
-    #    ctx.load_dialect(QuakeDialect)
-    #    ctx.load_dialect(CcDialect)
-    #    parser = Parser(ctx, mlir_input)
-    #    module = parser.parse_module()
-    # else:
-    #    module = mlir_input
 
     # Get CUDA-Q naming from a dummy kernel
     kernel = cudaq.make_kernel()
@@ -297,4 +272,4 @@ def cudaq_kernel(
     except Exception as e:
         raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}")
 
-    return cudaq_kernel_from_mlir(mlir_module, execution_mode=execution_mode)
+    return cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)

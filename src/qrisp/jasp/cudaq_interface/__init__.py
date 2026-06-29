@@ -31,13 +31,9 @@ Preferred import paths::
 """
 
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
-from qrisp.jasp.cudaq_interface.cudaq_kernel import (
-    cudaq_kernel_from_mlir,
-    cudaq_kernel,
-)
+from qrisp.jasp.cudaq_interface.cudaq_kernel import cudaq_kernel
 
 __all__ = [
-    "FixedShapeNDArray",
-    "cudaq_kernel_from_mlir",
     "cudaq_kernel",
+    "FixedShapeNDArray",
 ]
