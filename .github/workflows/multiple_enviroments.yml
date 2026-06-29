@@ -33,6 +33,44 @@ jobs:
             paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
           - name: algorithms-and-integrations
             paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+        
+        # Default flags for Linux and macOS
+        pip-extras: ["[dev,catalyst,xdsl,iqm]"]
+        pytest-flags: [""]
+
+        # Inject Windows configurations explicitly into the matrix
+        include:
+          - os: windows-latest
+            python-version: "3.11.*"
+            test-group:
+              name: core
+              paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
+            pip-extras: "[dev,xdsl,iqm]"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+          
+          - os: windows-latest
+            python-version: "3.11.*"
+            test-group:
+              name: algorithms-and-integrations
+              paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+            pip-extras: "[dev,xdsl,iqm]"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+
+          - os: windows-latest
+            python-version: "3.12.*"
+            test-group:
+              name: core
+              paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
+            pip-extras: "[dev,xdsl,iqm]"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
+          
+          - os: windows-latest
+            python-version: "3.12.*"
+            test-group:
+              name: algorithms-and-integrations
+              paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+            pip-extras: "[dev,xdsl,iqm]"
+            pytest-flags: "-k 'not test_catalyst_interface and not test_converter_qrisp_to_qml'"
 
     steps:
       - uses: actions/checkout@v7
@@ -44,7 +82,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,catalyst,xdsl,iqm]"
+          pip install -e ".${{ matrix.pip-extras }}"
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
-          pytest ${{ matrix.test-group.paths }}
+          pytest ${{ matrix.test-group.paths }} ${{ matrix.pytest-flags }}
