@@ -15,23 +15,10 @@
 ********************************************************************************
 """
 
-"""
-Tests for the Jasp → Quake (memory-semantics) lowering backend.
-
-Coverage
---------
-- Basic quantum circuit (alloc, gate, measure, dealloc).
-- Parameterized gates (rz, rx, u3).
-- Controlled gates (cx, ccx).
-- Reset operation.
-- SCF control-flow lowering (jrange loop).
-- Interface invariant: no ``!jasp.*`` types in the output.
-- Negative test: ``jasp.parity`` is left in place (not lowered).
-- Negative test: unsupported gate emits a warning and is left in place.
-"""
-
+import cudaq
 import jax.numpy as jnp
 import numpy as np
+import networkx as nx
 import pytest
 
 from qrisp import (
@@ -49,17 +36,8 @@ from qrisp import (
     control,
 )
 from qrisp.jasp import q_while_loop, q_cond, qache
-
-try:
-    import cudaq
-    from qrisp.jasp.cudaq_interface import (
-        cudaq_kernel,
-        FixedShapeNDArray,
-    )
-except ImportError as exc:
-    # Skip the entire test file if the import fails
-    pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
-
+from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
+from qrisp.operators import X, Y, Z
 
 # ---------------------------------------------------------------------------
 # Test qrisp cudaq kernel decorator
@@ -162,8 +140,6 @@ def test_cudaq_kernel_multiple_returns():
 
 def test_cudaq_kernel_algorithm():
     """Test that a more complex algorithm can be expressed in a @cudaq_kernel and executed."""
-    from qrisp.operators import X, Y, Z
-    import networkx as nx
 
     @cudaq_kernel
     def main():
