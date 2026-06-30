@@ -12,7 +12,6 @@ on:
   push:
     branches:
       - main
-      - multiple_enviroments
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
