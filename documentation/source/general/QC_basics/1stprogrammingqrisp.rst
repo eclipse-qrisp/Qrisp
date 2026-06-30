@@ -478,8 +478,8 @@ solutions.
   about :math:`g` (hence it is a black box) and our goal is to determine
   in which category the function belongs. Classically, you would have to
   send at least two queries, for input value 0 and 1. (If we expand to
-  :math:`N` possible inputs, we generally need :math:`\frac{N}{2}+1` $ Please explain that. $
-  queries). If both are the same, the function is constant, but you
+  :math:`N` possible inputs, we generally need :math:`\frac{N}{2}+1`
+  queries)$ Please explain that. $. If both are the same, the function is constant, but you
   couldn’t determine that with only one query.
 | The quantum oracle however has an incredible runtime of :math:`O(1)`,
   no matter the input size. The secret lies in utilizing the Hadamard
@@ -493,7 +493,7 @@ solutions.
 | Now, the black box oracle is applied, taking all qubits as input. The
   input :math:`\ket x \ket y` (x bitstring, y auxiliary qubit) is
   transformed to :math:`\ket x \ket{ y\oplus f(x)}` via the oracle,
-  with :math:`\oplus` as addition modulo 2. $ This explanation comes too late. $
+  with :math:`\oplus` as addition modulo 2. $ This explanation is too late. $
 | Wait, modulo 2? For now, we don’t have to worry about that. This step
   is ensuring that the only numbers we work with are 0 and 1 (we are
   staying in a mathematical group, if you are a nerd).
@@ -519,7 +519,7 @@ What is :math:`f(x)`? The next calculations depend on whether
 different, the output tells us which it is.
 
 | 1st case: constant oracle with :math:`f(0) =  f(1) = 0`
-| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes 0} +\ket 1 \ket{ 0\otimes 0} - \ket 0 \ket{ 1 \otimes 0} - \ket 1 \ket{ 1 \otimes 0})`
+| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 0} +\ket 1 \ket{ 0\oplus 0} - \ket 0 \ket{ 1 \oplus 0} - \ket 1 \ket{ 1 \oplus 0})`
 | Now, we can apply that :math:`\otimes` is addition module 2, meaning
   that we have these four possible results:
 | :math:`0 \oplus 0 = 0`
@@ -549,7 +549,7 @@ different, the output tells us which it is.
   substitute 0 and 1. To correctly identify the :math:`x` in
   :math:`f(x)`, we simply have a look at the previous qubit, since the
   oracle output is in the form :math:`\ket x \ket{ y \oplus f(x)}`:
-  :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 0} +\ket 1 \ket{ 0\oplus 1} - \ket 0 \ket{ 1 \otimes 0} - \ket 1 \ket{ 1 \otimes 1})`
+  :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 0} +\ket 1 \ket{ 0\oplus 1} - \ket 0 \ket{ 1 \oplus 0} - \ket 1 \ket{ 1 \oplus 1})`
 | perform addition modulo 2:
 | :math:`\frac{1}{2}(\ket 0 \ket{  0} +\ket 1 \ket{ 1} - \ket 0 \ket{ 1 } - \ket 1 \ket{0})`
 | And summarize the states:
@@ -565,7 +565,7 @@ In summary, for constant oracles the output is of the form
 :math:`\pm \ket - \ket -`.
 
 If the function is constant, the input has no effect on the auxiliary
-qubit. In a balanced function, the qubits get entangled (in pratice,
+qubit. In a balanced function, the qubits get entangled (in practice,
 this is often implemented with a CNOT gate, with the bitstring as
 control and auxiliary as target). This enables phase kickback, which
 changes the control qubit, in our case the bitstring, if the target is
@@ -591,6 +591,15 @@ Now we come to the fireworks of this section: the implementation with
 Qrisp. To construct the oracle, you can use all quantum gates, the ones
 that we have introduced so far and all others of course. The
 implementation in Qrisp is similar to a function in python:
+$ This code doesn't separate the oracle and the algorithm. The oracle seems
+
+wrong and you should think about including the other three possibilities
+
+as well. It would be helpful to comment, in which states the qubits are
+
+in during the stages of the algorithm. Write down the states of the qubits
+
+for every possibility (constant/balanced) if you have to. $
 
 .. code:: python
 
