@@ -22,7 +22,7 @@ repetition: complex numbers
 
 Since some familiarity with complex numbers is required, we will quickly
 skim the baiscs. Complex numbers use the imaginary unit
-:math:`i=\sqrt -1` and are written in the form :math:`z= a+bi`. With
+:math:`i^2=-1` and are written in the form :math:`z= a+bi`. With
 their real part :math:`a` and imaginary part :math:`b`, they can be
 visualized:
 
@@ -164,7 +164,7 @@ this is equivalent to (by multiplying :math:`e^{-i \phi_\alpha}`):
 Since our state vector has to be normalised, we know that
 :math:`\mid r_\alpha \mid ^2 + \mid r_\beta \mid ^2 =1` and with
 trigonometric relations (see the right triangle, :math:`r_\alpha` and
-:math:`r_\beta` are now the legs along the axses :math:`\ket{0}/\ket{1}`
+:math:`r_\beta` are now the legs along the axes :math:`\ket{0}/\ket{1}`
 and :math:`\ket{+}/\ket{-}`), we can make both numbers dependent on
 :math:`\theta`:
 
@@ -478,7 +478,7 @@ can multiply our 2-qubit state vector with it:
 When measuring a quantum system, the result will be one of the
 eigenvalues of the observable. Therefore, for every matrix, an
 **eigenvalue** :math:`\lambda` can be determined, expressed as
-:math:`M * v = \lambda * v`, meaning that the eigenvector scales the
+:math:`M * v = \lambda * v`, meaning that the eigenvalue scales the
 eigenvector :math:`v` the same way that the matrix :math:`M` does.
 Typically, the eigenvalue is calculated by solving the characteristic
 equation :math:`| M - \lambda I | = 0` with the identity matrix

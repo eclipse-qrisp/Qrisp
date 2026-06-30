@@ -411,7 +411,7 @@ Quantum Oracle
   know what’s going on to use them in an algorithm. Practically, you
   should know what you’re implementing.
 | At many times, the oracle will be unknown and given to you to use as
-  imput for an algorithm. You could imagine the oracle as some locked
+  input for an algorithm. You could imagine the oracle as some locked
   box you are trying to open via the algorithm to know what’s inside.
 
 | At this point we should recall the reversibility of all quantum
@@ -422,14 +422,14 @@ Quantum Oracle
   :math:`\ket{f(x)} = \ket{f(y)}` and the oracle wouldn’t be reversible
   anymore. We hence need a way to preserve the input :math:`\ket x`. To
   do that, we introduce a second register:
-  :math:`O(\ket{x} \otimes\ket{y}) = \ket{x}  \otimes \ket{y \oplus f(x)}`,
+  :math:`O(\ket{x} \otimes\ket{y}) = \ket{x}  \otimes \ket{y \oplus f(x)}` $ What does :math:`\oplus` mean? Please add the explanation here and delete the explanation in the next sub-chapter or Copy-Paste it. $,
   with :math:`x \hspace{0.1 cm}\epsilon  \hspace{0.1 cm}\{0, 1\}^n`,
   :math:`y \hspace{0.1 cm} \epsilon \hspace{0.1 cm} \{0,1\}^m` (notice
   that the registers can be of different size) and :math:`O` as the
   oracle with its function :math:`f(x)`. This might look weird now, but
   when you see an example on :math:`\ket y = \ket 0` it might be
   clearer:
-| :math:`U (\ket x\ket 0) = \ket x \ket{ 0 \otimes f(x)} = \ket x \ket{f(x)}`.
+| :math:`U (\ket x\ket 0) = \ket x \ket{ 0 \oplus f(x)} = \ket x \ket{f(x)}`.
   Here, :math:`\ket y` acts as an ancilla qubit without much use, but it
   can also be used to induce phase kickback when
   :math:`\ket y = \ket -`\ (more on that in the later algorithm).
@@ -478,7 +478,7 @@ solutions.
   about :math:`g` (hence it is a black box) and our goal is to determine
   in which category the function belongs. Classically, you would have to
   send at least two queries, for input value 0 and 1. (If we expand to
-  :math:`N` possible inputs, we generally need :math:`\frac{N}{2}+1`
+  :math:`N` possible inputs, we generally need :math:`\frac{N}{2}+1` $ Please explain that. $
   queries). If both are the same, the function is constant, but you
   couldn’t determine that with only one query.
 | The quantum oracle however has an incredible runtime of :math:`O(1)`,
@@ -492,8 +492,8 @@ solutions.
 
 | Now, the black box oracle is applied, taking all qubits as input. The
   input :math:`\ket x \ket y` (x bitstring, y auxiliary qubit) is
-  transformed to :math:`\ket x \ket{ y\otimes f(x)}` via the oracle,
-  with :math:`\otimes` as addition modulo 2.
+  transformed to :math:`\ket x \ket{ y\oplus f(x)}` via the oracle,
+  with :math:`\oplus` as addition modulo 2. $ This explanation comes too late. $
 | Wait, modulo 2? For now, we don’t have to worry about that. This step
   is ensuring that the only numbers we work with are 0 and 1 (we are
   staying in a mathematical group, if you are a nerd).
@@ -510,11 +510,11 @@ mathematics when the oracle is applied:
   :math:`\ket x` is also in superposition, we can substitute that to
 | :math:`\frac{1}{\sqrt{2}}(O((\frac{1}{\sqrt{2}}\ket 0 + \ket 1) \ket 0) - O((\frac{1}{\sqrt{2}}\ket 0 + \ket 1)\ket 1))`
 | Next, we apply the oracle
-  :math:`O(\ket x \ket y)= \ket x \ket{y \otimes f(x)}`:
-| :math:`\frac{1}{\sqrt{2}}(( \frac{1}{\sqrt 2}(\ket 0 + \ket 1) \ket{ 0\otimes f(x)}) - (\frac{1}{\sqrt 2}(\ket 0 + \ket 1) \ket{ 1\otimes f(x)}))=`
-  :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes f(x)} +\ket 1 \ket{ 0\otimes f(x)} - \ket 0 \ket{ 1 \otimes f(x)} - \ket 1 \ket{ 1 \otimes f(x)})`
+  :math:`O(\ket x \ket y)= \ket x \ket{y \oplus f(x)}`:
+| :math:`\frac{1}{\sqrt{2}}(( \frac{1}{\sqrt 2}(\ket 0 + \ket 1) \ket{ 0\oplus f(x)}) - (\frac{1}{\sqrt 2}(\ket 0 + \ket 1) \ket{ 1\oplus f(x)}))`
+  :math:`=\frac{1}{2}(\ket 0 \ket{ 0 \oplus f(x)} +\ket 1 \ket{ 0\oplus f(x)} - \ket 0 \ket{ 1 \oplus f(x)} - \ket 1 \ket{ 1 \oplus f(x)})`
 
-What is :math:`f(x)`? The next calculations depend on wether
+What is :math:`f(x)`? The next calculations depend on whether
 :math:`f(x)` is constant or balanced. Since every possible solution is
 different, the output tells us which it is.
 
@@ -522,13 +522,13 @@ different, the output tells us which it is.
 | :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes 0} +\ket 1 \ket{ 0\otimes 0} - \ket 0 \ket{ 1 \otimes 0} - \ket 1 \ket{ 1 \otimes 0})`
 | Now, we can apply that :math:`\otimes` is addition module 2, meaning
   that we have these four possible results:
-| :math:`0 \otimes 0 = 0`
-| :math:`0 \otimes 1 = 1`
-| :math:`1 \otimes 0= 1`
-| :math:`1 \otimes 1= 0`
+| :math:`0 \oplus 0 = 0`
+| :math:`0 \oplus 1 = 1`
+| :math:`1 \oplus 0= 1`
+| :math:`1 \oplus 1= 0`
 | So our equation simplifies to:
-| :math:`\frac{1}{2}(\ket 0 \ket{0} +\ket 1 \ket{ 0} - \ket 0 \ket{ 1} - \ket 1 \ket{ 1})=`
-  :math:`\frac{1}{2} (\ket 0 (\ket 0 - \ket 1) + \ket 1 (\ket 0 - \ket 1)) = \frac{1}{\sqrt{2}}(\ket 0 + \ket 1)\frac{1}{\sqrt{2}}(\ket 0 - \ket 1)`
+| :math:`\frac{1}{2}(\ket 0 \ket{0} +\ket 1 \ket{ 0} - \ket 0 \ket{ 1} - \ket 1 \ket{ 1})`
+  :math:`=\frac{1}{2} (\ket 0 (\ket 0 - \ket 1) + \ket 1 (\ket 0 - \ket 1)) = \frac{1}{\sqrt{2}}(\ket 0 + \ket 1)\frac{1}{\sqrt{2}}(\ket 0 - \ket 1)`
 | If you recall the statevector form of the states :math:`\ket +` and
   :math:`\ket -`, you will find that this equals to
 | :math:`\ket + \ket -`
@@ -536,7 +536,7 @@ different, the output tells us which it is.
 | 2nd case: constant oracle with :math:`f(x) = f(1) = 1`
 | Analogous to the first case, we can solve this by the same steps, we
   just have to be careful to substitute :math:`f(x)` different now:
-| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes 1} +\ket 1 \ket{ 0\otimes1} - \ket 0 \ket{ 1 \otimes 1} - \ket 1 \ket{ 1 \otimes 1})`
+| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 1} +\ket 1 \ket{ 0\oplus1} - \ket 0 \ket{ 1 \oplus 1} - \ket 1 \ket{ 1 \oplus 1})`
 | We again perform the addition mod 2:
 | :math:`\frac{1}{2}(\ket 0 \ket{ 1} +\ket 1 \ket{1} - \ket 0 \ket{ 0} - \ket 1 \ket{0})`
   :math:`=\frac{1}{\sqrt 2} (\ket 0 + \ket 1) - \frac{1}{\sqrt{2}} (\ket 0 - \ket 1) = -\ket + \ket -`
@@ -545,20 +545,20 @@ different, the output tells us which it is.
 
 | 3rd case: balanced oracle with :math:`f(0) \neq f(1): f(0) = 0` and
   :math:`f(1) = 1`
-| This one might look tricker, since we have to identify when to
-  substitue 0 and 1. To correctly identify the :math:`x` in
+| This one might look trickier, since we have to identify when to
+  substitute 0 and 1. To correctly identify the :math:`x` in
   :math:`f(x)`, we simply have a look at the previous qubit, since the
-  oracle output is in the form :math:`\ket x \ket{ y \otimes f(x)}`:
-  :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes 0} +\ket 1 \ket{ 0\otimes 1} - \ket 0 \ket{ 1 \otimes 0} - \ket 1 \ket{ 1 \otimes 1})`
+  oracle output is in the form :math:`\ket x \ket{ y \oplus f(x)}`:
+  :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 0} +\ket 1 \ket{ 0\oplus 1} - \ket 0 \ket{ 1 \otimes 0} - \ket 1 \ket{ 1 \otimes 1})`
 | perform addition modulo 2:
 | :math:`\frac{1}{2}(\ket 0 \ket{  0} +\ket 1 \ket{ 1} - \ket 0 \ket{ 1 } - \ket 1 \ket{0})`
 | And summarize the states:
-| :math:`\frac{1}{2} (\ket 0 (\ket 0 - \ket 1) - \ket 1(\ket 0 - \ket 1))=`
-  :math:`\frac{1}{\sqrt 2} (\ket 0 - \ket 1)\frac{1}{\sqrt 2} (\ket 0 - \ket 1) = \ket - \ket -`
+| :math:`\frac{1}{2} (\ket 0 (\ket 0 - \ket 1) - \ket 1(\ket 0 - \ket 1))`
+  :math:`=\frac{1}{\sqrt 2} (\ket 0 - \ket 1)\frac{1}{\sqrt 2} (\ket 0 - \ket 1) = \ket - \ket -`
 
 | 4th case: balanced oracle with :math:`f(0) = 1` and :math:`f(1) = 0`
-| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \otimes 1} +\ket 1 \ket{ 0\otimes 0} - \ket 0 \ket{ 1 \otimes 1} - \ket 1 \ket{ 1 \otimes 0})=`
-  :math:`\frac{1}{2}(\ket 0 \ket{ 1} +\ket 1 \ket{ 0} - \ket 0 \ket{0} - \ket 1 \ket{ 1 })=\frac{1}{2}( - \ket 0 (\ket 0 - \ket 1) + \ket 1(\ket 0 - \ket 1))=- \ket - \ket -`
+| :math:`\frac{1}{2}(\ket 0 \ket{ 0 \oplus 1} +\ket 1 \ket{ 0\oplus 0} - \ket 0 \ket{ 1 \oplus 1} - \ket 1 \ket{ 1 \oplus 0})`
+  :math:`=\frac{1}{2}(\ket 0 \ket{ 1} +\ket 1 \ket{ 0} - \ket 0 \ket{0} - \ket 1 \ket{ 1 })=\frac{1}{2}( - \ket 0 (\ket 0 - \ket 1) + \ket 1(\ket 0 - \ket 1))=- \ket - \ket -`
 
 In summary, for constant oracles the output is of the form
 :math:`\pm \ket + \ket -`, while a balanced oracle spits out
@@ -581,9 +581,11 @@ nicely readable.
 
 | 1st case constant oracle:
 | :math:`H(\pm \ket +) = \pm H(\frac{1}{\sqrt 2} \ket 0 + \ket 1) = \pm \frac{1}{2} (\ket 0 + \ket 1) \pm \frac{1}{2} (\ket 0 - \ket 1) = \ket 0`
+$ It is important to add, that :math:`\pm H(\frac{1}{\sqrt 2} \ket 0 + \ket 1) = \pm H(\frac{1}{\sqrt 2}\ket 0 ) \pm H(\frac{1}{\sqrt 2} \ket 1)`
+and the first :math:`\pm` stands for the same operator as the second :math:`\pm`. $
 
 | 2nd case balanced oracle:
-| :math:`H(\pm \ket -) = \pm H(\frac{1}{\sqrt 2} \ket 0 - \ket 1) = \pm \frac{1}{2} (\ket 0 + \ket 1) \mp \frac{1}{2} (\ket 0 - \ket 1) = \ket 1`
+| :math:`H(\pm \ket -) = \pm H(\frac{1}{\sqrt 2} \ket 0 - \ket 1) = \pm \frac{1}{2} (\ket 0 + \ket 1) \pm \frac{1}{2} (\ket 0 - \ket 1) = \ket 1`
 
 Now we come to the fireworks of this section: the implementation with
 Qrisp. To construct the oracle, you can use all quantum gates, the ones
@@ -641,7 +643,7 @@ secret string. In a classical setting, we would send :math:`n` queries
 for a bitstring of length :math:`n`, with 0 all over except one
 position. Is the dot product 1, we know that there is a 1 in that
 position. Is it 0, we know that there’s a 0. In the quantum case, we
-only need on query.
+only need one query.
 
 Formally, the problem can be defined as
 :math:`f: \{0, 1\}^n \rightarrow \{0, 1\}` with the secret string
@@ -782,12 +784,12 @@ Summary
 
 - quantum oracles can be separated into two classes: phase oracles and boolean oracles. Both follow the form of  :math:`O(\ket{x} \otimes\ket{y}) = \ket{x}  \otimes \ket{y \oplus f(x)}` to ensure reversibility. 
 
-- The Deutsch-Jozsa Algorithm was designed to determine wether a function is constant or balanced. It was one of the first quantum algorithm to propose an exponentially faster solution. 
+- The Deutsch-Jozsa Algorithm was designed to determine whether a function is constant or balanced. It was one of the first quantum algorithm to propose an exponentially faster solution.
 
 - The Bernstein-Vazirani algorithm is a modification of Deutsch-Jozsa that finds a secret bitstring. Both algorithms harness phase kickback. 
 
 After learning your two first quantum algorithms, we are now at the end
-of this chapter. Next, we will study two fundamental suproutines, where
+of this chapter. Next, we will study two fundamental subroutines, where
 one might be familiar from classical physics and computing. Happy
 coding, and may your qubits always stay entangled!
 

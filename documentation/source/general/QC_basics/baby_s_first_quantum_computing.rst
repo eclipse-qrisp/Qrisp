@@ -163,7 +163,7 @@ string:
 .. code:: python
 
    >>> from qrisp import h
-   >>> h(q_str_2[0][0])        # Hadamard gate. introduces supersposition 
+   >>> h(q_str_2[0][0])        # Hadamard gate. introduces superposition
    >>> print(q_str_0)
    {'hello world': 0.5, 'hello xorld': 0.5}
 
@@ -530,12 +530,12 @@ The measurements {‘0’: 0.5, ‘1’: 0.5} are the probabilities, the
 statevector function :math:`\frac{\sqrt{2} (\ket 0 + i \ket 1)}{2}` is
 providing us our initial solution.
 
-| As mentioned in the 4th DiVincenzo criterium, a set of universal
+| As mentioned in the 4th DiVincenzo criterion, a set of universal
   quantum gates is required to perform arbitrary computations. One
   commonly used universal set consists of the rotation, phase shift and
   CNOT gate. By using combinations of these gates, you can effectively
   simulate or approximate any other unitary quantum gate. The key word
-  here is approximate, since some gates connot be recreated 100%
+  here is approximate, since some gates cannot be recreated 100%
   accurately. The Solovay-Kitaev theorem is giving us more information
   about that: Any quantum circuit containing :math:`m` CNOTs and single
   qubit gates can be approximated to an accuracy :math:`\epsilon` using
@@ -621,7 +621,7 @@ can lead to them switching the values. This is known as a **phase
 kickback**. See this example:
  :math:`\frac{1}{2}\ket{00} -\frac{1}{2}\ket{01} +\frac{1}{2}\ket{10}-\frac{1}{2}\ket{11} \xrightarrow{CNOT}\frac{1}{2}\ket{00} -\frac{1}{2}\ket{01} -\frac{1}{2}\ket{10}+\frac{1}{2}\ket{11}`
 This will be an essential step in the Quantum Phase Estimation
-Algorithm (TODO: add link). To further understand these propteries, let’s have a look at the
+Algorithm (TODO: add link). To further understand these properties, let’s have a look at the
 matrix:
 
 .. math:: 
@@ -701,7 +701,7 @@ Challenges
 ----------
 
 | The reason we put so much effort into developing a new programming
-  paradigm is the promised quatum advantage. This describes the hope
+  paradigm is the promised quantum advantage. This describes the hope
   that a quantum computer can solve problems that no classical computer
   can solve in feasible time. This advantage has not been proven so far,
   but we have evidence to believe in it, such as clever engineered
@@ -712,19 +712,19 @@ Challenges
   physicists and engineers are facing when building quantum computers.
 
 For example the **connectivity** between qubits plays a vital role. When
-two qubits need to be adressed together, e.g. with a CNOT gate, but are
+two qubits need to be addressed together, e.g. with a CNOT gate, but are
 not connected to each other, the qubits need to be permuted via SWAP
 operations which costs valuable computation time and thus increases the
 probability of quantum noise effects (errors). However, a well-connected
 qubit system can lead to unwanted qubit interactions, termed as
 cross-talk between qubits, which induce decoherence.
 
-Quantum systems are extremly fragile and prone to **decoherence**. The
+Quantum systems are extremely fragile and prone to **decoherence**. The
 slightest change in temperature, humidity, electromagnetic influences
 (even in another room) or even the qubits themselves as just established
 can lead to information loss. Of course, these challenges are kept in
 mind when designing the hardware, but it is still hard to completely
-isolate the qubits from the evironment, especially since we need to
+isolate the qubits from the environment, especially since we need to
 manipulate them via gate functions.
 
 Similar, decoherence limits the **scalability**, as bigger quantum
@@ -741,7 +741,7 @@ be 10:1 to 1.000:1, depending on the algorithm, the error correction
 method and the fault-tolerance of the computation.
 
 To actually be able to build elaborate quantum computers and hopefully
-achieve quantum advantage, error handling techniques arised, so we can
+achieve quantum advantage, error handling techniques arose, so we can
 reduce these effects. In the section error handling (TODO add link), we
 have a closer look at different techniques. You can now decide if yo
 want to read up more on that, or get practical with your first Qrisp
@@ -755,7 +755,7 @@ Summary
    initialization
 -  The most important single qubit gates are the Pauli X, Y, Z gates,
    the phase shift gates, the rotation operations and the Hadamard gate
--  The most important mulit qubits gates are the SWAP, the CNOT-gate and
+-  The most important multi qubits gates are the SWAP, the CNOT-gate and
    its extension, the Toffoli gate.
 -  In Qrisp, QuantumTypes, the quantum counterparts to classical
    programming types, can be used without explicitly initializing the

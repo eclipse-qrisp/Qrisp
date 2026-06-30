@@ -27,10 +27,10 @@ Quantum? I hardly know her
   connected to the colour) of the light. Below that threshold, no
   electrons are emitted, no matter the intensity (brightness) of the
   light. Furthermore, frequency is the only variable affecting the
-  emmission rate: Intensity plays no role, counter-intuitive to
+  emission rate: Intensity plays no role, counter-intuitive to
   classical mechanics. From this result, Einstein concluded that light
   is “chunky” and its energy is defined by :math:`E = h\nu`. Energy can
-  only be absorbed or transmitted in disctrete steps, multiples of
+  only be absorbed or transmitted in discrete steps, multiples of
   :math:`h` (Planck’s constant). The particles of light, called photons,
   are the quantum pieces of light. To summarize: Photons with a distinct
   energy hit electrons in metal, transmit their energy and if the
@@ -164,7 +164,7 @@ Superposition
 When we measure a quantum particle, its superposition collapses. You can
 imagine that the photon has to “decide” on a property, we call this
 “deciding” the collapse of the wave function. In the collapse, the wave
-function takes u one of the eigenvalues with 100% certainty. In our
+function takes one of the eigenvalues with 100% certainty. In our
 :math:`\ket 0` :math:`\ket 1` basis, that is either 0 or 1. If you
 repeat the same experiment for many times, you can keep a statistic how
 often the result is 0 or 1. These statistical outcomes determine our
@@ -198,7 +198,7 @@ coefficients :math:`c_1` and :math:`c_0`.
   position), an integral is calculated instead, with :math:`\psi(x)` as
   the wavefunction: :math:`\psi(x) = \int \ket{x'} \bra{x'} dx'`.
 | Most time, we do our calculations in the computational basis,
-  :math:`\ket{0}` and :math:`\ket{1}`. Apart from that, these is also
+  :math:`\ket{0}` and :math:`\ket{1}`. Apart from that, there is also
   another popular basis, derived from the Pauli X eigenstates (more on
   the Pauli matrices in the next
   chapter)::math:`\ket{+} = \frac{1}{\sqrt{2}} (\ket{0} + \ket{1})` and
@@ -206,9 +206,9 @@ coefficients :math:`c_1` and :math:`c_0`.
   calculate the eigenstates for any Hermitian matrix/operator the way we
   introduced :ref:`last chapter <math>`.
 
-Superposition is hardly a visile physical property, hence why we didn’t
+Superposition is hardly a visible physical property, hence why we didn’t
 introduce an experiment to prove it. It is rather a mathematical device:
-The sum of states is also a state. It also depends on your chose basis
+The sum of states is also a state. It also depends on your chosen basis
 vectors: In our usual :math:`\ket{0}` and :math:`\ket{1}` basis,
 :math:`\frac{1}{\sqrt{2}} (\ket{0} + \ket{1})` is in superposition, but
 in the :math:`\ket{-}\ket{+}` basis, it is a basis vector. Superposition
@@ -344,7 +344,7 @@ nucleus, home of positively charged protons, is orbited by electrons on
 discrete shells. Is an electron energized (say by a photon hitting it),
 it makes a discrete move to a higher orbital. In-between options are not
 possible (this is the whole point of QUANTUM physics). This also
-explains the discrete packaging of energy, since emmitted energy sends
+explains the discrete packaging of energy, since emitted energy sends
 an electron to a lower orbit. This model is also utilized in quantum
 computing: To build singular qubits, the states :math:`\ket{0}` and
 :math:`\ket{1}` can be physically implemented as orbits, the electron
@@ -357,7 +357,7 @@ jumping between them is the actual qubit:
 While Bohr’s model works for some atoms (it actually is very limited),
 it is not applicable for larger atoms. Other phenomena such as spectral
 lines could not be explained with the current(1910) theories, therefore
-a new model arised. Modern approaches, based on the Schrödinger
+a new model arose. Modern approaches, based on the Schrödinger
 equation, picture an atom as a nucleus with a “cloud” of places where an
 electron could be positioned with a certain probability.
 
@@ -401,7 +401,7 @@ Summary
    -  3: time evolution is guarded by the Schrödinger equation
       :math:`i \hbar \frac{\partial \psi}{\partial t} = \hat{H}\psi`.
    -  4: Every observable has a corresponding linear operator. Upon
-      measurent, the wavefunction collapses to one of the eigenstates.
+      measurement, the wavefunction collapses to one of the eigenstates.
 
 -  A quantum particle can be in multiple states at once, called
    superposition. The superposition collapses when measured.
@@ -416,7 +416,7 @@ Summary
 -  All quantum operators (including quantum computing gates) need to be
    unitary
 
-After all this prepraration, we are now ready to dive into quantum
+After all this preparation, we are now ready to dive into quantum
 computing in the next chapter. Stay tuned, it even involves some first
 programming examples in Qrisp!
 
