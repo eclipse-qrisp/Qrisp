@@ -12,6 +12,7 @@ Quantum Types
    QuantumModulus
    QuantumChar
    QuantumString
+   QuantumEnum
 
 Quantum typing in Qrisp is smoothly integrated into the typing infractructure of Python, implying it can be used to specify the types of function arguments and return values. By using quantum typing, developers can write more self-documenting code and improve the maintainability of their projects.
 
@@ -27,7 +28,10 @@ We include four basic built-in quantum types.
 
 * :ref:`QuantumChar <QuantumChar>`
 
+* :ref:`QuantumEnum <QuantumEnum>`
+
 :ref:`QuantumString` is technically not a quantum type, since it inherits from :ref:`QuantumArray` but we still mention it here.
+
 
 Creating custom quantum types
 -----------------------------
