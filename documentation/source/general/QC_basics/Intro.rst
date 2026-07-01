@@ -21,7 +21,7 @@ Why Quantum Computing?
 ----------------------
 
 | To not get your hopes too high, I want to start by saying that quantum
-  computers will not take all problems that ever existed and give your
+  computers will not take all problems that ever existed and give you
   the best solution. There are many areas where the use of quantum
   computers doesn’t make sense, and the general consensus is that you
   won’t be having a quantum computer in your living room to do your
@@ -139,7 +139,7 @@ Complexity Theory
 | Shor’s algorithm for factoring is suspected to be in BQP, but not BPP,
   meaning we can simulate the algorithm in polynomial time on a quantum
   computer, but (likely) not on a classical computer like a Turing
-  machine. It is assumed that multiple problems lay in BQP, but not BPP,
+  machine. It is assumed that multiple problems lie in BQP, but not BPP,
   making quantum algorithms attractive for us.
 
 |image1| Source: Nicepng
@@ -179,7 +179,7 @@ Today’s Quantum Computers
   information the system can store and process grows linearly. Similar
   to classical computers, quantum computers work with qubits, whose
   states we write as :math:`\ket{0}` and :math:`\ket{1}`.
-| Given their quantum nature, they can also be in a :ref:` superposition <physics>` of 0
+| Given their quantum nature, they can also be in a :ref:`superposition <physics>` of 0
   and 1. What does that mean? You can imagine that a qubit can be in two
   states at once, 0 and 1 simultaneously. When
   combining qubits together, we get exponential growth :math:`2^n`
