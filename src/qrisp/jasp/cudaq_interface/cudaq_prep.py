@@ -48,7 +48,7 @@ from xdsl.dialects.builtin import (
 )
 from xdsl.ir import Attribute, Block, Region, SSAValue
 
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import (
     CcLogOutputOp,
     CcInsertValueOp,
     CcStructType,

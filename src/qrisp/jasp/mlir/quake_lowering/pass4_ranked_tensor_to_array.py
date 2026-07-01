@@ -59,7 +59,7 @@ from xdsl.dialects.builtin import (
 from xdsl.ir import Block, Region, SSAValue
 from xdsl.rewriter import Rewriter
 
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import (
     CcAllocaOp,
     CcArrayType,
     CcCastOp,

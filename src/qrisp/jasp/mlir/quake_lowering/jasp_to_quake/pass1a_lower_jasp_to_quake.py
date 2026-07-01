@@ -65,7 +65,7 @@ from xdsl.pattern_rewriter import (
 )
 from xdsl.rewriter import InsertPoint
 
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
+from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
     AllocaOp,
     ConcatOp,
     DeallocOp,

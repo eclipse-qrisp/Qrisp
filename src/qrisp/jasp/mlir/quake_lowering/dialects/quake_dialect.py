@@ -455,7 +455,7 @@ class MzOp(IRDLOperation):
         # Choose result type based on whether we're measuring a single qubit or a veq.
         if isinstance(qubit.type, QuakeVeqType):
             # Veq measurement → !cc.stdvec<!quake.measure>
-            from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcStdVecType
+            from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcStdVecType
 
             result_type = CcStdVecType()
         else:

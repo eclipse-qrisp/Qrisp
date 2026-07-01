@@ -51,13 +51,13 @@ try:
     )
 except ImportError:
     pass
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.quake_dialect import (
+from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
     QuakeDialect,
     QuakeMeasureType,
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcDialect, CcStdVecType
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcDialect, CcStdVecType
 
 __all__ = [
     "jaspr_to_quake_mlir",

@@ -59,7 +59,7 @@ from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
 )
 
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import (
     CcConditionOp,
     CcContinueOp,
     CcIfOp,
