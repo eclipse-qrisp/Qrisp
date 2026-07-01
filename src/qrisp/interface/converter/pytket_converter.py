@@ -21,8 +21,11 @@ from qrisp import ControlledOperation
 
 
 def create_tket_instruction(op):
-    from pytket import OpType
-    from pytket.circuit import CircBox
+    try:
+        from pytket import OpType
+        from pytket.circuit import CircBox
+    except (ModuleNotFoundError, ImportError) as exc:
+        raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
 
     if op.name == "rxx":
         tket_ins = OpType.XXPhase
@@ -78,8 +81,11 @@ def create_tket_instruction(op):
 
 
 def pytket_converter(qc, boxFlag=False):
-    from pytket import Circuit, OpType, Qubit
-    from pytket.circuit import CircBox, Op, QControlBox
+    try:
+        from pytket import Circuit, OpType, Qubit
+        from pytket.circuit import CircBox, Op, QControlBox
+    except (ModuleNotFoundError, ImportError) as exc:
+        raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
 
     # This dic gives the qiskit qubits/clbits when presented with their identifier
     qubit_dic = {}
@@ -159,10 +165,9 @@ def pytket_converter(qc, boxFlag=False):
                 tket_ins = OpType.CZ
 
         elif op.name == "cp":
-            if hasattr(op, "ctrl_state"):
-                tket_ins = OpType.CRz
-            else:
-                tket_ins = OpType.Rz
+            # cp is the controlled-phase gate diag(1,1,1,e^{i*theta}); pytket's
+            # CU1 is exactly controlled-U1 (CRz is a different gate). (#630)
+            tket_ins = OpType.CU1
 
         elif op.name == "sx":
             # bugged -> params empty
@@ -174,8 +179,7 @@ def pytket_converter(qc, boxFlag=False):
             tket_ins = OpType.SXdg
 
         elif op.name == "u1":
-            params[0] = params[0] / np.pi
-            # bugged
+            # angle already converted to pi-units in the block above (#631)
             tket_ins = OpType.Rz
         elif op.name == "id":
             params = []
