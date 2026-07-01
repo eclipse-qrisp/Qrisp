@@ -88,7 +88,7 @@ dev-testing = [
 dev = [
     "qrisp[dev-code-style,dev-testing]",
 ]
-dev_windows = [
+dev-windows = [
     "qrisp[dev-code-style, dev-testing-windows]",
 ]
 
