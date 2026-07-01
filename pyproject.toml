@@ -79,6 +79,7 @@ dev-testing = [
     "qiskit-aer",
     "pyscf",
     "cirq",
+    "pytket",
     "tqecd",
 ]
 dev = [
