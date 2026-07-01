@@ -74,15 +74,21 @@ docs = [
 dev-code-style = [
     "ruff",
 ]
-dev-testing = [
+dev-testing-windows = [
     "pytest==9.1.0",
     "qiskit-aer",
-    "pyscf",
     "cirq",
     "tqecd",
 ]
+dev-testing = [
+    "qrisp[dev-testing-windows]",
+    "pyscf",
+]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
+]
+dev-windows = [
+    "qrisp[dev-code-style, dev-testing-windows]",
 ]
 
 [project.urls]
