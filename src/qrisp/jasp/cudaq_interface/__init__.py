@@ -16,5 +16,24 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
-from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
+"""
+``qrisp.jasp.cudaq_interface`` — CUDA-Q backend for Qrisp/Jasp.
+
+Provides the CUDA-Q execution tools for Qrisp functions compiled via
+Jasp/Quake MLIR.  ``cudaq`` is an optional dependency; importing this
+package when ``cudaq`` is not installed raises an ``ImportError``.
+
+Preferred import paths::
+
+    from qrisp.jasp import cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
+
+"""
+
+from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
+from qrisp.jasp.cudaq_interface.cudaq_kernel import cudaq_kernel
+
+__all__ = [
+    "cudaq_kernel",
+    "FixedShapeNDArray",
+]

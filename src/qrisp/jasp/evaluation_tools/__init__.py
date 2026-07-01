@@ -22,3 +22,14 @@ from qrisp.jasp.evaluation_tools.jaspification import *
 from qrisp.jasp.evaluation_tools.catalyst_qjit import *
 from qrisp.jasp.evaluation_tools.profiler import *
 from qrisp.jasp.evaluation_tools.stim_extraction import *
+
+# Optional CUDA-Q backend — only exposed when cudaq is installed.
+try:
+    from qrisp.jasp.cudaq_interface import (
+        FixedShapeNDArray,
+        cudaq_kernel_from_mlir,
+        run_quake_mlir,
+        qrisp_cudaq_kernel,
+    )
+except ImportError:
+    pass
