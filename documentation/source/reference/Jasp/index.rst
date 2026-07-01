@@ -39,7 +39,7 @@ A more promising approach is the `QIR specification <https://www.qir-alliance.or
 
 With Jasp, we therefore aim to tackle both problems - compilation speed and lack of real-time computations - by targeting the established LLVM toolchain.
 
-Ideally we want you to keep all your Qrisp code the same and simply enable the Jasp feature. So if you simply want to speed up your code, you can stop reading here. Otherwise get ready for more background knowledge (yay)!
+Ideally we want you to keep all your Qrisp code the same and simply enable the Jasp feature. A large fraction of code written for static mode works in dynamic mode without any changes — see the :doc:`Static vs. Dynamic <Static_vs_Dynamic>` page for the patterns that do and don't carry over. So if you simply want to speed up your code, you can stop reading here. Otherwise get ready for more background knowledge (yay)!
 
 What is Jax?
 ^^^^^^^^^^^^
