@@ -27,7 +27,7 @@ that CUDA-Q's Module.parse expects:
 - Adds cudaq-entrypoint / cudaq-kernel unit attrs
 - Packs multiple return values into !cc.struct
 - Synthesizes .run variant (cc.log_output + void return)
-- Synthesizes .run.entry stub
+- Synthesizes .run.entry
 - Injects module-level attributes (llvm.data_layout, quake.mangled_name_map, etc.)
 
 xDSL stores inherent attributes (sym_name, function_type, sym_visibility)
@@ -318,7 +318,7 @@ def prepare_module_for_cudaq(
     Parameters
     ----------
     module : ModuleOp
-        xDSL module containing a @main function (output of passes 1–5).
+        xDSL module containing a @main function.
     func_name : str
         Target function name (e.g. "__nvqpp__mlirgen__<uuid>").
     entry_point : str

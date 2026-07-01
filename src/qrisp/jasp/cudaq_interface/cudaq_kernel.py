@@ -15,17 +15,42 @@
 ********************************************************************************
 """
 
-"""
-cudaq_kernel.py — refactored to use xDSL structural IR manipulation.
-
-All string-based MLIR surgery is replaced by pass6_cudaq_prep which operates
-on the xDSL ModuleOp directly.  Serialization happens exactly once, right
-before handing to CUDA-Q's Module.parse.
-
-A small normalization step converts xDSL's generic printing conventions
-to the format CUDA-Q's parser expects (e.g. `builtin.module` → `module`,
-`func.return` → `return`).
-"""
+# ====================================================================== #
+# CUSTOM INGESTION PIPELINE: Bridging External MLIR to CUDA-Q
+# ====================================================================== #
+# Rationale:
+# CUDA-Q's execution backend (C++) strictly requires an MLIR module to 
+# specify the host machine's exact memory architecture (llvm.data_layout) 
+# and hardware target (llvm.target_triple) to successfully compile and 
+# allocate memory. Currently, the CUDA-Q Python API lacks a native 
+# mechanism to cleanly ingest externally compiled MLIR strings. Omitting 
+# these hardware attributes results in fatal "missing data layout" 
+# runtime crashes.
+#
+# Workflow:
+# 1. Target Extraction: We define an empty Python function decorated with 
+#    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces 
+#    the underlying LLVM compiler to generate the exact, natively-matched 
+#    layout and target triple for the host environment, which we then 
+#    extract via regular expressions. If that fails
+#    (e.g. in CI environments where str() doesn't trigger full LLVM
+#    lowering), we fall back to well-known platform defaults derived from
+#    the host's architecture and OS.
+#
+# 2. Interface Adaptation (cudaq_prep.py): 
+#    We inject the extracted hardware specifications 
+#    into the Qrisp-generated MLIR. Crucially, we also clone the primary 
+#    entry function to create a required `.run` variant. During this cloning, 
+#    we translate standard `func.return` instructions into `cc.log_output` 
+#    operations. This structural change is required, as it is the exact 
+#    mechanism CUDA-Q uses to capture and aggregate individual per-shot 
+#    measurement data during simulation.
+#
+# 3. Re-Compilation: The fully adapted, hardware-aware MLIR string is fed 
+#    back into CUDA-Q's internal compiler via `Module.parse()`. This 
+#    re-compiles the string within the active MLIR context, resulting in a 
+#    valid kernel object that the C++ backend can safely execute.
+# ====================================================================== #
 
 from collections.abc import Callable
 from typing import Literal
@@ -169,15 +194,33 @@ def cudaq_kernel_from_xdsl_module(
     execution_mode: Literal["run", "sample"] = "run",
 ) -> PyKernelDecorator:
     """
-    Compiles a Quake MLIR string (or xDSL ModuleOp) into a native PyKernelDecorator.
+    Compiles an xDSL ModuleOp into a native PyKernelDecorator.
 
     Parameters
     ----------
     xdsl_module : ModuleOp
-        An xDSL ModuleOp containing a @main function.
+        An xDSL module representing the quantum computation in Quake and CC dialects.
+        Must contain a @main function as entrypoint.
     execution_mode : "run" | "sample"
-        "run" — synthesizes .run/.run.entry for cudaq.run.
-        "sample" — void-return kernel for cudaq.sample.
+        Controls how the compiled kernel is structured for CUDA-Q's backend,
+        determining which execution API the resulting kernel is compatible with.
+
+        - ``"run"`` — Prepares the kernel for use with ``cudaq.run()``. This mode
+          preserves the function's return values by synthesizing additional
+          ``.run`` and ``.run.entry`` function variants. The ``.run`` variant
+          replaces ``func.return`` operations with ``cc.log_output`` calls,
+          which is the mechanism CUDA-Q uses to capture and aggregate per-shot
+          measurement results across repeated executions. Use this mode when
+          you need to retrieve computed classical values (e.g., expectation
+          values, bit-strings with post-processing) from the quantum kernel.
+
+        - ``"sample"`` — Prepares the kernel for use with ``cudaq.sample()``.
+          This mode strips all return values from the kernel (making it
+          void-returning), as ``cudaq.sample()`` collects measurement results
+          implicitly from qubit measurements embedded in the circuit rather
+          than from explicit return statements. Use this mode when you only
+          need measurement count statistics (histograms) from the quantum
+          circuit.
 
     Returns
     -------
