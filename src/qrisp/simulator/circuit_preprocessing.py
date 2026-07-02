@@ -96,6 +96,7 @@ from qrisp.permeability.type_checker import is_permeable
 # many small unitaries. This estimation is elaborated in the calc_gain method.
 class GroupedInstruction:
     """Represents a group of quantum instructions that can be merged for efficient simulation."""
+
     # The constructor takes a list of instruction (for instance from a quantum circuit)
     # and a list of indices, which describe which instruction to include in the group
     # Using the qubits argument, is possible to provide a list of qubits, where the
@@ -492,7 +493,7 @@ def int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[An
                 temp = temp >> 1
                 bit_idx += 1
         return res
-    
+
     temp = int(data)
     for qb in qc.qubits:
         if temp & 1:
@@ -592,7 +593,7 @@ def optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
 #                  └───┘└───┘┌─┴─┐┌────────┐
 # qubit_3364: ───────────────┤ x ├┤ P(0.3) ├
 #                            └───┘└────────┘
-# If we don't the gates after the first CNOT with U,
+# If we denote the gates after the first CNOT with U,
 # the resulting state is
 # 2**-0.5*(|0>U|0> + |1>U|1>)
 # Since we are not interested in the wave-function but in the resulting
@@ -631,20 +632,15 @@ def optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
 # U|0>|a> = exp(i*phi_0) |0> U_0 |a>
 # U|1>|b> = exp(i*phi_1) |0> U_1 |b>
 
-# Create disentangling operation
-disentangler = Operation("disentangle", num_qubits=1)
-disentangler.definition = QuantumCircuit(1)
-disentangler.permeability = {0: False}
-disentangler.warning = False
 
+class Disentangler(Operation):
+    """A custom operation that indicates where the circuit can be split into separate branches for simulation."""
 
-def Disentangler(warning: bool = False) -> Operation:
-    """Creates a disentangling operation with an optional warning flag."""
-    d = Operation("disentangle", num_qubits=1)
-    d.definition = QuantumCircuit(1)
-    d.permeability = {0: False}
-    d.warning = warning
-    return d
+    def __init__(self, warning: bool = False):
+        super().__init__("disentangle", num_qubits=1)
+        self.definition = QuantumCircuit(1)
+        self.permeability = {0: False}
+        self.warning = warning
 
 
 def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
@@ -674,7 +670,7 @@ def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
                 qubit_index = instr.qubits.index(qubit)
 
                 if is_permeable(instr.op, [qubit_index]):
-                    reversed_data.insert(j + 1, Instruction(disentangler, [qubit]))
+                    reversed_data.insert(j + 1, Instruction(Disentangler(), [qubit]))
                     disentangling_counter += 1
                     j += 1
                 else:
@@ -687,9 +683,6 @@ def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
     return new_qc
 
 
-# Simple function to count the amount of measurements in a circuit,
-# this is helpfull, because we don't need to continue the simulation,
-# once all measurements have been performed
 def count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool = True) -> int:
     """Counts the number of measurement instructions in the circuit and handles qubit allocation/deallocation."""
     counter = 0
@@ -773,7 +766,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
                 if data[j].op.name == "measure" and data[j].qubits[0] == meas_qubit:
                     break
             else:
-                new_data.append(Instruction(disentangler, [meas_qubit]))
+                new_data.append(Instruction(Disentangler(), [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
 
@@ -782,7 +775,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
 
             if next_instr_is_reset:
                 new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-                new_data.append(Instruction(disentangler, [meas_qubit]))
+                new_data.append(Instruction(Disentangler(), [meas_qubit]))
 
             cb_to_qb_dic[instr.clbits[0]] = qb
             mes_instr = instr.copy()
@@ -790,7 +783,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
 
         elif instr.op.name == "reset":
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(Disentangler(warning=False), [meas_qubit]))
+            new_data.append(Instruction(Disentangler(), [meas_qubit]))
 
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
@@ -827,7 +820,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
                 )
 
             for qb in control_qubits:
-                new_data.append(Instruction(disentangler, [qb]))
+                new_data.append(Instruction(Disentangler(), [qb]))
         else:
             new_data.append(instr)
 
