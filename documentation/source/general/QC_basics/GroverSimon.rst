@@ -216,17 +216,17 @@ one output. This problem is of the form
 How can we tackle this problem classically? First, we would need to
 send enough queries to our black box oracle to get the same output
 twice, so :math:`f(x) = f(y)`. This is the leading factor for
-complexity, as this can take :math:`2^{\frac{n}{2}} +1` quieries for a
+complexity, as this can take :math:`2^{n-1} +1` queries for a
 n-bit string in the worst case, having to go through half the input
-domain to get every possible answer and the first repitition in the
+domain to get every possible answer and the first repetition in the
 next query. Now, you would apply XOR to the two inputs to obtain s.
-(This is especially easy, if one of your queries in all zeros. That
+(This is especially easy, if one of your queries is all zeros. That
 way, the bitstring s is simply the other query.) Unfortunately, this
 is pretty time consuming, leading to exponential complexity
 :math:`O(2^n)`.
 Our quantum solution however only has a linear complexity, therefore
 presenting an exponential speedup, the first of its kind. For the
-quantum version, we initalize two registers with each :math:`n` qubits
+quantum version, we initialize two registers with each :math:`n` qubits
 all in the state :math:`\ket 0`. We apply Hadamard gates on the first
 register and the oracle for :math:`f(x)` on both. Remember that an
 oracle maps :math:`\ket x \ket y \rightarrow \ket x \ket{f(x)}`, so
