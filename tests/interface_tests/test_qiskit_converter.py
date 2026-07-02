@@ -139,6 +139,18 @@ class TestQrispToQiskitRoundtrip:
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
+    def test_rxx(self):
+        qc = QuantumCircuit(2)
+        qc.rxx(0.7, 0, 1)
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_ryy(self):
+        qc = QuantumCircuit(2)
+        qc.ryy(0.7, 0, 1)
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
     def test_cp(self):
         qc = QuantumCircuit(2)
         qc.cp(np.pi / 4, 0, 1)

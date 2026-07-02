@@ -421,6 +421,44 @@ def RZZGate(phi: FloatLike = 0):
     return res
 
 
+def RYYGate(phi: FloatLike = 0):
+    """Return an Ising YY-coupling gate.
+
+    Parameters
+    ----------
+    phi : FloatLike, optional
+        The coupling angle in radians. The default is 0.
+
+    Returns
+    -------
+    :class:`.Operation`
+        The :math:`R_{YY}` gate operation.
+
+    """
+    from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+    qc = QuantumCircuit(2)
+    qc.gphase(-phi / 2, qc.qubits[0])
+    qc.s_dg(qc.qubits[0])
+    qc.s_dg(qc.qubits[1])
+    qc.h(qc.qubits[0])
+    qc.h(qc.qubits[1])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.p(phi, qc.qubits[1])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.h(qc.qubits[0])
+    qc.h(qc.qubits[1])
+    qc.s(qc.qubits[0])
+    qc.s(qc.qubits[1])
+
+    res = Operation(name="ryy", num_qubits=2, num_clbits=0, params=[phi], definition=qc)
+
+    res.permeability = {0: False, 1: False}
+    res.is_qfree = False
+
+    return res
+
+
 def XXYYGate(phi: FloatLike = 0, beta: FloatLike = 0):
     """Return an XX+YY interaction gate.
 
@@ -658,6 +696,7 @@ op_list = [
     TGate,
     RXXGate,
     RZZGate,
+    RYYGate,
     SXGate,
     SXDGGate,
     XXYYGate,

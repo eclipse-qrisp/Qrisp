@@ -15,6 +15,7 @@ from qrisp.circuit.standard_operations import (
     RXGate,
     RXXGate,
     RYGate,
+    RYYGate,
     RZGate,
     RZZGate,
     SGate,
@@ -40,7 +41,7 @@ def pytket_rand_test():
         SwapGate(),
     ]
 
-    mc_rot_gates = [RXXGate, RZZGate]
+    mc_rot_gates = [RXXGate, RZZGate, RYYGate]
 
     special_gates = [MCXGate(control_amount=3)]
 

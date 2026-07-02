@@ -37,6 +37,7 @@ from qrisp.circuit.standard_operations import (  # Barrier,
     RXGate,
     RXXGate,
     RYGate,
+    RYYGate,
     RZGate,
     RZZGate,
     SGate,
@@ -88,6 +89,7 @@ MULTI_GATE_MAP = [
     (SwapGate, qml.SWAP, 2, []),
     (RXXGate, qml.IsingXX, 2, [np.pi / 2]),
     (RZZGate, qml.IsingZZ, 2, [np.pi / 3]),
+    (RYYGate, qml.IsingYY, 2, [np.pi / 4]),
 ]
 
 CONTROLLED_GATE_MAP = [
@@ -195,6 +197,11 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
         (
             RZZGate,
             lambda t: qml.IsingZZ(t, wires=[0, 1]),
+            [(np.pi / 3,), (1.5,), (0.0,)],
+        ),
+        (
+            RYYGate,
+            lambda t: qml.IsingYY(t, wires=[0, 1]),
             [(np.pi / 3,), (1.5,), (0.0,)],
         ),
         (
