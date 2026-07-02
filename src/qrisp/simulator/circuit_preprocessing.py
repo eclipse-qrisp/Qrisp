@@ -88,8 +88,6 @@ from qrisp.circuit import (
 )
 from qrisp.permeability.type_checker import is_permeable
 
-memory_bandwidth_penalty = 2
-
 
 # This class is supposed to describe a group of instructions
 # The idea behind the grouping is that grouping instructions together allows
@@ -97,22 +95,23 @@ memory_bandwidth_penalty = 2
 # a medium size unitary on a large statevector is more efficient than applying
 # many small unitaries. This estimation is elaborated in the calc_gain method.
 class GroupedInstruction:
+    """Represents a group of quantum instructions that can be merged for efficient simulation."""
     # The constructor takes a list of instruction (for instance from a quantum circuit)
     # and a list of indices, which describe which instruction to include in the group
     # Using the qubits argument, is possible to provide a list of qubits, where the
-    # instruction are acting on. Otherwise, the (rather slow) .merge method is used
+    # instruction are acting on.
     def __init__(self, int_qc: IntegerCircuit, indices: list[int], qubits: list[Any] | None = None) -> None:
         self.gate_signature_list = []
 
         if qubits is None:
             if int_qc.use_chunks:
                 qubit_set = np.zeros(int_qc.num_chunks, dtype=np.int64)
-                for i in range(len(indices)):
-                    qubit_set |= int_qc.data[indices[i]]
+                for i in indices:
+                    qubit_set |= int_qc.data[i]
             else:
                 qubit_set = 0
-                for i in range(len(indices)):
-                    qubit_set |= int_qc.data[indices[i]]
+                for i in indices:
+                    qubit_set |= int_qc.data[i]
 
             self.qubits = int_to_qb_set_generic(qubit_set, int_qc.source)
         else:
@@ -120,6 +119,7 @@ class GroupedInstruction:
 
         self.instr_list = int_qc.source.data
         self.indices = indices
+        self.instruction = None
 
         # We now calculate the gain by estimating how many floating point operations are
         # performed for the grouped circuit vs the non-grouped circuit
@@ -147,24 +147,25 @@ class GroupedInstruction:
         # (or better the SUM instead of just taking the product) and 2**L
 
         self.gain = 0
-        for i in range(len(indices)):
-            self.gain += 1 << self.instr_list[indices[i]].op.num_qubits
+        for i in indices:
+            self.gain += 1 << self.instr_list[i].op.num_qubits
 
         self.gain = self.gain - 2 ** len(self.qubits) * 0.45
 
     def get_instruction(self) -> Instruction:
+        """Returns a single Instruction object that represents the grouped instructions."""
         temp_qc = QuantumCircuit()
         temp_qc.qubits = self.qubits
 
         added_clbits = set(temp_qc.clbits)
 
-        for i in range(len(self.indices)):
-            for cb in self.instr_list[self.indices[i]].clbits:
+        for i in self.indices:
+            for cb in self.instr_list[i].clbits:
                 if cb not in added_clbits:
                     temp_qc.add_clbit(cb)
                     added_clbits.add(cb)
 
-            temp_qc.append(self.instr_list[self.indices[i]])
+            temp_qc.append(self.instr_list[i])
 
         self.instruction = Instruction(temp_qc.to_op(), temp_qc.qubits, temp_qc.clbits)
         return self.instruction
@@ -298,7 +299,6 @@ def get_circuit_block_(
     current_idx: int,
 ) -> tuple[list[int], list[Any]]:
     """Determines which instructions can be grouped together based on the current set of qubits."""
-    n = int_qc.n
 
     if int_qc.use_chunks:
         # Pass a copy: the chunked jitted function modifies the qubits array
@@ -491,14 +491,15 @@ def int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[An
                         res.append(qc.qubits[qb_idx])
                 temp = temp >> 1
                 bit_idx += 1
-    else:
-        temp = int(data)
-        for i in range(len(qc.qubits)):
-            if temp & 1:
-                res.append(qc.qubits[i])
-            temp = temp >> 1
-            if temp == 0:
-                break
+        return res
+    
+    temp = int(data)
+    for qb in qc.qubits:
+        if temp & 1:
+            res.append(qb)
+        temp = temp >> 1
+        if temp == 0:
+            break
     return res
 
 
@@ -512,11 +513,11 @@ def qb_set_to_int_generic(qubits: list[Any], int_qc: IntegerCircuit) -> int | np
             b_idx = idx % int_qc.chunk_size
             res[c_idx] |= 1 << b_idx
         return res
-    else:
-        res = 0
-        for qb in qubits:
-            res |= 1 << int_qc.qb_to_index[qb]
-        return res
+
+    res = 0
+    for qb in qubits:
+        res |= 1 << int_qc.qb_to_index[qb]
+    return res
 
 
 class IntegerCircuit:
@@ -564,18 +565,18 @@ def optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
     """Determines the optimal recursion depth for grouping based on the number of qubits."""
     if qubit_amount <= 16:
         return 2
-    elif 16 < qubit_amount <= 20:
+    if 16 < qubit_amount <= 20:
         return 3
-    elif 20 < qubit_amount <= 24:
+    if 20 < qubit_amount <= 24:
         return 4
-    elif 24 < qubit_amount <= 28:
+    if 24 < qubit_amount <= 28:
         return 6
-    elif 28 < qubit_amount <= 32:
+    if 28 < qubit_amount <= 32:
         return 7
-    elif 32 < qubit_amount < 35:
+    if 32 < qubit_amount < 35:
         return 8
-    else:
-        return 8
+
+    return 8
 
 
 # ==============================================================================
@@ -648,8 +649,8 @@ def Disentangler(warning: bool = False) -> Operation:
 
 def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
     """Inserts disentangling operations into the circuit where appropriate."""
-    for i in range(len(qc.qubits)):
-        qc.reset(qc.qubits[i])
+    for qb in qc.qubits:
+        qc.reset(qb)
 
     reversed_data = list(qc.data)[::-1]
     disentangling_counter = 0
@@ -762,7 +763,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
                         next_instr_is_reset = True
                         data.pop(j)
                         break
-                    elif not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
+                    if not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
                         break
                 if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
                     break
@@ -807,16 +808,14 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
             new_qubits = []
             ctrl_state = instr.op.ctrl_state
             control_qubits = []
-            for j in range(len(instr.clbits)):
-                cb = instr.clbits[j]
-
+            for j, cb in enumerate(instr.clbits):
                 if cb not in cb_to_qb_dic:
                     if ctrl_state[j] == "1":
                         break
-                    else:
-                        qb = qc.add_qubit()
-                        new_qubits.append(qb)
-                        control_qubits.append(qb)
+
+                    qb = qc.add_qubit()
+                    new_qubits.append(qb)
+                    control_qubits.append(qb)
                 else:
                     control_qubits.append(cb_to_qb_dic[cb])
             else:
