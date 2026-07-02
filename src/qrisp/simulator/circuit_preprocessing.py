@@ -88,6 +88,8 @@ from qrisp.circuit import (
 )
 from qrisp.permeability.type_checker import is_permeable
 
+_WINDOW_SIZE = 100  # The number of instructions to consider in a single window for grouping.
+
 
 # This class is supposed to describe a group of instructions
 # The idea behind the grouping is that grouping instructions together allows
@@ -349,7 +351,7 @@ def binary_get_circuit_block_jitted(
     expansion_options = 0
     instruction_indices = []
     ee_counter = 0
-    window_size = 100
+    window_size = _WINDOW_SIZE
     end_idx = min(current_idx + window_size, len(int_qc_data))
 
     for i in range(current_idx, end_idx):
@@ -415,7 +417,7 @@ def binary_get_circuit_block_jitted_chunked(
     expansion_options = np.zeros(num_chunks, dtype=np.int64)
     instruction_indices = []
     ee_counter = 0
-    window_size = 100
+    window_size = _WINDOW_SIZE
     end_idx = min(current_idx + window_size, len(int_qc_data))
 
     for i in range(current_idx, end_idx):
