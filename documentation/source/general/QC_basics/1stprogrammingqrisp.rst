@@ -748,7 +748,7 @@ initialized in the state :math:`\ket 0`, with the ancilla qubit as
 
 and the phase oracle works its magic:
 :math:`\ket{\psi_2}=\frac{1}{\sqrt{2}^n} \sum \limits_{x \epsilon(0,1)^n} (-1)^{f(x)} \ket{x} \ket{-}`
-
+$ This term wasn't explained in the section before. $
 The uncomputation is done via Hadamard gates again and the bitstring
 qubits are measured, leaving us with:
 

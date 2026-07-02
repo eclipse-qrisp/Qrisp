@@ -227,8 +227,10 @@ action:
 Our 4 qubits are initialized in the state :math:`\ket {0010}` and after
 applying QFT, they are in an equal superposition.
 
+**This subchapter needs some more explanation, the topic isn't fully covered yet.**
+
 As in many cases, the quantum version offers an exponential speedup
-compared to the classical Fourier Transformation. In best cases, the
+compared to the classical Fourier Transformation. In worst cases, the
 Quantum Fourier Transform has a run time of :math:`O(n~ log~ n)` and use
 exponentally less gates.
 
@@ -239,7 +241,7 @@ Transformation (IQFT)**.
 The IQFT is quite similar to the regular QFT, with the difference of the
 exponential:
 
-.. math:: \ket{y} = QFT \ket{\tilde x} = \frac{1}{\sqrt N}\sum^{N-1}_{y=0} e^{-\frac{2 \pi i \tilde x y}{N}} \ket{\tilde x}
+.. math:: \ket{y} = IQFT \ket{\tilde x} = \frac{1}{\sqrt N}\sum^{N-1}_{y=0} e^{-\frac{2 \pi i \tilde x y}{N}} \ket{\tilde x}
 
 With minimal effort, we can also change our programming example:
 
@@ -408,8 +410,8 @@ the target qubit.
   global phase that is not measureable by itself.
 | However, if you apply a controlled T-gate with the control qubit in
   :math:`\ket +` and the target qubit in :math:`\ket 1`, you get
-  :math:`CT \ket{1+} =\frac{1}{\sqrt 2} CT (\ket{10} +  \ket{11} ) = \frac{1}{\sqrt 2}` 
-  :math:`(\ket{10} + e^{i \pi /4} \ket{11} )= \ket 1 \otimes  \frac{1}{\sqrt 2} (\ket{0} + e^{i \pi /4} \ket{1})`.
+  :math:`CT \ket{1+} =\frac{1}{\sqrt 2} CT (\ket{10} +  \ket{11} )`
+  :math:`= \frac{1}{\sqrt 2}(\ket{10} + e^{i \pi /4} \ket{11} )= \ket 1 \otimes  \frac{1}{\sqrt 2} (\ket{0} + e^{i \pi /4} \ket{1})`.
   So you can see that the control qubit is changed to aquire the extra
   phase of :math:`e^{i \pi /4}`, which is now a relative phase.
   (Remember how I said QPE can turn a global phase into a relative phase
