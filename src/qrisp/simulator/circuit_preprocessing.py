@@ -353,6 +353,9 @@ def binary_get_circuit_block_jitted(
 
     for i in range(current_idx, end_idx):
         is_established = False
+        # If the instruction has been identified as part of the group
+        # in a previous recursion, skip checking and add to the list
+        # of instructions
         if ee_counter < len(established_indices):
             if established_indices[ee_counter] == i:
                 is_established = True
@@ -369,16 +372,26 @@ def binary_get_circuit_block_jitted(
         instr_qubits = int_qc_data[i]
         intersection = qubits & instr_qubits
 
+        # If the intersection is empty, this instruction is not part of the group
+        # and no further action needs to be taken
         if not intersection:
             continue
 
-        # If it is a non-unitary gate, mask out the affected qubits
+        # If the instruction is non-unitary, no further instruction
+        # on the affected qubits can be part of the group
         if not is_unitary[i]:
             qubits = qubits & (~instr_qubits)
             continue
 
+        # If the instruction qubits are part of the group qubits,
+        # add the instruction to the group
         if (~qubits & instr_qubits) == 0:
             instruction_indices.append(i)
+
+        # Otherwise, the instruction happens partly on the group qubits,
+        # partly outside. Therefore we need to remove the qubits
+        # that interact with the outside.
+        # Nevertheless, we add the "outside" qubits to the set of expansion options
         else:
             qubits = qubits & (~intersection)
             expansion_options = expansion_options | (instr_qubits & (~intersection))
