@@ -13,9 +13,60 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
-"""
 
-# -*- coding: utf-8 -*-
+================================================================================
+Qrisp Simulator Circuit Preprocessor
+================================================================================
+
+This module is responsible for optimizing and preprocessing quantum circuits 
+before they are dispatched to a backend (primarily the Qrisp statevector simulator). 
+Because simulating large statevectors is exponentially expensive in both time 
+and memory, this module applies several advanced heuristic transformations to 
+significantly reduce computational overhead.
+
+The preprocessor acts as a compiler pass, modifying the circuit's abstract 
+syntax tree (AST) without altering its mathematical outcome.
+
+Core Functionalities:
+---------------------
+
+1. Gate Grouping (Instruction Merging)
+   Applying many small unitary matrices (e.g., 1-qubit or 2-qubit gates) to a 
+   massive 2^n statevector is inefficient due to high memory bandwidth usage.
+   - The `GroupedInstruction` class and `group_qc` function recursively search 
+     the circuit for sets of small, adjacent, or commuting gates.
+   - These gates are grouped together so their combined "medium-sized" unitary 
+     can be pre-calculated. Applying one medium unitary saves millions of 
+     floating-point operations (FLOPs) compared to applying many small ones.
+   - To make this search fast, `IntegerCircuit` translates the circuit into a 
+     bitwise representation, allowing the Numba-jitted search functions 
+     (`binary_get_circuit_block_jitted`) to evaluate gate commutativity using 
+     ultra-fast bitwise logic.
+
+2. State Disentangling
+   Simulating a 50+ qubit statevector is practically impossible if fully entangled. 
+   However, many algorithms naturally "disentangle" certain qubits during execution 
+   (e.g., via measurements, resets, or specific uncomputations).
+   - `insert_disentangling` identifies points in the circuit where wave-function 
+     branches no longer interact.
+   - It inserts a custom `disentangle` instruction. The simulator catches this and 
+     splits the massive simulation into smaller, separate, parallelizable wave-functions, 
+     effectively turning an intractable problem into a solvable one.
+
+3. Measurement and Allocation Management
+   - `extract_measurements` and `count_measurements_and_treat_alloc` optimize 
+     how classical measurements and temporary qubit allocations are handled.
+   - `insert_multiverse_measurements` handles deferred measurement patterns by 
+     introducing ancilla qubits and CNOT gates, ensuring probability distributions 
+     are correctly captured without breaking coherence prematurely.
+
+4. The Main Wrapper: `circuit_preprocessor(qc)`
+   The main entry point for this module. It evaluates the incoming circuit, 
+   applies disentangling (if the circuit is dangerously wide, e.g., >45 qubits), 
+   groups the gates for performance, and finally reorders the circuit to safely 
+   push measurements, resets, and disentanglers to the end of execution blocks.
+================================================================================
+"""
 
 import numpy as np
 from numba import njit
@@ -117,37 +168,45 @@ class GroupedInstruction:
 # The idea is now to iterate through different groupings and find the one with the most
 # gain.
 def group_qc(qc):
-    # This parameter describes how deep the search for good groupings should go
     max_recursion_depth = optimal_grouping_recursion_parameter(len(qc.qubits)) + 12
-
-    # Set up list of grouped instructions
     grouped_instr_list = []
-
-    # We now succesively remove gates from the front of the circuit that either
-    # have been determined as group or can't be grouped (because they are non-unitary)
-
+    
     int_qc = IntegerCircuit(qc)
-    while qc.data:
-        # If the instruction is non unitary, remove
-        # if qc.data[0].op.name in ["measure", "reset", "disentangle"] or
-        # (qc.data[0].op.name == "pt_permutation" and qc.data[0].op.num_qubits > 7):
-        if int_qc.data[0] < 0:
-            grouped_instr_list.append(int_qc.source.data.pop(0))
-            int_qc.data.pop(0)
+    num_instructions = len(int_qc.data)
+    
+    # NEW: Keep track of which instructions have been grouped
+    processed = np.zeros(num_instructions, dtype=bool)
+    
+    # NEW: Index pointer instead of while qc.data:
+    current_idx = 0 
+    
+    while current_idx < num_instructions:
+        # Skip this instruction if it was already swallowed by a previous group
+        if processed[current_idx]:
+            current_idx += 1
+            continue
+
+        # If the instruction is non-unitary (less than 0 in the bitwise representation)
+        if int_qc.data[current_idx] < 0:
+            grouped_instr_list.append(int_qc.source.data[current_idx])
+            processed[current_idx] = True
+            current_idx += 1
             continue
 
         # Find the best grouping
-        group = find_group(int_qc, max_recursion_depth)
+        # Note: We now need to pass current_idx and the processed mask down the chain
+        group = find_group(int_qc, max_recursion_depth, current_idx, processed)
 
         # Append the grouped instruction to the result list
-        # grouped_instr_list.append(group.instruction)
         grouped_instr_list.append(group.get_instruction())
 
-        # Delete the instructions from the circuit
-        delete_multiple_element(int_qc.source.data, group.indices)
-        delete_multiple_element(int_qc.data, group.indices)
+        # NEW: Mark all indices in this group as processed instead of deleting them
+        for idx in group.indices:
+            processed[idx] = True
+            
+        current_idx += 1
 
-    # Creat resulting circuit
+    # Create resulting circuit
     grouped_qc = qc.clearcopy()
     for i in range(len(grouped_instr_list)):
         grouped_qc.data.append(grouped_instr_list[i])
@@ -156,70 +215,59 @@ def group_qc(qc):
 
 
 # This function determines a set of grouping options and chooses the best option
-def find_group(int_qc, max_recursion_depth):
-    if int_qc.source.num_qubits() < 63:
-        int_qc.data = np.array(int_qc.data, dtype=np.int64)
-
-    grouping_options = find_grouping_options(int_qc, [], max_recursion_depth)
-
-    int_qc.data = list(int_qc.data)
-    return_index = np.argmax([gi.gain for gi in grouping_options])
-
-    if grouping_options[return_index].gain > 0:
-        return grouping_options[return_index]
-
-    return GroupedInstruction(int_qc, [0])
+def find_group(int_qc, max_recursion_depth, current_idx, processed):
+    traversed_qb_sets = []
+    initial_qubits = int_qc.data[current_idx]
+    
+    # Get all valid grouping combinations recursively
+    options = find_grouping_options(
+        int_qc=int_qc, 
+        traversed_qb_sets=traversed_qb_sets, 
+        max_recursion_depth=max_recursion_depth, 
+        qubits=initial_qubits, 
+        established_indices=[current_idx],
+        processed=processed,
+        current_idx=current_idx
+    )
+    
+    # Find the grouping option with the highest computational gain
+    best_gain = -float("inf")
+    best_group = options[0]
+    for opt in options:
+        if opt.gain > best_gain:
+            best_gain = opt.gain
+            best_group = opt
+            
+    return best_group
 
 
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
-def find_grouping_options(int_qc, traversed_qb_sets, max_recursion_depth, qubits=None, established_indices=[]):
-    # If no set of qubit is proposed, we search for the instructions that could
-    # be executed now (ie. in a QuantumCircuit they would be on the left end)
-    # and search for groups starting with these instructions
-
-    if qubits is None:
-        qubits = int_qc.data[0]
-        established_indices = [0]
-
-    # Log that this qubit constellation has been traversed
-    # traversed_qb_sets.append(sum([hash(qb) for qb in qubits]))
+def find_grouping_options(int_qc, traversed_qb_sets, max_recursion_depth, qubits, established_indices, processed, current_idx):
     traversed_qb_sets.append(qubits)
 
-    # Get the indices of the instructions that can be executed without leaving the given
-    # set of qubits. Additionally, this function returns the list expansion_options:
-    # This list contains qubits that could be included in the group
-    # instruction_indices, expansion_options = get_circuit_block(int_qc.source.data,
-    # int_to_qb_set(qubits, int_qc.source), list(established_indices))
+    # Pass processed and current_idx down to the scanning function
+    instruction_indices, expansion_options = get_circuit_block_(
+        int_qc, qubits, established_indices, processed, current_idx
+    )
 
-    instruction_indices, expansion_options = get_circuit_block_(int_qc, qubits, np.array(established_indices))
-
-    # Create the list of grouping options
-    # options = [GroupedInstruction(qc.source.data, instruction_indices,  qubits)]
     options = [GroupedInstruction(int_qc, instruction_indices, int_to_qb_set(qubits, int_qc.source))]
 
-    # Check some conditions that determine if no further recursion should be performed
     if len(expansion_options) == 0 or max_recursion_depth == 0 or len(int_to_qb_set(qubits, int_qc.source)) >= 7:
         return options
 
-    # Now, include the proposed expansion options
     for i in range(len(expansion_options)):
-        # Calculate the hash of the proposed set of qubits
-        # proposed_set = sum([hash(qb) for qb in qubits + [expansion_options[i]]])
         proposed_set = qubits | qb_set_to_int([expansion_options[i]], int_qc.qb_to_index)
-        # proposed_set = qubits.union(BinaryQubitSet([expansion_options[i]], qc.source))
 
-        # If this set has not been checked yet, add to the options
         if proposed_set not in traversed_qb_sets:
-            # options += find_grouping_options(qc_data, traversed_qb_sets,
-            # max_recursion_depth - 1, qubits = qubits + [expansion_options[i]],
-            # established_indices = list(instruction_indices))
             options += find_grouping_options(
-                int_qc,
-                traversed_qb_sets,
-                max_recursion_depth - 1,
+                int_qc=int_qc,
+                traversed_qb_sets=traversed_qb_sets,
+                max_recursion_depth=max_recursion_depth - 1,
                 qubits=proposed_set,
-                established_indices=(instruction_indices),
+                established_indices=instruction_indices,
+                processed=processed,
+                current_idx=current_idx
             )
 
     return options
@@ -517,147 +565,111 @@ def qc_to_int_list(qc, qb_to_index):
 
 # Copy set in order to prevent modification
 # qubits = set(qubits)
-def get_circuit_block_(int_qc, qubits, established_indices=[]):
-    # qubits = qb_set_to_int(qubits, qc.source)
+def get_circuit_block_(int_qc, qubits, established_indices, processed, current_idx):
     n = int_qc.n
 
-    # If the qubits int is to large to fit into np.int64, we use the non jitted version
     if isinstance(int_qc.data, np.ndarray):
         instruction_indices, expansion_options = binary_get_circuit_block_jitted(
-            int_qc.data, qubits, n, established_indices
+            int_qc.data, qubits, n, np.array(established_indices, dtype=np.int64), processed, current_idx
         )
     else:
         instruction_indices, expansion_options = binary_get_circuit_block(
-            int_qc.data, qubits, n, np.array(established_indices, dtype=np.int64)
+            int_qc.data, qubits, n, np.array(established_indices, dtype=np.int64), processed, current_idx
         )
 
     return instruction_indices, int_to_qb_set(expansion_options, int_qc.source)
-    # return instruction_indices, expansion_options.to_qubit_list()
 
 
 @njit(cache=True)
-def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices):
-    # Set up set of expansion options
+def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices, processed, current_idx):
     expansion_options = 0
-
-    # Set up result list
     instruction_indices = []
     ee_counter = 0
-    # Now iterate through all the given instructions
-    for i in range(len(int_qc_list)):
+    
+    # Lookahead window to prevent massive deep-circuit overhead
+    window_size = 1000
+    end_idx = min(current_idx + window_size, len(int_qc_list))
+
+    for i in range(current_idx, end_idx):
+        # Determine if this index is one of the explicitly established ones
+        is_established = False
+        if ee_counter < len(established_indices):
+            if established_indices[ee_counter] == i:
+                is_established = True
+
+        # If it was already processed in a previous group, ignore it!
+        if processed[i] and not is_established:
+            continue
+
         if qubits == 0:
             break
 
-        # If the instruction has been identified as part of the group
-        # in a previous recursion, skip the checking and add to the list
-        # of instructions
-        if ee_counter < len(established_indices):
-            if established_indices[ee_counter] == i:
-                ee_counter += 1
-                instruction_indices.append(i)
-                continue
+        if is_established:
+            ee_counter += 1
+            instruction_indices.append(i)
+            continue
 
-        # Set some aliases
         instr_qubits = int_qc_list[i]
-        # instr = qc.data[i]
-        # instr_qubits = set(instr.qubits)
-
-        # Determine the intersection between the qubits of the instruction
-        # and the qubits of the group
-        # intersection = instr_qubits.intersection(qubits)
         intersection = qubits & instr_qubits
 
-        # If the intersection is empty, this instruction is not part of the group
-        # and no further action needs to be taken
         if not intersection:
             continue
 
-        # If the instruction is non-unitary, no further instruction
-        # on this qubit can be part of the group
         if instr_qubits < 0:
-            qubits = qubits & (((1 << n) - 1) ^ (-instr_qubits))
+            qubits = qubits & (((1 << n) - 1) ^ instr_qubits)
             continue
 
-        # If the instruction qubits are part of the group qubits,
-        # add the instruction to the group
         if not bool((((1 << n) - 1) ^ qubits) & instr_qubits):
-            # if instr_qubits.issubset(qubits):
             instruction_indices.append(i)
-
-        # Otherwise, the instruction happens partly on the group qubits,
-        # partly outside. Therefore we need to remove the qubits
-        # that interact with the outside.
-        # Nevertheless, we add the "outside" qubits to the set of expansion options
         else:
             qubits = qubits & (((1 << n) - 1) ^ intersection)
-            # qubits = qubits - intersection
             expansion_options = expansion_options | (instr_qubits & (((1 << n) - 1) ^ intersection))
-            # expansion_options = expansion_options.union(instr_qubits - intersection)
 
-    # Return result
     return instruction_indices, expansion_options
 
 
-def binary_get_circuit_block(int_qc_list, qubits, n, established_indices):
-    # Set up set of expansion options
+def binary_get_circuit_block(int_qc_list, qubits, n, established_indices, processed, current_idx):
+    # Identical logic to the jitted version, for cases where np arrays aren't used
     expansion_options = 0
-
-    # Set up result list
     instruction_indices = []
     ee_counter = 0
-    # Now iterate through all the given instructions
-    for i in range(len(int_qc_list)):
+    
+    window_size = 1000
+    end_idx = min(current_idx + window_size, len(int_qc_list))
+
+    for i in range(current_idx, end_idx):
+        is_established = False
+        if ee_counter < len(established_indices):
+            if established_indices[ee_counter] == i:
+                is_established = True
+
+        if processed[i] and not is_established:
+            continue
+
         if qubits == 0:
             break
 
-        # If the instruction has been identified as part of the group
-        # in a previous recursion, skip the checking and add to the list
-        # of instructions
-        if ee_counter < len(established_indices):
-            if established_indices[ee_counter] == i:
-                ee_counter += 1
-                instruction_indices.append(i)
-                continue
+        if is_established:
+            ee_counter += 1
+            instruction_indices.append(i)
+            continue
 
-        # Set some aliases
         instr_qubits = int_qc_list[i]
-        # instr = qc.data[i]
-        # instr_qubits = set(instr.qubits)
-
-        # Determine the intersection between the qubits of the instruction
-        # and the qubits of the group
-        # intersection = instr_qubits.intersection(qubits)
         intersection = qubits & instr_qubits
 
-        # If the intersection is empty, this instruction is not part of the group
-        # and no further action needs to be taken
         if not intersection:
             continue
 
-        # If the instruction is non-unitary, no further instruction
-        # on this qubit can be part of the group
         if instr_qubits < 0:
             qubits = qubits & (((1 << n) - 1) ^ instr_qubits)
-            # qubits = qubits - instr_qubits
             continue
 
-        # If the instruction qubits are part of the group qubits,
-        # add the instruction to the group
         if not bool((((1 << n) - 1) ^ qubits) & instr_qubits):
-            # if instr_qubits.issubset(qubits):
             instruction_indices.append(i)
-
-        # Otherwise, the instruction happens partly on the group qubits,
-        # partly outside. Therefore we need to remove the qubits
-        # that interact with the outside.
-        # Nevertheless, we add the "outside" qubits to the set of expansion options
         else:
             qubits = qubits & (((1 << n) - 1) ^ intersection)
-            # qubits = qubits - intersection
             expansion_options = expansion_options | (instr_qubits & (((1 << n) - 1) ^ intersection))
-            # expansion_options = expansion_options.union(instr_qubits - intersection)
 
-    # Return result
     return instruction_indices, expansion_options
 
 
