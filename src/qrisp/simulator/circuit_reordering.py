@@ -61,8 +61,8 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Callable
 import itertools
-from typing import Any, Callable
 
 import networkx as nx
 from networkx import descendants, topological_sort
