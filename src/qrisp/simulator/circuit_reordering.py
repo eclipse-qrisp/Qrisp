@@ -65,6 +65,8 @@ import networkx as nx
 from networkx import descendants, topological_sort
 import numpy as np
 
+from qrisp.circuit import Operation
+
 
 def nx_get_causal_graph(qc, inverted=False, get_non_unitary_nodes=False, preferential_gates=[]):
 
@@ -133,7 +135,6 @@ def nx_get_causal_graph(qc, inverted=False, get_non_unitary_nodes=False, prefere
 
 # Function to reorder a circuit as described above
 def nx_reorder_circuit(qc, preferential_gates=[]):
-    from qrisp.circuit import Operation
 
     for i in range(len(qc.qubits)):
         qc.append(Operation("final_op", num_qubits=1), [qc.qubits[i]])
@@ -150,11 +151,11 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # Measurements/Resets/Disentanglings with only a few descendants need only a few
     # gates to be simulated until the measurement can be executed
     node_costs = []
-    for i in range(len(non_unitary_nodes)):
-        if qc.data[hash(non_unitary_nodes[i])].op.name == "final_op":
-            node_costs.append((non_unitary_nodes[i], np.inf))
+    for node in non_unitary_nodes:
+        if qc.data[hash(node)].op.name == "final_op":
+            node_costs.append((node, np.inf))
         else:
-            node_costs.append((non_unitary_nodes[i], len(descendants(G, non_unitary_nodes[i]))))
+            node_costs.append((node, len(descendants(G, node))))
 
     node_costs.sort(key=lambda x: x[1])
 
@@ -178,40 +179,35 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # to traverse next. In our case, this can mess with the topological ordering
     # Therefore we allways traverse the child with the highest topological index
 
-    def topological_desc_traversal(G, node, tp_dic, callback):
-        node_list = [x for x in nx.descendants(G, node)]
+    visited_nodes = set()
 
+    def topological_desc_traversal(G, node, tp_dic, callback):
+        if node in visited_nodes:
+            return
+            
+        # Only fetch descendants that haven't been visited yet
+        node_list = [x for x in nx.descendants(G, node) if x not in visited_nodes]
         node_list.sort(key=lambda x: -tp_dic[x])
 
         for n in node_list:
             callback(n)
-            G.remove_node(n)
 
         callback(node)
-        G.remove_node(node)
 
     def topological_df_traversal(G, node, tp_dic, callback):
-        # Acquire list of children
-        node_list = [x for x in G.neighbors(node)]
+        if node in visited_nodes:
+            return
+            
+        # Get unvisited neighbors and sort by topological index
+        neighbors = [x for x in G.neighbors(node) if x not in visited_nodes]
+        neighbors.sort(key=lambda x: -tp_dic[x])
 
-        # Sort according to their topological index
-        node_list.sort(key=lambda x: -tp_dic[x])
+        # Recursively traverse
+        for n in neighbors:
+            if n not in visited_nodes:
+                topological_df_traversal(G, n, tp_dic, callback)
 
-        # Recursively traverse the children
-        while node_list:
-            topological_df_traversal(G, node_list[0], tp_dic, callback)
-
-            # Since the traversed nodes are removed after each traversal,
-            # we need to to update the list of children, in case any of
-            # the nodes in node_list have been removed
-            node_list = [x for x in G.neighbors(node)]
-            node_list.sort(key=lambda x: -tp_dic[x])
-
-        # Call the callback function
         callback(node)
-        # Remove the node in order to prevent traversing it again
-        # this can happen because the causal graph is not necessarily a tree graph
-        G.remove_node(node)
 
     # The circuits in this list will be the circuits whose execution is the absolute
     # minimum in order to evaluate a certain non-unitary operation
@@ -228,9 +224,11 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
         # in order to perform the operation described by evaluation_node
         evaluation_list = []
 
-        # Create callback function
         def callback(x):
-            evaluation_list.append(x)
+            # The callback acts as the gatekeeper, marking nodes as processed
+            if x not in visited_nodes:
+                evaluation_list.append(x)
+                visited_nodes.add(x)
 
         # Traverse causal graph
         topological_desc_traversal(G, evaluation_node, tp_dic, callback)
@@ -263,7 +261,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
 # Similar function as above but implemented for the C++ based
 # graph theory package networkit
 def nk_reorder_circuit(qc, preferential_gates=[]):
-    from qrisp.circuit import Operation
 
     for i in range(len(qc.qubits)):
         qc.append(Operation("final_op", num_qubits=1), [qc.qubits[i]])
@@ -326,6 +323,8 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
 
     node_costs.sort(key=lambda x: x[1])
 
+    visited_nodes = set()
+
     def topological_desc_traversal(G, node, tp_dic, callback):
         if node in visited_nodes:
             return
@@ -354,7 +353,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
             # Process the current node
             callback(node)
 
-    visited_nodes = set()
     node_costs_queue = deque(node_costs)
     while node_costs_queue:
         evaluation_node = node_costs_queue.popleft()[0]
