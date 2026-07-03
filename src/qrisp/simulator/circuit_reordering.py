@@ -71,6 +71,28 @@ import numpy as np
 from qrisp.circuit import Operation, QuantumCircuit
 
 
+def reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
+    """
+    Reorder the given quantum circuit based on a topological sorting of its causal graph.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The quantum circuit to be reordered.
+    preferential_gates : list[str], optional
+        List of gate names to prioritize during reordering. Defaults to None.
+
+    Returns
+    -------
+    QuantumCircuit
+        The reordered quantum circuit.
+    """
+    if preferential_gates is None:
+        preferential_gates = []
+
+    return nx_reorder_circuit(qc, preferential_gates)
+
+
 def nx_get_causal_graph(
     qc: QuantumCircuit,
     inverted: bool = False,
@@ -322,159 +344,3 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
 
     # Return result
     return new_qc
-
-
-# Similar function as above but implemented for the C++ based
-# graph theory package networkit
-def nk_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
-    if preferential_gates is None:
-        preferential_gates = []
-
-    for qb in qc.qubits:
-        qc.append(Operation("final_op", num_qubits=1), [qb])
-
-    import networkit as nk
-
-    graph = nk.Graph(directed=True)
-    current_node_qubits = {qubit: "-" for qubit in qc.qubits}
-    current_node_clbits = {clbit: "-" for clbit in qc.clbits}
-    non_unitary_nodes = []
-    measurement_counter = 0
-    for i, instruction in enumerate(qc.data):
-        new_node = graph.addNode()
-        node_set = []
-        for qb in instruction.qubits:
-            if current_node_qubits[qb] != "-":
-                node_set.append(current_node_qubits[qb])
-
-            current_node_qubits[qb] = new_node
-
-        for cb in instruction.clbits:
-            if current_node_clbits[cb] != "-":
-                node_set.append(current_node_clbits[cb])
-
-            current_node_clbits[cb] = new_node
-
-        node_set = list(set(node_set))
-
-        for node in node_set:
-            graph.addEdge(i, node)
-
-        if instruction.op.name in preferential_gates + ["final_op"]:
-            non_unitary_nodes.append(new_node)
-            if instruction.op.name == "measure":
-                measurement_counter += 1
-
-    new_qc_list = []
-
-    from networkit.graphtools import GraphTools
-
-    sorted_nodes = GraphTools.topologicalSort(graph)
-
-    tp_dic = {sorted_nodes[i]: i for i in range(len(sorted_nodes))}
-
-    reach_alg = nk.reachability.ReachableNodes(graph, exact=True)
-
-    reach_alg.run()
-    node_costs = []
-
-    for node in non_unitary_nodes:
-        if qc.data[hash(node)].op.name == "final_op":
-            node_costs.append((node, np.inf))
-        else:
-            node_costs.append(
-                (
-                    node,
-                    reach_alg.numberOfReachableNodes(node),
-                )
-            )
-
-    node_costs.sort(key=lambda x: x[1])
-
-    visited_nodes = set()
-
-    def topological_desc_traversal(
-        graph: Any, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
-    ) -> None:
-        if node in visited_nodes:
-            return
-
-        node_list = []
-        nk.traversal.Traversal.DFSfrom(graph, node, node_list.append)
-
-        node_list.sort(key=lambda x: -tp_dic[x])
-
-        for n in node_list:
-            callback(n)
-
-    def topological_df_traversal(
-        graph: Any, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
-    ) -> None:
-        if node in visited_nodes:
-            return
-
-        # Get neighbors and sort them by time parameter
-        neighbors = [x for x in graph.iterNeighbors(node) if x not in visited_nodes]
-        neighbors.sort(key=lambda x: -tp_dic[x])
-
-        # Recursively visit unvisited neighbors
-        for neighbor in neighbors:
-            if neighbor not in visited_nodes:
-                topological_df_traversal(graph, neighbor, tp_dic, callback)
-
-        # Process the current node
-        callback(node)
-
-    node_costs_queue = deque(node_costs)
-    while node_costs_queue:
-        evaluation_node = node_costs_queue.popleft()[0]
-
-        if evaluation_node in visited_nodes:
-            continue
-
-        evaluation_list = []
-
-        def callback(x: int) -> None:
-            if x not in visited_nodes:
-                evaluation_list.append(x)
-                visited_nodes.add(x)
-
-        new_qc = qc.clearcopy()
-
-        # topological_df_traversal(graph, evaluation_node, tp_dic, callback)
-        topological_desc_traversal(graph, evaluation_node, tp_dic, callback)
-
-        for node in evaluation_list:
-            instr = qc.data[hash(node)]
-            if instr.op.name != "final_op":
-                new_qc.data.append(instr)
-
-        new_qc_list.append(new_qc)
-
-    for i in range(len(qc.qubits)):
-        qc.data.pop(-1)
-
-    new_qc = qc.clearcopy()
-    new_qc.data = list(itertools.chain.from_iterable(qc.data for qc in new_qc_list))
-
-    return new_qc
-
-
-try:
-    nk_available = True
-
-except:
-    nk_available = False
-    # print("Install networkit for additional simulator performance.
-    # Resorting to networkx.")
-
-
-def reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
-    if preferential_gates is None:
-        preferential_gates = []
-
-    if nk_available:
-        # return nk_reorder_circuit(qc, preferential_gates)
-        return nx_reorder_circuit(qc, preferential_gates)
-
-    return nx_reorder_circuit(qc, preferential_gates)
