@@ -587,6 +587,22 @@ class TestQuantumCircuitMethods:
         assert unitary.shape == (2, 2)
         assert np.allclose(unitary, np.array(expected, dtype=np.complex64), atol=1e-5)
 
+    @pytest.mark.parametrize("angle", [0.0, np.pi / 3, np.pi, 1.2345])
+    def test_get_unitary_ryy_gate(self, angle):
+        """qc.ryy produces the analytic RYY(theta) Ising YY-coupling matrix."""
+        c, s = np.cos(angle / 2), np.sin(angle / 2)
+        expected = np.array(
+            [
+                [c, 0, 0, 1j * s],
+                [0, c, -1j * s, 0],
+                [0, -1j * s, c, 0],
+                [1j * s, 0, 0, c],
+            ]
+        )
+        qc = QuantumCircuit(2)
+        qc.ryy(angle, 0, 1)
+        assert np.allclose(qc.get_unitary(), expected, atol=1e-5)
+
     # ------------------------------------------------------------------ #
     # get_unitary — general properties                                   #
     # ------------------------------------------------------------------ #
