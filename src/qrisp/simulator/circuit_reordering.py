@@ -58,7 +58,11 @@
 # Therefore, in this depth first traversal, we always traverse the child
 # with the highest index in a topological order first.
 
+from collections import deque
+import itertools
+
 import networkx as nx
+from networkx import descendants, topological_sort
 import numpy as np
 
 
@@ -142,8 +146,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
         preferential_gates=preferential_gates,
     )
 
-    from networkx import descendants, topological_sort
-
     # We now order the non-unitary nodes according to how many decendents they all have
     # Measurements/Resets/Disentanglings with only a few descendants need only a few
     # gates to be simulated until the measurement can be executed
@@ -217,9 +219,10 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
 
     # Now we succesively determine the minimal circuit required to execute
     # for each non-unitary operation
-    while node_costs:
+    node_costs_queue = deque(node_costs)
+    while node_costs_queue:
         # This node contains the non-unitary operation
-        evaluation_node = node_costs.pop(0)[0]
+        evaluation_node = node_costs_queue.popleft()[0]
 
         # This list will contain the unitary operations that are necessary
         # in order to perform the operation described by evaluation_node
@@ -247,7 +250,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     new_qc = qc.clearcopy()
 
     # Concatenate the data of the newly created circuits
-    new_qc.data = sum([qc.data for qc in new_qc_list], [])
+    new_qc.data = list(itertools.chain.from_iterable(qc.data for qc in new_qc_list))
 
     # Remove final_op operations
     for i in range(len(qc.qubits)):
@@ -324,40 +327,47 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
     node_costs.sort(key=lambda x: x[1])
 
     def topological_desc_traversal(G, node, tp_dic, callback):
+        if node in visited_nodes:
+            return
+            
         node_list = []
-
         nk.traversal.Traversal.DFSfrom(G, node, node_list.append)
 
         node_list.sort(key=lambda x: -tp_dic[x])
 
         for n in node_list:
             callback(n)
-            G.removeNode(node)
-
-        # callback(node)
-        # G.removeNode(node)
 
     def topological_df_traversal(G, node, tp_dic, callback):
-        node_list = [x for x in G.iterNeighbors(node)]
-        node_list.sort(key=lambda x: -tp_dic[x])
+            if node in visited_nodes:
+                return
+                
+            # Get neighbors and sort them by time parameter
+            neighbors = [x for x in G.iterNeighbors(node)]
+            neighbors.sort(key=lambda x: -tp_dic[x])
 
-        while node_list:
-            topological_df_traversal(G, node_list[0], tp_dic, callback)
-            node_list = [x for x in G.iterNeighbors(node)]
-            node_list.sort(key=lambda x: -tp_dic[x])
+            # Recursively visit unvisited neighbors
+            for neighbor in neighbors:
+                if neighbor not in visited_nodes:
+                    topological_df_traversal(G, neighbor, tp_dic, callback)
 
-        callback(node)
-        G.removeNode(node)
+            # Process the current node
+            callback(node)
 
-    while node_costs:
-        evaluation_node = node_costs.pop(0)[0]
+    visited_nodes = set()
+    node_costs_queue = deque(node_costs)
+    while node_costs_queue:
+        evaluation_node = node_costs_queue.popleft()[0]
+
+        if evaluation_node in visited_nodes:
+            continue
 
         evaluation_list = []
 
         def callback(x, y=0):
-            if len(evaluation_list):
-                G.removeNode(evaluation_list[-1])
-            evaluation_list.append(x)
+            if x not in visited_nodes:
+                evaluation_list.append(x)
+                visited_nodes.add(x)
 
         new_qc = qc.clearcopy()
 
@@ -375,7 +385,7 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
         qc.data.pop(-1)
 
     new_qc = qc.clearcopy()
-    new_qc.data = sum([qc.data for qc in new_qc_list], [])
+    new_qc.data = list(itertools.chain.from_iterable(qc.data for qc in new_qc_list))
 
     return new_qc
 
