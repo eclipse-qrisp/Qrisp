@@ -28,19 +28,13 @@ https://nvidia.github.io/cuda-quantum/latest/specification/quake-dialect.html
 """
 
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from xdsl.dialects.builtin import (
-    ArrayAttr,
-    FunctionType,
-    StringAttr,
     i64,
-    f64,
     i1,
-    i32,
 )
 from xdsl.ir import (
-    Attribute,
     Dialect,
     ParametrizedAttribute,
     SSAValue,
@@ -55,9 +49,10 @@ from xdsl.irdl import (
     operand_def,
     result_def,
     var_operand_def,
-    var_result_def,
 )
 from xdsl.printer import Printer
+
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcStdVecType, CcMeasureHandleType
 
 # ---------------------------------------------------------------------------
 # Types
@@ -95,37 +90,6 @@ _QubitOrVeq = AnyAttr()  # accepts both QuakeRefType and QuakeVeqType
 # ---------------------------------------------------------------------------
 # Memory-management ops
 # ---------------------------------------------------------------------------
-
-
-# @irdl_op_definition
-# class AllocaRefOp(IRDLOperation):
-#    """Allocate a single qubit: ``quake.alloca !quake.ref``."""
-#
-#    name = "quake.alloca"
-#    result = result_def(QuakeRefType)
-#
-#    def __init__(self) -> None:
-#        super().__init__(result_types=[QuakeRefType()])
-#
-#    def print(self, printer: Printer) -> None:
-#        printer.print_string(" !quake.ref")
-
-
-# @irdl_op_definition
-# class AllocaVeqOp(IRDLOperation):
-#    """Allocate *n* qubits: ``quake.alloca !quake.veq<?>[%n : i64]``."""
-#
-#    name = "quake.alloca"
-#    size = operand_def(i64)
-#    result = result_def(QuakeVeqType)
-#
-#    def __init__(self, size: SSAValue) -> None:
-#        super().__init__(operands=[size], result_types=[QuakeVeqType()])
-#
-#    def print(self, printer: Printer) -> None:
-#        printer.print_string(" !quake.veq<?>[")
-#        printer.print_ssa_value(self.size)
-#        printer.print_string(" : i64]")
 
 
 @irdl_op_definition
@@ -439,12 +403,12 @@ def make_gate_op(
 class MzOp(IRDLOperation):
     """Measure in the Z basis.
 
-    - Single qubit: ``quake.mz %ref : (!quake.ref) -> !quake.measure``
-    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!quake.measure>``
+    - Single qubit: ``quake.mz %ref : (!quake.ref) -> !cc.measure_handle``
+    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!cc.measure_handle>``
 
-    Per the CUDA-Q Quake dialect, measuring a ``veq`` returns
-    ``!cc.stdvec<!quake.measure>`` — a CC span of single-qubit measurement
-    values, matching the CUDA-Q reference output.
+    Per the CUDA-Q Quake dialect (>= 0.15.0), measuring a single qubit
+    returns ``!cc.measure_handle`` and measuring a ``veq`` returns
+    ``!cc.stdvec<!cc.measure_handle>``.
     """
 
     name = "quake.mz"
@@ -454,12 +418,9 @@ class MzOp(IRDLOperation):
     def __init__(self, qubit: SSAValue) -> None:
         # Choose result type based on whether we're measuring a single qubit or a veq.
         if isinstance(qubit.type, QuakeVeqType):
-            # Veq measurement → !cc.stdvec<!quake.measure>
-            from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcStdVecType
-
             result_type = CcStdVecType()
         else:
-            result_type = QuakeMeasureType()
+            result_type = CcMeasureHandleType()
         super().__init__(operands=[qubit], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
@@ -468,9 +429,7 @@ class MzOp(IRDLOperation):
         printer.print_string(" : (")
         printer.print_attribute(self.qubit.type)
         if isinstance(self.qubit.type, QuakeVeqType):
-            # Emit the literal string to avoid xDSL ParametrizedAttribute printing
-            # issues (missing element type) across different xDSL versions.
-            printer.print_string(") -> !cc.stdvec<!quake.measure>")
+            printer.print_string(") -> !cc.stdvec<!cc.measure_handle>")
         else:
             printer.print_string(") -> ")
             printer.print_attribute(self.result.type)
@@ -536,8 +495,6 @@ class QuakeDialect(Dialect):
 
     name = "quake"
     operations = [
-        # AllocaRefOp,
-        # AllocaVeqOp,
         AllocaOp,
         DeallocOp,
         ExtractRefOp,
@@ -549,4 +506,4 @@ class QuakeDialect(Dialect):
         ResetOp,
         *_ALL_GATE_CLASSES,
     ]
-    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType]
+    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, CcStdVecType, CcMeasureHandleType]

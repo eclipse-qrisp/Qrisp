@@ -232,6 +232,19 @@ class LowerSlice(RewritePattern):
     Assumptions:
     - start index is already a non-negative absolute index.
     - end index may be negative (Python slice semantics).
+
+    Empty-slice guard:
+    Whenever ``end_norm <= start`` the slice is empty (e.g. ``x[:]`` on a
+    zero-size array yields ``start=0, end=0``).  The naive translation
+    ``hi_inclusive = end_norm - 1`` then produces ``hi < lo`` and, when
+    ``lo == 0``, a *negative* ``hi`` (e.g. ``-1``).  cudaq's NVQIR runtime
+    (0.15.x) does not tolerate such a bound being fed into ``quake.subveq``:
+    the resulting ``!quake.veq<?>`` is corrupted and later crashes
+    (``Cannot append Arrays of different types``) once consumed by
+    ``quake.concat``.  Since sizes are traced SSA values (not concrete
+    Python ints), we guard with an ``scf.if`` at the MLIR level: the empty
+    branch synthesizes a fresh, well-formed zero-size veq via
+    ``quake.alloca`` instead of calling ``quake.subveq`` with an invalid bound.
     """
 
     @op_type_rewrite_pattern
@@ -244,17 +257,36 @@ class LowerSlice(RewritePattern):
         hi_raw = _extract_scalar_for_rewriter(end_t, i64, rewriter)
         hi_norm = _normalize_index_for_veq_rewriter(arr, hi_raw, rewriter)
 
-        # Exclusive → inclusive: hi_inclusive = hi_norm - 1
+        # All of the following is pure arithmetic (no runtime side effects),
+        # so it is safe to hoist above the branch: scf.if regions are not
+        # isolated-from-above and may reference these values directly.
+        is_empty = arith.CmpiOp(hi_norm, lo, "sle")
+        c0 = arith.ConstantOp(IntegerAttr(0, 64))
         one = arith.ConstantOp(IntegerAttr(1, 64))
+        # Exclusive → inclusive: hi_inclusive = hi_norm - 1
         hi_inclusive = arith.SubiOp(hi_norm, one.result)
-        rewriter.insert_op([one, hi_inclusive], InsertPoint.before(rewriter.current_operation))
+        rewriter.insert_op([is_empty, c0, one, hi_inclusive], InsertPoint.before(rewriter.current_operation))
+
+        # Only the effectful quake ops need to be branch-local: the empty
+        # branch allocates a fresh zero-size veq instead of calling
+        # quake.subveq with an out-of-range (potentially negative) bound.
+        empty_alloca = AllocaOp(c0.result)
+        empty_block = Block(ops=[empty_alloca, scf.YieldOp(empty_alloca.result)])
 
         subveq = SubVeqOp(arr, lo, hi_inclusive.result)
-        rewriter.insert_op(subveq, InsertPoint.before(rewriter.current_operation))
+        nonempty_block = Block(ops=[subveq, scf.YieldOp(subveq.result)])
+
+        if_op = scf.IfOp(
+            is_empty.result,
+            [QuakeVeqType()],
+            Region([empty_block]),
+            Region([nonempty_block]),
+        )
+        rewriter.insert_op(if_op, InsertPoint.before(rewriter.current_operation))
 
         for r in op.results:
             if _is_qubit_array(r.type):
-                r.replace_all_uses_with(subveq.result)
+                r.replace_all_uses_with(if_op.results[0])
 
         rewriter.erase_op(op)
 

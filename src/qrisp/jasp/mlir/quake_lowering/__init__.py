@@ -57,7 +57,7 @@ from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcDialect, CcStdVecType
+from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcDialect, CcMeasureHandleType, CcStdVecType
 
 __all__ = [
     "jaspr_to_quake_mlir",
@@ -71,5 +71,6 @@ __all__ = [
     "QuakeVeqType",
     "QuakeMeasureType",
     "CcDialect",
+    "CcMeasureHandleType",
     "CcStdVecType",
 ]

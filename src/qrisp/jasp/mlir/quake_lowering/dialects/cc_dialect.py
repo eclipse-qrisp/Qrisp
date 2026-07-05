@@ -99,6 +99,13 @@ class CcArrayType(ParametrizedAttribute, TypeAttribute):
 
 
 @irdl_attr_definition
+class CcMeasureHandleType(ParametrizedAttribute, TypeAttribute):
+    """CUDA-Q CC measurement handle type ``!cc.measure_handle`` (cudaq >= 0.15.0)."""
+
+    name = "cc.measure_handle"
+
+
+@irdl_attr_definition
 class CcPtrType(ParametrizedAttribute, TypeAttribute):
     """Pointer type: ``!cc.ptr<T>``."""
 
@@ -115,7 +122,8 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
     """CUDA-Q CC ``!cc.stdvec<T>`` type.
 
     When used without an explicit element_type parameter, prints as
-    ``!cc.stdvec<!quake.measure>`` (the return type of quake.mz on veq).
+    ``!cc.stdvec<!cc.measure_handle>`` (the return type of quake.mz on veq
+    in cudaq >= 0.15.0).
 
     When constructed with an element_type parameter, prints as
     ``!cc.stdvec<T>`` for the given element type (used for array params).
@@ -127,21 +135,13 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
 
     def __init__(self, element_type: Attribute | None = None) -> None:
         if element_type is None:
-            # Sentinel: use a StringAttr to mark "quake.measure" without importing it
-            element_type = StringAttr("!quake.measure")
+            element_type = CcMeasureHandleType()
         super().__init__(element_type)
 
     def print_parameters(self, printer: Printer) -> None:
-
-        if isinstance(self.element_type, StringAttr):
-            # Legacy: print as <!quake.measure>
-            printer.print_string("<")
-            printer.print_string(self.element_type.data)
-            printer.print_string(">")
-        else:
-            printer.print_string("<")
-            printer.print_attribute(self.element_type)
-            printer.print_string(">")
+        printer.print_string("<")
+        printer.print_attribute(self.element_type)
+        printer.print_string(">")
 
 
 @irdl_attr_definition
@@ -697,4 +697,4 @@ class CcDialect(Dialect):
         CcInsertValueOp,
         CcLogOutputOp,
     ]
-    attributes = [CcArrayType, CcPtrType, CcStdVecType, CcStructType]
+    attributes = [CcArrayType, CcPtrType, CcMeasureHandleType, CcStdVecType, CcStructType]
