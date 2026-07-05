@@ -137,14 +137,10 @@ def make_static_register_interpreter(size):
                 abs_qst = create_quantum_kernel_p.bind()
                 pre_alloc_array, abs_qst = create_qubits_p.bind(size, abs_qst)
                 free_indices = ScalarList(jnp.arange(size)[::-1], max_size=size)
-                insert_outvalues(
-                    eqn, context_dic, (pre_alloc_array, free_indices, abs_qst)
-                )
+                insert_outvalues(eqn, context_dic, (pre_alloc_array, free_indices, abs_qst))
 
             elif name == "jasp.consume_quantum_kernel":
-                pre_alloc_array, free_indices, abs_qst = extract_invalues(
-                    eqn, context_dic
-                )[0]
+                pre_alloc_array, free_indices, abs_qst = extract_invalues(eqn, context_dic)[0]
                 abs_qst = delete_qubits_p.bind(pre_alloc_array, abs_qst)
                 result = consume_quantum_kernel_p.bind(abs_qst)
                 insert_outvalues(eqn, context_dic, result)
@@ -181,8 +177,7 @@ def make_static_register_interpreter(size):
 
             else:
                 raise Exception(
-                    f"static_register_interpreter: don't know how to process "
-                    f"QuantumPrimitive '{eqn.primitive}'"
+                    f"static_register_interpreter: don't know how to process QuantumPrimitive '{eqn.primitive}'"
                 )
 
         else:
@@ -225,11 +220,13 @@ def make_static_register_interpreter(size):
                 else:
                     inner_args.append(invar.val)
             elif isinstance(invar.aval, AbstractQuantumState):
-                inner_args.append((
-                    AbstractQubitArray(),
-                    ScalarList(jnp.arange(size)[::-1], max_size=size),
-                    AbstractQuantumState(),
-                ))
+                inner_args.append(
+                    (
+                        AbstractQubitArray(),
+                        ScalarList(jnp.arange(size)[::-1], max_size=size),
+                        AbstractQuantumState(),
+                    )
+                )
             elif isinstance(invar.aval, AbstractQubitArray):
                 inner_args.append(ScalarList(max_size=size))
             elif isinstance(invar.aval, AbstractQubit):
@@ -243,10 +240,7 @@ def make_static_register_interpreter(size):
         # Step 2: count QuantumState outvars so we know how many expansions  #
         # to undo in the output                                               #
         # ------------------------------------------------------------------ #
-        qst_outvar_count = sum(
-            1 for v in jaspr.jaxpr.outvars
-            if isinstance(v.aval, AbstractQuantumState)
-        )
+        qst_outvar_count = sum(1 for v in jaspr.jaxpr.outvars if isinstance(v.aval, AbstractQuantumState))
 
         # If no QuantumState in outputs the inner jaxpr is already fine.
         if qst_outvar_count == 0:
@@ -272,9 +266,7 @@ def make_static_register_interpreter(size):
         # ScalarList has no backing tensor: each free-index slot is its own
         # scalar leaf, so the initial state is `size` individual constants
         # instead of one array + one counter.
-        _initial_free_slots   = tuple(
-            jnp.asarray(size - 1 - i, dtype=jnp.int64) for i in range(size)
-        )
+        _initial_free_slots = tuple(jnp.asarray(size - 1 - i, dtype=jnp.int64) for i in range(size))
         _initial_free_counter = jnp.array(size, dtype=jnp.int64)
 
         # Every expanded QuantumState contributes this many flat leaves to
@@ -305,14 +297,14 @@ def make_static_register_interpreter(size):
             #   (classical_outs...,
             #    [pre_alloc_array, *scalar_list_slots, scalar_list_counter,
             #     QuantumState] * n)
-            n_classical   = len(inner_result) - leaves_per_qst * qst_outvar_count
+            n_classical = len(inner_result) - leaves_per_qst * qst_outvar_count
             classical_outs = list(inner_result[:n_classical])
 
             final_qsts = []
             for i in range(qst_outvar_count):
-                base          = n_classical + i * leaves_per_qst
-                pre_alloc_out = inner_result[base]                       # QubitArray
-                abs_qst_out   = inner_result[base + leaves_per_qst - 1]  # QuantumState
+                base = n_classical + i * leaves_per_qst
+                pre_alloc_out = inner_result[base]  # QubitArray
+                abs_qst_out = inner_result[base + leaves_per_qst - 1]  # QuantumState
                 # Free the whole pre-allocated register before returning.
                 cleaned_qst = delete_qubits_p.bind(pre_alloc_out, abs_qst_out)
                 final_qsts.append(cleaned_qst)
@@ -393,9 +385,7 @@ def _process_delete_qubits(eqn, context_dic):
         free_qubits.append(reg_qubits.pop())
         return free_qubits, reg_qubits
 
-    free_qubits, reg_qubits = fori_loop(
-        0, reg_qubits.counter, loop_body, (free_qubits, reg_qubits)
-    )
+    free_qubits, reg_qubits = fori_loop(0, reg_qubits.counter, loop_body, (free_qubits, reg_qubits))
 
     context_dic[eqn.outvars[0]] = (pre_alloc_array, free_qubits, abs_qst)
 
@@ -426,18 +416,12 @@ def _process_fuse(eqn, context_dic, register_size):
     """Merge two ScalarLists (or a ScalarList and a single qubit position) into one."""
     invalues = extract_invalues(eqn, context_dic)
 
-    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
-        eqn.invars[1].aval, AbstractQubit
-    ):
+    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubit):
         res_qubits = ScalarList(invalues, max_size=register_size)
-    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(
-        eqn.invars[1].aval, AbstractQubit
-    ):
+    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(eqn.invars[1].aval, AbstractQubit):
         res_qubits = invalues[0].copy()
         res_qubits.append(invalues[1])
-    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
-        eqn.invars[1].aval, AbstractQubitArray
-    ):
+    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubitArray):
         res_qubits = invalues[1].copy()
         res_qubits.prepend(invalues[0])
     else:
@@ -460,16 +444,11 @@ def _process_op(op, invars, outvars, context_dic):
     pre_alloc_array, free_indices, abs_qst = context_dic[invars[-1]]
 
     # Resolve integer positions → AbstractQubit tracers
-    qb_tracers = [
-        get_qubit_p.bind(pre_alloc_array, context_dic[invars[i]])
-        for i in range(op.num_qubits)
-    ]
+    qb_tracers = [get_qubit_p.bind(pre_alloc_array, context_dic[invars[i]]) for i in range(op.num_qubits)]
 
     # Parameter values sit between the qubit invars and the state invar
     n_params = len(invars) - op.num_qubits - 1
-    param_values = [
-        context_dic[invars[op.num_qubits + i]] for i in range(n_params)
-    ]
+    param_values = [context_dic[invars[op.num_qubits + i]] for i in range(n_params)]
 
     new_abs_qst = quantum_gate_p.bind(*qb_tracers, *param_values, abs_qst, gate=op)
 
@@ -487,9 +466,7 @@ def _process_measurement(invars, outvars, context_dic):
 
     if isinstance(invars[0].aval, AbstractQubitArray):
         qubit_list = context_dic[invars[0]]
-        abs_qst, meas_res = _exec_multi_measurement(
-            pre_alloc_array, qubit_list, abs_qst
-        )
+        abs_qst, meas_res = _exec_multi_measurement(pre_alloc_array, qubit_list, abs_qst)
     else:
         qb_pos = context_dic[invars[0]]
         qb_tracer = get_qubit_p.bind(pre_alloc_array, qb_pos)
@@ -647,9 +624,7 @@ def _process_cond(eqn, context_dic, evaluator):
             operands,
         )
     else:
-        result = jax_switch(
-            jnp.asarray(pred, dtype=jnp.int32), wrapped_branches, operands
-        )
+        result = jax_switch(jnp.asarray(pred, dtype=jnp.int32), wrapped_branches, operands)
 
     n_outvars = len(eqn.outvars)
     if n_outvars == 0:
@@ -708,9 +683,7 @@ def _process_scan(eqn, context_dic, evaluator):
     xs_arg = xs[0] if len(xs) == 1 else tuple(xs)
     init_arg = init[0] if len(init) == 1 else tuple(init)
 
-    final_carry, ys = jax_scan(
-        wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll
-    )
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
 
     if not isinstance(final_carry, tuple):
         final_carry = (final_carry,)

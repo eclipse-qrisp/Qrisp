@@ -19,12 +19,7 @@ import pytest
 
 import cudaq
 
-from qrisp import (
-    QuantumFloat,
-    QuantumVariable,
-    measure,
-    x
-)
+from qrisp import QuantumFloat, QuantumVariable, measure, x
 from qrisp.jasp import jaspr_to_static_register_jaspr, jrange, make_jaspr
 from qrisp.jasp.cudaq_interface import cudaq_kernel, cudaq_kernel_from_xdsl_module
 from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir

@@ -85,9 +85,7 @@ class ScalarList:
 
     def _with_slot_set(self, index, value):
         """Return a new slots tuple with dynamic position ``index`` set to ``value``."""
-        return tuple(
-            lax.select(index == i, value, self.slots[i]) for i in range(self.max_size)
-        )
+        return tuple(lax.select(index == i, value, self.slots[i]) for i in range(self.max_size))
 
     # -- Jlist-compatible API ------------------------------------------------
 
