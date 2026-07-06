@@ -1,4 +1,4 @@
-name: Code style checks
+name: lint
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ruff:
+  lint:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -37,9 +37,5 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           args: format --check
-      - name: Codespell (American English)
+      - name: Codespell
         run: codespell
-      # - name: Ruff linter
-      #   uses: astral-sh/ruff-action@v3
-      #   with:
-      #     args: check  # wait for fix from Niko's student
