@@ -313,7 +313,7 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
         if num_ctrls == 1:
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls)
-            temp = controlled_jaspr.embed(*args, inline=True)
+            temp = controlled_jaspr.embedd(*args, inline=True)  # codespell:ignore
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls)
             return temp
@@ -327,7 +327,7 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
             ctrl_qb = ctrl_qbl[0]
 
             qs.append(mcx_operation, ctrls + [ctrl_qb])
-            res = controlled_jaspr.embed(*([ctrl_qb] + invalues), inline=True)
+            res = controlled_jaspr.embedd(*([ctrl_qb] + invalues), inline=True)  # codespell:ignore
             qs.append(mcx_operation, ctrls + [ctrl_qb])
 
             ctrl_qbl.delete()

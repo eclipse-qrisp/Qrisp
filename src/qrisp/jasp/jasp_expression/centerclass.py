@@ -676,7 +676,7 @@ class Jaspr(ClosedJaxpr):
             self, "num_qubits", meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
         )(*args)
 
-    def embed(self, *args, name=None, inline=False):
+    def embedd(self, *args, name=None, inline=False):  # codespell:ignore
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
         qs = TracingQuantumSession.get_instance()
