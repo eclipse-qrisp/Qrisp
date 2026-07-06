@@ -21,11 +21,29 @@ reflected immediately without reinstalling:
 
     pip install -e .
 
-For development you will also want the test and documentation dependencies:
+For development, you will also want the test and documentation dependencies. Choose the installation method for your operating system below:
+
+**Linux and macOS**
 
 .. code-block:: bash
 
     pip install -e ".[test,docs]"
+
+**Windows**
+
+.. note::
+    The ``test`` dependency group includes ``pyscf``, which is not supported on Windows. Windows users must install the compatible dependencies individually:
+
+.. code-block:: bash
+
+    # Install optional dependency groups (excluding test)
+    pip install -e ".[docs,iqm,xdsl,aqt,qiskit]"
+
+    # Install Windows-compatible testing framework tools
+    pip install pytest qiskit-aer cirq pytest-httpx stim
+
+    # Install tqecd from source
+    python -m pip install git+https://github.com/tqec/tqecd.git
 
 .. list-table:: Optional dependency groups
    :header-rows: 1
@@ -34,7 +52,7 @@ For development you will also want the test and documentation dependencies:
    * - Group
      - What it installs
    * - ``test``
-     - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
+     - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf *(Not supported on Windows)*)
    * - ``docs``
      - Sphinx and related extensions for building the documentation
    * - ``aqt``
@@ -44,7 +62,7 @@ For development you will also want the test and documentation dependencies:
    * - ``iqm``
      - Client for IQM quantum hardware
    * - ``catalyst``
-     - PennyLane Catalyst JIT compiler
+     - PennyLane Catalyst JIT compiler *(Not supported on Windows)*
    * - ``xdsl``
      - xDSL compiler infrastructure
 
@@ -52,7 +70,7 @@ Include the groups you need in brackets, either at install time or later:
 
 .. code-block:: bash
 
-    # All at once
+    # All at once (Linux/macOS)
     pip install -e ".[test,docs,iqm,catalyst,xdsl,aqt,qiskit]"
 
     # Or individual groups after the base install
@@ -79,10 +97,26 @@ Running the test suite
 Before making any changes, confirm that the existing test suite passes on your
 machine. This gives you a clean baseline to compare against.
 
+**Linux and macOS**
+
 .. code-block:: bash
 
     # Run the full suite (note: this currently takes up to ~1 hour)
     pytest tests/
+
+**Windows**
+
+.. note::
+    Because certain unsupported dependencies are missing on Windows, you must ignore specific interface and JAX tests when running the suite:
+
+.. code-block:: bash
+
+    # Run the full suite while ignoring unsupported dependency tests
+    pytest tests/ --ignore=tests/interface_tests/test_converter_qrisp_to_qml.py --ignore=tests/jax_tests/test_catalyst_interface.py --ignore=tests/jax_tests/test_qubit_array_fusion.py
+
+**Subsystem testing (All Platforms)**
+
+.. code-block:: bash
 
     # Run only a specific subsystem — much faster during development
     pytest tests/circuit_tests/
