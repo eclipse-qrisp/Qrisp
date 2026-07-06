@@ -135,21 +135,22 @@ builtin = "clear,rare,en-GB_to_en-US"
 check-filenames = true
 count = true
 summary = true
-# anc       — ancilla qubit variable name
-# ket       — Dirac bra-ket notation
+# anc       — ancilla qubit variable (src/qrisp/)
+# ket       — Dirac bra-ket notation (docstrings throughout)
 # Aer       — Qiskit Aer simulator (proper noun)
-# MIS       — Maximum Independent Set (CS abbreviation)
-# Childs    — Andrew Childs, researcher surname (arXiv citations)
-# COO,coo  — Coordinate format for sparse matrices (scipy sparse)
-# notin     — local variable name in matrix_multiplication.py
-# Wille     — Robert Wille, researcher surname (paper bibliography)
-# theRes    — local variable name in test_tket_converter.py
-# braket    — Amazon Braket quantum service / LaTeX braket package
-# mis       — Maximum Independent Set abbreviation (lowercase in notebook prose)
-# Tage      — German word for "days" in privacy imprint
-# thi       — part of URL (thi.uni-hannover.de) in paper bibliography
-# cancelled — API method name Job.cancelled() intentionally uses British spelling
-ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled"
+# MIS       — Maximum Independent Set abbreviation (src/qrisp/algorithms/qiro/)
+# Childs    — Andrew Childs, researcher surname (arXiv citations throughout)
+# COO,coo  — Coordinate sparse matrix format (src/qrisp/simulator/bi_arrays.py)
+# notin     — local variable name (src/qrisp/alg_primitives/arithmetic/matrix_multiplication.py)
+# Wille     — Robert Wille, researcher surname (documentation/source/general/papers/index.rst)
+# theRes    — local variable name (tests/interface_tests/test_tket_converter.py)
+# braket    — Amazon Braket / LaTeX braket package (docs & src/qrisp/algorithms/vqe/)
+# mis       — Maximum Independent Set (documentation/source/general/tutorial/QIROtutorial.ipynb)
+# Tage      — German word for "days" (documentation/source/general/imprint.rst)
+# thi       — part of URL thi.uni-hannover.de (documentation/source/general/papers/index.rst)
+# cancelled — API method Job.cancelled() (src/qrisp/interface/job.py)
+# alph      — local variable avoiding shadowing func `alpha` (documentation/source/general/tutorial/CD.ipynb)
+ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled,alph"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
