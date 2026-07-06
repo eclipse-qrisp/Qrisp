@@ -88,7 +88,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          return cast(JobResult, self._result_data)
 
       def cancel(self):
-         return False  # synchronous jobs cannot be canceled
+         return False  # synchronous jobs cannot be cancelled
 
       def status(self):
          return self._last_known_status
@@ -426,12 +426,12 @@ and derived from :meth:`~qrisp.interface.Job.status`:
 .. code-block:: python
 
    job.done()            # True only if the job completed successfully (JobStatus.DONE)
-   job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELED, or ERROR)
+   job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELLED, or ERROR)
 
 
-Additional helpers ``running()``, ``queued()``, and ``canceled()`` are also available
+Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available
 for polling-style workflows. If :meth:`~qrisp.interface.Job.result` is called on a job that has failed, a
-:exc:`~qrisp.interface.JobFailureError` is raised; if the job was canceled, a
+:exc:`~qrisp.interface.JobFailureError` is raised; if the job was cancelled, a
 :exc:`~qrisp.interface.JobCancelledError` is raised. Both are subclasses of
 :exc:`RuntimeError`.
 
@@ -451,10 +451,10 @@ The six states are:
 - ``QUEUED``: the job has been submitted and is waiting for execution resources.
 - ``RUNNING``: the job is currently being executed.
 - ``DONE``: the job completed successfully. Results are available via :meth:`~qrisp.interface.Job.result`.
-- ``CANCELED``: the job was canceled before or during execution.
+- ``CANCELLED``: the job was cancelled before or during execution.
 - ``ERROR``: the job failed due to an error during execution.
 
-The three terminal states (``DONE``, ``CANCELED``, ``ERROR``) are collected in
+The three terminal states (``DONE``, ``CANCELLED``, ``ERROR``) are collected in
 the module-level constant ``JOB_FINAL_STATES``.
 Once a job reaches any of these states, its outcome is final:
 
@@ -463,7 +463,7 @@ Once a job reaches any of these states, its outcome is final:
    from qrisp.interface.job import JOB_FINAL_STATES, JobStatus
 
    assert JobStatus.DONE      in JOB_FINAL_STATES
-   assert JobStatus.CANCELED in JOB_FINAL_STATES
+   assert JobStatus.CANCELLED in JOB_FINAL_STATES
    assert JobStatus.ERROR     in JOB_FINAL_STATES
 
 

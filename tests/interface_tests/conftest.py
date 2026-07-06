@@ -59,7 +59,7 @@ class MinimalJob(Job):
     def cancel(self) -> bool:
         if self.in_final_state():
             return False
-        self._last_known_status = JobStatus.CANCELED
+        self._last_known_status = JobStatus.CANCELLED
         self._done_event.set()
         return True
 

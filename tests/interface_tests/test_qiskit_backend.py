@@ -245,7 +245,7 @@ class TestQiskitJob:
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
-        assert job.last_known_status == JobStatus.CANCELED
+        assert job.last_known_status == JobStatus.CANCELLED
 
     # --- cancel ---
 
@@ -360,8 +360,8 @@ class TestMapQiskitStatus:
         assert _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
 
     def test_cancelled_maps_to_cancelled(self):
-        """A Qiskit job with status CANCELED maps to JobStatus.CANCELED."""
-        assert _map_qiskit_status(self._job_with_status("CANCELED")) == JobStatus.CANCELED
+        """A Qiskit job with status CANCELED maps to JobStatus.CANCELLED."""
+        assert _map_qiskit_status(self._job_with_status("CANCELED")) == JobStatus.CANCELLED
 
     def test_error_maps_to_error(self):
         """A Qiskit job with status ERROR maps to JobStatus.ERROR."""

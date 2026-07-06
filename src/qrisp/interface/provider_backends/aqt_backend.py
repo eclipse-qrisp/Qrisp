@@ -51,7 +51,7 @@ def _map_aqt_status(aqt_job) -> JobStatus:
         "VALIDATING": JobStatus.QUEUED,
         "RUNNING": JobStatus.RUNNING,
         "DONE": JobStatus.DONE,
-        "CANCELED": JobStatus.CANCELED,
+        "CANCELED": JobStatus.CANCELLED,
         "ERROR": JobStatus.ERROR,
     }
     return _MAP.get(name, JobStatus.RUNNING)
@@ -120,7 +120,7 @@ class AQTJob(Job):
         except Exception as exc:
             terminal_status = _map_aqt_status(self._aqt_job)
             self._last_known_status = terminal_status
-            if terminal_status == JobStatus.CANCELED:
+            if terminal_status == JobStatus.CANCELLED:
                 raise JobCancelledError(f"AQT job {self._job_id!r} was canceled.") from exc
             raise JobFailureError(f"AQT job {self._job_id!r} failed: {exc}") from exc
 

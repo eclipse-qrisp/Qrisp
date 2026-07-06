@@ -42,7 +42,7 @@ class TestJobStatusEnum:
         assert JobStatus.QUEUED
         assert JobStatus.RUNNING
         assert JobStatus.DONE
-        assert JobStatus.CANCELED
+        assert JobStatus.CANCELLED
         assert JobStatus.ERROR
 
     def test_all_states_are_distinct(self):
@@ -53,7 +53,7 @@ class TestJobStatusEnum:
     def test_final_states_are_done_cancelled_error(self):
         """Test that JOB_FINAL_STATES contains exactly DONE, CANCELED, and ERROR."""
         assert JobStatus.DONE in JOB_FINAL_STATES
-        assert JobStatus.CANCELED in JOB_FINAL_STATES
+        assert JobStatus.CANCELLED in JOB_FINAL_STATES
         assert JobStatus.ERROR in JOB_FINAL_STATES
 
     def test_non_final_states_not_in_final_states(self):
@@ -309,7 +309,7 @@ class TestJobConcreteHelpers:
         """Test that done() returns False for CANCELED and ERROR."""
         # done() means 'completed successfully' — it is not a synonym for
         # in_final_state(). Use in_final_state() to test for any terminal state.
-        assert self._job_with_status(backend, JobStatus.CANCELED).done() is False
+        assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
         assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 
     @pytest.mark.parametrize("status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING])
@@ -317,7 +317,7 @@ class TestJobConcreteHelpers:
         """Test that done() returns False for all non-terminal states."""
         assert self._job_with_status(backend, status).done() is False
 
-    @pytest.mark.parametrize("status", [JobStatus.DONE, JobStatus.CANCELED, JobStatus.ERROR])
+    @pytest.mark.parametrize("status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR])
     def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
         """Test that in_final_state() returns True for all three terminal states."""
         assert self._job_with_status(backend, status).in_final_state() is True
@@ -341,10 +341,10 @@ class TestJobConcreteHelpers:
 
     def test_cancelled_true_only_for_cancelled(self, backend):
         """Test that canceled() returns True only for the CANCELED state."""
-        assert self._job_with_status(backend, JobStatus.CANCELED).canceled() is True
-        assert self._job_with_status(backend, JobStatus.DONE).canceled() is False
-        assert self._job_with_status(backend, JobStatus.ERROR).canceled() is False
-        assert self._job_with_status(backend, JobStatus.RUNNING).canceled() is False
+        assert self._job_with_status(backend, JobStatus.CANCELLED).cancelled() is True
+        assert self._job_with_status(backend, JobStatus.DONE).cancelled() is False
+        assert self._job_with_status(backend, JobStatus.ERROR).cancelled() is False
+        assert self._job_with_status(backend, JobStatus.RUNNING).cancelled() is False
 
     def test_job_id_none_by_default(self, backend):
         """Test that job_id is None when not explicitly provided."""

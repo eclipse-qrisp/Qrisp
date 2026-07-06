@@ -61,10 +61,10 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
             nom = np.sum(A + 4 * B * C)
             denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alpha = nom / denom
-            alpha = [alpha] * N
+            alph = nom / denom
+            alph = [alph] * N
 
-            return alpha
+            return alph
 
     else:
 
@@ -75,8 +75,8 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
                 for i in range(N)
             ]
 
-            alpha = [nom[i] / denom[i] for i in range(N)]
-            return alpha
+            alph = [nom[i] / denom[i] for i in range(N)]
+            return alph
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
@@ -147,9 +147,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 B = 1 - lam
                 nom = np.sum(A + 4 * B * h)
                 denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-                alpha = nom / denom
-                alpha = [alpha] * N
-                return alpha
+                alph = nom / denom
+                alph = [alph] * N
+                return alph
 
             return alpha
 
@@ -159,8 +159,8 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                     2 * ((lam * h[i]) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
                     for i in range(N)
                 ]
-                alpha = [h[i] / denom[i] for i in range(N)]
-                return alpha
+                alph = [h[i] / denom[i] for i in range(N)]
+                return alph
 
             return alpha
 
@@ -181,16 +181,16 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                     + (1 - lam) ** 2 * (N + 8 * S_2)
                 )
 
-                alpha = -nom / denom
-                alpha = [N * [alpha]]
-                return alpha
+                alph = -nom / denom
+                alph = [N * [alph]]
+                return alph
 
             return alpha
 
         def nc_nonuniform(J, h):
             def alpha(lam):
-                alpha = [solve_alpha(h, J, lam)]
-                return alpha
+                alph = [solve_alpha(h, J, lam)]
+                return alph
 
             return alpha
 

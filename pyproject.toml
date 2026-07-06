@@ -126,11 +126,10 @@ omit = ["*/__init__.py"]
 # *.egg-info                           — package metadata dirs (src/qrisp.egg-info)
 # *.pyc                                — compiled Python bytecode
 # *.jpg,*.png,*.svg                    — binary image files (false positives)
-# *.ipynb                              — Jupyter notebooks (base64 content causes false positives)
 # ./documentation/build                — generated Sphinx HTML output
 # */changelog/0.?.rst  — pre-0.10 changelogs (preserve historical spelling)
 # */changelog/04_compiler_plot.py  — pre-0.10 changelog script
-skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.ipynb,*.egg-info,./documentation/build,*/changelog/0.?.rst,*/changelog/04_compiler_plot.py"
+skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,./documentation/build,*/changelog/0.?.rst,*/changelog/04_compiler_plot.py"
 builtin = "clear,rare,en-GB_to_en-US"
 check-filenames = true
 count = true
@@ -148,9 +147,10 @@ summary = true
 # mis       — Maximum Independent Set (documentation/source/general/tutorial/QIROtutorial.ipynb)
 # Tage      — German word for "days" (documentation/source/general/imprint.rst)
 # thi       — part of URL thi.uni-hannover.de (documentation/source/general/papers/index.rst)
-# cancelled — API method Job.cancelled() (src/qrisp/interface/job.py)
 # alph      — local variable avoiding shadowing func `alpha` (documentation/source/general/tutorial/CD.ipynb)
-ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled,alph"
+# te        — base64-encoded PNG data (documentation/source/general/tutorial/QAOAtutorial/MkCS.ipynb)
+# cancelled — API method Job.cancelled() uses British spelling; only 1 non-API occurrence exists (cancel_zero_controls.py)
+ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled,alph,te"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]

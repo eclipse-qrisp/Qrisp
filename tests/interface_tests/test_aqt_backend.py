@@ -416,7 +416,7 @@ class TestAQTJob:
         job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
         with pytest.raises(JobCancelledError):
             job.result()
-        assert job.last_known_status == JobStatus.CANCELED
+        assert job.last_known_status == JobStatus.CANCELLED
 
     def test_status_done_when_aqt_job_done(self):
         """status() returns DONE when the AQT job reports DONE."""

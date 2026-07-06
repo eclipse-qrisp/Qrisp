@@ -63,7 +63,7 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
         "VALIDATING": JobStatus.QUEUED,  # no direct equivalent
         "RUNNING": JobStatus.RUNNING,
         "DONE": JobStatus.DONE,
-        "CANCELED": JobStatus.CANCELED,
+        "CANCELED": JobStatus.CANCELLED,
         "ERROR": JobStatus.ERROR,
     }
     return mapping.get(name, JobStatus.RUNNING)
@@ -154,7 +154,7 @@ class QiskitJob(Job):
         except Exception as exc:
             terminal_status = _map_qiskit_status(self._qiskit_job)
             self._last_known_status = terminal_status
-            if terminal_status == JobStatus.CANCELED:
+            if terminal_status == JobStatus.CANCELLED:
                 raise JobCancelledError(f"Qiskit job {self._job_id!r} was canceled.") from exc
             raise JobFailureError(f"Qiskit job {self._job_id!r} failed: {exc}") from exc
 

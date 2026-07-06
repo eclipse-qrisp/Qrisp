@@ -1,6 +1,6 @@
-﻿qrisp.interface.Job.canceled
+﻿qrisp.interface.Job.cancelled
 =============================
 
 .. currentmodule:: qrisp.interface
 
-.. automethod:: Job.canceled
+.. automethod:: Job.cancelled

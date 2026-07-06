@@ -30,7 +30,7 @@ from qrisp.circuit.qubit import Qubit
 _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphase"})
 
 
-def _is_cancelled_by_zero(op: Operation, qubits: list[Qubit], fresh: set[Qubit]) -> bool:
+def _is_canceled_by_zero(op: Operation, qubits: list[Qubit], fresh: set[Qubit]) -> bool:
     r"""Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
     # Symmetric controlled-phase gates: diag(1,1,1,e^{iφ}).
     # Identity whenever *either* qubit is \|0⟩.
@@ -138,7 +138,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
             continue
 
         # Check whether the gate is a no-op given the fresh set.
-        if _is_cancelled_by_zero(op, qubits, fresh):
+        if _is_canceled_by_zero(op, qubits, fresh):
             continue
 
         # Gate is kept — append and update freshness.

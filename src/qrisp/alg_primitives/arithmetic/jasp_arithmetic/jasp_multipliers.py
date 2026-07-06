@@ -23,7 +23,7 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 @qache(static_argnames="inpl_adder")
-def jasp_controlling_multiplyer(a, b, inpl_adder=gidney_adder):
+def jasp_controlling_multiplier(a, b, inpl_adder=gidney_adder):
 
     s = QuantumFloat(a.size + b.size)
 
@@ -54,7 +54,7 @@ def jasp_squaring(a, inpl_adder=gidney_adder):
 
 
 @qache(static_argnames="inpl_adder")
-def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
+def jasp_multiplier(factor_1, factor_2, inpl_adder=gidney_adder):
 
     # Executes the algorithm
 

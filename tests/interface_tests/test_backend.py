@@ -142,7 +142,7 @@ class JobTest(Job):
 
     def _set_cancelled(self) -> None:
         """Mark the job as CANCELED and fire all registered callbacks."""
-        self._last_known_status = JobStatus.CANCELED
+        self._last_known_status = JobStatus.CANCELLED
         self._done_event.set()
         for cb in self._callbacks:
             try:
@@ -1018,7 +1018,7 @@ class TestCancellation:
             job.result()
         except RuntimeError:
             pass
-        assert job.status() == JobStatus.CANCELED
+        assert job.status() == JobStatus.CANCELLED
 
     def test_cancel_result_raises_runtime_error(self):
         """Ensure result() raises RuntimeError after the job has been canceled."""
@@ -1084,7 +1084,7 @@ class TestCancellation:
             job.result()
         except RuntimeError:
             pass
-        assert fired == [JobStatus.CANCELED]
+        assert fired == [JobStatus.CANCELLED]
 
     def test_cancel_result_raises_job_cancelled_error(self):
         """result() must raise JobCancelledError (not just RuntimeError) for a canceled job.
