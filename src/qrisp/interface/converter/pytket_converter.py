@@ -191,7 +191,7 @@ def pytket_converter(qc, boxFlag=False):
             if 0 == 1:
                 # if op.base_operation.definition:
                 # old code relic -- buggy
-                # base_operation.definition doesnt convert correctly if multiple abstract/costum gates are included
+                # base_operation.definition doesn't convert correctly if multiple abstract/custom gates are included
                 tket_definition = pytket_converter(op.base_operation.definition)
                 base_gate = tket_definition
                 if isinstance(base_gate, Circuit):

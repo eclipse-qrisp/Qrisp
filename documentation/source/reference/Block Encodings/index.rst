@@ -27,7 +27,7 @@ The Abstraction Layer for Quantum Linear Algebra
 
 Instead of navigating the intricacies of superposition and entanglement,
 users can work within the familiar language of linear algebra and signal processing.
-The block-encoding layer acts as a bridge that makes matrices "accessible" to the quantum comuter.
+The block-encoding layer acts as a bridge that makes matrices "accessible" to the quantum computer.
 It is important to note that the overall efficiency of an algorithm critically depends on the performance of its underlying block-encodings. 
 While Qrisp currently offers versatile, general-purpose constructors, additional specialized block-encodings will be introduced in future.
 

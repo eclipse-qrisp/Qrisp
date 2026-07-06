@@ -149,7 +149,7 @@ class QubitTerm:
         # should participate in an AND evaluation. If the evaluation of the AND
         # does not return True, the energy of this measurement is 0.
 
-        # 3. The ctrl_int: Thi binary representation has a 1 at every digit,
+        # 3. The ctrl_int: The binary representation has a 1 at every digit,
         # which should be flipped before evaluating the AND value.
 
         z_int = 0

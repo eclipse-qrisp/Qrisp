@@ -136,7 +136,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
             # which are not part of the uncomputation qubits.
 
             # This would is usually not uncomputable, however it could also imply
-            # that these qubits have been uncomputed allready but gate_wrapped.
+            # that these qubits have been uncomputed already but gate_wrapped.
             # The gate_wrap decorator makes ancilla slots as non-permeable,
             # so these qubits appear as target qubits here.
             off_target_qubits = list(set(target_qubits) - set(uncomp_qbs))

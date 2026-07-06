@@ -144,7 +144,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
 
     from networkx import descendants, topological_sort
 
-    # We now order the non-unitary nodes according to how many decendents they all have
+    # We now order the non-unitary nodes according to how many descendants they all have
     # Measurements/Resets/Disentanglings with only a few descendants need only a few
     # gates to be simulated until the measurement can be executed
     node_costs = []

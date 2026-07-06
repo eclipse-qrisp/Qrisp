@@ -54,7 +54,7 @@ def quantum_kernel(func):
     ----------
     func : callable
         A function that receives only classical values as inputs and returns
-        classical values as outpus. The function's body can however perform
+        classical values as outputs. The function's body can however perform
         quantum logic.
 
     Returns

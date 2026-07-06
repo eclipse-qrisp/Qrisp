@@ -162,7 +162,7 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
             )
 
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
-        # to execute indexs in parallel.
+        # to execute indices in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
 

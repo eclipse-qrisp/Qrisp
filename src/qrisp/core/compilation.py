@@ -47,7 +47,7 @@ from qrisp.permeability import lightcone_reduction, optimize_allocations, parall
 
 
 # It is however not only depth that can be improved by an increased workspace. Due to
-# more clean/dirty ancillae beeing available, in many cases it is also possible to
+# more clean/dirty ancillae being available, in many cases it is also possible to
 # generate more efficient mcx implementations, thus also reducing the gate count.
 def qompiler(
     qs,
@@ -185,7 +185,7 @@ def qompiler(
 
         if cancel_qfts:
             # Cancel adjacent QFT gates, which are inverse to each
-            # other. This can happen alot because of the heavy use of Fourier arithmetic
+            # other. This can happen a lot because of the heavy use of Fourier arithmetic
             reordered_qc = qft_cancellation(reordered_qc)
 
         # Transpile logic synthesis
@@ -567,7 +567,7 @@ def update_depth_dic(instruction, depth_dic, depth_indicator=None):
 
 
 # Function to cancel adjacent QFT, which are inverse to each other
-# Due to the heavy use of Fourier arithmetic, this can happen alot
+# Due to the heavy use of Fourier arithmetic, this can happen a lot
 # especially if multiple arithmetic operation on a single target are executed
 def qft_cancellation(qc):
     # The idea is to iterate through the instructions of the circuit

@@ -92,7 +92,7 @@ result of accept(x).
 
 Furthermore we need to make sure that only the phase of |x> is flipped. If we simply
 apply a Z-gate onto the result of accept, we could also flip the phase of a 
-child node y with accept(y) = True. We remedy this problem by determining wether
+child node y with accept(y) = True. We remedy this problem by determining whether
 |x> is odd into a qubit called oddity. For the even diffusing function, this qubit
 needs to be in the False state, for the odd function this qubit needs to be in the
 True state.
@@ -340,7 +340,7 @@ class QuantumBacktrackingTree:
         branch should no longer be investigated.
     subspace_optimization : bool, optional
         If set to ``True``, a significant optimization of the ``quantum_step`` function 
-        will be applied. The reject function has to fullfil a certain property
+        will be applied. The reject function has to fulfill a certain property
         for this to yield the correct results. Please check the "Details on the
         predicate functions" section for more information. The default is ``False``.
 
@@ -1022,7 +1022,7 @@ class QuantumBacktrackingTree:
             The precision to perform the quantum phase estimation(s) with.
         cl_accept : function, optional
             A classical version of the accept function of self. Needs to
-            receive a list to indicate a path and returns a bool wether the
+            receive a list to indicate a path and returns a bool whether the
             node is accepted. By default, the accept function of self will be
             evaluated on a simulator.
         measurement_kwargs : dictionary
@@ -1572,7 +1572,7 @@ The general idea to implement this operator are the following two steps:
     2. Manipulate branch_qa controlled on h-1 to bring the new branches into
         into superposition.
 
-The value of the constant c depends on wether x is the root or a terminal node.
+The value of the constant c depends on whether x is the root or a terminal node.
 
 For the root c = n**0.5*d_x**0.5
 Otherwise c = d_x**0.5
@@ -1754,7 +1754,7 @@ class Subtree(QuantumBacktrackingTree):
 
 
 def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measurement_kwargs={}):
-    # The idea of this function is to use the quantum algorithm to check wether
+    # The idea of this function is to use the quantum algorithm to check whether
     # a the subtree of a given node contains a solution and then recursively call
     # this function on that subtree.
 
@@ -1772,7 +1772,7 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
             mes_res = accept_qbl.get_measurement()
             return mes_res == {True: 1}
 
-    # The first step is to check wether the current root is a solution
+    # The first step is to check whether the current root is a solution
     if isinstance(tree, Subtree):
         path = tree.root_path
     else:
@@ -1796,7 +1796,7 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
     # Retrieve the measurement results
     mes_res = multi_measurement([qpe_res, tree.h, tree.branch_qa], **measurement_kwargs)
 
-    # We will first check wether there is a solution
+    # We will first check whether there is a solution
     # The s variable will contain the probability to measure
     # the qpe_res == 0 branch.
     s = 0

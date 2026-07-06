@@ -34,7 +34,7 @@ def TR_gate():
     qc.p(np.pi / 4, 1)
     qc.crx(np.pi / 2, 1, 2)
 
-    # Error in Thapliyal paper? Doesnt work if there is no inverse here
+    # Error in Thapliyal paper? Doesn't work if there is no inverse here
     result = qc.to_gate().inverse()
     result.name = "TR"
     return result

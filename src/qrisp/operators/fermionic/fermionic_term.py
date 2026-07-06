@@ -107,7 +107,7 @@ class FermionicTerm:
 
 
         Order ladder terms such that
-            1) Raising operators preceed lowering operators
+            1) Raising operators precede lowering operators
             2) Operators are ordered in descending order of fermionic modes
 
         Example: a_5^dagger a_2^dagger a_3 a_1

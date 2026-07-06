@@ -217,7 +217,7 @@ def custom_control(*func, **cusc_kwargs):
             if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
                 kwargs.update({"ctrl_method": env.ctrl_method})
 
-            # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
+            # In the case that a qubit was found, we use the CustomControlEnvironent (defined below)
             # This environments gatewraps the function and compiles it to a specific Operation subtype
             # called CustomControlledOperation.
             # The Condition/Control Environment compiler recognizes this Operation type

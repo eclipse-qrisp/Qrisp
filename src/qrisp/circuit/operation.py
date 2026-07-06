@@ -821,7 +821,7 @@ class PTControlledOperation(Operation):
 
 
 # Class to describe controlled operation
-# Very similar to phase tolerant operations but with a more specifix naming
+# Very similar to phase tolerant operations but with a more specific naming
 # convention, inversion algorithm and unitary generation algorithm
 class ControlledOperation(PTControlledOperation):
     def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="gray"):

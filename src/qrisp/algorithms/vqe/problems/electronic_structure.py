@@ -61,7 +61,7 @@ def delta(i, j):
 
 
 #
-# spacial orbitals to spin orbitals
+# spatial orbitals to spin orbitals
 #
 
 
@@ -70,11 +70,11 @@ def omega(x):
 
 
 def spacial_to_spin(one_int, two_int):
-    r"""Transforms one- and two-electron integrals w.r.t. $M$ spacial orbitals $\psi_0,\dotsc,\psi_{M-1}$ to
+    r"""Transforms one- and two-electron integrals w.r.t. $M$ spatial orbitals $\psi_0,\dotsc,\psi_{M-1}$ to
     one- and two-electron integrals w.r.t. $2M$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$, 
     $\chi_{2i+1}=\psi_{i}\beta$ for $i=0,\dotsc,M-1$.
 
-    That is, given one- and two-electron integrals for spacial orbitals:
+    That is, given one- and two-electron integrals for spatial orbitals:
 
     .. math::
 
@@ -91,9 +91,9 @@ def spacial_to_spin(one_int, two_int):
     Parameters
     ----------
     one_int : numpy.ndarray
-        The one-electron integrals w.r.t. spacial orbitals.
+        The one-electron integrals w.r.t. spatial orbitals.
     two_int : numpy.ndarray
-        The two-electron integrals w.r.t. spacial orbitals.
+        The two-electron integrals w.r.t. spatial orbitals.
 
     Returns
     -------
@@ -188,7 +188,7 @@ def electronic_data(mol):
     # Full tensor with physicist's notation
     two_int = np.transpose(two_int, (0, 2, 3, 1))
 
-    # Convert spacial orbital to spin orbitals
+    # Convert spatial orbital to spin orbitals
     one_int, two_int = spacial_to_spin(one_int, two_int)
 
     data["mol"] = mol

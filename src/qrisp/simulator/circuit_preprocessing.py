@@ -35,7 +35,7 @@ memory_bandwidth_penalty = 2
 
 # This class is supposed to describe a group of instructions
 # The idea behind the grouping is that grouping instructions together allows
-# to precalculate their unitary. This saves alot of time because applying
+# to precalculate their unitary. This saves a lot of time because applying
 # a medium size unitary on a large statevector is more efficient than applying
 # many small unitaries. This estimation is elaborated in the calc_gain method.
 class GroupedInstruction:

@@ -188,7 +188,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         Due to Qrisp's automatic qubit management, clean ancilla qubits are not as much
         of a sparse resource as one might think. Even though the ``balauca`` method
         requires a considerable amount of ancillae, many other functions also do,
-        implying there is alot of recycling potential. The net effect is that in more
+        implying there is a lot of recycling potential. The net effect is that in more
         complex programs, the amount of qubits of the circuit returned by the
         :meth:`compile method <qrisp.QuantumSession.compile>` increases only slightly.
 

@@ -109,7 +109,7 @@ def calc_embedded_unitary(gate, n, destination_qubits):
     # In principle, we could use the numpy function np.kron
     # tensor_array = np.kron(np.eye(2**(n-m)), gate.get_unitary())
 
-    # However, this performs alot of unnecessary multiplications since the structure of
+    # However, this performs a lot of unnecessary multiplications since the structure of
     # this matrix is simply the unitary of the gate on the diagonal 2**n/2**dim(gate)
     # times repeated
     if isinstance(gate, ControlledOperation):
@@ -213,7 +213,7 @@ def swap_tensor_factors(tensor, i, j):
 # tensor_array = np.kron(np.eye(2**(n-m)), gate.get_unitary())
 
 
-# However this performs alot of unnecessary multiplications
+# However this performs a lot of unnecessary multiplications
 # since the structure of this matrix is simply the unitary
 # of the gate on the diagonal 2**n/2**dim(gate) times repeated
 def generate_id_kron(input_tensor, n):

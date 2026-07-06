@@ -126,9 +126,11 @@ omit = ["*/__init__.py"]
 # *.egg-info                           — package metadata dirs (src/qrisp.egg-info)
 # *.pyc                                — compiled Python bytecode
 # *.jpg,*.png,*.svg                    — binary image files (false positives)
+# *.ipynb                              — Jupyter notebooks (base64 content causes false positives)
 # ./documentation/build                — generated Sphinx HTML output
-# documentation/source/general/changelog/0.?.rst  — pre-0.10 changelogs (preserve historical spelling)
-skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,./documentation/build,documentation/source/general/changelog/0.?.rst"
+# */changelog/0.?.rst  — pre-0.10 changelogs (preserve historical spelling)
+# */changelog/04_compiler_plot.py  — pre-0.10 changelog script
+skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.ipynb,*.egg-info,./documentation/build,*/changelog/0.?.rst,*/changelog/04_compiler_plot.py"
 builtin = "clear,rare,en-GB_to_en-US"
 check-filenames = true
 count = true
@@ -143,7 +145,11 @@ summary = true
 # Wille     — Robert Wille, researcher surname (paper bibliography)
 # theRes    — local variable name in test_tket_converter.py
 # braket    — Amazon Braket quantum service / LaTeX braket package
-ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket"
+# mis       — Maximum Independent Set abbreviation (lowercase in notebook prose)
+# Tage      — German word for "days" in privacy imprint
+# thi       — part of URL (thi.uni-hannover.de) in paper bibliography
+# cancelled — API method name Job.cancelled() intentionally uses British spelling
+ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]

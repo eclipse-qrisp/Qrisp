@@ -33,7 +33,7 @@ class TensorFactor:
         # This list contains a list of integers, which describe the current permutation
         # of qubit indices inside this TensorFactor, i.e. swapping two elements of this
         # list is the same as applying a swap gate. Using this structure is advantageous
-        # because applying matrices on specific qubit indices requires alot of swapping.
+        # because applying matrices on specific qubit indices requires a lot of swapping.
         # Swapping the indices of an array is resource costly because the array needs
         # to be copied. As it turns out memory speed is a bottleneck.
         self.qubits = qubits

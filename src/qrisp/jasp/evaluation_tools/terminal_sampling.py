@@ -29,7 +29,7 @@ def terminal_sampling(func=None, shots=0):
     because mid-circuit measurements can alter the classical computation.
 
     In general, generating N samples from a hybrid program requires N executions
-    of said programm. If it is however known that the quantum state is the same
+    of said program. If it is however known that the quantum state is the same
     regardless of mid-circuit measurement outcomes, we can use the terminal sampling
     function. If this condition is not met, the ``terminal_sampling`` function
     will not return a valid distribution. A demonstration for this is given in the

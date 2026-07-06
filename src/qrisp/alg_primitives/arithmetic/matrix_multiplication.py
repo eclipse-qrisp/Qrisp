@@ -654,7 +654,7 @@ def tensordot(a, b, axes):
     >>> import numpy as np
     >>> from qrisp import QuantumFloat, QuantumArray, tensordot
 
-    Initiate the QuantumArray holding the statevector. We initate the state of uniform
+    Initiate the QuantumArray holding the statevector. We initiate the state of uniform
     superposition
 
     .. math::

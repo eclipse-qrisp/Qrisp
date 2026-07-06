@@ -49,7 +49,7 @@ In the following, we focus on finding the ground state energy
 
 where $\ket{\Psi_0}$ is a ground state wave function of the system.
 
-A starting point for solving this problem is the (restricted) **Hartree-Fock** method which produces a set $\{\psi_i\}$ of $K$ spacial orbitals
+A starting point for solving this problem is the (restricted) **Hartree-Fock** method which produces a set $\{\psi_i\}$ of $K$ spatial orbitals
 that correspond to $M=2K$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$ and $\chi_{2i+1}=\psi_{i}\beta$, for $i=0,\dotsc,K-1$, for the $N$ electrons 
 of the molecule.
 

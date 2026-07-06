@@ -319,7 +319,7 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
         # If treat_invalid is set to True, the function should leave the invalid values
         # invariant. That is, values that are bigger than the modulus N.
 
-        # We achieve this by computing a QuantumBool, which indicates wether the value is
+        # We achieve this by computing a QuantumBool, which indicates whether the value is
         # invalid and the controlling the multiplication on this QuantumBool.
         if treat_invalid:
             a.__class__ = QuantumFloat

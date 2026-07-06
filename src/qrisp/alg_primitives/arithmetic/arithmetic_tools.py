@@ -256,7 +256,7 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
 
 
 def logical_OR(operands: list[Qubit], flag: Qubit):
-    # handle the case fo an empty list
+    # handle the case of an empty list
     # Implement the case of a Quantum Variable with more the 2 qubits
     x(operands)
     x(flag)

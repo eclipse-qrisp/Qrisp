@@ -88,7 +88,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
     # added starting at the most significant bit.
     # As the algorithm produces empty bits in the remainder at the same rate as
     # quotient bits are required, we initialize the quotient as a 1 bit variable
-    # Since the highest significance ist calculated fist, this bit needs significance n.
+    # Since the highest significance is calculated fist, this bit needs significance n.
 
     # We initialize this float with a single Qubit which will be freed up
     # once the algorithm produced the first bit
@@ -210,7 +210,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
         # qs.cx(quotient[0], remainder[j])
 
         # We still need to make up for the fact that the next layer of CNOT
-        # gates doesnt include remainder[-1]
+        # gates doesn't include remainder[-1]
 
         # qs.cx(quotient[0], remainder[-1])
 

@@ -127,7 +127,7 @@ def is_inv(x, bit):
     # return (math.gcd(int(np.round(x, 3)),2**bit) == 1)
 
     # The only divisors 2**bit has is powers of 2
-    # ie. if tha factorization of x doesn't contain any powers of 2 it is invertible
+    # ie. if the factorization of x doesn't contain any powers of 2 it is invertible
     # in other words: x is invertible if it is uneven
     return bool(int(x) % 2)
 

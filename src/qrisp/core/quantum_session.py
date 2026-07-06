@@ -529,7 +529,7 @@ class QuantumSession(QuantumCircuit):
     # This is because merging two quantum session works essentially by handing them
     # a pointer to the same data list (which contains the merged circuits)
     # If we clear the data list by setting it to an empty list, any session
-    # that has been merged with self.qs doesnt point to the same data list anymore.
+    # that has been merged with self.qs doesn't point to the same data list anymore.
     # This method tackles this problem by keeping the pointer to the list alive,
     # but removing every single element
     def clear_data(self):

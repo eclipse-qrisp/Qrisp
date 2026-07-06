@@ -297,7 +297,7 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     elif method == "COLD":
         problem_operators = create_COLD_instance(Q, uniform_AGP_coeffs=problem_args["uniform"])
 
-    # Create qarg and problem instrance
+    # Create qarg and problem instance
     qarg = QuantumVariable(Q.shape[0])
     prob = DCQOProblem(*problem_operators)
 

@@ -31,7 +31,7 @@ from qrisp import (
 )
 
 
-# check if the respone from QuantumArray.get_measurement() has the expected formet.
+# check if the response from QuantumArray.get_measurement() has the expected formet.
 # Should return a list of tuples of the type (numpy.ndarray, float)
 # ie. [(array([1,1,0]), 232), (array([1,1,3]), 115), ...]
 def test_conditional_environments_example():

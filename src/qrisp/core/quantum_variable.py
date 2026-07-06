@@ -412,9 +412,9 @@ class QuantumVariable:
         Note that this method has a different function than the destructor. Calling this
         method will tell the QuantumSession to mark the used qubits as free and apply a
         reset gate.
-        If set to True, the keyword verify will cause a simulation to check, wether the
+        If set to True, the keyword verify will cause a simulation to check, whether the
         deleted qubits are in the $\ket{0}$ state prior to resetting. This is helpful
-        during debugging, as it indicates wether the uncomputation of this
+        during debugging, as it indicates whether the uncomputation of this
         QuantumVariable was successful.
 
         After deletion, the QuantumVariable object is basically unchanged but an error
@@ -898,7 +898,7 @@ class QuantumVariable:
             The qubits to remove from the QuantumVariable.
 
         verify : bool
-            Boolean value which indicates wether Qrisp should verify that the reduced
+            Boolean value which indicates whether Qrisp should verify that the reduced
             qubits are in the $\ket{0}$ state.
 
         Raises

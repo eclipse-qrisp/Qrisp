@@ -697,7 +697,7 @@ class SparseBiArray(BiArray):
 
 # This class serves mainly as an interface to numpy arrays using the same methods as the
 # SparseBiArray class this way the algorithm using these classes doesn't need to care
-# about wether it's treating a sparse array or a dense array.
+# about whether it's treating a sparse array or a dense array.
 # Furthermore, some multithreading techniques from the SparseBiArray class are deployed.
 class DenseBiArray(BiArray):
     # The constructor can only be called with numpy arrays

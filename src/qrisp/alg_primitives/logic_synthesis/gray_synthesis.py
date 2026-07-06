@@ -74,7 +74,7 @@ def hamming_tsp(location_list, bit_amount):
     # Copy list in order not to change the input
     location_list = list(location_list)
 
-    # Create log-lists for the salesman pathes
+    # Create log-lists for the salesman paths
     salesman_1 = [min(location_list)]
     location_list.pop(np.argmin(location_list))
 
@@ -265,7 +265,7 @@ def single_qb_traversal(locations, bit_amount):
 # Returns a list of tuples indicating the applied CNOT gates
 # and a list of integers indicating the sequence of traversed parity operators
 def multi_qb_traversal(locations, bit_amount):
-    # Copy locations list (in oder to prevent modification)
+    # Copy locations list (in order to prevent modification)
 
     locations = list(locations)
 
@@ -489,7 +489,7 @@ def gray_phase_synth_qb_list(qc, qb_list, target_phases, phase_tolerant=False):
 # |1> if we synthesized the |-> state and |0> if we synthesized the |+> state.
 # We choose the phases for the states which have a 0 in the output variable to be 0
 # and the phases for the states which have a 1 in the output variable according to
-# wether the truth table to be synthesized requires a 1 or a 0.
+# whether the truth table to be synthesized requires a 1 or a 0.
 
 # An additional perk of this function is, that it support phase tolerant synthesis
 # This means that we are tolerant regarding the phase the out will have, i.e. if the

@@ -1184,7 +1184,7 @@ class QubitOperator(Hamiltonian):
             x_matrix = np.stack(x_vectors, axis=1)
             z_matrix = np.stack(z_vectors, axis=1)
 
-            # Find qubits (rows) on which Pauli X,Y,Z operatos act
+            # Find qubits (rows) on which Pauli X,Y,Z operators act
             qb_indices = []
             for k in range(n):
                 if not (np.all(x_matrix[k] == 0) and np.all(z_matrix[k] == 0)):

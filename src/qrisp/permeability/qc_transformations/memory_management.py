@@ -229,7 +229,7 @@ def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_no
             # we therefore remove them from the other columns
             dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
-            # Finaly we set all nodes in the processed column to 1 so this column
+            # Finally we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 
@@ -378,7 +378,7 @@ def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_n
             # we therefore remove them from the other columns
             dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
-            # Finaly we set all nodes in the processed column to 1 so this column
+            # Finally we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 

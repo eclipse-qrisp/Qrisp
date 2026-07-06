@@ -185,7 +185,7 @@ Find the resulting permutation
 >>> winning_permutation.most_likely()
 OutcomeArray([1, 3, 2])
 
-Together with our assumption that the first city is always 0, this is the same result as in the `TSP tutorial <https://www.qrisp.eu/general/tutorial/TSP.html>`_. Finaly, we perform some benchmarking:
+Together with our assumption that the first city is always 0, this is the same result as in the `TSP tutorial <https://www.qrisp.eu/general/tutorial/TSP.html>`_. Finally, we perform some benchmarking:
 
 >>> qpe_compiled_qc = perm_specifiers[0].qs.compile()
 >>> qpe_compiled_qc.depth()

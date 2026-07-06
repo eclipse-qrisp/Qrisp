@@ -163,7 +163,7 @@ class PermeabilityGraph(nx.DiGraph):
         # The recent_node_dic attribute is a dictionary of the type
         # {Qubit: UnqompNode}
         # which describes which nodes represent the
-        # operations that have been carried ot most
+        # operations that have been carried to most
         # recently on the corresponding Qubit.
         self.recent_node_dic = dag_from_qc(self, qc, remove_artificials=remove_artificials)
 
@@ -530,7 +530,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     # to the terminator node.
 
                     # To determine the value layer of the Terminator, we find the
-                    # successor with the hight value layer and increase it by one.
+                    # successor with the height value layer and increase it by one.
                     value_layers = []
                     for s in streak_members:
                         # Add anti-depedency edge

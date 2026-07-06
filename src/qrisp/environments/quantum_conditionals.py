@@ -522,7 +522,7 @@ class ConditionEnvironment(QuantumEnvironment):
             # We now uncompute the environments' truth value
 
             # For this we can use the uncompute method, which will however not
-            # recompute any intermediate values, therefore blocking alot of qubits
+            # recompute any intermediate values, therefore blocking a lot of qubits
             # during execution. Especially in nested environments this can quickly
             # become a problem, because the blocked ancillae can not be reused
             # for further condition evaluations.
