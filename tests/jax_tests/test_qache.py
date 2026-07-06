@@ -63,7 +63,7 @@ def test_qache():
         b = QuantumFloat(i)
         b[:] = 5
 
-        s = jasp_multiplier(a, b, inpl_adder=gidney_adder)
+        s = jasp_multiplyer(a, b, inpl_adder=gidney_adder)
 
         return measure(s)
 

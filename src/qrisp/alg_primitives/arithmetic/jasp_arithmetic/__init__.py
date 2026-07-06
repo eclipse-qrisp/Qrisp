@@ -24,10 +24,10 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import (
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import (
     jasp_mod_adder,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multipliers import (
-    jasp_controlling_multiplier,
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
+    jasp_controlling_multiplyer,
     jasp_squaring,
-    jasp_multiplier,
+    jasp_multiplyer,
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
     q_montgomery_reduction,
