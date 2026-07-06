@@ -107,86 +107,74 @@ def test_pytket_rand_test():
     cnt = result.get_counts()
     d = {}
     for key, value in cnt.items():
-        Key = (str(index) for index in key)
-        converted2 = "".join(Key)
-        # reverse string because of pytket specific return??
-        # converted = converted2[::-1]
-        converted = converted2
+        converted = "".join(str(index) for index in key)
         d.setdefault(converted, value / 1000)
 
-    print(d)
-
-    # print(result.get_counts(basis=BasisOrder.dlo))
     theRes = qvRand.get_measurement()
-    print(theRes)
 
     for index4 in list(d.keys()):
-        if index4 not in list(theRes.keys()):
-            print("NOT IN THERE")
-            print(index4)
         assert index4 in list(theRes.keys())
-        if not theRes[index4] * 0.6 <= d[index4] <= theRes[index4] * 1.4:
-            print(index4)
-            print(theRes[index4])
-            print(d[index4])
+        # Ignore low-probability outcomes that are dominated by shot noise.
         if not d[index4] < 0.05:
             assert theRes[index4] * 0.6 <= d[index4] <= theRes[index4] * 1.4
 
 
 def _matches_up_to_global_phase(actual, expected, atol=1e-6):
-    """Return True if two unitaries are equal up to a global phase factor."""
+    """Return True if two unitaries are equal up to a global phase factor.
+
+    The global phase is recovered from the Frobenius inner product of the two
+    matrices. This is robust even when several entries share the largest
+    magnitude: normalising against a single pivot entry is not, because
+    floating-point noise can make ``argmax`` select different entries for the
+    two unitaries, so they end up referenced to different phases.
+    """
     actual = np.asarray(actual)
     expected = np.asarray(expected)
 
-    def _strip_phase(unitary):
-        flat = unitary.flatten()
-        pivot = flat[np.argmax(np.abs(flat))]
-        return unitary * np.exp(-1j * np.angle(pivot))
+    overlap = np.vdot(expected, actual)
+    if np.abs(overlap) < atol:
+        return False
 
-    return np.allclose(_strip_phase(actual), _strip_phase(expected), atol=atol)
-
-
-def test_to_pytket_u1_angle():
-    """Regression for #631: the u1 angle must not be divided by pi twice.
-
-    u1(theta) = diag(1, e^{i*theta}). It maps to a pytket Rz, which differs
-    only by a global phase, so the converted unitary must equal diag(1,
-    e^{i*theta}) up to a global phase. Before the fix the angle was divided by
-    pi a second time, producing the wrong rotation.
-    """
-    pytest.importorskip("pytket")
-
-    theta = 0.7
-    qc = QuantumCircuit(1)
-    qc.append(U1Gate(theta), [0])
-
-    unitary = qc.to_pytket().get_unitary()
-    expected = np.diag([1, np.exp(1j * theta)])
-
-    assert _matches_up_to_global_phase(unitary, expected)
-
-
-def test_to_pytket_cp_controlled_phase():
-    """Regression for #630: cp must map to controlled-phase, not CRz.
-
-    cp(theta) = diag(1, 1, 1, e^{i*theta}). Before the fix it was emitted as a
-    CRz, which splits the phase across the two target states and is a different
-    gate. The converted unitary must equal the controlled-phase matrix up to a
-    global phase.
-    """
-    pytest.importorskip("pytket")
-
-    theta = 0.7
-    qc = QuantumCircuit(2)
-    qc.append(CPGate(theta), [0, 1])
-
-    unitary = qc.to_pytket().get_unitary()
-    expected = np.diag([1, 1, 1, np.exp(1j * theta)])
-
-    assert _matches_up_to_global_phase(unitary, expected)
+    phase = overlap / np.abs(overlap)
+    return np.allclose(actual, expected * phase, atol=atol)
 
 
 _GATE_THETA = 0.7
+
+# Regression cases for the two mapping fixes. Each converted unitary must equal
+# the gate's textbook matrix up to a global phase, independently of Qrisp's own
+# get_unitary().
+_REGRESSION_CASES = {
+    # #631: the u1 angle must not be divided by pi twice. u1(theta) maps to a
+    # pytket Rz, which differs only by a global phase, so the converted unitary
+    # must equal diag(1, e^{i*theta}).
+    "u1": (
+        1,
+        lambda qc: qc.append(U1Gate(_GATE_THETA), [0]),
+        np.diag([1, np.exp(1j * _GATE_THETA)]),
+    ),
+    # #630: cp must map to controlled-phase, not CRz. cp(theta) is
+    # diag(1, 1, 1, e^{i*theta}); CRz splits the phase across the two target
+    # states and is a different gate.
+    "cp": (
+        2,
+        lambda qc: qc.append(CPGate(_GATE_THETA), [0, 1]),
+        np.diag([1, 1, 1, np.exp(1j * _GATE_THETA)]),
+    ),
+}
+
+
+@pytest.mark.parametrize("gate", sorted(_REGRESSION_CASES))
+def test_to_pytket_regression(gate):
+    """Regression tests for the #630 (cp) and #631 (u1) gate-mapping fixes."""
+    pytest.importorskip("pytket")
+
+    num_qubits, build, expected = _REGRESSION_CASES[gate]
+    qc = QuantumCircuit(num_qubits)
+    build(qc)
+
+    assert _matches_up_to_global_phase(qc.to_pytket().get_unitary(), expected)
+
 
 # Gate builders whose pytket conversion must reproduce Qrisp's own unitary.
 # Comparing to_pytket().get_unitary() against QuantumCircuit.get_unitary() checks
@@ -196,11 +184,13 @@ _SINGLE_QUBIT_GATE_BUILDERS = {
     "x": lambda qc: qc.x(0),
     "y": lambda qc: qc.y(0),
     "z": lambda qc: qc.z(0),
+    "id": lambda qc: qc.id(0),
     "s": lambda qc: qc.s(0),
     "s_dg": lambda qc: qc.s_dg(0),
     "t": lambda qc: qc.t(0),
     "t_dg": lambda qc: qc.t_dg(0),
     "sx": lambda qc: qc.append(SXGate(), [0]),
+    "sx_dg": lambda qc: qc.sx_dg(0),
     "rx": lambda qc: qc.rx(_GATE_THETA, 0),
     "ry": lambda qc: qc.ry(_GATE_THETA, 0),
     "rz": lambda qc: qc.rz(_GATE_THETA, 0),
@@ -247,3 +237,29 @@ def test_to_pytket_two_qubit_gate_unitary(gate):
     _TWO_QUBIT_GATE_BUILDERS[gate](qc)
 
     assert _matches_up_to_global_phase(qc.to_pytket().get_unitary(), qc.get_unitary())
+
+
+def test_to_pytket_measure():
+    """to_pytket() maps measurements to pytket Measure ops, preserving wiring.
+
+    Measurement is not unitary, so this checks the converted circuit
+    structurally: every qubit is measured into the classical bit of the same
+    index.
+    """
+    pytest.importorskip("pytket")
+    from pytket import OpType
+
+    num_qubits = 2
+    qc = QuantumCircuit(num_qubits, num_qubits)
+    qc.x(0)
+    qc.measure(0, 0)
+    qc.measure(1, 1)
+
+    tket_qc = qc.to_pytket()
+    measurements = [cmd for cmd in tket_qc.get_commands() if cmd.op.type == OpType.Measure]
+
+    assert tket_qc.n_bits == num_qubits
+    assert len(measurements) == num_qubits
+    # Each measurement wires qubit k to the classical bit of the same index.
+    expected_wiring = {(k, k) for k in range(num_qubits)}
+    assert {(cmd.qubits[0].index[0], cmd.bits[0].index[0]) for cmd in measurements} == expected_wiring
