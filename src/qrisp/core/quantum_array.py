@@ -2221,7 +2221,7 @@ class OutcomeArray(np.ndarray):
         for i in indices:
             np.ndarray.__setitem__(obj, i, ndarray[i])
 
-        obj.flags.writeable = False
+        obj.flags.writeable = False  # codespell:ignore
         return obj
 
     def __hash__(self):
