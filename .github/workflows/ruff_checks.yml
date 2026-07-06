@@ -37,6 +37,8 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           args: format --check
+      - name: Codespell (American English)
+        run: codespell
       # - name: Ruff linter
       #   uses: astral-sh/ruff-action@v3
       #   with:

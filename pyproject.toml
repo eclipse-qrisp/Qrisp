@@ -73,6 +73,7 @@ docs = [
 ]
 dev-code-style = [
     "ruff",
+    "codespell<=2.4.2",
 ]
 dev-testing = [
     "pytest==9.1.0",
@@ -119,6 +120,15 @@ ignore = [
 
 [tool.coverage.run]
 omit = ["*/__init__.py"]
+
+[tool.codespell]
+# .venv,.git,__pycache__,.ruff_cache  — version control, virtual env, caches
+# *.egg-info                           — package metadata dirs (src/qrisp.egg-info)
+# *.pyc                                — compiled Python bytecode
+# *.jpg,*.png,*.svg                    — binary image files (false positives)
+# documentation/build                  — generated Sphinx HTML output
+skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,documentation/build"
+builtin = "en-GB_to_en-US"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
