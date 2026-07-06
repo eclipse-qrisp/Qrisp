@@ -52,7 +52,7 @@ def cl_cost_function(counts):
     -------
     energy/total_counts : int
         The classical cost functions returns the ratio between the energy calculated
-        using the maxcut_obj objective funcion and the amount of counts used in the
+        using the maxcut_obj objective function and the amount of counts used in the
         experiment.
 
     """
@@ -149,7 +149,7 @@ def initial_state_maxcut(qarg):
 
 
 # Define the initial state
-# instate = initial_state_maxcut(qarg) # the initial state is not necessary in this case since it's automaticaly set to a superposition
+# instate = initial_state_maxcut(qarg) # the initial state is not necessary in this case since it's automatically set to a superposition
 
 # Creates an unitary MaxCut cost operator
 cost_operator = create_maxcut_cost_operator(G)

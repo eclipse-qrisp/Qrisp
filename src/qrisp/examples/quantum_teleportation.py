@@ -77,7 +77,7 @@ def teleport_qubit(alice, bob, teleported_qubit):
 
     # Perform Bob's steps of the quantum teleportation protocol
     bob_qc = bob.get_clear_qc()
-    # The information about the outcome alice_res is transfered via a classical channel
+    # The information about the outcome alice_res is transferred via a classical channel
     if list(alice_res.keys())[0][1] == "1":
         bob_qc.x(bell_pair_1)
 
@@ -121,7 +121,7 @@ print(bob.run(bob_qc))
 
 # %%
 
-# This example displays quantum key distribution using the BB84 protocoll
+# This example displays quantum key distribution using the BB84 protocol
 # https://en.wikipedia.org/wiki/BB84
 
 
@@ -187,7 +187,7 @@ temp_key_alice = a[congruent_b]
 k = len(temp_key_bob)
 
 if np.all(temp_key_bob[: k // 2] == temp_key_alice[: k // 2]):
-    raise Exception("Evesdropper detected!")
+    raise Exception("Eavesdropper detected!")
 
 shared_key = temp_key_bob[k // 2 :]
 

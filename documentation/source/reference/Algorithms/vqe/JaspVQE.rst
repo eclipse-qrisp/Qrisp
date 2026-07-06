@@ -4,7 +4,7 @@ How to use VQE in Jasp
 ======================
 
 In the `How to think in Jasp <https://www.qrisp.eu/general/tutorial/Jasp.html>`_ we learned how Jasp allows to future proof Qrisp code for practically relevant problems.
-For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compliled, optimized and executed.
+For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compiled, optimized and executed.
 
 We again use the example of calculating the ground state energy of the $H_2$ molecule with VQE.
 Running this example in Jasp is as easy as wrapping the code in a ``main`` function:

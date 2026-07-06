@@ -92,7 +92,7 @@ def multi_controlled_U_g(output_qf, control_qb_list, y, phase_tolerant=False, us
         mcx(control_qb_list, ancilla[0], method=toffoli_method)
 
     # Now we execute the phase gates
-    # For this there is 2 possibilies
+    # For this there is 2 possibilities
     # Either use regular phase gates or use GMS gates
     # GMS gates are ion-trap native gates, that allow the entanglement
     # of multiple qubits within a single laser pulse
@@ -646,7 +646,7 @@ def hybrid_mult(
 
     This algorithm also operates on the Fourier transform. Because of this,
     between successive multiplications targeting the same QuantumFloat
-    it is not neccessary to Fourier-Transform.
+    it is not necessary to Fourier-Transform.
     This advantage is expressed in the parameters init_op and terminal_op.
     These can be set to either 'h', 'qft' or None
     to leave out self canceling Fourier-transforms.
@@ -668,7 +668,7 @@ def hybrid_mult(
         The default is "qft".
     phase_tolerant : bool, optional
         If set to True, differing results introduce differing extra phases.
-        This can be usefull to save resources incase this functions will get uncomputed.
+        This can be useful to save resources in case this functions will get uncomputed.
         The default is False.
     cl_factor : float, optional
         Allows to multiply the result by a classical factor without any extra gates.
@@ -681,7 +681,7 @@ def hybrid_mult(
 
     Examples
     --------
-    We multiply two QuantumFloat with eachother and an additional classical factor
+    We multiply two QuantumFloat with each other and an additional classical factor
 
     ::
 
@@ -702,8 +702,8 @@ def hybrid_mult(
     """
     from qrisp import QFT, cx, h, merge, z
 
-    # The two factors take asymetrical roles in this algorithm
-    # This implies that there is most likely a prefered choice
+    # The two factors take asymmetrical roles in this algorithm
+    # This implies that there is most likely a preferred choice
     # for the roles depending on the size of the factors
     # Several trials showed that these roles work best
     if not x.size > y.size:
@@ -1286,7 +1286,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
         sv_function = qf.qs.statevector("function")
 
-    This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude.
+    This function receives a dictionary of QuantumVariables specifying the desired label constellation and returns its complex amplitude.
     We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$.
 
     ::

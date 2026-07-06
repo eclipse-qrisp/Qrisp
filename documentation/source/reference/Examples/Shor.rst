@@ -65,7 +65,7 @@ As of right now, the following list of adders have been pre-implemented:
 
 * The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`__) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
 
-Using a diffent adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
+Using a different adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
 
 Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_adder>` and compare it to the :meth:`qcla <qrisp.qcla>` on the operation most relevant for Shor's algorithm: Controlled modular in-place multiplication.
 

@@ -50,7 +50,7 @@ def parity(*measurements, expectation=0, observable=False):
 
         p = \bigoplus_{i=0}^{n-1} x_i
 
-    A common usecase for this quanity are certain checks within quantum error
+    A common usecase for this quantity are certain checks within quantum error
     correction circuits. In this scenario, the programmer ensures that
     a certain set of measurements has a deterministic parity. If this is not
     satisfied during the execution, it indicates the presence of an error.

@@ -73,7 +73,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             max_sig = max(significance_range_qf1)
             min_sig = min(signficance_range_intersetion)
 
-            # If the maximum significance is higher than the maximum signficance of qf2, we need
+            # If the maximum significance is higher than the maximum significance of qf2, we need
             # to augment some ancilla qubits because the Cuccaro-procedure requires equal
             # amount of input qubits
 

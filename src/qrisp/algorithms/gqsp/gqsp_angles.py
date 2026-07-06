@@ -112,7 +112,7 @@ def _complementary_polynomial(b: "ArrayLike") -> Array:
     """
     d = b.shape[0] - 1
     # The degree of b is d. The degree of |b|^2 is 2d.
-    # Choose N as a power of two larger than 2d to avoid aliasing. Multiply by factor 8 for increased precison.
+    # Choose N as a power of two larger than 2d to avoid aliasing. Multiply by factor 8 for increased precision.
     N = 8 * (1 << (2 * d + 2).bit_length())
 
     # 1. Evaluate b(z) at N-th roots of unity

@@ -471,7 +471,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
 
         _, _, _ = x_fori_loop(0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand))
 
-        # Perfrom last leaf
+        # Perform last leaf
         x_cond(
             case_amount % 2 == 0,
             lambda: leaf(n - 1, anc, case, operand, case_amount - 2),

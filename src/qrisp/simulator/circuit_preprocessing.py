@@ -461,7 +461,7 @@ def insert_disentangling(qc):
 
 
 # Simple function to count the amount of measurements in a circuit,
-# this is helpfull, because we don't need to continue the simulation,
+# this is helpful, because we don't need to continue the simulation,
 # once all measurements have been performed
 def count_measurements_and_treat_alloc(qc, insert_reset=True):
     counter = 0

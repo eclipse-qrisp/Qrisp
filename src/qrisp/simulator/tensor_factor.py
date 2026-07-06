@@ -34,7 +34,7 @@ class TensorFactor:
         # of qubit indices inside this TensorFactor, i.e. swapping two elements of this
         # list is the same as applying a swap gate. Using this structure is advantageous
         # because applying matrices on specific qubit indices requires alot of swapping.
-        # Swapping the indices of an array is ressource costly because the array needs
+        # Swapping the indices of an array is resource costly because the array needs
         # to be copied. As it turns out memory speed is a bottleneck.
         self.qubits = qubits
 
@@ -220,7 +220,7 @@ class TensorFactor:
                 temp[0] = 1
 
             new_bi_arrays[0].data *= 1 / p_list[0] ** 0.5
-            # print("disentangling successfull")
+            # print("disentangling successful")
             return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
 
         if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
@@ -243,7 +243,7 @@ class TensorFactor:
         temp[1] = (p_list[1]) ** 0.5 * vdot_value / xp.abs(vdot_value)
 
         new_bi_arrays[0].data *= 1 / p_list[0] ** 0.5
-        # print("disentangling successfull")
+        # print("disentangling successful")
         return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
 
 

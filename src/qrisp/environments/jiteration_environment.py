@@ -297,7 +297,7 @@ def iteration_env_evaluator(eqn, context_dic):
             else:
                 return_values.append(res[update_rules[i]])
 
-        # Return the appropriate values (with the cancelation threshold).
+        # Return the appropriate values (with the cancellation threshold).
         return tuple(return_values)
 
     # The condition function: continue while loop_index <= threshold.

@@ -71,7 +71,7 @@ class QAOABenchmark:
 
         **Gain metric**
 
-        By default, two gain metrics are avialable.
+        By default, two gain metrics are available.
 
         The `approximation ratio <https://en.wikipedia.org/wiki/Approximation_algorithm>`_
         is a standard quantity in approximation algorithms and can be selected by
@@ -528,7 +528,7 @@ def max_five_metric(metric_dict):
 def time_to_solution(counts, optimal_solution, cost_function):
     """Parameters
     ----------
-    counts : the result dictionary from the QAOA method, contaning the
+    counts : the result dictionary from the QAOA method, containing the
                     bitstrings as keys and the counts divided by the number
                     of shots as values.
     optimal_solution: the optimal solution of the problem
@@ -551,7 +551,7 @@ def time_to_solution(counts, optimal_solution, cost_function):
 def approximation_ratio(counts, optimal_solution, cost_function):
     """Parameters
     ----------
-    counts : the result dictionary from the QAOA method, contaning the
+    counts : the result dictionary from the QAOA method, containing the
                     bitstrings as keys and the counts divided by the number
                     of shots as values.
     optimal_solution: the optimal solution of the problem

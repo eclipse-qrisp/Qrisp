@@ -210,7 +210,7 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
 
 
 def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL) -> dict:
-    r"""Verifies oeprator against different FOQCS-LCU-compatible models.
+    r"""Verifies operator against different FOQCS-LCU-compatible models.
     Picks the narrowest scope.
     First checks against spin-glass, then tries to narrow it down to Heisenberg model.
 
@@ -256,7 +256,7 @@ def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SP
 def is_operator_foqcs_compatible(
     O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:  # Or None, if incompatible
-    r"""Runs `foqcs_analyze_operator` without rasing an error on unsuccessful attempt.
+    r"""Runs `foqcs_analyze_operator` without raising an error on unsuccessful attempt.
 
     Parameters
     ----------

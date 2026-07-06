@@ -260,7 +260,7 @@ def qache_helper(func, jax_kwargs):
         # Return the result and the result AbstractQuantumState.
         return res, new_abs_qst
 
-    # Modify the name of the ammended function to reflect the input
+    # Modify the name of the amended function to reflect the input
     ammended_function.__name__ = func.__name__
     # Wrap in jax.jit
     ammended_function = jax.jit(ammended_function, **jax_kwargs)
@@ -290,7 +290,7 @@ def qache_helper(func, jax_kwargs):
         #     elif isinstance(args[i], complex):
         #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
-        # Excecute the function
+        # Execute the function
         ammended_kwargs = dict(kwargs)
         ammended_kwargs[10 * "~"] = tr_qs.abs_qst
         try:

@@ -38,7 +38,7 @@ class QuantumDictionary(dict):
     >>> print(qd[42])
     (3,4)
 
-    The key difference is that the QuantumDictionary can also recieve
+    The key difference is that the QuantumDictionary can also receive
     :ref:`QuantumVariables <QuantumVariable>` as keys and return the corresponding
     values as an entangled QuantumVariable.
 
@@ -94,7 +94,7 @@ class QuantumDictionary(dict):
     >>> print(type(value_qv))
     <class 'qrisp.misc.misc_functions.custom_qv.<locals>.CustomQuantumVariable'>
 
-    If we want to apply further processing this might not be helpfull since custom
+    If we want to apply further processing this might not be helpful since custom
     QuantumVariables lack many methods that are available in more specific quantum
     types. In this case we can supply the QuantumDictionary with a return type:
 

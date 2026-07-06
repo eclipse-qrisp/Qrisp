@@ -74,7 +74,7 @@ class QAOAProblem:
     cl_cost_function : callable
         The classical cost function for the specific QAOA problem instance, which takes a dictionary of measurement results as input.
     init_function : callable, optional
-        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` for preparing the inital state.
+        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` for preparing the initial state.
         By default, the uniform superposition state $\ket{+}^n$ is prepared.
     callback : bool, optional
         If ``True``, intermediate results are stored. The default is ``False``.
@@ -690,7 +690,7 @@ class QAOAProblem:
 
         Examples
         --------
-        We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a ciruit with the :ref:`QAOAProblem` instance.
+        We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a circuit with the :ref:`QAOAProblem` instance.
 
         ::
 

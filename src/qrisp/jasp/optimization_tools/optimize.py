@@ -20,7 +20,7 @@ from qrisp.jasp.optimization_tools.spsa import spsa
 
 
 def minimize(fun, x0, args=(), method="COBYLA", options={}):
-    r"""Minimization of scalar functions of one ore more variables via gradient-free solvers.
+    r"""Minimization of scalar functions of one or more variables via gradient-free solvers.
 
     The API for this function matches SciPy with some minor deviations.
 

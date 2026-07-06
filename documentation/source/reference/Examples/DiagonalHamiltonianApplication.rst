@@ -13,7 +13,7 @@ In the following example we will demonstrate how to compile arbitrary diagonal h
 Hamiltonian function
 --------------------
 
-We begin by specifiying a hamiltonian. This is achieved through a Python function that recieves elements form the labels of the QuantumVariable we would like to process and returns a value which represents the phase.
+We begin by specifying a hamiltonian. This is achieved through a Python function that receives elements form the labels of the QuantumVariable we would like to process and returns a value which represents the phase.
 In this case we are handling a QuantumFloat, so the input is a float. Another case could be where we are handling a QuantumChar, which implies that the hamiltonian function should be able to process characters.
 
 ::
@@ -41,7 +41,7 @@ To visualize the results we retrieve the :meth:`statevector<qrisp.QuantumSession
 
 >>> sv_function = qf.qs.statevector("function")
 
-This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns it's complex amplitude.
+This function receives a dictionary of QuantumVariables specifying the desired label constellation and returns it's complex amplitude.
 
 Prepare the numpy arrays for plotting:
 

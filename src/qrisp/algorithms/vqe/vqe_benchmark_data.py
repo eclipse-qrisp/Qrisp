@@ -35,7 +35,7 @@ class VQEBenchmark:
     iterations : list[int]
         The amount of backend calls of each run.
     energy : list[dict]
-        The energy of the problem Hamiltonian for the optimized ciruits for each run.
+        The energy of the problem Hamiltonian for the optimized circuits for each run.
     runtime : list[float]
         The amount of time passed (in seconds) of each run.
     optimal_energy : float
@@ -68,7 +68,7 @@ class VQEBenchmark:
 
             \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
 
-        where $\text{shots} = 1/\text{precision}^2$. The acutal number of shots exhibits a scaling factor that depends on the Hamiltonian.
+        where $\text{shots} = 1/\text{precision}^2$. The actual number of shots exhibits a scaling factor that depends on the Hamiltonian.
         For different Hamiltonians, the results for the OQV metric are not comparable.
 
         **Gain metric**
@@ -149,7 +149,7 @@ class VQEBenchmark:
         * ``qubit_amount``: The amount of qubits of the compiled circuit.
         * ``precision``: The precision with which the expectation of the Hamiltonian is evaluated.
         * ``iterations``: The amount of backend calls, that the optimizer was allowed to do.
-        * ``energy``: The energy of the problem Hamiltonian for the optimized ciruits for each run.
+        * ``energy``: The energy of the problem Hamiltonian for the optimized circuits for each run.
         * ``runtime``: The time (in seconds) that the ``run`` method of :ref:`VQEProblem` took.
         * ``optimal_energy``: The exact ground state energy of the problem Hamiltonian.
 
@@ -512,7 +512,7 @@ def approximation_ratio(energy, optimal_energy):
     """Parameters
     ----------
     energy : float
-        The energy of the problem Hamiltonian for the optimized ciruit.
+        The energy of the problem Hamiltonian for the optimized circuit.
     optimal_energy: float
         The optimal energy of the problem Hamiltonian.
 

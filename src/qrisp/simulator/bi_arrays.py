@@ -719,7 +719,7 @@ class DenseBiArray(BiArray):
 
         # If not given, estimate sparsity. In many situations the sparsity
         # of a contraction result can be estimated (and then given to the constructor),
-        # so it is helpfull to track it
+        # so it is helpful to track it
         if sparsity is None:
             self.sparsity = np.count_nonzero(array) / array.size
         else:
@@ -949,7 +949,7 @@ class DenseBiArray(BiArray):
 
         # p_nz = self.sparsity*other.sparsity
 
-        # The probabilty for the product being zero is therefore
+        # The probability for the product being zero is therefore
         # p_z = 1 - self.sparsity*other.sparsity
 
         # p_z = 1 - self.sparsity*other.sparsity

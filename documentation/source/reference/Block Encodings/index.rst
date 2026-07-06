@@ -54,7 +54,7 @@ Let us consider two Hermitian matrices $A$ and $B$ and evaluate the matrix expre
     
         C = I + A - 2A^2 + B^{-1}
         
-applied to a vector $\vec{b}$. Frist, we define the matrices as NumPy arrays and their respective :ref:`BlockEncoding` representations.
+applied to a vector $\vec{b}$. First, we define the matrices as NumPy arrays and their respective :ref:`BlockEncoding` representations.
 
 :: 
 
@@ -83,7 +83,7 @@ applied to a vector $\vec{b}$. Frist, we define the matrices as NumPy arrays and
     B_A = BlockEncoding.from_array(A)
     B_B = BlockEncoding.from_array(B)
 
-Next, we evalute the matrix expression using **NumPy** and **Qrisp**:
+Next, we evaluate the matrix expression using **NumPy** and **Qrisp**:
 
 ::
 
@@ -123,7 +123,7 @@ In general, implementing **non-unitary Hermitian operators** on a quantum comput
 
     res_dict = main(b)
 
-    # Convert measurement probabilites to (absolute values of) amplitudes.
+    # Convert measurement probabilities to (absolute values of) amplitudes.
     amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
     print("qrisp:", amps)
     # qrisp: [0.44630489 0.66211377 0.41182956 0.43910558]

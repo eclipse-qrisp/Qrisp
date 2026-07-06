@@ -724,7 +724,7 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise Exception("In-place substraction for type " + str(type(other)) + " not implemented")
+            raise Exception("In-place subtraction for type " + str(type(other)) + " not implemented")
 
         return self
 
@@ -1227,7 +1227,7 @@ def copy_qf(qf1, qf2, ignore_overflow_errors=False, ignore_rounding_errors=False
 
     if qf2.signed:
         if not qf1.signed:
-            raise Exception("Tried to copy signed into unsigend float")
+            raise Exception("Tried to copy signed into unsigned float")
 
         # Remove last entry from significance list (last qubit is the sign qubit)
         qf2_sign_list.pop(-1)

@@ -40,7 +40,7 @@ from qrisp.permeability import lightcone_reduction, optimize_allocations, parall
 # available and synthesizes and mcx implementation based on this information.
 
 # The parameter workspace can be given to extend the amount of qubits of the resulting
-# QuantumCircuit by that amount. This extension can be helpfull because it gives the
+# QuantumCircuit by that amount. This extension can be helpful because it gives the
 # compiler more options to pick when allocating a new qubit. Since the allocation is
 # based on a depth-reduction heuristic, giving more workspace results in many case in
 # less depth circuits.
@@ -170,7 +170,7 @@ def qompiler(
         # (for more information check the topological sort function)
 
         # The reordering process aims to find an order that minimizes that maximum
-        # amount of qubits that is needed. Losely speaking it tries to reorder the data,
+        # amount of qubits that is needed. Loosely speaking it tries to reorder the data,
         # that allocations are performed as late as possible and deallocations are
         # performed as early as possible.
 
@@ -666,7 +666,7 @@ def qft_cancellation(qc):
             for qb in qc.data[i].qubits:
                 new_qc.h(qb)
             # print(qc.data[i].qubits)
-            # print("H replacement successfull")
+            # print("H replacement successful")
             continue
 
         if i in cancellation_indices:

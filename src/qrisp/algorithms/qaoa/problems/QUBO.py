@@ -150,7 +150,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
     Returns
     -------
     list[tuple]
-        A list of tuples representing the solutions: The first element is the cost, the second element is the bitstring, and the thrid element is the probability.
+        A list of tuples representing the solutions: The first element is the cost, the second element is the bitstring, and the third element is the probability.
         Solutions are sorted by their costs in ascending order.
 
     Examples

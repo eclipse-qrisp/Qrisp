@@ -86,7 +86,7 @@ def controlled_unitary(controlled_gate):
     return res
 
 
-# Calculates the unitary of a gate embeddded into a circuit of n qubits
+# Calculates the unitary of a gate embedded into a circuit of n qubits
 # For instance consider this circuit
 # Here we have gate = CXGate(), n = 4, destination_qubits = [2,3]
 # q80_0: ─────
@@ -274,10 +274,10 @@ def generate_id_kron_jitted(input_tensor, n):
 # q_3: ──────────
 
 # We can calculate the unitary on the first two qubits on the 4 d basis
-# and then embedd this unitary into the 2**4 = 16d basis
+# and then embed this unitary into the 2**4 = 16d basis
 
 
-# In order to harness the effciency gain we use a divide and conquer strategy:
+# In order to harness the efficiency gain we use a divide and conquer strategy:
 # We merge the instruction of the circuit into pairs of elementary gates, calculate
 # this unitary and the again merge this unitary with the neighboring pair of elementary
 # gate. Applying this recursively requires only a single 2**n d matrix multiplication.
@@ -290,8 +290,8 @@ def __calc_circuit_unitary(qc):
     if len(qc.data) == 0:
         return np.eye(2**n, dtype=np_dtype)
 
-    # If the circuit contains only a single insturction,
-    # calculate this instructions unitary and embedd it
+    # If the circuit contains only a single instruction,
+    # calculate this instructions unitary and embed it
     if len(qc.data) == 1:
         instr_0 = qc.data[0]
         unitary_0 = calc_embedded_unitary(qc.data[0].op, n, [qc.qubits.index(qb) for qb in instr_0.qubits])

@@ -162,7 +162,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
-        # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
+        # and the probabilities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
         cl_prob = np.round(cl_prob, int(-np.log10(np.max(cl_prob))) + 5)
         norm = np.sum(cl_prob)

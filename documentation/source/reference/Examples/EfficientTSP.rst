@@ -3,7 +3,7 @@
 Efficient Solution for the TSP
 ==============================
 
-This example showcases a few tweeks for the solution of the traveling salesman problem presented (TSP) in the `tutorial about solving TSP <https://www.qrisp.eu/general/tutorial/TSP.html>`_. We recommend checking the general idea out before returning for the optimized version here ::
+This example showcases a few tweaks for the solution of the traveling salesman problem presented (TSP) in the `tutorial about solving TSP <https://www.qrisp.eu/general/tutorial/TSP.html>`_. We recommend checking the general idea out before returning for the optimized version here ::
    
    import numpy as np
    from qrisp import *

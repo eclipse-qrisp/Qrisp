@@ -126,9 +126,9 @@ omit = ["*/__init__.py"]
 # *.egg-info                           — package metadata dirs (src/qrisp.egg-info)
 # *.pyc                                — compiled Python bytecode
 # *.jpg,*.png,*.svg                    — binary image files (false positives)
-# documentation/build                  — generated Sphinx HTML output
+# ./documentation/build                — generated Sphinx HTML output
 # documentation/source/general/changelog/0.?.rst  — pre-0.10 changelogs (preserve historical spelling)
-skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,documentation/build,documentation/source/general/changelog/0.?.rst"
+skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,./documentation/build,documentation/source/general/changelog/0.?.rst"
 builtin = "clear,rare,en-GB_to_en-US"
 check-filenames = true
 count = true
@@ -138,12 +138,12 @@ summary = true
 # Aer       — Qiskit Aer simulator (proper noun)
 # MIS       — Maximum Independent Set (CS abbreviation)
 # Childs    — Andrew Childs, researcher surname (arXiv citations)
-# COO       — Coordinate format for sparse matrices (scipy sparse)
+# COO,coo  — Coordinate format for sparse matrices (scipy sparse)
 # notin     — local variable name in matrix_multiplication.py
 # Wille     — Robert Wille, researcher surname (paper bibliography)
 # theRes    — local variable name in test_tket_converter.py
 # braket    — Amazon Braket quantum service / LaTeX braket package
-ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,notin,Wille,theRes,braket"
+ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]

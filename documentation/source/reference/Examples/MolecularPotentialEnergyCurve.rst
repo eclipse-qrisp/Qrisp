@@ -16,7 +16,7 @@ where $E_{\text{elec}}(\{R_A\})$ is the electronic energy and $E_{\text{nuc}}(\{
 Example Hydrogen
 ================
 
-We caluclate the potential energy curve for the Hydrogen molecule for varying interatomic distance.
+We calculate the potential energy curve for the Hydrogen molecule for varying interatomic distance.
 
 We implement a function ``problem_data`` that sets up a molecule and 
 utilizes the `PySCF <https://pyscf.org>`_ quantum chemistry library to compute the :meth:`electronic data <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` (one- and two-electron integrals, number of orbitals, number of electrons, nuclear repulsion energy, Hartree-Fock energy)
@@ -39,7 +39,7 @@ Then we utilize the :meth:`electronic_structure_problem <qrisp.vqe.problems.elec
 
 VQE is a probabilistic algorithm and may not yield the optimal solution every time. 
 Therefore, we run VQE five times for each instance and select the minimal energy that was found.
-For more acurate results we adjust the measurement precision ``mes_kwargs={'precision':0.005}``. 
+For more accurate results we adjust the measurement precision ``mes_kwargs={'precision':0.005}``. 
 
 ::
 
@@ -81,7 +81,7 @@ Finally, we visualize the results.
 Example Beryllium hydride
 =========================
 
-We caluclate the potential energy curve for the Beryllium hydride molecule for varying interatomic distance.
+We calculate the potential energy curve for the Beryllium hydride molecule for varying interatomic distance.
 
 As in the previous example, we set up a function that computes the :meth:`electronic data <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` for
 the Beryllium hydride molecule for varying **interatomic distance**, i.e., the distance between the Beryllium and Hydrogen nuclei.

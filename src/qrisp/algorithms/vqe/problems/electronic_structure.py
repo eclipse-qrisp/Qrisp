@@ -233,7 +233,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     Examples
     --------
-    We calucalte the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.
+    We calculate the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.
 
     ::
 
@@ -518,7 +518,7 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_
     active_elec : int, optional
         The number of active electrons.
     ansatz_type : string, optional
-        The ansatz type. Availabe is ``QCCSD``. The default is ``QCCSD``.
+        The ansatz type. Available is ``QCCSD``. The default is ``QCCSD``.
     threshold : float, optional
         The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
 

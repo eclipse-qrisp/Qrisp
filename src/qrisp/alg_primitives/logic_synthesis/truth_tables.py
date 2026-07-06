@@ -23,7 +23,7 @@ from qrisp.misc import int_as_array
 
 
 # Class to describe truth tables
-# Can be intialized with a list of bitstrings, or a numpy array with 1 and 0s or a
+# Can be initialized with a list of bitstrings, or a numpy array with 1 and 0s or a
 # sympy expression
 class TruthTable:
     def __init__(self, init_object):
@@ -44,7 +44,7 @@ class TruthTable:
             symbol_list = get_ordered_symbol_list(expr)[::-1]
 
             # Replace the variables in the expression with 1s and 0s and add them to the
-            # intialization string
+            # initialization string
             from sympy import lambdify
 
             expr_func = lambdify([symbol_list], expr, "numpy")

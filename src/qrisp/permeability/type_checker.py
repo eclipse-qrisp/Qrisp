@@ -29,7 +29,7 @@ import sympy as sp
 # leaves the state of R invariant i.e. if R is in state |x>
 # U |x>|y> = |x> U_x |y>
 # this property will for instance be used to make sure that uncomputations,
-# which depend on the state of R indeed stil recieve the original state of R
+# which depend on the state of R indeed still receive the original state of R
 # when the uncomputation is performed. An error will be thrown if in the meantime,
 # there have been non-permeable operations on R
 
@@ -164,7 +164,7 @@ def get_block_matrix(matrix, block_size):
     return result
 
 
-# Recieves a matrix which is turned into a block matrix and then
+# Receives a matrix which is turned into a block matrix and then
 # returns a matrix of boolean entries where the entry is False, if
 # the corresponding block is the 0 matrix and True otherwise
 def get_boolean_block_matrix(matrix, block_size):

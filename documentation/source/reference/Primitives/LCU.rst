@@ -26,7 +26,7 @@ This function implements the prepare-select-unprepare structure, also known as b
 .. math::
    \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
 
-- **PREPARE$^{\\dagger}$**: Applies the inverse prepartion to the ancilla.
+- **PREPARE$^{\\dagger}$**: Applies the inverse preparation to the ancilla.
 
 .. note::
 

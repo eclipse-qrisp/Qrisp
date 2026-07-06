@@ -212,7 +212,7 @@ def RUS(*trial_function, **jit_kwargs):
             # Turn into a list of qubits
             case_indicator_qubits = [case_indicator[i] for i in range(n)]
 
-            # Perform the LCU protocoll
+            # Perform the LCU protocol
             with conjugate(state_preparation)(case_indicator):
                 for i in range(len(case_functions)):
                     with control(case_indicator_qubits, ctrl_state = i):
@@ -267,7 +267,7 @@ def RUS(*trial_function, **jit_kwargs):
 
     # The idea for implementing this feature is to execute the function once qached
     # to collect the output QuantumVariable object.
-    # From the infered output signature the q_while_loop is constructed
+    # From the inferred output signature the q_while_loop is constructed
 
     def return_function(*trial_args):
 
@@ -342,9 +342,9 @@ def RUS(*trial_function, **jit_kwargs):
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))
             return combined_args
 
-        # This is the loop cancelation condition
+        # This is the loop cancellation condition
         def cond_fun(val):
-            # The loop cancelation index is located at the second position of the
+            # The loop cancellation index is located at the second position of the
             # return value tuple
             return ~val[n_arg_vals]
 
@@ -355,7 +355,7 @@ def RUS(*trial_function, **jit_kwargs):
         def true_fun(combined_args):
             return combined_args
 
-        # If the first iteration was not successfull, we start the loop
+        # If the first iteration was not successful, we start the loop
         def false_fun(combined_args):
             # Here is the while_loop
             return q_while_loop(cond_fun, body_fun, init_val=combined_args)

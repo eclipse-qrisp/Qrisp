@@ -676,7 +676,7 @@ class Jaspr(ClosedJaxpr):
             self, "num_qubits", meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
         )(*args)
 
-    def embedd(self, *args, name=None, inline=False):
+    def embed(self, *args, name=None, inline=False):
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
         qs = TracingQuantumSession.get_instance()
@@ -1565,7 +1565,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         check_for_tracing_mode,
     )
 
-    # Handle static_argnums adjustment for the ammended function
+    # Handle static_argnums adjustment for the amended function
     adjusted_jax_kwargs = dict(jax_kwargs)
     if "static_argnums" in adjusted_jax_kwargs:
         if isinstance(adjusted_jax_kwargs["static_argnums"], list):

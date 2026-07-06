@@ -48,7 +48,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
         \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
 
-    - **PREPARE**$^\dagger$: Applies the inverse prepartion to the ancilla.
+    - **PREPARE**$^\dagger$: Applies the inverse preparation to the ancilla.
 
     .. note::
 

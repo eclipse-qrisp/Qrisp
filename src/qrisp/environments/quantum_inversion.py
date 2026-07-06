@@ -219,7 +219,7 @@ class InversionEnvironment(QuantumEnvironment):
         # QuantumBool qb
         # QuantumFloat qf
 
-        # Our solution is therefore to collect all the INITAL and FINAL allocation gates
+        # Our solution is therefore to collect all the INITIAL and FINAL allocation gates
         # and execute them separately while keeping the inner (De)Allocation gates
         # where they are.
 

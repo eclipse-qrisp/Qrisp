@@ -132,7 +132,7 @@ class QuantumState:
         # Perform measurement on this TensorFactor
         # p_0 is the measurement probability of measuring p_0,
         # outcome_tensor_f_0 is the TensorFactor that is left after a measurement with
-        # outcome 0 has been performed, i.e. if the state descibes
+        # outcome 0 has been performed, i.e. if the state describes
         # |psi> = 2**-0.5 |0>|a> + 2**-0.5|1>|b>
         # we have p_0 = 0.5 and outcome_tensor_f_0 = |a>
         p_0, outcome_tensor_f_0, p_1, outcome_tensor_f_1 = tensor_factor.measure(i)
@@ -164,7 +164,7 @@ class QuantumState:
 
         if keep_res and meas_res:
             # This sets the measured qubit to the |1> state (described by the
-            # array [0,1] instead of [1,0] which descibes the |0> state)
+            # array [0,1] instead of [1,0] which describes the |0> state)
             outcome_state.tensor_factors[i] = TensorFactor([i], xp.array([0, 1], dtype=xp.complex64))
         else:
             outcome_state.tensor_factors[i] = TensorFactor([i])

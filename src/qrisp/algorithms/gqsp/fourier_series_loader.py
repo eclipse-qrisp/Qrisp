@@ -81,7 +81,7 @@ def fourier_series_loader(
     k : int
         The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved. The default is 1.
     mirror : bool
-        If True, frequencies are caluclated from mirror padded ``signal`` via FFT to mitigate artifacts at the boundaries.
+        If True, frequencies are calculated from mirror padded ``signal`` via FFT to mitigate artifacts at the boundaries.
         The default is False.
 
     Returns

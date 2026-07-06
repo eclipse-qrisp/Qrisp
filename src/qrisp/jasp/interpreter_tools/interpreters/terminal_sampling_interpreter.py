@@ -54,14 +54,14 @@ from qrisp.jasp.primitives import (
 # print(main(100))
 
 # While the resulting Jaxpr accurately describes a sampling task, the sampling
-# is not as scalable as it could be, given the powerfull sampling features of the
+# is not as scalable as it could be, given the powerful sampling features of the
 # Qrisp simulator.
 
 # When called via @jaspify and terminal_sampling = True, we need some custom logic
 # to implement the terminal_sampling behavior.
 
 # The traced Jaxpr contains the "sampling_body_func", which
-# is (visually) partioned into three sections:
+# is (visually) partitioned into three sections:
 
 # 1. The evaluation of the user function, which executes the code of "inner_func"
 # 2. The sampling helper 1 function. This function contains the measurement primitives.
@@ -365,10 +365,10 @@ def decoder_compiler(jaxpr, eqn_evaluator):
 
     The first problem is circumvented by statically checking if the jaxpr exceeds
     a certain number of equations. This is not a guarantee that the decoder would
-    infact be trivial because the equations could also contain sub-jaxprs, but
-    it serves as a cheap and powerfull guestimate.
+    in fact be trivial because the equations could also contain sub-jaxprs, but
+    it serves as a cheap and powerful guestimate.
 
-    The second problem is solved by replacing all occurences of AbstractQubitArrays
+    The second problem is solved by replacing all occurrences of AbstractQubitArrays
     simply with their actual length (i.e. the corresponding arguments are no longer
     quantum but a simple, classical integer) and also modifying the behavior of the
     jasp.get_size primitive to simply return that integer.

@@ -77,7 +77,7 @@ def test_mlir_generation(lower_stablehlo):
     jaspr = make_jaspr(main)(2)
     xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
 
-    # Test wheter stablehlo control flow is properly removed
+    # Test whether stablehlo control flow is properly removed
 
     def main():
 

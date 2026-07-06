@@ -51,7 +51,7 @@ from sklearn import preprocessing
 mu_array = np.array(mu)
 norm_mu_full = preprocessing.normalize([mu_array])
 
-# create covar_matrix -- from the original protfolio balancing paper
+# create covar_matrix -- from the original portfolio balancing paper
 covar_string = "99.8 42.5 37.2 40.3 38.0 30.0 46.8 14.9 42.5 100.5 41.1 15.2 71.1 27.8 47.5 12.7 37.2 41.1 181.3 17.9 38.4 27.9 39.0 8.3 40.3 15.2 17.9 253.1 12.4 48.7 33.3 3.8 38.0 71.1 38.4 12.4 84.7 28.5 42.0 13.1 30.0 27.8 27.9 48.7 28.5 173.1 28.9 -12.7 46.8 47.5 39.0 33.3 42.0 28.9 125.8 14.6 14.9 12.7 8.3 3.8 13.1 -12.7 14.6 179.0"
 li = list(covar_string.split(" "))
 fin_list = [float(item) for item in li]

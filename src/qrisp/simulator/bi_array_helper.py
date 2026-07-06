@@ -484,7 +484,7 @@ def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_s
 
     This will give as the index arrays I, J where R is non-zero.
     The rows array of the COO representation of A*B is now given as unique_marker_A[I].
-    The colums array of the COO representation of A*B is now given as unique_marker_B[j].
+    The columns array of the COO representation of A*B is now given as unique_marker_B[j].
     The data is R[I,J]
 
     """

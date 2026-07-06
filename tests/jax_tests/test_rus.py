@@ -155,7 +155,7 @@ def test_rus():
         # Turn into a list of qubits
         case_indicator_qubits = [case_indicator[i] for i in range(n)]
 
-        # Perform the LCU protocoll
+        # Perform the LCU protocol
         with conjugate(state_preparation)(case_indicator):
             for i in range(len(case_functions)):
                 with control(case_indicator_qubits, ctrl_state=i):

@@ -22,7 +22,7 @@ from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 
 def create_max_indep_set_mixer(G):
-    r"""Creates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the ``controlled_RX_mixer`` for an instance of the maximal independent set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
@@ -58,7 +58,7 @@ def create_max_indep_set_mixer(G):
 
 
 def create_max_indep_set_cl_cost_function(G):
-    """Creates the classical cost function for an instance of the maximal independet set problem for a given graph ``G``.
+    """Creates the classical cost function for an instance of the maximal independent set problem for a given graph ``G``.
 
     Parameters
     ----------

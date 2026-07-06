@@ -27,7 +27,7 @@ from qrisp.permeability.qc_transformations.memory_management import topological_
 
 # The strategy is similar to the one presented in reorder_circuit:
 # We bring the circuit in the dag representation and perform a topological sort with
-# the intended measurement as prefered instructions
+# the intended measurement as preferred instructions
 
 
 # After that we investigate the circuit for instructions that can be removed
@@ -46,7 +46,7 @@ def lightcone_reduction(qc, intended_measurements):
     # Create result qc
     qc_new = qc.clearcopy()
 
-    # Define prefered instructions
+    # Define preferred instructions
     measure_identifier = lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
 
     def sub_sort(dag):

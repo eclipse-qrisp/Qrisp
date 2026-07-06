@@ -8,7 +8,7 @@ The latest 0.6 Qrisp update is centered around Jasp submodule, which significant
 Jasp
 ----
 
-Jasp allows you to scale up your Qrisp code to previously unseen problem scales with the folowing features: 
+Jasp allows you to scale up your Qrisp code to previously unseen problem scales with the following features: 
 
 * :ref:`Jaspr`: enables an efficient representation of a wide variety of (hybrid algorithms)
 * :ref:`quantum_kernel`: allows to annotate a subroutine as a quantum kernel resulting in parallelization of quantum routines hosted on several QPUs.
@@ -16,7 +16,7 @@ Jasp allows you to scale up your Qrisp code to previously unseen problem scales 
 * :ref:`jrange`: performs a loop with a dynamic bound.
 * :ref:`Repeat Until Success decorator <RUS>`: repeats a given subroutine followed by a qubit measurement until the measurement returns the value 1. 
 * :ref:`sample`: allows to take samples from a state that is specified by a preparation procedure.
-* :ref:`jaspify decorator <jaspify>`: a fast general pupose simulator that can use state sparsity. 
+* :ref:`jaspify decorator <jaspify>`: a fast general purpose simulator that can use state sparsity. 
 * :ref:`qjit <qjit>` decorator: calls the Catalyst pipeline to compile and run the program via the Lightning simulator.
 * :ref:`boolean_simulation <boolean_simulation>` decorator: Leverages the Jax pipeline to compile the program into a series of boolean operations. Restricted to programs that require only X, CX, CCX, etc. gates. This simulator can be extremely powerful for verifying the correctness of large classical subroutines, that are called by another quantum function.
 * :ref:`terminal_sampling <terminal_sampling>` decorator: performs a hybrid simulation and afterwards samples from the resulting quantum state. Used to perform accelerated quantum sampling.
@@ -39,9 +39,9 @@ Apart from the compilation scaling issues, many frameworks (Qrisp included) suff
 
 What is a real-time computation? A classical computation that happens during the quantum computation, while the quantum computer stays in superposition. This computation has to happen much faster than the coherence time, so performing that computation by waiting for the Python interpreter to generate a new circuit is impossible. 
 
-Real-time computations are essential for many techniques in error correction, such as syndrom decoding or magic state distillation. On the algorithmic level, real-time computations also become more popular since they are so much cheaper than the quantum equivalent. Examples are Gidney’s adder or repeat until success protocols like HHL. 
+Real-time computations are essential for many techniques in error correction, such as syndrome decoding or magic state distillation. On the algorithmic level, real-time computations also become more popular since they are so much cheaper than the quantum equivalent. Examples are Gidney’s adder or repeat until success protocols like HHL. 
 
-Real-time computations are deeply ingrained into the Jasp archictecture - anything that can be done with Jax can also be a real-time computation.
+Real-time computations are deeply ingrained into the Jasp architecture - anything that can be done with Jax can also be a real-time computation.
 
 Static Analysis of quantum programs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

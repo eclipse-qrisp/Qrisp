@@ -475,7 +475,7 @@ class QuantumSession(QuantumCircuit):
         # We now need to merge the sessions and treat their differing environment
         # levels. The idea here is that if a quantum session A is not identical to the
         # environment session B, there have been no gates applied within that
-        # environment so far (otherwise merging would have occured). Thus, all data of A
+        # environment so far (otherwise merging would have occurred). Thus, all data of A
         # belongs into the original_data attribute of the environment with the highest
         # level environment, where the environment quantum session isn't identical to A.
         flattened_qubits = []
@@ -508,7 +508,7 @@ class QuantumSession(QuantumCircuit):
         #             qs.data = []
         #             merge([qs, env.env_qs])
 
-        # We merge qs_list again since no merge happened incase there were no
+        # We merge qs_list again since no merge happened in case there were no
         # environments.
         # if not operation.name == "qb_alloc":
         multi_session_merge(qs_list)
@@ -780,10 +780,10 @@ class QuantumSession(QuantumCircuit):
             The amount of workspace qubits to be granted. The default is 0.
         intended_measurements : list[Qubit], optional
             A list of :ref:`Qubits <Qubit>` that are supposed to be measured. The
-            compiler will remove any instructions that are not directly neccessary to
+            compiler will remove any instructions that are not directly necessary to
             perform the measurements. Note that the resulting :ref:`QuantumCircuit`
             contains no measurements, such that the user can still specify a classical
-            bit for the measurement. The default ist [].
+            bit for the measurement. The default is [].
         cancel_qfts : bool, optional
             If set to True, any :meth:`QFT <qrisp.QFT>` instruction that is executed on
             a set of qubits that have just been allocated (ie. the $\ket{0}$ state) will

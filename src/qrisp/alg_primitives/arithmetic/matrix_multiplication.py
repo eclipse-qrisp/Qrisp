@@ -49,7 +49,7 @@ def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_
         If set to True, the required gate count is reduced but each constellation of
         computational basis states of the inputs will introduce a different phase.
         This is helpful when it's clear that this function will be at some point
-        uncomputed, resulting in the cancelation of these phases. The default is False.
+        uncomputed, resulting in the cancellation of these phases. The default is False.
 
     Raises
     ------
@@ -434,7 +434,7 @@ def inplace_matrix_app(vector, matrix):
         # Save evaluation
         eval_eq.append(target_values[i])
 
-        # Find a column with invertible coeffiecient
+        # Find a column with invertible coefficient
         j = 0
         while True:
             # Determine that coefficient(can be done by differentiating the evaluating
@@ -461,7 +461,7 @@ def inplace_matrix_app(vector, matrix):
         subs_dic = {x[j]: eval_inverse}
 
         for k in range(i + 1, n):
-            # Substitue in the following equations
+            # Substitute in the following equations
             target_values[k] = target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
 
             # Truncate coefficients
@@ -525,7 +525,7 @@ def auto_matmul_wrapper(a, b, out=None):
         return semi_classic_matmul(b.transpose(), a.transpose(), out).transpose()
 
     else:
-        raise Exception("Could not proccess input constellation " + str(type(a)) + " and " + str(type(b)))
+        raise Exception("Could not process input constellation " + str(type(a)) + " and " + str(type(b)))
 
 
 def dot(a, b, out=None):

@@ -58,7 +58,7 @@ for a list of evolution times ``s_values = np.linspace(.01,.3,10)``. This could 
     theta = sp.Symbol('theta')
     optimal_s = [theta]
 
-    # Caculate energy for initial state
+    # Calculate energy for initial state
     qv = QuantumVariable(N)
     U_0(qv)
     E_0 = maxcut_cost(qv.get_measurement())

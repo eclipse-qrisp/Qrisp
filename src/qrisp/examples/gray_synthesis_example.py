@@ -16,7 +16,7 @@
 """
 
 # This example displays the logic synthesis capabilities of Qrisp
-# The user-interface for this feautre is the QuantumDictionary
+# The user-interface for this feature is the QuantumDictionary
 
 from qrisp import h
 from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth  # , pprm

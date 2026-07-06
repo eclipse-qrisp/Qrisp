@@ -189,7 +189,7 @@ def GQSP(
     .. note::
 
         While GQSP allows you to apply arbitrary polynomials to operators, applying
-        abitrary polynomials to :ref:`BlockEncodings <BlockEncoding>` requires an 
+        arbitrary polynomials to :ref:`BlockEncodings <BlockEncoding>` requires an 
         additional step. This is because raising the operator
 
         .. math::

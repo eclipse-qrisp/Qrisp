@@ -57,7 +57,7 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     BE2 = BlockEncoding.from_operator(H2)
     BE_poly = BE.poly(np.array([0.0, 0.9, 0.0, 0.8]))
 
-    # Prepare inital system state |psi> = |0>
+    # Prepare initial system state |psi> = |0>
     def operand_prep():
         return QuantumFloat(L)
 
@@ -88,7 +88,7 @@ def test_gqsp_hamiltonian_simulation_long_time():
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     BE = BlockEncoding.from_operator(H)
 
-    # Prepare inital system state |psi> = |0>
+    # Prepare initial system state |psi> = |0>
     def operand_prep():
         return QuantumFloat(L)
 

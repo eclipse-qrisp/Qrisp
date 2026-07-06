@@ -64,7 +64,7 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
 
     Examples
     --------
-    Generate an Ising Hamiltonian $H$ and apply Hamiltonian simulation $e^{-itH}$ to the inital system state $\ket{0}$.
+    Generate an Ising Hamiltonian $H$ and apply Hamiltonian simulation $e^{-itH}$ to the initial system state $\ket{0}$.
 
     ::
 
@@ -86,7 +86,7 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         H = create_ising_hamiltonian(L, 0.25, 0.5)
         BE = BlockEncoding.from_operator(H)
 
-        # Prepare inital system state |psi> = |0>
+        # Prepare initial system state |psi> = |0>
         def operand_prep():
             return QuantumFloat(L)
 
@@ -117,7 +117,7 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
 
         # Prepare state|psi(t)> = e^{itH} |psi>
         def psi_(t):
-            # Prepare inital system state |psi> = |0>
+            # Prepare initial system state |psi> = |0>
             psi0 = np.zeros(2**H.find_minimal_qubit_amount())
             psi0[0] = 1
             

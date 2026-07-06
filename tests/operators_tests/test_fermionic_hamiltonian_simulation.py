@@ -127,7 +127,7 @@ def test_fermionic_hamiltonian_simulation():
 
                 # Compute the unitary
                 unitary = qc.get_unitary()
-                # Retrive the top left block matrix
+                # Retrieve the top left block matrix
                 reduced_unitary_0 = unitary[: 2**qv.size, : 2**qv.size]
 
                 qv = QuantumVariable(4)
@@ -141,7 +141,7 @@ def test_fermionic_hamiltonian_simulation():
 
                 # Compute the unitary
                 unitary = qc.get_unitary()
-                # Retrive the top left block matrix
+                # Retrieve the top left block matrix
                 reduced_unitary_1 = unitary[: 2**qv.size, : 2**qv.size]
 
                 assert norm(reduced_unitary_1 - reduced_unitary_0) < 1e-1

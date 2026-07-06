@@ -21,7 +21,7 @@ from qrisp.operators.qubit.qubit_operator import QubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 
-# Jordan-Wigner annihilation operaror
+# Jordan-Wigner annihilation operator
 # @cache
 def a_jw(j):
     d1 = {i: "Z" for i in range(j)}

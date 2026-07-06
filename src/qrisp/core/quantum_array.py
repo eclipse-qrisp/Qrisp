@@ -115,7 +115,7 @@ class QuantumArray:
     **Quantum indexing**
 
     QuantumArrays can be dereferenced by :ref:`QuantumFloats <QuantumFloat>`. This
-    returns a :ref:`QuantumEnvironment <QuantumEnvironment>` in which the corresponding entry is avaliable as
+    returns a :ref:`QuantumEnvironment <QuantumEnvironment>` in which the corresponding entry is available as
     a QuantumVariable. ::
 
         from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, x, multi_measurement
@@ -161,7 +161,7 @@ class QuantumArray:
     .. note::
         By default, the output matrix will have the same ``qtype`` as the first input
         matrix. Here, the ``qtype`` is a QuantumFloat with 5 mantissa bits and exponent
-        -2, implying that the result 8 yields overflow. Since qrisps unsigend arithmetic
+        -2, implying that the result 8 yields overflow. Since qrisps unsigned arithmetic
         is modular, we get a 0.
 
     It is also possible to multiply classical and quantum matrices
@@ -187,8 +187,8 @@ class QuantumArray:
         # The idea to implement this class with compatibility to dynamic features
         # (such as dynamic index support) is rooted in two core attributes:
 
-        # 1. An integer jax array containing adresses
-        # 2. A dynamic qubit array containig ALL qubits of the array
+        # 1. An integer jax array containing addresses
+        # 2. A dynamic qubit array containing ALL qubits of the array
 
         # Many of the important properties (such as shape, size etc.) are derived
         # from the index array. Therefore manipulating these things can be achieved
@@ -638,7 +638,7 @@ class QuantumArray:
             A dictionary of sympy symbols and floats to specify parameters in the case
             of a circuit with unspecified, abstract parameters. The default is {}.
         circuit_preprocessor : Python function, optional
-            A function which recieves a QuantumCircuit and returns one, which is applied
+            A function which receives a QuantumCircuit and returns one, which is applied
             after compilation and parameter substitution. The default is None.
 
         Raises
@@ -715,7 +715,7 @@ class QuantumArray:
 
     def decoder(self, code_int):
         """The decoder method specifies how a QuantumArray turns the outcomes of
-        measurements into human-readable values. It recieves an integer i and returns an
+        measurements into human-readable values. It receives an integer i and returns an
         OutcomeArray.
 
         Parameters
@@ -1902,7 +1902,7 @@ class QuantumArray:
         if isinstance(other, QuantumArray):
             if self.shape != other.shape:
                 raise ValueError(
-                    f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})"
+                    f"Tried to perform element-wise function call with mismatching array shapes ({self.shape} vs {other.shape})"
                 )
             other_view = other.flatten()
             if check_for_tracing_mode():
@@ -1914,7 +1914,7 @@ class QuantumArray:
         elif isinstance(other, (np.ndarray, jnp.ndarray)):
             if self.shape != other.shape:
                 raise ValueError(
-                    f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})"
+                    f"Tried to perform element-wise function call with mismatching array shapes ({self.shape} vs {other.shape})"
                 )
             flattened_other = other.flatten()
             if isinstance(other, np.ndarray):

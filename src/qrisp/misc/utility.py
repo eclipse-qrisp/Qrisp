@@ -568,7 +568,7 @@ def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verif
                     # the uncomputed gate in alloc/dealloc gates but instead wrap both
                     # the computation gate and the recomputation in alloc/dealloc gates
 
-                    # To undestand this behavior better consider the following example
+                    # To understand this behavior better consider the following example
 
                     # from qrisp import QuantumFloat
                     # a = QuantumFloat(2)
@@ -834,7 +834,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
 
 
 def as_hamiltonian(hamiltonian):
-    r"""Decorator that recieves a regular Python function (returning a float) and returns a
+    r"""Decorator that receives a regular Python function (returning a float) and returns a
     function of QuantumVariables, applying phases based on the function's output.
 
     Parameters
@@ -957,8 +957,8 @@ def perm_lock(qubits):
     Z-operator of this qubit. For more information, what a permeable gate is, check the
     :ref:`uncomputation documentation <uncomputation>`.
 
-    This can be helpfull as it forbids all operations that change that computational
-    basis state of this qubit but still allow controling on this qubit or applying
+    This can be helpful as it forbids all operations that change that computational
+    basis state of this qubit but still allow controlling on this qubit or applying
     phase gates.
 
 
@@ -1390,7 +1390,7 @@ def redirect_qfunction(function_to_redirect):
 
     Examples
     --------
-    We create a function that determins the AND value of its inputs and redirect it
+    We create a function that determines the AND value of its inputs and redirect it
     onto another QuantumBool. ::
 
         from qrisp import QuantumBool, mcx, redirect_qfunction

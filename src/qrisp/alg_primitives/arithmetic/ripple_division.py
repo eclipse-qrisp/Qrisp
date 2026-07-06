@@ -65,7 +65,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
     # where the prime denotes negation
 
     # The Q -= 2**(n-1) is simply performed by flipping the significance n-1 bit
-    # The Q = Q + 0.5 is performed by adding an aditional qubit at the -1 significance
+    # The Q = Q + 0.5 is performed by adding an additional qubit at the -1 significance
     # of Q and turning it on
 
     # The final conditional is performed similar to the previous condition
@@ -160,7 +160,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
 
         # This next instruction is a bit involved to understand
 
-        # If we didn't use the technique of transfering the bits from the remainder
+        # If we didn't use the technique of transferring the bits from the remainder
         # to the quotient, we would have to call quotient.x() in order to realize
         # the initial Q = 2**n - 1 statement. In this case we would then afterwards
         # CNOT from remainder sign bit it the quotient sign bit from this iteration
@@ -168,7 +168,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
         # we can also perform the x gate after the CNOT
 
         # Translating this to our case we replaced the CNOT with the bit transfer,
-        # we arive at the neccessity of an x at this point
+        # we arrive at the necessity of an x at this point
         x(quotient[0])
 
         # Since the new bit was added at the least significant end,
@@ -181,7 +181,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
 
         # We constructed Q with one initial qubit, which will be freed up after
         # the first iteration. This does not produce a qubit overhead,
-        # because the upcomming add function needs more than one ancilla anyway
+        # because the upcoming add function needs more than one ancilla anyway
         if i == n - 1:
             quotient.reduce(quotient[1])
 
@@ -253,7 +253,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
         quotient.reduce(quotient[0])
         quotient.exp_shift(1)
 
-        # Incase the divisor is not only signed but actually negative, we CNOT the
+        # In case the divisor is not only signed but actually negative, we CNOT the
         # remainder such that the upcoming addition circuit results in a subtraction
         qs.cx(divisor[-1], remainder.reg)
 

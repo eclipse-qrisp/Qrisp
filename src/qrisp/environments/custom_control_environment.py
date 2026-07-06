@@ -41,7 +41,7 @@ def custom_control(*func, **cusc_kwargs):
 
     Specific controlled versions of quantum functions are very common in many
     scientific publications. This is because the general control procedure can
-    signifcantly increase resource demands.
+    significantly increase resource demands.
 
     In order to use the ``custom_control`` decorator, you need to add the ``ctrl``
     keyword to your function signature. If called within a controlled context,

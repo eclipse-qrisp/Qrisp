@@ -27,7 +27,7 @@ from qrisp.misc import get_depth_dic
 
 
 class ConjugationEnvironment(QuantumEnvironment):
-    r"""This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for perfoming conjugated operations.
+    r"""This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for performing conjugated operations.
     An arbitrary unitary :math:`U \in SU(2^n)` can be conjugated by another unitary
     :math:`V \in SU(2^n)`:
 

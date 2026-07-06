@@ -78,7 +78,7 @@ class ConditionEnvironment(QuantumEnvironment):
     After that, we enter the ConditionEnvironment, which controls the operations
     on the condition that ``q_ch`` is in state $\ket{a}$. Finally, we simultaneously
     measure both :ref:`QuantumVariables <QuantumVariable>`. We see that the
-    incrementation of ``qf`` only occured on the branch, where ``q_ch`` is equal to the
+    incrementation of ``qf`` only occurred on the branch, where ``q_ch`` is equal to the
     character ``"a"``. The resulting quantum state is:
 
     .. math::
@@ -105,7 +105,7 @@ class ConditionEnvironment(QuantumEnvironment):
     **Constructing custom conditional environments**
 
     Apart from infix notation like the equality operator, Qrisp also provides an
-    interface for creating custom conditonal environments.
+    interface for creating custom conditional environments.
 
     Parameters
     ----------
@@ -296,8 +296,8 @@ class ConditionEnvironment(QuantumEnvironment):
         \sum_{i = 0}^n i = \frac{n(n+1)}{2}
 
 
-    >>> print("Excpected outcomes:", [n*(n+1)/2 for n in n_results.keys()])
-    Excpected outcomes: [10.0, 15.0]
+    >>> print("Expected outcomes:", [n*(n+1)/2 for n in n_results.keys()])
+    Expected outcomes: [10.0, 15.0]
 
     """
 
@@ -329,7 +329,7 @@ class ConditionEnvironment(QuantumEnvironment):
     def __enter__(self):
         from qrisp.qtypes.quantum_bool import QuantumBool
 
-        # For more information on why this attribute is neccessary check the comment
+        # For more information on why this attribute is necessary check the comment
         # on the line containing subcondition_truth_values = []
         self.sub_condition_envs = []
 
@@ -370,7 +370,7 @@ class ConditionEnvironment(QuantumEnvironment):
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         # Create the quantum variable where the condition truth value should be saved
-        # Incase we have a parent environment we create two qubits because
+        # In case we have a parent environment we create two qubits because
         # we use the second qubit to compute the toffoli of this one and the parent
         # environments truth value in order to not have the environment operations
         # controlled on two qubits

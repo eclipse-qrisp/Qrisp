@@ -37,7 +37,7 @@ def multi_hamiltonian_measurement(
     Parameters
     ----------
     hamiltonians : list[Hamiltonian]
-        The Hamiltonians for wich the expeced value is to be evaluated.
+        The Hamiltonians for which the expected value is to be evaluated.
     qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
         The quantum argument to evaluate the Hamiltonians on.
     precision: float, optional

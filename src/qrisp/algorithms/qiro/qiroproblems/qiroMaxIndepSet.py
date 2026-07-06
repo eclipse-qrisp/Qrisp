@@ -31,7 +31,7 @@ def create_max_indep_replacement_routine(res, problem_updated):
     res : dict
         Result dictionary of QAOA optimization procedure.
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        Updates that happened during the QIRO routine. Consists of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
         and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
@@ -100,7 +100,7 @@ def create_max_indep_cost_operator_reduced(problem_updated):
     Parameters
     ----------
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        Updates that happened during the QIRO routine. Consists of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
         and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
@@ -126,14 +126,14 @@ def create_max_indep_cost_operator_reduced(problem_updated):
 
 
 def create_max_indep_controlled_mixer_reduced(problem_updated):
-    r"""Creates the ``controlled_RX_mixer`` for a QIRO instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the ``controlled_RX_mixer`` for a QIRO instance of the maximal independent set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
     Parameters
     ----------
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        Updates that happened during the QIRO routine. Consists of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
         and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
@@ -166,7 +166,7 @@ def create_max_indep_controlled_mixer_reduced(problem_updated):
 
 
 def qiro_max_indep_set_init_function(solutions=[], exclusions=[]):
-    r"""To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem soultion.
+    r"""To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem solution.
 
     Parameters
     ----------

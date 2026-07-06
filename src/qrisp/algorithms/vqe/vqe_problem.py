@@ -45,7 +45,7 @@ class VQEProblem:
         The number of parameters $n$ per layer of the ansatz.
     init_function : callable, optional
         A function receiving a :ref:`QuantumVariable` and preparing the initial state from the $\ket{0}$ state.
-        By default, the inital state is the $\ket{0}$ state.
+        By default, the initial state is the $\ket{0}$ state.
     callback : bool, optional
         If ``True``, intermediate results are stored. The default is ``False``.
 

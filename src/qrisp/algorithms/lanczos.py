@@ -314,7 +314,7 @@ def regularize_S_H(
     This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
     above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$)
     are projected onto this reduced subspace, ensuring numerical stability for subsequent
-    generalized eigenvalue calculations. The regularized matrices are caculated as $\tilde{S} = V^TSV$ and $\tilde{H}=V^THV$ for a projection matrix $V$.
+    generalized eigenvalue calculations. The regularized matrices are calculated as $\tilde{S} = V^TSV$ and $\tilde{H}=V^THV$ for a projection matrix $V$.
 
     Parameters
     ----------

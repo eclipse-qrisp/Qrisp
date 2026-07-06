@@ -26,7 +26,7 @@ from jax.scipy.optimize import OptimizeResults
 def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
     r"""Minimize a scalar function of one or more variables using the `Simultaneous Perturbation Stochastic Approximation algorithm <https://en.wikipedia.org/wiki/Simultaneous_perturbation_stochastic_approximation>`_.
 
-    This algorithm aims at finding the optimal control $x^*$ minimizing a given loss fuction $f$:
+    This algorithm aims at finding the optimal control $x^*$ minimizing a given loss function $f$:
 
     .. math::
 

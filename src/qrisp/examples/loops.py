@@ -37,6 +37,6 @@ for i in qRange(n):
 start_time = time.time()
 print(qf)  # Yields {10.0: 0.5, 15.0: 0.5}
 
-print("Excpected outcomes:", [(n - 1) * (n) / 2 for n in n_results.keys()])
+print("Expected outcomes:", [(n - 1) * (n) / 2 for n in n_results.keys()])
 # Yields n*(n+1)/2 as expected
 print(start_time - time.time())

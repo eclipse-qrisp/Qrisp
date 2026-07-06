@@ -113,14 +113,14 @@ def QREDC(t, N, m):
         # The subtraction only happens if S is odd. Since N
         # is odd by design, the new least significant qubit would always
         # ends up to be zero (this is why we can do the S = S/2 step)
-        # Since we already transfered the least significant qubit to u,
+        # Since we already transferred the least significant qubit to u,
         # we would have to create a new qubit to perform the subtraction
         # where we however know that this qubit will end up to be zero and
         # it would also immediately phased out again by the S = S/2 step.
         # Therefore instead of subtracting N, we subtract (N-1) on
         # "truncated" S.
 
-        # To accomodate for the fact, that S is "truncated" ie. currently it's
+        # To accommodate for the fact, that S is "truncated" ie. currently it's
         # least significant qubit has significance 2**1 = 2, we additionally divide
         # (N-1) by two.
         with control(temp):

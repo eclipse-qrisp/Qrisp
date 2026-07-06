@@ -98,7 +98,7 @@ class ControlEnvironment(QuantumEnvironment):
 
             self.manual_allocation_management = True
 
-            # For more information on why this attribute is neccessary check the comment
+            # For more information on why this attribute is necessary check the comment
             # on the line containing subcondition_truth_values = []
             self.sub_condition_envs = []
 
@@ -155,7 +155,7 @@ class ControlEnvironment(QuantumEnvironment):
         from qrisp.environments import ConditionEnvironment, CustomControlOperation
 
         # Create the quantum variable where the condition truth value should be saved
-        # Incase we have a parent environment we create two qubits because
+        # In case we have a parent environment we create two qubits because
         # we use the second qubit to compute the toffoli of this one and the parent
         # environments truth value in order to not have the environment operations
         # controlled on two qubits
@@ -176,7 +176,7 @@ class ControlEnvironment(QuantumEnvironment):
                 # the controlled-controlled-controlled... version of the gates inside
                 # the environment increases exponentially. Because of this we compute
                 # the toffoli of the parent and child truth value
-                # and controll the environment gates on this qubit.
+                # and control the environment gates on this qubit.
 
                 # Synthesize the condition of the environment
                 # into the condition truth value qubit

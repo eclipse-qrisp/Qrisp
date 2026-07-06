@@ -6,7 +6,7 @@ Issues to Tackle and Feature Requests
 
 This is a standing cross-reference to our `open good first issues on GitHub <https://github.com/eclipse-qrisp/Qrisp/issues?q=state%3Aopen%20label%3A%22good%20first%20issue%22>`_.
 If you want to get involved but don't know where to start, look no further! 
-We have also added a ``non-quantum`` tag incase you are not too familiar with Quantum computing just yet.
+We have also added a ``non-quantum`` tag in case you are not too familiar with Quantum computing just yet.
 
 **Why to start here?** 
 

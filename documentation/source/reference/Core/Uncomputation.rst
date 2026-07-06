@@ -184,7 +184,7 @@ The second way of calling uncomputation is the :meth:`uncompute<qrisp.QuantumVar
     QuantumBool result
 
 .. note::
-   The :meth:`uncompute <qrisp.QuantumVariable.uncompute>` method and the ``auto_uncompute`` decorator automatically call the :meth:`delete <qrisp.QuantumVariable.delete>` method after successfull uncomputation.
+   The :meth:`uncompute <qrisp.QuantumVariable.uncompute>` method and the ``auto_uncompute`` decorator automatically call the :meth:`delete <qrisp.QuantumVariable.delete>` method after successful uncomputation.
 
 In some cases, the entanglement structure of a set of QuantumVariables only allows uncomputation if all of them are uncomputed together. In this situation, setting ``do_it = False`` marks a QuantumVariable for uncomputation but does not actually perform it. On the next call with ``do_it = True``, the whole batch is uncomputed together ::
 
@@ -351,7 +351,7 @@ Recomputation is a phenomenon that can happen if a function ``f`` that uncompute
     QuantumBool b
     QuantumBool c
       
-We see that the uncomputation of ``u`` is awaited until the uncomputation of ``result`` finished, even though within the code, the :meth:`uncompute<qrisp.QuantumVariable.uncompute>` call of ``u`` came before the one of ``result``. In many situations this is a really efficient and helpfull feature of the algorithm, since there is less overhead in gates because ``u`` doesn't need to be recomputed.
+We see that the uncomputation of ``u`` is awaited until the uncomputation of ``result`` finished, even though within the code, the :meth:`uncompute<qrisp.QuantumVariable.uncompute>` call of ``u`` came before the one of ``result``. In many situations this is a really efficient and helpful feature of the algorithm, since there is less overhead in gates because ``u`` doesn't need to be recomputed.
 There are however situations, where this can yield to a significant qubit overhead. To understand how this happens, consider the following simplified situation:
 
 ::

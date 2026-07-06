@@ -115,13 +115,13 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
             if detect_double_alloc(lin[i:], node.instr.qubits):
                 continue
 
-            # This case represents the neccesity to uncompute
+            # This case represents the necessity to uncompute
             if set(target_qubits).issubset(uncomp_qbs) and node.instr and target_qubits:
                 # The uncompute node function inserts an uncomputation node into the pdag
                 # If a recomputation is required, no nodes are inserted and it returns True
                 recompute = uncompute_node(pdag, node, uncomp_qbs, recompute_qubits)
 
-                # If a recomputation is required, we call the algorithm with the approriate
+                # If a recomputation is required, we call the algorithm with the appropriate
                 # recomputation qubits. Qubits that could require recomputation can only
                 # be part of the controls
                 if recompute:
@@ -302,7 +302,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
             if not recomputation_required.issubset(uncomp_qbs):
                 return True
 
-            # Instead of connecting to the previos control node, we connect to the
+            # Instead of connecting to the previous control node, we connect to the
             # "latest" control node that operated on that qubit.
             for qb in recomputation_required:
                 ctrls.append(pdag.recent_node_dic[qb])
@@ -335,9 +335,9 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
 
     # The next step is to connect the targets.
     # For that we use the a_star_n_list which represents all the nodes, that are
-    # targetted by the operation
+    # targeted by the operation
     for a_star_n in a_star_n_list:
-        # We first add the edge to the qubits targetted by a_star_n
+        # We first add the edge to the qubits targeted by a_star_n
 
         # The qubits of this edge are the qubits which are:
         #   1. Part of the uncomputation qubits

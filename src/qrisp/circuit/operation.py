@@ -176,7 +176,7 @@ class Operation:
     # Method to get the unitary matrix of the operation
 
     # The parameter decimals has no influence on what is calculated
-    # Rounding is usefull here because the floating point errors
+    # Rounding is useful here because the floating point errors
     # sometimes make it hard to read the unitary
     def get_unitary(self, decimals=-1):
         """Returns the unitary matrix (if applicable) of the Operation as a numpy array.
@@ -570,7 +570,7 @@ pi = float(np.pi)
 
 
 # This class is special for pauli gates. In principle, we could also use the U3Gate
-# class, but this could lead to unneccessary floating point errors
+# class, but this could lead to unnecessary floating point errors
 class PauliGate(U3Gate):
     def __init__(self, name):
         from qrisp.simulator.unitary_management import pauli_x, pauli_y, pauli_z
@@ -622,7 +622,7 @@ class PauliGate(U3Gate):
 
 # For a regular controlled gate, all D_i have to be identity matrices.
 
-# Phase tolerant controlled operations are usally more efficient than their controlled equivalent.
+# Phase tolerant controlled operations are usually more efficient than their controlled equivalent.
 
 
 # In many cases, they can replace the controlled version without changing the semantics,
@@ -741,7 +741,7 @@ class PTControlledOperation(Operation):
                 )
 
         # If the base operation has a definition, we can simply apply the phase tolerant
-        # control algorithm to every gate contained in this defintion.
+        # control algorithm to every gate contained in this definition.
         # This is done in the function multi_controlled_circuit
 
         elif base_operation.definition:
@@ -821,7 +821,7 @@ class PTControlledOperation(Operation):
 
 
 # Class to describe controlled operation
-# Very simlar to phase tolerant operations but with a more specifix naming
+# Very similar to phase tolerant operations but with a more specifix naming
 # convention, inversion algorithm and unitary generation algorithm
 class ControlledOperation(PTControlledOperation):
     def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="gray"):

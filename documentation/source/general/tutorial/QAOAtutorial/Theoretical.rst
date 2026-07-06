@@ -11,7 +11,7 @@
 Theoretical Overview
 ====================
 
-In this tutoral we will take a peek into the inner workings of the Qrisp QAOA module. From learning the main concepts of the algorithm we'll take a deep dive into the :ref:`QAOAProblem` class, exploring its various components and how they come together to implement the algorithm. From defining quantum parameters to optimizing and measuring the final state, we’ll really get to see how this class functions under the hood.
+In this tutorial we will take a peek into the inner workings of the Qrisp QAOA module. From learning the main concepts of the algorithm we'll take a deep dive into the :ref:`QAOAProblem` class, exploring its various components and how they come together to implement the algorithm. From defining quantum parameters to optimizing and measuring the final state, we’ll really get to see how this class functions under the hood.
 
 QAOA in a nutshell
 ------------------

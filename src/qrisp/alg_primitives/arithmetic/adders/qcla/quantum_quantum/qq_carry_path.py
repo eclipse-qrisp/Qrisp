@@ -175,7 +175,7 @@ def brent_kung_tree(P, G, r, k_out=np.inf):
         return grouped_carry
 
     # If working with a radix > 2, the carry also needs to be propagated
-    # to the position of the first group. In the case of r = 2, this is not neccessary
+    # to the position of the first group. In the case of r = 2, this is not necessary
     # because the first group consists just of the 0-th position (which already contains
     # the carry in its GENERATE status) and the 1st position which contains the CARRY status
     # due to the GENERATE computation of this group.
@@ -183,7 +183,7 @@ def brent_kung_tree(P, G, r, k_out=np.inf):
     propagate_carry(P[initial_interval], G[initial_interval])
 
     # Go through all the groups and propagate the carry.
-    # Note that the last interval has not neccessarily size r (depending on the size of G)
+    # Note that the last interval has not necessarily size r (depending on the size of G)
     for i in range(1, len(G) // r + 1):
         interval = slice(r * i - 1, r * (i + 1) - 1)
         propagate_carry(P[interval], G[interval])
@@ -223,7 +223,7 @@ def brent_kung_tree(P, G, r, k_out=np.inf):
 
 
 # Furthermore this function uncomputes all garbage. What is the garbage here?
-# The cancelation of the brent kung tree at an early layer produce many GENERATE
+# The cancellation of the brent kung tree at an early layer produce many GENERATE
 # entries, that are not holding CARRY values. Furthermore, also the PROPAGATE values
 # of groups are uncomputed.
 
@@ -278,7 +278,7 @@ def qq_calc_carry(a, b, radix_base=2, radix_exponent=0):
     # with a trick: We apply the CNOT gate first (instead of the mcx gate) and create
     # a ancillary gate that wraps the mcx gates within two CNOT gates.
     # This ancillary gate is then permeable on the "b_i" input and the cycle in the
-    # DAG dissapears. This introduces two extra CNOT gates per iteration. However,
+    # DAG disappears. This introduces two extra CNOT gates per iteration. However,
     # two of these CNOT gates are adjacent so, they will be canceled out during
     # circuit optimization.
 

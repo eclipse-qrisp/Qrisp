@@ -191,7 +191,7 @@ def pytket_converter(qc, boxFlag=False):
             if 0 == 1:
                 # if op.base_operation.definition:
                 # old code relic -- buggy
-                # base_operation.definition doesnt convert correctly if mutiple abstract/costum gates are included
+                # base_operation.definition doesnt convert correctly if multiple abstract/costum gates are included
                 tket_definition = pytket_converter(op.base_operation.definition)
                 base_gate = tket_definition
                 if isinstance(base_gate, Circuit):
@@ -224,7 +224,7 @@ def pytket_converter(qc, boxFlag=False):
             tket_qc.add_qcontrolbox(tket_ins, qubit_list)
 
         elif clbit_list:
-            # add other isinstance checks from above here aswell?
+            # add other isinstance checks from above here as well?
             tket_qc.add_gate(tket_ins, params, qubit_list + clbit_list)
 
         else:

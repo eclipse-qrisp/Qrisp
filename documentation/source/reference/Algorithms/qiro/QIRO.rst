@@ -21,7 +21,7 @@ The central data structure of the QIRO module is the :ref:`QIROProblem` class.
 :ref:`QIROProblem`
 ------------------
 
-The :ref:`QIROProblem` encapsulates the required prerequesites to run the algorithm:
+The :ref:`QIROProblem` encapsulates the required prerequisites to run the algorithm:
 
 * The ``problem`` to be solved, which is not necessarly a graph.
 * The ``replacement_routine``, which has the job of performing the aforementioned specific reductions to the ``problem`` object.

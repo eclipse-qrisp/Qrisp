@@ -28,7 +28,7 @@ import numpy as np
 # Importing it at module level triggers a circular import:
 #
 #   gidney_adder -> BigInteger (from jasp_bigintiger)
-#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
+#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multipliers/montgomery
 #     -> gidney_adder  (circular!)
 #
 # The TYPE_CHECKING guard keeps the runtime import-free while satisfying

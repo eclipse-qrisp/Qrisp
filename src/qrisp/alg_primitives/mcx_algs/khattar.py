@@ -154,7 +154,7 @@ def cca_mcx(ctrls, target, anc):
 
 @qache
 def khattar_mcx(ctrls, target, ctrl_state):
-    """Implements the Khattar multi-controlled X (MCX) gate methode using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
+    """Implements the Khattar multi-controlled X (MCX) gate method using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
     The behavior of the function varies depending on the number of
     control qubits (N) and the control state.
 

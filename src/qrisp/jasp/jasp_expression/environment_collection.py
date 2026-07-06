@@ -298,7 +298,7 @@ class VarTracker:
 
 
     An important feature that is required by the environment collection function
-    is to slice the list of equations - afterall the environment body will
+    is to slice the list of equations - after all the environment body will
     be a slice of the equation list in most cases.
 
     Because of this, the class tracks another list of integers, demarking

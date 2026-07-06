@@ -30,7 +30,7 @@
 # The problem here is that we want (almost) all quantum sessions,
 # that operate inside the environment, to be merged into the environment session.
 # The sessions we dont want merged are the ones that get CREATED inside the environment.
-# This situtation represents the case that we have a foreign function from a module,
+# This situation represents the case that we have a foreign function from a module,
 # which creates some gate objects, using a quantum session. If we merge this quantum
 # session into our environment, the foreign function no longer works as intended.
 # The strategy for solving this kind of problem is now:
@@ -41,7 +41,7 @@
 
 # 2. Once the append method of a QuantumSession is executed, the environment stack of
 # this QuantumSession is checked for Environment where the env_qs QuantumSession
-# is not merged into. If this is the case, the QuantumSession's data will be transfered
+# is not merged into. If this is the case, the QuantumSession's data will be transferred
 # into the original_data attribute of the oldest env_qs environment
 # that has not been merged into self.
 
@@ -94,7 +94,7 @@ class QuantumEnvironment(QuantumPrimitive):
         QuantumVariable qv
 
     More advanced environments allow for a large variety of features and can significantly
-    simplify code development and maintainance.
+    simplify code development and maintenance.
 
     The most important built-in QuantumEnvironments are:
 
@@ -238,7 +238,7 @@ class QuantumEnvironment(QuantumPrimitive):
         especially nested :ref:`Condition <conditionenvironment>`- and
         :ref:`ControlEnvironments <controlenvironment>` lose a lot of efficiency if
         compiled prematurely. Therefore, ``print``-calls within QuantumEnvironments are
-        usefull for debugging purposes but should be removed, if efficiency is a
+        useful for debugging purposes but should be removed, if efficiency is a
         concern.
 
 
@@ -258,7 +258,7 @@ class QuantumEnvironment(QuantumPrimitive):
     inside this environment, are registered.
 
     The compile method is then called once all environments of ``.env_qs`` have been
-    exited. Note that this doesn't neccessarily imply that all QuantumEnvironments have
+    exited. Note that this doesn't necessarily imply that all QuantumEnvironments have
     been left. For more information about the interplay between QuantumSessions and
     QuantumEnvironments check the :ref:`session merging <SessionMerging>` documentation.
 
@@ -396,7 +396,7 @@ class QuantumEnvironment(QuantumPrimitive):
         # This list stores the original data of the quantum session tracked
         self.original_data = []
 
-        # This list stores the data that is appended inside the environemt
+        # This list stores the data that is appended inside the environment
         self.env_data = []
 
         # This list stores the qubits that have been deallocated in this environment
@@ -423,7 +423,7 @@ class QuantumEnvironment(QuantumPrimitive):
         # and deallocation gates.
         # If set to False, these gates will be filtered out of the env_data attribute before
         # compile is called.
-        # In this case, the (de)allocation gates that happened insided this environment
+        # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
         if type(self) is QuantumEnvironment:
             self.manual_allocation_management = True

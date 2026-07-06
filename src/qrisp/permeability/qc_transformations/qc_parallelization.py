@@ -74,7 +74,7 @@ def qb_set_to_int(qubits, index_dict):
     return split_integer(qb_indices, int(np.ceil(len(index_dict) / 64)))
 
 
-# This function reverses the split_integer function (usefull for debugging)
+# This function reverses the split_integer function (useful for debugging)
 def reverse_split(split_int, num_qubits):
 
     res = []

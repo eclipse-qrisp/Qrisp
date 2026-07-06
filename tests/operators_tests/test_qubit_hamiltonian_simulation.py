@@ -77,7 +77,7 @@ def test_qubit_hamiltonian_simulation():
 
         # Compute the unitary
         unitary = qc.get_unitary()
-        # Retrive the top left block matrix
+        # Retrieve the top left block matrix
         reduced_unitary = unitary[: 2**qv.size, : 2**qv.size]
 
         # Check for equivalence

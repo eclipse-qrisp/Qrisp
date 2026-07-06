@@ -22,7 +22,7 @@ from qrisp import QuantumBool, QuantumFloat, auto_uncompute, mcx
 
 
 def test_backtracking():
-    # This test is depracated (i.e., for previous implementation of backtracking).
+    # This test is deprecated (i.e., for previous implementation of backtracking).
     # In this example [1,1,1] is accepted and rejected and can be reached in the backtracking tree!
     """@auto_uncompute
     def P(tree):

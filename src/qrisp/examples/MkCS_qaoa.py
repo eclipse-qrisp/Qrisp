@@ -180,7 +180,7 @@ def cl_cost_function(counts):
     -------
     energy/total_counts : int
         The classical cost functions returns the ratio between the energy calculated
-        using the mkcs_obj objective funcion and the amount of counts used in the
+        using the mkcs_obj objective function and the amount of counts used in the
         experiment.
 
     """

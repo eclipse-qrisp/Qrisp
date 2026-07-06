@@ -331,7 +331,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
         flag = QuantumFloat(1)
         cx(a[-1], flag)
         with control(flag):
-            # If the QuantumFloat is signed and the value negative: substract the ceiling
+            # If the QuantumFloat is signed and the value negative: subtract the ceiling
             c = q_ceil(a)
             b -= c
             injected_qceil = c << q_ceil
@@ -340,7 +340,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
             c.delete()
 
         with control(flag, 0):
-            # If the QuantumFloat is signed and the value positive: substract the floor
+            # If the QuantumFloat is signed and the value positive: subtract the floor
             c = q_floor(a)
             b -= c
             injected_qfloor = c << q_floor
@@ -351,7 +351,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
         flag.delete()
 
     if not a.signed:
-        # If the QuantumFloat is unsigned: substract the floor
+        # If the QuantumFloat is unsigned: subtract the floor
         c = q_floor(a)
         b -= c
         injected_qfloor = c << q_floor

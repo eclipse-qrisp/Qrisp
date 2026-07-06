@@ -235,7 +235,7 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
     measurements.
 
     For some algorithms (such as :ref:`RUS`) sampling the measurement result
-    from a simple distribution won't cut it because the required ressource can
+    from a simple distribution won't cut it because the required resource can
     be heavily influenced by measurement outcomes. For this matter it is also
     possible to perform a full simulation. Note that this simulation is no
     longer deterministic.

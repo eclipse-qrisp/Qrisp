@@ -174,7 +174,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # As mentioned in the comment at the beginning of this file,
     # a regular depth first traversal basically allows picking any child
     # to traverse next. In our case, this can mess with the topological ordering
-    # Therefore we allways traverse the child with the highest topological index
+    # Therefore we always traverse the child with the highest topological index
 
     def topological_desc_traversal(G, node, tp_dic, callback):
         node_list = [x for x in nx.descendants(G, node)]

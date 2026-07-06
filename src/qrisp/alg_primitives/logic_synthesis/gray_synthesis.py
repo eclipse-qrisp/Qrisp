@@ -32,7 +32,7 @@ try:
     from ffht import fht as fwht
 
     fwht(np.array([0, 1, 0, 1]))
-    # print("FALCONN fwht import successfull")
+    # print("FALCONN fwht import successful")
 except:
     # print("FALCONN fwht import failed")
 
@@ -170,17 +170,17 @@ def hamming_movement(init, target, bit_amount):
 def gray_code(n):
     # The key observation is that we can solve the problem for the n-D cube, if we solve
     # it for the (n-1)-D cube such that the path starts at bin(0) and ends in
-    # bin(2**(n-2)). We then concantenate this solution in the "lower half" of the n-D
+    # bin(2**(n-2)). We then concatenate this solution in the "lower half" of the n-D
     # cube with the reversed solution in the upper half applied
 
-    # This concantenation will again give a solution which starts at 0 and ends in
+    # This concatenation will again give a solution which starts at 0 and ends in
     # bin(2**((n+1)-2)). We thus have a recursion
 
     # Example for the 3D cube:
     # A possible solution for the 2D cube is [0,1,3,2]
 
     # The reversal is [2,3,1,0] which is [6,7,5,4] on the upper half
-    # Concantenating gives [0,1,3,2,6,7,5,4] ie. a solution which starts in 0
+    # Concatenating gives [0,1,3,2,6,7,5,4] ie. a solution which starts in 0
     # and ends in 2**(3-1) = 4
 
     if n < 1:
@@ -199,9 +199,9 @@ def gray_code(n):
 
 
 # This function calculates the phases to put after each parity operator.
-# A given state will recieve then recieve the phase phi_i if it is true under the parity
+# A given state will receive then receive the phase phi_i if it is true under the parity
 # operator i. As each state is true on a unique combination of parity operators each
-# state will recieve a unique phase. The total phase of any state is the sum of all the
+# state will receive a unique phase. The total phase of any state is the sum of all the
 # parity operators it is True on. If we now want to get a certain constellation of total
 # phases. This gives us a system of linear equations, where the matrix is given by the
 # parity matrix

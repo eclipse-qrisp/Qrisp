@@ -133,7 +133,7 @@ def portfolio_cl_cost_function(problem):
 
 def portfolio_init(lots):
     """| Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
-    | Depending on the number of lots a QuantumArray is prepared, where the first index describes the short positions held and the second index describes the long postions held.
+    | Depending on the number of lots a QuantumArray is prepared, where the first index describes the short positions held and the second index describes the long positions held.
 
     Parameters
     ----------

@@ -109,7 +109,7 @@ QuantumBacktrackingTree class.
 The next layer of complexity is the reject function.
 If a node is rejected, it has no children, ie. |psi_x> = |x>.
 
-This could be realized by modifiying the operator U_x but as it turns out there is
+This could be realized by modifying the operator U_x but as it turns out there is
 a more efficient possibility.
 
 For this consider the fact that for a rejected node
@@ -121,7 +121,7 @@ so restricted on H_x we can assume
 
 D_x = -1
 
-We therfore now need to modify D_x such that D_x = -1 when reject(x) is True.
+We therefore now need to modify D_x such that D_x = -1 when reject(x) is True.
 
 To achieve this we deploy a circuit that integrates with our previous construction
 but instead performs 
@@ -172,7 +172,7 @@ A node which has height 4 in a some tree T, still has height 4 in a subtree of T
 The initial state of branch_qa is |0>|0>|0>...
 
 Because we use the height instead of the path length, the path to the node is 
-specified by the reveresed array. Ie. the path [1,1,0,1]  in a depth 7 tree is 
+specified by the reversed array. Ie. the path [1,1,0,1]  in a depth 7 tree is 
 specified by the branch_qa state
 
 |0>|0>|0>|1>|0>|1>|1>
@@ -207,7 +207,7 @@ class QuantumBacktrackingTree:
             if reject(x) or len(x) == max_depth:
                 return None
 
-            for j in assigments:
+            for j in assignments:
                 y = list(x)
                 y.append(j)
                 res = backtracking(y)
@@ -447,7 +447,7 @@ class QuantumBacktrackingTree:
     of a child of the root (say the one connected to the 1 branch) it would be ``[1]``.
 
     Note that the ``statevector`` method decodes the QuantumVariables holding the
-    node state for convenient readibility. If you want to see the encoded variables
+    node state for convenient readability. If you want to see the encoded variables
     you can take a look at the :ref:`QuantumSession` s :meth:`statevector method<qrisp.QuantumSession.statevector>`:
 
     >>> tree.qs.statevector()
@@ -745,7 +745,7 @@ class QuantumBacktrackingTree:
         mcz_list.append(oddity_qbl)
         ctrl_state += "0"
 
-        # Check if |x> is root. Otherwise, if the reject funtions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
+        # Check if |x> is root. Otherwise, if the reject functions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
         # mcz_list.append(is_root)
         # ctrl_state += "0"
 

@@ -174,7 +174,7 @@ def construct_change_of_basis(S):
     s_list : numpy.array
         A list indicating the qubits on which an S gate is applied.
     perm_vec : numpy.array
-        A vector repesenting a permutation.
+        A vector representing a permutation.
 
     """
     n = int(S.shape[0] / 2)

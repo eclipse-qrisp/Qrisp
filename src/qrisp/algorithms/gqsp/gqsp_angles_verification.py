@@ -45,7 +45,7 @@ def plot_reconstruction_vs_target(
     title : str
         The main title of the plot.
 
-    Examles
+    Examples
     -------
 
     ::
