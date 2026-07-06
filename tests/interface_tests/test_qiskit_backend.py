@@ -476,7 +476,7 @@ class TestQiskitBackendConstruction:
     def test_default_backend_is_aer_simulator(self, sampler_mock):
         """When no backend is provided, AerSimulator is used as the default."""
         backend = QiskitBackend(options={"shots": 100})
-        assert "are" in backend.name.lower()
+        assert "aer" in backend.name.lower()
 
     def test_options_read_from_backend_when_not_provided(self, sampler_mock):
         """When options is omitted and backend exposes a dict, those options are used."""
@@ -784,9 +784,9 @@ class TestQiskitRuntimeBackendIntegration:
         """QiskitRuntimeBackend backed by a real AerSimulator and real SamplerV2."""
         from qiskit_ibm_runtime import SamplerV2
 
-        are = AerSimulator()
+        aer = AerSimulator()
         mock_service = MagicMock()
-        mock_service.least_busy.return_value = are
+        mock_service.least_busy.return_value = aer
 
         mock_module = MagicMock()
         mock_module.QiskitRuntimeService = MagicMock(return_value=mock_service)

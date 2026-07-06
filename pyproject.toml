@@ -136,7 +136,7 @@ count = true
 summary = true
 # anc       — ancilla qubit variable (src/qrisp/)
 # ket       — Dirac bra-ket notation (docstrings throughout)
-# Aer       — Qiskit Aer simulator (proper noun)
+# Aer,aer   — Qiskit Aer simulator (proper noun), lowercase in test assertions
 # MIS       — Maximum Independent Set abbreviation (src/qrisp/algorithms/qiro/)
 # Childs    — Andrew Childs, researcher surname (arXiv citations throughout)
 # COO,coo  — Coordinate sparse matrix format (src/qrisp/simulator/bi_arrays.py)
@@ -150,7 +150,7 @@ summary = true
 # alph      — local variable avoiding shadowing func `alpha` (documentation/source/general/tutorial/CD.ipynb)
 # te        — base64-encoded PNG data (documentation/source/general/tutorial/QAOAtutorial/MkCS.ipynb)
 # cancelled — API method Job.cancelled() uses British spelling; only 1 non-API occurrence exists (cancel_zero_controls.py)
-ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled,alph,te"
+ignore-words-list = "anc,ket,Aer,aer,MIS,Childs,COO,coo,notin,Wille,theRes,braket,mis,Tage,thi,cancelled,alph,te"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
