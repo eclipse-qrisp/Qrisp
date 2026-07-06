@@ -307,7 +307,7 @@ class QuantumSession(QuantumCircuit):
         return return_qubits
 
     def clear_qubits(self, qubits, verify=False):
-        # Apply initialization operation
+        # Apply initialisation operation
         # The following is uncommented because the QASM simulator speed drastically
         # drops when having non unitary operations
         # Uncomment, when executing on real backends

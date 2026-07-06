@@ -30,6 +30,20 @@ Static analysis
 Use **pylint** or **ruff** to catch common issues before submitting a pull
 request.
 
+Spelling
+--------
+
+Use **codespell** to check for misspellings and British English variants.
+The project enforces American English spelling via the ``en-GB_to_en-US``
+builtin dictionary.
+
+.. code:: bash
+
+   codespell
+
+Run from the repository root; configuration is read automatically from
+``pyproject.toml``. This check is also run in CI.
+
 - Pylint documentation: https://pylint.readthedocs.io/
 - Ruff documentation: https://docs.astral.sh/ruff/
 

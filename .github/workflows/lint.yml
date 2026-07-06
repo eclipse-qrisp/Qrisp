@@ -38,4 +38,9 @@ jobs:
         with:
           args: format --check
       - name: Codespell
-        run: codespell
+        run: |
+          codespell || {
+            echo "::warning::The Qrisp project uses American English. Found spelling issues (see above)."
+            echo "::warning::Run 'codespell' locally to see the full list, or 'codespell -w' to auto-fix."
+            exit 1
+          }
