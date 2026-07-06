@@ -94,9 +94,9 @@ class DCQOProblem:
             B = 1 - lam
             nom = np.sum(A + 4*B*h)
             denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alpha = nom/denom
-            alpha = [alpha]*N
-            return alpha
+            alph = nom/denom  # codespell:ignore
+            alph = [alph]*N  # codespell:ignore
+            return alph  # codespell:ignore
 
         # Simple scheduling function 0 -> 1
         def lam():
