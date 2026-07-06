@@ -104,3 +104,4 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    ConstrainedMixers.ipynb
    QUBO.ipynb
    PortfolioRebalancing.ipynb
+   LinearRampQAOA.ipynb
