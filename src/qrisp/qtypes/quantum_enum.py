@@ -19,7 +19,7 @@ from enum import Enum
 from math import log2, ceil
 from typing import Self, Union
 from qrisp import QuantumVariable
-from qrisp import cp
+from qrisp import cp, cx, mcp
 
 class QuantumEnum(QuantumVariable):
     r"""A quantum meta type for auto encoding python enums in a QuantumVariable
@@ -104,7 +104,7 @@ class QuantumEnum(QuantumVariable):
     
                 def apply_phase_if_eq(self, other: Self, gamma):
                     cx(self, other)
-                    mcp(2*gamma, other, ctrl_state=0)
+                    mcp(gamma, other, ctrl_state=0)
                     cx(self, other)
                 cls.apply_phase_if_eq = apply_phase_if_eq
     
@@ -158,7 +158,7 @@ class QuantumEnum(QuantumVariable):
     
                 def apply_phase_if_eq(self, other: Self, gamma):
                     for i in range(self.size):
-                        cp(2 * gamma, self[i], other[i])
+                        cp(gamma, self[i], other[i])
                 cls.apply_phase_if_eq = apply_phase_if_eq
                 
                 return cls
