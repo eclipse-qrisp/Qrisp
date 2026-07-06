@@ -333,13 +333,19 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     inpl_adder = x.inpl_adder
     N = x.modulus
 
-    # Compute the reduction shift m = ceil(log2((N-1)^2 + 1)) - n.
+    # Compute the reduction shift m = ceil(log2((N-1)^2) + 1) - n. This must
+    # match the static montgomery_mod_mul (and create_output_qf, which the
+    # QuantumArray element-wise path uses to preallocate the output's
+    # Montgomery shift); otherwise the result's res.m disagrees with the
+    # decoder and the value comes out scaled by a power of two (see #640).
+    # Note ceil(log2((N-1)^2) + 1) == ceil(log2((N-1)^2)) + 1, hence the "+ 1"
+    # sits outside smallest_power_of_two rather than inside its argument.
     # When N is a BigInteger with traced digits, both n and m will be
     # JAX tracers.  That is fine: jrange / jlen handle traced loop bounds,
     # QuantumFloat accepts traced sizes, and jdecoder handles a traced
     # Montgomery shift (res.m) via BigInteger arithmetic.
     n = smallest_power_of_two(N)
-    m = smallest_power_of_two((N - 1) ** 2 + 1) - n
+    m = smallest_power_of_two((N - 1) ** 2) + 1 - n
 
     if check_for_tracing_mode():
         xrange = jrange
