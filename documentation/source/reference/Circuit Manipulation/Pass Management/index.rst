@@ -29,7 +29,7 @@ Build a compilation pipeline by chaining passes together::
 
     qc = QuantumCircuit(2)
     qc.cx(0, 1)
-    qc.cx(0, 1)   # Self-inverse — will be cancelled
+    qc.cx(0, 1)   # Self-inverse — will be canceled
     qc.h(0)
     qc.h(0)        # Another self-inverse pair
 
@@ -64,7 +64,7 @@ Build a compilation pipeline by chaining passes together::
 
 ::
 
-    # Empty circuit — all gates cancelled
+    # Empty circuit — all gates canceled
 
 Visualizing Pass Transformations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

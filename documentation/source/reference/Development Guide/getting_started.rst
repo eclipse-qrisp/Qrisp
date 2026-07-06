@@ -98,7 +98,7 @@ running the test a few more times before concluding there is a bug.
 
 .. note::
 
-    The test suite is organised by subsystem and mirrors the layout of the
+    The test suite is organized by subsystem and mirrors the layout of the
     source tree. See :ref:`WritingTests` for the full directory structure and
     guidance on adding new tests.
 

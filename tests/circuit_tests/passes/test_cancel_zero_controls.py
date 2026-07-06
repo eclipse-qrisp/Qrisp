@@ -86,7 +86,7 @@ class TestDiagonalPreservesFreshness:
         cp = Operation(name="cp", num_qubits=2, params=[np.pi / 4])
         qc.append(cp, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        # q1 still fresh → CP cancelled
+        # q1 still fresh → CP canceled
         assert "cp" not in _gate_names(result)
 
     def test_h_on_both_keeps_cp(self):
@@ -196,7 +196,7 @@ class TestAllocDealloc:
         cp = Operation(name="cp", num_qubits=2, params=[np.pi / 4])
         qc.append(cp, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        # q1 still fresh → CP cancelled
+        # q1 still fresh → CP canceled
         assert "cp" not in _gate_names(result)
 
 

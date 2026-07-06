@@ -200,7 +200,7 @@ class TestLazyDict:
             hash(ld)
 
     def test_is_mapping(self):
-        """LazyDict must be recognised as a collections.abc.Mapping."""
+        """LazyDict must be recognized as a collections.abc.Mapping."""
         assert isinstance(_Ready({}), Mapping)
 
 
@@ -402,7 +402,7 @@ class TestIntKeyedResult:
         assert r[1] == pytest.approx(1.0)
 
     def test_normalises_shot_counts(self):
-        """Counts far from 1 (i.e. raw shot counts) must be normalised to probabilities."""
+        """Counts far from 1 (i.e. raw shot counts) must be normalized to probabilities."""
         r = _IntKeyedResult(_populated_mr({"00": 512, "11": 512}), num_bits=2)
         assert r[0] == pytest.approx(0.5)
         assert r[3] == pytest.approx(0.5)
@@ -414,12 +414,12 @@ class TestIntKeyedResult:
         assert r[3] == pytest.approx(0.5)
 
     def test_no_normalisation_within_tolerance(self):
-        """Total within 1e-3 of 1.0 must not be normalised."""
-        # total = 1.0 exactly → no normalisation
+        """Total within 1e-3 of 1.0 must not be normalized."""
+        # total = 1.0 exactly → no normalization
         r = _IntKeyedResult(_populated_mr({"00": 0.9995, "11": 0.0005}), num_bits=2)
         assert r[0] == pytest.approx(0.9995)
         assert r[3] == pytest.approx(0.0005)
-        # abs(1 - 1.0005) = 0.0005 < 1e-3 → no normalisation
+        # abs(1 - 1.0005) = 0.0005 < 1e-3 → no normalization
         r2 = _IntKeyedResult(_populated_mr({"0": 1.0005}), num_bits=1)
         assert r2[0] == pytest.approx(1.0005)
 

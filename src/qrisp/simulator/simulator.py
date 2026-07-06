@@ -229,7 +229,7 @@ def statevector_sim(qc):
         position=0,
         smoothing=1,
         file=sys.stdout,
-        # colour = "green"
+        # color = "green"
     )
 
     progress_bar.display()

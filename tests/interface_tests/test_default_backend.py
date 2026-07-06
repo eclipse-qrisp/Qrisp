@@ -358,7 +358,7 @@ class TestQrispSimulatorBackendPassManager:
         assert results[1] == {"00": 1.0}
 
     def test_empty_pm_is_identity(self):
-        """An empty PassManager must not alter circuit behaviour."""
+        """An empty PassManager must not alter circuit behavior."""
         backend = QrispSimulatorBackend(pm=PassManager())
         qf = QuantumFloat(2)
         qf[:] = 3

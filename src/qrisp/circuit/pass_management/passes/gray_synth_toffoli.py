@@ -29,7 +29,7 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 # The gray-synthesis Toffoli circuit is built lazily (on first call) rather than
 # at module level. Building it at import time triggers QuantumCircuit.append →
 # convert_to_qb_list → "from qrisp import QuantumArray", which hits a circular
-# import because qrisp.circuit is itself not yet fully initialised when
+# import because qrisp.circuit is itself not yet fully initialized when
 # qrisp.__init__ imports qrisp.circuit.passes. The lru_cache ensures the circuit
 # is constructed only once and reused on every subsequent call.
 @functools.lru_cache(maxsize=1)
@@ -85,7 +85,7 @@ def is_toffoli(op) -> bool:
 def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     """Replace Toffoli gates with a gray-synthesis decomposition.
 
-    Qrisp's default Toffoli implementation is optimised for T-depth, since
+    Qrisp's default Toffoli implementation is optimized for T-depth, since
     the majority of Qrisp algorithms target fault-tolerant execution where
     T gates dominate cost.  The default decomposition does not have a
     higher CNOT count than the gray-synthesis variant, but it requires

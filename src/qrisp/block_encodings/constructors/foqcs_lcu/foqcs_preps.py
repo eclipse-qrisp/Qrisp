@@ -376,7 +376,7 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int
     Parameters
     ----------
     prep : partial
-        Partially initialised FOQCS-LCU PREP method.
+        Partially initialized FOQCS-LCU PREP method.
 
     num_q_ops : int
         Number of operand qubits (L argument for FOQCS-LCU PREP routines).

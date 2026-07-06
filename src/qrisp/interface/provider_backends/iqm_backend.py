@@ -53,7 +53,7 @@ def _map_iqm_status(iqm_job) -> JobStatus:
         "processing": JobStatus.RUNNING,
         "completed": JobStatus.DONE,
         "failed": JobStatus.ERROR,
-        "cancelled": JobStatus.CANCELLED,
+        "canceled": JobStatus.CANCELED,
     }
     return _status_map.get(name, JobStatus.RUNNING)
 
@@ -85,7 +85,7 @@ class IQMJob(Job):
         shots_per_circuit: list[int],
         client,
     ):
-        """Initialise the wrapper.
+        """Initialize the wrapper.
 
         Parameters
         ----------
@@ -136,7 +136,7 @@ class IQMJob(Job):
         JobFailureError
             If the IQM job failed.
         JobCancelledError
-            If the IQM job was cancelled.
+            If the IQM job was canceled.
 
         """
         if self._cached_result is not None:
@@ -147,9 +147,9 @@ class IQMJob(Job):
 
             final_iqm_status = self._iqm_job.wait_for_completion()
 
-            if final_iqm_status == IQMJobStatus.CANCELLED:
-                self._last_known_status = JobStatus.CANCELLED
-                raise JobCancelledError(f"IQM job {self._job_id!r} was cancelled.")
+            if final_iqm_status == IQMJobStatus.CANCELED:
+                self._last_known_status = JobStatus.CANCELED
+                raise JobCancelledError(f"IQM job {self._job_id!r} was canceled.")
             if final_iqm_status != IQMJobStatus.COMPLETED:
                 self._last_known_status = JobStatus.ERROR
                 raise JobFailureError(f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}.")
@@ -189,7 +189,7 @@ class IQMJob(Job):
             return False
         try:
             self._iqm_job.cancel()
-            self._last_known_status = JobStatus.CANCELLED
+            self._last_known_status = JobStatus.CANCELED
             return True
         except Exception:
             return False

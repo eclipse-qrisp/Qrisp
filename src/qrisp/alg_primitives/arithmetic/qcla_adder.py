@@ -238,7 +238,7 @@ def calc_carry(a, b, radix_base=2, radix_exponent=0):
     # by enforcing the order with a non-permeable identity. Ie. two subseqeuent x gates
     x(g)
     x(g)
-    # These x gates are cancelled by the compile method so there is no overhead.
+    # These x gates are canceled by the compile method so there is no overhead.
 
     p = b
 

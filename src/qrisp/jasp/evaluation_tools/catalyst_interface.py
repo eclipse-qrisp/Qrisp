@@ -41,7 +41,7 @@ from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (
 def jaspr_to_catalyst_jaxpr(jaspr):
     """Converts a jaspr into a Catalyst Jaxpr.
 
-    Since the jasp modelling aproach of quantum computation differs a bit from
+    Since the jasp modeling aproach of quantum computation differs a bit from
     the Catalyst Jaxpr model, we have to translate between the models.
 
     The AbstractQreg datastructure in Catalyst is treated as a stack of qubits,

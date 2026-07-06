@@ -33,7 +33,7 @@ from qrisp.interface.measurement_result import MeasurementResult
 
 # NOTE: ``BatchedBackend`` intentionally does not inherit from
 # ``Backend``. ``Backend.run`` is contractually required to return
-# a fully populated result. A ``BatchedBackend`` cannot honour that
+# a fully populated result. A ``BatchedBackend`` cannot honor that
 # contract because its ``run`` returns an empty placeholder that is
 # only populated after ``dispatch`` is called. Inheriting from
 # ``Backend`` would therefore violate the Liskov Substitution Principle.

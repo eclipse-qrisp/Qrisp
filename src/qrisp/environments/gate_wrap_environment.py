@@ -20,7 +20,7 @@ from qrisp.environments import QuantumEnvironment
 
 
 class GateWrapEnvironment(QuantumEnvironment):
-    """This environment allows to hide complexity in the circuit visualisation.
+    """This environment allows to hide complexity in the circuit visualization.
     Operations appended inside this environment are bundled into a single
     :ref:`Instruction` object.
 

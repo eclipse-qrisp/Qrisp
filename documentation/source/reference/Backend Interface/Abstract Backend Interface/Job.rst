@@ -37,7 +37,7 @@ Methods
    Job.done
    Job.running
    Job.queued
-   Job.cancelled
+   Job.canceled
    Job.in_final_state
    Job.refresh
    Job._raise_for_status

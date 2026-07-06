@@ -279,7 +279,7 @@ def generate_id_kron_jitted(input_tensor, n):
 
 # In order to harness the effciency gain we use a divide and conquer strategy:
 # We merge the instruction of the circuit into pairs of elementary gates, calculate
-# this unitary and the again merge this unitary with the neighbouring pair of elementary
+# this unitary and the again merge this unitary with the neighboring pair of elementary
 # gate. Applying this recursively requires only a single 2**n d matrix multiplication.
 
 
@@ -318,7 +318,7 @@ def __calc_circuit_unitary(qc):
         # Set up a new circuit where the merged instructions are appended
         recursion_qc = qc.clearcopy()
 
-        # Merge every pair of neighbouring instructions into one instruction
+        # Merge every pair of neighboring instructions into one instruction
         for i in range(0, len(qc.data), 2):
             if i + 1 < len(qc.data):
                 recursion_qc.append(qc.data[i].merge(qc.data[i + 1]))

@@ -63,7 +63,7 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
         "VALIDATING": JobStatus.QUEUED,  # no direct equivalent
         "RUNNING": JobStatus.RUNNING,
         "DONE": JobStatus.DONE,
-        "CANCELLED": JobStatus.CANCELLED,
+        "CANCELED": JobStatus.CANCELED,
         "ERROR": JobStatus.ERROR,
     }
     return mapping.get(name, JobStatus.RUNNING)
@@ -89,7 +89,7 @@ class QiskitJob(Job):
         qiskit_job,
         num_circuits: int,
     ):
-        """Initialise the wrapper with the Qrisp backend, the Qiskit job, and the circuit count."""
+        """Initialize the wrapper with the Qrisp backend, the Qiskit job, and the circuit count."""
         try:
             job_id = qiskit_job.job_id()
         except Exception:
@@ -131,7 +131,7 @@ class QiskitJob(Job):
             If the Qiskit job failed or raised an exception.
 
         JobCancelledError
-            If the Qiskit job was cancelled.
+            If the Qiskit job was canceled.
 
         TimeoutError
             If *timeout* expires before the job completes.
@@ -154,8 +154,8 @@ class QiskitJob(Job):
         except Exception as exc:
             terminal_status = _map_qiskit_status(self._qiskit_job)
             self._last_known_status = terminal_status
-            if terminal_status == JobStatus.CANCELLED:
-                raise JobCancelledError(f"Qiskit job {self._job_id!r} was cancelled.") from exc
+            if terminal_status == JobStatus.CANCELED:
+                raise JobCancelledError(f"Qiskit job {self._job_id!r} was canceled.") from exc
             raise JobFailureError(f"Qiskit job {self._job_id!r} failed: {exc}") from exc
 
         self._last_known_status = JobStatus.DONE
@@ -281,7 +281,7 @@ class QiskitBackend(Backend):
 
     The result is no longer a sharp peak at ``{4: 1.0}`` because the noise
     model introduces gate errors and readout errors, spreading probability
-    mass across neighbouring bitstrings.
+    mass across neighboring bitstrings.
 
     """
 
@@ -291,7 +291,7 @@ class QiskitBackend(Backend):
         name: str | None = None,
         options: Mapping | None = None,
     ):
-        """Initialise the QiskitBackend, defaulting to AerSimulator if no backend is provided."""
+        """Initialize the QiskitBackend, defaulting to AerSimulator if no backend is provided."""
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator

@@ -179,7 +179,7 @@ def GQSP(
     That is, starting in state $\ket{\psi}=\ket{0}=(1,0,0,0)$, we obtain
 
     >>> result = cosm(A)@(np.array([1,0,0,0]).transpose())
-    >>> result = result/np.linalg.norm(result) # normalise
+    >>> result = result/np.linalg.norm(result) # normalize
     >>> result = result**2 # compute measurement probabilities
     >>> print(result)
     [0.1452825+0.j 0.       +0.j 0.       +0.j 0.8547175-0.j]

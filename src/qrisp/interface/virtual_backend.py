@@ -41,7 +41,7 @@ class VirtualJob(Job):
         shots: int | list[int] | None,
         token: str,
     ):
-        """Initialise the job with the backend, normalised circuit list, shot count, and token."""
+        """Initialize the job with the backend, normalized circuit list, shot count, and token."""
         super().__init__(backend=backend)
         self._circuits = circuits
         self._shots = shots
@@ -55,7 +55,7 @@ class VirtualJob(Job):
     def submit(self) -> None:
         """Execute all circuits synchronously via the user-provided ``run_func``.
 
-        Each circuit is serialised to QASM and passed to ``run_func`` along
+        Each circuit is serialized to QASM and passed to ``run_func`` along
         with the shot count and token.  The collected counts dictionaries
         are wrapped in a :class:`~qrisp.interface.JobResult`.
         """
@@ -95,7 +95,7 @@ class VirtualJob(Job):
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
-        """Return ``False``: synchronous jobs cannot be cancelled after submission."""
+        """Return ``False``: synchronous jobs cannot be canceled after submission."""
         return False
 
     def status(self) -> JobStatus:

@@ -1700,7 +1700,7 @@ class Subtree(QuantumBacktrackingTree):
     def __init__(self, parent_tree, root_path):
 
         if len(root_path) > parent_tree.max_depth:
-            raise Exception("Tried to initialise subtree with root path longer than maximum depth")
+            raise Exception("Tried to initialize subtree with root path longer than maximum depth")
 
         QuantumBacktrackingTree.__init__(
             self,

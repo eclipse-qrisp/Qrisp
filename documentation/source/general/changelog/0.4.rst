@@ -95,6 +95,6 @@ Bug-fixes
 * Fixed a bug that prevented proper QFT cancellation within the :meth:`compile <qrisp.QuantumSession.compile>` method in some cases.
 * Fixed a bug that prevented proper verification of correct automatic uncomputation in some cases.
 * Fixed a bug that caused false determination of the unitary of controlled gates with a non-trivial control state.
-* Fixed a bug that caused problems during circuit visualisation on some platforms.
+* Fixed a bug that caused problems during circuit visualization on some platforms.
 * Fixed a bug that caused the simulation progress bar to not vanish after the simulation concluded.
 * Fixed a bug that introduced an extra phase in the compilation of dirty-ancillae supported ``balauca`` MCX gates.

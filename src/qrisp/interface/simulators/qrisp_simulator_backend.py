@@ -39,7 +39,7 @@ class QrispSimulatorJob(Job):
         circuits: Sequence,
         shots: int | list[int] | None,
     ):
-        """Initialise the job with the backend, normalised circuit list, and shot count."""
+        """Initialize the job with the backend, normalized circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
         self._shots = shots
@@ -100,7 +100,7 @@ class QrispSimulatorJob(Job):
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
-        """Return ``False``: synchronous jobs cannot be cancelled after submission."""
+        """Return ``False``: synchronous jobs cannot be canceled after submission."""
         return False
 
     def status(self) -> JobStatus:
@@ -128,7 +128,7 @@ class QrispSimulatorBackend(Backend):
     pm : PassManager or None, optional
         An optional :class:`~qrisp.circuit.pass_management.PassManager` that
         is applied to every circuit before it is submitted to the simulator.
-        This allows users to inject custom transpilation or optimisation
+        This allows users to inject custom transpilation or optimization
         passes into the simulation pipeline. Defaults to ``None``.
 
     Examples

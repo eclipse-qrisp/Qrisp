@@ -135,7 +135,7 @@ class QubitTerm:
     def serialize(self):
         # This function serializes the QubitTerm in a way that facilitates the
         # measurement post-processing. To learn more details about the reasoning
-        # behind this Serialisation check QubitOperator.conjugation_circuit
+        # behind this Serialization check QubitOperator.conjugation_circuit
 
         # The idea here is to serialize the operator via 3 integers.
         # These integers specify how the energy of a measurement sample should

@@ -1715,7 +1715,7 @@ class QuantumCircuit:
         Parameters
         ----------
         shots : int or None, optional
-            Number of shots to sample. When set to ``None`` (default), the behaviour
+            Number of shots to sample. When set to ``None`` (default), the behavior
             depends on the backend. For simulators, the exact probability distribution
             is returned. For real quantum devices, the number of shots is determined
             by the backend's default settings.
@@ -2921,7 +2921,7 @@ def convert_to_qb_list(
 ) -> list[Any]:
     """Convert a qubit specification to a (possibly nested) list of :class:`.Qubit` objects.
 
-    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalise the
+    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalize the
     *qubits* argument before an instruction is recorded.  The function accepts every form
     that ``append`` advertises:
 
@@ -2990,8 +2990,8 @@ def convert_to_cb_list(
     """Convert a classical-bit specification to a (possibly nested) list of
     :class:`.Clbit` objects.
 
-    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalise the
-    *clbits* argument before an instruction is recorded.  It mirrors the behaviour of
+    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalize the
+    *clbits* argument before an instruction is recorded.  It mirrors the behavior of
     :func:`convert_to_qb_list` for classical bits:
 
     * A :class:`.Clbit` instance, returned as ``[clbit]``.

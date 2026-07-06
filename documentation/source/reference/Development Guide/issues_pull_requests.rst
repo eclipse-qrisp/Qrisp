@@ -32,7 +32,7 @@ early almost always saves time.
 
 Good places to reach out:
 
-- **GitHub Issues**: for specific bugs, questions about behaviour, or
+- **GitHub Issues**: for specific bugs, questions about behavior, or
   suggestions: https://github.com/eclipse-qrisp/Qrisp/issues
 - **Discord**: for broader design conversations:
   https://discord.gg/v5np7DeBaq
@@ -89,7 +89,7 @@ upfront makes the review process smoother for everyone.
   PR. Keeping changes cohesive makes review and debugging significantly easier.
 
 **New functionality without tests**
-  Any new feature or behaviour change should be accompanied by appropriate
+  Any new feature or behavior change should be accompanied by appropriate
   tests. See :ref:`WritingTests`.
 
 **Ignoring existing project conventions**

@@ -36,7 +36,7 @@ def _map_aqt_status(aqt_job) -> JobStatus:
     """Translate an AQT (Qiskit-compatible) job's status to :class:`~qrisp.interface.JobStatus`.
 
     ``VALIDATING`` has no direct Qrisp equivalent and is mapped to ``QUEUED``.
-    Any unrecognised status string falls back to ``RUNNING``.
+    Any unrecognized status string falls back to ``RUNNING``.
     """
     try:
         raw = aqt_job.status()
@@ -51,7 +51,7 @@ def _map_aqt_status(aqt_job) -> JobStatus:
         "VALIDATING": JobStatus.QUEUED,
         "RUNNING": JobStatus.RUNNING,
         "DONE": JobStatus.DONE,
-        "CANCELLED": JobStatus.CANCELLED,
+        "CANCELED": JobStatus.CANCELED,
         "ERROR": JobStatus.ERROR,
     }
     return _MAP.get(name, JobStatus.RUNNING)
@@ -74,7 +74,7 @@ class AQTJob(Job):
     """
 
     def __init__(self, backend: "AQTBackend", aqt_job, cl_bits_per_circuit: list[int]):
-        """Initialise the wrapper with the Qrisp backend, the AQT job, and the
+        """Initialize the wrapper with the Qrisp backend, the AQT job, and the
         per-circuit classical-bit counts needed to format result bitstrings.
         """
         super().__init__(backend=backend)
@@ -109,7 +109,7 @@ class AQTJob(Job):
         JobFailureError
             If the AQT job failed or raised an exception.
         JobCancelledError
-            If the AQT job was cancelled.
+            If the AQT job was canceled.
 
         """
         try:
@@ -120,8 +120,8 @@ class AQTJob(Job):
         except Exception as exc:
             terminal_status = _map_aqt_status(self._aqt_job)
             self._last_known_status = terminal_status
-            if terminal_status == JobStatus.CANCELLED:
-                raise JobCancelledError(f"AQT job {self._job_id!r} was cancelled.") from exc
+            if terminal_status == JobStatus.CANCELED:
+                raise JobCancelledError(f"AQT job {self._job_id!r} was canceled.") from exc
             raise JobFailureError(f"AQT job {self._job_id!r} failed: {exc}") from exc
 
         self._last_known_status = JobStatus.DONE
@@ -172,7 +172,7 @@ class AQTBackend(Backend):
         ``AQTSampler`` returns quasi-probability distributions
         (float values that sum to 1.0) rather than integer counts.
         These are returned as-is and are handled by Qrisp's measurement
-        normalisation logic.
+        normalization logic.
 
     Parameters
     ----------

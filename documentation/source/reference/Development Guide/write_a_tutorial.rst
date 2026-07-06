@@ -48,7 +48,7 @@ Each tutorial is a self-contained overview of:
   A description of where the problem originates from and why it is important to solve it, i.e. use cases.
 
 **The mathematical foundation behind it**
-  An explanation of the maths and/or physics behind it. Keep it short and concise. You will need to find a balance between providing sufficient background explanation and keeping the tutorial an exciting read.
+  An explanation of the math and/or physics behind it. Keep it short and concise. You will need to find a balance between providing sufficient background explanation and keeping the tutorial an exciting read.
 
 **How it is solved using quantum computing**
   What does the research say on how we solve this problem? This is the foundation to give the explanation of your implementation footing. 

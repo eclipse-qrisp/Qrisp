@@ -38,7 +38,7 @@ class TestVisualizePass:
         assert isinstance(result, QuantumCircuit)
 
     # ------------------------------------------------------------------
-    # Identity behaviour
+    # Identity behavior
     # ------------------------------------------------------------------
 
     @staticmethod

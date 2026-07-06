@@ -65,7 +65,7 @@ class TestIdentityCancellation:
 
         Qrisp's H gate has tiny (~1e-16) imaginary components that push
         the norm of H² − I just above the 1e-10 cancellation threshold,
-        so the two H gates are combined rather than cancelled.
+        so the two H gates are combined rather than canceled.
         """
         qc = QuantumCircuit(1)
         qc.h(0)
@@ -120,7 +120,7 @@ class TestGateCombination:
         qc.z(0)
         result = combine_single_qubit_gates(qc)
         assert len(result.data) == 1
-        # Qrisp recognises the combined 1Q unitary as a U3 gate.
+        # Qrisp recognizes the combined 1Q unitary as a U3 gate.
         assert _gate_names(result)[0] == "u3"
 
     def test_three_gates_combined_to_one(self):
@@ -133,7 +133,7 @@ class TestGateCombination:
         assert len(result.data) == 1
 
     def test_single_gate_stays_single(self):
-        """A single gate with no neighbours should be re-emitted as-is."""
+        """A single gate with no neighbors should be re-emitted as-is."""
         qc = QuantumCircuit(1)
         qc.x(0)
         result = combine_single_qubit_gates(qc)
@@ -304,7 +304,7 @@ class TestRecursiveProcessing:
     """
 
     def test_gate_with_definition_optimised(self):
-        """A composite gate containing redundant rotations is optimised."""
+        """A composite gate containing redundant rotations is optimized."""
         inner = QuantumCircuit(1)
         inner.x(0)
         inner.x(0)  # cancels
@@ -321,7 +321,7 @@ class TestRecursiveProcessing:
 
     def test_controlled_op_base_definition_optimised(self):
         """A ControlledOperation whose base gate has a definition is
-        recursively optimised.
+        recursively optimized.
         """
         inner = QuantumCircuit(2)
         inner.x(0)

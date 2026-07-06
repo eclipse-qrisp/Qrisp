@@ -279,7 +279,7 @@ def qq_calc_carry(a, b, radix_base=2, radix_exponent=0):
     # a ancillary gate that wraps the mcx gates within two CNOT gates.
     # This ancillary gate is then permeable on the "b_i" input and the cycle in the
     # DAG dissapears. This introduces two extra CNOT gates per iteration. However,
-    # two of these CNOT gates are adjacent so, they will be cancelled out during
+    # two of these CNOT gates are adjacent so, they will be canceled out during
     # circuit optimization.
 
     # This gate is synthesized by the anc_gate function.

@@ -129,6 +129,17 @@ omit = ["*/__init__.py"]
 # documentation/build                  — generated Sphinx HTML output
 skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,documentation/build"
 builtin = "en-GB_to_en-US"
+# anc       — ancilla qubit variable name
+# ket       — Dirac bra-ket notation
+# Aer       — Qiskit Aer simulator (proper noun)
+# MIS       — Maximum Independent Set (CS abbreviation)
+# Childs    — Andrew Childs, researcher surname (arXiv citations)
+# COO       — Coordinate format for sparse matrices (scipy sparse)
+# notin     — local variable name in matrix_multiplication.py
+# Wille     — Robert Wille, researcher surname (paper bibliography)
+# theRes    — local variable name in test_tket_converter.py
+# braket    — Amazon Braket quantum service / LaTeX braket package
+ignore-words-list = "anc,ket,Aer,MIS,Childs,COO,notin,Wille,theRes,braket"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]

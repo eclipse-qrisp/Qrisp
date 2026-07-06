@@ -380,7 +380,7 @@ def gidney_adder(
     """
     a_is_quantum = _validate_gidney_adder_inputs(a, b)
 
-    # Normalise QuantumBool wrappers to raw qubits for downstream code.
+    # Normalize QuantumBool wrappers to raw qubits for downstream code.
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
     c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
 

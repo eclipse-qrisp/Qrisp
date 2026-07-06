@@ -158,7 +158,7 @@ def zz_zz_mcx(
     All three Z qubits are restored after the operation.
 
     Used in the carry XOR block to check two conditions at once: whether the
-    incoming carry and the target bit disagree with their neighbours.
+    incoming carry and the target bit disagree with their neighbors.
     """
     cx(z_left_right, z_left)  # z_left    ← left parity
     cx(z_left_right, z_right)  # z_right   ← right parity

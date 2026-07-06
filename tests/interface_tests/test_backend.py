@@ -64,7 +64,7 @@ class JobTest(Job):
     """
 
     def __init__(self, backend, circuits, shots, job_id=None):
-        """Initialise the JobTest with the backend, circuits, shot count, and optional job ID."""
+        """Initialize the JobTest with the backend, circuits, shot count, and optional job ID."""
         super().__init__(backend=backend, job_id=job_id)
         self.circuits = circuits
         self.shots = shots
@@ -141,8 +141,8 @@ class JobTest(Job):
                 pass
 
     def _set_cancelled(self) -> None:
-        """Mark the job as CANCELLED and fire all registered callbacks."""
-        self._last_known_status = JobStatus.CANCELLED
+        """Mark the job as CANCELED and fire all registered callbacks."""
+        self._last_known_status = JobStatus.CANCELED
         self._done_event.set()
         for cb in self._callbacks:
             try:
@@ -168,7 +168,7 @@ class BackendTest(Backend):
         name: str | None = None,
         options=None,
     ):
-        """Initialise the BackendTest with an execution mode, qubit count, delay, and RNG seed."""
+        """Initialize the BackendTest with an execution mode, qubit count, delay, and RNG seed."""
         super().__init__(name=name, options=options)
         valid_modes = {
             ExecutionMode.SYNC,
@@ -264,7 +264,7 @@ class BackendTest(Backend):
         job._set_error(RuntimeError("Simulated hardware fault."))
 
     def _run_cancellable(self, job: JobTest) -> None:
-        """Execute in steps of 0.5 s, honouring cancellation requests between steps."""
+        """Execute in steps of 0.5 s, honoring cancellation requests between steps."""
         step = 0.5
         total_steps = max(1, int(self.async_delay / step))
         job._set_status(JobStatus.RUNNING)
@@ -304,7 +304,7 @@ class BackendWithExplicitOptions(Backend):
     """Backend instantiated with explicit options — must override the base defaults entirely."""
 
     def __init__(self, options=None):
-        """Initialise with the provided options mapping."""
+        """Initialize with the provided options mapping."""
         super().__init__(options=options)
 
     def run_async(self, circuits, shots: int | list[int] | None = None):
@@ -546,7 +546,7 @@ class TestDummyBackend:
         assert b.name == "DummyBackend"
 
     def test_dummy_backend_default_options_are_correct(self):
-        """Ensure DummyBackend initialises with the expected default options."""
+        """Ensure DummyBackend initializes with the expected default options."""
         b = DummyBackend()
         assert b.options == {"shots": 1000, "flag": False}
 
@@ -1010,7 +1010,7 @@ class TestCancellation:
         assert job.cancel() is True
 
     def test_cancel_job_reaches_cancelled_status(self):
-        """Ensure the job status reaches CANCELLED after a successful cancel() call."""
+        """Ensure the job status reaches CANCELED after a successful cancel() call."""
         job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
@@ -1018,10 +1018,10 @@ class TestCancellation:
             job.result()
         except RuntimeError:
             pass
-        assert job.status() == JobStatus.CANCELLED
+        assert job.status() == JobStatus.CANCELED
 
     def test_cancel_result_raises_runtime_error(self):
-        """Ensure result() raises RuntimeError after the job has been cancelled."""
+        """Ensure result() raises RuntimeError after the job has been canceled."""
         job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
@@ -1029,7 +1029,7 @@ class TestCancellation:
             job.result()
 
     def test_cancelled_job_is_in_final_state(self):
-        """Ensure a cancelled job is in a final state (in_final_state() is True).
+        """Ensure a canceled job is in a final state (in_final_state() is True).
 
         Note that done() returns False because it means "completed successfully",
         not "reached any terminal state".
@@ -1042,7 +1042,7 @@ class TestCancellation:
         except RuntimeError:
             pass
         assert job.done() is False  # done() means success only
-        assert job.in_final_state() is True  # in_final_state() covers CANCELLED too
+        assert job.in_final_state() is True  # in_final_state() covers CANCELED too
 
     def test_cancel_returns_false_on_finished_job(self):
         """Ensure cancel() returns False when the job has already completed successfully."""
@@ -1074,7 +1074,7 @@ class TestCancellation:
         assert job.cancel() is True
 
     def test_callback_fires_on_cancellation(self):
-        """Ensure a registered callback is invoked with CANCELLED status after cancellation."""
+        """Ensure a registered callback is invoked with CANCELED status after cancellation."""
         job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         fired = []
         job.add_callback(lambda j: fired.append(j.status()))
@@ -1084,10 +1084,10 @@ class TestCancellation:
             job.result()
         except RuntimeError:
             pass
-        assert fired == [JobStatus.CANCELLED]
+        assert fired == [JobStatus.CANCELED]
 
     def test_cancel_result_raises_job_cancelled_error(self):
-        """result() must raise JobCancelledError (not just RuntimeError) for a cancelled job.
+        """result() must raise JobCancelledError (not just RuntimeError) for a canceled job.
 
         This lets callers distinguish a user-initiated cancellation from a hardware
         fault. JobCancelledError is a RuntimeError subclass, so existing
@@ -1111,7 +1111,7 @@ def test_virtual_backend_deprecation_warning():
 
 
 class JobTestLifecycle:
-    """Tests that the job lifecycle contract is honoured.
+    """Tests that the job lifecycle contract is honored.
 
     The only hard guarantee is that a job must exit INITIALIZING before
     run_async() returns. The exact state after that depends on the backend:

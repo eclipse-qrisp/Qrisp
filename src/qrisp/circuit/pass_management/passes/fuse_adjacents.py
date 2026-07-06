@@ -15,7 +15,7 @@
 ********************************************************************************
 
 Circuit pass that cancels adjacent gate–inverse-gate pairs by building a
-directed acyclic graph (DAG) and fusing neighbouring instructions.
+directed acyclic graph (DAG) and fusing neighboring instructions.
 
 **Architecture**
 
@@ -24,7 +24,7 @@ The module is layered in three tiers:
 1. **Operation-level fusion** — domain logic that decides whether two
    :class:`~qrisp.circuit.Operation` objects cancel, fuse into a single
    operation, or cannot be combined.  A dispatcher,
-   :func:`_fuse_operations`, delegates to specialised handlers in order:
+   :func:`_fuse_operations`, delegates to specialized handlers in order:
 
    * :func:`_fuse_swap_with_neighbour` — SWAP·{CX,CP,RZZ} and vice
      versa, replacing the pair with a cheaper compound gate.
@@ -45,7 +45,7 @@ The module is layered in three tiers:
 3. **DAG orchestration** — :func:`fuse_adjacents` builds a DAG where
    each instruction is a node and edges track qubit/clbit flow.  When
    an instruction has a single predecessor (meaning the pair is locally
-   adjacent on every qubit), fusion is attempted.  Cancelled or fused
+   adjacent on every qubit), fusion is attempted.  Canceled or fused
    nodes are removed and edges rewired via :func:`_rewire_past_node`.
    Surviving instructions are emitted in topological order by
    :func:`_emit_surviving_circuit`.
@@ -94,7 +94,7 @@ _FUSION_CANCEL = object()
 
 
 def _fuse_swap_with_neighbour(op_a, op_b):
-    """Try to fuse a SWAP gate with a neighbouring symmetric two-qubit gate.
+    """Try to fuse a SWAP gate with a neighboring symmetric two-qubit gate.
 
     When a SWAP immediately precedes (or follows) one of these symmetric
     two-qubit gates (CX, CP, RZZ, CZ), the pair can be replaced by a simpler
@@ -102,7 +102,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
     of SWAP then gate.
 
     The "half_*_qc" circuits below are the gate that remains after
-    absorbing part of the SWAP into the neighbouring operation.
+    absorbing part of the SWAP into the neighboring operation.
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
     -------
     Operation or None
         The fused operation, or ``None`` if neither op is a SWAP or
-        the neighbour is not a recognised symmetric two-qubit gate.
+        the neighbor is not a recognized symmetric two-qubit gate.
 
     """
     with fast_append(0):
@@ -186,7 +186,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
 
 
 def _fuse_parameterized_1q(op_a, op_b, gphase_array):
-    """Try to fuse two parameterised single-qubit gates.
+    """Try to fuse two parameterized single-qubit gates.
 
     Rz(θ₁)·Rz(θ₂) → Rz(θ₁+θ₂), and if θ₁+θ₂ = 0 the pair cancels.
     P(θ₁)·P(θ₂)  → P(θ₁+θ₂), same logic.
@@ -212,7 +212,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
     Operation or _FUSION_CANCEL or None
         * ``Operation`` — the fused result.
         * ``_FUSION_CANCEL`` — the two operations cancel completely.
-        * ``None`` — no parameterised fusion possible.
+        * ``None`` — no parameterized fusion possible.
 
     """
     if not op_a.params:
@@ -256,7 +256,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
             return RYGate(param_sum)
         if op_a.name == "gphase":
             return GPhaseGate(op_a.global_phase + op_b.global_phase)
-        # Other parameterised gates with matching names (e.g. cp, rzz)
+        # Other parameterized gates with matching names (e.g. cp, rzz)
         # are handled by the generic inverse check further below.
 
     return None
@@ -344,7 +344,7 @@ def _fuse_controlled_ops(op_a, op_b):
 
 
 def _fuse_via_transpile(op_a, op_b):
-    """Try to fuse two composite gates by transpiling and cancelling.
+    """Try to fuse two composite gates by transpiling and canceling.
 
     Some cancellations are only visible after decomposing composite
     gates into their constituent operations.  This escape hatch:
@@ -352,7 +352,7 @@ def _fuse_via_transpile(op_a, op_b):
     1. Builds a two-instruction circuit from ``op_a`` and ``op_b``.
     2. Transpiles it (decomposes the definitions).
     3. Runs ``fuse_adjacents`` on the decomposition.
-    4. If anything cancelled (gate count changed), returns the fused
+    4. If anything canceled (gate count changed), returns the fused
        result as a new gate.
 
     Parameters
@@ -365,7 +365,7 @@ def _fuse_via_transpile(op_a, op_b):
     Returns
     -------
     Operation or None
-        The fused operation, or ``None`` if nothing cancelled.
+        The fused operation, or ``None`` if nothing canceled.
 
     """
     qc = QuantumCircuit(op_a.num_qubits)
@@ -376,7 +376,7 @@ def _fuse_via_transpile(op_a, op_b):
     qc = fuse_adjacents(qc)
     qc = combine_single_qubit_gates(qc)
     if op_counts != qc.count_ops():
-        # If all gates cancelled → full cancellation.
+        # If all gates canceled → full cancellation.
         if len(qc.data) == 0:
             return _FUSION_CANCEL
         return qc.to_gate()
@@ -432,7 +432,7 @@ def _check_inverse_cancel(op_a, op_b):
         if np.linalg.norm(unitary_a - unitary_b) > 1e-4:
             return None
 
-        # Mark as cancelled
+        # Mark as canceled
         return _FUSION_CANCEL
 
     return None
@@ -446,9 +446,9 @@ def _check_inverse_cancel(op_a, op_b):
 def _fuse_operations(op_a, op_b, gphase_array):
     """Try to fuse two operations into one (or cancel them).
 
-    Dispatches through the specialised fusion helpers in order:
-    1. SWAP fusion with neighbouring two-qubit gates.
-    2. Parameterised single-qubit gate fusion.
+    Dispatches through the specialized fusion helpers in order:
+    1. SWAP fusion with neighboring two-qubit gates.
+    2. Parameterized single-qubit gate fusion.
     3. GidneyLogicalAND compute/uncompute cancellation.
     4. Controlled-operation recursion (if op_a has a definition).
     5. Generic inverse cancellation.
@@ -471,12 +471,12 @@ def _fuse_operations(op_a, op_b, gphase_array):
         * ``None`` — no fusion possible.
 
     """
-    # 1. SWAP fusion with neighbouring two-qubit gates.
+    # 1. SWAP fusion with neighboring two-qubit gates.
     result = _fuse_swap_with_neighbour(op_a, op_b)
     if result is not None:
         return result
 
-    # 2. Parameterised single-qubit gate fusion.
+    # 2. Parameterized single-qubit gate fusion.
     result = _fuse_parameterized_1q(op_a, op_b, gphase_array)
     if result is not None:
         return result
@@ -566,7 +566,7 @@ def _resolve_qubit_order(instr_a, instr_b):
 
 
 def _fuse_instructions(instr_a, instr_b, gphase_array):
-    """Try to fuse two neighbouring instructions.
+    """Try to fuse two neighboring instructions.
 
     This is a thin wrapper around ``_fuse_operations`` that additionally
     validates qubit alignment and handles *symmetric* gates (via
@@ -750,7 +750,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
         every qubit it touches), call ``_fuse_instructions`` to attempt
         to merge or cancel the pair.
 
-    3.  When a pair is cancelled, both nodes are
+    3.  When a pair is canceled, both nodes are
         removed from the DAG and their qubit edges are rewired to
         bridge over the gap.
 
@@ -766,12 +766,12 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
 
     * Self-inverse gates: ``X·X``, ``H·H``, ``CX·CX``, ``CZ·CZ``,
       ``SWAP·SWAP``, …
-    * Parameterised rotations with opposite angles:
+    * Parameterized rotations with opposite angles:
       ``Rz(θ)·Rz(−θ)``, ``Rx(θ)·Rx(−θ)``, ``Ry(θ)·Ry(−θ)``
     * Phase gates: ``P(θ)·P(−θ)``
     * Cross-type fusion: ``Rz(θ)·P(−θ)`` → ``P(0)·Gphase``
     * Controlled operations whose base gates cancel
-    * Partial fusion of ``SWAP`` with neighbouring ``CX``, ``CP``,
+    * Partial fusion of ``SWAP`` with neighboring ``CX``, ``CP``,
       ``RZZ`` into fewer CX gates
 
     **Global phase tracking**
@@ -789,7 +789,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
     Returns
     -------
     QuantumCircuit
-        A new circuit with adjacent inverse gates cancelled.
+        A new circuit with adjacent inverse gates canceled.
 
     Examples
     --------
@@ -799,7 +799,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
         >>> from qrisp import fuse_adjacents
         >>> qc = QuantumCircuit(2)
         >>> qc.cx(0, 1)
-        >>> qc.cx(0, 1)   # CX is self-inverse → cancelled
+        >>> qc.cx(0, 1)   # CX is self-inverse → canceled
         >>> print(qc)
         <BLANKLINE>
         qb_96: ──■────■──
@@ -817,7 +817,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
         qb_97:
         <BLANKLINE>
 
-    Fuse a SWAP with a neighbouring CX into fewer gates::
+    Fuse a SWAP with a neighboring CX into fewer gates::
 
         >>> qc = QuantumCircuit(2)
         >>> qc.swap(0, 1)
@@ -838,7 +838,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
     """
     gphase_array = [0]  # mutable accumulator for global phase
 
-    # Step 1: initialise the DAG.
+    # Step 1: initialize the DAG.
     G, qubit_dic, clbit_dic, edge_dic, data_list = _init_dag(qc)
 
     # Step 2: build the DAG and attempt fusion/cancellation on the fly.

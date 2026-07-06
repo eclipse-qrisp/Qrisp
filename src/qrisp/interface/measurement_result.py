@@ -267,7 +267,7 @@ class DecodedMeasurementResult(LazyDict):
     Parameters
     ----------
     raw : LazyDict
-        The source of integer-keyed, normalised probability data (typically
+        The source of integer-keyed, normalized probability data (typically
         an :class:`_IntKeyedResult` returned by ``get_measurement_from_qc``).
     decoder : Callable[[int], object]
         Maps an integer bitstring index to a user-facing label. This is
@@ -392,7 +392,7 @@ class MultiMeasurementResult(LazyDict):
 
         # Sort for deterministic decoding order.
         raw_counts = dict(sorted(self._raw._data.items()))
-        # Normalise to probabilities in case the backend returned raw counts.
+        # Normalize to probabilities in case the backend returned raw counts.
         total = sum(raw_counts.values())
 
         # The circuit in multi_measurement adds classical registers in
@@ -441,12 +441,12 @@ class MultiMeasurementResult(LazyDict):
 
 
 class _IntKeyedResult(LazyDict):
-    """Internal: lazily converts raw bitstring counts to normalised int-keyed probabilities.
+    """Internal: lazily converts raw bitstring counts to normalized int-keyed probabilities.
 
     Created by ``get_measurement_from_qc`` after calling
     :meth:`~qrisp.interface.Backend.run`. On first access it reads the raw
     bitstring counts, strips spaces, truncates each key to *num_bits* bits,
-    converts to an integer, merges colliding keys by summing, and normalises
+    converts to an integer, merges colliding keys by summing, and normalizes
     to probabilities when the total count differs from 1 by more than 1e-3.
     """
 

@@ -137,7 +137,7 @@ class TestVirtualBackendDeprecation:
 
 
 class TestVirtualBackendName:
-    """Tests for the name-related behaviour of VirtualBackend."""
+    """Tests for the name-related behavior of VirtualBackend."""
 
     def test_name_defaults_to_class_name(self):
         """When no name is provided, VirtualBackend.name must be 'VirtualBackend'."""
@@ -394,7 +394,7 @@ class TestVirtualBackendBatch:
 
 
 # ---------------------------------------------------------------------------
-# Shots behaviour
+# Shots behavior
 # ---------------------------------------------------------------------------
 
 
@@ -536,7 +536,7 @@ class TestVirtualBackendErrors:
 
 
 class TestVirtualBackendJobLifecycle:
-    """Tests that VirtualJob honours the Job lifecycle contract."""
+    """Tests that VirtualJob honors the Job lifecycle contract."""
 
     def test_job_is_virtual_job_instance(self, vb):
         """run_async must return a VirtualJob."""
@@ -574,7 +574,7 @@ class TestVirtualBackendJobLifecycle:
 
 
 # ---------------------------------------------------------------------------
-# Cancel behaviour
+# Cancel behavior
 # ---------------------------------------------------------------------------
 
 

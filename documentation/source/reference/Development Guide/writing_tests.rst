@@ -40,12 +40,12 @@ Writing a test
 Each test file must be named ``test_<feature>.py`` and each test function must
 start with ``test_``. Tests should be:
 
-- *Small and focused*: avoid large tests that validate many behaviours at
+- *Small and focused*: avoid large tests that validate many behaviors at
   once.
 - *Deterministic*: avoid randomness unless the feature itself is
   probabilistic.
 - *Explicit*: the test name and body should make it clear exactly which
-  behaviour is being validated.
+  behavior is being validated.
 
 We refer to the official pytest documentation for more detailed guidance 
 on writing tests (see the ``Useful references`` section below).

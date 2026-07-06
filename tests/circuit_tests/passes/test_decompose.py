@@ -66,7 +66,7 @@ class TestDecomposePass:
         assert len(result.data) > len(qc.data)
 
     # ------------------------------------------------------------------
-    # Decomposition behaviour
+    # Decomposition behavior
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -79,7 +79,7 @@ class TestDecomposePass:
         return qc
 
     # ------------------------------------------------------------------
-    # Multi-level decomposition behaviour (MCX has a 2-level definition)
+    # Multi-level decomposition behavior (MCX has a 2-level definition)
     # ------------------------------------------------------------------
 
     def test_level_zero_no_decomposition(self):
@@ -209,7 +209,7 @@ class TestDecomposePass:
         assert np.allclose(U_orig, U_result, atol=1e-6), "Unitaries must match after gphase collection"
 
     def test_collect_gphases_default_false(self):
-        """Default behaviour (collect_gphases=False) leaves gphase gates untouched."""
+        """Default behavior (collect_gphases=False) leaves gphase gates untouched."""
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.append(GPhaseGate(0.5), [0])

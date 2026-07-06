@@ -30,7 +30,7 @@ from qrisp.interface.job import Job, JobResult, JobStatus
 class MinimalJob(Job):
     """The smallest possible concrete `Job` class that can be instantiated.
 
-    Used to unit-test the base class behaviour in isolation.
+    Used to unit-test the base class behavior in isolation.
     All state is managed directly via private attributes.
     Threading is supported internally via a ``threading.Event`` class
     so that ``result`` can block correctly, but this is an implementation
@@ -59,7 +59,7 @@ class MinimalJob(Job):
     def cancel(self) -> bool:
         if self.in_final_state():
             return False
-        self._last_known_status = JobStatus.CANCELLED
+        self._last_known_status = JobStatus.CANCELED
         self._done_event.set()
         return True
 
@@ -123,7 +123,7 @@ class CountingWrapper(Backend):
     """
 
     def __init__(self, inner: Backend):
-        """Initialise with the backend to delegate execution to."""
+        """Initialize with the backend to delegate execution to."""
         super().__init__()
         self._inner = inner
         self.run_async_call_count = 0

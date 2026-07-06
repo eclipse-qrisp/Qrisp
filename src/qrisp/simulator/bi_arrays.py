@@ -177,7 +177,7 @@ class SparseBiArray(BiArray):
         # Handle the case that the init_object is a tuple of nz_indices/data arrays
         elif isinstance(init_object, tuple):
             if shape is None:
-                raise Exception("Tried to initialise SparseBiArray from sparse data without providing a shape")
+                raise Exception("Tried to initialize SparseBiArray from sparse data without providing a shape")
 
             self.nz_indices = init_object[0].ravel()
             self.data = init_object[1]
@@ -187,7 +187,7 @@ class SparseBiArray(BiArray):
         # Handle the case that the init_object is a sparse matrix/array
         elif isinstance(init_object, (coo_array)):
             if shape is None:
-                raise Exception("Tried to initialise SparseBiArray from sparse matrix without providing a shape")
+                raise Exception("Tried to initialize SparseBiArray from sparse matrix without providing a shape")
 
             self.nz_indices = hlp.gen_flat_coords(init_object.col, init_object.row, init_object.shape)
             self.data = init_object.data

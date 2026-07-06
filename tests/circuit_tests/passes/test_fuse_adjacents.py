@@ -94,7 +94,7 @@ class TestSelfInverseCancellation:
 
 
 # ---------------------------------------------------------------------------
-# Tests: parameterised gate cancellation
+# Tests: parameterized gate cancellation
 # ---------------------------------------------------------------------------
 
 
@@ -228,7 +228,7 @@ class TestSeparationPreventsCancellation:
         assert names.count("cx") == 1
 
     def test_non_adjacent_not_cancelled(self):
-        """X · Z · X — the Z prevents the two X from cancelling."""
+        """X · Z · X — the Z prevents the two X from canceling."""
         qc = QuantumCircuit(1)
         qc.x(0)
         qc.z(0)
@@ -247,7 +247,7 @@ class TestSymmetricGates:
     """Symmetric two-qubit gates match by qubit set, not order."""
 
     def test_cz_different_order_cancels(self):
-        """CZ(0,1) then CZ(1,0) — same set → cancelled."""
+        """CZ(0,1) then CZ(1,0) — same set → canceled."""
         qc = QuantumCircuit(2)
         qc.cz(0, 1)
         qc.cz(1, 0)
@@ -255,7 +255,7 @@ class TestSymmetricGates:
         assert _num_gates(result) == 0
 
     def test_swap_different_order_cancels(self):
-        """SWAP(0,1) then SWAP(1,0) — cancelled."""
+        """SWAP(0,1) then SWAP(1,0) — canceled."""
         qc = QuantumCircuit(2)
         qc.swap(0, 1)
         qc.swap(1, 0)
@@ -263,7 +263,7 @@ class TestSymmetricGates:
         assert _num_gates(result) == 0
 
     def test_cp_different_order_cancels(self):
-        """Adjacent CP(θ)·CP(−θ) gates are fused or cancelled."""
+        """Adjacent CP(θ)·CP(−θ) gates are fused or canceled."""
         qc = QuantumCircuit(2)
         qc.cp(np.pi / 3, 0, 1)
         qc.cp(-np.pi / 3, 0, 1)
@@ -279,7 +279,7 @@ class TestSymmetricGates:
 
 
 class TestGlobalPhase:
-    """Global phase gates and phase tracking in parameterised gates."""
+    """Global phase gates and phase tracking in parameterized gates."""
 
     def test_gphase_tracking(self):
         """Two gphase operations on the same qubit are fused."""
@@ -299,7 +299,7 @@ class TestGlobalPhase:
         qc.rz(np.pi, 0)
         qc.rz(-np.pi, 0)
         result = fuse_adjacents(qc)
-        # Cancelled → no gates remain (global phase may be dropped).
+        # Canceled → no gates remain (global phase may be dropped).
         assert _num_gates(result) == 0
 
 
@@ -420,7 +420,7 @@ class TestIdentityPreservation:
 
 
 class TestGidneyLogicalAND:
-    """Cancellation behaviour of GidneyLogicalAND compute/uncompute pairs."""
+    """Cancellation behavior of GidneyLogicalAND compute/uncompute pairs."""
 
     def test_compute_uncompute_cancels(self):
         """A GidneyLogicalAND compute followed by uncompute must cancel."""

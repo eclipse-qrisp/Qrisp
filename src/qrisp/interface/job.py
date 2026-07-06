@@ -45,8 +45,8 @@ class JobStatus(StrEnum):
         The job is currently being executed.
     DONE :
         The job completed successfully. Results are available.
-    CANCELLED :
-        The job was cancelled before or during execution.
+    CANCELED :
+        The job was canceled before or during execution.
     ERROR :
         The job failed due to an error during execution.
 
@@ -56,13 +56,13 @@ class JobStatus(StrEnum):
     QUEUED = auto()
     RUNNING = auto()
     DONE = auto()
-    CANCELLED = auto()
+    CANCELED = auto()
     ERROR = auto()
 
     @classmethod
     def final_states(cls) -> tuple[JobStatus, ...]:
         """Terminal states: once a Job reaches one of these, its state won't change anymore."""
-        return (cls.DONE, cls.CANCELLED, cls.ERROR)
+        return (cls.DONE, cls.CANCELED, cls.ERROR)
 
 
 JOB_FINAL_STATES = JobStatus.final_states()
@@ -75,8 +75,8 @@ class JobFailureError(RuntimeError):
 
 
 class JobCancelledError(RuntimeError):
-    """Raised by :meth:`Job.result` when the job was cancelled
-    (:attr:`~JobStatus.CANCELLED`).
+    """Raised by :meth:`Job.result` when the job was canceled
+    (:attr:`~JobStatus.CANCELED`).
     """
 
 
@@ -194,7 +194,7 @@ class Job(ABC):
     submission. The caller can then:
 
     * call :meth:`result` to wait for the outcome and retrieve it, or
-    * poll :attr:`status` / :meth:`done` / :meth:`running` / :meth:`queued` / :meth:`cancelled`
+    * poll :attr:`status` / :meth:`done` / :meth:`running` / :meth:`queued` / :meth:`canceled`
       to check the current state, or
     * call :meth:`cancel` to attempt cancellation.
 
@@ -206,7 +206,7 @@ class Job(ABC):
 
     The ``Job`` base class defines *only the observable contract*. That is, the three
     abstract methods that every concrete job must implement. It deliberately
-    prescribes no internal synchronisation mechanism (no threading, no
+    prescribes no internal synchronization mechanism (no threading, no
     asyncio, no polling loop). Each concrete subclass chooses whatever
     concurrency model suits its execution environment:
 
@@ -260,11 +260,11 @@ class Job(ABC):
     def last_known_status(self) -> JobStatus:
         """The most recently cached :class:`JobStatus` for this job.
 
-        This value is initialised to :attr:`~JobStatus.INITIALIZING` and is
+        This value is initialized to :attr:`~JobStatus.INITIALIZING` and is
         updated at the following points:
 
         * :meth:`status`: every live query updates the cache as a side effect.
-        * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or
+        * :meth:`result`: transitions to ``DONE``, ``CANCELED``, or
           ``ERROR`` when the job reaches a terminal state.
         * :meth:`refresh`: explicitly fetches the live status and caches it
           (semantically identical to calling :meth:`status`, but signals intent
@@ -282,8 +282,8 @@ class Job(ABC):
 
         This is a blocking call: it does not return until the job is in one
         of the terminal states: :attr:`~JobStatus.DONE`,
-        :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`. The
-        internal synchronisation mechanism (threading, polling, asyncio,
+        :attr:`~JobStatus.CANCELED`, or :attr:`~JobStatus.ERROR`. The
+        internal synchronization mechanism (threading, polling, asyncio,
         etc.) is left entirely to the concrete implementation.
 
         If the job is already in a terminal state when this method is
@@ -312,7 +312,7 @@ class Job(ABC):
             If the job terminated in :attr:`~JobStatus.ERROR` state.
 
         JobCancelledError
-            If the job was cancelled (:attr:`~JobStatus.CANCELLED`).
+            If the job was canceled (:attr:`~JobStatus.CANCELED`).
 
         TimeoutError
             If *timeout* is specified and the job does not finish in time.
@@ -328,10 +328,10 @@ class Job(ABC):
         -------
         bool
             ``True`` if the cancellation was initiated: either the job is
-            already in :attr:`~JobStatus.CANCELLED` state (for synchronous
+            already in :attr:`~JobStatus.CANCELED` state (for synchronous
             or in-process backends), or the cancel request has been
             dispatched to the remote backend (for asynchronous hardware
-            backends, the transition to ``CANCELLED`` may not yet be
+            backends, the transition to ``CANCELED`` may not yet be
             visible in :meth:`status`).
 
             ``False`` if the job is already in a terminal state and no
@@ -375,7 +375,7 @@ class Job(ABC):
     #
     # NOTE: every method in this block calls :meth:`status` on each
     # invocation, which for remote backends may involve a network
-    # round-trip. Callers that need to minimise round-trips should read
+    # round-trip. Callers that need to minimize round-trips should read
     # :attr:`last_known_status` directly after a single :meth:`status`
     # or :meth:`refresh` call rather than using these helpers repeatedly.
     # ------------------------------------------------------------------
@@ -392,15 +392,15 @@ class Job(ABC):
         """Return ``True`` if the job is waiting in the backend queue."""
         return self.status() == JobStatus.QUEUED
 
-    def cancelled(self) -> bool:
-        """Return ``True`` if the job was cancelled."""
-        return self.status() == JobStatus.CANCELLED
+    def canceled(self) -> bool:
+        """Return ``True`` if the job was canceled."""
+        return self.status() == JobStatus.CANCELED
 
     def in_final_state(self) -> bool:
         """Return ``True`` if the job has reached a terminal state.
 
         Terminal states are :attr:`~JobStatus.DONE`,
-        :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
+        :attr:`~JobStatus.CANCELED`, and :attr:`~JobStatus.ERROR`.
         """
         return self.status() in JOB_FINAL_STATES
 
@@ -447,7 +447,7 @@ class Job(ABC):
             If *status* is ``ERROR``.
 
         JobCancelledError
-            If *status* is ``CANCELLED``.
+            If *status* is ``CANCELED``.
 
         """
         if status is None:
@@ -456,8 +456,8 @@ class Job(ABC):
             if self._failure_cause is not None:
                 raise JobFailureError(f"Job {self._job_id!r} failed: {self._failure_cause}") from self._failure_cause
             raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
-        if status == JobStatus.CANCELLED:
-            raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
+        if status == JobStatus.CANCELED:
+            raise JobCancelledError(f"Job {self._job_id!r} was canceled.")
 
     # ------------------------------------------------------------------
     # Dunder methods

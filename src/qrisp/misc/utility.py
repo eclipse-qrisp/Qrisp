@@ -192,7 +192,7 @@ def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1) -> dict:
 def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     """Decorator to bundle up the quantum instructions of a function into a single gate
     object. Bundled gate objects can help debugging as it allows for a more clear
-    QuantumCircuit visualisation.
+    QuantumCircuit visualization.
 
     Furthermore, bundling up functions is relevant for Qrisps uncomputation algorithm.
     When bundling up for uncomputation, this decorator provides the means to annotate
@@ -1299,7 +1299,7 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
     Appends measurement gates for each qubit in *qubits*, submits the circuit
     to *backend*, and wraps the raw result in an
     :class:`~qrisp.interface.measurement_result._IntKeyedResult` that converts
-    bitstrings to integers and normalises shot counts to probabilities on first
+    bitstrings to integers and normalizes shot counts to probabilities on first
     access.
 
     Parameters
@@ -1318,7 +1318,7 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
     Returns
     -------
     _IntKeyedResult
-        Lazy mapping from integer bitstring indices to normalised probabilities.
+        Lazy mapping from integer bitstring indices to normalized probabilities.
         Population is deferred until the first access.
 
     """
@@ -2108,7 +2108,7 @@ def inpl_adder_test(inpl_adder):
                     )
                 else:
                     assert c == b, (
-                        f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+                        f"Controlled quantum-quantum addition behavior was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
                     )
 
         if i < 6:
@@ -2140,7 +2140,7 @@ def inpl_adder_test(inpl_adder):
                         )
                     else:
                         assert b == a, (
-                            f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                            f"Controlled classical-quantum addition behavior was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
                         )
 
 

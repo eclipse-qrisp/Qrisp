@@ -189,7 +189,7 @@ class CircuitPass:
         return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
 
     def visualize(self, qc: QuantumCircuit) -> None:
-        """Print a before/after visualisation of this pass applied to *qc*.
+        """Print a before/after visualization of this pass applied to *qc*.
 
         The method copies *qc*, applies the pass, and prints both the
         original and the transformed circuit to the console.
@@ -197,7 +197,7 @@ class CircuitPass:
         Parameters
         ----------
         qc : QuantumCircuit
-            The input quantum circuit to visualise.
+            The input quantum circuit to visualize.
 
         Examples
         --------

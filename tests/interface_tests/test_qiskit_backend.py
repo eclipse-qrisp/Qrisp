@@ -229,23 +229,23 @@ class TestQiskitJob:
     # --- result (cancellation path) ---
 
     def test_result_raises_job_cancelled_error_when_cancelled(self):
-        """A cancelled Qiskit job raises JobCancelledError, not JobFailureError."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("job was cancelled"))
+        """A canceled Qiskit job raises JobCancelledError, not JobFailureError."""
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("job was canceled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELLED"
+        qiskit_job.status.return_value.name = "CANCELED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
-        """result() updates last_known_status to CANCELLED when the job was cancelled."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
+        """result() updates last_known_status to CANCELED when the job was canceled."""
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("canceled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELLED"
+        qiskit_job.status.return_value.name = "CANCELED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
-        assert job.last_known_status == JobStatus.CANCELLED
+        assert job.last_known_status == JobStatus.CANCELED
 
     # --- cancel ---
 
@@ -308,10 +308,10 @@ class TestQiskitJob:
         assert job.last_known_status == JobStatus.RUNNING
 
     def test_result_raises_immediately_when_already_cancelled(self):
-        """result() raises JobCancelledError without calling Qiskit when already CANCELLED."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
+        """result() raises JobCancelledError without calling Qiskit when already CANCELED."""
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("canceled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELLED"
+        qiskit_job.status.return_value.name = "CANCELED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
@@ -360,8 +360,8 @@ class TestMapQiskitStatus:
         assert _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
 
     def test_cancelled_maps_to_cancelled(self):
-        """A Qiskit job with status CANCELLED maps to JobStatus.CANCELLED."""
-        assert _map_qiskit_status(self._job_with_status("CANCELLED")) == JobStatus.CANCELLED
+        """A Qiskit job with status CANCELED maps to JobStatus.CANCELED."""
+        assert _map_qiskit_status(self._job_with_status("CANCELED")) == JobStatus.CANCELED
 
     def test_error_maps_to_error(self):
         """A Qiskit job with status ERROR maps to JobStatus.ERROR."""
@@ -502,7 +502,7 @@ class TestQiskitBackendIntegration:
     # QuantumCircuit → transpile → SamplerV2 submission → DataBin parsing —
     # without any substitution of Qiskit internals.
 
-    # They are deliberately narrow: each test targets the specific behaviour
+    # They are deliberately narrow: each test targets the specific behavior
     # introduced or fixed in the current implementation and would not be
     # caught by the mocked unit tests above.
 
@@ -714,7 +714,7 @@ class TestQiskitRuntimeBackendConstruction:
         assert last_sampler_arg is session_instance
 
     def test_invalid_mode_raises_value_error(self, runtime_mocks):
-        """An unrecognised mode string raises ValueError with a descriptive message."""
+        """An unrecognized mode string raises ValueError with a descriptive message."""
         with pytest.raises(ValueError, match="not available"):
             QiskitRuntimeBackend(api_token="token", mode="batch")
 

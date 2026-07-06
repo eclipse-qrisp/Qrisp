@@ -88,7 +88,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          return cast(JobResult, self._result_data)
 
       def cancel(self):
-         return False  # synchronous jobs cannot be cancelled
+         return False  # synchronous jobs cannot be canceled
 
       def status(self):
          return self._last_known_status
@@ -206,7 +206,7 @@ Asynchronous Backends
 
 For hardware backends, circuit execution is typically asynchronous: the job is submitted
 to a remote queue, and the caller does not block waiting for it to complete.
-We can simulate this behaviour locally by running circuits in parallel background threads,
+We can simulate this behavior locally by running circuits in parallel background threads,
 using Python's ``threading`` module.
 
 The following example wraps the same built-in simulator, but submits each circuit to a
@@ -230,7 +230,7 @@ separate thread so they all execute concurrently:
          self._circuits = circuits
          self._shots = shots
          self._result_data = None
-         # threading.Event is the synchronisation primitive that allows
+         # threading.Event is the synchronization primitive that allows
          # result() to block cheaply until all threads have finished.
          self._done_event = threading.Event()
 
@@ -364,7 +364,7 @@ The threading model here is therefore a faithful simulation of the asynchronous 
 (the caller submits and returns immediately) even if the local speedup is modest.
 
 These two examples cover the most important local execution patterns: blocking simulation
-and parallelised asynchronous simulation. A third important case is the remote hardware
+and parallelized asynchronous simulation. A third important case is the remote hardware
 backend that submits circuits to a vendor API, receives a job identifier, and polls for
 results over the network. This is architecturally distinct and will be covered in a dedicated
 example in a future release.
@@ -382,7 +382,7 @@ caller, and the caller decides when to block for the result.
 
 The base ``Job`` class defines *only the observable contract*: three abstract methods that
 every concrete implementation must provide.
-It deliberately prescribes no internal synchronisation mechanism.
+It deliberately prescribes no internal synchronization mechanism.
 A synchronous simulator may resolve the job inline; an asynchronous hardware backend
 may poll a remote queue in a background thread or coroutine.
 From the caller's perspective, both are used identically:
@@ -426,12 +426,12 @@ and derived from :meth:`~qrisp.interface.Job.status`:
 .. code-block:: python
 
    job.done()            # True only if the job completed successfully (JobStatus.DONE)
-   job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELLED, or ERROR)
+   job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELED, or ERROR)
 
 
-Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available
+Additional helpers ``running()``, ``queued()``, and ``canceled()`` are also available
 for polling-style workflows. If :meth:`~qrisp.interface.Job.result` is called on a job that has failed, a
-:exc:`~qrisp.interface.JobFailureError` is raised; if the job was cancelled, a
+:exc:`~qrisp.interface.JobFailureError` is raised; if the job was canceled, a
 :exc:`~qrisp.interface.JobCancelledError` is raised. Both are subclasses of
 :exc:`RuntimeError`.
 
@@ -451,10 +451,10 @@ The six states are:
 - ``QUEUED``: the job has been submitted and is waiting for execution resources.
 - ``RUNNING``: the job is currently being executed.
 - ``DONE``: the job completed successfully. Results are available via :meth:`~qrisp.interface.Job.result`.
-- ``CANCELLED``: the job was cancelled before or during execution.
+- ``CANCELED``: the job was canceled before or during execution.
 - ``ERROR``: the job failed due to an error during execution.
 
-The three terminal states (``DONE``, ``CANCELLED``, ``ERROR``) are collected in
+The three terminal states (``DONE``, ``CANCELED``, ``ERROR``) are collected in
 the module-level constant ``JOB_FINAL_STATES``.
 Once a job reaches any of these states, its outcome is final:
 
@@ -463,7 +463,7 @@ Once a job reaches any of these states, its outcome is final:
    from qrisp.interface.job import JOB_FINAL_STATES, JobStatus
 
    assert JobStatus.DONE      in JOB_FINAL_STATES
-   assert JobStatus.CANCELLED in JOB_FINAL_STATES
+   assert JobStatus.CANCELED in JOB_FINAL_STATES
    assert JobStatus.ERROR     in JOB_FINAL_STATES
 
 

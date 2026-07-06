@@ -42,7 +42,7 @@ class TestJobStatusEnum:
         assert JobStatus.QUEUED
         assert JobStatus.RUNNING
         assert JobStatus.DONE
-        assert JobStatus.CANCELLED
+        assert JobStatus.CANCELED
         assert JobStatus.ERROR
 
     def test_all_states_are_distinct(self):
@@ -51,9 +51,9 @@ class TestJobStatusEnum:
         assert len(states) == len(set(states))
 
     def test_final_states_are_done_cancelled_error(self):
-        """Test that JOB_FINAL_STATES contains exactly DONE, CANCELLED, and ERROR."""
+        """Test that JOB_FINAL_STATES contains exactly DONE, CANCELED, and ERROR."""
         assert JobStatus.DONE in JOB_FINAL_STATES
-        assert JobStatus.CANCELLED in JOB_FINAL_STATES
+        assert JobStatus.CANCELED in JOB_FINAL_STATES
         assert JobStatus.ERROR in JOB_FINAL_STATES
 
     def test_non_final_states_not_in_final_states(self):
@@ -110,7 +110,7 @@ class TestJobResultConstruction:
     def test_metadata_old_dict_style_is_nested(self):
         """Test that passing metadata=dict nests it under the key 'metadata'.
 
-        This documents the expected behaviour after the **kwargs API change:
+        This documents the expected behavior after the **kwargs API change:
         callers that use the old metadata={"key": val} style will find their
         dict stored at r.metadata["metadata"], not at r.metadata["key"].
         """
@@ -306,10 +306,10 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.DONE).done() is True
 
     def test_done_returns_false_for_cancelled_and_error(self, backend):
-        """Test that done() returns False for CANCELLED and ERROR."""
+        """Test that done() returns False for CANCELED and ERROR."""
         # done() means 'completed successfully' — it is not a synonym for
         # in_final_state(). Use in_final_state() to test for any terminal state.
-        assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
+        assert self._job_with_status(backend, JobStatus.CANCELED).done() is False
         assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 
     @pytest.mark.parametrize("status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING])
@@ -317,7 +317,7 @@ class TestJobConcreteHelpers:
         """Test that done() returns False for all non-terminal states."""
         assert self._job_with_status(backend, status).done() is False
 
-    @pytest.mark.parametrize("status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR])
+    @pytest.mark.parametrize("status", [JobStatus.DONE, JobStatus.CANCELED, JobStatus.ERROR])
     def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
         """Test that in_final_state() returns True for all three terminal states."""
         assert self._job_with_status(backend, status).in_final_state() is True
@@ -340,11 +340,11 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.DONE).queued() is False
 
     def test_cancelled_true_only_for_cancelled(self, backend):
-        """Test that cancelled() returns True only for the CANCELLED state."""
-        assert self._job_with_status(backend, JobStatus.CANCELLED).cancelled() is True
-        assert self._job_with_status(backend, JobStatus.DONE).cancelled() is False
-        assert self._job_with_status(backend, JobStatus.ERROR).cancelled() is False
-        assert self._job_with_status(backend, JobStatus.RUNNING).cancelled() is False
+        """Test that canceled() returns True only for the CANCELED state."""
+        assert self._job_with_status(backend, JobStatus.CANCELED).canceled() is True
+        assert self._job_with_status(backend, JobStatus.DONE).canceled() is False
+        assert self._job_with_status(backend, JobStatus.ERROR).canceled() is False
+        assert self._job_with_status(backend, JobStatus.RUNNING).canceled() is False
 
     def test_job_id_none_by_default(self, backend):
         """Test that job_id is None when not explicitly provided."""
@@ -383,7 +383,7 @@ class TestJobResultContract:
             job.result(timeout=1)
 
     def test_result_raises_job_cancelled_error_on_cancelled_state(self, backend):
-        """result() raises JobCancelledError when the job was cancelled."""
+        """result() raises JobCancelledError when the job was canceled."""
         job = MinimalJob(backend=backend)
         job.cancel()
         with pytest.raises(JobCancelledError):
@@ -398,7 +398,7 @@ class TestJobResultContract:
             job.result(timeout=0)
 
     def test_result_raises_immediately_if_already_cancelled(self, backend):
-        """result() raises immediately without blocking if the job is already CANCELLED."""
+        """result() raises immediately without blocking if the job is already CANCELED."""
         job = MinimalJob(backend=backend)
         job.cancel()
         # cancel() sets the done event, so result() must not block
@@ -447,7 +447,7 @@ class TestJobResultContract:
         job._raise_for_status()  # no argument, no exception expected
 
     def test_raise_for_status_without_argument_raises_for_cancelled(self, backend):
-        """_raise_for_status() with no argument must raise JobCancelledError for CANCELLED."""
+        """_raise_for_status() with no argument must raise JobCancelledError for CANCELED."""
         job = MinimalJob(backend=backend)
         job.cancel()
         with pytest.raises(JobCancelledError):

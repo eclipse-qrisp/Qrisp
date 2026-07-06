@@ -5,7 +5,7 @@ Molecular Potential Energy Curves
 
 .. currentmodule:: qrisp.vqe
 
-Molecular potential energy curves and surfaces are tools in computational quantum chemistry for analysing the molecular geometries and chemical reactions.
+Molecular potential energy curves and surfaces are tools in computational quantum chemistry for analyzing the molecular geometries and chemical reactions.
 The potential energy is defined as 
 
 $$E_{\\text{pot}}(\\{R_A\\})=E_{\\text{elec}}(\\{R_A\\})+E_{\\text{nuc}}(\\{R_A\\})$$

@@ -174,7 +174,7 @@ class PermeabilityGraph(nx.DiGraph):
         Parameters
         ----------
         layout_seed : int, optional
-            A seed for the RNG which can (slightly) influence the visualisation layout if the Graph is arranged in an inconvenient way. The default is None.
+            A seed for the RNG which can (slightly) influence the visualization layout if the Graph is arranged in an inconvenient way. The default is None.
 
         """
         visualize_dag(self, layout_seed)
@@ -422,7 +422,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
     # This dictionary tracks what kind of streak each Qubit is currently on.
     streak_dic = {}
 
-    # This dictionary tracks a quantity called value layer. This is important for visualisation.
+    # This dictionary tracks a quantity called value layer. This is important for visualization.
     # The idea behind it is to group each node into a layer. Nodes that are part of a streak
     # are grouped into the same layer.
     value_layer = {}
@@ -647,13 +647,13 @@ def visualize_dag(G, layout_seed=None):
 
     # Draw the nodes
     nx.draw_networkx_nodes(G, pos, nodelist=allocation_nodes, node_color="tab:blue", node_size=750)
-    nx.draw_networkx_nodes(G, pos, nodelist=instruction_nodes, node_color="grey", node_size=750)
+    nx.draw_networkx_nodes(G, pos, nodelist=instruction_nodes, node_color="gray", node_size=750)
     nx.draw_networkx_nodes(G, pos, nodelist=terminator_nodes, node_color="orange", node_size=750)
 
     # Define node and edge colors
     edge_colors = {
         "Z": "green",
-        "neutral": "grey",
+        "neutral": "gray",
         "anti_dependency": "purple",
         "X": "red",
     }

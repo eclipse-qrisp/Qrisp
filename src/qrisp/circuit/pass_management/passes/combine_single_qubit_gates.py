@@ -78,7 +78,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
     consecutive single-qubit gates on each qubit.  When an interruption is
     encountered (multi-qubit gate, allocation, measurement, …) the
     pending gates are flushed: their unitaries are multiplied together and
-    emitted as a single operation, cancelling any sequences that reduce to
+    emitted as a single operation, canceling any sequences that reduce to
     the identity.
 
     **Recursive processing**
@@ -91,7 +91,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
     are handled analogously: the base definition is combined in place
     and the controlled wrapper is preserved.
 
-    This pass is designed as a local optimisation that reduces gate count
+    This pass is designed as a local optimization that reduces gate count
     and depth without changing the overall circuit semantics.  It is
     especially useful after transpilation passes that may introduce
     redundant single-qubit rotations.
@@ -157,14 +157,14 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
                         ctrl_state=op.ctrl_state,
                     )
             elif op.definition:
-                # Generic composite gate: recursively optimise its definition.
+                # Generic composite gate: recursively optimize its definition.
                 instr = instr.copy()
                 instr.op = instr.op.copy()
                 instr.op.definition = combine_single_qubit_gates(op.definition)
 
             qc_new.append(instr)
         else:
-            # Single-qubit gate — defer; will be combined with neighbours.
+            # Single-qubit gate — defer; will be combined with neighbors.
             qb_dic[instr.qubits[0]].append(op)
 
     # Flush any remaining gates at the end of the circuit.

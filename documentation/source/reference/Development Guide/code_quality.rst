@@ -13,11 +13,11 @@ expected to meet: static analysis, code style, and type annotations.
     contributors are encouraged to follow for the changes they introduce. Automated enforcement will be
     introduced in the future.
 
-Preserving existing behaviour
+Preserving existing behavior
 ------------------------------
 
 Unless a breaking change has been explicitly agreed on with the maintainers,
-every contribution must preserve all existing user-facing behaviour.
+every contribution must preserve all existing user-facing behavior.
 
 A practical rule of thumb: if a user's existing code would stop working after
 your change, it is a breaking change. If you believe a breaking change is
@@ -33,7 +33,7 @@ request.
 - Pylint documentation: https://pylint.readthedocs.io/
 - Ruff documentation: https://docs.astral.sh/ruff/
 
-Issues worth prioritising include the ones related to code logic, efficiency, and maintainability:
+Issues worth prioritizing include the ones related to code logic, efficiency, and maintainability:
 
 - Mutable default arguments
 - Unnecessary ``elif`` or ``return`` statements
@@ -61,7 +61,7 @@ contributors.
 
 When working on core components, avoid changes that significantly degrade
 performance: unnecessary allocations, non-vectorised operations where
-vectorisation is natural, or tightly looped code that could be simplified.
+vectorization is natural, or tightly looped code that could be simplified.
 
 If a change might affect performance, mention it in the pull request
 description.

@@ -14,7 +14,7 @@ Members
 .. autoattribute:: JobStatus.QUEUED
 .. autoattribute:: JobStatus.RUNNING
 .. autoattribute:: JobStatus.DONE
-.. autoattribute:: JobStatus.CANCELLED
+.. autoattribute:: JobStatus.CANCELED
 .. autoattribute:: JobStatus.ERROR
 
 Methods

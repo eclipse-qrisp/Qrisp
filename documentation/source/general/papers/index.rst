@@ -63,7 +63,7 @@ Research from within the Qrisp community
 
             The rise of quantum computing/technology potentially introduces significant security challenges to cloud computing, 
             necessitating quantum-resistant encryption strategies as well as protection schemes and methods for cloud infrastructures offering quantum computing time and services (i.e. quantum clouds). 
-            This research explores various options for securing quantum clouds and ensuring privacy, especially focussing on the integration of homomorphic encryption (HE) into Eclipse Qrisp, 
+            This research explores various options for securing quantum clouds and ensuring privacy, especially focusing on the integration of homomorphic encryption (HE) into Eclipse Qrisp, 
             a high-level quantum computing framework, to enhance the security of quantum cloud platforms. The study addresses the technical feasibility of integrating HE with Qrisp, 
             evaluates performance trade-offs, and assesses the potential impact on future quantum cloud architectures. 
             The successful implementation and Qrisp integration of three post-quantum cryptographic (PQC) algorithms demonstrates the feasibility of integrating HE with quantum computing frameworks. 

@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 # This protocol is required because `BatchedBackend` intentionally
 # does not inherit from `Backend`, as this would violate the Liskov
 # Substitution Principle (the `run` method in `BatchedBackend`
-# has different behaviour and return type than in `Backend`).
+# has different behavior and return type than in `Backend`).
 @runtime_checkable
 class BackendLike(Protocol):
     """Structural protocol satisfied by both :class:`Backend` and
@@ -140,7 +140,7 @@ class Backend(ABC):
     backends, and may be ignored by backends for which it is not meaningful.
 
     Options are updated through :meth:`update_options`, but only keys that
-    were present at initialisation may be modified.
+    were present at initialization may be modified.
 
     .. rubric:: Hardware metadata
 
@@ -191,7 +191,7 @@ class Backend(ABC):
     """
 
     def __init__(self, name: str | None = None, options: Mapping | None = None, **kwargs):
-        """Initialise the backend."""
+        """Initialize the backend."""
         self.name = name or self.__class__.__name__
 
         if options is None:
@@ -465,7 +465,7 @@ class Backend(ABC):
         does not match the number of submitted circuits.
 
         This method can be called inside :meth:`run_async` implementations
-        immediately after normalising *circuits* to a list and before any execution,
+        immediately after normalizing *circuits* to a list and before any execution,
         whenever *shots* is a ``list``.
 
         Parameters
@@ -515,7 +515,7 @@ class Backend(ABC):
     def options(self) -> Mapping[str, Any]:
         """Current runtime options for the backend.
 
-        These options may influence execution behaviour (e.g. the number of
+        These options may influence execution behavior (e.g. the number of
         shots) and therefore may affect :meth:`run_async` and :meth:`run`.
 
         The returned mapping is read-only. Use :meth:`update_options` to
@@ -527,7 +527,7 @@ class Backend(ABC):
     def update_options(self, **kwargs) -> None:
         """Update existing runtime options for the backend.
 
-        Only keys that were present at initialisation (i.e. defined in
+        Only keys that were present at initialization (i.e. defined in
         :meth:`_default_options` or the ``options`` argument passed to the
         constructor) may be updated. Attempting to set an unknown key raises
         an :exc:`AttributeError`.

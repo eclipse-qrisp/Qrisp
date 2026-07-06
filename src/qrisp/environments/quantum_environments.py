@@ -158,7 +158,7 @@ class QuantumEnvironment(QuantumPrimitive):
         ---------------------
         QuantumVariable a
 
-    **Visualisation within QuantumEnvironments**
+    **Visualization within QuantumEnvironments**
 
     Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment will
     display only the instructions, that have been performed within this environment. ::

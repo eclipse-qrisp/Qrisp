@@ -129,7 +129,7 @@ def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None 
 
 
 class TestAQTBackendConstruction:
-    """Constructor validation and name-extraction behaviour."""
+    """Constructor validation and name-extraction behavior."""
 
     def test_wrong_api_token_type_raises(self):
         """API token must be a string, not an integer."""
@@ -400,23 +400,23 @@ class TestAQTJob:
         assert job.last_known_status == JobStatus.DONE
 
     def test_result_raises_job_cancelled_error_when_cancelled(self):
-        """A cancelled AQT job raises JobCancelledError, not JobFailureError."""
-        aqt_job = _make_aqt_job(fail=RuntimeError("job was cancelled by user"))
+        """A canceled AQT job raises JobCancelledError, not JobFailureError."""
+        aqt_job = _make_aqt_job(fail=RuntimeError("job was canceled by user"))
         aqt_job.status.return_value = MagicMock()
-        aqt_job.status.return_value.name = "CANCELLED"
+        aqt_job.status.return_value.name = "CANCELED"
         job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
         with pytest.raises(JobCancelledError):
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
-        """result() updates last_known_status to CANCELLED when the job was cancelled."""
-        aqt_job = _make_aqt_job(fail=RuntimeError("cancelled"))
+        """result() updates last_known_status to CANCELED when the job was canceled."""
+        aqt_job = _make_aqt_job(fail=RuntimeError("canceled"))
         aqt_job.status.return_value = MagicMock()
-        aqt_job.status.return_value.name = "CANCELLED"
+        aqt_job.status.return_value.name = "CANCELED"
         job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
         with pytest.raises(JobCancelledError):
             job.result()
-        assert job.last_known_status == JobStatus.CANCELLED
+        assert job.last_known_status == JobStatus.CANCELED
 
     def test_status_done_when_aqt_job_done(self):
         """status() returns DONE when the AQT job reports DONE."""
@@ -435,7 +435,7 @@ class TestAQTJob:
         assert job.status() == JobStatus.RUNNING
 
     def test_status_falls_back_to_running_on_unknown(self):
-        """Any unrecognised AQT status string falls back to RUNNING."""
+        """Any unrecognized AQT status string falls back to RUNNING."""
         aqt_job = _make_aqt_job()
         aqt_job.status.return_value = MagicMock()
         aqt_job.status.return_value.name = "SOME_VENDOR_SPECIFIC_STATE"

@@ -20,7 +20,7 @@ xDSL dialect definition for the JASP (Qrisp) quantum dialect.
 
 This module registers the JASP dialect with xDSL so that:
 - JASP types (QuantumState, Qubit, QubitArray) parse and print without quotes
-- JASP ops are recognised as typed IRDLOperation subclasses instead of
+- JASP ops are recognized as typed IRDLOperation subclasses instead of
   UnregisteredOp, enabling typed pattern matching in xDSL passes
 - Non-variadic ops print in their custom assembly format (no quoted op names)
 """

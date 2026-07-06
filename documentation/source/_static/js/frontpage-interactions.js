@@ -145,7 +145,7 @@
     if (pos === 'static' || pos === '') qrispPre.style.position = 'relative';
     qrispPre.style.overflow = 'hidden';
 
-    /* Get the background colour so the overlay blends seamlessly */
+    /* Get the background color so the overlay blends seamlessly */
     var bg = style.backgroundColor;
     if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') bg = '#f8f8f8';
 

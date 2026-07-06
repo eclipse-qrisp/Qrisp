@@ -452,7 +452,7 @@ class _RecordingJob(Job):
     """Job that records the timeout value passed to result() and returns a fixed count."""
 
     def __init__(self, backend, received_timeouts):
-        """Initialise with a reference to the shared list that records timeouts."""
+        """Initialize with a reference to the shared list that records timeouts."""
         super().__init__(backend)
         self._received_timeouts = received_timeouts
 
@@ -479,7 +479,7 @@ class _RecordingBackend(Backend):
     """Backend that creates _RecordingJob instances to capture Job.result() arguments."""
 
     def __init__(self, received_timeouts):
-        """Initialise with a reference to the shared list that records timeouts."""
+        """Initialize with a reference to the shared list that records timeouts."""
         super().__init__()
         self._received_timeouts = received_timeouts
 

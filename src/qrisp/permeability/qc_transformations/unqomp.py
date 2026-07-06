@@ -319,7 +319,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
 
             # Iterate over the streak
             for streak_child in streak_children:
-                # The streak is cancelled by the streak children of the streak_child
+                # The streak is canceled by the streak children of the streak_child
                 for cancellation_node in pdag.get_streak_children(streak_child, qb):
                     pdag.add_edge(
                         reversed_node,
