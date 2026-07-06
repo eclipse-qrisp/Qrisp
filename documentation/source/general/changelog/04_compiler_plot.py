@@ -75,7 +75,7 @@ ax1.plot(node_count[: len(qis_gc)], qis_gc, c="#6929C4", marker="o", linestyle="
 ax1.legend(fontsize=14, labelcolor="linecolor")
 ax1.grid()
 
-# Second Plot (Compile time)
+# Second Plot (Compiletime)
 # fig, ax2 = plt.subplots(figsize=(12, 5))
 
 ax2.set_xlabel("MaxCut Instance Node Count", fontsize=15, color="#444444", fontname="Segoe UI")

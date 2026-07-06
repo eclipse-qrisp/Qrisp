@@ -70,7 +70,7 @@ The Qrisp simulator received multiple powerful performance upgrades such as a mu
 Network interface
 -----------------
 
-For remote backend queries, Qrisp now uses the network interface developed in the `sequence project <https://sequence.de/>`_. This project aims to build a uniform, open-source quantum cloud infrastructure. Note that specific backend vendors like IBMQuantum can still be called via :ref:`VirtualBackends <VirtualBackend>`.
+For remote backend queries, Qrisp now uses the network interface developed in the `SequenC project <https://sequenc.de/>`_. This project aims to build a uniform, open-source quantum cloud infrastructure. Note that specific backend vendors like IBMQuantum can still be called via :ref:`VirtualBackends <VirtualBackend>`.
 
 Docker Container
 ----------------

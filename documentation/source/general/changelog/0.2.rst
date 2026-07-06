@@ -66,7 +66,7 @@ Bug fixes
 * Simulation requests are no longer transferred through the network interface.
 * The Qrisp simulator will now generate stochastic noise if queried with shots < 10000.
 * QuantumFloat in-place multiplication now uses a quantum bit shift instead of the compiler bit shift.
-* Fixed a bug that in some situations prevented proper uncomputation within quantum environments.
+* Fixed a bug that in some situtations prevented proper uncomputation within quantum environments.
 * Fixed a bug that caused an unintentional phase in the ``balauca_dirty`` mcx function.
 * Some parts of the simulator used ``np.complex64`` while others used ``np.complex128``. The datatype can now be chosen.
 * Fixed a bug that prevent proper control state specification on control environments.
