@@ -202,91 +202,160 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                 # This case describes the logic to use the simulator sampling features
                 if function_name == "sampling_helper_1":
-                    # Collect the qubits to be measured into a single list
-                    qubits = []
-                    for i in range(len(invalues) - 1):
-                        qubits.extend(invalues[i])
-                        return_signature.append(len(invalues[i]))
+                    # Detect whether we are in the quantum or classical path by
+                    # inspecting the abstract values of the jaxpr arguments.
+                    # Quantum path: arguments are AbstractQubitArrays (qubit
+                    # registers to measure) plus a QuantumState.
+                    # Classical path: arguments are plain classical values
+                    # (already measured/decoded by the user function).
+                    helper_jaxpr = eqn.params["jaxpr"]
+                    is_quantum = any(
+                        isinstance(var.aval, AbstractQubitArray)
+                        for var in helper_jaxpr.jaxpr.invars
+                    )
 
-                    # Clear the buffer and copy the state to evaluate the measurement
-                    invalues[-1].apply_buffer()
-                    quantum_state = invalues[-1].copy()
+                    if is_quantum:
+                        # ======================================================
+                        # Quantum path (existing behaviour).
+                        # ======================================================
 
-                    # Evaluate the measurement
-                    # This returns a dictionary of the form {label int : count int}
-                    # if shots is an int. If shots is None, count int instead is a
-                    # float representing the probability.
+                        # Collect the qubits to be measured into a single list
+                        qubits = []
+                        for i in range(len(invalues) - 1):
+                            qubits.extend(invalues[i])
+                            return_signature.append(len(invalues[i]))
 
-                    meas_res_dic.update(quantum_state.multi_measure(qubits, shots))
+                        # Clear the buffer and copy the state to evaluate the measurement
+                        invalues[-1].apply_buffer()
+                        quantum_state = invalues[-1].copy()
 
-                    if shots is None:
-                        # Round to prevent floating point errors of the simulation
-                        norm = 0
-                        for k, v in meas_res_dic.items():
-                            meas_res_dic[k] = np.round(v, decimals=7)
-                            norm += meas_res_dic[k]
+                        # Evaluate the measurement
+                        # This returns a dictionary of the form {label int : count int}
+                        # if shots is an int. If shots is None, count int instead is a
+                        # float representing the probability.
 
-                        for k, v in meas_res_dic.items():
-                            meas_res_dic[k] = v / norm
+                        meas_res_dic.update(quantum_state.multi_measure(qubits, shots))
 
-                    outvalues = [0] * len(eqn.outvars)
-                    insert_outvalues(eqn, context_dic, outvalues)
+                        if shots is None:
+                            # Round to prevent floating point errors of the simulation
+                            norm = 0
+                            for k, v in meas_res_dic.items():
+                                meas_res_dic[k] = np.round(v, decimals=7)
+                                norm += meas_res_dic[k]
+
+                            for k, v in meas_res_dic.items():
+                                meas_res_dic[k] = v / norm
+
+                        outvalues = [0] * len(eqn.outvars)
+                        insert_outvalues(eqn, context_dic, outvalues)
+                    else:
+                        # ======================================================
+                        # Classical path: the user function already returned
+                        # classical values.  sampling_helper_1 is a pass-through
+                        # (identity).  Evaluate it normally.
+                        # ======================================================
+                        outvalues = eval_jaxpr(
+                            eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
+                        )(*invalues)
+                        # Normalise: eval_jaxpr returns a bare value for single-
+                        # output jaxprs, but insert_outvalues expects a Sequence
+                        # when multiple_results is True.
+                        if eqn.primitive.multiple_results and not isinstance(
+                            outvalues, (list, tuple)
+                        ):
+                            outvalues = (outvalues,)
+                        elif not eqn.primitive.multiple_results and not isinstance(
+                            outvalues, (list, tuple)
+                        ):
+                            outvalues = [outvalues]
+                        insert_outvalues(eqn, context_dic, outvalues)
 
                 # Each int in the values of meas_res_dic represents the values
                 # of all QuantumVariables. We therefore need to "split" the ints
                 # into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
-                    if sampling_res_type == "ev":
-                        sampling_res = jnp.zeros(len(eqn.outvars))
-                    elif sampling_res_type == "array":
-                        sampling_res = []
-                        sampling_res_dict = {}
-                    elif sampling_res_type == "dict":
-                        sampling_res = {}
+                    # Detect whether this is the quantum or classical path by
+                    # inspecting the jaxpr argument types.
+                    helper_jaxpr = eqn.params["jaxpr"]
+                    is_quantum = any(
+                        isinstance(var.aval, AbstractQubitArray)
+                        for var in helper_jaxpr.jaxpr.invars
+                    )
 
-                    # Compile the decoder
-                    decoder = decoder_compiler(eqn.params["jaxpr"], eqn_evaluator)
+                    if is_quantum:
+                        # ==========================================================
+                        # Quantum path (existing behaviour): iterate the measurement
+                        # distribution produced by sampling_helper_1, decode each
+                        # outcome, and build the sampling result.
+                        # ==========================================================
 
-                    # Iterate through the sampled values
-                    for k, v in meas_res_dic.items():
-                        # We now evaluate the function that was previously traced
-                        # to perform the decoding. The first few arguments of this
-                        # function are the integers to be decoded.
+                        if sampling_res_type == "ev":
+                            sampling_res = jnp.zeros(len(eqn.outvars))
+                        elif sampling_res_type == "array":
+                            sampling_res = []
+                            sampling_res_dict = {}
+                        elif sampling_res_type == "dict":
+                            sampling_res = {}
 
-                        # We therefore use the traced Jaspr to perform the decoding
-                        # by modifying the input values.
-                        new_invalues = list(invalues)
+                        # Compile the decoder
+                        decoder = decoder_compiler(eqn.params["jaxpr"], eqn_evaluator)
 
-                        j = 0
-                        for i in range(len(return_signature)):
-                            # Split the integers into intervals ranging from
-                            # j to j + return_signature[i]
-                            new_invalues[len(invalues) - len(return_signature) + i] = (
-                                k & ((2 ** (return_signature[i]) - 1) << j)
-                            ) >> j
-                            j += return_signature[i]
+                        # Iterate through the sampled values
+                        for k, v in meas_res_dic.items():
+                            # We now evaluate the function that was previously traced
+                            # to perform the decoding. The first few arguments of this
+                            # function are the integers to be decoded.
 
-                        # Evaluate the decoder
-                        # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
+                            # We therefore use the traced Jaspr to perform the decoding
+                            # by modifying the input values.
+                            new_invalues = list(invalues)
 
-                        outvalues = decoder(*new_invalues)
+                            j = 0
+                            for i in range(len(return_signature)):
+                                # Split the integers into intervals ranging from
+                                # j to j + return_signature[i]
+                                new_invalues[len(invalues) - len(return_signature) + i] = (
+                                    k & ((2 ** (return_signature[i]) - 1) << j)
+                                ) >> j
+                                j += return_signature[i]
 
-                        # We now build the key for the result dic
-                        # For that we turn the jax types into the corresponding
-                        # Python types.
+                            # Evaluate the decoder
+                            # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
 
-                        # This treats the case that the decoder returned only
-                        # a single result (instead of a tuple).
-                        if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
-                            if sampling_res_type == "ev":
-                                sampling_res += outvalues * v
+                            outvalues = decoder(*new_invalues)
+
+                            # We now build the key for the result dic
+                            # For that we turn the jax types into the corresponding
+                            # Python types.
+
+                            # This treats the case that the decoder returned only
+                            # a single result (instead of a tuple).
+                            if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
+                                if sampling_res_type == "ev":
+                                    sampling_res += outvalues * v
+                                elif sampling_res_type == "array":
+                                    # sampling_res.extend(v*[outvalues[0]])
+                                    sampling_res_dict[outvalues.item()] = v
+                                    # sampling_res.extend(v*[key])
+                                elif sampling_res_type == "dict":
+                                    key = outvalues
+                                    if type(v) not in [int, float]:
+                                        if v.dtype in [np.float64, np.float32]:
+                                            v = float(v.item())
+                                        elif v.dtype in [np.int32, np.int64]:
+                                            v = int(v.item())
+                                        else:
+                                            raise
+                                    sampling_res[key.item()] = v
+
+                            # If the user given function returned more than one
+                            # value, the key is a tuple to be build up
+                            elif sampling_res_type == "ev":
+                                sampling_res += jnp.array(outvalues) * v
                             elif sampling_res_type == "array":
-                                # sampling_res.extend(v*[outvalues[0]])
-                                sampling_res_dict[outvalues.item()] = v
-                                # sampling_res.extend(v*[key])
+                                sampling_res_dict[tuple(np.array(outvalues))] = v
                             elif sampling_res_type == "dict":
-                                key = outvalues
                                 if type(v) not in [int, float]:
                                     if v.dtype in [np.float64, np.float32]:
                                         v = float(v.item())
@@ -294,40 +363,90 @@ def terminal_sampling_evaluator(sampling_res_type):
                                         v = int(v.item())
                                     else:
                                         raise
-                                sampling_res[key.item()] = v
+                                sampling_res[tuple(x.item() for x in outvalues)] = v
 
-                        # If the user given function returned more than one
-                        # value, the key is a tuple to be build up
+                        if sampling_res_type == "array":
+                            keys = np.array(list(sampling_res_dict.keys()))
+                            counts = np.array(list(sampling_res_dict.values()))
+                            sampling_res = np.repeat(keys, counts, axis=0)
+                            np.random.shuffle(sampling_res)
+
                         elif sampling_res_type == "ev":
-                            sampling_res += jnp.array(outvalues) * v
-                        elif sampling_res_type == "array":
-                            sampling_res_dict[tuple(np.array(outvalues))] = v
+                            sampling_res = sampling_res / shots
+                            if sampling_res.shape[0] == 1:
+                                sampling_res = sampling_res[0]
                         elif sampling_res_type == "dict":
-                            if type(v) not in [int, float]:
-                                if v.dtype in [np.float64, np.float32]:
-                                    v = float(v.item())
-                                elif v.dtype in [np.int32, np.int64]:
-                                    v = int(v.item())
+                            # Sort the counts such the most probable values come first
+                            sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
+                            sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
+
+                        decoded_meas_res.append(sampling_res)
+
+                    else:
+                        # ==========================================================
+                        # Classical path: the user function already returned
+                        # classical values.  sampling_helper_2 applies post-
+                        # processing.  In terminal sampling mode only a single
+                        # iteration executes, so we evaluate normally and tile
+                        # the result to match the expected output shape.
+                        # This intentionally produces statistically inaccurate
+                        # results (all shots get the same value) — this is the
+                        # documented trade-off of terminal sampling with
+                        # classical returns.
+                        # ==========================================================
+                        raw_outvalues = eval_jaxpr(
+                            eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
+                        )(*invalues)
+
+                        # Normalise to a tuple for uniform handling below.
+                        # eval_jaxpr returns a bare value for single-output
+                        # jaxprs; insert_outvalues also requires a Sequence
+                        # when multiple_results is True.
+                        num_outs = len(eqn.params["jaxpr"].jaxpr.outvars)
+                        if num_outs == 1:
+                            if isinstance(raw_outvalues, (list, tuple)):
+                                outvalues = tuple(raw_outvalues)
+                            else:
+                                outvalues = (raw_outvalues,)
+                        else:
+                            outvalues = tuple(raw_outvalues)
+
+                        # Re-wrap for insert_outvalues if needed
+                        insert_vals = outvalues if eqn.primitive.multiple_results else list(outvalues)
+                        insert_outvalues(eqn, context_dic, insert_vals)
+
+                        # Build the sampling result from the single iteration.
+                        if sampling_res_type == "array":
+                            if num_outs == 1:
+                                single = jnp.array(outvalues[0])
+                                # Tile to (shots,) for scalar or (shots, n) for
+                                # multi-valued returns.
+                                if single.ndim == 0:
+                                    sampling_res = jnp.tile(single, (shots,))
                                 else:
-                                    raise
-                            sampling_res[tuple(x.item() for x in outvalues)] = v
+                                    sampling_res = jnp.tile(single, (shots, 1))
+                            else:
+                                arr = jnp.array(outvalues)
+                                sampling_res = jnp.tile(arr, (shots, 1))
+                        elif sampling_res_type == "ev":
+                            # For expectation_value, just return the single value.
+                            if num_outs == 1:
+                                sampling_res = jnp.array(outvalues[0])
+                            else:
+                                sampling_res = jnp.array(outvalues)
+                        elif sampling_res_type == "dict":
+                            if num_outs == 1:
+                                key = outvalues[0]
+                                try:
+                                    key = key.item()
+                                except AttributeError:
+                                    pass
+                                sampling_res = {key: 1.0}
+                            else:
+                                key = tuple(x.item() if hasattr(x, "item") else x for x in outvalues)
+                                sampling_res = {key: 1.0}
 
-                    if sampling_res_type == "array":
-                        keys = np.array(list(sampling_res_dict.keys()))
-                        counts = np.array(list(sampling_res_dict.values()))
-                        sampling_res = np.repeat(keys, counts, axis=0)
-                        np.random.shuffle(sampling_res)
-
-                    elif sampling_res_type == "ev":
-                        sampling_res = sampling_res / shots
-                        if sampling_res.shape[0] == 1:
-                            sampling_res = sampling_res[0]
-                    elif sampling_res_type == "dict":
-                        # Sort the counts such the most probable values come first
-                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
-                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
-
-                    decoded_meas_res.append(sampling_res)
+                        decoded_meas_res.append(sampling_res)
 
             return eqn_evaluator(eqn, context_dic)
 

@@ -611,7 +611,7 @@ def find_detectors(func=None, *, return_circuits=False):
             # Convert to stim
             raw_stim, meas_map = result[-1].to_stim(return_measurement_map=True)
             inv_map = {v: k for k, v in meas_map.items()}
-
+            
             # Prepare for tqecd and annotate
             tqecd_circ = _prepare_for_tqecd(raw_stim)
             annotated = tqecd.annotate_detectors_automatically(tqecd_circ)

@@ -206,49 +206,85 @@ def sample(state_prep=None, shots=0, post_processor=None):
             acc = args[0]
 
             # Evaluate the user function
-            qv_tuple = user_func(*args[1:])
+            result_tuple = user_func(*args[1:])
 
-            if not isinstance(qv_tuple, tuple):
-                qv_tuple = (qv_tuple,)
+            if not isinstance(result_tuple, tuple):
+                result_tuple = (result_tuple,)
 
-            for qv in qv_tuple:
-                if not isinstance(qv, QuantumVariable):
-                    raise Exception("Tried to sample from function not returning a QuantumVariable")
+            if result_tuple and all(isinstance(x, QuantumVariable) for x in result_tuple):
+                # ==============================================================
+                # Quantum path: user_func returns QuantumVariable(s).
+                # The three-stage structure (user_func -> sampling_helper_1 ->
+                # sampling_helper_2) is preserved for the terminal sampling
+                # interpreter.
+                # ==============================================================
+                qv_tuple = result_tuple
 
-            # Trace the DynamicQubitArray measurements
-            # Since we execute the measurements on the .reg attribute, no decoding
-            # is applied. The decoding happens in sampling_helper_2
-            @qache
-            def sampling_helper_1(*args):
-                res_list = []
-                for reg in args:
-                    res_list.append(measure(reg))
-                return tuple(res_list)
+                # Trace the DynamicQubitArray measurements
+                # Since we execute the measurements on the .reg attribute, no decoding
+                # is applied. The decoding happens in sampling_helper_2
+                @qache
+                def sampling_helper_1(*args):
+                    res_list = []
+                    for reg in args:
+                        res_list.append(measure(reg))
+                    return tuple(res_list)
 
-            measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
+                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
 
-            # Trace the decoding
-            @jax.jit
-            def sampling_helper_2(*meas_ints):
-                decoded_values = []
-                for j in range(len(qv_tuple)):
-                    decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                # Trace the decoding
+                @jax.jit
+                def sampling_helper_2(*meas_ints):
+                    decoded_values = []
+                    for j in range(len(qv_tuple)):
+                        decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
 
-                if len(qv_tuple) > 1:
-                    decoded_values = post_processor(*decoded_values)
-                else:
-                    decoded_values = post_processor(*decoded_values)
+                    if len(qv_tuple) > 1:
+                        decoded_values = post_processor(*decoded_values)
+                    else:
+                        decoded_values = post_processor(*decoded_values)
 
-                if isinstance(decoded_values, tuple):
-                    # Save the return amount (for more details check the comment of the)
-                    # initialization command of return_amount
-                    return_amount.append(len(decoded_values))
-                    if len(acc.shape) == 1:
-                        raise AuxException()
+                    if isinstance(decoded_values, tuple):
+                        # Save the return amount (for more details check the comment of the)
+                        # initialization command of return_amount
+                        return_amount.append(len(decoded_values))
+                        if len(acc.shape) == 1:
+                            raise AuxException()
 
-                return decoded_values
+                    return decoded_values
 
-            decoded_values = sampling_helper_2(*measurement_ints)
+                decoded_values = sampling_helper_2(*measurement_ints)
+
+            else:
+                # ==============================================================
+                # Classical path: user_func returns classical values directly.
+                # The same three-stage structure is maintained with the same
+                # function names so the terminal sampling interpreter can
+                # identify and handle them.  In terminal sampling mode only
+                # one iteration executes, so the classical result reflects a
+                # single sample (documented statistical inaccuracy).
+                # ==============================================================
+                classical_tuple = result_tuple
+
+                # Stage 2: pass-through (no qubit measurement needed -
+                # values are already classical).
+                @jax.jit
+                def sampling_helper_1(*args):
+                    return args
+
+                passed_values = sampling_helper_1(*classical_tuple)
+
+                # Stage 3: apply post-processing.
+                @jax.jit
+                def sampling_helper_2(*args):
+                    result = post_processor(*args)
+                    if isinstance(result, tuple):
+                        return_amount.append(len(result))
+                        if len(acc.shape) == 1:
+                            raise AuxException()
+                    return result
+
+                decoded_values = sampling_helper_2(*passed_values)
 
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
