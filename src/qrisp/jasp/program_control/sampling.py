@@ -211,18 +211,17 @@ def sample(state_prep=None, shots=0, post_processor=None):
             if not isinstance(result_tuple, tuple):
                 result_tuple = (result_tuple,)
 
-            if result_tuple and all(isinstance(x, QuantumVariable) for x in result_tuple):
-                # ==============================================================
-                # Quantum path: user_func returns QuantumVariable(s).
-                # The three-stage structure (user_func -> sampling_helper_1 ->
-                # sampling_helper_2) is preserved for the terminal sampling
-                # interpreter.
-                # ==============================================================
-                qv_tuple = result_tuple
+            # Build a per-position mask: QuantumVariable -> True, classical -> False.
+            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
 
-                # Trace the DynamicQubitArray measurements
-                # Since we execute the measurements on the .reg attribute, no decoding
-                # is applied. The decoding happens in sampling_helper_2
+            # Separate quantum and classical returns.
+            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
+            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
+
+            if qv_tuple:
+                # ----------------------------------------------------------
+                # Stage 2: measure quantum registers only.
+                # ----------------------------------------------------------
                 @qache
                 def sampling_helper_1(*args):
                     res_list = []
@@ -232,59 +231,58 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
                 measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
 
-                # Trace the decoding
+                # ----------------------------------------------------------
+                # Stage 3: decode quantum, interleave with classical values,
+                # apply post-processing.  classical_tuple and is_quantum are
+                # captured from the enclosing scope — classical_tuple holds
+                # JAX tracers, is_quantum is a compile-time constant.
+                # ----------------------------------------------------------
                 @jax.jit
                 def sampling_helper_2(*meas_ints):
-                    decoded_values = []
+                    decoded_q = []
                     for j in range(len(qv_tuple)):
-                        decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
 
-                    if len(qv_tuple) > 1:
-                        decoded_values = post_processor(*decoded_values)
+                    # Reconstruct full result in original order.
+                    full = []
+                    q_idx = 0
+                    c_idx = 0
+                    for is_q in is_quantum:
+                        if is_q:
+                            full.append(decoded_q[q_idx])
+                            q_idx += 1
+                        else:
+                            full.append(classical_tuple[c_idx])
+                            c_idx += 1
+
+                    if len(full) > 1:
+                        result = post_processor(*full)
                     else:
-                        decoded_values = post_processor(*decoded_values)
+                        result = post_processor(*full)
 
-                    if isinstance(decoded_values, tuple):
-                        # Save the return amount (for more details check the comment of the)
-                        # initialization command of return_amount
-                        return_amount.append(len(decoded_values))
-                        if len(acc.shape) == 1:
-                            raise AuxException()
-
-                    return decoded_values
-
-                decoded_values = sampling_helper_2(*measurement_ints)
-
-            else:
-                # ==============================================================
-                # Classical path: user_func returns classical values directly.
-                # The same three-stage structure is maintained with the same
-                # function names so the terminal sampling interpreter can
-                # identify and handle them.  In terminal sampling mode only
-                # one iteration executes, so the classical result reflects a
-                # single sample (documented statistical inaccuracy).
-                # ==============================================================
-                classical_tuple = result_tuple
-
-                # Stage 2: pass-through (no qubit measurement needed -
-                # values are already classical).
-                @jax.jit
-                def sampling_helper_1(*args):
-                    return args
-
-                passed_values = sampling_helper_1(*classical_tuple)
-
-                # Stage 3: apply post-processing.
-                @jax.jit
-                def sampling_helper_2(*args):
-                    result = post_processor(*args)
                     if isinstance(result, tuple):
                         return_amount.append(len(result))
                         if len(acc.shape) == 1:
                             raise AuxException()
                     return result
 
-                decoded_values = sampling_helper_2(*passed_values)
+                decoded_values = sampling_helper_2(*measurement_ints)
+
+            else:
+                # ----------------------------------------------------------
+                # No quantum returns — pure classical.  No measurement or
+                # decoding needed; just apply post-processing directly.
+                # ----------------------------------------------------------
+                if len(classical_tuple) > 1:
+                    result = post_processor(*classical_tuple)
+                else:
+                    result = post_processor(*classical_tuple)
+
+                if isinstance(result, tuple):
+                    return_amount.append(len(result))
+                    if len(acc.shape) == 1:
+                        raise AuxException()
+                decoded_values = result
 
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
