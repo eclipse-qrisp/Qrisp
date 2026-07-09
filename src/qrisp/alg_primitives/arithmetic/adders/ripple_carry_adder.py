@@ -185,7 +185,7 @@ def inpl_add(
             qs.cx(qf2[-1], ancilla_var[i])
 
     if adder == "thapliyal":
-        thapliyal_procedure(qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1])
+        thapliyal_procedure(qubit_list_2[:-1], qubit_list_1[:-1], qubit_list_1[-1])
     else:
         raise Exception("Adder " + adder + " not implemented")
 
