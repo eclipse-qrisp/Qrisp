@@ -50,12 +50,7 @@ class QuantumEnum(QuantumVariable):
     """
     
     def __init__(self, qs=None, name=None):
-        size = 0
-        if self.encoding == "Binary":
-            size = ceil(log2(len(self.enum.__members__)))
-        elif self.encoding == "OneHot":
-            size = len(self.enum.__members__)
-        super().__init__(size, qs=qs, name=name)
+        super().__init__(self.size, qs=qs, name=name)
 
     class Binary(Enum):
         r"""Binary encoding for python enums resulting in values in the range of 0 to n-1
@@ -88,6 +83,7 @@ class QuantumEnum(QuantumVariable):
                 cls.bitlength = ceil(log2(len(enum_cls.__members__)))
     
                 cls.encoding = "Binary"
+                cls.size = ceil(log2(len(enum_cls.__members__)))
     
                 def encoder(self, value):
                     if (type(value) != enum_cls):
@@ -142,6 +138,7 @@ class QuantumEnum(QuantumVariable):
                 cls.bitlength = len(enum_cls.__members__)   
     
                 cls.encoding = "OneHot"
+                cls.size = len(enum_cls.__members__)
     
                 def encoder(self, value):
                     if (type(value) != enum_cls):
