@@ -187,14 +187,6 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
-    "general/tutorial/QAOAtutorial/LinearRampQAOA": [
-        {
-            "name": "Cedric Schacht",
-            "affiliation": "DHBW Stuttgart",
-            "role": "Eclipse Qrisp Contributor",
-            "linkedin": None,
-        }
-    ],
     "general/tutorial/QIROtutorial": [
         {
             "name": "Niklas Steinmann",
