@@ -52,7 +52,7 @@ iqm = [
     "iqm-station-control-client==12.0.5",
     "iqm-exa-common==27.5.4",
     "opentelemetry-exporter-otlp==1.27.0",
-    "iqm-data-definitions==2.22",
+    "iqm-data-definitions==2.27",
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
