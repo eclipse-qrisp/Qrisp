@@ -10,6 +10,12 @@ changelog enforcement.
 Other New Features
 ------------------
 
+* Added a classical-to-LLVM lowering pass for the JASP MLIR pipeline.
+  Converts all non-quantum MLIR dialects (``arith``, ``tensor``, ``scf``,
+  ``math``) into the ``llvm`` dialect, leaving only ``jasp.*`` (quantum)
+  and ``llvm.*`` (classical) ops in the module
+  (`PR #679 <https://github.com/eclipse-qrisp/Qrisp/pull/679>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
