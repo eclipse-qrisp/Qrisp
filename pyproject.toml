@@ -39,7 +39,7 @@ dependencies = [
     "tqdm",
     "dill",
     "psutil",
-    "jax==0.7.1",
+    "jax==0.10.2",
     "jaxlib==0.7.1"
 ]
 
