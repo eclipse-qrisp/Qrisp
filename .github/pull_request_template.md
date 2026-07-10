@@ -59,3 +59,33 @@ If yes, describe the impact and migration path:
 ## Reviewer Notes
 
 <!-- Anything specific the reviewer should focus on? -->
+
+---
+
+### Generative AI/LLM disclosure
+
+**Architecture & Design:**
+- [ ] No generative AI/LLM was used
+- [ ] Partially performed by generative AI/LLM — **X%** performed by the author(s)
+- [ ] Fully performed by generative AI/LLM
+
+**Code content:**
+- [ ] No generative AI/LLM work
+- [ ] Partially written by generative AI/LLM — **X%** performed by the author(s)
+- [ ] Fully written by generative AI/LLM
+
+**Code review:**
+- [ ] No generative AI/LLM was used
+- [ ] Partially performed by generative AI/LLM — **X%** performed by the author(s)
+- [ ] Fully performed by generative AI/LLM
+
+**Tests:**
+- [ ] No generative AI/LLM work
+- [ ] Partially written by generative AI/LLM — **X%** performed by the author(s)
+- [ ] Fully written by generative AI/LLM
+
+<!--
+Attribution: This disclosure template is adapted from
+https://github.com/hhat-lang/hhat_lang/blob/main/.github/pull_request_template.md,
+used under the terms of the GNU Affero General Public License v3.0.
+-->
