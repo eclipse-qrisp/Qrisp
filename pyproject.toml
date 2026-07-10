@@ -55,7 +55,7 @@ iqm = [
     "iqm-data-definitions==2.22",
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
-xdsl = ["xdsl==0.59.0"]
+xdsl = ["xdsl==0.68.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
