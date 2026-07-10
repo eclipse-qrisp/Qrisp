@@ -30,7 +30,7 @@ license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 
 dependencies = [
     "numpy>=2.0,<2.5",
-    "sympy<=1.13",
+    "sympy<=1.14.0",
     "qiskit>=0.44.0",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
