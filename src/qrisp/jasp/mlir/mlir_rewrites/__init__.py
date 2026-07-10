@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+from qrisp.jasp.mlir.mlir_rewrites.classical_lowering import classical_to_llvm
 from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
 from qrisp.jasp.mlir.mlir_rewrites.scalar_linalg_folding import scalar_linalg_folding
 from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding

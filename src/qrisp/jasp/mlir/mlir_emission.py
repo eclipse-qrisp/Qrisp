@@ -31,6 +31,7 @@ from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 from qrisp.jasp.mlir.jaxpr_lowering import jaxpr_to_xdsl
+from qrisp.jasp.mlir.mlir_rewrites.classical_lowering import classical_to_llvm
 from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding
 from qrisp.jasp.mlir.mlir_rewrites.scalar_linalg_folding import scalar_linalg_folding
 from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
@@ -72,5 +73,8 @@ def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO=False) -> builtin.ModuleOp:
         scalar_linalg_folding(xdsl_ctx, xdsl_module)
         scalar_tensor_folding(xdsl_ctx, xdsl_module)
         cmpi_extui_folding(xdsl_ctx, xdsl_module)
+
+        # TODO: uncomment once classical_to_llvm patterns are implemented
+        # classical_to_llvm(xdsl_ctx, xdsl_module)
 
     return xdsl_module
