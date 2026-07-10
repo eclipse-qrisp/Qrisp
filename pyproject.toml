@@ -40,7 +40,7 @@ dependencies = [
     "dill",
     "psutil",
     "jax==0.7.1",
-    "jaxlib==0.7.1"
+    "jaxlib==0.10.2"
 ]
 
 [project.optional-dependencies]
