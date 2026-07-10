@@ -1,6 +1,8 @@
 <p align="center" width="100%"><img src="https://raw.githubusercontent.com/eclipse-qrisp/Qrisp/main/logo/logo_with_contour.png" width=30%></p>
 
 </h1><br>
+
+
 <div align="center">
 
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
