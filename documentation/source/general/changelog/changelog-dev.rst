@@ -58,6 +58,8 @@ Development
 * Added pytest coverage reporting to the CI test workflow
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
 
+* Test change to the readme: remove license
+
 First Time Contributors 🎉
 --------------------------
 
