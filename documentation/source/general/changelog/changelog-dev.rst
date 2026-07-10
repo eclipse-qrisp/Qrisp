@@ -35,6 +35,12 @@ UI Changes
 
 .. Add UI changes above this line
 
+Development
+-----------
+
+* Added a development status note to the repository landing page
+  (`PR #715 <https://github.com/eclipse-qrisp/Qrisp/pull/715>`_).
+
 First Time Contributors 🎉
 --------------------------
 
