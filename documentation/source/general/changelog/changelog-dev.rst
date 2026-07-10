@@ -45,6 +45,10 @@ API Changes
 Development
 -----------
 
+* Added ``AGENTS.md`` for AI coding agent instructions and added a
+  Generative AI/LLM disclosure section to the pull request template
+  (`PR #717 <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
 
