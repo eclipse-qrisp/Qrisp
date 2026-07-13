@@ -21,6 +21,7 @@ import threading
 
 import numpy as np
 from numba import njit
+import random
 from tqdm import tqdm
 
 from qrisp.circuit import QuantumCircuit, fast_append
@@ -478,8 +479,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         count_measurements_and_treat_alloc(qc, insert_reset=True)
         qc = group_qc(qc)
 
-        import random
-
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
 
@@ -489,9 +488,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         # for i in range(len(qc.qubits)):
         #     qubit_to_index_dic[qc.qubits[i]] = i
 
-        for i in range(len(qc.data)):
-            # Set alias for the instruction of this operation
-            instr = qc.data[i]
+        for instr in qc.data:
 
             progress_bar.update(1)
 
