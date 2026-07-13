@@ -233,40 +233,73 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
                 # ----------------------------------------------------------
                 # Stage 3: decode quantum, interleave with classical values,
-                # apply post-processing.  classical_tuple and is_quantum are
-                # captured from the enclosing scope — classical_tuple holds
-                # JAX tracers, is_quantum is a compile-time constant.
+                # apply post-processing.  Classical values are passed as
+                # explicit arguments (before measurement ints).  When present
+                # the helper is named sampling_helper_2_mixed so that the
+                # terminal-sampling guard in jaspification.py can detect it.
                 # ----------------------------------------------------------
-                @jax.jit
-                def sampling_helper_2(*meas_ints):
-                    decoded_q = []
-                    for j in range(len(qv_tuple)):
-                        decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                if classical_tuple:
+                    def sampling_helper_2_mixed(*args):
+                        n_classical = len(classical_tuple)
+                        classical_vals = args[:n_classical]
+                        meas_ints = args[n_classical:]
 
-                    # Reconstruct full result in original order.
-                    full = []
-                    q_idx = 0
-                    c_idx = 0
-                    for is_q in is_quantum:
-                        if is_q:
-                            full.append(decoded_q[q_idx])
-                            q_idx += 1
+                        decoded_q = []
+                        for j in range(len(qv_tuple)):
+                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+
+                        full = []
+                        q_idx = 0
+                        c_idx = 0
+                        for is_q in is_quantum:
+                            if is_q:
+                                full.append(decoded_q[q_idx])
+                                q_idx += 1
+                            else:
+                                full.append(classical_vals[c_idx])
+                                c_idx += 1
+
+                        if len(full) > 1:
+                            result = post_processor(*full)
                         else:
-                            full.append(classical_tuple[c_idx])
-                            c_idx += 1
+                            result = post_processor(*full)
 
-                    if len(full) > 1:
-                        result = post_processor(*full)
-                    else:
-                        result = post_processor(*full)
+                        if isinstance(result, tuple):
+                            return_amount.append(len(result))
+                            if len(acc.shape) == 1:
+                                raise AuxException()
+                        return result
+                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
+                else:
+                    def sampling_helper_2(*meas_ints):
+                        decoded_q = []
+                        for j in range(len(qv_tuple)):
+                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
 
-                    if isinstance(result, tuple):
-                        return_amount.append(len(result))
-                        if len(acc.shape) == 1:
-                            raise AuxException()
-                    return result
+                        full = []
+                        q_idx = 0
+                        c_idx = 0
+                        for is_q in is_quantum:
+                            if is_q:
+                                full.append(decoded_q[q_idx])
+                                q_idx += 1
+                            else:
+                                full.append(classical_tuple[c_idx])
+                                c_idx += 1
 
-                decoded_values = sampling_helper_2(*measurement_ints)
+                        if len(full) > 1:
+                            result = post_processor(*full)
+                        else:
+                            result = post_processor(*full)
+
+                        if isinstance(result, tuple):
+                            return_amount.append(len(result))
+                            if len(acc.shape) == 1:
+                                raise AuxException()
+                        return result
+                    sampling_helper_2 = jax.jit(sampling_helper_2)
+
+                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
 
             else:
                 # ----------------------------------------------------------

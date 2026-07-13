@@ -314,29 +314,15 @@ def terminal_sampling_evaluator(sampling_res_type):
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
 
-        # If decoded_meas_res is still empty, the classical path was taken
-        # (sampling_helper_2 was never called because sampling_helper_1/2
-        # are only emitted for quantum returns).  In terminal sampling mode
-        # the while loop runs a single iteration, so the accumulator has
-        # one meaningful entry at index 0.  Extract and tile it.
+        # If decoded_meas_res is still empty, the pure-classical path was
+        # taken (sampling_helper_2 was never called).  Terminal sampling
+        # cannot handle this — raise instead of silently tiling.
         if not decoded_meas_res:
-            acc = outvalues[0]
-            single = acc[0]
-            if sampling_res_type == "array":
-                single_arr = jnp.array(single)
-                if single_arr.ndim == 0:
-                    sampling_res = jnp.tile(single_arr, (shots,))
-                else:
-                    sampling_res = jnp.tile(single_arr, (shots, 1))
-            elif sampling_res_type == "ev":
-                sampling_res = jnp.array(single)
-            elif sampling_res_type == "dict":
-                try:
-                    key = single.item()
-                except AttributeError:
-                    key = single
-                sampling_res = {key: 1.0}
-            decoded_meas_res.append(sampling_res)
+            raise Exception(
+                "Terminal sampling does not support classical "
+                "return values. Use terminal_sampling=False "
+                "to sample with classical returns."
+            )
 
         insert_outvalues(eqn, context_dic, decoded_meas_res)
 

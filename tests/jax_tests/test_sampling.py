@@ -292,10 +292,11 @@ def test_sampling_classical_and_mixed():
     def main():
         return sample(sp_classical_scalar, shots=30)()
 
-    res = main()
-    assert res.shape == (30,)
-    # Terminal sampling: all shots identical (single-iteration classical result)
-    assert jnp.all(res == res[0])
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
 
     # ------------------------------------------------------------------
     # Classical tuple return
@@ -319,10 +320,11 @@ def test_sampling_classical_and_mixed():
     def main():
         return sample(sp_classical_tuple, shots=20)()
 
-    res = main()
-    assert res.shape == (20, 2)
-    # Terminal sampling: all rows identical
-    assert jnp.all(res == res[0])
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
 
     # ------------------------------------------------------------------
     # Classical return with post_processor
@@ -346,9 +348,11 @@ def test_sampling_classical_and_mixed():
     def main():
         return sample(sp_pp, shots=20, post_processor=double)()
 
-    res = main()
-    assert res.shape == (20,)
-    assert jnp.all(res == res[0])
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
 
     # ------------------------------------------------------------------
     # Mixed return: one quantum, one classical
@@ -367,14 +371,16 @@ def test_sampling_classical_and_mixed():
     res = main()
     assert res.shape == (20, 2)
 
+    # Terminal sampling must reject classical returns
     @jaspify(terminal_sampling=True)
     def main():
         return sample(sp_mixed, shots=20)()
 
-    res = main()
-    assert res.shape == (20, 2)
-    # Classical column (index 1) is all-identical (single iteration)
-    assert jnp.all(res[:, 1] == res[0, 1])
+    try:
+        main()
+        assert False, "Expected Exception for mixed returns with terminal_sampling"
+    except Exception:
+        pass
 
     # ------------------------------------------------------------------
     # Mixed return with post_processor
@@ -390,13 +396,13 @@ def test_sampling_classical_and_mixed():
     res = main()
     assert res.shape == (15,)
 
+    # Terminal sampling must reject classical returns even with post_processor
     @jaspify(terminal_sampling=True)
     def main():
         return sample(sp_mixed, shots=15, post_processor=pp_sum)()
 
-    res = main()
-    assert res.shape == (15,)
-    # The quantum portion varies (correct TS behaviour), so the sum varies.
-    # The classical portion is fixed (single TS iteration), so the sum is
-    # just the quantum value shifted by a constant.
-    assert len(jnp.unique(res)) >= 1
+    try:
+        main()
+        assert False, "Expected Exception for mixed returns with terminal_sampling"
+    except Exception:
+        pass
