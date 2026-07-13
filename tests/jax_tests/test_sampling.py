@@ -406,3 +406,150 @@ def test_sampling_classical_and_mixed():
         assert False, "Expected Exception for mixed returns with terminal_sampling"
     except Exception:
         pass
+
+
+def test_expectation_value_classical_and_mixed():
+    """Tests for expectation_value() with classical and mixed returns."""
+
+    import jax.numpy as jnp
+
+    # ------------------------------------------------------------------
+    # Classical scalar return
+    # ------------------------------------------------------------------
+
+    def sp_classical_scalar():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        h(qf[1])
+        return measure(qf)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return expectation_value(sp_classical_scalar, shots=500)()
+
+    res = main()
+    # Two qubits in superposition → expected value 1.5
+    assert abs(res - 1.5) < 0.3
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return expectation_value(sp_classical_scalar, shots=500)()
+
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # Classical tuple return
+    # ------------------------------------------------------------------
+
+    def sp_classical_tuple():
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        h(a[0])
+        cx(a[0], b[0])
+        return measure(a), measure(b)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return expectation_value(sp_classical_tuple, shots=500)()
+
+    res = main()
+    assert len(res) == 2
+    # a in {0, 1} → expected 0.5; b in {0, 1} → expected 0.5
+    assert abs(res[0] - 0.5) < 0.3
+    assert abs(res[1] - 0.5) < 0.3
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return expectation_value(sp_classical_tuple, shots=500)()
+
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # Classical return with post_processor
+    # ------------------------------------------------------------------
+
+    def sp_pp():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return expectation_value(sp_pp, shots=500, post_processor=double)()
+
+    res = main()
+    # doubled values: expected = 2 * 0.5 = 1.0
+    assert abs(res - 1.0) < 0.3
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return expectation_value(sp_pp, shots=500, post_processor=double)()
+
+    try:
+        main()
+        assert False, "Expected Exception for classical returns with terminal_sampling"
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # Mixed return: one quantum, one classical
+    # ------------------------------------------------------------------
+
+    def sp_mixed():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        mes = measure(qf[1])  # always 0 (no superposition on bit 1)
+        return qf, mes
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return expectation_value(sp_mixed, shots=500)()
+
+    res = main()
+    assert len(res) == 2
+    # qf ∈ {0, 1} → expected 0.5; mes = 0 → expected 0.0
+    assert abs(res[0] - 0.5) < 0.3
+    assert res[1] == 0.0
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return expectation_value(sp_mixed, shots=500)()
+
+    try:
+        main()
+        assert False, "Expected Exception for mixed returns with terminal_sampling"
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # Mixed return with post_processor
+    # ------------------------------------------------------------------
+
+    def pp_sum(x, y):
+        return x + y
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return expectation_value(sp_mixed, shots=500, post_processor=pp_sum)()
+
+    res = main()
+    # qf + mes → expected 0.5 + 0 = 0.5
+    assert abs(res - 0.5) < 0.3
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return expectation_value(sp_mixed, shots=500, post_processor=pp_sum)()
+
+    try:
+        main()
+        assert False, "Expected Exception for mixed returns with terminal_sampling"
+    except Exception:
+        pass
