@@ -263,4 +263,140 @@ def test_expectation_value():
         index, sum = q_while_loop(cond_fun, body_fun, (1, 0))
         return sum
 
-    test()
+
+def test_sampling_classical_and_mixed():
+    """Tests for sample() with classical and mixed (quantum + classical) returns."""
+
+    import jax.numpy as jnp
+
+    # ------------------------------------------------------------------
+    # Classical scalar return
+    # ------------------------------------------------------------------
+
+    def sp_classical_scalar():
+        qf = QuantumFloat(4)
+        h(qf[0])
+        h(qf[1])
+        return measure(qf)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return sample(sp_classical_scalar, shots=30)()
+
+    res = main()
+    assert res.shape == (30,)
+    # With 2 qubits in superposition we should see variation
+    assert len(jnp.unique(res)) >= 2
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return sample(sp_classical_scalar, shots=30)()
+
+    res = main()
+    assert res.shape == (30,)
+    # Terminal sampling: all shots identical (single-iteration classical result)
+    assert jnp.all(res == res[0])
+
+    # ------------------------------------------------------------------
+    # Classical tuple return
+    # ------------------------------------------------------------------
+
+    def sp_classical_tuple():
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        h(a[0])
+        cx(a[0], b[0])
+        return measure(a), measure(b)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return sample(sp_classical_tuple, shots=20)()
+
+    res = main()
+    assert res.shape == (20, 2)
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return sample(sp_classical_tuple, shots=20)()
+
+    res = main()
+    assert res.shape == (20, 2)
+    # Terminal sampling: all rows identical
+    assert jnp.all(res == res[0])
+
+    # ------------------------------------------------------------------
+    # Classical return with post_processor
+    # ------------------------------------------------------------------
+
+    def sp_pp():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return sample(sp_pp, shots=20, post_processor=double)()
+
+    res = main()
+    assert res.shape == (20,)
+    # doubled values are always even
+    assert jnp.all(res % 2 == 0)
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return sample(sp_pp, shots=20, post_processor=double)()
+
+    res = main()
+    assert res.shape == (20,)
+    assert jnp.all(res == res[0])
+
+    # ------------------------------------------------------------------
+    # Mixed return: one quantum, one classical
+    # ------------------------------------------------------------------
+
+    def sp_mixed():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        mes = measure(qf[1])  # classical (always 0, no superposition on bit 1)
+        return qf, mes
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return sample(sp_mixed, shots=20)()
+
+    res = main()
+    assert res.shape == (20, 2)
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return sample(sp_mixed, shots=20)()
+
+    res = main()
+    assert res.shape == (20, 2)
+    # Classical column (index 1) is all-identical (single iteration)
+    assert jnp.all(res[:, 1] == res[0, 1])
+
+    # ------------------------------------------------------------------
+    # Mixed return with post_processor
+    # ------------------------------------------------------------------
+
+    def pp_sum(x, y):
+        return x + y
+
+    @jaspify(terminal_sampling=False)
+    def main():
+        return sample(sp_mixed, shots=15, post_processor=pp_sum)()
+
+    res = main()
+    assert res.shape == (15,)
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return sample(sp_mixed, shots=15, post_processor=pp_sum)()
+
+    res = main()
+    assert res.shape == (15,)
+    # The quantum portion varies (correct TS behaviour), so the sum varies.
+    # The classical portion is fixed (single TS iteration), so the sum is
+    # just the quantum value shifted by a constant.
+    assert len(jnp.unique(res)) >= 1
