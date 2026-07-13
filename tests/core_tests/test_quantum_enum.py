@@ -113,6 +113,7 @@ def test_OneHot_apply_phase_if_eq():
     r"""Test that phases are applied according to the enum encoding if and only if the enum variants are equal"""
     from qrisp import QuantumEnum
     from enum import auto
+    import numpy as np
 
     class Color(QuantumEnum.OneHot):
         RED = auto()
@@ -161,6 +162,7 @@ def test_Binary_apply_phase_if_eq():
     r"""Test that phases are applied according to the enum encoding if and only if the enum variants are equal"""
     from qrisp import QuantumEnum
     from enum import auto
+    import numpy as np
 
     class Color(QuantumEnum.Binary):
         RED = auto()
