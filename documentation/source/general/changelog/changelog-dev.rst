@@ -36,6 +36,9 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* Added meta type for QuantumEnums with auto encoding/decoding.
+  (`PR #713 <https://github.com/eclipse-qrisp/Qrisp/pull/713>`_).
+
 .. Add API changes above this line
 
 Development
@@ -64,3 +67,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `Cedric <https://github.com/CedricSchacht>`_
