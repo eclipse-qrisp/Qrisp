@@ -45,4 +45,7 @@ jobs:
           pip install -e ".[dev,catalyst,xdsl,iqm]"
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
-          pytest ${{ matrix.test-group.paths }}
+          pytest ${{ matrix.test-group.paths }} \
+            --cov=qrisp \
+            --cov-report=term-missing \
+            --cov-branch

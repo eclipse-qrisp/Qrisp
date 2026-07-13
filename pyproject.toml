@@ -76,6 +76,7 @@ dev-code-style = [
 ]
 dev-testing = [
     "pytest==9.1.0",
+    "pytest-cov>=6.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
@@ -115,6 +116,9 @@ ignore = [
     "D400",  # first-line-should-end-with-period
     "D415",  # ends-in-punctuation
 ]
+
+[tool.coverage.run]
+omit = ["*/__init__.py"]
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
