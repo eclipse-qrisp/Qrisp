@@ -47,9 +47,11 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 
 def sample(state_prep=None, shots=0, post_processor=None):
-    r"""The ``sample`` function allows to take samples from a state that is specified
-    by a preparation procedure. This preparation procedure can be supplied via
-    a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
+    r"""The ``sample`` function allows to take samples from a quantum computation
+    specified by a *sampling kernel* — a Python function that receives only
+    classical arguments and returns arbitrary values.  Any
+    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    measured and decoded.
 
     The samples are returned in the form of a
     `Jax Array <https://jax.readthedocs.io/en/latest/_autosummary/jax.Array.html>`_
@@ -57,26 +59,41 @@ def sample(state_prep=None, shots=0, post_processor=None):
     can only be a **static integer** (no dynamic values!). If you want to sample
     with a dynamic shot amount, look into :ref:`expectation_value`.
 
+    Sample calls can be efficiently simulated via terminal sampling by setting the
+    corresponding keyword within :func:`~qrisp.jasp.jaspify` to ``True``.
+
+    .. note::
+
+        **Terminal sampling** (``terminal_sampling=True`` inside
+        :func:`~qrisp.jasp.jaspify`) does **not** support sampling kernels
+        that return classical values alongside quantum variables, or kernels
+        that return *only* classical values.  Use ``terminal_sampling=False``
+        for those cases.
 
     Parameters
     ----------
     state_prep : callable
-        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`.
-        The state from this QuantumVariables will be sampled.
-        The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sampling
-        iteration, which is prohibited by the no-cloning theorem.
+        A sampling kernel — a function receiving only classical arguments and
+        returning one or more :ref:`QuantumVariables <QuantumVariable>`,
+        classical measurement results, or a mixture of both.
+        The function may **not** receive quantum arguments because a quantum
+        value would need to be copied for each sampling iteration, which is
+        prohibited by the no-cloning theorem.
     shots : int
         The amounts of samples to take.
     post_processor : callable, optional
-        A function to apply to the samples directly after measuring. By default no post processing is applied.
+        A function to apply to the samples directly after measuring. By default
+        no post processing is applied.
 
     Raises
     ------
     Exception
         Tried to sample with dynamic shots value (static integer required)
     Exception
-        Tried to sample from state preparation function taking a quantum value
+        Tried to sample from sampling kernel taking a quantum value
+    Exception
+        Tried to use terminal sampling with a kernel that returns classical
+        values (use ``terminal_sampling=False`` instead)
 
     Returns
     -------
@@ -158,6 +175,37 @@ def sample(state_prep=None, shots=0, post_processor=None):
         print(main(4))
         # Yields
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+
+    **Sampling kernels returning classical values**
+
+    A sampling kernel may also return classical values from mid-circuit
+    measurements alongside (or instead of) quantum variables:
+
+    ::
+
+        def mixed_kernel():
+            qf = QuantumFloat(4)
+            h(qf[0])
+            h(qf[1])
+            mes = measure(qf[1])      # classical measurement result
+            return qf, mes            # mixed: quantum + classical
+
+        @jaspify
+        def main():
+            return sample(mixed_kernel, shots=20)()
+
+        print(main())
+        # Yields e.g.:
+        # [[0. 0.]
+        #  [0. 0.]
+        #  [1. 0.]
+        #  ...]
+
+    .. note::
+
+        The above example uses ``@jaspify`` (which defaults to
+        ``terminal_sampling=False``).  Using ``@jaspify(terminal_sampling=True)``
+        with a mixed-returns kernel will raise an error.
 
     """
     from qrisp.core import QuantumVariable, measure
