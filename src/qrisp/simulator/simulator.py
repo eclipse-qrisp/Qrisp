@@ -399,6 +399,45 @@ def single_shot_sim(qc, quantum_state=None):
 
 
 def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_dic):
+    """Apply a buffered circuit chunk onto an existing quantum state.
+
+    This function is used by the Jasp evaluation pipeline (see
+    :class:`~qrisp.jasp.evaluation_tools.buffered_quantum_state.BufferedQuantumState`)
+    to incrementally advance a quantum state as gates are appended during
+    the interpretation of a jaxpr. Unlike :func:`run` or
+    :func:`single_shot_sim`, it does not run the full
+    :func:`~qrisp.simulator.circuit_preprocessing.circuit_preprocessor`
+    pipeline: it only removes allocation gates
+    (:func:`~qrisp.simulator.circuit_preprocessing.count_measurements_and_treat_alloc`)
+    and applies gate grouping
+    (:func:`~qrisp.simulator.circuit_preprocessing.group_qc`), since the
+    incoming circuit is already a short, measurement-terminated chunk rather
+    than a full, statically-known circuit.
+
+    Instructions are applied one by one: ``reset`` and ``disentangle``
+    instructions are handled explicitly (splitting/collapsing the state
+    branch), while all other (unitary) operations are applied via
+    ``quantum_state.apply_operation``.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The buffered circuit chunk to apply.
+    quantum_state : QuantumState
+        The quantum state to advance. Consumed by this function; the
+        returned quantum state should be used afterwards instead.
+    deallocated_qubits : list
+        List that qubits deallocated via ``qb_dealloc`` instructions are
+        appended to, in place.
+    qubit_to_index_dic : dict
+        Maps qubits appearing in ``qc`` to their integer index within
+        ``quantum_state``.
+
+    Returns
+    -------
+    QuantumState
+        The quantum state after applying all instructions in ``qc``.
+    """
     if len(qc.data) == 0:
         return quantum_state
 
