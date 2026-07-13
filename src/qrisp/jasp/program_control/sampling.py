@@ -46,7 +46,7 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def sample(state_prep=None, shots=0, post_processor=None):
+def sample(sampling_kernel=None, shots=0, post_processor=None):
     r"""The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
@@ -72,7 +72,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
     Parameters
     ----------
-    state_prep : callable
+    sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
@@ -115,7 +115,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         from qrisp.jasp import *
 
 
-        def state_prep(k):
+        def sampling_kernel(k):
             a = QuantumFloat(4)
             b = QuantumFloat(4)
 
@@ -136,7 +136,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         @jaspify
         def main(k):
 
-            sampling_function = sample(state_prep,
+            sampling_function = sample(sampling_kernel,
                                        shots = 10)
 
             return sampling_function(k)
@@ -166,7 +166,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         @jaspify
         def main(k):
 
-            sampling_function = sample(state_prep,
+            sampling_function = sample(sampling_kernel,
                                        shots = 10,
                                        post_processor = post_processor)
 
@@ -211,11 +211,11 @@ def sample(state_prep=None, shots=0, post_processor=None):
     from qrisp.core import QuantumVariable, measure
     from qrisp.jasp import qache
 
-    if isinstance(state_prep, int):
-        shots = state_prep
-        state_prep = None
+    if isinstance(sampling_kernel, int):
+        shots = sampling_kernel
+        sampling_kernel = None
 
-    if state_prep is None:
+    if sampling_kernel is None:
         return lambda x: sample(x, shots, post_processor=post_processor)
 
     if post_processor is None:
@@ -235,7 +235,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
     # Qache the user function
     @qache
     def user_func(*args):
-        return state_prep(*args)
+        return sampling_kernel(*args)
 
     # This function evaluates the sampling process
     @jax.jit
@@ -398,7 +398,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         if check_for_tracing_mode():
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
-            return terminal_sampling(state_prep, shots)(*args)
+            return terminal_sampling(sampling_kernel, shots)(*args)
 
     return return_function
 
