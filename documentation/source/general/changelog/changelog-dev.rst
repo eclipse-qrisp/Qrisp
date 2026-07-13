@@ -23,6 +23,10 @@ Bug Fixes
   deprecated ``Aer.get_backend()`` API
   (`PR #690 <https://github.com/eclipse-qrisp/Qrisp/pull/690>`_).
 
+* Fixed Cirq ``FutureWarning`` by explicitly setting ``use_repetition_ids=True``
+  in ``CircuitOperation`` calls
+  (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
+
 Compatibility
 -------------
 
