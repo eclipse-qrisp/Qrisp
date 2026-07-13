@@ -287,6 +287,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # terminal-sampling guard in jaspification.py can detect it.
                 # ----------------------------------------------------------
                 if classical_tuple:
+
                     def sampling_helper_2_mixed(*args):
                         n_classical = len(classical_tuple)
                         classical_vals = args[:n_classical]
@@ -317,8 +318,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                             if len(acc.shape) == 1:
                                 raise AuxException()
                         return result
+
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
+
                     def sampling_helper_2(*meas_ints):
                         decoded_q = []
                         for j in range(len(qv_tuple)):
@@ -345,6 +348,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                             if len(acc.shape) == 1:
                                 raise AuxException()
                         return result
+
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
                 decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
