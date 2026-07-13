@@ -19,24 +19,24 @@ import pytest
 
 from qrisp import QuantumEnum
 
-@pytest.mark.parametrize(
-    "encoding", ["OneHot", "Binary"]
-)
+
+@pytest.mark.parametrize("encoding", ["OneHot", "Binary"])
 def test_encoding_variants(encoding):
     """Test that the correct encoding is used for QuantumEnum"""
     if encoding == "OneHot":
         from qrisp import QuantumEnum, x
         from enum import auto
+
         class Color(QuantumEnum.OneHot):
-                    RED = auto()
-                    YELLOW = auto()
-                    GREEN = auto()
-                    BLUE = auto()
+            RED = auto()
+            YELLOW = auto()
+            GREEN = auto()
+            BLUE = auto()
 
         @QuantumEnum.auto(Color)
         class QuantumColor(QuantumEnum):
-                    pass
-                
+            pass
+
         q_color = QuantumColor()
         q_color[:] = Color.RED
         x(q_color[0])
@@ -48,16 +48,17 @@ def test_encoding_variants(encoding):
     elif encoding == "Binary":
         from qrisp import QuantumEnum, x
         from enum import auto
+
         class Color(QuantumEnum.Binary):
-                    RED = auto()
-                    YELLOW = auto()
-                    GREEN = auto()
-                    BLUE = auto()
+            RED = auto()
+            YELLOW = auto()
+            GREEN = auto()
+            BLUE = auto()
 
         @QuantumEnum.auto(Color)
         class QuantumColor(QuantumEnum):
-                    pass
-                
+            pass
+
         q_color = QuantumColor()
         q_color[:] = Color.RED
         x(q_color[0])
@@ -74,15 +75,16 @@ def test_OneHot_decoding():
     r"""Test that decoding OneHot encoded enums fail when state is $\ket{000}$"""
     from qrisp import QuantumEnum, x
     from enum import auto
+
     class Color(QuantumEnum.OneHot):
-                RED = auto()
-                GREEN = auto()
-                BLUE = auto()
+        RED = auto()
+        GREEN = auto()
+        BLUE = auto()
 
     @QuantumEnum.auto(Color)
     class QuantumColor(QuantumEnum):
-                pass
-            
+        pass
+
     q_color = QuantumColor()
     with pytest.raises(ValueError, match="Can not decode value"):
         result = q_color.decoder(0)
@@ -92,15 +94,16 @@ def test_Binary_decoding():
     r"""Test that Binary encoded enums fail to decode when $\ket{N}$ is outside of used range"""
     from qrisp import QuantumEnum, x
     from enum import auto
+
     class Color(QuantumEnum.Binary):
-                RED = auto()
-                GREEN = auto()
-                BLUE = auto()
+        RED = auto()
+        GREEN = auto()
+        BLUE = auto()
 
     @QuantumEnum.auto(Color)
     class QuantumColor(QuantumEnum):
-                pass
-            
+        pass
+
     q_color = QuantumColor()
     with pytest.raises(ValueError, match="Can not decode value outside of range"):
         result = q_color.decoder(3)
@@ -110,14 +113,15 @@ def test_OneHot_apply_phase_if_eq():
     r"""Test that phases are applied according to the enum encoding if and only if the enum variants are equal"""
     from qrisp import QuantumEnum
     from enum import auto
+
     class Color(QuantumEnum.OneHot):
-                RED = auto()
-                GREEN = auto()
-                BLUE = auto()
+        RED = auto()
+        GREEN = auto()
+        BLUE = auto()
 
     @QuantumEnum.auto(Color)
     class QuantumColor(QuantumEnum):
-                pass
+        pass
 
     # No phase if not equal
     q_color_a = QuantumColor()
@@ -148,24 +152,24 @@ def test_OneHot_apply_phase_if_eq():
     res = q_color_c.qs.statevector_array()
 
     expected_res = np.zeros(64, dtype=complex)
-    expected_res[36] = 0.87758255+0.47942555j
+    expected_res[36] = 0.87758255 + 0.47942555j
 
     assert np.allclose(expected_res, res)
-
 
 
 def test_Binary_apply_phase_if_eq():
     r"""Test that phases are applied according to the enum encoding if and only if the enum variants are equal"""
     from qrisp import QuantumEnum
     from enum import auto
+
     class Color(QuantumEnum.Binary):
-                RED = auto()
-                GREEN = auto()
-                BLUE = auto()
+        RED = auto()
+        GREEN = auto()
+        BLUE = auto()
 
     @QuantumEnum.auto(Color)
     class QuantumColor(QuantumEnum):
-                pass
+        pass
 
     q_color_a = QuantumColor()
     q_color_a[:] = Color.RED
@@ -194,6 +198,6 @@ def test_Binary_apply_phase_if_eq():
     res = q_color_c.qs.statevector_array()
 
     expected_res = np.zeros(32, dtype=complex)
-    expected_res[0] = 0.87758255+0.47942555j
+    expected_res[0] = 0.87758255 + 0.47942555j
 
     assert np.allclose(expected_res, res)

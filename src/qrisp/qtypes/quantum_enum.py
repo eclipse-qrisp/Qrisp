@@ -21,12 +21,13 @@ from typing import Self, Union
 from qrisp import QuantumVariable
 from qrisp import cp, cx, mcp
 
+
 class QuantumEnum(QuantumVariable):
     r"""A quantum meta type for auto encoding python enums in a QuantumVariable
-    
+
     >>> from qrisp import QuantumEnum
     >>> from enum import auto
-    >>> 
+    >>>
     >>> class Color(QuantumEnum.OneHot):
     >>>     RED = auto()
     >>>     GREEN = auto()
@@ -35,11 +36,11 @@ class QuantumEnum(QuantumVariable):
     >>> @QuantumEnum.auto(Color)
     >>> class QuantumColor(QuantumEnum):
     >>>     pass
-    >>> 
+    >>>
     >>> q_color = QuantumColor()
     >>> q_color[:] = Color.RED
 
-    ``QuantumEnum.OneHot`` encoding uses one qubit per enum value, 
+    ``QuantumEnum.OneHot`` encoding uses one qubit per enum value,
     depending on the usecase ``QuantumEnum.Binary`` encoding might be beneficial,
     only requiring $\lceil\log_2{N}\rceil$ qubits instead of $N$.
 
@@ -48,7 +49,7 @@ class QuantumEnum(QuantumVariable):
     This method is available on any class created via ``@QuantumEnum.auto(...)``,
     such as ``QuantumColor`` in the usage examples.
     """
-    
+
     def __init__(self, qs=None, name=None):
         super().__init__(self.size, qs=qs, name=name)
 
@@ -57,108 +58,120 @@ class QuantumEnum(QuantumVariable):
 
         >>> from qrisp import QuantumEnum
         >>> from enum import auto
-        >>> 
+        >>>
         >>> class Color(QuantumEnum.Binary):
         >>>     RED = auto()    # 0
         >>>     GREEN = auto()  # 1
         >>>     BLUE = auto()   # 2
         >>>     PURPLE = auto() # 3
         """
+
         def _generate_next_value_(name, start, count, last_values):
             return count
-    
+
         @staticmethod
         def auto_implement(enum_cls: Self) -> Self:
             if len(enum_cls.__members__) > 0:
                 values = [member.value for member in enum_cls]
-    
+
                 values.sort()
-    
+
                 n = len(enum_cls.__members__.items())
                 if values != list(range(n)):
-                    raise ValueError(f"{enum_cls} Enum values must be unique and consecutive integers from 0 to {n-1}.")
-    
+                    raise ValueError(
+                        f"{enum_cls} Enum values must be unique and consecutive integers from 0 to {n - 1}."
+                    )
+
             def decorator(cls):
                 cls.enum = enum_cls
                 cls.bitlength = ceil(log2(len(enum_cls.__members__)))
-    
+
                 cls.encoding = "Binary"
                 cls.size = ceil(log2(len(enum_cls.__members__)))
-    
+
                 def encoder(self, value):
-                    if (type(value) != enum_cls):
+                    if type(value) != enum_cls:
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
+
                 cls.encoder = encoder
-    
+
                 def decoder(self, i):
                     if i in range(len(enum_cls.__members__.items())):
                         return enum_cls(i)
                     else:
                         raise ValueError("Can not decode value outside of range")
+
                 cls.decoder = decoder
-    
+
                 def apply_phase_if_eq(self, other: Self, gamma):
                     cx(self, other)
                     mcp(gamma, other, ctrl_state=0)
                     cx(self, other)
+
                 cls.apply_phase_if_eq = apply_phase_if_eq
-    
+
                 return cls
+
             return decorator
-    
+
     class OneHot(Enum):
         r"""One hot encoding for python enums resulting in values as powers of 2
 
         >>> from qrisp import QuantumEnum
         >>> from enum import auto
-        >>> 
+        >>>
         >>> class Color(QuantumEnum.OneHot):
         >>>     RED = auto()    # 1
         >>>     GREEN = auto()  # 2
         >>>     BLUE = auto()   # 4
         >>>     PURPLE = auto() # 8
         """
+
         def _generate_next_value_(name, start, count, last_values):
             return 1 << count
-        
+
         @staticmethod
         def auto_implement(enum_cls: Self) -> Self:
             if len(enum_cls.__members__) > 0:
-                values = [member.value for member in enum_cls]  
-    
-                values.sort()   
-    
+                values = [member.value for member in enum_cls]
+
+                values.sort()
+
                 n = [2**x for x in range(len(enum_cls.__members__.items()))]
                 if values != n:
-                    raise ValueError(f"{enum_cls} Enum values must be unique and follow the one hot encoding.") 
-    
+                    raise ValueError(f"{enum_cls} Enum values must be unique and follow the one hot encoding.")
+
             def decorator(cls):
                 cls.enum = enum_cls
-                cls.bitlength = len(enum_cls.__members__)   
-    
+                cls.bitlength = len(enum_cls.__members__)
+
                 cls.encoding = "OneHot"
                 cls.size = len(enum_cls.__members__)
-    
+
                 def encoder(self, value):
-                    if (type(value) != enum_cls):
+                    if type(value) != enum_cls:
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
-                cls.encoder = encoder   
-    
+
+                cls.encoder = encoder
+
                 def decoder(self, i):
                     if i in [member.value for member in enum_cls]:
                         return enum_cls(i)
                     else:
                         raise ValueError("Can not decode value")
-                cls.decoder = decoder   
-    
+
+                cls.decoder = decoder
+
                 def apply_phase_if_eq(self, other: Self, gamma):
                     for i in range(self.size):
                         cp(gamma, self[i], other[i])
+
                 cls.apply_phase_if_eq = apply_phase_if_eq
-                
+
                 return cls
+
             return decorator
 
     def auto(enum_cls: Union[Binary, OneHot]) -> Self:
