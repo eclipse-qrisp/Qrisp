@@ -47,18 +47,20 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
     r"""The ``expectation_value`` function allows to estimate the expectation value
-    from a state that is specified by a preparation procedure. This preparation
-    procedure can be supplied via a Python function that returns one or
-    more :ref:`QuantumVariables <QuantumVariable>`.
+    from a *sampling kernel* — a Python function that receives only classical
+    arguments and returns arbitrary values.  Any
+    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    measured and decoded; classical values are interleaved in-place.
 
     Parameters
     ----------
     state_prep : callable
-        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`.
-        The expectation value from this state will be computed.
-        The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sampling
-        iteration, which is prohibited by the no-cloning theorem.
+        A sampling kernel — a function receiving only classical arguments and
+        returning one or more :ref:`QuantumVariables <QuantumVariable>`,
+        classical measurement results, or a mixture of both.
+        The function may **not** receive quantum arguments because a quantum
+        value would need to be copied for each sampling iteration, which is
+        prohibited by the no-cloning theorem.
     shots : int or jax.core.Tracer
         The amount of samples to take to compute the expectation value.
     post_processor : callable, optional
@@ -68,7 +70,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     Raises
     ------
     Exception
-        Tried to sample from state preparation function taking a quantum value
+        Tried to sample from sampling kernel taking a quantum value
 
     Returns
     -------
@@ -182,39 +184,69 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
             # Evaluate the user function
             acc = args[0]
-            qv_tuple = user_func(*args[1:])
+            result_tuple = user_func(*args[1:])
 
-            if not isinstance(qv_tuple, tuple):
-                qv_tuple = (qv_tuple,)
+            if not isinstance(result_tuple, tuple):
+                result_tuple = (result_tuple,)
 
-            # Ensure all results are QuantumVariables
-            for qv in qv_tuple:
-                if not isinstance(qv, QuantumVariable):
-                    raise Exception("Tried to sample from function not returning a QuantumVariable")
+            # Build a per-position mask: QuantumVariable -> True, classical -> False.
+            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
 
-            # Trace the DynamicQubitArray measurements
-            # Since we execute the measurements on the .reg attribute, no decoding
-            # is applied. The decoding happens in sampling_helper_2
-            @qache
-            def sampling_helper_1(*args):
-                res_list = []
-                for reg in args:
-                    res_list.append(measure(reg))
-                return tuple(res_list)
+            # Separate quantum and classical returns.
+            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
+            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
 
-            measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
+            if qv_tuple:
+                # Measure quantum registers only.
+                @qache
+                def sampling_helper_1(*args):
+                    res_list = []
+                    for reg in args:
+                        res_list.append(measure(reg))
+                    return tuple(res_list)
 
-            # Trace the decoding
-            @jax.jit
-            def sampling_helper_2(*meas_ints):
-                res_list = []
-                for i in range(len(qv_tuple)):
-                    res_list.append(qv_tuple[i].jdecoder(meas_ints[i]))
+                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
 
-                # Apply the post processing
-                return post_processor(*res_list)
+                # Decode quantum, interleave with classical values, apply
+                # post-processing.  Classical values are passed as explicit
+                # arguments (before measurement ints).  When present the
+                # helper is named sampling_helper_2_mixed for detection.
+                if classical_tuple:
+                    def sampling_helper_2_mixed(*args):
+                        n_classical = len(classical_tuple)
+                        classical_vals = args[:n_classical]
+                        meas_ints = args[n_classical:]
 
-            decoded_values = sampling_helper_2(*(list(measurement_ints)))
+                        decoded_q = []
+                        for j in range(len(qv_tuple)):
+                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+
+                        full = []
+                        q_idx = 0
+                        c_idx = 0
+                        for is_q in is_quantum:
+                            if is_q:
+                                full.append(decoded_q[q_idx])
+                                q_idx += 1
+                            else:
+                                full.append(classical_vals[c_idx])
+                                c_idx += 1
+
+                        return post_processor(*full)
+                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
+                else:
+                    def sampling_helper_2(*meas_ints):
+                        res_list = []
+                        for j in range(len(qv_tuple)):
+                            res_list.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        return post_processor(*res_list)
+                    sampling_helper_2 = jax.jit(sampling_helper_2)
+
+                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
+
+            else:
+                # Pure classical — just apply post-processing directly.
+                decoded_values = post_processor(*classical_tuple)
 
             if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
                 # Save the return amount (for more details check the comment of the)
