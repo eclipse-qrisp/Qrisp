@@ -100,30 +100,17 @@ def backend_sampling_eqn_evaluator(backend):
                 val = val.item()
             kernel_args.append(val)
 
-        # Step 2: Get loop body Jaspr (sampling_body_func), call to_qc on it
+        # Step 2: Get user_func Jaspr (the kernel), call to_qc on it.
+        # user_func has a clean structure: quantum ops → measurements →
+        # classical return (including parity, arithmetic, etc.).
+        # sampling_body_func wraps this with accumulation logic that
+        # to_qc can't handle (e.g. ParityHandle in JAX ops).
         sampling_body_jaxpr = find_named_jaxpr(
             eqn.params["jaxpr"].jaxpr, "sampling_body_func"
         )
         if sampling_body_jaxpr is None:
             raise RuntimeError("sampling_body_func not found in sampling structure")
 
-        loop_body_jaspr = Jaspr(sampling_body_jaxpr)
-        n_non_qst = sum(
-            1 for v in loop_body_jaspr.invars
-            if not isinstance(v.aval, AbstractQuantumState)
-        )
-        # Pad with placeholder ints for loop_counter and accumulator
-        to_qc_args = [0] * (n_non_qst - len(kernel_args)) + list(kernel_args)
-        result_tuple = loop_body_jaspr.to_qc(*to_qc_args)
-        *_, qc = result_tuple
-
-        # Step 3: Run on backend
-        meas_result = backend.run(qc, shots=shots)
-
-        # Step 4: Get post-processing from user_func (the kernel's Jaspr).
-        # user_func has a clean quantum → measure → decode structure.
-        # sampling_body_func includes accumulation logic that can't be
-        # handled by extract_post_processing.
         user_func_jaxpr = find_named_jaxpr(
             sampling_body_jaxpr.jaxpr, "user_func"
         )
@@ -131,6 +118,13 @@ def backend_sampling_eqn_evaluator(backend):
             raise RuntimeError("user_func not found in sampling structure")
 
         user_func_jaspr = Jaspr(user_func_jaxpr)
+        result_tuple = user_func_jaspr.to_qc(*kernel_args)
+        *_, qc = result_tuple
+
+        # Step 3: Run on backend
+        meas_result = backend.run(qc, shots=shots)
+
+        # Step 4: Get post-processing from user_func (the kernel's Jaspr).
         post_proc = user_func_jaspr.extract_post_processing(*kernel_args)
 
         # Steps 5-6: Apply post-processing → build target array
