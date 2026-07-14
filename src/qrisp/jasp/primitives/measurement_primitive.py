@@ -66,7 +66,7 @@ def measure_implementation(meas_object, qc):
         if return_bool:
             meas_res = Clbit("cb_" + str(len(qc.clbits)))
             qc.clbits.insert(0, meas_res)
-            qc.measure(meas_object, meas_res)
+            qc.measure(meas_object[0], meas_res)
             return meas_res, qc
         else:
             clbit_list = []
