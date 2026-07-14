@@ -804,6 +804,12 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # ProcessedMeasurement stays processed
                 context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 return
+            elif isinstance(inval, ParityHandle):
+                # ParityHandle represents a parity measurement result.
+                # Any type conversion on it is meaningless during circuit
+                # extraction — produce a ProcessedMeasurement placeholder.
+                context_dic[eqn.outvars[0]] = ProcessedMeasurement()
+                return
             elif isinstance(inval, list) and len(inval) and isinstance(inval[0], (ProcessedMeasurement, Clbit)):
                 # List of measurement data
                 if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
