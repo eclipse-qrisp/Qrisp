@@ -236,6 +236,11 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                 # sampling_helper_2 only appears for quantum returns; classical
                 # returns bypass the helpers and are handled after the while loop.
+                #
+                # Each int in the values of meas_res_dic represents the values
+                # of all QuantumVariables.  We therefore need to "split" the
+                # ints into the appropriate parts and decode them.
+                # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
                     if sampling_res_type == "ev":
                         sampling_res = jnp.zeros(len(eqn.outvars))
@@ -250,16 +255,31 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                     # Iterate through the sampled values
                     for k, v in meas_res_dic.items():
+                        # We now evaluate the function that was previously traced
+                        # to perform the decoding.  The first few arguments of
+                        # this function are the integers to be decoded.
+                        #
+                        # We therefore use the traced Jaspr to perform the
+                        # decoding by modifying the input values.
                         new_invalues = list(invalues)
                         j = 0
                         for i in range(len(return_signature)):
+                            # Split the integers into intervals ranging from
+                            # j to j + return_signature[i]
                             new_invalues[len(invalues) - len(return_signature) + i] = (
                                 k & ((2 ** (return_signature[i]) - 1) << j)
                             ) >> j
                             j += return_signature[i]
 
+                        # Evaluate the decoder
                         outvalues = decoder(*new_invalues)
 
+                        # We now build the key for the result dict.
+                        # For that we turn the Jax types into the corresponding
+                        # Python types.
+                        #
+                        # This treats the case that the decoder returned only
+                        # a single result (instead of a tuple).
                         if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues * v
@@ -275,6 +295,8 @@ def terminal_sampling_evaluator(sampling_res_type):
                                     else:
                                         raise
                                 sampling_res[key.item()] = v
+                        # If the user function returned more than one value,
+                        # the key is a tuple to be built up.
                         elif sampling_res_type == "ev":
                             sampling_res += jnp.array(outvalues) * v
                         elif sampling_res_type == "array":
@@ -299,6 +321,8 @@ def terminal_sampling_evaluator(sampling_res_type):
                         if sampling_res.shape[0] == 1:
                             sampling_res = sampling_res[0]
                     elif sampling_res_type == "dict":
+                        # Sort the counts such that the most probable values
+                        # come first.
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
 
