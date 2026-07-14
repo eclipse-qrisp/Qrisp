@@ -25,7 +25,7 @@ from .constructors import (
     build_from_operator,
     build_from_projector,
 )
-from .transformations import apply_inv, apply_poly, apply_pseudo_inv, apply_sim, apply_svt
+from .transformations import apply_inv, apply_poly, apply_pseudo_inv, apply_sim, apply_svt, apply_nested_commutators
 
 BlockEncoding.from_array = classmethod(build_from_array)
 BlockEncoding.from_eye = classmethod(build_from_eye)
@@ -40,5 +40,6 @@ BlockEncoding.poly = apply_poly
 BlockEncoding.pseudo_inv = apply_pseudo_inv
 BlockEncoding.sim = apply_sim
 BlockEncoding.svt = apply_svt
+BlockEncoding.nested_commutators = apply_nested_commutators
 
 __all__ = ["BlockEncoding"]

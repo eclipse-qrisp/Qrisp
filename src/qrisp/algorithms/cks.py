@@ -161,28 +161,28 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
 
     """
 
-    #Computes rotation angles \phi_i to prepare the unary state.
-    #Vectorized and numerically stable implementation using cumulative sums.
+    # Computes rotation angles \phi_i to prepare the unary state.
+    # Vectorized and numerically stable implementation using cumulative sums.
 
-    # Amplitudes a_k of the state with exactly k+1 consecutive ones 
+    # Amplitudes a_k of the state with exactly k+1 consecutive ones
     # are related to the coefficients c_k by:
     # a_k ~ sin(phi_0)sin(phi_1)...sin(phi_{k-1})cos(phi_k)
     # cos(phi_k) = sqrt(c_k) / sqrt(c_k + c_{c+1} + ... + c_{N-1})
     # sin(phi_k) = sqrt(c_{k+1} + ... + c_{N-1}) / sqrt(c_k + c_{k+1} + ... + c_{N-1})
-    
+
     # Calculate the reverse cumulative sum of the coefficients
     # rev_cumsum[k] = sum_{j=k}^{N-1} c_j
     rev_cumsum = jnp.cumsum(coeffs[::-1])[::-1]
-    
+
     # y arguments represent the norm of the remaining state (sin component)
     y_args = jnp.sqrt(rev_cumsum[1:])
-    
+
     # x arguments represent the amplitude of the current unary state (cos component)
     x_args = jnp.sqrt(coeffs[:-1])
-    
+
     # arctan2 safely handles x=0, y=0, and tiny values without division
     phi = jnp.arctan2(y_args, x_args)
-    
+
     return 2 * phi
 
 

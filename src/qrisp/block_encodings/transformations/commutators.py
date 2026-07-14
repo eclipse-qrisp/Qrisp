@@ -18,13 +18,16 @@
 
 from __future__ import annotations
 
+from typing import Any, Literal, TYPE_CHECKING
+
 import jax.numpy as jnp
 import math
 import numpy as np
 import numpy.typing as npt
+
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
-from qrisp.block_encodings import BlockEncoding
+from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx, p
 from qrisp.environments import conjugate, control
 from qrisp.jasp import (
@@ -33,7 +36,6 @@ from qrisp.jasp import (
     q_switch,
 )
 from qrisp.qtypes import QuantumBool, QuantumFloat
-from typing import Any, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -47,7 +49,7 @@ def _chebyshev_commutator_coeffs(d):
     ----------
     d : int
         The order of the nested commutator, which determines the size of the coefficient matrix.
-    
+
     Returns
     -------
     C : ndarray, shape (d+1, d+1)
@@ -182,8 +184,8 @@ def unary_prep(
         x(qv[:i])
 
     n = int(np.ceil(np.log2(d + 1)))
-    q_switch(anc[:n], case_func, qm, branch_amount=d+1)
-    q_switch(anc[n:], case_func, qn, branch_amount=d+1)
+    q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
+    q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
 
 
 def unary_walk_prep(
@@ -259,9 +261,7 @@ def unary_walk_prep(
         coeffs[d - 1] = 1
     else:
         # Rescale coefficients
-        coeffs = np.array(coeffs) * np.array(
-            [np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)]
-        )
+        coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)])
         coeffs = coeffs / np.sum(coeffs)
 
     if d > 1:
@@ -289,7 +289,7 @@ def unary_walk_prep(
 
         # Initialize the coins
         h(coins1)
-        z(coins1) # Applies the minus sign for the commutator
+        z(coins1)  # Applies the minus sign for the commutator
         h(coins2)
 
         for step in jrange(d):
@@ -298,7 +298,6 @@ def unary_walk_prep(
 
             # Apply the walk step
             with control(steps[step]):
-
                 with control(c1, ctrl_state=0):
                     apply_symmetric_walk(c2, m_line)
 
@@ -319,8 +318,8 @@ def unary_walk_prep(
             x(qn[:i])
 
 
-def nested_commutators(
-    A: BlockEncoding,
+def apply_nested_commutators(
+    self,
     B: BlockEncoding,
     coeffs: "ArrayLike",
     method: Literal["default", "walk"] = "default",
@@ -335,13 +334,11 @@ def nested_commutators(
 
         \mathcal A = \sum_{k=1}^d \gamma_kc_k \text{ad}_A^k(B)
 
-    where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$, 
+    where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$,
     $c_k$ are real non-negative coefficients, and $\gamma_k=i$ if $k$ is odd and $\gamma_k=1$ if $k$ is even.
 
     Parameters
     ----------
-    A : BlockEncoding
-        A block-encoded Hermitian operator.
     B : BlockEncoding
         A block-encoded Hermitian operator.
     coeffs : ArrayLike, shape (d,)
@@ -385,7 +382,7 @@ def nested_commutators(
         B_B = BlockEncoding.from_operator(B)
 
         # BlockEncoding of sum of odd nested commutators
-        B_C = nested_commutators(B_A, B_B, np.array([1., 0., 1.,]))
+        B_C = B_A.nested_commutators(B_B, np.array([1., 0., 1.,]))
 
         b = np.array([1., 1., 0., 1.])
         # Prepare variable in state |b>
@@ -417,13 +414,11 @@ def nested_commutators(
 
 
     """
+    A = self
 
     ALLOWED_METHODS = {"default", "walk"}
     if method not in ALLOWED_METHODS:
-        raise ValueError(
-            f"Invalid method specified: '{method}'. "
-            f"Allowed methods are: {', '.join(ALLOWED_METHODS)}"
-        )
+        raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
 
     if method == "default":
         prep_func = unary_prep
@@ -459,16 +454,12 @@ def nested_commutators(
         ancs_A = args[num_prep_ancs + 3 : num_prep_ancs + num_ancs_A + 3]
         qubits_A = sum([anc.reg for anc in ancs_A], [])
 
-        ancs_B = args[
-            num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3
-        ]
+        ancs_B = args[num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3]
         operands = args[-num_ops:]
 
         # Apply weighted sum of nested commutators expansion in Chebyshev basis.
         # sum_{m,n} (-1)^n C_{m,n} T_m(A) B T_n(A)
-        with conjugate(prep_func)(
-            *outer_ancs, outer_anc_left, outer_anc_right, d, coeffs
-        ):
+        with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
 
             def parity(qv1, qv2, qbl):
                 for i in jrange(d):
@@ -507,12 +498,9 @@ def nested_commutators(
             x(anc_qbl)
 
     if method == "default":
-
         new_anc_templates = (
             [
-                QuantumVariable(
-                    2 * n
-                ).template(),  # binary-encoded ancilla for coefficient preparation
+                QuantumVariable(2 * n).template(),  # binary-encoded ancilla for coefficient preparation
                 QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
                 QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
                 QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
@@ -522,18 +510,13 @@ def nested_commutators(
         )
 
     elif method == "walk":
-
         new_anc_templates = (
             [
                 QuantumVariable(d).template(),  # step ancilla variable for walk
                 QuantumVariable(d).template(),  # coin ancilla variable 1 for walk
                 QuantumVariable(d).template(),  # coin ancilla variable 2 for walk
-                QuantumVariable(
-                    2 * d + 1
-                ).template(),  # position ancilla variable m_line for walk
-                QuantumVariable(
-                    2 * d + 1
-                ).template(),  # position ancilla variable n_line for walk
+                QuantumVariable(2 * d + 1).template(),  # position ancilla variable m_line for walk
+                QuantumVariable(2 * d + 1).template(),  # position ancilla variable n_line for walk
                 QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
                 QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
                 QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
