@@ -12,10 +12,14 @@ Algorithms & Applications
 .. autosummary:: 
     :toctree: generated/
     
+    GQSVT
     GQET
+    QSVT
     QET
     hamiltonian_simulation
     inversion
+    dalzell_inversion
+    pseudo_inversion
     convolve
     fourier_series_loader
 
@@ -28,3 +32,5 @@ Utilities
     poly2cheb
     cheb2poly
     gqsp_angles
+    qsp_angles
+    qsvt_angles

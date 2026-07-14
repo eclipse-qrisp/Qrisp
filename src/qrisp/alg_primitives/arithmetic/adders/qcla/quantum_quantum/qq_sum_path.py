@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 21 11:22:37 2023
+"""Created on Tue Nov 21 11:22:37 2023
 
 @author: sea
 """
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.environments import invert
-from qrisp.misc import redirect_qfunction
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import (
-    qq_calc_carry,
-)
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
+from qrisp.core.gate_application_functions import cx
+from qrisp.qtypes import QuantumVariable
 
 
 def qq_sum_path(a, b, c, R):
@@ -31,7 +25,6 @@ def qq_sum_path(a, b, c, R):
         i = 0
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -55,7 +48,6 @@ def qq_sum_path(a, b, c, R):
 
                 gidney_adder(a_block, b_block)
             else:
-
                 # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
                 gidney_adder(a_block, b_block, c[i - 1])
 
@@ -70,7 +62,6 @@ def qq_sum_path(a, b, c, R):
         # qubits of b (incase the carry is True)
         # We start at the index the last loop finished at
         for j in range(i + 1, len(b) // R + 1)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
 
             if not len(b_block):
@@ -121,10 +112,8 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
     # qubits of b (incase the carry is True)
     # #We start at the index the last loop finished at
     if len(a) != len(b):
-
         # Perform the loop in reverse
         for j in range(int(np.ceil(len(a) / R)), len(b) // R + 2)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
 
             if not len(b_block):
@@ -133,13 +122,12 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
             # Perform incrementation function
             if R * j == 0:
                 lin_incr(b_block, c_out=c[j])
+            elif j < len(c):
+                # We use the c_out of the incrementor to uncompute the carry of
+                # the previous iteration
+                lin_incr(b_block, c[j - 1], c_out=c[j])
             else:
-                if j < len(c):
-                    # We use the c_out of the incrementor to uncompute the carry of
-                    # the previous iteration
-                    lin_incr(b_block, c[j - 1], c_out=c[j])
-                else:
-                    lin_incr(b_block, c[j - 1])
+                lin_incr(b_block, c[j - 1])
 
     # Execute addition using the corresponding carry values
     for i in range(len(a) // R + 1)[::-1]:
@@ -163,7 +151,6 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
 
         # Perform Gidney addition
         if i == 0:
-
             # Use the c_out keyword of the Gidney-Adder to uncompute the carry of
             # the previous iteration
             if len(c):

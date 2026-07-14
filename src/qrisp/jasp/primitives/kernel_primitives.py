@@ -1,5 +1,4 @@
-"""
-\********************************************************************************
+r"""\********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,9 @@
 """
 
 import jax.numpy as jnp
-from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
+
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
+from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 create_quantum_kernel_p = QuantumPrimitive("create_quantum_kernel")
 consume_quantum_kernel_p = QuantumPrimitive("consume_quantum_kernel")
@@ -30,12 +30,13 @@ def quantum_kernel_abstract_eval():
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     return AbstractQuantumState()
 
 
@@ -45,10 +46,11 @@ def quantum_kernel_abstract_eval(abs_qst):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     return jnp.bool(False).aval

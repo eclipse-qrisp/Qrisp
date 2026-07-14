@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,25 +17,6 @@
 
 import setuptools
 
-REQUIREMENTS = [
-                "numpy>=2.0",
-                "sympy<=1.13",
-                "qiskit>=0.44.0",
-                "matplotlib>=3.5.1",
-                "scipy>=1.10.0",
-                "numba",
-                "networkx",
-                "tqdm",
-                "dill",
-                "flask<2.3.0",
-                "waitress",
-                "pyyaml",
-                "requests",
-                "psutil",
-                "jax==0.7.1",
-                "jaxlib==0.7.1"]
-
-
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
@@ -53,11 +33,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "src"},
-    install_requires = REQUIREMENTS,
-    setup_requires = REQUIREMENTS,
-    extras_require={
-        'iqm': ['iqm-client[qiskit]']
-    },
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.11",
+    python_requires=">=3.11, <3.14",
 )

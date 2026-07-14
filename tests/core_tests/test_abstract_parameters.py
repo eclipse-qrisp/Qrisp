@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,14 @@
 """
 
 # Created by ann81984 at 04.05.2022
-import time
 import random
-import numpy as np
+import time
 
-from qrisp.core import QuantumSession, QuantumVariable
-from qrisp.circuit import RYGate, RXGate, transpile, HGate, ZGate, PGate, XGate, MCXGate
+import numpy as np
 from sympy import Symbol, simplify
+
+from qrisp.circuit import PGate
+from qrisp.core import QuantumVariable, xxyy
 
 
 def test_abstract_parameters():
@@ -66,8 +66,9 @@ def test_abstract_parameters():
     if use_qiskit:
         from qiskit.circuit import Parameter, QuantumCircuit
     else:
-        from qrisp.circuit import QuantumCircuit
         from sympy import Symbol as Parameter
+
+        from qrisp.circuit import QuantumCircuit
 
     n = 1000
     param_name_list = ["p_" + str(i) for i in range(n)]
@@ -77,18 +78,27 @@ def test_abstract_parameters():
 
     for i in range(n):
         qc.cx(i, i + 1)
-        qc.p(parameter_list[i]**(i%10), i)
+        qc.p(parameter_list[i] ** (i % 10), i)
 
     m = 100
 
     start_time = time.time()
     for i in range(int(m)):
-        param_values = [
-            random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))
-        ]
-        qc.bind_parameters(
-            {parameter_list[j]: param_values[j] for j in range(len(parameter_list))}
-        )
+        param_values = [random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
+        qc.bind_parameters({parameter_list[j]: param_values[j] for j in range(len(parameter_list))})
 
     duration = time.time() - start_time
-    print("Took " + str(duration/m) + " per binding iteration")
+    print("Took " + str(duration / m) + " per binding iteration")
+
+    # Test the fix for https://github.com/eclipse-qrisp/Qrisp/issues/540
+    phi = Symbol("phi")
+    psi = Symbol("psi")
+
+    qv = QuantumVariable(2)
+    xxyy(phi, psi, qv[0], qv[1])
+
+    op = qv.qs.data[2].op
+
+    inv_op = op.inverse()
+
+    assert len(inv_op.params)

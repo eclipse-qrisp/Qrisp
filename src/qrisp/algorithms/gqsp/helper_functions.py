@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,16 @@
 ********************************************************************************
 """
 
+import warnings
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Literal
+
 import jax
-from jax import Array
 import jax.numpy as jnp
-from typing import Literal, TYPE_CHECKING
+import numpy as np
+import numpy.typing as npt
+from jax import Array
+from numpy.polynomial import Chebyshev
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -29,8 +34,7 @@ if TYPE_CHECKING:
 # To be deprecated when available in jax.numpy
 @jax.jit
 def poly2cheb(poly: "ArrayLike") -> Array:
-    """
-    Convert a polynomial from monomial to Chebyshev basis.
+    """Convert a polynomial from monomial to Chebyshev basis.
     JAX version of `numpy.polynomial.chebyshev.poly2cheb <https://numpy.org/doc/2.3/reference/generated/numpy.polynomial.chebyshev.poly2cheb.html>`_.
 
     Convert an array representing the coefficients of a polynomial (relative to the monomial basis) ordered from lowest degree to highest,
@@ -48,7 +52,6 @@ def poly2cheb(poly: "ArrayLike") -> Array:
 
     Examples
     --------
-
     >>> import jax.numpy as jnp
     >>> from qrisp.gqsp import poly2cheb
     >>> poly = jnp.array([-2., -8.,  4., 12.])
@@ -85,8 +88,7 @@ def poly2cheb(poly: "ArrayLike") -> Array:
 # To be deprecated when available in jax.numpy
 @jax.jit
 def cheb2poly(cheb: "ArrayLike") -> Array:
-    """
-    Convert a polynomial from Chebyshev to monomial basis.
+    """Convert a polynomial from Chebyshev to monomial basis.
     JAX version of `numpy.polynomial.chebyshev.cheb2poly <https://numpy.org/doc/stable/reference/generated/numpy.polynomial.chebyshev.cheb2poly.html>`_.
 
     Convert an array representing the coefficients of a Chebyshev series, ordered from lowest degree to highest,
@@ -104,7 +106,6 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
 
     Examples
     --------
-
     >>> import jax.numpy as jnp
     >>> from qrisp.gqsp import cheb2poly
     >>> poly = jnp.array([0., 1., 2., 3.])
@@ -141,8 +142,7 @@ def _rescale_poly(
     p: "ArrayLike",
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
 ) -> "ArrayLike":
-    r"""
-    Returns a new polynomial $\tilde{p}$ such that $\tilde{p}(z) = p(z/\alpha)$.
+    r"""Returns a new polynomial $\tilde{p}$ such that $\tilde{p}(z) = p(z/\alpha)$.
 
     Parameters
     ----------
@@ -159,7 +159,6 @@ def _rescale_poly(
         1-D array containing the (rescaled) polynomial coefficients, ordered from lowest order term to highest.
 
     """
-
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     scaling_exponents = jnp.arange(len(p))
     scaling_factors = jnp.power(alpha, scaling_exponents)
@@ -174,3 +173,67 @@ def _rescale_poly(
         p = poly2cheb(p)
 
     return p
+
+
+def chebyshev_approx(
+    func: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]],
+    eps: float = 1e-3,
+    max_N: int = 2048,
+) -> Chebyshev:
+    r"""Calculates a truncated Chebyshev polynomial approximation of a function.
+
+    This method interpolates the given smooth function `func` using Chebyshev
+    polynomials up to a specified maximum degree `max_N` over the interval $[-1, 1]$.
+    It then truncates the higher-order coefficients to achieve a compressed
+    representation, guaranteeing that the maximum approximation error caused
+    by the truncation remains below the specified tolerance.
+
+    Parameters
+    ----------
+    func : Callable
+        The target function to approximate. Must accept a 1D
+        NumPy array of inputs and return a 1D array of evaluated outputs.
+    eps : float, optional
+        The maximum allowed absolute error introduced by dropping higher-order terms.
+        Defaults to 1e-3.
+    max_N : int, optional
+        The maximum polynomial degree used for the initial interpolation.
+        Defaults to 2048.
+
+    Returns
+    -------
+    Chebyshev
+        A NumPy Chebyshev polynomial object with the truncated coefficients.
+
+    """
+    N = 16
+
+    while N <= max_N:
+        cheb_poly = Chebyshev.interpolate(func, deg=N, domain=[-1, 1])
+        coeffs = cheb_poly.coef
+
+        tail_start = int(N * 0.8)
+        tail_sum = np.sum(np.abs(coeffs[tail_start:]))
+
+        if tail_sum < eps:
+            break
+
+        N *= 2
+
+    if N > max_N:
+        warnings.warn(
+            f"Failed to converge to tolerance {eps} within a maximal polynomial degree of {max_N}. "
+            "Consider increasing 'max_N' to improve approximation accuracy."
+        )
+
+    error_sum = 0.0
+    trunc_idx = len(coeffs)
+
+    for i in range(len(coeffs) - 1, -1, -1):
+        error_sum += abs(coeffs[i])
+        if error_sum > eps:
+            trunc_idx = i + 1
+            break
+
+    trunc_idx = max(1, trunc_idx)
+    return Chebyshev(coeffs[:trunc_idx], domain=[-1, 1])

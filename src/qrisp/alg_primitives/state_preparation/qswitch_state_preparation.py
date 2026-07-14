@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,27 @@
 ********************************************************************************
 """
 
-from typing import Callable, Tuple
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
 
-from qrisp.misc.utility import _EPSILON, swap_endianness
+from qrisp.misc.utility import EPSILON, swap_endianness
+
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
+    from qrisp.typing import NDArrayLike
 
 
 def _rot_params_from_state(
-    vec: jnp.ndarray,
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """
-    Computes the rotation angles to prepare a single qubit state,
+    vec: jax.Array,
+) -> tuple[jax.Array, jax.Array, jax.Array]:
+    """Computes the rotation angles to prepare a single qubit state,
     where the amplitude of the |0> basis state is real and non-negative.
 
     Specifically, it computes the angles ``theta``, ``phi``, and ``lambda``
@@ -40,7 +45,7 @@ def _rot_params_from_state(
 
     Parameters
     ----------
-    vec : jnp.ndarray
+    vec : jax.Array
         A 2-dimensional complex vector representing a qubit state.
 
     Returns
@@ -53,46 +58,44 @@ def _rot_params_from_state(
 
     lam : float
         The rotation angle lambda.
+
     """
     a, b = vec
     # We know that a is real (and non-negative).
     # This step avoids warning about casting complex to real.
     a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
-    phi = jnp.where(jnp.abs(b) > _EPSILON, jnp.angle(b), 0.0)
+    phi = jnp.where(jnp.abs(b) > EPSILON, jnp.angle(b), 0.0)
     lam = jnp.float64(0.0)
     return theta, phi, lam
 
 
-def _normalize_with_phase(
-    v: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """
-    Normalizes a given vector and adjusts its phase.
+def _normalize_with_phase(v: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array]:
+    """Normalizes a given vector and adjusts its phase.
 
     The phase of the first element of the vector is removed and added to the accumulated phase.
     The vector is normalized to have a unit norm and the first element is ensured to be real and non-negative.
 
     Parameters
     ----------
-    v : jnp.ndarray
+    v : jax.Array
         The child vector to normalize.
 
-    acc : jnp.ndarray
+    acc : jax.Array
         The accumulated phase from previous operations.
 
     Returns
     -------
-    norm : jnp.ndarray
+    norm : jax.Array
         The norm of the input vector.
 
-    v_normalized : jnp.ndarray
+    v_normalized : jax.Array
         The normalized vector with adjusted phase.
 
-    updated_acc : jnp.ndarray
+    updated_acc : jax.Array
         The updated accumulated phase.
-    """
 
+    """
     norm = jnp.linalg.norm(v)
 
     def branch_nonzero(_):
@@ -108,43 +111,39 @@ def _normalize_with_phase(
         return norm, v_adj, acc
 
     return lax.cond(
-        norm > _EPSILON,
+        norm > EPSILON,
         lambda _: branch_nonzero(None),
         lambda _: branch_zero(None),
         operand=None,
     )
 
 
-def _compute_thetas(
-    vec: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """
-    For a given input vector, this function computes the rotation angles
+def _compute_thetas(vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array]:
+    """For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
     and updates the accumulated phases for each child vector.
 
     Parameters
     ----------
-    vec : jnp.ndarray
+    vec : jax.Array
         A complex vector representing the current vector to process.
 
-    acc : jnp.ndarray
+    acc : jax.Array
         The accumulated phase from previous operations.
 
 
     Returns
     -------
-    theta : jnp.ndarray
+    theta : jax.Array
         The angle (scalar array) for the ry rotation gate.
 
-    subvecs : jnp.ndarray
+    subvecs : jax.Array
         A 2D array where each row corresponds to a normalized subvector.
 
-    acc_phases : jnp.ndarray
+    acc_phases : jax.Array
         A 1D array containing the updated accumulated phases for each subvector.
 
     """
-
     len_vec = vec.shape[0]
     half = len_vec // 2
 
@@ -161,31 +160,27 @@ def _compute_thetas(
     return theta, subvecs, acc_phases
 
 
-def _compute_u3_params(
-    qubit_vec: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """
-    For a given length-2 vector, this function computes the U3 gate parameters needed
+def _compute_u3_params(qubit_vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array]:
+    """For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
 
     Parameters
     ----------
-    qubit_vec : jnp.ndarray
+    qubit_vec : jax.Array
         A complex vector representing a one-qubit state.
 
-    acc : jnp.ndarray
+    acc : jax.Array
         The accumulated phase from previous operations.
 
     Returns
     -------
-    u_params : jnp.ndarray
+    u_params : jax.Array
         A 1D array containing the rotation angles (theta, phi, lambda) for the U3 gate.
 
-    total_phase : jnp.ndarray
+    total_phase : jax.Array
         The updated accumulated phase after processing the leaf subvector.
 
     """
-
     _, vec_n, total_phase = _normalize_with_phase(qubit_vec, acc)
     theta, phi, lam = _rot_params_from_state(vec_n)
     return jnp.array([theta, phi, lam]), total_phase
@@ -213,27 +208,25 @@ def _compute_u3_params(
 #    phases = Array[phase_leaf0, phase_leaf1, ..., phase_leaf_{2^(n-1)-1}]
 #
 def _preprocess(
-    target_array: jnp.ndarray,
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """
-    This preprocessing function returns three data structures needed for state preparation.
+    target_array: jax.Array,
+) -> tuple[jax.Array, jax.Array, jax.Array]:
+    """This preprocessing function returns three data structures needed for state preparation.
 
     Parameters
     ----------
-    target_array : jnp.ndarray
+    target_array : jax.Array
         A complex vector representing the target state to prepare.
 
     Returns
     -------
-    thetas : jnp.ndarray
+    thetas : jax.Array
         A 2D array containing the ry rotation angles for each layer.
-    u_params : jnp.ndarray
+    u_params : jax.Array
         A 2D array containing the U3 parameters for each leaf node.
-    phases : jnp.ndarray
+    phases : jax.Array
         A 1D array containing the global phase for each leaf node.
 
     """
-
     n = int(np.log2(target_array.shape[0]))
     max_nodes = 1 << (n - 1)
 
@@ -246,7 +239,6 @@ def _preprocess(
     subvecs = target_array[jnp.newaxis, :]
     acc_phases = jnp.zeros((1,), dtype=jnp.float64)
     for l in range(n):
-
         num_nodes = 1 << l
         sub_len = 1 << (n - l)
 
@@ -264,9 +256,8 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
-    """
-    Prepare the quantum state encoded in ``qv`` so that it matches the given
+def prepare_qswitch(qv: QuantumVariable, target_array: NDArrayLike, big_endianness: bool = False) -> None:
+    """Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
     amplitudes and applying a sequence of uniformly controlled rotations via
     the ``q_switch`` primitive.
@@ -283,7 +274,7 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     qv : QuantumVariable
         The quantum variable representing the qubits to be prepared.
 
-    target_array : jnp.ndarray
+    target_array : NDArrayLike
         A normalized complex vector representing the target state to prepare.
 
     big_endianness : bool, optional
@@ -292,7 +283,6 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
         Default is ``False``, meaning little-endian convention is used.
 
     """
-
     # These imports are here to avoid circular dependencies
     from qrisp import gphase, ry, u3
     from qrisp.jasp.program_control.jrange_iterator import jrange
@@ -300,10 +290,10 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     from qrisp.jasp.tracing_logic import check_for_tracing_mode
     from qrisp.misc.utility import bit_reverse
 
-    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
-    target_array = target_array / jnp.linalg.norm(target_array)
+    target_array_jax: jax.Array = jnp.asarray(target_array, dtype=jnp.complex128)
+    target_array_jax = target_array_jax / jnp.linalg.norm(target_array_jax)
     # n is static (known at compile time), so we can use normal numpy here
-    n = int(np.log2(target_array.shape[0]))
+    n = int(np.log2(target_array_jax.shape[0]))
 
     # The binary-tree preprocessing (_preprocess) and the q_switch traversal in this
     # function were originally implemented for a big-endian interpretation of the
@@ -315,14 +305,14 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     # Therefore, `big_endianness=False` indicates that we want to use little-endianness,
     # so we need to swap the endianness of the target_array before proceeding.
     if big_endianness is False:
-        target_array = swap_endianness(target_array, n)
+        target_array_jax = swap_endianness(target_array_jax, n)
 
     # We could use jrange even in static mode, but this would add overhead.
     xrange = jrange if check_for_tracing_mode() else range
 
-    thetas, u_params, phases = _preprocess(target_array)
+    thetas, u_params, phases = _preprocess(target_array_jax)
 
-    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
+    def make_case_fn(layer_size, is_final: bool = False) -> Callable:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
@@ -347,7 +337,6 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     ry(thetas[0][0], qv[0])
 
     for layer_size in xrange(1, qv.size - 1):
-
         q_switch(
             qv[:layer_size],
             make_case_fn(layer_size),

@@ -212,8 +212,6 @@ Built-in backend classes include:
      - AQT Arnica cloud
    * - :doc:`QiskitRuntimeBackend <Backend Interface/index>`
      - IBM Qiskit Runtime sessions
-   * - :doc:`VirtualBackend <Backend Interface/index>`
-     - Run arbitrary dispatch code adhering to the Qrisp interface
 
 Qrisp also supports direct export to Qiskit circuits and other circuit formats for seamless interoperability.
 

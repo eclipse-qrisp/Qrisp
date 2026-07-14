@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -46,15 +45,15 @@ Usage
         return detectors, m1, m3
 """
 
-import stim
-import numpy as np
 import jax
+import numpy as np
+import stim
 from jax.tree_util import tree_flatten
 
 from qrisp import QuantumArray, QuantumBool
+from qrisp.circuit import QuantumCircuit as QC
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.primitives.parity_primitive import parity
-from qrisp.circuit import QuantumCircuit as QC
 
 # ───────────────────── stim instruction categories ─────────────────────
 _RESET_OPS = frozenset({"R", "RX", "RY"})
@@ -118,10 +117,7 @@ def _prepare_for_tqecd(stim_circ):
     """
     # Collect all qubit indices
     all_qubits = {
-        t.value
-        for i in stim_circ.flattened()
-        for t in i.targets_copy()
-        if not t.is_measurement_record_target
+        t.value for i in stim_circ.flattened() for t in i.targets_copy() if not t.is_measurement_record_target
     }
 
     # Split instructions into rounds.
@@ -134,11 +130,7 @@ def _prepare_for_tqecd(stim_circ):
         if cur["M"] and inst.name not in _MEASUREMENT_OPS:
             rounds.append(cur)
             cur = {"R": [], "G": [], "M": []}
-        key = (
-            "R"
-            if inst.name in _RESET_OPS
-            else "M" if inst.name in _MEASUREMENT_OPS else "G"
-        )
+        key = "R" if inst.name in _RESET_OPS else "M" if inst.name in _MEASUREMENT_OPS else "G"
         cur[key].append(inst)
     if cur["M"]:
         rounds.append(cur)
@@ -183,11 +175,7 @@ def _extract_detectors(annotated_circ, total_meas, inv_meas_map):
     ``DETECTOR`` instruction.
     """
     return [
-        [
-            inv_meas_map[total_meas + t.value]
-            for t in inst.targets_copy()
-            if t.is_measurement_record_target
-        ]
+        [inv_meas_map[total_meas + t.value] for t in inst.targets_copy() if t.is_measurement_record_target]
         for inst in annotated_circ.flattened()
         if inst.name == "DETECTOR"
     ]
@@ -555,14 +543,12 @@ def find_detectors(func=None, *, return_circuits=False):
         result = main()
         stim_circ = result[-1]
         print(f"Found {stim_circ.num_detectors} detectors")
+
     """
     try:
         import tqecd
     except ImportError:
-        raise ImportError(
-            "find_detectors requires the 'tqecd' package. "
-            "Install it with: pip install tqecd"
-        )
+        raise ImportError("find_detectors requires the 'tqecd' package. Install it with: pip install tqecd")
 
     def _decorator(fn):
         def wrapper(*args, **kwargs):
@@ -571,15 +557,10 @@ def find_detectors(func=None, *, return_circuits=False):
             for a in args:
                 if isinstance(a, QuantumArray):
                     if not isinstance(a.qtype, QuantumBool):
-                        raise TypeError(
-                            f"find_detectors: QuantumArray args must have "
-                            f"qtype QuantumBool, got {a.qtype}"
-                        )
+                        raise TypeError(f"find_detectors: QuantumArray args must have qtype QuantumBool, got {a.qtype}")
                     quantum_arrays.append(a)
             if not quantum_arrays:
-                raise TypeError(
-                    "find_detectors: at least one QuantumArray argument is required"
-                )
+                raise TypeError("find_detectors: at least one QuantumArray argument is required")
 
             n_qubits = sum(a.size * a.qtype.size for a in quantum_arrays)
 
@@ -588,9 +569,7 @@ def find_detectors(func=None, *, return_circuits=False):
             # the quantum arguments.  Static values (ints, bools, …)
             # become constants inside the jaspr.
             qa_idx = [i for i, a in enumerate(args) if isinstance(a, QuantumArray)]
-            static = {
-                i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)
-            }
+            static = {i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)}
 
             def fn_qa_only(*qa_args, _kw=kwargs):
                 full = [None] * len(args)
@@ -638,26 +617,15 @@ def find_detectors(func=None, *, return_circuits=False):
             annotated = tqecd.annotate_detectors_automatically(tqecd_circ)
 
             # Extract detector Clbit sets
-            all_dets = _extract_detectors(
-                annotated, tqecd_circ.num_measurements, inv_map
-            )
+            all_dets = _extract_detectors(annotated, tqecd_circ.num_measurements, inv_map)
 
             # Keep only detectors whose Clbits all appear in returned measurements
             returned = set(analysis_clbits)
-            relevant = [
-                (i, d)
-                for i, d in enumerate(all_dets)
-                if all(cb in returned for cb in d)
-            ]
+            relevant = [(i, d) for i, d in enumerate(all_dets) if all(cb in returned for cb in d)]
 
             # --- 2b. Simulate noiseless circuit to determine detector expectations ---
             # Use stim's built-in method to remove all noise processes
-            expectations = (
-                annotated.without_noise()
-                .compile_detector_sampler()
-                .sample(shots=1)[0]
-                .tolist()
-            )
+            expectations = annotated.without_noise().compile_detector_sampler().sample(shots=1)[0].tolist()
 
             # --- 3. Call real function & map analysis Clbits to traced booleans ---
             real_returns = fn(*args, **kwargs)

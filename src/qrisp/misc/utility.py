@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,15 +17,24 @@
 
 import functools
 import traceback
+import warnings
+from typing import TYPE_CHECKING
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import sympy
 from jax.typing import ArrayLike
 
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+if TYPE_CHECKING:
+    from qrisp.interface.backend import BackendLike
+    from qrisp.interface.measurement_result import _IntKeyedResult
+
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
-_EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
+EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
 
 def bin_rep(n, bits):
@@ -34,9 +42,7 @@ def bin_rep(n, bits):
         raise Exception("Only positive numbers are supported")
 
     if n >= 2**bits:
-        raise Exception(
-            str(n) + " can't be represented as a " + str(bits) + " bit number"
-        )
+        raise Exception(str(n) + " can't be represented as a " + str(bits) + " bit number")
 
     return bin(n)[2:].zfill(bits)
     zero_string = "".join(["0" for k in range(bits)])
@@ -46,20 +52,17 @@ def bin_rep(n, bits):
 def int_encoder(qv, encoding_number):
 
     from qrisp import control, x
-    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
+    from qrisp.jasp import check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
-            raise Exception(
-                "Not enough qubits to encode integer " + str(encoding_number)
-            )
+            raise ValueError("Not enough qubits to encode integer " + str(encoding_number))
 
         for i in range(len(qv)):
             if (1 << i) & encoding_number:
                 x(qv[i])
 
     else:
-
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
         )
@@ -109,7 +112,7 @@ def array_as_int(array):
 
 # Decomposes the circuit qc until no more decompositions are possible and then counts
 # the cnot operations
-def cnot_count(qc):
+def cnot_count(qc) -> int:
     qc = qc.transpile()
 
     gate_count_dic = qc.count_ops()
@@ -129,7 +132,9 @@ def is_inv(x, bit):
     return bool(int(x) % 2)
 
 
-def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1):
+# TODO: This should be fixed/improved (for example, it should always return a dict
+# and the type hint should be updated accordingly).
+def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1) -> dict:
     if len(qc.qubits) == 0:
         return {}
 
@@ -185,8 +190,7 @@ def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1):
 
 
 def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
-    """
-    Decorator to bundle up the quantum instructions of a function into a single gate
+    """Decorator to bundle up the quantum instructions of a function into a single gate
     object. Bundled gate objects can help debugging as it allows for a more clear
     QuantumCircuit visualisation.
 
@@ -219,7 +223,6 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     Parameters
     ----------
-
     permeability : string or list, optional
         Specify the permeability behavior of the function. When given "args", it is
         assumed that the gate is permeable only on the qubits of the arguments. When
@@ -237,7 +240,6 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     Examples
     --------
-
     We create a simple function wrapping up multiple gates: ::
 
 
@@ -379,8 +381,8 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 └───────────────────┘└──────────────────────┘
         Live QuantumVariables:
         ---------------------
-    """
 
+    """
     """
     if len(args):
         return gate_wrap_inner(args[0])
@@ -423,15 +425,11 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         return gate_wrap_helper
 
 
-def gate_wrap_inner(
-    function, permeability=None, is_qfree=None, name=None, verify=False
-):
+def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verify=False):
 
     qached_function = function
 
-    def wrapped_function(
-        *args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs
-    ):
+    def wrapped_function(*args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs):
 
         from qrisp.jasp import check_for_tracing_mode
 
@@ -439,9 +437,9 @@ def gate_wrap_inner(
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
-        from qrisp import QuantumArray, QuantumVariable, merge
+        from qrisp import QuantumArray, QuantumVariable
         from qrisp.circuit import Qubit
-        from qrisp.core import recursive_qs_search, recursive_qv_search
+        from qrisp.core import recursive_qs_search
         from qrisp.environments import GateWrapEnvironment
 
         try:
@@ -482,10 +480,7 @@ def gate_wrap_inner(
                 from qrisp.permeability import is_qfree as is_qfree_function
 
                 if not is_qfree_function(gwe.instruction.op):
-                    raise Exception(
-                        f"Verification of qfree-ness for function {function.__name__} "
-                        f"failed"
-                    )
+                    raise Exception(f"Verification of qfree-ness for function {function.__name__} failed")
 
             gwe.instruction.op.is_qfree = is_qfree
 
@@ -495,9 +490,7 @@ def gate_wrap_inner(
             not_permeable_qubits = []
 
             if isinstance(permeability, list):
-
                 for i in range(len(args)):
-
                     if i in permeability:
                         extension_list = permeable_qubits
                     else:
@@ -530,7 +523,6 @@ def gate_wrap_inner(
                         not_permeable_qubits += qv.reg
 
             elif isinstance(permeability, str):
-
                 for arg in args:
                     if isinstance(arg, QuantumVariable):
                         permeable_qubits += arg.reg
@@ -564,14 +556,12 @@ def gate_wrap_inner(
                         extension_list += qv.reg
 
             for i in range(len(gwe.instruction.qubits)):
-
                 qb = gwe.instruction.qubits[i]
                 if qb in permeable_qubits:
                     permeability_dict[i] = True
                 elif qb in not_permeable_qubits:
                     permeability_dict[i] = False
                 elif qb in ancillas:
-
                     # Even though ancilla qubits are permeable, we want to be able to
                     # use the gate_wrap decorator as an interface to perform
                     # recomputation. If we mark them as permeable, Unqomp won't  wrap
@@ -668,10 +658,7 @@ def gate_wrap_inner(
                             permeable_qubit_indices.append(i)
 
                     if not is_permeable(gwe.instruction.op, permeable_qubit_indices):
-                        raise Exception(
-                            f"Verification of permeability for function "
-                            f"{function.__name__} failed"
-                        )
+                        raise Exception(f"Verification of permeability for function {function.__name__} failed")
 
                 gwe.instruction.op.permeability = permeability_dict
 
@@ -715,8 +702,7 @@ def find_qs(args):
 
 # Function to measure multiple quantum variables at once to assess their entanglement
 def multi_measurement(qv_list, shots=None, backend=None):
-    """
-    This functions facilitates the measurement of multiple QuantumVariables at the same
+    """This functions facilitates the measurement of multiple QuantumVariables at the same
     time. This can be used if the entanglement structure between several
     QuantumVariables is of interest.
 
@@ -726,7 +712,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
         A list of QuantumVariables.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-    backend : BackendClient, optional
+    backend : BackendLike, optional
         The backend to evaluate the compiled QuantumCircuit on. By default, the backend
         from default_backend.py will be used.
 
@@ -744,7 +730,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     Examples
     --------
-
     We entangle three QuantumFloats via addition and perform a multi-measurement:
 
     >>> from qrisp import QuantumFloat, h, multi_measurement
@@ -758,13 +743,11 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-
+    from qrisp.interface.measurement_result import MultiMeasurementResult
     from qrisp.jasp import check_for_tracing_mode
 
     if check_for_tracing_mode():
-        raise Exception(
-            "Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead"
-        )
+        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -795,10 +778,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
     for qa in recursive_qa_search(qv_list):
         temp.extend(list(qa.flatten()))
 
-    compiled_qc = qompiler(
-        qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
-    )
-    # compiled_qc = qv_list[0].qs.copy()
+    compiled_qc = qompiler(qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], []))
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
 
@@ -820,63 +800,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
         # Add measurement instruction
         compiled_qc.measure(qubits, cl_reg)
 
-    # counts = execute(qs_temp, backend, basis_gates = basis_gates,
-    # noise_model = noise_model, shots = shots).result().get_counts()
-    counts = backend.run(compiled_qc, shots)
-    counts = {k: counts[k] for k in sorted(counts)}
-    shots = sum(counts.values())
-
-    # Convert the labeling bistrings of counts into list of labels
-    new_counts = {}
-    for i in range(len(counts)):
-        # Retrieve the separated strings of each measurement variable
-
-        counts_strings = []
-        counts_bitstring = list(counts.keys())[i]
-
-        bitstring_adress = 0
-        for j in range(len(cl_reg_list)):
-            cl_reg = cl_reg_list[::-1][j]
-            counts_strings.append(
-                counts_bitstring[bitstring_adress : bitstring_adress + len(cl_reg)][
-                    ::-1
-                ]
-            )
-            bitstring_adress += len(cl_reg)
-
-        # Convert to integers and insert outcome labels
-        counts_values = []
-        for j in range(len(counts_strings)):
-            outcome_int = int(counts_strings[j][::-1], 2)
-            try:
-                label = qv_list[j].decoder(outcome_int)
-                if isinstance(label, np.ndarray):
-                    from qrisp import OutcomeArray
-
-                    label = OutcomeArray(label)
-                counts_values.append(label)
-            except AttributeError:
-                counts_values.append(outcome_int)
-
-        # Create array
-        array_state = tuple(counts_values)
-        try:
-            no_of_shots_executed = sum(counts.values())
-            new_counts[array_state] = (
-                counts[list(counts.keys())[i]] / no_of_shots_executed
-            )
-        except TypeError:
-            raise Exception(
-                "Tried to create measurement outcome dic for QuantumVariable "
-                "with unhashable labels"
-            )
-        # Append to the counts list
-        # counts_list.append((array_state, counts[list(counts.keys())[i]]/shots))
-
-    # Sort counts_list such the most probable values come first
-    new_counts = dict(sorted(new_counts.items(), key=lambda item: -item[1]))
-
-    return new_counts
+    raw = backend.run(compiled_qc, shots)
+    return MultiMeasurementResult(raw, qv_list, cl_reg_list)
 
 
 # Function to apply a phase function of signature phase_function(x,y,z..) -> float
@@ -897,9 +822,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
     phases = []
     for i in range(len(product_index_list)):
         # Calculate the outcome labels of the current constellation of indices
-        labels = [
-            qv_list[j].decoder(product_index_list[i][j]) for j in range(len(qv_list))
-        ]
+        labels = [qv_list[j].decoder(product_index_list[i][j]) for j in range(len(qv_list))]
 
         # Calculate the phase
         phases.append(phase_function(*labels, **kwargs) * t)
@@ -907,14 +830,11 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
     # Synthesize phase
     from qrisp import gray_phase_synth_qb_list
 
-    gray_phase_synth_qb_list(
-        qv_list[0].qs, sum([qv.reg[::-1] for qv in qv_list], []), phases
-    )
+    gray_phase_synth_qb_list(qv_list[0].qs, sum([qv.reg[::-1] for qv in qv_list], []), phases)
 
 
 def as_hamiltonian(hamiltonian):
-    r"""
-    Decorator that recieves a regular Python function (returning a float) and returns a
+    r"""Decorator that recieves a regular Python function (returning a float) and returns a
     function of QuantumVariables, applying phases based on the function's output.
 
     Parameters
@@ -930,8 +850,6 @@ def as_hamiltonian(hamiltonian):
 
     Examples
     --------
-
-
     In this example we will demonstrate how a phase function with multiple arguments can
     be synthesized. For this we will create a phase function which encodes the fourier
     transform of different integers on the QuantumFloat x conditioned on the value of a
@@ -1033,8 +951,7 @@ def as_hamiltonian(hamiltonian):
 
 
 def perm_lock(qubits):
-    """
-    Locks a list of qubits such that only permeable gates can be executed on these
+    """Locks a list of qubits such that only permeable gates can be executed on these
     qubits. This means that an error will be raised if the user attempts to perform any
     operation involving these qubits if the operation does not commute with the
     Z-operator of this qubit. For more information, what a permeable gate is, check the
@@ -1054,7 +971,6 @@ def perm_lock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, perm_lock, cx, p
@@ -1085,8 +1001,7 @@ def perm_lock(qubits):
 
 
 def perm_unlock(qubits):
-    """
-    Reverses the effect of "perm_lock".
+    """Reverses the effect of "perm_lock".
 
     Parameters
     ----------
@@ -1095,7 +1010,6 @@ def perm_unlock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, perm_lock, perm_unlock
@@ -1121,8 +1035,7 @@ def perm_unlock(qubits):
 
 
 def lock(qubits):
-    """
-    Locks a list of qubits, implying an error will be raised if the user tries to
+    """Locks a list of qubits, implying an error will be raised if the user tries to
     perform any operation involving these qubits.
 
     This can be reversed by calling unlock.
@@ -1134,7 +1047,6 @@ def lock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, lock
@@ -1142,6 +1054,7 @@ def lock(qubits):
     >>> lock(q_ch)
     >>> q_ch[:] = "g"
     Exception: Tried to operation on locked qubits
+
     """
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
 
@@ -1155,8 +1068,7 @@ def lock(qubits):
 
 
 def unlock(qubits):
-    """
-    Reverses the effect of "lock".
+    """Reverses the effect of "lock".
 
     Parameters
     ----------
@@ -1165,7 +1077,6 @@ def unlock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, lock, unlock
@@ -1214,14 +1125,10 @@ def benchmark_function(function):
 
 def custom_qv(labels, decoder=None, qs=None, name=None):
     if not isinstance(labels, list):
-        raise Exception(
-            "Tried to create custom QuantumVariable without providing a list type"
-        )
+        raise Exception("Tried to create custom QuantumVariable without providing a list type")
 
     if len(labels) == 0:
-        raise Exception(
-            "Tried to create custom QuantumVariable without providing labels"
-        )
+        raise Exception("Tried to create custom QuantumVariable without providing labels")
     elif len(labels) == 1:
         n = 1
     else:
@@ -1249,8 +1156,7 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
 # where it is called inside jrange loops, because DynamicQubitArray
 # does not support reverse iteration.
 def bit_reverse(i, width):
-    """
-    Jasp-compatible bit-reversal function.
+    """Jasp-compatible bit-reversal function.
 
     Interprets ``i`` as a ``width``-bit binary integer
     and returns the decimal integer corresponding to the bit-reversal of ``i``.
@@ -1274,7 +1180,6 @@ def bit_reverse(i, width):
 
     Examples
     --------
-
     For ``i=5`` and ``width=3``, the binary representation
     of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
 
@@ -1388,54 +1293,56 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=None):
-    # Add classical registers for the measurement results to be stored in
+def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "_IntKeyedResult":
+    """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
+
+    Appends measurement gates for each qubit in *qubits*, submits the circuit
+    to *backend*, and wraps the raw result in an
+    :class:`~qrisp.interface.measurement_result._IntKeyedResult` that converts
+    bitstrings to integers and normalises shot counts to probabilities on first
+    access.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The circuit to execute. Measurement gates are added in-place.
+    qubits : sequence
+        The qubits to measure, in order.
+    backend : BackendLike
+        Any Qrisp-compatible backend (either a concrete
+        :class:`~qrisp.interface.Backend` subclass or a
+        :class:`~qrisp.interface.BatchedBackend`).
+    shots : int or None, optional
+        Number of shots. If ``None``, the backend's default is used.
+
+    Returns
+    -------
+    _IntKeyedResult
+        Lazy mapping from integer bitstring indices to normalised probabilities.
+        Population is deferred until the first access.
+
+    """
+    from qrisp.interface.measurement_result import MeasurementResult, _IntKeyedResult
+
     cl = []
     for i in range(len(qubits)):
         cl.append(qc.add_clbit())
 
-    # Add measurement instruction
     for i in range(len(qubits)):
         qc.measure(qubits[i], cl[i])
 
-    # Execute circuit
-    counts = backend.run(qc, shots)
-
-    # Remove other measurements outcomes from counts dic
-    new_counts_dic = {}
-
-    no_of_shots_executed = 0
-
-    for key in counts.keys():
-        # Remove possible whitespaces
-        new_key = key.replace(" ", "")
-        # Remove other measurements
-        new_key = new_key[: len(cl)]
-
-        new_key = int(new_key, base=2)
-        try:
-            new_counts_dic[new_key] += counts[key]
-        except KeyError:
-            new_counts_dic[new_key] = counts[key]
-
-        no_of_shots_executed += counts[key]
-
-    counts = new_counts_dic
-
-    if abs(1 - no_of_shots_executed) < 1e-3:
-        return counts
-    # Normalize counts
-    for key in counts.keys():
-        counts[key] = counts[key] / abs(no_of_shots_executed)
-
-    return counts
+    raw = backend.run(qc, shots=shots)
+    if not isinstance(raw, MeasurementResult):
+        # Legacy backends (e.g. VirtualBackend) return a plain dict directly.
+        mr = MeasurementResult()
+        mr._inject(raw)
+        raw = mr
+    return _IntKeyedResult(raw, len(cl))
 
 
 def find_calling_line(level=0):
     stack = traceback.extract_stack(limit=level + 3)
-    return str(
-        traceback.format_list(stack)[1].split("\n")[1].strip()
-    )  # prints "a = fct1()"
+    return str(traceback.format_list(stack)[1].split("\n")[1].strip())  # prints "a = fct1()"
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
@@ -1455,8 +1362,7 @@ def retarget_instructions(data, source_qubits, target_qubits):
 
 
 def redirect_qfunction(function_to_redirect):
-    """
-    Decorator to turn a function returning a QuantumVariable into an in-place function.
+    """Decorator to turn a function returning a QuantumVariable into an in-place function.
     This can be helpful for manual uncomputation if we have a function returning some
     QuantumVariable, but we want the result to operate on some other variable, which is
     supposed to be uncomputed.
@@ -1484,7 +1390,6 @@ def redirect_qfunction(function_to_redirect):
 
     Examples
     --------
-
     We create a function that determins the AND value of its inputs and redirect it
     onto another QuantumBool. ::
 
@@ -1544,9 +1449,7 @@ def redirect_qfunction(function_to_redirect):
     def redirected_qfunction(*args, target=None, **kwargs):
 
         if check_for_tracing_mode():
-            jaspr = make_jaspr(function_to_redirect)(
-                *args, **kwargs
-            ).flatten_environments()
+            jaspr = make_jaspr(function_to_redirect)(*args, **kwargs).flatten_environments()
 
             qs = TracingQuantumSession.get_instance()
             abs_qst = qs.abs_qst
@@ -1559,9 +1462,7 @@ def redirect_qfunction(function_to_redirect):
                 flattened_args.append(target.qb_array.reg.tracer)
             else:
                 transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
-                flattened_args.append(
-                    target.reg.tracer
-                )  # Traced<QubitArray>with<DynamicJaxprTrace>
+                flattened_args.append(target.reg.tracer)  # Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
@@ -1576,20 +1477,17 @@ def redirect_qfunction(function_to_redirect):
                 qs.abs_qst = res[-1]
 
         else:
+            qargs = [arg for arg in list(args) + [target] if isinstance(arg, (QuantumVariable, QuantumArray))]
+            merge(qargs)
 
-            merge(
-                [
-                    arg
-                    for arg in list(args) + [target]
-                    if isinstance(arg, (QuantumVariable, QuantumArray))
-                ]
-            )
             env = QuantumEnvironment()
             env.manual_allocation_management = True
             qs = target.qs
 
             with env:
                 res = function_to_redirect(*args, **kwargs)
+
+                merge([res] + qargs)
 
                 if isinstance(res, QuantumVariable):
                     res_qubits = list(res)
@@ -1603,15 +1501,11 @@ def redirect_qfunction(function_to_redirect):
                 # target = list(target)
 
                 if len(res) != len(target) or len(list(res)) != len(list(target)):
-                    raise Exception(
-                        "Tried to redirect quantum function into QuantumVariable of "
-                        "differing size"
-                    )
+                    raise Exception("Tried to redirect quantum function into QuantumVariable of differing size")
 
                 i = 0
                 res_is_new = False
                 while i < len(env.env_qs.data):
-
                     instr = env.env_qs.data[i]
 
                     if isinstance(instr, QuantumEnvironment):
@@ -1657,19 +1551,15 @@ def redirect_qfunction(function_to_redirect):
 def get_sympy_state(qs, decimals):
     from sympy import (
         I,
-        Rational,
         Symbol,
         cancel,
-        cos,
         count_ops,
         exp,
-        factor,
         nsimplify,
         pi,
         simplify,
-        sin,
     )
-    from sympy.physics.quantum import Ket, OrthogonalKet
+    from sympy.physics.quantum import OrthogonalKet
 
     from qrisp.simulator import statevector_sim
 
@@ -1720,9 +1610,7 @@ def get_sympy_state(qs, decimals):
         amplitude = sv_array[ind]
 
         if not sv_array.dtype == np.dtype("O"):
-
             if decimals is None:
-
                 try:
                     abs_amp = trigify_amp(amplitude, nnz)
                 except TypeError:
@@ -1739,17 +1627,13 @@ def get_sympy_state(qs, decimals):
 
                 ket_expr = exp(I * phase * pi) * abs_amp * nnz**0.5
             else:
-
                 ket_expr = sympy.N(amplitude, decimals)
 
         else:
             process_stack = [amplitude]
             while process_stack:
                 a = process_stack.pop(0)
-                if (
-                    isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul))
-                    and len(a.free_symbols) != 0
-                ):
+                if isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul)) and len(a.free_symbols) != 0:
                     process_stack.extend(a.args)
 
                 elif len(a.free_symbols) == 0:
@@ -1769,7 +1653,6 @@ def get_sympy_state(qs, decimals):
                     if np.angle(complex(a.evalf())) / np.pi == 1:
                         phase = -1
                     else:
-
                         phase = sp.exp(
                             sp.I
                             * nsimplify(
@@ -1788,7 +1671,6 @@ def get_sympy_state(qs, decimals):
             ket_expr = sp.trigsimp(amplitude) * nnz**0.5
 
         int_string = bin_rep(ind, len(compiled_qc.qubits))
-        from sympy.physics.quantum import TensorProduct
 
         labels = []
         for qv in qv_list:
@@ -1797,7 +1679,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr = TensorProduct(ket_expr, OrthogonalKet((label)))
+            ket_expr = ket_expr * OrthogonalKet((label))
 
         res += ket_expr
 
@@ -1817,18 +1699,10 @@ def get_sympy_state(qs, decimals):
 
 def trigify_amp(amplitude, nnz):
     from sympy import (
-        I,
-        Rational,
         Symbol,
-        cancel,
         cos,
-        count_ops,
-        exp,
-        factor,
         latex,
         nsimplify,
-        pi,
-        simplify,
         sin,
     )
 
@@ -1855,20 +1729,17 @@ def trigify_amp(amplitude, nnz):
 
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
-        temp = (
-            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5) / nnz**0.5
-        )
+        temp = nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5) / nnz**0.5
         if len(latex(temp)) > 20:
             abs = np.abs(amplitude)
 
         else:
             abs = temp
 
+    elif expr == "cos":
+        abs = cos(cos_expr * Symbol("pi"))
     else:
-        if expr == "cos":
-            abs = cos(cos_expr * Symbol("pi"))
-        else:
-            abs = sin(sin_expr * Symbol("pi"))
+        abs = sin(sin_expr * Symbol("pi"))
 
     return abs
 
@@ -1905,8 +1776,7 @@ def render_qc(qc):
 
 
 def lifted(*args, verify=False):
-    """
-    Shorthand for ``gate_wrap(permability = "args", is_qfree = True)``.
+    """Shorthand for ``gate_wrap(permability = "args", is_qfree = True)``.
 
     A lifted function is ``qfree`` and permeable on its inputs. The results of lifted
     functions can be automatically uncomputed even if they contain functions that could
@@ -1925,14 +1795,12 @@ def lifted(*args, verify=False):
 
     Parameters
     ----------
-
     verify : bool, optional
         If set to ``True``, the specified information about permeability and
         ``qfree``-ness will be checked numerically. The default is ``False``.
 
     Examples
     --------
-
     We create a function performing the `Margolus gate
     <https://arxiv.org/abs/quant-ph/0312225>`_. As it contains ``ry`` rotations,
     there are non-``qfree`` steps involved. Putting on the ``lifted`` decorator however
@@ -2002,13 +1870,10 @@ def lifted(*args, verify=False):
     a small scale, since the verification can be time-consuming.
 
     """
-
     if len(args) == 0:
 
         def lifted_helper(function):
-            return gate_wrap(permeability="args", is_qfree=True, verify=verify)(
-                function
-            )
+            return gate_wrap(permeability="args", is_qfree=True, verify=verify)(function)
 
         return lifted_helper
 
@@ -2017,8 +1882,7 @@ def lifted(*args, verify=False):
 
 
 def t_depth_indicator(op, epsilon):
-    r"""
-    This function returns the T-depth of an :ref:`Operation` object.
+    r"""This function returns the T-depth of an :ref:`Operation` object.
 
     According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
     up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$
@@ -2038,7 +1902,6 @@ def t_depth_indicator(op, epsilon):
         The estimated T-depth of the Operation.
 
     """
-
     from qrisp import ClControlledOperation
 
     if isinstance(op, ClControlledOperation):
@@ -2091,8 +1954,7 @@ def t_depth_indicator(op, epsilon):
 
 
 def cnot_depth_indicator(op):
-    r"""
-    This function returns the CNOT-depth of an :ref:`Operation` object.
+    r"""This function returns the CNOT-depth of an :ref:`Operation` object.
 
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
     circuit execution. This function can be used as a gate-speed specifier for
@@ -2109,7 +1971,6 @@ def cnot_depth_indicator(op):
         The CNOT-depth of the Operation.
 
     """
-
     from qrisp import ClControlledOperation
 
     if isinstance(op, ClControlledOperation):
@@ -2125,8 +1986,7 @@ def cnot_depth_indicator(op):
 
 
 def inpl_adder_test(inpl_adder):
-    """
-    This function runs tests on a desired inplace addition function.
+    """This function runs tests on a desired inplace addition function.
     An inplace addition function is a function mapping (a, b) to (a, a+b),
     where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer
     and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].
@@ -2144,7 +2004,6 @@ def inpl_adder_test(inpl_adder):
 
     Examples
     --------
-
     We test the built-in Cuccaro adder:
 
     ::
@@ -2167,7 +2026,6 @@ def inpl_adder_test(inpl_adder):
     from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
-
         for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
@@ -2181,23 +2039,19 @@ def inpl_adder_test(inpl_adder):
             inpl_adder(a, c)
 
             statevector_arr = a.qs.compile().statevector_array()
-            angles = np.angle(
-                statevector_arr[
-                    np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
-                ]
-            )
+            angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
 
             # Test correct phase behavior
-            assert (
-                np.sum(np.abs(angles)) < 0.1
-            ), f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            assert np.sum(np.abs(angles)) < 0.1, (
+                f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+            )
 
             mes_res = multi_measurement([a, b, c])
 
             for a, b, c in mes_res.keys():
-                assert (a + b) % (
-                    2**i
-                ) == c, f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                assert (a + b) % (2**i) == c, (
+                    f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                )
 
         if i < 6:
             for j in range(1, 2**i):
@@ -2211,24 +2065,19 @@ def inpl_adder_test(inpl_adder):
                 inpl_adder(j, a)
 
                 statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(
-                    statevector_arr[
-                        np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
-                    ]
+                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
+                assert np.sum(np.abs(angles)) < 0.1, (
+                    f"Classical-quantum adder produced a faulty phase shift on input size {i}."
                 )
-                assert (
-                    np.sum(np.abs(angles)) < 0.1
-                ), f"Classical-quantum adder produced a faulty phase shift on input size {i}."
 
                 mes_res = multi_measurement([a, b])
 
                 for a, b in mes_res.keys():
-                    assert (b + j) % (
-                        2**i
-                    ) == a, f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+                    assert (b + j) % (2**i) == a, (
+                        f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+                    )
 
     for i in range(1, 7):
-
         for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
@@ -2245,27 +2094,22 @@ def inpl_adder_test(inpl_adder):
                 inpl_adder(a, c)
 
             statevector_arr = a.qs.compile().statevector_array()
-            angles = np.angle(
-                statevector_arr[
-                    np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
-                ]
+            angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
+            assert np.sum(np.abs(angles)) < 0.1, (
+                f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
             )
-            assert (
-                np.sum(np.abs(angles)) < 0.1
-            ), f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
 
             mes_res = multi_measurement([a, b, c, qbl])
 
             for a, b, c, qbl in mes_res.keys():
-
                 if qbl:
-                    assert (a + b) % (
-                        2**i
-                    ) == c, f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                    assert (a + b) % (2**i) == c, (
+                        f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                    )
                 else:
-                    assert (
-                        c == b
-                    ), f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+                    assert c == b, (
+                        f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+                    )
 
         if i < 6:
             for j in range(1, 2**i):
@@ -2282,78 +2126,67 @@ def inpl_adder_test(inpl_adder):
                     inpl_adder(j, a)
 
                 statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(
-                    statevector_arr[
-                        np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
-                    ]
+                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
+                assert np.sum(np.abs(angles)) < 0.1, (
+                    f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
                 )
-                assert (
-                    np.sum(np.abs(angles)) < 0.1
-                ), f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
 
                 mes_res = multi_measurement([a, b, qbl])
 
                 for a, b, qbl in mes_res.keys():
                     if qbl:
-                        assert (b + j) % (
-                            2**i
-                        ) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                        assert (b + j) % (2**i) == a, (
+                            f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                        )
                     else:
-                        assert (
-                            b == a
-                        ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        assert b == a, (
+                            f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        )
 
 
 def batched_measurement(variables, backend, shots=None):
-    """
-    This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
+    """Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
+    batched execution using a :class:`~qrisp.interface.BatchedBackend`.
+
+    All ``get_measurement`` calls are collected first (returning lazy results
+    immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
+    called once to execute every circuit and populate all results together.
+
+    .. deprecated:: 0.8
+
+        ``batched_measurement`` is deprecated. You can call
+        :meth:`~qrisp.QuantumVariable.get_measurement` on each variable with a
+        :class:`~qrisp.interface.BatchedBackend`, then call
+        :meth:`~qrisp.interface.BatchedBackend.dispatch` directly instead::
+
+            bb = backend.batched()
+            r1 = qv1.get_measurement(backend=bb)
+            r2 = qv2.get_measurement(backend=bb)
+            bb.dispatch()
 
     Parameters
     ----------
     variables : list[:ref:`QuantumVariable`]
-        A list of QuantumVariables.
-    backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on.
+        A list of QuantumVariables to measure.
+    backend : :class:`~qrisp.interface.BatchedBackend`
+        A batched backend obtained via
+        :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
     shots : int, optional
-        The amount of shots to perform. The default is given by the backend used.
+        Number of shots. Defaults to the backend's ``shots`` option.
 
     Returns
     -------
-    results : list[dict]
-        The list of results.
+    results : list[DecodedMeasurementResult]
+        One decoded result per variable, in the same order as *variables*.
 
     Examples
     --------
-
-    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
-    on the Qrisp simulator.
-
     ::
 
-        from qrisp import *
-        from qrisp.interface import BatchedBackend
+        from qrisp import QuantumFloat, batched_measurement
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        def run_func_batch(batch):
-            # Parameters
-            # ----------
-            # batch : list[tuple[QuantumCircuit, int]]
-            #     The circuit and shot batch indicating the backend queries.
-
-            # Returns
-            # -------
-            # results : list[dict[string, int]]
-            #     The list of results.
-
-            results = []
-            for i in range(len(batch)):
-                qc = batch[i][0]
-                shots = batch[i][1]
-                results.append(qc.run(shots = shots))
-
-            return results
-
-        # Set up batched backend
-        bb = BatchedBackend(run_func_batch)
+        bb = QrispSimulatorBackend().batched()
 
         a = QuantumFloat(4)
         b = QuantumFloat(3)
@@ -2367,47 +2200,24 @@ def batched_measurement(variables, backend, shots=None):
         e[:] = 3
         f = d + e
 
-        batched_measurement([c,f], backend=bb)
+        batched_measurement([c, f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
 
     """
+    warnings.warn(
+        "batched_measurement is deprecated and will be removed in a future release. "
+        "Call get_measurement() on each variable with a BatchedBackend, "
+        "then call backend.dispatch() directly.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
-    import threading
-
-    results = [0] * len(variables)
-
-    def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend=backend, shots=shots)
-
-    threads = []
-    for i, var in enumerate(variables):
-        thread = threading.Thread(
-            target=eval_measurement,
-            args=(
-                var,
-                i,
-            ),
-        )
-        threads.append(thread)
-
-    # Start the threads
-    for thread in threads:
-        thread.start()
-
-    # Call the dispatch routine
-    # The min_calls keyword will make it wait
-    # until the batch has a size of number of variables
-    backend.dispatch(min_calls=len(variables))
-
-    # Wait for the threads to join
-    for thread in threads:
-        thread.join()
-
-    # Inspect the results
+    results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
+    backend.dispatch()
     return results
 
 
-def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
+def _bitrev_indices(n: ArrayLike) -> jax.Array:
     """Return array r where r[j] = bitreverse(j) over n bits."""
     idx = jnp.arange(1 << n, dtype=jnp.uint32)
     rev = jnp.zeros_like(idx)
@@ -2416,9 +2226,8 @@ def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
     return rev
 
 
-def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
-    """
-    Convert between big-endian and little-endian qubit ordering.
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
+    """Convert between big-endian and little-endian qubit ordering.
 
     This transformation is its own inverse, so it works in both directions.
 
@@ -2431,8 +2240,9 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
 
     Returns
     -------
-    jnp.ndarray
+    jax.Array
         The state vector with reversed qubit ordering.
+
     """
     r = _bitrev_indices(n)
     return vec[r]

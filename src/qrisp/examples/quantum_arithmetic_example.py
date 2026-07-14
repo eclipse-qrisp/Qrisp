@@ -1,6 +1,5 @@
-"""
-/*********************************************************************
-* Copyright (c) 2025 the Qrisp Authors
+"""/*********************************************************************
+* Copyright (c) 2026 the Qrisp Authors
 *
 * This program and the accompanying materials are made
 * available under the terms of the Eclipse Public License 2.0
@@ -10,13 +9,14 @@
 **********************************************************************
 """
 
+import time
+
 import numpy as np
 from numpy.linalg import norm
-import time
+from qiskit_aer import AerSimulator
+
 from qrisp import QuantumFloat, transpile
 from qrisp.simulator import statevector_sim
-from qiskit import Aer, execute
-
 
 n = 6
 
@@ -48,9 +48,9 @@ qc.qubits.reverse()
 qiskit_qc = qc.to_qiskit()
 
 start_time = time.time()
-# simulator = Aer.get_backend('qasm_simulator')
-simulator = Aer.get_backend("statevector_simulator")
-result = execute(qiskit_qc, simulator).result()
+simulator = AerSimulator(method="statevector")
+qiskit_qc.save_statevector()
+result = simulator.run(qiskit_qc).result()
 qiskit_res = result.get_statevector(qiskit_qc).data
 print("Qiskit simulator time: ", time.time() - start_time)
 

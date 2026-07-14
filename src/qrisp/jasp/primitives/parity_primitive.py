@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,32 +22,26 @@ from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 parity_p = QuantumPrimitive("parity")
 
+import jax.numpy as jnp
 from jax.core import ShapedArray
 from jax.lax import while_loop
-import jax.numpy as jnp
 
 
 @parity_p.def_abstract_eval
 def parity_abstract_eval(*measurements, expectation=0, observable=False):
-    """
-    Abstract evaluation for the parity primitive.
+    """Abstract evaluation for the parity primitive.
 
     Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
     """
     for b in measurements:
-        if not isinstance(b, ShapedArray) or not isinstance(
-            b.dtype, np.dtypes.BoolDType
-        ):
-            raise Exception(
-                f"Tried to trace parity primitive with value {b} (permitted is boolean)"
-            )
+        if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
+            raise Exception(f"Tried to trace parity primitive with value {b} (permitted is boolean)")
 
     return ShapedArray((), bool)
 
 
 def parity(*measurements, expectation=0, observable=False):
-    r"""
-    Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
+    r"""Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
 
     In mathematical terms, if given the inputs $\{x_i \in \mathbb{F}_2\| 0 \leq i < n \}$
     the output of this function is therefore
@@ -129,7 +122,6 @@ def parity(*measurements, expectation=0, observable=False):
 
     Examples
     --------
-
     We measure the parity of the 4 qubit GHZ state:
 
     .. math::
@@ -177,7 +169,6 @@ def parity(*measurements, expectation=0, observable=False):
 
     """
     import jax.numpy as jnp
-    from jax import lax
 
     expectation = int(expectation)
     observable = bool(observable)
@@ -187,9 +178,7 @@ def parity(*measurements, expectation=0, observable=False):
 
     if all(s == () for s in shapes):
         # All scalars - direct call to primitive
-        return parity_p.bind(
-            *measurements, expectation=expectation, observable=observable
-        )
+        return parity_p.bind(*measurements, expectation=expectation, observable=observable)
     else:
         # At least one array - check that all arrays have the same shape
         # Collect all non-scalar shapes
@@ -197,22 +186,16 @@ def parity(*measurements, expectation=0, observable=False):
 
         if not non_scalar_shapes:
             # This shouldn't happen given the if-else structure, but just in case
-            return parity_p.bind(
-                *measurements, expectation=expectation, observable=observable
-            )
+            return parity_p.bind(*measurements, expectation=expectation, observable=observable)
 
         # Check that all non-scalar shapes are identical
         first_shape = non_scalar_shapes[0]
         if not all(s == first_shape for s in non_scalar_shapes):
-            raise ValueError(
-                f"All array inputs to parity must have the same shape. Got shapes: {shapes}"
-            )
+            raise ValueError(f"All array inputs to parity must have the same shape. Got shapes: {shapes}")
 
         # Also check that scalar and non-scalar inputs are not mixed
         if len(non_scalar_shapes) != len(shapes):
-            raise ValueError(
-                f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}"
-            )
+            raise ValueError(f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}")
 
         result_shape = first_shape
         flat_result = jnp.zeros(measurements[0].size, dtype=bool)
@@ -247,8 +230,7 @@ def parity(*measurements, expectation=0, observable=False):
 
 @parity_p.def_impl
 def parity_implementation(*measurements, expectation, observable):
-    """
-    Implementation of the parity primitive.
+    """Implementation of the parity primitive.
 
     Handles only scalar inputs. Array broadcasting is handled in the parity function.
     """
@@ -260,8 +242,7 @@ def parity_implementation(*measurements, expectation, observable):
 
 
 class ParityOperation(Operation):
-    """
-    Operation class representing a Stim parity instructions (DETECTOR or OBSERVABLE_INCLUDE).
+    """Operation class representing a Stim parity instructions (DETECTOR or OBSERVABLE_INCLUDE).
 
     This operation is used to interface with Stim's DETECTOR and OBSERVABLE instructions during the
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,12 +18,11 @@
 import weakref
 
 import jax
+from sympy import symbols
 
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-from qrisp.core.quantum_variable import QuantumVariable
-
-from sympy import symbols
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -32,8 +30,7 @@ greek_letters = symbols(
 
 
 class TracingQuantumSession:
-    """
-    Manage tracing-time state for building quantum circuits in Jasp mode.
+    """Manage tracing-time state for building quantum circuits in Jasp mode.
 
     This class acts as the central recording context while JAX is tracing a Python
     function that constructs a quantum program. In particular, it maintains:
@@ -60,13 +57,11 @@ class TracingQuantumSession:
     qubit_cache_stack = []
 
     def __init__(self):
-        """
-        Construct a new tracing quantum session and make it the current session.
+        """Construct a new tracing quantum session and make it the current session.
 
         The session starts with no active circuit.
         Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
         """
-
         self.abs_qst = None
         self.qv_list = []
         self.deleted_qv_list = []
@@ -96,21 +91,18 @@ class TracingQuantumSession:
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
+        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
         if len(clbits):
-            raise Exception(
-                "Tried to append Operation with non-zero classical bits in JAX mode."
-            )
+            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
 
-        from qrisp.core import QuantumVariable, QuantumArray
+        from qrisp.core import QuantumArray, QuantumVariable
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
             for i in jrange(qubits[0].size):
                 self.append(
                     operation,
@@ -120,7 +112,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], list):
-
             for i in range(len(qubits[0])):
                 self.append(
                     operation,
@@ -130,7 +121,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], QuantumArray):
-
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
                     raise Exception(
@@ -138,9 +128,7 @@ class TracingQuantumSession:
                     )
 
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception(
-                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
-                    )
+                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
 
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
 
@@ -158,13 +146,11 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        self.abs_qst = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation
-        )
+        self.abs_qst = quantum_gate_p.bind(*([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation)
 
     def register_qv(self, qv, size):
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
+        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -187,7 +173,7 @@ class TracingQuantumSession:
 
     def delete_qv(self, qv, verify=False):
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
+        if self.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -197,9 +183,7 @@ class TracingQuantumSession:
 
         # Check if quantum variable appears in this session
         if qv.name not in [qv.name for qv in self.qv_list]:
-            raise Exception(
-                "Tried to remove a non existent quantum variable from quantum session"
-            )
+            raise Exception("Tried to remove a non existent quantum variable from quantum session")
 
         self.clear_qubits(qv.reg, verify)
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,12 +16,11 @@
 """
 
 import numpy as np
-from sympy import continued_fraction_convergents, continued_fraction_iterator, Rational
+from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 
-from qrisp.interface import QiskitBackend
-from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
+from qrisp import QuantumFloat, QuantumModulus, control, h
 from qrisp.alg_primitives import QFT
-from qrisp import QuantumModulus, QuantumFloat, h, control
+from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
 
 depths = []
 cnot_count = []
@@ -101,7 +99,6 @@ def extract_order(mes_res, a, N):
         pass
 
     while True:
-
         r_values = get_r_values(approximations.pop(0))
 
         for r in r_values:
@@ -118,15 +115,12 @@ def extract_order(mes_res, a, N):
 
 
 def get_r_values(approx):
-    rationals = continued_fraction_convergents(
-        continued_fraction_iterator(Rational(approx))
-    )
+    rationals = continued_fraction_convergents(continued_fraction_iterator(Rational(approx)))
     return [rat.q for rat in rationals if 1 < rat.q]
 
 
 def shors_alg(N, inpl_adder=None, mes_kwargs={}):
-    """
-    Performs `Shor's factorization algorithm <https://arxiv.org/abs/quant-ph/9508027>`_ on a given integer N.
+    """Performs `Shor's factorization algorithm <https://arxiv.org/abs/quant-ph/9508027>`_ on a given integer N.
     The adder used for factorization can be customized. To learn more about this feature, please read :ref:`QuantumModulus`
 
     Parameters
@@ -145,7 +139,6 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
 
     Examples
     --------
-
     We factor 65:
 
     >>> from qrisp.shor import shors_alg
@@ -159,7 +152,6 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     a_proposals = find_optimal_a(N)
 
     for a in a_proposals:
-
         K = np.gcd(a, N)
 
         if K != 1:

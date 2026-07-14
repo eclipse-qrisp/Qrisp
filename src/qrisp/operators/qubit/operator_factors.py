@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp.circuit.qubit import Qubit
 from qrisp.operators.qubit.qubit_operator import QubitOperator
-from qrisp.operators.qubit.bound_qubit_operator import BoundQubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 
 
 def X(arg):
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "X"}): 1})
-    elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "X"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
@@ -35,8 +29,6 @@ def X(arg):
 def Y(arg):
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Y"}): 1})
-    elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "Y"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
@@ -44,8 +36,6 @@ def Y(arg):
 def Z(arg):
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Z"}): 1})
-    elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "Z"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 

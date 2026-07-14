@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ from qrisp.misc import bin_rep, custom_qv, int_as_array
 
 
 class QuantumDictionary(dict):
-    r"""
-    This class can be used for loading data relations into the quantum computer which
+    r"""This class can be used for loading data relations into the quantum computer which
     are not based on a quantum algorithm.
 
     As an inheritor of the Python dictionary it has all the functionality we are used to
@@ -151,8 +149,7 @@ class QuantumDictionary(dict):
         return self.load(key)
 
     def load(self, key, value_qv=None, synth_method="gray"):
-        """
-        Loads the values of the QuantumDictionary into a given QuantumVariable.
+        """Loads the values of the QuantumDictionary into a given QuantumVariable.
 
         Parameters
         ----------
@@ -173,7 +170,6 @@ class QuantumDictionary(dict):
 
         Examples
         --------
-
         We create a QuantumDictionary with return type QuantumFloat
 
         >>> from qrisp import QuantumDictionary, QuantumFloat, h
@@ -208,10 +204,7 @@ class QuantumDictionary(dict):
 
         for qv in key:
             if not isinstance(qv, QuantumVariable):
-                raise Exception(
-                    "Tried to deref QuantumDictionary with mixed"
-                    "(classical + quantum) input."
-                )
+                raise Exception("Tried to deref QuantumDictionary with mixed(classical + quantum) input.")
 
             labels.append([qv.decoder(i) for i in range(2**qv.size)])
 
@@ -250,9 +243,7 @@ class QuantumDictionary(dict):
                     bin_string += bin_rep(qv.encoder(k), qv.size)[::-1]
 
             row_number = int(bin_string[::-1], 2)
-            tt_array[row_number, :] = int_as_array(
-                value_qv.encoder(relevant_dic[k]), value_qv.size
-            )[::-1]
+            tt_array[row_number, :] = int_as_array(value_qv.encoder(relevant_dic[k]), value_qv.size)[::-1]
 
         tt = TruthTable(tt_array)
 
@@ -262,9 +253,7 @@ class QuantumDictionary(dict):
         tt.q_synth(qv_temp_0, qv_temp_1, method=synth_method)
 
         if len(qv_temp_0.qs.qubits) != qv_temp_0.size + qv_temp_1.size:
-            synth_ancilla = QuantumVariable(
-                len(qv_temp_0.qs.qubits) - qv_temp_0.size + qv_temp_1.size
-            )
+            synth_ancilla = QuantumVariable(len(qv_temp_0.qs.qubits) - qv_temp_0.size + qv_temp_1.size)
             quantum_key.append(synth_ancilla)
 
         res_gate = qv_temp_0.qs.data[-1].op
@@ -272,9 +261,7 @@ class QuantumDictionary(dict):
         res_gate.is_qfree = True
         res_gate.permeability = {i: i < n for i in range(res_gate.num_qubits)}
 
-        quantum_key[0].qs.append(
-            res_gate, sum([qv.reg for qv in quantum_key], []) + value_qv.reg
-        )
+        quantum_key[0].qs.append(res_gate, sum([qv.reg for qv in quantum_key], []) + value_qv.reg)
 
         if len(qv_temp_0.qs.qubits) != qv_temp_0.size + qv_temp_1.size:
             synth_ancilla.delete()

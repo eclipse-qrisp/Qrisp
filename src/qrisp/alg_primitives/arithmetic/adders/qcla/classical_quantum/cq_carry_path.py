@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -33,17 +32,17 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx, mcx, barrier
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.circuit import QuantumCircuit
-from qrisp.permeability import auto_uncompute
-from qrisp.misc.utility import bin_rep, check_if_fresh
 from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+from qrisp.circuit import QuantumCircuit
+from qrisp.core.gate_application_functions import cx, mcx, x
+from qrisp.misc.utility import bin_rep, check_if_fresh
+from qrisp.permeability import auto_uncompute
+from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
 # Returns the PROPAGATE status of a group of entries
 def calc_P_group(P):
-    new_p = QuantumBool(name="p_group*", qs=P[0].qs())
+    new_p = QuantumBool(name="p_group*")
     # Due to the semi-classical nature of the algorithm, it is possible
     # that some propagate values are known to be 0 (because some of the
     # input values are known to be 0)
@@ -72,7 +71,6 @@ def calc_P_group(P):
 def calc_G_group(P, G):
 
     for i in range(len(G) - 1):
-
         controls = [G[i]] + P[i + 1 :]
         for p in controls:
             if isinstance(p, QuantumBool):
@@ -80,7 +78,6 @@ def calc_G_group(P, G):
             if check_if_fresh([p], p.qs()):
                 break
         else:
-
             if len(P[i + 1 :]) == 1:
                 mcx(controls, G[-1], method="jones")
             else:
@@ -109,7 +106,6 @@ def propagate_carry(P, G):
     # information because none of the CARRY status has been calculated yet)
 
     for i in range(1, len(G))[::-1]:
-
         for j in range(i):
             if len(P[j + 1 : i + 1]) == 1:
                 method = "jones"
@@ -242,9 +238,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
     if isinstance(a, int):
         a = bin_rep(a, len(b))[::-1]
     elif not isinstance(a, str):
-        raise Exception(
-            f"Tried to call semi-classical carry calculator with invalid type {type(a)}"
-        )
+        raise Exception(f"Tried to call semi-classical carry calculator with invalid type {type(a)}")
 
     R = radix_base**radix_exponent
     # How can we achieve that the GENERATE entries, that don't contain a relevant
@@ -258,15 +252,13 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
     # If b can be divided into k blocks of size R,
     # we only need k-1 ancillae qubit, because we have no need for
     # the carry of the last bock.
-    c = QuantumVariable(int(np.ceil(len(b) / R)) - 1, name="carry*", qs=b[0].qs())
+    c = QuantumVariable(int(np.ceil(len(b) / R)) - 1, name="carry*")
 
     # This variable will hold the intermediate GENERATE values, that are supposed
     # to be uncomputed. The uncomputation is performed using the auto_uncompute
     # decorator. This decorator uncomputes all local variables.
     if R > 1:
-        brent_kung_ancilla = QuantumVariable(
-            c.size * (R - 1), name="bk_ancilla*", qs=b[0].qs()
-        )
+        brent_kung_ancilla = QuantumVariable(c.size * (R - 1), name="bk_ancilla*")
         anc_list = list(brent_kung_ancilla)
     else:
         anc_list = []
@@ -291,17 +283,13 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
 
     use_parallel = False
 
-    if not ctrl is None:
+    if ctrl is not None:
         if sum(k == "1" for k in a) > 1:
-            parallel_anc_var = QuantumVariable(
-                sum(k == "1" for k in a), name="parll_qbl*", qs=b[0].qs()
-            )
+            parallel_anc_var = QuantumVariable(sum(k == "1" for k in a), name="parll_qbl*")
             parallel_ancillae = list(parallel_anc_var)
 
     for i in range(min(len(g), len(a), len(b))):
-
         if a[i] == "1":
-
             # To get p_i = a_i XOR b_i we can simply flip b_i (because we know
             # that a_i = 1)
             x(b[i])
@@ -321,22 +309,21 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
             # GENERATE entries to 0 if the control qubit is in the |0> state.
             # This is achieved by deploying a x gate controlled by
             # the control qubit and b_i.
-            else:
-                # Instead of this command:
+            # Instead of this command:
 
-                if not use_parallel:
-                    mcx([ctrl, b[i]], g[i], method="gidney", ctrl_state="10")
-                    use_parallel = True
-                else:
-                    # To achieve further parallelization, we "copy" the value of
-                    # the control value.
-                    # The permutation of the controls  that is necessary for
-                    # actual parallelization will be done by the the compiler.
-                    # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
-                    parll_qbl = parallel_ancillae.pop(0)
-                    cx(ctrl, parll_qbl)
-                    mcx([parll_qbl, b[i]], g[i], method="gidney", ctrl_state="10")
-                    # parll_qbl.uncompute(recompute = True)
+            elif not use_parallel:
+                mcx([ctrl, b[i]], g[i], method="gidney", ctrl_state="10")
+                use_parallel = True
+            else:
+                # To achieve further parallelization, we "copy" the value of
+                # the control value.
+                # The permutation of the controls  that is necessary for
+                # actual parallelization will be done by the the compiler.
+                # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
+                parll_qbl = parallel_ancillae.pop(0)
+                cx(ctrl, parll_qbl)
+                mcx([parll_qbl, b[i]], g[i], method="gidney", ctrl_state="10")
+                # parll_qbl.uncompute(recompute = True)
 
     try:
         parallel_anc_var.uncompute(recompute=True)

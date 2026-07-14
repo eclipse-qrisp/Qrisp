@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -63,10 +62,7 @@ import networkx as nx
 import numpy as np
 
 
-def nx_get_causal_graph(
-    qc, inverted=False, get_non_unitary_nodes=False, preferential_gates=[]
-):
-    from qrisp.circuit import Instruction, Operation
+def nx_get_causal_graph(qc, inverted=False, get_non_unitary_nodes=False, preferential_gates=[]):
 
     # Create graph object
     G = nx.DiGraph()
@@ -133,7 +129,7 @@ def nx_get_causal_graph(
 
 # Function to reorder a circuit as described above
 def nx_reorder_circuit(qc, preferential_gates=[]):
-    from qrisp.circuit import Instruction, Operation
+    from qrisp.circuit import Operation
 
     for i in range(len(qc.qubits)):
         qc.append(Operation("final_op", num_qubits=1), [qc.qubits[i]])
@@ -146,7 +142,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
         preferential_gates=preferential_gates,
     )
 
-    from networkx import descendants, topological_sort, transitive_reduction
+    from networkx import descendants, topological_sort
 
     # We now order the non-unitary nodes according to how many decendents they all have
     # Measurements/Resets/Disentanglings with only a few descendants need only a few
@@ -156,9 +152,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
         if qc.data[hash(non_unitary_nodes[i])].op.name == "final_op":
             node_costs.append((non_unitary_nodes[i], np.inf))
         else:
-            node_costs.append(
-                (non_unitary_nodes[i], len(descendants(G, non_unitary_nodes[i])))
-            )
+            node_costs.append((non_unitary_nodes[i], len(descendants(G, non_unitary_nodes[i]))))
 
     node_costs.sort(key=lambda x: x[1])
 
@@ -193,7 +187,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
 
         callback(node)
         G.remove_node(node)
-        return
 
     def topological_df_traversal(G, node, tp_dic, callback):
         # Acquire list of children
@@ -225,7 +218,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # Now we succesively determine the minimal circuit required to execute
     # for each non-unitary operation
     while node_costs:
-
         # This node contains the non-unitary operation
         evaluation_node = node_costs.pop(0)[0]
 
@@ -268,7 +260,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
 # Similar function as above but implemented for the C++ based
 # graph theory package networkit
 def nk_reorder_circuit(qc, preferential_gates=[]):
-    from qrisp.circuit import Instruction, Operation
+    from qrisp.circuit import Operation
 
     for i in range(len(qc.qubits)):
         qc.append(Operation("final_op", num_qubits=1), [qc.qubits[i]])
@@ -304,8 +296,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
             non_unitary_nodes.append(new_node)
             if qc.data[i].op.name == "measure":
                 measurement_counter += 1
-
-    from networkit.traversal import Traversal
 
     new_qc_list = []
 
@@ -346,8 +336,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
 
         # callback(node)
         # G.removeNode(node)
-
-        return
 
     def topological_df_traversal(G, node, tp_dic, callback):
         node_list = [x for x in G.iterNeighbors(node)]
@@ -393,8 +381,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
 
 
 try:
-    import networkit
-
     nk_available = True
 
 except:

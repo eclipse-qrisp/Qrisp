@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,9 +17,10 @@
 
 import numpy as np
 import sympy as sp
-from sympy.logic.utilities.dimacs import load
-from qrisp import auto_uncompute, z, multi_measurement
 from qrisp.grover import grovers_alg
+from sympy.logic.utilities.dimacs import load
+
+from qrisp import auto_uncompute, multi_measurement, z
 
 # %%
 
@@ -74,8 +74,7 @@ def q_eval_bl_expression(expr, qbls):
         for qbl in qbls:
             if qbl.name == expr.name:
                 return qbl
-        else:
-            raise Exception(f"Could not find {expr.name} in given QuantumBool list.")
+        raise Exception(f"Could not find {expr.name} in given QuantumBool list.")
 
     # Otherwise, prepare the list of arguments as QuantumBools
     from sympy import And, Not, Or

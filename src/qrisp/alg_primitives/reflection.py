@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,31 +15,39 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable, Sequence
+from typing import Any
+
 import numpy as np
+
 from qrisp import (
     QuantumArray,
     QuantumVariable,
+    conjugate,
+    control,
     gate_wrap,
     gphase,
     h,
-    mcx,
+    invert,
     mcp,
+    mcx,
     x,
     z,
-    conjugate,
-    invert,
-    control,
 )
-from qrisp.jasp import jlen, qache
+from qrisp.jasp import jlen
+from qrisp.typing import FloatLike
 
 
-# @qache
 @gate_wrap(permeability=[], is_qfree=False)
 def reflection(
-    qargs, state_function=None, args=(), kwargs={}, phase=np.pi, reflection_indices=None
+    qargs: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
+    state_function: Callable | None = None,
+    args: Sequence[Any] | None = None,
+    kwargs: dict[str, Any] | None = None,
+    phase: FloatLike = np.pi,
+    reflection_indices: list[int] | None = None,
 ):
-    r"""
-    Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
+    r"""Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
 
     .. math::
 
@@ -51,18 +58,18 @@ def reflection(
 
     Parameters
     ----------
-    qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The (list of) QuantumVariables representing the state to apply the reflection on.
-    state_function : function, optional
+    qargs : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
+        The quantum variable, array, or collection thereof on which the reflection is performed.
+    state_function : Callable, optional
         A Python function ``state_function(*qargs, *args, **kwargs)`` preparing the state $\ket{\psi}$ in variables ``qargs`` around which to reflect.
         By default, the reflection is performed around the $\ket{0}$ state.
-    args : tuple, optional
+    args : Sequence[Any], optional
         Additional arguments for the state function.
     kwargs : dict, optional
         Keyword arguments for the state function.
-    phase : float or sympy.Symbol, optional
+    phase : FloatLike, optional
         Specifies the phase shift. The default is $\pi$.
-    refection_indices : list[int], optional
+    reflection_indices : list[int], optional
         A list of indices indicating with respect to which variables the reflection is performed.
         This is used for `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_.
         Indices correspond to the flattened ``qargs``, e.g., if ``qargs = QuantumArray(QuantumFloat(3), (6,))``,
@@ -71,7 +78,6 @@ def reflection(
 
     Examples
     --------
-
     We prepare a QuantumVariable in state $\ket{1}^{\otimes n}$, and reflect around the GHZ state $\frac{1}{\sqrt{2}}(\ket{0}^{\otimes n} + \ket{1}^{\otimes n})$.
     The resulting state is $\ket{0}^{\otimes n}$.
 
@@ -98,7 +104,7 @@ def reflection(
         print(qv)
         # {'00000': 1.0}
 
-    The refletion can also be applied to lists of QuantumVariables and QuantumArrays:
+    The reflection can also be applied to lists of QuantumVariables and QuantumArrays:
 
     ::
 
@@ -129,7 +135,7 @@ def reflection(
         print(multi_measurement([qv, qa]))
         # {('00000', OutcomeArray(['000', '000', '000'], dtype=object)): 1.0}
 
-    Addtional arguments can be passed to the state function:
+    Additional arguments can be passed to the state function:
 
     ::
 
@@ -153,6 +159,11 @@ def reflection(
         # {'00000': 0.9900599999999998,'01000': 0.0024799999999999996,'00100': 0.0024799999999999996,'11011': 0.0024799999999999996,'10111': 0.0024799999999999996,'11111': 1.9999999999999998e-05}
 
     """
+    if args is None:
+        args = []
+
+    if kwargs is None:
+        kwargs = {}
 
     if isinstance(qargs, (list, tuple)) and not qargs:
         return
@@ -174,16 +185,13 @@ def reflection(
         else:
             raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
 
-    if reflection_indices is None:
-        reflection_indices = range(len(flattened_qargs))
-
-    qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])
+    indices = reflection_indices if reflection_indices is not None else range(len(flattened_qargs))
+    qubits = sum([flattened_qargs[i].reg for i in indices], [])
 
     # Reflection around |0> state
     def inner_reflection(qubits, phase):
 
         with control(phase == np.pi):
-
             x(qubits[-1])
 
             with control(jlen(qubits) == 1):

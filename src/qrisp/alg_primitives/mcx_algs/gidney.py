@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,16 +16,16 @@
 """
 
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    ctrl_state_wrap,
     gidney_qc,
     gidney_qc_inv,
     margolus_qc,
-    ctrl_state_wrap,
 )
-from qrisp.circuit import QuantumCircuit, Operation
+from qrisp.circuit import Operation, QuantumCircuit
+from qrisp.jasp import qache
 
 
 class GidneyLogicalAND(Operation):
-
     def __init__(self, inv=False, ctrl_state="11"):
 
         definition = QuantumCircuit(3)
@@ -60,15 +59,12 @@ class GidneyLogicalAND(Operation):
     def recompile(self, computation_strategy="gidney"):
         if self.inv:
             compiled_qc = gidney_qc_inv
+        elif computation_strategy == "gidney":
+            compiled_qc = gidney_qc
+        elif computation_strategy == "margolus":
+            compiled_qc = margolus_qc
         else:
-            if computation_strategy == "gidney":
-                compiled_qc = gidney_qc
-            elif computation_strategy == "margolus":
-                compiled_qc = margolus_qc
-            else:
-                raise Exception(
-                    f"Don't know measurement based uncomputation strategy {computation_strategy}"
-                )
+            raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
 
         name = "compiled_gidney_mcx"
         if self.inv:
@@ -81,73 +77,40 @@ class GidneyLogicalAND(Operation):
         return res
 
 
-from qrisp.jasp import AbstractQubit, make_jaspr, Jaspr
-from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
+from qrisp import custom_inversion
+from qrisp.core import cx, cz, h, measure, s, t, t_dg, x
 from qrisp.environments import control
 
 
+@qache
 def gidney_mcx_impl(a, b, c):
-
     h(c)
     t(c)
-
     cx(a, c)
     cx(b, c)
     cx(c, a)
     cx(c, b)
-
     t_dg(a)
     t_dg(b)
     t(c)
-
     cx(c, a)
     cx(c, b)
-
     h(c)
     s(c)
 
 
+@qache
 def gidney_mcx_inv_impl(a, b, c):
     h(c)
     bl = measure(c)
-
     with control(bl):
         cz(a, b)
         x(c)
 
 
-class GidneyMCXJaspr(Jaspr):
-
-    slots = ["inv"]
-
-    def __init__(self, inv):
-        self.inv = inv
-        if self.inv:
-            temp_jaspr = make_jaspr(gidney_mcx_inv_impl)(
-                AbstractQubit(), AbstractQubit(), AbstractQubit()
-            ).flatten_environments()
-        else:
-            temp_jaspr = make_jaspr(gidney_mcx_impl)(
-                AbstractQubit(), AbstractQubit(), AbstractQubit()
-            ).flatten_environments()
-
-        Jaspr.__init__(self, temp_jaspr)
-        self.envs_flattened = True
-
-    def inverse(self):
-        if self.inv:
-            return gidney_mcx_jaspr
-        else:
-            return gidney_mcx_inv_jaspr
-
-
-gidney_mcx_jaspr = GidneyMCXJaspr(False)
-gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
-
-
-def jasp_gidney_mcx(a, b, c):
-    gidney_mcx_jaspr.embedd(a, b, c, name="gidney_mcx")
-
-
-def jasp_gidney_mcx_inv(a, b, c):
-    gidney_mcx_inv_jaspr.embedd(a, b, c, name="gidney_mcx_inv")
+@custom_inversion
+def jasp_gidney_mcx(a, b, c, inv=False):
+    if not inv:
+        gidney_mcx_impl(a, b, c)
+    else:
+        gidney_mcx_inv_impl(a, b, c)

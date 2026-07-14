@@ -1,5 +1,4 @@
-"""
-Tests that validate find_detectors against stim's built-in circuit generators.
+"""Tests that validate find_detectors against stim's built-in circuit generators.
 
 stim.Circuit.generated() produces QEC circuits with *correct* DETECTOR
 annotations.  These tests:
@@ -14,18 +13,17 @@ and replays it through Qrisp, handling MR (measure-reset), MX (X-basis
 measurement), MY (Y-basis measurement), and their MR variants with proper
 buffering so that tqecd fragment structure is preserved.
 """
-import pytest
+
 import stim
-import numpy as np
+
 from qrisp import QuantumArray, QuantumBool, cx, h, measure, reset
 from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
-
 from qrisp.misc.stim_tools.find_detectors import find_detectors
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def _run_and_get_stim(main_fn):
     """Call an @extract_stim decorated function, return the stim circuit."""
@@ -44,9 +42,9 @@ def _sample_detectors_ok(stim_circ, shots=2000):
 # Stim circuit parser and Qrisp auto-recode
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def _parse_stim_for_qrisp_recode(stim_circ):
-    """
-    Parse a stim circuit and extract its gate-level structure.
+    """Parse a stim circuit and extract its gate-level structure.
 
     Returns (n_qubits, ops, measurements) where:
       - n_qubits: total qubit count
@@ -59,31 +57,43 @@ def _parse_stim_for_qrisp_recode(stim_circ):
     meas_counter = 0
 
     known_gates = {
-        "R": "reset", "RX": "reset_x", "RY": "reset_y",
-        "H": "h", "X": "x", "Y": "y", "Z": "z",
-        "S": "s", "S_DAG": "s_dg",
-        "SQRT_X": "sx", "SQRT_X_DAG": "sx_dg",
-        "SQRT_Y": "sy", "SQRT_Y_DAG": "sy_dg",
-        "CX": "cx", "CY": "cy", "CZ": "cz",
-        "M": "measure", "MR": "measure_reset",
+        "R": "reset",
+        "RX": "reset_x",
+        "RY": "reset_y",
+        "H": "h",
+        "X": "x",
+        "Y": "y",
+        "Z": "z",
+        "S": "s",
+        "S_DAG": "s_dg",
+        "SQRT_X": "sx",
+        "SQRT_X_DAG": "sx_dg",
+        "SQRT_Y": "sy",
+        "SQRT_Y_DAG": "sy_dg",
+        "CX": "cx",
+        "CY": "cy",
+        "CZ": "cz",
+        "M": "measure",
+        "MR": "measure_reset",
     }
 
     for inst in clean:
         name = inst.name
-        if name in ("TICK", "DETECTOR", "OBSERVABLE_INCLUDE",
-                     "SHIFT_COORDS", "QUBIT_COORDS", "REPEAT"):
+        if name in ("TICK", "DETECTOR", "OBSERVABLE_INCLUDE", "SHIFT_COORDS", "QUBIT_COORDS", "REPEAT"):
             continue
-        targets = [t.value for t in inst.targets_copy()
-                   if not t.is_measurement_record_target]
+        targets = [t.value for t in inst.targets_copy() if not t.is_measurement_record_target]
 
         if name in ("M", "MR", "MX", "MY", "MRX", "MRY"):
             for t in targets:
                 measurements.append(t)
                 meas_counter += 1
             meas_op_map = {
-                "M": "measure", "MR": "measure_reset",
-                "MX": "measure_x", "MY": "measure_y",
-                "MRX": "measure_reset_x", "MRY": "measure_reset_y",
+                "M": "measure",
+                "MR": "measure_reset",
+                "MX": "measure_x",
+                "MY": "measure_y",
+                "MRX": "measure_reset_x",
+                "MRY": "measure_reset_y",
             }
             ops.append((meas_op_map[name], targets))
         elif name in known_gates:
@@ -96,19 +106,17 @@ def _parse_stim_for_qrisp_recode(stim_circ):
 
 
 def _build_qrisp_from_parsed(n_qubits, ops):
-    """
-    Build a @find_detectors-decorated Qrisp function from parsed stim ops.
+    """Build a @find_detectors-decorated Qrisp function from parsed stim ops.
 
     Handles MR buffering and MX/MY basis-tracking to preserve tqecd
     fragment structure.
     """
-    from qrisp import s, s_dg, x, y, z, cz, cy
-    from qrisp import sx, sx_dg
+    from qrisp import cy, cz, s, s_dg, sx, sx_dg, x, y, z
 
     @find_detectors
     def auto_circuit(qa):
         meas_results = []
-        pending_meas = []       # list of (qubit_index, basis) tuples
+        pending_meas = []  # list of (qubit_index, basis) tuples
         pending_mr_resets = []  # list of (qubit_index, reset_basis) tuples
 
         def _flush_measurements():
@@ -138,10 +146,13 @@ def _build_qrisp_from_parsed(n_qubits, ops):
                     reset(qa[t])
             elif gate_name == "reset_x":
                 for t in targets:
-                    reset(qa[t]); h(qa[t])
+                    reset(qa[t])
+                    h(qa[t])
             elif gate_name == "reset_y":
                 for t in targets:
-                    reset(qa[t]); h(qa[t]); s(qa[t])
+                    reset(qa[t])
+                    h(qa[t])
+                    s(qa[t])
             elif gate_name == "h":
                 for t in targets:
                     h(qa[t])
@@ -192,8 +203,7 @@ def _build_qrisp_from_parsed(n_qubits, ops):
                 meas_basis, reset_basis = _MEAS_OPS[gate_name]
                 pending_meas.extend((t, meas_basis) for t in targets)
                 if reset_basis is not None:
-                    pending_mr_resets.extend(
-                        (t, reset_basis) for t in targets)
+                    pending_mr_resets.extend((t, reset_basis) for t in targets)
             else:
                 _flush_measurements()
                 _flush_mr_resets()
@@ -206,8 +216,7 @@ def _build_qrisp_from_parsed(n_qubits, ops):
 
 
 def _auto_recode_and_check(code_task, distance, rounds):
-    """
-    Fully automated comparison: generate stim reference, parse, recode via
+    """Fully automated comparison: generate stim reference, parse, recode via
     Qrisp, compare detector counts and verify noiseless sampling.
 
     Returns (expected_det, found_det, noiseless_ok).
@@ -237,6 +246,7 @@ def _auto_recode_and_check(code_task, distance, rounds):
 # Manual recode tests (hand-written Qrisp repetition codes)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def test_manual_rep_d3_r1():
     """Manual recode: repetition code d=3, 1 round + final readout."""
     ref = stim.Circuit.generated("repetition_code:memory", distance=3, rounds=1)
@@ -244,11 +254,17 @@ def test_manual_rep_d3_r1():
 
     @find_detectors
     def rep_code(data, ancilla):
-        reset(ancilla[0]); reset(ancilla[1])
-        cx(data[0], ancilla[0]); cx(data[1], ancilla[1])
-        cx(data[1], ancilla[0]); cx(data[2], ancilla[1])
-        ma0 = measure(ancilla[0]); ma1 = measure(ancilla[1])
-        md0 = measure(data[0]); md1 = measure(data[1]); md2 = measure(data[2])
+        reset(ancilla[0])
+        reset(ancilla[1])
+        cx(data[0], ancilla[0])
+        cx(data[1], ancilla[1])
+        cx(data[1], ancilla[0])
+        cx(data[2], ancilla[1])
+        ma0 = measure(ancilla[0])
+        ma1 = measure(ancilla[1])
+        md0 = measure(data[0])
+        md1 = measure(data[1])
+        md2 = measure(data[2])
         return ma0, ma1, md0, md1, md2
 
     @extract_stim
@@ -271,11 +287,17 @@ def test_manual_rep_d3_r2():
     @find_detectors
     def rep_code(data, ancilla):
         for _rnd in range(2):
-            reset(ancilla[0]); reset(ancilla[1])
-            cx(data[0], ancilla[0]); cx(data[1], ancilla[1])
-            cx(data[1], ancilla[0]); cx(data[2], ancilla[1])
-            _a0 = measure(ancilla[0]); _a1 = measure(ancilla[1])
-        md0 = measure(data[0]); md1 = measure(data[1]); md2 = measure(data[2])
+            reset(ancilla[0])
+            reset(ancilla[1])
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[1])
+            cx(data[1], ancilla[0])
+            cx(data[2], ancilla[1])
+            _a0 = measure(ancilla[0])
+            _a1 = measure(ancilla[1])
+        md0 = measure(data[0])
+        md1 = measure(data[1])
+        md2 = measure(data[2])
         return _a0, _a1, md0, md1, md2
 
     @extract_stim
@@ -300,9 +322,12 @@ def test_manual_rep_d3_r3():
     def rep_code(data, ancilla):
         all_meas = []
         for _rnd in range(3):
-            reset(ancilla[0]); reset(ancilla[1])
-            cx(data[0], ancilla[0]); cx(data[1], ancilla[1])
-            cx(data[1], ancilla[0]); cx(data[2], ancilla[1])
+            reset(ancilla[0])
+            reset(ancilla[1])
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[1])
+            cx(data[1], ancilla[0])
+            cx(data[2], ancilla[1])
             all_meas.append(measure(ancilla[0]))
             all_meas.append(measure(ancilla[1]))
         all_meas.append(measure(data[0]))
@@ -403,6 +428,7 @@ def test_manual_rep_d5_r3():
 
 # --- Repetition codes ---
 
+
 def test_auto_rep_d3_r1():
     """Auto-recode: repetition code d=3, 1 round."""
     exp, found, ok = _auto_recode_and_check("repetition_code:memory", 3, 1)
@@ -440,28 +466,23 @@ def test_auto_rep_d5_r3():
 
 # --- Surface codes ---
 
+
 def test_auto_surface_z_d2_r1():
     """Auto-recode: rotated surface code (Z-memory) d=2, 1 round."""
-    exp, found, ok = _auto_recode_and_check(
-        "surface_code:rotated_memory_z", 2, 1
-    )
+    exp, found, ok = _auto_recode_and_check("surface_code:rotated_memory_z", 2, 1)
     assert found == exp
     assert ok
 
 
 def test_auto_surface_x_d2_r1():
     """Auto-recode: rotated surface code (X-memory) d=2, 1 round."""
-    exp, found, ok = _auto_recode_and_check(
-        "surface_code:rotated_memory_x", 2, 1
-    )
+    exp, found, ok = _auto_recode_and_check("surface_code:rotated_memory_x", 2, 1)
     assert found == exp
     assert ok
 
 
 def test_auto_surface_z_d3_r1():
     """Auto-recode: rotated surface code (Z-memory) d=3, 1 round."""
-    exp, found, ok = _auto_recode_and_check(
-        "surface_code:rotated_memory_z", 3, 1
-    )
+    exp, found, ok = _auto_recode_and_check("surface_code:rotated_memory_z", 3, 1)
     assert found == exp
     assert ok

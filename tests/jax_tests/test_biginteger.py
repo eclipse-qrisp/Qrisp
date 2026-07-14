@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,20 +15,20 @@
 ********************************************************************************
 """
 
-import random
 import math
+import random
+
+import jax.numpy as jnp
 import numpy as np
 import pytest
-import jax.numpy as jnp
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
     BigInteger,
+    bi_extended_euclidean,
     bi_modinv,
-    bi_montgomery_encode,
     bi_montgomery_decode,
-    bi_extended_euclidean
+    bi_montgomery_encode,
 )
-
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BASE
 
 # ----------------- Global parameter lists -----------------
@@ -41,7 +40,7 @@ CREATE_STATIC_SEEDS = [0, 1, 2]
 CREATE_DYNAMIC_SIZES = [4, 8]
 CREATE_DYNAMIC_SEEDS = [3, 4, 5]
 
-FLOAT_CREATE_SIZE = [4] # Must remain small
+FLOAT_CREATE_SIZE = [4]  # Must remain small
 FLOAT_CREATE_SEEDS = [6, 7, 8]
 
 ADD_SIZES = [2, 4, 8]
@@ -87,7 +86,7 @@ MODINV_SEEDS = [110, 111, 112]
 MONT_SIZE = [2]
 MONT_SEEDS = [120, 121]
 
-CALL_SIZE = [2] # Must remain small
+CALL_SIZE = [2]  # Must remain small
 CALL_SEEDS = [130, 131]
 
 EEA_SIZES = [2, 3]
@@ -96,14 +95,13 @@ EEA_SEEDS = [160, 161, 162]
 
 # ----------------- Helpers -----------------
 
+
 def mask_for_size(size: int) -> int:
     return (1 << (32 * size)) - 1
 
 
 def _digits_array(maybe_bi):
-    """
-    Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
-    """
+    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array."""
     if isinstance(maybe_bi, (jnp.ndarray, np.ndarray)):
         return maybe_bi
     if hasattr(maybe_bi, "digits"):
@@ -112,9 +110,7 @@ def _digits_array(maybe_bi):
 
 
 def to_int(maybe_bi) -> int:
-    """
-    Convert a BigInteger (or its digits array) to a Python int exactly.
-    """
+    """Convert a BigInteger (or its digits array) to a Python int exactly."""
     ds = np.asarray(_digits_array(maybe_bi), dtype=np.uint64).tolist()
     acc = 0
     for i, d in enumerate(ds):
@@ -123,9 +119,7 @@ def to_int(maybe_bi) -> int:
 
 
 def limbs_to_int(limbs) -> int:
-    """
-    Convert a list of uint32 limbs (little-endian) to a Python int.
-    """
+    """Convert a list of uint32 limbs (little-endian) to a Python int."""
     acc = 0
     for i, d in enumerate(limbs):
         acc |= (int(d) & 0xFFFFFFFF) << (32 * i)
@@ -137,8 +131,7 @@ def random_limbs(size):
 
 
 def mk_bigint_dynamic_by_base_digits(digits_le, size):
-    """
-    Dynamically build a BigInteger from base-2^32 digits using only
+    """Dynamically build a BigInteger from base-2^32 digits using only
     small create(...) calls and multiplication by BASE, avoiding passing
     huge Python ints to create(...).
 
@@ -156,6 +149,7 @@ def mk_bigint_dynamic_by_base_digits(digits_le, size):
 
 
 # ----------------- Creation tests -----------------
+
 
 @pytest.mark.parametrize("size", CREATE_STATIC_SIZES)
 @pytest.mark.parametrize("seed", CREATE_STATIC_SEEDS)
@@ -188,6 +182,7 @@ def test_create_from_float_small_exact(size, seed):
 
 
 # ----------------- Basic arithmetic -----------------
+
 
 @pytest.mark.parametrize("size", ADD_SIZES)
 @pytest.mark.parametrize("seed", ADD_SEEDS)
@@ -234,6 +229,7 @@ def test_mul_random(size, seed):
 
 # ----------------- Shifts -----------------
 
+
 @pytest.mark.parametrize("size", LSHIFT_SIZES)
 @pytest.mark.parametrize("shift", LSHIFT_SHIFTS)
 @pytest.mark.parametrize("seed", LSHIFT_SEEDS)
@@ -269,6 +265,7 @@ def test_rshift(size, shift, seed):
 
 # ----------------- Bitwise ops -----------------
 
+
 @pytest.mark.parametrize("size", BITWISE_SIZES)
 @pytest.mark.parametrize("seed", BITWISE_SEEDS)
 def test_bitwise_ops(size, seed):
@@ -286,6 +283,7 @@ def test_bitwise_ops(size, seed):
 
 
 # ----------------- Comparisons -----------------
+
 
 @pytest.mark.parametrize("size", CMP_SIZES)
 @pytest.mark.parametrize("seed", CMP_SEEDS)
@@ -308,6 +306,7 @@ def test_comparisons(size, seed):
 
 # ----------------- Power -----------------
 
+
 @pytest.mark.parametrize("size", POW_SIZES)
 @pytest.mark.parametrize("exp", POW_EXPS)
 @pytest.mark.parametrize("seed", POW_SEEDS)
@@ -317,13 +316,14 @@ def test_pow_edges_and_small(size, exp, seed):
     limbs = random_limbs(size)
     ia = limbs_to_int(limbs)
     A = BigInteger.create_static(ia, size)
-    res = A ** exp
+    res = A**exp
     # exact modulo 2^(32*size)
     expected = pow(ia, exp, 1 << (32 * size))
     assert to_int(res) == (expected & M)
 
 
 # ----------------- Bit-level helpers -----------------
+
 
 @pytest.mark.parametrize("size", BITLEVEL_SIZES)
 @pytest.mark.parametrize("seed", BITLEVEL_SEEDS)
@@ -339,7 +339,7 @@ def test_get_bit_and_flip_bit(size, seed):
     assert all(v == 1 for v in reads)
     expected = 0
     for i in bits:
-        expected |= (1 << i)
+        expected |= 1 << i
     assert to_int(x) == expected
 
 
@@ -359,6 +359,7 @@ def test_bit_size_zero_and_random(size, seed):
 
 
 # ----------------- Division and modulo (limited due to float approximation) -----------------
+
 
 @pytest.mark.parametrize("size_a", DIVMOD_SIZES_A)
 @pytest.mark.parametrize("size_b", DIVMOD_SIZES_B)
@@ -385,10 +386,11 @@ def test_div_mod(size_a, size_b, seed):
 
     assert q == exp_q
     assert r == exp_r
-    assert ((b & M) == ((a * q + r) & M))
+    assert (b & M) == ((a * q + r) & M)
 
 
 # ----------------- Modular inverse -----------------
+
 
 @pytest.mark.parametrize("size", MODINV_SIZE)
 @pytest.mark.parametrize("seed", MODINV_SEEDS)
@@ -404,6 +406,7 @@ def test_modinv_small_prime_modulus(size, seed):
 
 
 # ----------------- Montgomery encode/decode -----------------
+
 
 @pytest.mark.parametrize("size", MONT_SIZE)
 @pytest.mark.parametrize("seed", MONT_SEEDS)
@@ -423,6 +426,7 @@ def test_montgomery_encode_decode_small(size, seed):
 
 # ----------------- __call__ approximation (small exact range) -----------------
 
+
 @pytest.mark.parametrize("size", CALL_SIZE)
 @pytest.mark.parametrize("seed", CALL_SEEDS)
 def test_call_float_approx_small_exact(size, seed):
@@ -433,6 +437,7 @@ def test_call_float_approx_small_exact(size, seed):
 
 
 # ----------------- Extended euclidean algorithm -----------------
+
 
 @pytest.mark.parametrize("size", EEA_SIZES)
 @pytest.mark.parametrize("seed", EEA_SEEDS)

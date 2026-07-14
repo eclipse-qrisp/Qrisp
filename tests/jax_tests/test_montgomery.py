@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,8 @@
 
 def test_montgomery_jasp_qq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, modinv, gidney_adder, measure, best_montgomery_shift
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure, modinv
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     @boolean_simulation
@@ -41,11 +41,11 @@ def test_montgomery_jasp_qq():
                     ar, br, rr = qq(a % N, b % N, n, N)
                     assert ar == a % N
                     assert br == b % N
-                    assert rr == (ar*br*q) % N
+                    assert rr == (ar * br * q) % N
 
 
 def test_montgomery_not_jasp_qq():
-    from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement, best_montgomery_shift
+    from qrisp import QuantumFloat, best_montgomery_shift, gidney_adder, modinv, multi_measurement
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     X = 29
@@ -64,12 +64,13 @@ def test_montgomery_not_jasp_qq():
 
     m = best_montgomery_shift(N)
 
-    assert test_qq_g()[((X*y*modinv(2**m, N)) % N,)] == 1.0
+    assert test_qq_g()[((X * y * modinv(2**m, N)) % N,)] == 1.0
 
 
 def test_montgomery_jasp_cq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply
 
     @boolean_simulation
@@ -87,14 +88,15 @@ def test_montgomery_jasp_cq():
                 if a % N != 0 and b % N != 0:
                     br, rr = cq(a % N, b % N, n, N)
                     assert br == b % N
-                    assert rr == ((a % N)*br) % N
+                    assert rr == ((a % N) * br) % N
 
 
 def test_montgomery_jasp_cq_inplace():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
     def icq(a, b, n, N):
@@ -111,14 +113,23 @@ def test_montgomery_jasp_cq_inplace():
             for b in range(4, 50, 5):
                 if a % N != 0 and b % N != 0 and np.gcd(a, N) == 1:
                     br = icq(a % N, b % N, n, N)
-                    assert br == ((a % N)*(b % N)) % N
+                    assert br == ((a % N) * (b % N)) % N
 
 
 def test_montgomery_jasp_cq_inplace_controlled():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, QuantumBool, control, best_montgomery_shift
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+
+    from qrisp import (
+        QuantumBool,
+        QuantumFloat,
+        best_montgomery_shift,
+        boolean_simulation,
+        control,
+        gidney_adder,
+        measure,
+    )
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
     def cicq(a, b, n, N, c):
@@ -139,12 +150,22 @@ def test_montgomery_jasp_cq_inplace_controlled():
                 for c in [0, 1]:
                     if a % N != 0 and b % N != 0 and np.gcd(a, N) == 1:
                         br = cicq(a % N, b % N, n, N, c)
-                        assert br == (((a % N)**c)*(b % N)) % N
+                        assert br == (((a % N) ** c) * (b % N)) % N
 
 
 def test_montgomery_jasp_cq_inplace_bi():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, QuantumBool, gidney_adder, measure, control, BigInteger, best_montgomery_shift
+
+    from qrisp import (
+        BigInteger,
+        QuantumBool,
+        QuantumFloat,
+        best_montgomery_shift,
+        boolean_simulation,
+        control,
+        gidney_adder,
+        measure,
+    )
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
@@ -167,24 +188,36 @@ def test_montgomery_jasp_cq_inplace_bi():
                 for c in [0, 1]:
                     if a % N != 0 and b % N != 0 and np.gcd(a, N) == 1:
                         br = bicicq(a % N, b % N, n, N, c)
-                        assert br == (((a % N)**c)*(b % N)) % N
+                        assert br == (((a % N) ** c) * (b % N)) % N
 
 
 def test_montgomery_find_order():
     import numpy as np
-    import jax
-    from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, QFT, h, x, BigInteger
-    from qrisp import fourier_adder, jasp_fourier_adder, gidney_adder
+
+    from qrisp import (
+        QFT,
+        BigInteger,
+        QuantumFloat,
+        QuantumModulus,
+        control,
+        fourier_adder,
+        gidney_adder,
+        h,
+        jasp_fourier_adder,
+        jrange,
+        terminal_sampling,
+        x,
+    )
 
     def find_order(a, N, inpl_adder):
         qg = QuantumModulus(N, inpl_adder)
         qg[:] = 1
-        qpe_res = QuantumFloat(2*qg.size + 1, exponent=-(2*qg.size + 1))
+        qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
         h(qpe_res)
         for i in range(len(qpe_res)):
             with control(qpe_res[i]):
                 qg *= a
-                a = (a*a) % N
+                a = (a * a) % N
         QFT(qpe_res, inv=True)
         return qpe_res.get_measurement()
 
@@ -195,12 +228,12 @@ def test_montgomery_find_order():
     def find_order(a, N, inpl_adder):
         qg = QuantumModulus(N, inpl_adder=inpl_adder)
         x(qg[0])
-        qpe_res = QuantumFloat(2*qg.size + 1, exponent=-(2*qg.size + 1))
+        qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
         h(qpe_res)
         for i in jrange(qpe_res.size):
             with control(qpe_res[i]):
                 qg *= a
-            a = (a*a) % N
+            a = (a * a) % N
         QFT(qpe_res, inv=True)
         return qpe_res
 

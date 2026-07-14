@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,12 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import (
-    QuantumVariable,
-    QuantumBool,
-)
+from typing import TYPE_CHECKING
+
 from qrisp.alg_primitives import gidney_adder
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from typing import TYPE_CHECKING
+from qrisp.core import QuantumVariable
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -31,8 +28,7 @@ if TYPE_CHECKING:
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
-    r"""
-    Performs cyclic convolution of a quantum state with a filter.
+    r"""Performs cyclic convolution of a quantum state with a filter.
 
     Given $\ket{\psi}=\sum_{j=0}^{N-1}x_j\ket{j}$ and a filter $f=\{a_k\}_{k=-d}^d$
     the cyclic convolution of $\ket{\psi}$ with $f$ is
@@ -70,7 +66,6 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
 
     Examples
     --------
-
     ::
 
         import numpy as np

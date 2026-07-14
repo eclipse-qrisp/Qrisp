@@ -32,3 +32,4 @@ from qrisp.alg_primitives.lcu import *
 from qrisp.alg_primitives.state_preparation import *
 from qrisp.alg_primitives.iterative_qpe import *
 from qrisp.alg_primitives.reflection import *
+from qrisp.alg_primitives.unbalanced_w_state import *

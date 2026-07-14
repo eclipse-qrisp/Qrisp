@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,23 +15,20 @@
 ********************************************************************************
 """
 
-from jax.core import ShapedArray
-from jax._src.array import ArrayImpl
-from jax.extend.core import ClosedJaxpr
-
-from qrisp.circuit import Qubit, QuantumCircuit, XGate
-from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import QuantumEnvironment, ClControlEnvironment
-from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.core import mcx, p, rz, x
-
 import numpy as np
+from jax._src.array import ArrayImpl
+from jax.core import ShapedArray
+
+from qrisp.circuit import QuantumCircuit, Qubit, XGate
+from qrisp.core import mcx, p, rz, x
+from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
+from qrisp.environments import ClControlEnvironment, QuantumEnvironment
+from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import bin_rep, perm_lock, perm_unlock
 
 
 class ControlEnvironment(QuantumEnvironment):
-    """
-    This class behaves similarly to ConditionEnvironment but instead of a function
+    """This class behaves similarly to ConditionEnvironment but instead of a function
     calculating a truth value, we supply a list of qubits.
     The environment's content is then controlled on these qubits.
 
@@ -50,24 +46,23 @@ class ControlEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We create a QuantumVariable and control on some of it's qubits
     using the control alias ::
 
-        from qrisp import QuantumVariable, QuantumString, multi_measurement, control, h
+        from qrisp import QuantumVariable, QuantumString, multi_measurement, control, h, x
 
         qv = QuantumVariable(3)
-        q_str = QuantumString()
+        q_str = QuantumString(size = len("hello world"))
+        q_str[:] = "hello world"
 
         qv[:] = "011"
         h(qv[0])
 
         with control(qv[:2], "11"):
-            q_str += "hello world"
+            x(q_str[0])
 
-
-    >>> print(multi_measurement([qv, q_str]))
-    {('011', 'aaaaaaaaaaa'): 0.5, ('111', 'hello world'): 0.5}
+        print(multi_measurement([qv, q_str]))
+        {('011', 'hello world'): 0.5, ('111', 'yello world'): 0.5}
 
 
     """
@@ -83,13 +78,11 @@ class ControlEnvironment(QuantumEnvironment):
             self.ctrl_state = str(ctrl_state)
 
         if check_for_tracing_mode():
-
             QuantumEnvironment.__init__(self, list(ctrl_qubits))
             if not isinstance(ctrl_qubits, list):
                 ctrl_qubits = [ctrl_qubits]
 
         else:
-
             if isinstance(ctrl_qubits, list):
                 self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
             else:
@@ -140,9 +133,7 @@ class ControlEnvironment(QuantumEnvironment):
         )
 
         if check_for_tracing_mode():
-            QuantumEnvironment.__exit__(
-                self, exception_type, exception_value, traceback
-            )
+            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
             return
         self.parent_cond_env = None
 
@@ -156,7 +147,6 @@ class ControlEnvironment(QuantumEnvironment):
                 self.parent_cond_env = env
                 break
             if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
-
                 if not type(env) == QuantumEnvironment:
                     break
 
@@ -179,7 +169,6 @@ class ControlEnvironment(QuantumEnvironment):
             cond_compile_ctrl_state = self.ctrl_state
 
             if self.parent_cond_env is not None:
-
                 # In the parent case we also need to make sure that the code is executed
                 # if the parent environment is executed. A possible approach would be
                 # to control the content on both, the parent and the chield truth value.
@@ -195,9 +184,7 @@ class ControlEnvironment(QuantumEnvironment):
                     from qrisp.misc import retarget_instructions
 
                     self.qbool = QuantumBool(name="ctrl_env*", qs=self.env_qs)
-                    retarget_instructions(
-                        self.env_data, [self.condition_truth_value], [self.qbool[0]]
-                    )
+                    retarget_instructions(self.env_data, [self.condition_truth_value], [self.qbool[0]])
 
                     if len(self.env_qs.data):
                         if isinstance(self.env_qs.data[-1], QuantumEnvironment):
@@ -212,9 +199,7 @@ class ControlEnvironment(QuantumEnvironment):
 
                 if isinstance(self.parent_cond_env, ControlEnvironment):
                     if len(self.parent_cond_env.ctrl_qubits) == 1:
-                        if self.parent_cond_env.ctrl_state == "0" and not hasattr(
-                            self.parent_cond_env, "qbool"
-                        ):
+                        if self.parent_cond_env.ctrl_state == "0" and not hasattr(self.parent_cond_env, "qbool"):
                             parent_ctrl_state = "0"
 
                     if self.parent_cond_env.invert:
@@ -226,7 +211,6 @@ class ControlEnvironment(QuantumEnvironment):
                 cond_compile_ctrl_state = cond_compile_ctrl_state + parent_ctrl_state
 
             if len(ctrl_qubits) > 1:
-
                 if len(ctrl_qubits) > 5:
                     method = "auto"
                 else:
@@ -247,9 +231,7 @@ class ControlEnvironment(QuantumEnvironment):
             # The instruction from the subcondition environments do not need to be
             # controlled, since their compile method compiles their condition
             # truth value based on the truth value of the parent environment.
-            subcondition_truth_values = [
-                env.condition_truth_value for env in self.sub_condition_envs
-            ]
+            subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
             inversion_tracker = 1
 
             # Now we need to recover the instructions from the data list
@@ -261,9 +243,7 @@ class ControlEnvironment(QuantumEnvironment):
                 if isinstance(instruction, (ControlEnvironment, ConditionEnvironment)):
                     instruction.compile()
 
-                    subcondition_truth_values = [
-                        env.condition_truth_value for env in self.sub_condition_envs
-                    ]
+                    subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
                     continue
 
                 # If the instruction is a general environment, compile the instruction
@@ -277,9 +257,7 @@ class ControlEnvironment(QuantumEnvironment):
                     self.env_qs.clear_data()
                     self.env_qs.data.extend(temp_data_list)
 
-                    subcondition_truth_values = [
-                        env.condition_truth_value for env in self.sub_condition_envs
-                    ]
+                    subcondition_truth_values = [env.condition_truth_value for env in self.sub_condition_envs]
                     continue
 
                 if (
@@ -303,9 +281,9 @@ class ControlEnvironment(QuantumEnvironment):
                 # Support for inversion of the condition without opening a new
                 # environment
                 # if set(instruction.qubits).issubset(self.user_exposed_qbool):
-                if set(instruction.qubits).issubset(
-                    [self.condition_truth_value]
-                ) and not isinstance(instruction.op, CustomControlOperation):
+                if set(instruction.qubits).issubset([self.condition_truth_value]) and not isinstance(
+                    instruction.op, CustomControlOperation
+                ):
                     if instruction.op.name == "x":
                         inversion_tracker *= -1
                         x(self.condition_truth_value)
@@ -328,7 +306,6 @@ class ControlEnvironment(QuantumEnvironment):
                     ctrl_state = "1"
 
                 if self.invert:
-
                     new_ctrl_state = ""
                     for c in ctrl_state:
                         if c == "1":
@@ -357,9 +334,7 @@ class ControlEnvironment(QuantumEnvironment):
                     )
 
                     # Add condition truth value qubit to the instruction qubit list
-                    instruction.qubits = [self.condition_truth_value] + list(
-                        instruction.qubits
-                    )
+                    instruction.qubits = [self.condition_truth_value] + list(instruction.qubits)
                 # Append instruction
                 self.env_qs.append(instruction)
 
@@ -369,7 +344,6 @@ class ControlEnvironment(QuantumEnvironment):
                 x(self.condition_truth_value)
 
             if len(ctrl_qubits) > 1:
-
                 if len(ctrl_qubits) > 5:
                     method = "auto"
                 else:
@@ -384,9 +358,7 @@ class ControlEnvironment(QuantumEnvironment):
                 self.qbool.delete()
 
         if self.parent_cond_env is not None:
-            self.parent_cond_env.sub_condition_envs.extend(
-                self.sub_condition_envs + [self]
-            )
+            self.parent_cond_env.sub_condition_envs.extend(self.sub_condition_envs + [self])
 
     def jcompile(self, eqn, context_dic):
 
@@ -453,35 +425,28 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
 
     # Iterate through the data
     for def_instr in instruction.op.definition.data:
-
         if new_control_qubit in def_instr.qubits:
             # If the instruction is targeting the control qubit, we call the function
             # recursively to make sure that we are indeed appending a custom_control
             # operation
-            new_definition.append(
-                convert_to_custom_control(def_instr, new_control_qubit)
-            )
+            new_definition.append(convert_to_custom_control(def_instr, new_control_qubit))
         else:
             # Else, we generate the operations regular control
             new_op = def_instr.op.control(1)
-            new_definition.append(
-                new_op, [new_control_qubit] + def_instr.qubits, def_instr.clbits
-            )
+            new_definition.append(new_op, [new_control_qubit] + def_instr.qubits, def_instr.clbits)
 
     # Create the result and modify the definition
     res = instruction.copy()
     res.op.definition = new_definition
 
-    res.op = CustomControlOperation(
-        res.op, targeting_control=control_qubit in instruction.qubits
-    )
+    res.op = CustomControlOperation(res.op, targeting_control=control_qubit in instruction.qubits)
 
     return res
 
 
 def control(*args, **kwargs):
     args = list(args)
-    from qrisp import Qubit, QuantumBool, QuantumVariable
+    from qrisp import QuantumBool, QuantumVariable, Qubit
     from qrisp.jasp import AbstractQubit, check_for_tracing_mode
 
     if isinstance(args[0], QuantumVariable):
@@ -501,13 +466,12 @@ def control(*args, **kwargs):
             return ClControlEnvironment(*args, **kwargs)
         else:
             raise Exception(f"Don't know how to control from input type {args[0]}")
+    elif all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
+        return ControlEnvironment(*args, **kwargs)
+    elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
+        return ClControlEnvironment(*args, **kwargs)
+    elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
+        args[0] = [bool(bit) for bit in args[0]]
+        return ClControlEnvironment(*args, **kwargs)
     else:
-        if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
-            return ControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
-            return ClControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
-            args[0] = [bool(bit) for bit in args[0]]
-            return ClControlEnvironment(*args, **kwargs)
-        else:
-            raise Exception(f"Don't know how to control from input type {args[0]}")
+        raise Exception(f"Don't know how to control from input type {args[0]}")

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,16 @@
 ********************************************************************************
 """
 
-import numpy as np
+from typing import TYPE_CHECKING, Optional
+
 import jax.numpy as jnp
-from qrisp import (
-    QuantumVariable,
-    QuantumBool,
-    h,
-    p,
-)
+import numpy as np
+
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.jasp import qache, jrange
-from typing import Optional, TYPE_CHECKING
+from qrisp.core import QuantumVariable
+from qrisp.core.gate_application_functions import h, p
+from qrisp.jasp import jrange, qache
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -40,8 +38,7 @@ def fourier_series_loader(
     k: int = 1,
     mirror: bool = False,
 ) -> QuantumBool:
-    r"""
-    Performs quantum state preparation for the first $k$ Fourier modes.
+    r"""Performs quantum state preparation for the first $k$ Fourier modes.
 
     Given an input array of $M$ values $\{a_{j}\}_{j=0}^{M-1}$ representing a signal sampled at equidistant points,
     this method prepares an $n$-qubit quantum state $(N=2^{n})$ by reconstructing a smooth approximation of the signal using its lowest $2k+1$ frequency components.
@@ -95,7 +92,6 @@ def fourier_series_loader(
 
     Examples
     --------
-
     We prepare a quantum state with amplitudes following a Gaussian distribution.
 
     ::
@@ -176,7 +172,6 @@ def fourier_series_loader(
         # {'h': 6, 'rz': 8, 'p': 108, 'x': 6, 'cx': 72, 'rx': 7, 'measure': 1}
 
     """
-
     ALLOWED_MODES = {"standard", "mirror"}
 
     if frequencies is not None:
@@ -196,9 +191,7 @@ def fourier_series_loader(
             scaling_factor = 1.0
 
         # Compression
-        compressed_frequencies = jnp.concatenate(
-            [frequencies[-k:], frequencies[: k + 1]]
-        )
+        compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[: k + 1]])
     else:
         raise Exception("Either signal or frequencies must be specified")
 

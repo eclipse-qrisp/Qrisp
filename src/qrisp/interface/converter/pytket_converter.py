@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,7 +22,6 @@ from qrisp import ControlledOperation
 
 def create_tket_instruction(op):
     from pytket import OpType
-
     from pytket.circuit import CircBox
 
     if op.name == "rxx":
@@ -80,9 +78,8 @@ def create_tket_instruction(op):
 
 
 def pytket_converter(qc, boxFlag=False):
-    from pytket import Circuit, Qubit, Bit, OpType
-
-    from pytket.circuit import CircBox, QControlBox, Op
+    from pytket import Circuit, OpType, Qubit
+    from pytket.circuit import CircBox, Op, QControlBox
 
     # This dic gives the qiskit qubits/clbits when presented with their identifier
     qubit_dic = {}
@@ -198,9 +195,7 @@ def pytket_converter(qc, boxFlag=False):
                 tket_definition = pytket_converter(op.base_operation.definition)
                 base_gate = tket_definition
                 if isinstance(base_gate, Circuit):
-                    tket_definition = pytket_converter(
-                        op.base_operation.definition, boxFlag=True
-                    )
+                    tket_definition = pytket_converter(op.base_operation.definition, boxFlag=True)
                     tket_definition.name = base_name
                     tket_ins = CircBox(tket_definition)
                 else:
@@ -228,7 +223,7 @@ def pytket_converter(qc, boxFlag=False):
         elif isinstance(tket_ins, QControlBox):
             tket_qc.add_qcontrolbox(tket_ins, qubit_list)
 
-        elif len(clbit_list):
+        elif clbit_list:
             # add other isinstance checks from above here aswell?
             tket_qc.add_gate(tket_ins, params, qubit_list + clbit_list)
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,25 +15,16 @@
 ********************************************************************************
 """
 
+import time
+from collections.abc import Mapping
+
 import numpy as np
 
 # Created by ann81984 at 04.05.2022
 import pytest
-import time
 
-from qrisp.circuit import (
-    multi_controlled_circuit,
-    RYGate,
-    RZGate,
-    RXGate,
-    transpile,
-    HGate,
-    XGate,
-    PGate,
-    U3Gate
-)
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit, transpile, x
-from qiskit.circuit.library import HGate
+from qrisp import QuantumCircuit, QuantumSession, QuantumVariable, x
+from qrisp.circuit import U3Gate, XGate, multi_controlled_circuit
 
 
 # Check by printing circuit
@@ -86,7 +76,7 @@ def test_controlled_gates():
 
     assert 0.4 < tmp["11"] < 0.6 and 0.4 < tmp["00"] < 0.6
     assert not (0.8 < tmp["11"] < 1 and 0.7 < tmp["00"] < 0.2)
-    assert isinstance(tmp, dict)
+    assert isinstance(tmp, Mapping)
     with pytest.raises(KeyError) as excinfo:
         bool(tmp["23"] < 0.6)
     assert "23" in str(excinfo.value)
@@ -113,7 +103,7 @@ def test_controlled_gates():
 
     print(qv_target.get_measurement())
     tmp2 = qv_target.get_measurement()
-    assert isinstance(tmp2, dict)
+    assert isinstance(tmp2, Mapping)
     assert tmp2["1"] == 1.0
 
     qv_0 = QuantumVariable(2)
@@ -134,7 +124,7 @@ def test_controlled_gates():
     )
 
     assert qv_1.get_measurement() == {"1": 1.0}
-    
+
     u3 = U3Gate(1.7465, -0.58331, 0)
     cu3 = u3.control(1)
-    assert np.allclose(cu3.get_unitary(), cu3.definition.get_unitary(), atol = 1E-5)
+    assert np.allclose(cu3.get_unitary(), cu3.definition.get_unitary(), atol=1e-5)

@@ -1,0 +1,60 @@
+name: Feature Request
+description: Propose a new feature for Qrisp
+labels: ["feature request"]
+body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+
+  - type: input
+
+    id: responsible
+    attributes:
+      label: Responsible
+      placeholder: "Name(s) + institution(s)"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: short-description
+    attributes:
+      label: Short Description
+      description: "Max 3 sentences. What is needed and why?"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: long-description
+    attributes:
+      label: Long Description
+      description: "Include references to papers, standards, or existing implementations."
+    validations:
+      required: false
+
+  - type: textarea
+
+    id: tests
+    attributes:
+      label: Means of Verification
+      description: "For example 1 positive, 1 negative, and 2 boundary tests."
+      value: |
+        | Test-ID | Type     | Description | Expected Result |
+        |---------|----------|-------------|-----------------|
+        | T-001   | Positive |             |                 |
+        | T-002   | Negative |             |                 |
+        | T-003   | Boundary |             |                 |
+        | T-004   | Boundary |             |                 |
+    validations:
+      required: true

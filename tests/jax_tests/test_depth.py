@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -30,8 +29,10 @@ from qrisp import (
     h,
     measure,
     rx,
+    rz,
+    u3,
 )
-from qrisp.jasp import jrange, q_cond
+from qrisp.jasp import jrange, q_cond, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -137,9 +138,7 @@ class TestDepthSingleQubit:
             ([0, 1], [1, 0], 1),
         ],
     )
-    def test_multiple_create_qubits(
-        self, qubit_indices_1, qubit_indices_2, expected_depth
-    ):
+    def test_multiple_create_qubits(self, qubit_indices_1, qubit_indices_2, expected_depth):
         """Test depth computation with multiple create_qubits calls."""
 
         @depth(meas_behavior="0")
@@ -211,6 +210,31 @@ class TestDepthMultiQubit:
 
         assert main(4) == 4
 
+    @pytest.mark.parametrize(
+        "control_qubit,target_qubit_1,target_qubit_2,param_qubit,expected_depth",
+        [
+            (0, 1, 1, 0, 6),
+            (0, 1, 2, 3, 4),
+            (0, 3, 3, 3, 6),
+            (1, 0, 0, 0, 6),
+            (2, 1, 1, 0, 4),
+        ],
+    )
+    def test_parametrized_gates(self, control_qubit, target_qubit_1, target_qubit_2, param_qubit, expected_depth):
+        """Test depth of a combination of gates including a parametrized gate, with different qubit configurations."""
+
+        @depth(meas_behavior="1")
+        def main():
+            qf = QuantumFloat(4)
+            rx(0.123, qf[param_qubit])
+            rz(0.456, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_1])
+            rx(0.789, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_2])
+            u3(0.321, 0.654, 0.987, qf[param_qubit])
+
+        assert main() == expected_depth
+
     def test_multiple_create_qubits(self):
         """Test depth computation with multiple create_qubits calls."""
 
@@ -242,7 +266,6 @@ class TestDepthMultiQubit:
     )
     def test_op_with_definition(self, x_target, expected_depth):
         """Test depth computation for an operation with definition."""
-
         qc = QuantumCircuit(2)
         for _ in range(3):
             qc.x(x_target)
@@ -261,7 +284,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition2(self):
         """Test depth computation for an operation with definition."""
-
         qc_2 = QuantumCircuit(3)
         for _ in range(3):
             qc_2.x(0)
@@ -281,7 +303,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition3(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.rx(3.1415, 0)
@@ -304,7 +325,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition4(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(0)
@@ -327,7 +347,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition5(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(1)
@@ -492,9 +511,7 @@ class TestDepthMeasurementBehavior:
             qf = QuantumFloat(1)
             return measure(qf[0])
 
-        with pytest.raises(
-            ValueError, match="Measurement behavior must return a boolean, got 42"
-        ):
+        with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
     def test_no_measurements(self):
@@ -572,8 +589,8 @@ class TestDepthMeasurementBehavior:
         assert first == second
 
 
-class TestDepthSliceFuse:
-    """Test that the depth is correctly computed when slicing and/or fusing quantum registers."""
+class TestDepthSlice:
+    """Test that the depth is correctly computed when slicing a quantum register."""
 
     @pytest.mark.parametrize(
         "slices,expected_depth",
@@ -656,6 +673,106 @@ class TestDepthSliceFuse:
             cx(qf2[0:1], qf2[1:2])
 
         assert main(4, 4) == 3
+
+    def test_slice_negative_stop(self):
+        """Test depth computation with slicing using negative stop index."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:-1])  # should apply h to all but the last qubit
+            h(qf[:-1])  # should apply h to all but the last qubit (same as above)
+
+        assert main(2) == 2
+
+    def test_slice_negative_start(self):
+        """Test depth computation with slicing using negative start index."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(5)
+            h(qf[-4:5])  # should apply h to all qubits except the first one
+            h(qf[-40:5])  # should apply h to all qubits
+            h(qf[-4:50])  # should apply h to all qubits except the first one
+            h(qf[-40:50])  # should apply h to all qubits
+
+        assert main() == 4
+
+    def test_slice_out_of_bounds_stop(self):
+        """Stop index exceeds array size."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:100])  # all qubits get h
+
+        assert main(4) == 1
+
+    def test_slice_out_of_bounds_start(self):
+        """Start index exceeds array size — should produce empty slice."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[100:])  # empty slice, no gates applied
+
+        assert main(4) == 0
+
+    def test_slice_empty(self):
+        """Test depth computation with an empty slice."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:0])
+            h(qf[1:1])
+            h(qf[2:2])
+
+        assert main(4) == 0
+
+    def test_slice_start_larger_than_stop_1(self):
+        """Test depth computation with a slice where start index is larger than stop index."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[3:2])  # empty slice, no gates applied
+
+        assert main(4) == 0
+
+    def test_slice_start_larger_than_stop_2(self):
+        """Test depth computation with a slice where start index is larger than stop index, with negative indices."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[0:-100])  # empty slice, no gates applied
+
+        assert main() == 0
+
+    def test_slice_negative_start_positive_stop(self):
+        """Negative start with positive stop."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[-2:4])  # last 2 qubits of a 4-qubit register
+
+        assert main() == 1
+
+    def test_slice_negative_start_negative_stop(self):
+        """Both start and stop negative."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[-3:-1])  # qubits 1 and 2 of a 4-qubit register
+
+        assert main() == 1
+
+
+class TestDepthFuse:
+    """Test that the depth is correctly computed when fusing quantum registers."""
 
     # We keep the following tests separate for clarity
     # (parametrization would make them much less readable).
@@ -846,9 +963,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(11)
 
@@ -863,9 +978,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(1023)
 
@@ -880,9 +993,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(300, 301)
 
@@ -896,3 +1007,149 @@ def test_caching_behavior():
 
     main(BigInteger.create_static(1, 1))
     main(BigInteger.create_static(5, 2))
+
+
+def test_callback_threshold_depth():
+    """Test that depth with callback_threshold produces correct results.
+
+    The callback_threshold parameter controls whether ``jax.pure_callback``
+    wrapping is used for reused sub-jaxprs to prevent XLA compilation blowup.
+    Different threshold values should all produce the same profiling results.
+    """
+
+    # A qache'd subroutine that will be reused multiple times.
+    @qache
+    def depth_heavy_sub(qv):
+        """A subroutine that contributes significant depth."""
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[1])
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        # Call the qache'd subroutine multiple times
+        depth_heavy_sub(qv)
+        depth_heavy_sub(qv)
+        depth_heavy_sub(qv)
+
+        h(qv[2])
+        return measure(qv[0])
+
+    # Baseline: no callbacks
+    baseline = depth(meas_behavior="0")(make_circuit)()
+
+    # callback_threshold=0: wrap every reused sub-jaxpr
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+
+    # callback_threshold=500: middle ground
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+
+    # Callback threshold with very large value
+    result_large = depth(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
+    assert result_large == baseline, f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
+
+    # Also test with meas_behavior="1"
+    baseline_1 = depth(meas_behavior="1")(make_circuit)()
+    result_1_0 = depth(meas_behavior="1", callback_threshold=0)(make_circuit)()
+    assert result_1_0 == baseline_1, (
+        f"meas_behavior='1', callback_threshold=0 diverged:\n  baseline={baseline_1}\n  got={result_1_0}"
+    )
+
+    # Verify the depth result is a positive integer
+    assert isinstance(baseline, int), f"Depth should be int, got {type(baseline)}"
+    assert baseline > 0, f"Depth should be positive, got {baseline}"
+
+
+def test_callback_threshold_depth_nested_qache():
+    """Test callback_threshold depth with nested @qache'd subroutines.
+
+    An outer qache'd function calls an inner qache'd function.  Both are
+    reused.  The callback wrapping must yield the same depth regardless
+    of threshold.
+    """
+
+    @qache
+    def inner_depth_sub(qv):
+        """Inner subroutine: contributes depth via sequential gates."""
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[0])
+
+    @qache
+    def outer_depth_sub(qv):
+        """Outer subroutine: calls inner_depth_sub and adds more depth."""
+        cx(qv[1], qv[2])
+        inner_depth_sub(qv)
+        inner_depth_sub(qv)
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        outer_depth_sub(qv)
+        outer_depth_sub(qv)
+        outer_depth_sub(qv)
+
+        h(qv[3])
+        return measure(qv[0])
+
+    baseline = depth(meas_behavior="0")(make_circuit)()
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"Nested qache depth with callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"Nested qache depth with callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Also test with threshold=1
+    result_1 = depth(meas_behavior="0", callback_threshold=1)(make_circuit)()
+    assert result_1 == baseline, (
+        f"Nested qache depth with callback_threshold=1 diverged:\n  baseline={baseline}\n  got={result_1}"
+    )
+
+
+def test_callback_threshold_depth_with_jrange():
+    """Test callback_threshold depth with a jrange loop + qache'd subroutine.
+
+    The jrange loop creates many call sites for the same qache'd function,
+    testing that callback wrapping handles scan-primitive-based loops
+    correctly in the depth metric.
+    """
+
+    @qache
+    def depth_loop_sub(qv, n):
+        """Subroutine called inside a jrange loop, contributes depth."""
+        h(qv[(n + 0) % 3])
+        cx(qv[(n + 0) % 3], qv[(n + 1) % 3])
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        for i in jrange(15):
+            depth_loop_sub(qv, i)
+
+        h(qv[3])
+        return measure(qv[0])
+
+    baseline = depth(meas_behavior="0")(make_circuit)()
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"jrange depth with callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"jrange depth with callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    assert baseline > 0, f"Depth should be positive, got {baseline}"

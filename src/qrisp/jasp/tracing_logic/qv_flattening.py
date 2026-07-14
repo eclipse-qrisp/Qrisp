@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,14 +16,15 @@
 """
 
 import copy
-from jax import tree_util
+
 import jax.numpy as jnp
+from jax import tree_util
+
 from qrisp.jasp.tracing_logic import (
-    TracingQuantumSession,
     DynamicQubitArray,
+    TracingQuantumSession,
     check_for_tracing_mode,
 )
-
 
 # This class has two purposes
 
@@ -42,7 +42,6 @@ from qrisp.jasp.tracing_logic import (
 # The QuantumVariable template doesn't carry the register information (only the
 # size) and can therefore be passed around like a classical value.
 class QuantumVariableTemplate:
-
     def __init__(self, qv, size_tracked=True):
         self.duplication_counter = 0
         self.qv = copy.copy(qv)
@@ -67,9 +66,7 @@ class QuantumVariableTemplate:
         res.qs = qs
         if reg is None:
             if not self.size_tracked:
-                raise Exception(
-                    "Tried to construct QuantumVariable from template lacking a size specification"
-                )
+                raise Exception("Tried to construct QuantumVariable from template lacking a size specification")
 
             qs.register_qv(res, self.qv_size)
         else:
@@ -158,6 +155,4 @@ def unflatten_template(aux_data, children):
     return res
 
 
-tree_util.register_pytree_node(
-    QuantumVariableTemplate, flatten_template, unflatten_template
-)
+tree_util.register_pytree_node(QuantumVariableTemplate, flatten_template, unflatten_template)

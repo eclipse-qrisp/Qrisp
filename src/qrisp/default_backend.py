@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,28 @@
 ********************************************************************************
 """
 
-from qrisp.interface import VirtualBackend, QiskitBackend
-from qrisp.simulator.simulator import run
-from qrisp import QuantumCircuit
+"""
+Default backend configuration.
 
+:data:`def_backend` is the module-level singleton used as the default backend
+throughout Qrisp when no explicit backend is provided. It is an instance of
+:class:`~qrisp.interface.simulators.qrisp_simulator_backend.QrispSimulatorBackend`.
 
-class DefaultBackend:
-    def run(self, qc, shots=None, token=""):
-        return run(qc, shots, token)
+To change the global default, replace *def_backend* with a different backend
+instance, e.g.::
 
+    import qrisp.default_backend as db
+    from my_custom_backend import MyBackend
+    db.def_backend = MyBackend()
 
-def_backend = DefaultBackend()
+The implementing classes live in
+:mod:`qrisp.interface.simulators.qrisp_simulator_backend` and are re-exported here
+for convenience.
+"""
+
+from qrisp.interface.simulators.qrisp_simulator_backend import (
+    QrispSimulatorBackend,
+    QrispSimulatorJob,  # noqa: F401 — re-exported for convenience
+)
+
+def_backend = QrispSimulatorBackend()
