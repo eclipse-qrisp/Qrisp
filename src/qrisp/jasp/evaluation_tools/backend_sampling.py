@@ -18,49 +18,39 @@
 r"""Backend-based sampling for Jasp.
 
 This module provides :func:`backend_sampler` — a decorator that routes
-:func:`~qrisp.jasp.sample` calls through a real quantum backend instead of
-the Qrisp simulator.
+:func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+calls through a real quantum backend instead of the Qrisp simulator.
 
 How it works
 ============
 
-:func:`~qrisp.jasp.sample` traces a sampling kernel into a Jaspr with the
-following internal structure (documented in
-:mod:`~qrisp.jasp.interpreter_tools.interpreters.terminal_sampling_interpreter`)::
+Both :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+trace a sampling kernel into a Jaspr with the same internal structure::
 
     outer Jaspr
-      └── sampling_eval_function  (pjit)
+      └── sampling_eval_function / expectation_value_eval_function  (pjit)
            └── fori_loop  (while, iterates over shots)
                 └── sampling_body_func  (jit, inside quantum_kernel)
-                     ├── user_func           ← quantum state preparation
-                     ├── sampling_helper_1   ← measurement (inlined as primitives)
-                     └── sampling_helper_2   ← decoding + post-processing (inlined)
+                     ├── user_func           ← quantum kernel
+                     ├── (inline primitives) ← measurement + decoding
+                     └── (inline primitives) ← accumulation
 
 :func:`backend_sampler` uses the same ``eqn_evaluator`` pattern as
-:func:`~qrisp.jasp.jaspify` but intercepts at the ``sampling_body_func``
-level rather than simulating the loop shot-by-shot:
+:func:`~qrisp.jasp.jaspify` but intercepts at two levels:
 
-1. **One-time setup** (first loop iteration):
+1. **Top level** — ``sampling_eval_function`` / ``expectation_value_eval_function``:
+   extracts the shot count and kernel arguments.  For
+   :func:`~qrisp.jasp.expectation_value` these live at the top level
+   because ``sampling_body_func`` only receives a running-sum accumulator,
+   not the full sample array.
 
-   * Locate the ``user_func`` sub-Jaspr — this is the user's sampling kernel.
-   * Extract a :class:`~qrisp.circuit.QuantumCircuit` from it via
-     :meth:`~qrisp.jasp.Jaspr.to_qc`.
-   * Run the circuit on the *backend* with the requested shot count.
-   * Extract the classical post-processing function via
-     :meth:`~qrisp.jasp.Jaspr.extract_post_processing`.
-   * Apply post-processing to every backend measurement outcome and cache
-     the flat list of results.
-
-2. **Every loop iteration**:
-
-   * Instead of executing ``user_func`` (which would run the quantum
-     simulation), replace its output with the *i*-th cached result.
-   * Let the existing JAX primitives (``scatter``, ``broadcast_in_dim``,
-     etc.) handle accumulation into the target array naturally.
-
-This design delegates array construction, batching, and return-value
-shaping to the Jaspr's own JAX logic.  The backend only replaces the
-quantum execution — everything else stays the same.
+2. **Loop body** — ``sampling_body_func``:
+   on the first iteration extracts the ``user_func`` sub-Jaspr, converts
+   it to a :class:`~qrisp.circuit.QuantumCircuit` via
+   :meth:`~qrisp.jasp.Jaspr.to_qc`, runs the circuit on the *backend*,
+   and caches the post-processed results.  Every subsequent iteration
+   looks up the *i*-th cached result and replaces ``user_func``'s output
+   with it — JAX handles accumulation naturally.
 
 .. rubric:: Usage
 
@@ -157,26 +147,23 @@ def find_named_jaxpr(jaxpr, target_name):
 def backend_sampling_eqn_evaluator(backend):
     """Factory that returns an ``eqn_evaluator`` for backend-based sampling.
 
-    This evaluator is designed to be plugged into the same Jaspr
-    evaluation infrastructure that :func:`~qrisp.jasp.jaspify` uses
-    (see :func:`simulate_jaspr`).  It intercepts ``sampling_body_func``
-    jit calls and replaces the quantum kernel execution with a backend
-    run, while leaving the loop and accumulation logic untouched.
+    Plugs into the same Jaspr evaluation infrastructure as
+    :func:`~qrisp.jasp.jaspify` (see :func:`simulate_jaspr`).
 
-    .. rubric:: Interception strategy
+    **Two-level interception:**
 
-    The evaluator targets ``jit`` equations whose ``name`` parameter is
-    ``"sampling_body_func"``.  These sit inside the ``fori_loop`` of
-    every :func:`~qrisp.jasp.sample` call and represent one shot
-    iteration::
+    *   **Top level** — ``sampling_eval_function`` /
+        ``expectation_value_eval_function``: extracts shot count and
+        kernel arguments into shared state (*ev_state*).
 
-        sampling_body_func(i, acc, *kernel_args, qs) → (acc_updated, …, qs)
+    *   **Loop body** — ``sampling_body_func``: on the first iteration
+        extracts *user_func*, calls :meth:`~Jaspr.to_qc` and
+        :meth:`~Jaspr.extract_post_processing`, runs the backend, and
+        caches processed results.  Every iteration replaces *user_func*'s
+        output with the *i*-th cached result.
 
-    .. rubric:: Caching
-
-    Results are cached per unique ``sampling_body_func`` Jaxpr so that
-    the backend is only called once even when the sampling loop runs
-    hundreds or thousands of iterations.
+    **Caching** — results are cached per unique *sampling_body_func*
+    Jaxpr, so the backend is called once regardless of loop count.
 
     Parameters
     ----------
@@ -187,105 +174,88 @@ def backend_sampling_eqn_evaluator(backend):
     -------
     callable
         An ``eqn_evaluator`` compatible with :func:`eval_jaxpr`.
-        Returns ``True`` for equations it doesn't handle (delegating to
-        the default evaluator) and ``False`` after processing a
-        ``sampling_body_func`` equation.
     """
 
     # Per-evaluator result cache.
     # Maps id(body_jaxpr) → (results_list, n_returns).
-    # One entry per unique sampling_body_func Jaxpr, populated on the first
-    # loop iteration and reused for all subsequent iterations.
     _result_cache = {}
 
-    def sampling_eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
-        # Only intercept jit calls named "sampling_body_func".
-        if eqn.primitive.name != "jit":
-            return True
-        if eqn.params.get("name", "") != "sampling_body_func":
-            return True
+    # Shared state for the expectation_value path: the top-level
+    # expectation_value_eval_function carries shot count and kernel args
+    # that are not present in sampling_body_func's own invars.
+    _ev_state = {"shots": None, "kernel_args": None}
 
-        # ── Extract inputs from the context ─────────────────────────────
-        # sampling_body_func signature: (i, acc, *kernel_args, qs)
+    # -----------------------------------------------------------------
+    # Helpers
+    # -----------------------------------------------------------------
+
+    def _extract_args_sampling_eval(eqn, context_dic):
+        """Extract shots + kernel_args from a top-level eval function.
+
+        Returns (shots, kernel_args, invalues).
+        """
         invalues = extract_invalues(eqn, context_dic)
-        i = int(invalues[0])          # loop counter — which shot we're on
-        acc = invalues[1]             # accumulator — acc.shape[0] = shots
-        qs = invalues[-1]             # QuantumState (unused by backend path)
+        shots = int(invalues[-1])
+        kernel_args = []
+        for j in range(len(eqn.invars) - 1):
+            val = invalues[j]
+            if hasattr(val, 'item'):
+                val = val.item()
+            kernel_args.append(val)
+        return shots, kernel_args, invalues
 
-        body_jaxpr = eqn.params["jaxpr"]   # the sampling_body_func ClosedJaxpr
-        cache_key = id(body_jaxpr)
+    def _extract_args_body_func(invalues):
+        """Extract shots + kernel_args from sampling_body_func (sample() path)."""
+        kernel_args = []
+        for j in range(2, len(invalues) - 1):
+            val = invalues[j]
+            if hasattr(val, 'item'):
+                val = val.item()
+            kernel_args.append(val)
+        shots = int(invalues[1].shape[0])   # acc.shape[0] == shots
+        return shots, kernel_args
 
-        # ── One-time setup: extract QC, run backend, cache results ──────
-        # Only performed on the very first loop iteration (i == 0).
-        if cache_key not in _result_cache:
+    def _setup_backend_results(user_func_jaxpr, kernel_args, shots):
+        """One-time: QC → backend → post-process → flat result list.
 
-            # --- locate user_func (the user's sampling kernel) ---
-            user_func_jaspr = find_named_jaxpr(body_jaxpr.jaxpr, "user_func")
-            if user_func_jaspr is None:
-                raise RuntimeError(
-                    "user_func not found in sampling_body_func"
+        Returns (processed_list, n_returns).
+        """
+        user_func_jaspr = Jaspr(user_func_jaxpr)
+
+        # QuantumCircuit from user_func → run on backend.
+        result_tuple = user_func_jaspr.to_qc(*kernel_args)
+        *_, qc = result_tuple
+        meas_result = backend.run(qc, shots=shots)
+
+        # Post-processing function from user_func.
+        post_proc = user_func_jaspr.extract_post_processing(*kernel_args)
+
+        # Expand {bitstring: count} into a flat, shuffled list.
+        n_returns = len(user_func_jaxpr.jaxpr.outvars) - 1  # excluding QS
+        processed = []
+        for bitstring, count in meas_result.items():
+            val = post_proc(bitstring)
+            count = int(count)
+            if n_returns == 1:
+                scalar = float(val) if hasattr(val, 'item') else val
+                processed.extend([scalar] * count)
+            else:
+                tup = tuple(
+                    float(v) if hasattr(v, 'item') else v for v in val
                 )
+                processed.extend([tup] * count)
 
-            # --- extract kernel arguments ---
-            # sampling_body_func's invars are (i, acc, *kernel_args, qs).
-            # Skip the first two (i, acc) and the last (qs) to get the
-            # kernel's own arguments.
-            kernel_args = []
-            for j in range(2, len(invalues) - 1):
-                val = invalues[j]
-                if hasattr(val, 'item'):
-                    val = val.item()   # JAX tracer → concrete Python
-                kernel_args.append(val)
+        np.random.shuffle(processed)
+        return processed, n_returns
 
-            # --- QuantumCircuit from user_func → run on backend ---
-            # to_qc returns (*return_values, qc); we only need the circuit.
-            result_tuple = user_func_jaspr.to_qc(*kernel_args)
-            *_, qc = result_tuple
-            shots = int(acc.shape[0])          # shot count from accumulator
-            meas_result = backend.run(qc, shots=shots)
-
-            # --- post-processing from user_func ---
-            # This function takes a measurement bitstring and returns the
-            # decoded, post-processed value that user_func would have returned.
-            post_proc = user_func_jaspr.extract_post_processing(*kernel_args)
-
-            # --- build flat list of post-processed results ---
-            # The backend returns {bitstring: count}.  Expand each bitstring
-            # *count* times, apply post-processing, and shuffle to match the
-            # statistical distribution of independent shots.
-            n_returns = len(user_func_jaspr.jaxpr.outvars) - 1  # excluding QS
-            processed = []
-            for bitstring, count in meas_result.items():
-                val = post_proc(bitstring)
-                count = int(count)
-                if n_returns == 1:
-                    scalar = float(val) if hasattr(val, 'item') else val
-                    processed.extend([scalar] * count)
-                else:
-                    tup = tuple(
-                        float(v) if hasattr(v, 'item') else v for v in val
-                    )
-                    processed.extend([tup] * count)
-
-            np.random.shuffle(processed)
-            _result_cache[cache_key] = (processed, n_returns)
-
-        # ── Look up the i-th result ─────────────────────────────────────
-        processed_results, n_returns = _result_cache[cache_key]
-        user_func_result = processed_results[i]
-
-        # ── Evaluate sampling_body_func with user_func replaced ─────────
-        # We evaluate the body Jaspr normally, except that the user_func
-        # jit call returns our pre-computed backend result instead of
-        # actually running the quantum simulation.  The downstream JAX
-        # primitives (scatter, broadcast_in_dim, etc.) handle accumulation
-        # into the target array exactly as they would in the original code.
+    def _evaluate_body_replacing_user_func(
+        body_jaxpr, invalues, n_returns, user_func_result
+    ):
+        """Evaluate sampling_body_func with user_func output replaced."""
         def body_eqn_evaluator(inner_eqn, inner_context):
-            if (inner_eqn.primitive.name == "jit"
+            # Replace user_func output with the pre-computed backend result.
+            if (inner_eqn.primitive.name in ("jit", "pjit")
                     and inner_eqn.params.get("name") == "user_func"):
-                # user_func returns (classical_result…, QuantumState).
-                # Provide the classical result(s) and pass through the
-                # QuantumState from the input unchanged.
                 inner_invalues = extract_invalues(inner_eqn, inner_context)
                 qs_in = inner_invalues[-1]
                 if n_returns == 1:
@@ -297,16 +267,97 @@ def backend_sampling_eqn_evaluator(backend):
                         inner_eqn, inner_context,
                         list(user_func_result) + [qs_in]
                     )
-                return False  # handled — don't fall through to default
-            return True  # delegate everything else to default evaluation
+                return False
+
+            # Recursively evaluate nested jit/pjit — don't let them hit
+            # exec_eqn which would try XLA compilation on quantum types.
+            if inner_eqn.primitive.name in ("jit", "pjit"):
+                inner_invalues = extract_invalues(inner_eqn, inner_context)
+                sub = (inner_eqn.params.get("jaxpr")
+                       or inner_eqn.params.get("call_jaxpr"))
+                outvals = eval_jaxpr(
+                    sub, eqn_evaluator=body_eqn_evaluator
+                )(*inner_invalues)
+                if not isinstance(outvals, (list, tuple)):
+                    outvals = [outvals]
+                insert_outvalues(inner_eqn, inner_context, outvals)
+                return False
+
+            return True  # default for all other primitives
 
         outvalues = eval_jaxpr(
             body_jaxpr, eqn_evaluator=body_eqn_evaluator
         )(*invalues)
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
+        return outvalues
+
+    # -----------------------------------------------------------------
+    # Main evaluator
+    # -----------------------------------------------------------------
+
+    def sampling_eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
+        name = eqn.params.get("name", "")
+
+        # ── Top-level sampling / expectation_value calls ──────────────
+        if eqn.primitive.name in ("jit", "pjit") and name in (
+            "sampling_eval_function", "expectation_value_eval_function",
+        ):
+            shots, kernel_args, invalues = _extract_args_sampling_eval(
+                eqn, context_dic
+            )
+            _ev_state["shots"] = shots
+            _ev_state["kernel_args"] = kernel_args
+
+            # Evaluate inner Jaxpr; sampling_body_func interceptor (below)
+            # will use the stored _ev_state if needed.
+            sub = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+            outvalues = eval_jaxpr(sub, eqn_evaluator=eqn_evaluator)(*invalues)
+            if not isinstance(outvalues, (list, tuple)):
+                outvalues = [outvalues]
+            insert_outvalues(eqn, context_dic, outvalues)
+            return False
+
+        # ── sampling_body_func ────────────────────────────────────────
+        if eqn.primitive.name not in ("jit", "pjit"):
+            return True
+        if name != "sampling_body_func":
+            return True
+
+        invalues = extract_invalues(eqn, context_dic)
+        i = int(invalues[0])
+        body_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+        cache_key = id(body_jaxpr)
+
+        # Determine shots + kernel_args depending on the path.
+        # sample():        invars are (i, acc, *kernel_args, qs)
+        # expectation_value: invars are (i, acc_scalar, qs) — use _ev_state
+        if len(invalues) > 3:
+            shots, kernel_args = _extract_args_body_func(invalues)
+        else:
+            shots = _ev_state["shots"]
+            kernel_args = _ev_state["kernel_args"]
+
+        # ── One-time setup (first iteration only) ─────────────────────
+        if cache_key not in _result_cache:
+            user_func_jaxpr = find_named_jaxpr(body_jaxpr.jaxpr, "user_func")
+            if user_func_jaxpr is None:
+                raise RuntimeError(
+                    "user_func not found in sampling_body_func"
+                )
+            _result_cache[cache_key] = _setup_backend_results(
+                user_func_jaxpr, kernel_args, shots
+            )
+
+        # ── Look up i-th result, evaluate body with user_func replaced ─
+        processed_results, n_returns = _result_cache[cache_key]
+        user_func_result = processed_results[i]
+
+        outvalues = _evaluate_body_replacing_user_func(
+            body_jaxpr, invalues, n_returns, user_func_result
+        )
         insert_outvalues(eqn, context_dic, outvalues)
-        return False  # handled
+        return False
 
     return sampling_eqn_evaluator
 
@@ -316,13 +367,13 @@ def backend_sampling_eqn_evaluator(backend):
 # ===========================================================================
 
 def backend_sampler(backend=None):
-    """Decorator that routes :func:`~qrisp.jasp.sample` calls through a
-    real backend instead of the Qrisp simulator.
+    """Decorator that routes :func:`~qrisp.jasp.sample` and
+    :func:`~qrisp.jasp.expectation_value` calls through a real backend.
 
     Uses the same ``eqn_evaluator`` infrastructure as
     :func:`~qrisp.jasp.jaspify`.  The decorated function **must** use
-    :func:`~qrisp.jasp.sample` internally — a :class:`RuntimeError` is
-    raised otherwise.
+    :func:`~qrisp.jasp.sample` or :func:`~qrisp.jasp.expectation_value`
+    internally — a :class:`RuntimeError` is raised otherwise.
 
     The decorator can be used with or without explicit arguments::
 
@@ -418,12 +469,13 @@ class _BackendSampler:
             self.func, return_shape=True
         )(*args, **kwargs)
 
-        # ── Validate: the function must use sample() internally ─────────
-        if find_named_jaxpr(jaspr.jaxpr, "sampling_eval_function") is None:
+        # ── Validate: the function must use sample() or expectation_value() ─
+        if (find_named_jaxpr(jaspr.jaxpr, "sampling_eval_function") is None
+                and find_named_jaxpr(jaspr.jaxpr, "expectation_value_eval_function") is None):
             raise RuntimeError(
                 "@backend_sampler requires the decorated function to use "
-                "sample() internally. For single-shot simulation without "
-                "sample(), use @jaspify instead."
+                "sample() or expectation_value() internally. "
+                "For single-shot simulation, use @jaspify instead."
             )
 
         # ── Build the custom evaluator ─────────────────────────────────
@@ -453,13 +505,15 @@ class _BackendSampler:
                 return False  # backend evaluator processed it
 
             # -- default behavior (matches simulate_jaspr) --
-            if eqn.primitive.name == "jit":
+            if eqn.primitive.name in ("jit", "pjit"):
                 # Recursively evaluate nested jit calls with the same
                 # evaluator so that sampling_body_func is intercepted
                 # at any nesting depth.
                 invalues = extract_invalues(eqn, context_dic)
+                # pjit stores the sub-jaxpr in "call_jaxpr"; jit uses "jaxpr".
+                sub_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
                 outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
+                    sub_jaxpr, eqn_evaluator=eqn_evaluator
                 )(*invalues)
                 if not isinstance(outvalues, (list, tuple)):
                     outvalues = [outvalues]
