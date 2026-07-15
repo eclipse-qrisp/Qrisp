@@ -164,6 +164,7 @@ def create_unary_preps_walk(
         coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)])
         coeffs = coeffs / np.sum(coeffs)
 
+    @custom_control
     def prep_right(
         steps: QuantumVariable,
         coins1: QuantumVariable,
@@ -172,12 +173,59 @@ def create_unary_preps_walk(
         n_line: QuantumVariable,
         qm: QuantumVariable,
         qn: QuantumVariable,
+        ctrl=None,
     ) -> None:
 
-        if d > 1:
-            unary_prep(steps, coeffs)
+        if ctrl is not None:
+            with control(ctrl):
+                if d > 1:
+                    unary_prep(steps, coeffs)
+                else:
+                    x(steps)
         else:
-            x(steps)
+            if d > 1:
+                unary_prep(steps, coeffs)
+            else:
+                x(steps)
+
+        inner_walk(steps, coins1, coins2, m_line, n_line, d)
+
+        for i in jrange(1, d + 1):
+            cx(m_line[origin - i], m_line[origin + i])
+            cx(n_line[origin - i], n_line[origin + i])
+
+        # Copy the position of the particles to the output variables in unary encoding
+        for i in jrange(1, d + 1):
+            with control(m_line[origin + i]):
+                x(qm[:i])
+            with control(n_line[origin + i]):
+                x(qn[:i])
+
+        z(qn)  # Applies the minus sign for the commutator whenever n is odd via Z gates on the outer right ancilla.
+
+    @custom_control
+    def prep_left(
+        steps: QuantumVariable,
+        coins1: QuantumVariable,
+        coins2: QuantumVariable,
+        m_line: QuantumVariable,
+        n_line: QuantumVariable,
+        qm: QuantumVariable,
+        qn: QuantumVariable,
+        ctrl=None,
+    ) -> None:
+
+        if ctrl is not None:
+            with control(ctrl):
+                if d > 1:
+                    unary_prep(steps, coeffs)
+                else:
+                    x(steps)
+        else:
+            if d > 1:
+                unary_prep(steps, coeffs)
+            else:
+                x(steps)
 
         inner_walk(steps, coins1, coins2, m_line, n_line, d)
 
@@ -199,4 +247,4 @@ def create_unary_preps_walk(
         QuantumVariable(2 * d + 1).template(),  # position ancilla variable m_line for walk
         QuantumVariable(2 * d + 1).template(),  # position ancilla variable n_line for walk
     ]
-    return prep_right, None, prep_anc_templates
+    return prep_right, prep_left, prep_anc_templates

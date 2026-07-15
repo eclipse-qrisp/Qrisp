@@ -160,7 +160,7 @@ def apply_nested_commutators(
         prep_func_right, prep_func_left, prep_anc_templates = create_unary_preps_walk(d, coeffs)
 
     num_prep_ancs = len(prep_anc_templates)
-    use_prep_pair = prep_func_left is not None
+    # use_prep_pair = prep_func_left is not None
 
     A_walk = A.qubitization()
 
@@ -189,7 +189,7 @@ def apply_nested_commutators(
         # sum_{m,n} (-1)^n C_{m,n} T_m(A) B T_n(A)
         # with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
 
-        def select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands):
+        def select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands, ctrl=None):
 
             def parity(qv1, qv2, qbl):
                 for i in jrange(d):
@@ -201,8 +201,8 @@ def apply_nested_commutators(
                 p(np.pi / 2, anc_qbl)
 
             # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
-            if not use_prep_pair:
-                z(outer_anc_right)
+            # if not use_prep_pair:
+            #    z(outer_anc_right)
 
             # Apply T_n(A) from the right.
             for i in jrange(d):
@@ -233,24 +233,24 @@ def apply_nested_commutators(
             # Ensure that measurment in |0> yields the correct result.
             x(anc_qbl)
 
-        if use_prep_pair:
+        # if use_prep_pair:
+        if ctrl is not None:
+            with control(ctrl):
+                prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+        else:
+            prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+
+        select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands, ctrl=ctrl)
+
+        with invert():
             if ctrl is not None:
                 with control(ctrl):
-                    prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
-            else:
-                prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
-
-            select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
-
-            with invert():
-                if ctrl is not None:
-                    with control(ctrl):
-                        prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
-                else:
                     prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
-        else:
-            with conjugate(prep_func_right)(*outer_ancs, outer_anc_left, outer_anc_right):
-                select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
+            else:
+                prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
+        # else:
+        #    with conjugate(prep_func_right)(*outer_ancs, outer_anc_left, outer_anc_right):
+        #        select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
 
     new_anc_templates = (
         prep_anc_templates
