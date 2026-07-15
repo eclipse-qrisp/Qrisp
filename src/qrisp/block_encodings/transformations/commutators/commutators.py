@@ -25,6 +25,7 @@ import math
 import numpy as np
 import numpy.typing as npt
 
+from qrisp import custom_control
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
@@ -167,7 +168,8 @@ def apply_nested_commutators(
     num_ancs_A = A_walk.num_ancs
     num_ancs_B = B.num_ancs
 
-    def new_unitary(*args):
+    @custom_control
+    def new_unitary(*args, ctrl=None):
 
         outer_ancs = args[:num_prep_ancs]
         outer_anc_left = args[num_prep_ancs]
@@ -214,7 +216,11 @@ def apply_nested_commutators(
             mcx(qubits_A, anc_qbl, ctrl_state=0)
 
             # Apply B
-            B.unitary(*ancs_B, *operands)
+            if ctrl is not None:
+                with control(ctrl):
+                    B.unitary(*ancs_B, *operands)
+            else:
+                B.unitary(*ancs_B, *operands)
 
             # Apply T_m(A) from the left.
             for i in jrange(d):
@@ -228,10 +234,20 @@ def apply_nested_commutators(
             x(anc_qbl)
 
         if use_prep_pair:
-            prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+            if ctrl is not None:
+                with control(ctrl):
+                    prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+            else:
+                prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+
             select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
+
             with invert():
-                prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
+                if ctrl is not None:
+                    with control(ctrl):
+                        prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
+                else:
+                    prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
         else:
             with conjugate(prep_func_right)(*outer_ancs, outer_anc_left, outer_anc_right):
                 select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)

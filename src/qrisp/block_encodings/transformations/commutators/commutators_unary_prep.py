@@ -24,6 +24,7 @@ import math
 import numpy as np
 import numpy.typing as npt
 
+from qrisp import custom_control
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
@@ -117,10 +118,16 @@ def create_unary_preps(
         coeffs = np.zeros(d, dtype=np.complex128)
         coeffs[d - 1] = 1
 
-    def prep_right(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable) -> None:
+    @custom_control
+    def prep_right(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, ctrl=None) -> None:
 
         target = target_state(d, coeffs)
-        prepare(anc, target)
+
+        if ctrl is not None:
+            with control(ctrl):
+                prepare(anc, target)
+        else:
+            prepare(anc, target)
 
         def case_func(i, qv):
             x(qv[:i])
@@ -129,10 +136,16 @@ def create_unary_preps(
         q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
         q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
 
-    def prep_left(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable) -> None:
+    @custom_control
+    def prep_left(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, ctrl=None) -> None:
 
         target = target_state(d, coeffs).conj()
-        prepare(anc, target)
+
+        if ctrl is not None:
+            with control(ctrl):
+                prepare(anc, target)
+        else:
+            prepare(anc, target)
 
         def case_func(i, qv):
             x(qv[:i])

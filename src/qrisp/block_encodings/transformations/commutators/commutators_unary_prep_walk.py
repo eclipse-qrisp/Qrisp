@@ -24,6 +24,7 @@ import math
 import numpy as np
 import numpy.typing as npt
 
+from qrisp import custom_control
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
