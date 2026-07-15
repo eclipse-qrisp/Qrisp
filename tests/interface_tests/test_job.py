@@ -340,7 +340,7 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.DONE).queued() is False
 
     def test_cancelled_true_only_for_cancelled(self, backend):
-        """Test that canceled() returns True only for the CANCELLED state."""
+        """Test that cancelled() returns True only for the CANCELLED state."""
         assert self._job_with_status(backend, JobStatus.CANCELLED).cancelled() is True
         assert self._job_with_status(backend, JobStatus.DONE).cancelled() is False
         assert self._job_with_status(backend, JobStatus.ERROR).cancelled() is False
