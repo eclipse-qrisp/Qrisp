@@ -48,7 +48,7 @@ def create_unary_preps_walk(
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
     r"""
-    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices
+    Return a state preparation pair that prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices
     by simulating a symmetric quantum walk on a 1D line from $-d$ to $d$.
 
     Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
@@ -76,31 +76,33 @@ def create_unary_preps_walk(
     prep_right : Callable
         A function that prepares the right side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
         The function takes the following arguments:
-            steps : QuantumVariable
-                A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
-            coins1 : QuantumVariable
-                An ancilla QuantumVariable of size d, used as the first set of coin variables to control the walk steps.
-            coins2 : QuantumVariable
-                An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
-            m_line : QuantumVariable
-                A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $m$-axis, which encodes the index of $T_m(A)$.
-            n_line : QuantumVariable
-                A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
-            qm : QuantumVariable
-                A unary-encoded QuantumVariable of size d, representing the $m$ index.
-            qn : QuantumVariable
-                A unary-encoded QuantumVariable of size d, representing the $n$ index.
+
+        steps : QuantumVariable
+            A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
+        coins1 : QuantumVariable
+            An ancilla QuantumVariable of size d, used as the first set of coin variables to control the walk steps.
+        coins2 : QuantumVariable
+            An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
+        m_line : QuantumVariable
+            A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $m$-axis, which encodes the index of $T_m(A)$.
+        n_line : QuantumVariable
+            A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
+        qm : QuantumVariable
+            A unary-encoded QuantumVariable of size d, representing the $m$ index.
+        qn : QuantumVariable
+            A unary-encoded QuantumVariable of size d, representing the $n$ index.
     prep_left : Callable
         A function that prepares the left side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
         The function takes the same arguments as `prep_right`.
     prep_anc_templates : List[QuantumVariableTemplate]
         A list of QuantumVariable templates for the ancilla variables used in the state preparation.
         The templates correspond to the following ancilla variables:
-            - steps : QuantumVariable of size d, for controlling the walk steps.
-            - coins1 : QuantumVariable of size d, for the first set of coin variables.
-            - coins2 : QuantumVariable of size d, for the second set of coin variables.
-            - m_line : QuantumVariable of size 2d+1, for the position along the $m$-axis.
-            - n_line : QuantumVariable of size 2d+1, for the position along the $n$-axis.
+
+        - steps : QuantumVariable of size d, for controlling the walk steps.
+        - coins1 : QuantumVariable of size d, for the first set of coin variables.
+        - coins2 : QuantumVariable of size d, for the second set of coin variables.
+        - m_line : QuantumVariable of size 2d+1, for the position along the $m$-axis.
+        - n_line : QuantumVariable of size 2d+1, for the position along the $n$-axis.
 
     Notes
     -----

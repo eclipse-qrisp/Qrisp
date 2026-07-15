@@ -7,6 +7,6 @@ BlockEncoding.nested_commutators
 
 .. automethod:: BlockEncoding.nested_commutators
 
-.. autofunction:: qrisp.block_encodings.transformations.commutators.unary_prep
+.. autofunction:: qrisp.block_encodings.transformations.commutators.create_unary_preps
 
-.. autofunction:: qrisp.block_encodings.transformations.commutators.unary_walk_prep
+.. autofunction:: qrisp.block_encodings.transformations.commutators.create_unary_preps_walk

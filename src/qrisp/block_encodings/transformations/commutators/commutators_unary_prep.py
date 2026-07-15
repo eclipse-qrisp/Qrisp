@@ -48,19 +48,24 @@ def create_unary_preps(
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
     r"""
-    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices.
+    Returns a state preparation pair that prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices.
 
     Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
-    The state prepared by this function encodes the square root of the weighted sum of these coefficients in the amplitudes of a superposition over the indices $m$ and $n$,
-    which can then be used to apply the corresponding operators in superposition.
+    A weighted sum of nested commutators can then be expressed as a sum of these terms with coefficients $c_k$:
 
     .. math::
 
-            \sum_{k=1}^d\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A)
+            \sum_{k=1}^dc_k\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A) 
+
+    The state preparation functions returned by this function prepare the following states:
 
     .. math::
 
-            \text{PREP}\ket{0}_a\ket{0}_m\ket{0}_n \propto \sum_{m,n}\sqrt{\sum_{k=1}^d c_kC_{k,m,n}}\ket{m}\ket{n}
+            \text{PREP_R}\ket{0}_a\ket{0}_m\ket{0}_n \propto \sum_{m,n}\sqrt{\sum_{k=1}^d c_kC_{k,m,n}}\ket{m,n}_a\ket{m}\ket{n}
+
+    .. math::
+
+            \text{PREP_L}\ket{0}_a\ket{0}_m\ket{0}_n \propto \sum_{m,n}\sqrt{\sum_{k=1}^d c_kC_{k,m,n}}^*\ket{m,n}_a\ket{m}\ket{n}
 
     Parameters
     ----------
@@ -75,20 +80,22 @@ def create_unary_preps(
     prep_right : Callable
         A function that prepares the right side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
         The function takes the following arguments:
-            anc : QuantumVariable
-                A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
-                Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
-            qm : QuantumVariable
-                A unary-encoded QuantumVariable of size d, representing the $m$ index.
-            qn : QuantumVariable
-                A unary-encoded QuantumVariable of size d, representing the $n$ index.
+        
+        anc : QuantumVariable
+            A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
+            Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
+        qm : QuantumVariable
+            A unary-encoded QuantumVariable of size d, representing the $m$ index.
+        qn : QuantumVariable
+            A unary-encoded QuantumVariable of size d, representing the $n$ index.
     prep_left : Callable
         A function that prepares the left side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
         The function takes the same arguments as `prep_right`.
     prep_anc_templates : List[QuantumVariableTemplate]
         A list of QuantumVariable templates for the ancilla variables used in the state preparation.
         The templates correspond to the following ancilla variables:
-            - anc : QuantumVariable of size $2\lceil\log_2(d)\rceil$.
+
+        - anc : QuantumVariable of size $2\lceil\log_2(d)\rceil$.
 
     Notes
     -----
