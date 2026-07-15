@@ -46,7 +46,7 @@ Development
 -----------
 
 * Added ``codespell`` configuration for automated typo checking and fixed typos
-  across 215 files in documentation, source code, and tests
+  across documentation, source code, and tests
   (`PR #716 <https://github.com/eclipse-qrisp/Qrisp/pull/716>`_).
 
 * Added Dependabot configuration for automated dependency updates

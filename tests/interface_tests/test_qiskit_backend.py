@@ -230,18 +230,18 @@ class TestQiskitJob:
 
     def test_result_raises_job_cancelled_error_when_cancelled(self):
         """A canceled Qiskit job raises JobCancelledError, not JobFailureError."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("job was canceled"))
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("job was cancelled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELED"
+        qiskit_job.status.return_value.name = "CANCELLED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
         """result() updates last_known_status to CANCELED when the job was canceled."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("canceled"))
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELED"
+        qiskit_job.status.return_value.name = "CANCELLED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
@@ -309,9 +309,9 @@ class TestQiskitJob:
 
     def test_result_raises_immediately_when_already_cancelled(self):
         """result() raises JobCancelledError without calling Qiskit when already CANCELED."""
-        qiskit_job = _make_qiskit_job(fail=RuntimeError("canceled"))
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
         qiskit_job.status.return_value = MagicMock()
-        qiskit_job.status.return_value.name = "CANCELED"
+        qiskit_job.status.return_value.name = "CANCELLED"
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         with pytest.raises(JobCancelledError):
             job.result()
@@ -361,7 +361,7 @@ class TestMapQiskitStatus:
 
     def test_cancelled_maps_to_cancelled(self):
         """A Qiskit job with status CANCELED maps to JobStatus.CANCELLED."""
-        assert _map_qiskit_status(self._job_with_status("CANCELED")) == JobStatus.CANCELLED
+        assert _map_qiskit_status(self._job_with_status("CANCELLED")) == JobStatus.CANCELLED
 
     def test_error_maps_to_error(self):
         """A Qiskit job with status ERROR maps to JobStatus.ERROR."""

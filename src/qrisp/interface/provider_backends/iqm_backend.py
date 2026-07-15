@@ -53,7 +53,7 @@ def _map_iqm_status(iqm_job) -> JobStatus:
         "processing": JobStatus.RUNNING,
         "completed": JobStatus.DONE,
         "failed": JobStatus.ERROR,
-        "canceled": JobStatus.CANCELLED,
+        "cancelled": JobStatus.CANCELLED,
     }
     return _status_map.get(name, JobStatus.RUNNING)
 
@@ -149,7 +149,7 @@ class IQMJob(Job):
 
             if final_iqm_status == IQMJobStatus.CANCELLED:
                 self._last_known_status = JobStatus.CANCELLED
-                raise JobCancelledError(f"IQM job {self._job_id!r} was canceled.")
+                raise JobCancelledError(f"IQM job {self._job_id!r} was cancelled.")
             if final_iqm_status != IQMJobStatus.COMPLETED:
                 self._last_known_status = JobStatus.ERROR
                 raise JobFailureError(f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}.")

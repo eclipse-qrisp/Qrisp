@@ -401,18 +401,18 @@ class TestAQTJob:
 
     def test_result_raises_job_cancelled_error_when_cancelled(self):
         """A canceled AQT job raises JobCancelledError, not JobFailureError."""
-        aqt_job = _make_aqt_job(fail=RuntimeError("job was canceled by user"))
+        aqt_job = _make_aqt_job(fail=RuntimeError("job was cancelled by user"))
         aqt_job.status.return_value = MagicMock()
-        aqt_job.status.return_value.name = "CANCELED"
+        aqt_job.status.return_value.name = "CANCELLED"
         job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
         with pytest.raises(JobCancelledError):
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
         """result() updates last_known_status to CANCELED when the job was canceled."""
-        aqt_job = _make_aqt_job(fail=RuntimeError("canceled"))
+        aqt_job = _make_aqt_job(fail=RuntimeError("cancelled"))
         aqt_job.status.return_value = MagicMock()
-        aqt_job.status.return_value.name = "CANCELED"
+        aqt_job.status.return_value.name = "CANCELLED"
         job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
         with pytest.raises(JobCancelledError):
             job.result()
