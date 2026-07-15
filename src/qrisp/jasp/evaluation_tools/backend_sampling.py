@@ -91,7 +91,7 @@ Architecture
 
 **Piece 3 — :class:`_BackendSampler`**
     The decorator that traces the user function with
-    :func:`~qrisp.jasp.make_jaspr`, validates it, wires the evaluator
+    :func:`~qrisp.jasp.make_jaspr`, wires the evaluator
     from piece 2 into the standard Jaspr evaluation loop, and
     evaluates the Jaspr in pure Python (the ``pure_callback`` provides
     the JIT boundary).
@@ -526,16 +526,12 @@ def _make_backend_eqn_evaluator(backend):
 
 
 # ===========================================================================
-# Piece 3 — Decorator that traces, validates, and JIT-evaluates
+# Piece 3 — Decorator that traces and evaluates
 # ===========================================================================
 
 def backend_sampler(backend=None):
     """Decorator that routes :func:`~qrisp.jasp.sample` and
     :func:`~qrisp.jasp.expectation_value` calls through a real backend.
-
-    The decorated function **must** use :func:`~qrisp.jasp.sample` or
-    :func:`~qrisp.jasp.expectation_value` internally — a
-    :class:`RuntimeError` is raised otherwise.
 
     The decorator can be used with or without explicit arguments::
 
@@ -586,20 +582,6 @@ class _BackendSampler:
             *args, **kwargs
         )
 
-        # ── Validate ────────────────────────────────────────────────
-        if (
-            find_named_jaxpr(jaspr.jaxpr, "sampling_eval_function") is None
-            and find_named_jaxpr(
-                jaspr.jaxpr, "expectation_value_eval_function"
-            )
-            is None
-        ):
-            raise RuntimeError(
-                "@backend_sampler requires the decorated function to use "
-                "sample() or expectation_value() internally. "
-                "For single-shot simulation, use @jaspify instead."
-            )
-
         # ── Build evaluators ────────────────────────────────────────
         be_evaluator = _make_backend_eqn_evaluator(backend)
         _QS = jnp.array(0.0)  # sentinel for QuantumState placeholders
@@ -632,6 +614,13 @@ class _BackendSampler:
                     return False
                 elif prim == "jasp.consume_quantum_kernel":
                     return False
+                elif prim.startswith("jasp."):
+                    raise RuntimeError(
+                        f"Encountered quantum primitive '{prim}' in "
+                        f"@backend_sampler without a surrounding "
+                        f"sample() or expectation_value() call. "
+                        f"Use @jaspify for single-shot simulation."
+                    )
                 else:
                     return True
 
