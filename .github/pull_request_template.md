@@ -64,25 +64,15 @@ If yes, describe the impact and migration path:
 
 ### Generative AI/LLM disclosure
 
-**Architecture & Design:**
-- [ ] No generative AI/LLM was used
-- [ ] Partially performed by generative AI/LLM — **X%** performed by the author(s)
-- [ ] Fully performed by generative AI/LLM
+| Area | None | Partial | Full |
+|------|:----:|:-------:|:----:|
+| Architecture & Design | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
+| Code content | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
+| Code review | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
+| Tests | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
 
-**Code content:**
-- [ ] No generative AI/LLM work
-- [ ] Partially written by generative AI/LLM — **X%** performed by the author(s)
-- [ ] Fully written by generative AI/LLM
+**Details:** Provide a detailed description of how AI/LLM tools were used across the checked areas above.
 
-**Code review:**
-- [ ] No generative AI/LLM was used
-- [ ] Partially performed by generative AI/LLM — **X%** performed by the author(s)
-- [ ] Fully performed by generative AI/LLM
-
-**Tests:**
-- [ ] No generative AI/LLM work
-- [ ] Partially written by generative AI/LLM — **X%** performed by the author(s)
-- [ ] Fully written by generative AI/LLM
 
 <!--
 Attribution: This disclosure template is adapted from
