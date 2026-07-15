@@ -337,13 +337,15 @@ def test_ev_custom_backend():
 
 
 def test_ev_default_backend():
-    """No backend argument."""
+    """Explicit default backend."""
+    from qrisp.default_backend import QrispSimulatorBackend
+
     def kernel():
         qf = QuantumFloat(2)
         qf[:] = 1
         return measure(qf)
 
-    @backend_sampler
+    @backend_sampler(backend=QrispSimulatorBackend())
     def main():
         return expectation_value(kernel, shots=50)()
 

@@ -430,14 +430,15 @@ def test_custom_backend():
 
 
 def test_default_backend():
-    """No backend specified → uses default"""
+    """Explicit default backend."""
+    from qrisp.default_backend import QrispSimulatorBackend
 
     def kernel():
         qf = QuantumFloat(2)
         h(qf[0])
         return measure(qf)
 
-    @backend_sampler
+    @backend_sampler(backend=QrispSimulatorBackend())
     def main():
         return sample(kernel, shots=30)()
 

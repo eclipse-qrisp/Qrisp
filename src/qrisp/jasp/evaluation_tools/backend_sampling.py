@@ -132,52 +132,144 @@ def _make_backend_eqn_evaluator(backend):
 # Decorator
 # ===========================================================================
 
-def backend_sampler(backend=None):
-    """Decorator that routes :func:`~qrisp.jasp.sample` and
-    :func:`~qrisp.jasp.expectation_value` calls through a real backend.
+def backend_sampler(backend):
+    r"""Decorator that routes :func:`~qrisp.jasp.sample` and
+    :func:`~qrisp.jasp.expectation_value` calls through a real backend
+    instead of the Jaspify simulator.
 
-    The decorator can be used with or without explicit arguments::
-
-        @backend_sampler
-        def main(): ...
+    Must be called with a backend::
 
         @backend_sampler(backend=my_backend)
         def main(): ...
 
+    How it works
+    ------------
+    Each ``sample()`` / ``expectation_value()`` call inside the
+    decorated function is intercepted.  The quantum circuit is
+    extracted **once**, executed on the backend for all shots, and the
+    classical post-processing (decoding, accumulator updates) is
+    replayed via the Jaspr's own while-loop — so all typing, indexing,
+    and loop logic comes from the Jaspr itself.
+
     Parameters
     ----------
-    backend : Backend, optional
-        The backend to execute on. If ``None``, defaults to
-        :class:`~qrisp.default_backend.QrispSimulatorBackend`.
+    backend : :ref:`BackendInterface`
+        The backend to execute on.  See the :ref:`Backend Interface
+        <BackendInterface>` documentation for available backends.
 
     Returns
     -------
     callable
         A decorator wrapping a Jasp-compatible function.
+
+    Raises
+    ------
+    RuntimeError
+        If the decorated function contains quantum operations without
+        a surrounding ``sample()`` or ``expectation_value()`` call.
+        Use :func:`~qrisp.jasp.jaspify` for single-shot simulation.
+
+    Examples
+    --------
+    Basic sampling through a backend:
+
+    .. code-block:: python
+
+        from qrisp import QuantumFloat, h, measure
+        from qrisp.jasp import sample, backend_sampler
+        from qrisp.interface import VirtualBackend
+
+        backend = VirtualBackend()
+
+        @backend_sampler(backend=backend)
+        def main(k):
+            def kernel(k):
+                qf = QuantumFloat(4)
+                h(qf[0])
+                return measure(qf)
+            return sample(kernel, shots=100)(k)
+
+        result = main(1)
+        # result is a JAX array of shape (100,) with backend results
+
+    Using a custom backend:
+
+    .. code-block:: python
+
+        from qrisp.interface import VirtualBackend
+
+        backend = VirtualBackend()
+
+        @backend_sampler(backend=backend)
+        def main():
+            def kernel():
+                qv = QuantumFloat(3)
+                h(qv)
+                return measure(qv)
+            return sample(kernel, shots=200)()
+
+        result = main()
+
+    Using :func:`~qrisp.jasp.expectation_value`:
+
+    .. code-block:: python
+
+        @backend_sampler(backend=backend)
+        def main():
+            def kernel():
+                qf = QuantumFloat(4)
+                h(qf[0])
+                h(qf[1])
+                return measure(qf)
+            return expectation_value(kernel, shots=500)()
+
+        ev = main()  # scalar or vector JAX array
+
+    Multiple sample / expectation_value calls in the same function:
+
+    .. code-block:: python
+
+        @backend_sampler(backend=backend)
+        def main():
+            def kernel_a():
+                qf = QuantumFloat(3)
+                h(qf[0])
+                return measure(qf)
+
+            def kernel_b():
+                qf = QuantumFloat(3)
+                h(qf[1])
+                return measure(qf)
+
+            samples_a = sample(kernel_a, shots=100)()
+            samples_b = sample(kernel_b, shots=50)()
+            return samples_a, samples_b
+
+        a, b = main()
+        # Each call is independently routed through the backend.
+
+    .. note::
+
+        The decorated function **must** use :func:`~qrisp.jasp.sample`
+        or :func:`~qrisp.jasp.expectation_value` to trigger quantum
+        execution.  Direct quantum operations (gates, measurements)
+        without a surrounding sample/EV call will raise a
+        :class:`RuntimeError` pointing you to
+        :func:`~qrisp.jasp.jaspify`.
     """
-    # Support both @backend_sampler and @backend_sampler(backend=...)
-    if backend is None:
-        return lambda func: _make_backend_sampler_wrapper(func, None)
-    if callable(backend):
-        return _make_backend_sampler_wrapper(backend, None)
     return lambda func: _make_backend_sampler_wrapper(func, backend)
 
 
 def _make_backend_sampler_wrapper(func, backend):
     """Return a callable that wraps *func* with backend-sampling."""
     def wrapper(*args, **kwargs):
-        _backend = backend
-        if _backend is None:
-            from qrisp.default_backend import QrispSimulatorBackend
-            _backend = QrispSimulatorBackend()
-
         # ── Trace the decorated function ────────────────────────────
         jaspr, out_tree = make_jaspr(func, return_shape=True)(
             *args, **kwargs
         )
 
         # ── Build evaluators ────────────────────────────────────────
-        be_evaluator = _make_backend_eqn_evaluator(_backend)
+        be_evaluator = _make_backend_eqn_evaluator(backend)
         _QS = jnp.array(0.0)  # sentinel for QuantumState placeholders
 
         # Use a factory to avoid parameter-name shadowing:
