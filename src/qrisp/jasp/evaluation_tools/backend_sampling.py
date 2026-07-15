@@ -19,45 +19,124 @@ r"""Backend-based sampling for Jasp.
 
 This module provides :func:`backend_sampler` — a decorator that routes
 :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
-calls through a real quantum backend instead of the Qrisp simulator.
+calls through a real quantum backend instead of the Jaspify simulator.
 
-How it works
+Architecture
 ============
 
 Both :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
-trace a sampling kernel into a Jaspr with the same internal structure::
-
-    outer Jaspr
-      └── sampling_eval_function / expectation_value_eval_function  (pjit)
-           └── fori_loop  (while, iterates over shots)
-                └── sampling_body_func  (jit, inside quantum_kernel)
-                     ├── user_func           ← quantum kernel
-                     ├── (inline primitives) ← measurement + decoding
-                     └── (inline primitives) ← accumulation
-
+trace a sampling kernel into a Jaspr with the same internal structure.
 :func:`backend_sampler` uses the same ``eqn_evaluator`` pattern as
-:func:`~qrisp.jasp.jaspify` but intercepts at two levels:
+:func:`~qrisp.jasp.jaspify` and intercepts three named JIT calls:
 
-1. **Top level** — ``sampling_eval_function`` / ``expectation_value_eval_function``:
-   extracts the shot count and kernel arguments.  For
-   :func:`~qrisp.jasp.expectation_value` these live at the top level
-   because ``sampling_body_func`` only receives a running-sum accumulator,
-   not the full sample array.
+::
 
-2. **Loop body** — ``sampling_body_func``:
-   on the first iteration extracts the ``user_func`` sub-Jaspr, converts
-   it to a :class:`~qrisp.circuit.QuantumCircuit` via
-   :meth:`~qrisp.jasp.Jaspr.to_qc`, runs the circuit on the *backend*,
-   and caches the post-processed results.  Every subsequent iteration
-   looks up the *i*-th cached result and replaces ``user_func``'s output
-   with it — JAX handles accumulation naturally.
+    ┌─ outer Jaspr ──────────────────────────────────────────────┐
+    │                                                             │
+    │  sampling_eval_function / expectation_value_eval_function   │  ← intercept ②
+    │  ┌─ inner Jaxpr ─────────────────────────────────────────┐ │
+    │  │                                                        │ │
+    │  │  _backend_shots_marker(shots)   ← intercept ①          │ │
+    │  │                                                        │ │
+    │  │  while i < shots:                                      │ │
+    │  │    create_quantum_kernel                               │ │
+    │  │    sampling_body_func(i, acc, *kernel_args, qs)        │ │  ← intercept ③
+    │  │      ├── user_func (quantum gates)                     │ │
+    │  │      ├── sampling_helper_1 (measurement)               │ │
+    │  │      ├── sampling_helper_2 (decoder + post-processing) │ │
+    │  │      └── acc[i] = decoded; return (acc, *kernel_args)  │ │
+    │  │    consume_quantum_kernel                              │ │
+    │  │                                                        │ │
+    │  └────────────────────────────────────────────────────────┘ │
+    │  result = acc / shots  (or return acc for sample)           │
+    └─────────────────────────────────────────────────────────────┘
+
+**Intercept ① — shot count**
+    A ``@jax.jit``-annotated identity marker ``_backend_shots_marker``
+    is called inside ``sampling_eval_function`` /
+    ``expectation_value_eval_function`` (see ``sampling.py`` and
+    ``ev.py``).  The evaluator finds this named call in the Jaxpr and
+    captures the shot count — no fragile position-based extraction.
+
+**Intercept ② — eval function**
+    The outer JIT must be evaluated recursively with our own evaluator
+    so that the ``while``-loop and its body are processed by us rather
+    than XLA-compiled via ``exec_eqn`` (which would fail on quantum
+    types).
+
+**Intercept ③ — sampling_body_func**
+    On the **first** iteration (``i = 0``) the entire body is flattened:
+
+    1. :meth:`~Jaspr.to_qc` on the ``sampling_body_func`` Jaspr
+       extracts a :class:`~qrisp.circuit.QuantumCircuit`.
+    2. ``backend.run(qc, shots)`` runs **once** (all shots at once).
+    3. A JIT-compiled post-processing evaluator (wrapping
+       :meth:`~Jaspr.extract_post_processing`) is created and cached
+       alongside the expanded, shuffled list of measurement boolean
+       arrays (one per shot, representing the exact backend result
+       distribution).
+
+    Every iteration pops the next pre-computed boolean array and calls
+    the cached JIT function with the current loop index *i* and
+    accumulator *acc*.  JAX traces through
+    ``extract_post_processing`` once and reuses the same compilation for
+    all subsequent *i* / *acc* values.  The resulting
+    ``sampling_body_func`` return (accumulator + kernel arguments) is
+    injected into the context dict, allowing the while-loop and
+    post-loop processing (e.g. division by shots for
+    :func:`~qrisp.jasp.expectation_value`) to run naturally.
+
+Key design properties
+---------------------
+
+* **No kernel-arg extraction** — ``invalues[:-1]`` (everything except
+  the trailing ``QuantumState``) is forwarded directly to ``to_qc`` and
+  ``extract_post_processing``.
+* **Marker-based shot detection** — ``_backend_shots_marker`` identifies
+  shots in the Jaxpr without positional assumptions.
+* **Single backend call** — the circuit is built once, the backend runs
+  once, and only JIT-cached post-processing varies per iteration.
+
+.. rubric:: Annotated Jaspr example
+
+Tracing a simple kernel that applies a Hadamard to a 3-qubit
+:class:`~qrisp.QuantumFloat` and measures it with
+:func:`~qrisp.jasp.sample` produces the following Jaspr::
+
+    { lambda ; a:QuantumState. let
+        b:f64[500] = pjit[
+          name=sampling_eval_function          ← intercept ②
+          jaxpr={ lambda ; d:f64[500] e:i64[]. let
+              _:i64[] = pjit[
+                name=_backend_shots_marker     ← intercept ①
+                jaxpr={ lambda ; e:i64[]. let in (e,) }
+              ] e
+              ...
+              _:i64[] _:i64[] f:f64[500] = while[
+                body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let
+                    j:QuantumState = jasp.create_quantum_kernel
+                    k:QuantumState l:f64[500] = pjit[
+                      name=sampling_body_func  ← intercept ③
+                      jaxpr={ ...
+                        pjit[name=user_func] ...
+                        pjit[name=sampling_helper_1] ...
+                        pjit[name=sampling_helper_2] ...
+                      }
+                    ] g h j
+                    m:QuantumState = jasp.consume_quantum_kernel k
+                  in (l, m) }
+                ...
+              ] ...
+            in (f,) }
+        ] ...
+      in (b,) }
 
 .. rubric:: Usage
 
 .. code-block:: python
 
     from qrisp import QuantumFloat, h, measure
-    from qrisp.jasp import sample, backend_sampler
+    from qrisp.jasp import sample, expectation_value, backend_sampler
     from qrisp.default_backend import QrispSimulatorBackend
 
     backend = QrispSimulatorBackend()
@@ -151,21 +230,41 @@ def backend_sampling_eqn_evaluator(backend):
     Plugs into the same Jaspr evaluation infrastructure as
     :func:`~qrisp.jasp.jaspify` (see :func:`simulate_jaspr`).
 
-    **Flat interception** — on the first iteration of the while loop, the
-    entire ``sampling_body_func`` is flattened via
-    :meth:`~Jaspr.to_qc` and :meth:`~Jaspr.extract_post_processing`.
-    The backend is called **once** (all shots at once), and the decoded
-    results are cached.  Every subsequent iteration pops from the cache
-    — no more backend calls, no while-loop simulation.
+    **How it works**
 
-    Key design decisions:
+    The evaluator intercepts three named JIT calls inside the traced
+    Jaspr:
+
+    1. ``_backend_shots_marker`` — captures the shot count from a
+       ``@jax.jit``-annotated marker function called inside
+       ``sampling.py`` / ``ev.py``.
+
+    2. ``sampling_eval_function`` / ``expectation_value_eval_function`` —
+       recursively walks into the outer eval function so that the
+       while-loop and its body are handled by us rather than
+       ``exec_eqn`` (which would fail on quantum types).
+
+    3. ``sampling_body_func`` — on the **first** iteration the entire
+       body is flattened via :meth:`~Jaspr.to_qc` (circuit extraction)
+       and the backend is called **once** (all shots at once).  The raw
+       measurement distribution and a JIT-compiled post-processing
+       evaluator (wrapping :meth:`~Jaspr.extract_post_processing`) are
+       cached.  Every iteration picks a random bitstring weighted by the
+       measurement distribution and evaluates the cached JIT function
+       with the current loop index *i* and accumulator — different
+       ``i``/``acc`` values reuse the same JIT compilation.
+
+    **Key design properties**
 
     *   **No kernel-arg extraction** — ``invalues[:-1]`` (everything
         except the trailing ``QuantumState``) is forwarded directly to
         ``to_qc`` and ``extract_post_processing``.
-    *   **Shots via marker** — a ``@jit``-annotated marker
-        ``_backend_shots_marker`` (called inside the eval function)
-        reliably identifies the shot count in the Jaxpr.
+    *   **Shots via marker** — the ``_backend_shots_marker`` JIT call
+        identifies the shot count in the Jaxpr without relying on
+        positional extraction.
+    *   **Single backend call** — the circuit is built once, the backend
+        runs once, and only lightweight JIT'd post-processing varies
+        per iteration.
 
     Parameters
     ----------
@@ -178,7 +277,8 @@ def backend_sampling_eqn_evaluator(backend):
         An ``eqn_evaluator`` compatible with :func:`eval_jaxpr`.
     """
 
-    # Per-evaluator state: maps id(body_jaxpr) → list of decoded results.
+    # Per-evaluator state.
+    # Maps id(body_jaxpr) → (evaluate_shot_fn, meas_arrays_list).
     _result_cache = {}
     # Captured shot count (populated when the _backend_shots_marker is hit).
     _shots = {"value": None}
@@ -187,7 +287,7 @@ def backend_sampling_eqn_evaluator(backend):
         name = eqn.params.get("name", "")
 
         # ── 1. Capture shots from marker ──────────────────────────────
-        if eqn.primitive.name in ("jit", "pjit") and name == "_backend_shots_marker":
+        if eqn.primitive.name == "jit" and name == "_backend_shots_marker":
             invalues = extract_invalues(eqn, context_dic)
             _shots["value"] = int(invalues[0])
             insert_outvalues(eqn, context_dic, [invalues[0]])  # identity
@@ -198,7 +298,7 @@ def backend_sampling_eqn_evaluator(backend):
         # expectation_value_eval_function with our own evaluator so that
         # the while loop and its body are handled by us rather than
         # XLA-compiled via exec_eqn (which would fail on quantum types).
-        if eqn.primitive.name in ("jit", "pjit") and name in (
+        if eqn.primitive.name == "jit" and name in (
             "sampling_eval_function",
             "expectation_value_eval_function",
         ):
@@ -211,7 +311,7 @@ def backend_sampling_eqn_evaluator(backend):
             return False
 
         # ── 3. sampling_body_func → flatten on first iteration ───────
-        if eqn.primitive.name not in ("jit", "pjit"):
+        if eqn.primitive.name != "jit":
             return True
         if name != "sampling_body_func":
             return True
@@ -248,21 +348,23 @@ def backend_sampling_eqn_evaluator(backend):
                 )
                 return post_proc(meas_array)
 
-            _result_cache[cache_key] = (evaluate_shot, raw_results)
+            # Expand {bitstring: count} into a flat, shuffled list of
+            # boolean arrays so that each iteration pops the exact
+            # backend result — no additional sampling noise.
+            meas_arrays = []
+            for bitstring, count in raw_results.items():
+                arr = jax.numpy.array(
+                    [c == "1" for c in bitstring], dtype=bool
+                )
+                meas_arrays.extend([arr] * int(count))
+            np.random.shuffle(meas_arrays)
 
-        # ── Per-iteration: pick bitstring, JIT-evaluate, insert ──────
-        evaluate_shot, raw_results = _result_cache[cache_key]
+            _result_cache[cache_key] = (evaluate_shot, meas_arrays)
 
-        # Pick a random bitstring weighted by measurement counts.
-        bitstrings = list(raw_results.keys())
-        counts = np.array([raw_results[bs] for bs in bitstrings], dtype=int)
-        probs = counts / counts.sum()
-        bitstring = np.random.choice(bitstrings, p=probs)
+        # ── Per-iteration: pop pre-computed meas_array, evaluate, insert
+        evaluate_shot, meas_arrays = _result_cache[cache_key]
 
-        # Convert bitstring to JAX boolean array for the JIT boundary.
-        meas_array = jax.numpy.array(
-            [c == "1" for c in bitstring], dtype=bool
-        )
+        meas_array = meas_arrays.pop()
 
         # Accumulator and kernel args for this iteration.
         acc = invalues[1]
@@ -363,8 +465,10 @@ class _BackendSampler:
 
     1. Traces the decorated function with :func:`make_jaspr` to obtain a
        :class:`Jaspr`.
-    2. Verifies the Jaspr contains a ``sampling_eval_function`` (i.e. the
-       function uses :func:`~qrisp.jasp.sample` internally).
+    2. Verifies the Jaspr contains a ``sampling_eval_function`` or
+       ``expectation_value_eval_function`` (i.e. the function uses
+       :func:`~qrisp.jasp.sample` or :func:`~qrisp.jasp.expectation_value`
+       internally).
     3. Creates a :func:`backend_sampling_eqn_evaluator` and evaluates the
        Jaspr with the same infrastructure that :func:`~qrisp.jasp.jaspify`
        uses, except that ``sampling_body_func`` equations are intercepted
