@@ -365,7 +365,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
         # while-loop and extracts the final result — the Jaspr itself
         # owns all accumulator typing and indexing logic.
-        return eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator)(
+        return jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(
             *invals
         )
 
