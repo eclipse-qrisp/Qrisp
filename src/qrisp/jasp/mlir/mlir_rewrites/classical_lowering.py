@@ -29,16 +29,23 @@ the ``classical_to_llvm`` orchestrator.
 from collections.abc import Sequence
 
 from xdsl.context import Context
-from xdsl.dialects import builtin
+from xdsl.dialects import arith, builtin, llvm
+from xdsl.dialects.builtin import IntegerAttr, i64
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
+    PatternRewriter,
     PatternRewriteWalker,
     RewritePattern,
+    op_type_rewrite_pattern,
 )
 
 
 # ==============================================================================
 # Orchestrator
+#
+# Note: patterns are classes (not functions) because xDSL's
+# GreedyRewritePatternApplier expects list[RewritePattern], and
+# @op_type_rewrite_pattern requires a class method.
 # ==============================================================================
 
 
@@ -57,8 +64,22 @@ def classical_to_llvm(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
     xdsl_module : builtin.ModuleOp
         The xDSL module to rewrite. Modified in-place.
     """
-    # TODO: populate with all pattern instances
-    patterns: list[RewritePattern] = []
+    patterns: list[RewritePattern] = [
+        ArithAddiToLLVM(),
+        ArithSubiToLLVM(),
+        ArithMuliToLLVM(),
+        ArithDivuiToLLVM(),
+        ArithDivsiToLLVM(),
+        ArithRemuiToLLVM(),
+        ArithRemsiToLLVM(),
+        ArithCmpiToLLVM(),
+        ArithAndToLLVM(),
+        ArithOrToLLVM(),
+        ArithXOrToLLVM(),
+        ArithShliToLLVM(),
+        ArithShrsiToLLVM(),
+        ArithShruiToLLVM(),
+    ]
 
     walker = PatternRewriteWalker(
         GreedyRewritePatternApplier(patterns),
@@ -76,102 +97,228 @@ def classical_to_llvm(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
 class ArithAddiToLLVM(RewritePattern):
     """Lower ``arith.addi`` to ``llvm.add``.
 
-    Matches ``arith.AddiOp`` and replaces it with ``llvm.AddOp`` using the
-    same operands and result type.
+    ``arith.addi`` (https://mlir.llvm.org/docs/Dialects/ArithOps/#arithaddi-arithaddiop)
+    performs N-bit integer addition modulo 2^N (two's complement). The operands
+    are signless — the same operation handles both signed and unsigned addition.
+
+    ``llvm.add`` (https://llvm.org/docs/LangRef.html#add-instruction)
+    is the LLVM equivalent with identical bitvector semantics. Both support
+    ``nuw``/``nsw`` overflow flags (``arith`` uses ``IntegerOverflowFlagsAttr``,
+    LLVM uses ``OverflowAttr``). Overflow wraparound modulo 2^N when the flags
+    are absent.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.AddiOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.AddOp(op.lhs, op.rhs))
 
 
 class ArithSubiToLLVM(RewritePattern):
     """Lower ``arith.subi`` to ``llvm.sub``.
 
-    Matches ``arith.SubiOp`` and replaces it with ``llvm.SubOp``.
+    ``arith.subi`` (https://mlir.llvm.org/docs/Dialects/ArithOps/#arithsubi-arithsubiop)
+    computes ``lhs - rhs`` modulo 2^N (two's complement). Signless semantics:
+    ``-5 - 3 = -8`` with `i32` wraps to ``2^32 - 8``.
+
+    ``llvm.sub`` (https://llvm.org/docs/LangRef.html#sub-instruction)
+    has identical N-bit subtraction semantics. Both support ``nuw``/``nsw``
+    overflow flags.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.SubiOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.SubOp(op.lhs, op.rhs))
 
 
 class ArithMuliToLLVM(RewritePattern):
     """Lower ``arith.muli`` to ``llvm.mul``.
 
-    Matches ``arith.MuliOp`` and replaces it with ``llvm.MulOp``.
+    ``arith.muli`` (https://mlir.llvm.org/docs/Dialects/ArithOps/#arithmuli-arithmuliop)
+    multiplies two N-bit integers, producing the low N bits of the full 2N-bit
+    product (i.e., ``(a * b) mod 2^N``). Signless — the low N bits are the same
+    for signed and unsigned multiplication.
+
+    ``llvm.mul`` (https://llvm.org/docs/LangRef.html#mul-instruction)
+    has identical semantics. Both support ``nuw``/``nsw`` overflow flags.
+    If ``nuw`` is set, the result is poison if the product overflows unsigned;
+    if ``nsw`` is set, poison on signed overflow.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.MuliOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.MulOp(op.lhs, op.rhs))
 
 
 class ArithDivuiToLLVM(RewritePattern):
     """Lower ``arith.divui`` (unsigned division) to ``llvm.udiv``.
 
-    Matches ``arith.DivuiOp`` and replaces it with ``llvm.UDivOp``.
+    ``arith.divui`` (https://mlir.llvm.org/docs/Dialects/ArithOps/#arithdivui-arithdivuiop)
+    performs unsigned integer division, rounding toward zero. The operands are
+    treated as unsigned N-bit values, so ``-1`` (``0xFFFFFFFF`` for ``i32``)
+    divided by ``2`` gives ``2^31 - 1``, not ``-0.5``. Division by zero is UB.
+
+    ``llvm.udiv`` (https://llvm.org/docs/LangRef.html#udiv-instruction)
+    has identical unsigned division semantics. Both support an ``exact`` flag:
+    if set, the result is poison when ``lhs`` is not a multiple of ``rhs``.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.DivUIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.UDivOp(op.lhs, op.rhs))
 
 
 class ArithDivsiToLLVM(RewritePattern):
     """Lower ``arith.divsi`` (signed division) to ``llvm.sdiv``.
 
-    Matches ``arith.DivsiOp`` and replaces it with ``llvm.SDivOp``.
+    ``arith.divsi`` (https://mlir.llvm.org/docs/Dialects/ArithOps/#arithdivsi-arithdivsiop)
+    performs signed integer division, rounding toward zero (truncation toward
+    zero). Examples: ``7 / -2 = -3``, ``-7 / 2 = -3``. Division by zero and
+    signed overflow (``INT_MIN / -1``) are UB.
+
+    ``llvm.sdiv`` (https://llvm.org/docs/LangRef.html#sdiv-instruction)
+    has identical signed division semantics. Both support an ``exact`` flag:
+    if set, the result is poison when ``lhs`` is not a multiple of ``rhs``.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.DivSIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.SDivOp(op.lhs, op.rhs))
 
 
 class ArithRemuiToLLVM(RewritePattern):
     """Lower ``arith.remui`` (unsigned remainder) to ``llvm.urem``.
 
-    Matches ``arith.RemuiOp`` and replaces it with ``llvm.URemOp``.
+    ``arith.remui`` computes ``lhs % rhs`` treating both operands as unsigned
+    bitvectors (leading bit is MSB, not a sign). ``llvm.urem`` has identical
+    unsigned remainder semantics (result has the same sign as the dividend).
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.RemUIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.URemOp(op.lhs, op.rhs))
 
 
 class ArithRemsiToLLVM(RewritePattern):
     """Lower ``arith.remsi`` (signed remainder) to ``llvm.srem``.
 
-    Matches ``arith.RemsiOp`` and replaces it with ``llvm.SRemOp``.
+    ``arith.remsi`` computes ``lhs % rhs`` with sign — the result sign matches
+    the dividend (``lhs``), and the result magnitude equals ``|lhs| % |rhs|``.
+    ``llvm.srem`` has identical semantics (sign follows dividend, trunc toward
+    zero). Division by zero is UB in both dialects.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.RemSIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.SRemOp(op.lhs, op.rhs))
 
 
 class ArithCmpiToLLVM(RewritePattern):
     """Lower ``arith.cmpi`` to ``llvm.icmp``.
 
-    Matches ``arith.CmpiOp`` and replaces it with ``llvm.ICmpOp``.
-    The integer predicate values (0-9) use the same encoding in both
-    dialects, so the predicate attribute is forwarded as-is.
+    Both operations compare two integers using a predicate encoded as an
+    integer attribute with values 0–9, and the encoding is identical:
+
+    =====  =====  =============  ===========
+    Value  Name   Meaning        Operands
+    =====  =====  =============  ===========
+    0      eq     equal          signed
+    1      ne     not equal      signed
+    2      slt    less than      signed
+    3      sle    less or equal  signed
+    4      sgt    greater than   signed
+    5      sge    greater/equal  signed
+    6      ult    less than      unsigned
+    7      ule    less or equal  unsigned
+    8      ugt    greater than   unsigned
+    9      uge    greater/equal  unsigned
+    =====  =====  =============  ===========
+
+    The result is a 1-bit integer (``i1``). Operands must be integer-like
+    (scalar, vector, or tensor); vector/tensor comparisons are element-wise.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.CmpiOp, rewriter: PatternRewriter):
+        pred = IntegerAttr(op.predicate.value.data, i64)
+        rewriter.replace_matched_op(llvm.ICmpOp(op.lhs, op.rhs, pred))
 
 
 class ArithAndToLLVM(RewritePattern):
     """Lower ``arith.andi`` to ``llvm.and``.
 
-    Matches ``arith.AndOp`` and replaces it with ``llvm.AndOp``.
+    Both ops compute the bitwise AND of two integer values. Operands are
+    treated as unsigned bitvectors — the operation is identical for signed
+    and unsigned integers since AND is bitwise. ``arith.andi`` uses signless
+    integer types; ``llvm.and`` uses the same.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.AndIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.AndOp(op.lhs, op.rhs))
 
 
 class ArithOrToLLVM(RewritePattern):
     """Lower ``arith.ori`` to ``llvm.or``.
 
-    Matches ``arith.OrOp`` and replaces it with ``llvm.OrOp``.
+    Both ops compute the bitwise OR of two integer values. Like AND, this
+    operation is bitwise and identical for signed and unsigned integers.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.OrIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.OrOp(op.lhs, op.rhs))
 
 
 class ArithXOrToLLVM(RewritePattern):
     """Lower ``arith.xori`` to ``llvm.xor``.
 
-    Matches ``arith.XOrOp`` and replaces it with ``llvm.XOrOp``.
+    Both ops compute the bitwise XOR (exclusive OR) of two integer values.
+    Like AND/OR, this is a purely bitwise operation independent of signedness.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.XOrIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.XOrOp(op.lhs, op.rhs))
 
 
 class ArithShliToLLVM(RewritePattern):
     """Lower ``arith.shli`` (shift left) to ``llvm.shl``.
 
-    Matches ``arith.ShliOp`` and replaces it with ``llvm.ShlOp``.
+    ``arith.shli`` shifts ``lhs`` left by ``rhs`` positions, filling the low
+    bits with zeros. This is a logical/arithmetic left shift (same for both).
+    ``llvm.shl`` has identical semantics. If ``rhs`` >= bitwidth, the result
+    is poison in both dialects.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.ShLIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.ShlOp(op.lhs, op.rhs))
 
 
 class ArithShrsiToLLVM(RewritePattern):
-    """Lower ``arith.shrsi`` (arithmetic/signed shift right) to ``llvm.ashr``.
+    """Lower ``arith.shrsi`` (signed shift right) to ``llvm.ashr``.
 
-    Matches ``arith.ShrsiOp`` and replaces it with ``llvm.AShrOp``.
+    ``arith.shrsi`` performs an arithmetic (signed) right shift: the shift
+    fills the high bits with copies of the original sign bit (sign-extension).
+    ``llvm.ashr`` (arithmetic shift right) has identical semantics.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.ShRSIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.AShrOp(op.lhs, op.rhs))
 
 
 class ArithShruiToLLVM(RewritePattern):
-    """Lower ``arith.shrui`` (logical/unsigned shift right) to ``llvm.lshr``.
+    """Lower ``arith.shrui`` (unsigned shift right) to ``llvm.lshr``.
 
-    Matches ``arith.ShruiOp`` and replaces it with ``llvm.LShrOp``.
+    ``arith.shrui`` performs a logical (unsigned) right shift: the high bits
+    are filled with zeros. ``llvm.lshr`` (logical shift right) has identical
+    semantics.
     """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.ShRUIOp, rewriter: PatternRewriter):
+        rewriter.replace_matched_op(llvm.LShrOp(op.lhs, op.rhs))
 
 
 # ==============================================================================
@@ -362,7 +509,7 @@ class ScfWhileToLLVM(RewritePattern):
     ``scf.while`` has two regions: a ``before`` region (computes the
     condition) and an ``after`` region (computes the next iteration values).
 
-    The lowering produces:
+    The lowering produces::
 
         ^entry:
           br ^cond(carried_values...)
@@ -439,3 +586,6 @@ class MathLogToLLVM(RewritePattern):
 
     Matches ``math.LogOp`` and replaces it with ``llvm.intr.log``.
     """
+
+
+
