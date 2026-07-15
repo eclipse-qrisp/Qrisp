@@ -178,4 +178,5 @@ def apply_pseudo_inv(
     """
     from qrisp.algorithms.gqsp import pseudo_inversion
 
+    # temp: this functon returns the pseudo inversion
     return pseudo_inversion(self, eps, theta, delta)
