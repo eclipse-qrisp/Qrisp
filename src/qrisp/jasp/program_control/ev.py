@@ -20,6 +20,13 @@ import jax.numpy as jnp
 
 from qrisp.jasp.tracing_logic import quantum_kernel
 
+
+@jax.jit
+def _backend_shots_marker(val):
+    """Identity marker so that ``backend_sampler`` can reliably locate the
+    shot count inside a traced expectation_value Jaxpr."""
+    return val
+
 # The following function implements the expectation_value feature.
 # The basic functionality would be relatively straightforward to implement,
 # however there are some complications. The reason for that is that the resulting
@@ -45,7 +52,7 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
+def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=None):
     r"""The ``expectation_value`` function allows to estimate the expectation value
     from a *sampling kernel* — a Python function that receives only classical
     arguments and returns arbitrary values.  Any
@@ -54,7 +61,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
     Parameters
     ----------
-    state_prep : callable
+    sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
@@ -91,7 +98,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         from qrisp.jasp import *
 
 
-        def state_prep(k):
+        def sampling_kernel(k):
             a = QuantumFloat(4)
             b = QuantumFloat(4)
 
@@ -112,7 +119,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50)
+            ev_function = expectation_value(sampling_kernel, shots = 50)
 
             return ev_function(k)
 
@@ -134,7 +141,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50)
+            ev_function = expectation_value(sampling_kernel, shots = 50)
 
             return ev_function(k)
 
@@ -167,7 +174,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     # Qache the user function
     @qache
     def user_func(*args):
-        return state_prep(*args)
+        return sampling_kernel(*args)
 
     # This function performs the logic to evaluate the expectation value
     def expectation_value_eval_function(*args, shots=0):
@@ -175,6 +182,10 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         for arg in args:
             if isinstance(arg, QuantumVariable):
                 raise Exception("Tried to sample from state preparation function taking a quantum value")
+
+        # Marker: allows backend_sampler to locate the shot count in the
+        # traced Jaxpr without fragile position-based extraction.
+        _backend_shots_marker(shots)
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.
@@ -212,7 +223,6 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 # arguments (before measurement ints).  When present the
                 # helper is named sampling_helper_2_mixed for detection.
                 if classical_tuple:
-
                     def sampling_helper_2_mixed(*args):
                         n_classical = len(classical_tuple)
                         classical_vals = args[:n_classical]
@@ -234,16 +244,13 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                                 c_idx += 1
 
                         return post_processor(*full)
-
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
-
                     def sampling_helper_2(*meas_ints):
                         res_list = []
                         for j in range(len(qv_tuple)):
                             res_list.append(qv_tuple[j].jdecoder(meas_ints[j]))
                         return post_processor(*res_list)
-
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
                 decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)

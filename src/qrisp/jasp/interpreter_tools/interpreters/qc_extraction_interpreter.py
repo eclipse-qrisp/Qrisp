@@ -446,6 +446,11 @@ def apply_array_primitive(prim_name, params, invalues):
         for dim in dimensions:
             result = np.flip(result, axis=dim)
 
+    elif prim_name == "convert_element_type":
+        # Type conversion on measurement data is a no-op for circuit
+        # extraction — measurement results are placeholders anyway.
+        result = encoded[0]
+
     elif prim_name == "dynamic_update_slice":
         # dynamic_update_slice(operand, update, start_indices)
         # Updates a slice of operand starting at start_indices with the values from update
@@ -689,25 +694,33 @@ def make_qc_extraction_eqn_evaluator(qc):
         # SECTION 4.1: Control Flow and Structural Primitives
         # -----------------------------------------------------------------
 
-        if prim_name == "jit" and (
-            isinstance(eqn.params["jaxpr"], Jaspr) or any(contains_measurement_data(v) for v in invalues)
-        ):
-            # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
+        if prim_name == "jit":
+            # Always recursively evaluate nested jit calls with our
+            # interpreter so that quantum operations inside @qache'd
+            # sub-functions (user_func, sampling_helper_*) are extracted
+            # into the QuantumCircuit rather than being silently skipped.
             from qrisp.jasp import eval_jaxpr
 
-            definition_jaxpr = eqn.params["jaxpr"]
-            res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
-                *(definition_jaxpr.consts + invalues)
+            definition = eqn.params["jaxpr"]
+            if isinstance(definition, Jaspr):
+                inner_jaxpr = definition.jaxpr
+                inner_consts = definition.consts
+            elif hasattr(definition, 'jaxpr'):
+                inner_jaxpr = definition.jaxpr
+                inner_consts = definition.consts
+            else:
+                inner_jaxpr = definition
+                inner_consts = []
+
+            res = eval_jaxpr(inner_jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
+                *(inner_consts + invalues)
             )
 
-            if len(definition_jaxpr.jaxpr.outvars) == 1:
+            if len(inner_jaxpr.outvars) == 1:
                 res = [res]
 
             insert_outvalues(eqn, context_dic, res)
             return
-
-        elif prim_name == "jit":
-            return True
 
         elif prim_name == "cond":
             # Conditional branching - may become classically controlled operation
@@ -838,6 +851,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             "rev",
             "dynamic_update_slice",
             "select_n",
+            "convert_element_type",
         ):
             # Check if any input contains measurement data
             if any(contains_measurement_data(v) for v in invalues):

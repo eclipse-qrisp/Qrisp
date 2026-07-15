@@ -20,6 +20,13 @@ import jax.numpy as jnp
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
+
+@jax.jit
+def _backend_shots_marker(val):
+    """Identity marker so that ``backend_sampler`` can reliably locate the
+    shot count inside a traced ``sampling_eval_function`` Jaxpr."""
+    return val
+
 # The following function implements the sample feature.
 
 # The basic functionality would be relatively straightforward to implement,
@@ -244,6 +251,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         for arg in args:
             if isinstance(arg, QuantumVariable):
                 raise Exception("Tried to sample from state preparation function taking a quantum value")
+
+        # Marker: allows backend_sampler to locate the shot count in the
+        # traced Jaxpr without fragile position-based extraction.
+        _backend_shots_marker(tracerized_shots)
 
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
