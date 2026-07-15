@@ -22,7 +22,11 @@ import numpy as np
 
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.block_encodings.transformations.commutators import unary_prep, unary_walk_prep, _chebyshev_commutator_coeffs
+from qrisp.block_encodings.transformations.commutators import (
+    create_unary_preps,
+    create_unary_preps_walk,
+    _chebyshev_commutator_coeffs,
+)
 from qrisp.operators import X, Y, Z
 
 
@@ -30,25 +34,33 @@ from qrisp.operators import X, Y, Z
 
 
 def apply_unary_prep(d, coeffs):
-    n = int(np.ceil(np.log2(d + 1)))
-    anc = QuantumVariable(2 * n)
+    # n = int(np.ceil(np.log2(d + 1)))
+    # anc = QuantumVariable(2 * n)
     qm = QuantumVariable(d)
     qn = QuantumVariable(d)
 
-    unary_prep(anc, qm, qn, d, coeffs=coeffs)
+    prep_right, prep_left, prep_anc_templates = create_unary_preps(d, coeffs=coeffs)
+
+    ancs = [anc_template.construct() for anc_template in prep_anc_templates]
+
+    prep_right(*ancs, qm, qn)
     return qm, qn
 
 
 def apply_unary_walk_prep(d, coeffs):
-    steps = QuantumVariable(d)
-    coin1 = QuantumVariable(d)
-    coin2 = QuantumVariable(d)
-    m_line = QuantumVariable(2 * d + 1)
-    n_line = QuantumVariable(2 * d + 1)
+    # steps = QuantumVariable(d)
+    # coin1 = QuantumVariable(d)
+    # coin2 = QuantumVariable(d)
+    # m_line = QuantumVariable(2 * d + 1)
+    # n_line = QuantumVariable(2 * d + 1)
     qm = QuantumVariable(d)
     qn = QuantumVariable(d)
 
-    unary_walk_prep(steps, coin1, coin2, m_line, n_line, qm, qn, d, coeffs=coeffs)
+    prep_right, prep_left, prep_anc_templates = create_unary_preps_walk(d, coeffs=coeffs)
+
+    ancs = [anc_template.construct() for anc_template in prep_anc_templates]
+
+    prep_right(*ancs, qm, qn)
     return qm, qn
 
 
@@ -141,7 +153,14 @@ def test_state_prep_for_nested_commutators(coeffs):
         ),
     ],
 )
-def test_nested_commutators(A, B, coeffs, description):
+@pytest.mark.parametrize(
+    "method",
+    [
+        "default",
+        "walk",
+    ],
+)
+def test_nested_commutators(A, B, coeffs, description, method):
 
     ad1 = A * B - B * A
     ad2 = A * ad1 - ad1 * A
@@ -163,8 +182,7 @@ def test_nested_commutators(A, B, coeffs, description):
     B_B = BlockEncoding.from_operator(B)
 
     # BlockEncoding of sum of odd nested commutators
-    B_C = B_A.nested_commutators(B_B, coeffs, method="default")
-    B_C_walk = B_A.nested_commutators(B_B, coeffs, method="walk")
+    B_C = B_A.nested_commutators(B_B, coeffs, method=method)
 
     b = np.array([1.0, 1.0, 0.0, 1.0])
 
@@ -184,11 +202,7 @@ def test_nested_commutators(A, B, coeffs, description):
     res_dict_C = main(B_C)
     amps_C = np.sqrt([res_dict_C.get(i, 0) for i in range(len(b))])
 
-    res_dict_C_walk = main(B_C_walk)
-    amps_C_walk = np.sqrt([res_dict_C_walk.get(i, 0) for i in range(len(b))])
-
     assert np.allclose(amps_ad_sum, amps_C, atol=1e-2)
-    assert np.allclose(amps_ad_sum, amps_C_walk, atol=1e-2)
 
 
 @pytest.mark.parametrize(
@@ -207,7 +221,14 @@ def test_nested_commutators(A, B, coeffs, description):
         ),
     ],
 )
-def test_nested_commutators_nomalization(A, B, coeffs, description):
+@pytest.mark.parametrize(
+    "method",
+    [
+        "default",
+        "walk",
+    ],
+)
+def test_nested_commutators_nomalization(A, B, coeffs, description, method):
     """Test that the normalization of the nested commutator block encoding is correct by comparing to a direct block encoding of the same operator."""
 
     ad1 = A * B - B * A
@@ -220,8 +241,7 @@ def test_nested_commutators_nomalization(A, B, coeffs, description):
     B_B = BlockEncoding.from_operator(B)
 
     # BlockEncoding of sum of odd nested commutators
-    B_C = B_A.nested_commutators(B_B, coeffs, method="default") + B_A
-    B_C_walk = B_A.nested_commutators(B_B, coeffs, method="walk") + B_A
+    B_C = B_A.nested_commutators(B_B, coeffs, method=method) + B_A
 
     b = np.array([1.0, 1.0, 0.0, 1.0])
 
@@ -241,8 +261,4 @@ def test_nested_commutators_nomalization(A, B, coeffs, description):
     res_dict_C = main(B_C)
     amps_C = np.sqrt([res_dict_C.get(i, 0) for i in range(len(b))])
 
-    res_dict_C_walk = main(B_C_walk)
-    amps_C_walk = np.sqrt([res_dict_C_walk.get(i, 0) for i in range(len(b))])
-
     assert np.allclose(amps_T, amps_C, atol=1e-2)
-    assert np.allclose(amps_T, amps_C_walk, atol=1e-2)

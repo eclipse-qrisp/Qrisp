@@ -38,7 +38,7 @@ from qrisp.jasp import (
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 from .commutators_unary_prep import create_unary_preps
-from .commutators_unary_prep_walk import create_unary_prep_walk
+from .commutators_unary_prep_walk import create_unary_preps_walk
 from .helper_functions import _chebyshev_sum_commutator_coeffs
 
 if TYPE_CHECKING:
@@ -147,11 +147,16 @@ def apply_nested_commutators(
     if method not in ALLOWED_METHODS:
         raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
 
+    # Rescale coefficients by the appropriate power of the normalization factor for A.
     d = len(coeffs)
+    alpha = A.alpha
+    beta = B.alpha
+    coeffs = np.array(coeffs) * (alpha ** np.arange(1, d + 1))
+
     if method == "default":
         prep_func_right, prep_func_left, prep_anc_templates = create_unary_preps(d, coeffs)
     elif method == "walk":
-        prep_func_right, prep_func_left, prep_anc_templates = create_unary_prep_walk(d, coeffs)
+        prep_func_right, prep_func_left, prep_anc_templates = create_unary_preps_walk(d, coeffs)
 
     num_prep_ancs = len(prep_anc_templates)
     use_prep_pair = prep_func_left is not None
@@ -161,14 +166,6 @@ def apply_nested_commutators(
     num_ops = A.num_ops
     num_ancs_A = A_walk.num_ancs
     num_ancs_B = B.num_ancs
-
-    d = len(coeffs)
-    n = int(np.ceil(np.log2(d + 1)))
-
-    # Rescale coefficients by the appropriate power of the normalization factor for A.
-    alpha = A.alpha
-    beta = B.alpha
-    coeffs = np.array(coeffs) * (alpha ** np.arange(1, d + 1))
 
     def new_unitary(*args):
 

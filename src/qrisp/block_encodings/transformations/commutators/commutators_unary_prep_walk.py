@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def create_unary_prep_walk(
+def create_unary_preps_walk(
     d: int,
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
