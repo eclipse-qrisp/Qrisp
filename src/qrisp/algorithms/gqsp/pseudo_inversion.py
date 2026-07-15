@@ -93,7 +93,7 @@ def pseudo_inversion(
     References
     ----------
     - Childs et al. (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
-    - Gilyén et al. (2019) `Quantum singular value transformation and beyond: exponential improvements for quantum matrix arithmetic <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_.
+    - Gilyén et al. (2019) `Quantum singular value transformation and beyond: exponential improvements for quantum matrix arithmetics <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_.  # codespell:ignore
 
     Examples
     --------
