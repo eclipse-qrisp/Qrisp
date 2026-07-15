@@ -289,7 +289,7 @@ class QAOAProblem:
         qarg_prep : callable
             A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
-            The among of QAOA layers.
+            The amount of QAOA layers.
         symbols : list
             The list of symbols used in the quantum circuit.
         mes_kwargs : dict, optional

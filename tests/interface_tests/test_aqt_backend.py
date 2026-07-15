@@ -409,7 +409,7 @@ class TestAQTJob:
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
-        """result() updates last_known_status to CANCELED when the job was canceled."""
+        """result() updates last_known_status to CANCELLED when the job was canceled."""
         aqt_job = _make_aqt_job(fail=RuntimeError("cancelled"))
         aqt_job.status.return_value = MagicMock()
         aqt_job.status.return_value.name = "CANCELLED"

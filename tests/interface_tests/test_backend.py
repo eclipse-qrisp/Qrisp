@@ -141,7 +141,7 @@ class JobTest(Job):
                 pass
 
     def _set_cancelled(self) -> None:
-        """Mark the job as CANCELED and fire all registered callbacks."""
+        """Mark the job as CANCELLED and fire all registered callbacks."""
         self._last_known_status = JobStatus.CANCELLED
         self._done_event.set()
         for cb in self._callbacks:
@@ -1010,7 +1010,7 @@ class TestCancellation:
         assert job.cancel() is True
 
     def test_cancel_job_reaches_cancelled_status(self):
-        """Ensure the job status reaches CANCELED after a successful cancel() call."""
+        """Ensure the job status reaches CANCELLED after a successful cancel() call."""
         job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         time.sleep(0.6)
         job.cancel()
@@ -1042,7 +1042,7 @@ class TestCancellation:
         except RuntimeError:
             pass
         assert job.done() is False  # done() means success only
-        assert job.in_final_state() is True  # in_final_state() covers CANCELED too
+        assert job.in_final_state() is True  # in_final_state() covers CANCELLED too
 
     def test_cancel_returns_false_on_finished_job(self):
         """Ensure cancel() returns False when the job has already completed successfully."""
@@ -1074,7 +1074,7 @@ class TestCancellation:
         assert job.cancel() is True
 
     def test_callback_fires_on_cancellation(self):
-        """Ensure a registered callback is invoked with CANCELED status after cancellation."""
+        """Ensure a registered callback is invoked with CANCELLED status after cancellation."""
         job = BackendTest(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async("c")
         fired = []
         job.add_callback(lambda j: fired.append(j.status()))

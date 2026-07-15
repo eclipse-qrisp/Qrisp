@@ -238,7 +238,7 @@ class TestQiskitJob:
             job.result()
 
     def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
-        """result() updates last_known_status to CANCELED when the job was canceled."""
+        """result() updates last_known_status to CANCELLED when the job was canceled."""
         qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
         qiskit_job.status.return_value = MagicMock()
         qiskit_job.status.return_value.name = "CANCELLED"
@@ -308,7 +308,7 @@ class TestQiskitJob:
         assert job.last_known_status == JobStatus.RUNNING
 
     def test_result_raises_immediately_when_already_cancelled(self):
-        """result() raises JobCancelledError without calling Qiskit when already CANCELED."""
+        """result() raises JobCancelledError without calling Qiskit when already CANCELLED."""
         qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
         qiskit_job.status.return_value = MagicMock()
         qiskit_job.status.return_value.name = "CANCELLED"
@@ -360,7 +360,7 @@ class TestMapQiskitStatus:
         assert _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
 
     def test_cancelled_maps_to_cancelled(self):
-        """A Qiskit job with status CANCELED maps to JobStatus.CANCELLED."""
+        """A Qiskit job with status CANCELLED maps to JobStatus.CANCELLED."""
         assert _map_qiskit_status(self._job_with_status("CANCELLED")) == JobStatus.CANCELLED
 
     def test_error_maps_to_error(self):

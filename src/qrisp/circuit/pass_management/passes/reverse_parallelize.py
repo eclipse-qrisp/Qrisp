@@ -17,6 +17,14 @@
 
 from __future__ import annotations
 
+"""Reverse-order parallelization pass.
+
+This pass reverses the instruction order, runs Qrisp's parallelization,
+and restores the original order.  It is useful to group commuting gates
+with later SWAP operations so cancellation passes can remove redundant
+two-qubit gates.
+"""
+
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
