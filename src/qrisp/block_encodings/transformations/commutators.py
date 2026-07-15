@@ -29,7 +29,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx, p
-from qrisp.environments import conjugate, control
+from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
     jrange,
     qache,
@@ -105,7 +105,7 @@ def _chebyshev_sum_commutator_coeffs(coeffs):
 
     """
     d = len(coeffs)
-    C = np.zeros((d + 1, d + 1))
+    C = np.zeros((d + 1, d + 1), dtype=np.complex128)
     for k in range(1, d + 1):
         Ck_matrix = _chebyshev_commutator_coeffs(k)
         rows, cols = Ck_matrix.shape
@@ -114,9 +114,6 @@ def _chebyshev_sum_commutator_coeffs(coeffs):
 
 
 def unary_prep(
-    anc: QuantumVariable,
-    qm: QuantumVariable,
-    qn: QuantumVariable,
     d: int,
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
@@ -159,16 +156,12 @@ def unary_prep(
 
     """
 
-    if coeffs is None:
-        coeffs = np.zeros(d)
-        coeffs[d - 1] = 1
-
     def target_state(d, coeffs):
 
         n = int(np.ceil(np.log2(d + 1)))
-        target = np.zeros(2 ** (2 * n))
+        target = np.zeros(2 ** (2 * n), dtype=np.complex128)
 
-        C_matrix = np.sqrt(np.abs(_chebyshev_sum_commutator_coeffs(coeffs)))
+        C_matrix = np.sqrt(_chebyshev_sum_commutator_coeffs(coeffs))
 
         # Flatten the 2D coefficient matrix into a 1D array corresponding to the amplitudes of the target state
         for i in range(d + 1):
@@ -176,16 +169,38 @@ def unary_prep(
                 target[i + (j << n)] += C_matrix[i, j]
 
         return target
+    
+    if coeffs is None:
+        coeffs = np.zeros(d, dtype=np.complex128)
+        coeffs[d - 1] = 1
 
-    target = target_state(d, coeffs)
-    prepare(anc, target)
+    def prep_right(anc, qm, qn):
 
-    def case_func(i, qv):
-        x(qv[:i])
+        target = target_state(d, coeffs)
+        prepare(anc, target)
 
-    n = int(np.ceil(np.log2(d + 1)))
-    q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
-    q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
+        def case_func(i, qv):
+            x(qv[:i])
+
+        n = int(np.ceil(np.log2(d + 1)))
+        q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
+        q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
+
+
+    def prep_left(anc, qm, qn):
+
+        target = target_state(d, coeffs).conj()
+        prepare(anc, target)
+
+        def case_func(i, qv):
+            x(qv[:i])
+
+        n = int(np.ceil(np.log2(d + 1)))
+        q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
+        q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
+
+
+    return prep_right, prep_left
 
 
 def unary_walk_prep(
@@ -420,12 +435,14 @@ def apply_nested_commutators(
     if method not in ALLOWED_METHODS:
         raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
 
+    d = len(coeffs)
     if method == "default":
-        prep_func = unary_prep
+        prep_func_right, prep_func_left = unary_prep(d, coeffs)
         num_prep_ancs = 1
     elif method == "walk":
-        prep_func = unary_walk_prep
-        num_prep_ancs = 5
+        #prep_func = unary_walk_prep
+        #num_prep_ancs = 5
+        raise NotImplementedError("The 'walk' method is not yet implemented for nested commutators.")
 
     A_walk = A.qubitization()
 
@@ -452,14 +469,16 @@ def apply_nested_commutators(
         anc_qbl = args[num_prep_ancs + 2]
 
         ancs_A = args[num_prep_ancs + 3 : num_prep_ancs + num_ancs_A + 3]
-        qubits_A = sum([anc.reg for anc in ancs_A], [])
+        #qubits_A = sum([anc.reg for anc in ancs_A], [])
 
         ancs_B = args[num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3]
         operands = args[-num_ops:]
 
         # Apply weighted sum of nested commutators expansion in Chebyshev basis.
         # sum_{m,n} (-1)^n C_{m,n} T_m(A) B T_n(A)
-        with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
+        #with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
+
+        def select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands):
 
             def parity(qv1, qv2, qbl):
                 for i in jrange(d):
@@ -471,7 +490,7 @@ def apply_nested_commutators(
                 p(np.pi / 2, anc_qbl)
 
             # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
-            z(outer_anc_right)
+            #z(outer_anc_right)
 
             # Apply T_n(A) from the right.
             for i in jrange(d):
@@ -481,6 +500,7 @@ def apply_nested_commutators(
 
             # To reuse ancillas for the block-encoding of A for applying T_k(A) from the left,
             # we must ensure that they are in state |0>.
+            qubits_A = sum([anc.reg for anc in ancs_A], [])
             mcx(qubits_A, anc_qbl, ctrl_state=0)
 
             # Apply B
@@ -496,6 +516,15 @@ def apply_nested_commutators(
 
             # Ensure that measurment in |0> yields the correct result.
             x(anc_qbl)
+
+
+        prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+
+        select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
+
+        with invert():
+            prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
+
 
     if method == "default":
         new_anc_templates = (

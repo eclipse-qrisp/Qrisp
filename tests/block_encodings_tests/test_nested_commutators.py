@@ -16,8 +16,10 @@
 ********************************************************************************
 """
 
-import numpy as np
 import pytest
+
+import numpy as np
+
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
 from qrisp.block_encodings.transformations.commutators import unary_prep, unary_walk_prep, _chebyshev_commutator_coeffs
