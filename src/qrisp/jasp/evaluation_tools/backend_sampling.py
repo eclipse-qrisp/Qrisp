@@ -196,6 +196,62 @@ def find_named_jaxpr(jaxpr, target_name):
 # Piece 1 — Backend sampling function factory
 # ===========================================================================
 
+
+class _FirstBodyCall(Exception):
+    """Raised to stop evaluation after capturing the first
+    ``sampling_body_func`` invalues."""
+
+
+def _extract_to_qc_args(inner_jaxpr, body_jaspr, *invals):
+    """Run *inner_jaxpr* until the first ``sampling_body_func`` call,
+    capture its invalues, and return them (minus the trailing
+    QuantumState) as the *to_qc_args* for *body_jaspr*.
+
+    This lets JAX's own evaluator handle all captured closure
+    variables, accumulator initialisation, and loop-index setup —
+    no manual position reconstruction needed.
+    """
+    captured_invalues = []
+    _QS = object()  # sentinel for QuantumState placeholders
+
+    def extraction_evaluator(eqn, context_dic):
+        prim = eqn.primitive.name
+        name = eqn.params.get("name", "")
+
+        if prim in ("jit", "pjit") and name == "sampling_body_func":
+            captured_invalues.append(extract_invalues(eqn, context_dic))
+            raise _FirstBodyCall()
+
+        # Quantum-kernel bookkeeping — no-ops
+        if prim == "jasp.create_quantum_kernel":
+            if eqn.outvars:
+                context_dic[eqn.outvars[0]] = _QS
+            return False
+
+        if prim == "jasp.consume_quantum_kernel":
+            return False
+
+        # Let default evaluation handle everything else
+        # (while loops, jit, etc.)
+        return True
+
+    try:
+        eval_jaxpr(inner_jaxpr, eqn_evaluator=extraction_evaluator)(
+            *invals
+        )
+    except _FirstBodyCall:
+        pass
+
+    if not captured_invalues:
+        raise RuntimeError(
+            "sampling_body_func was never called during extraction"
+        )
+
+    # invalues = [*captured, i, *kernel_args, acc, qs]
+    # to_qc_args = [*captured, i, *kernel_args, acc]  (drop qs)
+    return captured_invalues[0][:-1]
+
+
 def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     """Return ``fn(*kernel_args, shots) → result`` for a given eval Jaxpr.
 
@@ -218,18 +274,59 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         )
     body_jaspr = Jaspr(body_jaxpr)
 
+    # ── Pre-compute invar positions ─────────────────────────────────
+    # The accumulator output is always the first outvar (return value
+    # of sampling_body_func).  Match its aval against the invars to
+    # find the accumulator position (robust against captured vars).
+    # The loop index *i* is the first int64 scalar before the acc.
+    acc_out_aval = body_jaspr.outvars[0].aval
+    acc_pos = None
+    for idx, invar in enumerate(body_jaspr.invars):
+        aval = invar.aval
+        if (type(aval) is type(acc_out_aval)
+                and aval.shape == acc_out_aval.shape
+                and aval.dtype == acc_out_aval.dtype):
+            acc_pos = idx
+            break
+    if acc_pos is None:
+        raise RuntimeError(
+            "Could not identify accumulator position in "
+            "sampling_body_func invars"
+        )
+
+    i_pos = None
+    for idx in range(acc_pos):
+        aval = body_jaspr.invars[idx].aval
+        if hasattr(aval, 'dtype') and aval.dtype == jnp.int64 and aval.shape == ():
+            i_pos = idx
+            break
+    if i_pos is None:
+        raise RuntimeError(
+            "Could not identify loop-index position in "
+            "sampling_body_func invars"
+        )
+
     def backend_sampling_fn(*invals):
-        # invals = (*kernel_args, shots)
-        kernel_args = list(invals[:-1])
-        shots = int(invals[-1])
+        # invals may include JAX-implicitly-prepended captured closure
+        # variables.  Split them: the last N are the actual function
+        # args (kernel_args + shots), everything before is captured.
+        n_expected = len(inner_jaxpr.jaxpr.invars)
+        captured = invals[:-n_expected] if len(invals) > n_expected else ()
+        actual_args = invals[-n_expected:]
+        kernel_args = list(actual_args[:-1])
+        shots = int(actual_args[-1])
 
         # ── Phase 1: static analysis ────────────────────────────────
-        # Build dummy args for circuit extraction.  The circuit
-        # structure is independent of i and acc, so dummy values are
-        # fine here.
-        body_acc_aval = body_jaspr.invars[1].aval
-        dummy_acc = jnp.zeros(body_acc_aval.shape, dtype=body_acc_aval.dtype)
-        to_qc_args = [0, dummy_acc] + kernel_args
+        # Extract to_qc_args by running inner_jaxpr until the first
+        # sampling_body_func call.  This lets JAX's own evaluator
+        # handle all captured closure variables, accumulator
+        # initialisation, and loop-index setup — no manual position
+        # reconstruction needed.  Only pass the actual function args
+        # (the last n_expected invals); outer captured vars are
+        # consumed by the outer pjit, not by inner_jaxpr.
+        to_qc_args = _extract_to_qc_args(
+            inner_jaxpr, body_jaspr, *actual_args
+        )
         *_, qc = body_jaspr.to_qc(*to_qc_args)
 
         # Run the backend ONCE.
@@ -245,10 +342,10 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 
         # ── Phase 2: dynamic loop evaluation ────────────────────────
         def post_proc(meas_results, *all_non_qs_args):
-            """Return ``(acc_out, *kernel_args)`` for one shot.
+            """Return ``(*kernel_args, acc_out)`` for one shot.
 
             *all_non_qs_args* receives the **actual** loop-carried
-            values ``(i, acc, *kernel_args)``, so the extracted
+            values ``(i, *kernel_args, acc)``, so the extracted
             post-processing function uses the real *i* and *acc*
             rather than hard-coded dummies.
             """
@@ -257,7 +354,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
             )
 
         loop_eqn_evaluator = _body_loop_evaluator(
-            post_proc, meas_results_array
+            post_proc, meas_results_array, i_pos, acc_pos
         )
 
         # Evaluate the inner Jaspr (the ``sampling_eval_function`` /
@@ -271,7 +368,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     return backend_sampling_fn
 
 
-def _body_loop_evaluator(post_proc, meas_results):
+def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
     """Build an ``eqn_evaluator`` for the *inner_jaxpr*
     (``sampling_eval_function`` / ``expectation_value_eval_function``).
 
@@ -292,12 +389,13 @@ def _body_loop_evaluator(post_proc, meas_results):
         # ── Intercept sampling_body_func ────────────────────────────
         if prim_name in ("jit", "pjit") and eqn.params.get("name") == "sampling_body_func":
             invalues = extract_invalues(eqn, context_dic)
-            # invalues = [i, acc, *kernel_args, qs]
-            iteration = invalues[0]
+            # invalues = [*captured, i, *kernel_args, acc, qs]
+            # acc is always at acc_pos, qs at -1, i at i_pos
+            iteration = invalues[i_pos]
             qs_val = invalues[-1]
 
-            # post_proc(meas_bits, i, acc, *kernel_args)
-            # → (acc_out, *kernel_args)   [QS stripped by extract_post_processing]
+            # post_proc(meas_bits, i, *kernel_args, acc)
+            # → (*kernel_args, acc_out)  [QS stripped by extract_post_processing]
             results = post_proc(
                 meas_results[iteration], *invalues[:-1]
             )
