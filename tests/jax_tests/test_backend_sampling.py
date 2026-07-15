@@ -470,7 +470,9 @@ def test_statistical_uniformity():
         counts[iv] = counts.get(iv, 0) + 1
 
     expected = 2000 / 8
-    assert all(abs(c - expected) < 3 * 15 for c in counts.values())
+    # 5σ threshold: σ = sqrt(2000 * 1/8 * 7/8) ≈ 14.8, so 5σ ≈ 74.
+    # Using 5 * sqrt(expected) ≈ 5 * 15 = 75 gives comfortable margin.
+    assert all(abs(c - expected) < 5 * 15 for c in counts.values())
     assert len(counts) == 8
 
 

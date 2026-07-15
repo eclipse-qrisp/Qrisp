@@ -74,6 +74,7 @@ trace a sampling kernel into a Jaspr with the same internal structure::
 """
 
 import numpy as np
+import jax
 from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.circuit import fast_append
@@ -237,12 +238,20 @@ def backend_sampling_eqn_evaluator(backend):
             # Run on backend (one call, all shots).
             raw_results = backend.run(qc, shots=shots)
 
-            # Store raw measurement dict + Jaspr for per-iteration
-            # post-processing extraction.
-            _result_cache[cache_key] = (body_jaspr, raw_results)
+            # Build a JIT'd post-processing evaluator.  extract_post_processing
+            # is traced through by JAX — different i/acc/kernel_args reuse the
+            # same cached compilation (see sketchbook.py example).
+            @jax.jit
+            def evaluate_shot(meas_array, i, acc, *kernel_args):
+                post_proc = body_jaspr.extract_post_processing(
+                    i, acc, *kernel_args
+                )
+                return post_proc(meas_array)
 
-        # ── Per-iteration: pick bitstring, extract post-proc, decode ─
-        body_jaspr, raw_results = _result_cache[cache_key]
+            _result_cache[cache_key] = (evaluate_shot, raw_results)
+
+        # ── Per-iteration: pick bitstring, JIT-evaluate, insert ──────
+        evaluate_shot, raw_results = _result_cache[cache_key]
 
         # Pick a random bitstring weighted by measurement counts.
         bitstrings = list(raw_results.keys())
@@ -250,16 +259,17 @@ def backend_sampling_eqn_evaluator(backend):
         probs = counts / counts.sum()
         bitstring = np.random.choice(bitstrings, p=probs)
 
+        # Convert bitstring to JAX boolean array for the JIT boundary.
+        meas_array = jax.numpy.array(
+            [c == "1" for c in bitstring], dtype=bool
+        )
+
         # Accumulator and kernel args for this iteration.
         acc = invalues[1]
-        kernel_args = list(invalues[2:-1])
+        kernel_args = tuple(invalues[2:-1])
 
-        # Extract post-processing with this iteration's i and acc.
-        post_proc = body_jaspr.extract_post_processing(i, acc, *kernel_args)
-
-        # Decode the bitstring → full sampling_body_func return
-        # (excluding QuantumState).
-        result = post_proc(bitstring)
+        # JIT'd post-processing with this iteration's i and acc.
+        result = evaluate_shot(meas_array, i, acc, *kernel_args)
 
         # Insert into context dict.  sampling_body_func returns
         # (..., QuantumState) — append the input QS placeholder.
