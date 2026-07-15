@@ -22,6 +22,7 @@ from xdsl.ir import Block, Region
 from xdsl.ir.affine import AffineMap
 
 from qrisp.jasp.mlir.mlir_rewrites import cmpi_extui_folding, scalar_linalg_folding, scalar_tensor_folding
+from qrisp.jasp.mlir.mlir_rewrites.classical_lowering import classical_to_llvm
 
 
 @pytest.fixture
@@ -33,6 +34,7 @@ def ctx() -> Context:
     ctx.load_dialect(func.Func)
     ctx.load_dialect(linalg.Linalg)
     ctx.load_dialect(tensor.Tensor)
+    ctx.load_dialect(llvm.LLVM)
     return ctx
 
 
@@ -353,16 +355,10 @@ class TestCmpiExtUIFolding:
 # ==============================================================================
 
 
-# ==============================================================================
-# Helpers
-# ==============================================================================
+# -- arith integer binary ops --------------------------------------------
 
 
-def _run_classical_lowering(module, ctx):
-    from qrisp.jasp.mlir.mlir_rewrites.classical_lowering import (
-        classical_to_llvm,
-    )
-
+def _run(module, ctx):
     classical_to_llvm(ctx, module)
 
 
@@ -379,152 +375,142 @@ def _make_binary_func(arg_type, op_builder):
 # -- arith integer binary ops --------------------------------------------
 
 
-@pytest.fixture
-def llvm_ctx() -> Context:
-    ctx = Context()
-    ctx.load_dialect(builtin.Builtin)
-    ctx.load_dialect(arith.Arith)
-    ctx.load_dialect(func.Func)
-    ctx.load_dialect(llvm.LLVM)
-    return ctx
-
-
-def test_arith_addi_lowering(llvm_ctx):
+def test_arith_addi_lowering(ctx):
     """``arith.addi`` (N-bit add, modulo 2^N) → ``llvm.add``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.AddiOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.AddiOp) for op in ops)
     assert any(isinstance(op, llvm.AddOp) for op in ops)
 
 
-def test_arith_subi_lowering(llvm_ctx):
+def test_arith_subi_lowering(ctx):
     """``arith.subi`` (N-bit subtract, modulo 2^N) → ``llvm.sub``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.SubiOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.SubiOp) for op in ops)
     assert any(isinstance(op, llvm.SubOp) for op in ops)
 
 
-def test_arith_muli_lowering(llvm_ctx):
+def test_arith_muli_lowering(ctx):
     """``arith.muli`` (N-bit multiply, low N bits of product) → ``llvm.mul``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.MuliOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.MuliOp) for op in ops)
     assert any(isinstance(op, llvm.MulOp) for op in ops)
 
 
-def test_arith_divui_lowering(llvm_ctx):
+def test_arith_divui_lowering(ctx):
     """``arith.divui`` (unsigned division, trunc toward 0) → ``llvm.udiv``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.DivUIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.DivUIOp) for op in ops)
     assert any(isinstance(op, llvm.UDivOp) for op in ops)
 
 
-def test_arith_divsi_lowering(llvm_ctx):
+def test_arith_divsi_lowering(ctx):
     """``arith.divsi`` (signed division, trunc toward 0) → ``llvm.sdiv``.
 
     ``INT_MIN / -1`` and division by zero are UB in both dialects.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.DivSIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.DivSIOp) for op in ops)
     assert any(isinstance(op, llvm.SDivOp) for op in ops)
 
 
-def test_arith_remui_lowering(llvm_ctx):
+def test_arith_remui_lowering(ctx):
     """``arith.remui`` (unsigned remainder) → ``llvm.urem``.
 
     Both operands are treated as unsigned bitvectors — the result magnitude
     is ``|lhs| % |rhs|`` interpreted as unsigned.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.RemUIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.RemUIOp) for op in ops)
     assert any(isinstance(op, llvm.URemOp) for op in ops)
 
 
-def test_arith_remsi_lowering(llvm_ctx):
+def test_arith_remsi_lowering(ctx):
     """``arith.remsi`` (signed remainder) → ``llvm.srem``.
 
     The result sign matches the dividend (``lhs``): ``-7 rem 3 = -1``,
     ``7 rem -3 = 1``.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.RemSIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.RemSIOp) for op in ops)
     assert any(isinstance(op, llvm.SRemOp) for op in ops)
 
 
-def test_arith_andi_lowering(llvm_ctx):
+def test_arith_andi_lowering(ctx):
     """``arith.andi`` (bitwise AND) → ``llvm.and``.
 
     Bitwise AND is identical for signed and unsigned types — both dialects
     treat the operands as bitvectors and compute ``lhs & rhs``.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.AndIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.AndIOp) for op in ops)
     assert any(isinstance(op, llvm.AndOp) for op in ops)
 
 
-def test_arith_ori_lowering(llvm_ctx):
+def test_arith_ori_lowering(ctx):
     """``arith.ori`` (bitwise OR) → ``llvm.or``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.OrIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.OrIOp) for op in ops)
     assert any(isinstance(op, llvm.OrOp) for op in ops)
 
 
-def test_arith_xori_lowering(llvm_ctx):
+def test_arith_xori_lowering(ctx):
     """``arith.xori`` (bitwise XOR) → ``llvm.xor``."""
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.XOrIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.XOrIOp) for op in ops)
     assert any(isinstance(op, llvm.XOrOp) for op in ops)
 
 
-def test_arith_shli_lowering(llvm_ctx):
+def test_arith_shli_lowering(ctx):
     """``arith.shli`` (shift left, zero-fill) → ``llvm.shl``.
 
     ``rhs >= bitwidth`` is poison in both dialects.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.ShLIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.ShLIOp) for op in ops)
     assert any(isinstance(op, llvm.ShlOp) for op in ops)
 
 
-def test_arith_shrsi_lowering(llvm_ctx):
+def test_arith_shrsi_lowering(ctx):
     """``arith.shrsi`` (arithmetic / signed shift right) → ``llvm.ashr``.
 
     Fills high bits with copies of the sign bit (sign-extension).
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.ShRSIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.ShRSIOp) for op in ops)
     assert any(isinstance(op, llvm.AShrOp) for op in ops)
 
 
-def test_arith_shrui_lowering(llvm_ctx):
+def test_arith_shrui_lowering(ctx):
     """``arith.shrui`` (logical / unsigned shift right) → ``llvm.lshr``.
 
     Fills high bits with zeros.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.ShRUIOp(a, b))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.ShRUIOp) for op in ops)
     assert any(isinstance(op, llvm.LShrOp) for op in ops)
@@ -533,14 +519,14 @@ def test_arith_shrui_lowering(llvm_ctx):
 # -- arith.cmpi ----------------------------------------------------------
 
 
-def test_arith_cmpi_lowering(llvm_ctx):
+def test_arith_cmpi_lowering(ctx):
     """``arith.cmpi`` (integer comparison) → ``llvm.icmp``.
 
     Predicate encoding (0 = eq, 1 = ne, 2 = slt, …, 9 = uge) is identical
     in both dialects. Result is ``i1``.
     """
     module, block = _make_binary_func(builtin.i32, lambda a, b: arith.CmpiOp(a, b, "eq"))
-    _run_classical_lowering(module, llvm_ctx)
+    _run(module, ctx)
     ops = list(block.ops)
     assert not any(isinstance(op, arith.CmpiOp) for op in ops)
     assert any(isinstance(op, llvm.ICmpOp) for op in ops)

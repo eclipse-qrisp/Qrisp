@@ -18,12 +18,9 @@
 """
 Classical-to-LLVM lowering for the JASP MLIR pipeline.
 
-This module converts all non-quantum MLIR dialects (``arith``, ``tensor``,
-``scf``, ``math``) into the ``llvm`` dialect, leaving only ``jasp.*``
-(quantum) and ``llvm.*`` (classical) ops in the module.
-
-Each dialect group has its own ``RewritePattern`` subclass(es), registered in
-the ``classical_to_llvm`` orchestrator.
+This module converts ``arith`` integer operations into ``llvm`` equivalents.
+Other classical dialects (``tensor``, ``scf``, ``math``) have bare-bone
+placeholder stubs and  will be filled in separately.
 """
 
 from collections.abc import Sequence
