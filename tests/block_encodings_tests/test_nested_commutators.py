@@ -151,6 +151,12 @@ def test_state_prep_for_nested_commutators(coeffs):
             np.array([1.0]),
             "first order only",
         ),
+        (
+            0.5 * X(0) * Z(1) + 0.5 * Y(0) * Y(1),
+            0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
+            np.array([-1.0, 0.5, -1.0]),
+            "negative coefficients",
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -211,13 +217,14 @@ def test_nested_commutators(A, B, coeffs, description, method):
         (
             0.5 * X(0) * Z(1) + 0.5 * Y(0) * Y(1),
             0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
-            np.array(
-                [
-                    0.0,
-                    1.0,
-                ]
-            ),
+            np.array([0.0, 1.0]),
             "second order only",
+        ),
+        (
+            0.5 * X(0) * Z(1) + 0.5 * Y(0) * Y(1),
+            0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
+            np.array([0.5, -1.0]),
+            "negative coefficients",
         ),
     ],
 )

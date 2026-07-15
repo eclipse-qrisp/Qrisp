@@ -38,6 +38,7 @@ from qrisp.jasp import (
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 from .helper_functions import _chebyshev_commutator_coeffs, _chebyshev_sum_commutator_coeffs
+from .unary_prep import _unary_prep
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -181,12 +182,12 @@ def create_unary_preps_walk(
         if ctrl is not None:
             with control(ctrl):
                 if d > 1:
-                    unary_prep(steps, coeffs)
+                    _unary_prep(steps, coeffs)
                 else:
                     x(steps)
         else:
             if d > 1:
-                unary_prep(steps, coeffs)
+                _unary_prep(steps, coeffs)
             else:
                 x(steps)
 
@@ -220,12 +221,12 @@ def create_unary_preps_walk(
         if ctrl is not None:
             with control(ctrl):
                 if d > 1:
-                    unary_prep(steps, coeffs)
+                    _unary_prep(steps, coeffs, conjugate=True)
                 else:
                     x(steps)
         else:
             if d > 1:
-                unary_prep(steps, coeffs)
+                _unary_prep(steps, coeffs, conjugate=True)
             else:
                 x(steps)
 
