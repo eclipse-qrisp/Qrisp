@@ -43,7 +43,7 @@ API Changes
 .. Add API changes above this line
 
 Development
-----------
+-----------
 
 * Added ``codespell`` configuration for automated typo checking and fixed typos
   across 215 files in documentation, source code, and tests

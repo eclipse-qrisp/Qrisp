@@ -195,10 +195,10 @@ Compatibility
 
 .. Add compatibility notes above this line
 
-New Tutorials / Updated Documentation
---------------------------------------
+New Tutorials/ Updated Documentation
+-------------------------------------
 
-.. Add new tutorials / updated documentation above this line
+.. Add new tutorials above this line
 
 API Changes
 -----------
