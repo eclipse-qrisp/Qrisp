@@ -21,6 +21,41 @@ This module provides :func:`backend_sampler` — a decorator that routes
 :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
 calls through a real quantum backend instead of the Jaspify simulator.
 
+Example Jaspr structure
+=======================
+
+Tracing a simple kernel that applies a Hadamard to a 3-qubit
+:class:`~qrisp.QuantumFloat` and measures it with
+:func:`~qrisp.jasp.sample` produces the following Jaspr::
+
+    { lambda ; a:QuantumState. let
+        b:f64[500] = pjit[
+          name=sampling_eval_function          ← intercept ②
+          jaxpr={ lambda ; d:f64[500] e:i64[]. let
+              _:i64[] = pjit[
+                name=_backend_shots_marker
+                jaxpr={ lambda ; e:i64[]. let in (e,) }
+              ] e
+              ...
+              _:i64[] _:i64[] f:f64[500] = while[
+                body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let
+                    j:QuantumState = jasp.create_quantum_kernel
+                    k:QuantumState l:f64[500] = pjit[
+                      name=sampling_body_func  ← intercept ③
+                      jaxpr={ ...
+                        pjit[name=user_func] ...
+                        pjit[name=sampling_helper_1] ...
+                        pjit[name=sampling_helper_2] ...
+                      }
+                    ] g h j
+                    m:QuantumState = jasp.consume_quantum_kernel k
+                  in (l, m) }
+                ...
+              ] ...
+            in (f,) }
+        ] ...
+      in (b,) }
+
 Architecture
 ============
 
@@ -29,37 +64,37 @@ Architecture
 **Piece 1 — :func:`_make_backend_sampling_fn`**
     A factory that receives a ``sampling_eval_function`` (or
     ``expectation_value_eval_function``) Jaxpr and returns a plain
-    Python function ``fn(*kernel_args, shots) → result``.  It operates
-    in two phases:
+    Python function ``fn(*kernel_args, shots) → result``.  Operates in
+    two phases:
 
     **Phase 1 (static)** — extracts the quantum circuit from the
     loop-body Jaspr via :meth:`~Jaspr.to_qc`, executes it **once** on
     the backend, and expands the result into a shuffled array of
-    bitstrings (one per shot).
+    bitstrings (one per shot).  The arguments for ``to_qc`` are
+    obtained by running the eval Jaspr with a mini-interpreter that
+    stops at the first ``sampling_body_func`` call — this lets JAX
+    resolve all captured closure variables automatically.
 
     **Phase 2 (dynamic)** — replays the JAX while-loop inside the eval
     Jaspr via :func:`~eval_jaxpr` with a custom evaluator
     (:func:`_body_loop_evaluator`).  The evaluator intercepts the
     ``sampling_body_func`` pjit and replaces it with a call to
     :meth:`~Jaspr.extract_post_processing` using the **actual**
-    loop-carried *i*, *acc*, and kernel-arg values.  This means all
-    accumulator typing, indexing, and update logic comes from the
-    Jaspr itself — no manual type inspection, EV/sample branching, or
-    shape-dependent decoding happens in this module.
+    loop-carried *i*, *acc*, and kernel-arg values.  All accumulator
+    typing, indexing, and update logic comes from the Jaspr itself.
 
 **Piece 2 — :func:`_make_backend_eqn_evaluator`**
     An ``eqn_evaluator`` that intercepts the two named JIT calls
     (``sampling_eval_function`` / ``expectation_value_eval_function``)
     in the outer Jaspr and replaces each with a
     :func:`jax.pure_callback` wrapping the factory from piece 1.
-    Every other primitive falls through to default evaluation.
 
 **Piece 3 — :class:`_BackendSampler`**
     The decorator that traces the user function with
     :func:`~qrisp.jasp.make_jaspr`, validates it, wires the evaluator
     from piece 2 into the standard Jaspr evaluation loop, and
-    evaluates the Jaspr in pure Python (no ``@jax.jit`` — the
-    ``pure_callback`` already provides the JIT boundary).
+    evaluates the Jaspr in pure Python (the ``pure_callback`` provides
+    the JIT boundary).
 
 ::
 
@@ -75,31 +110,27 @@ Architecture
     │  result = acc (or acc / shots for EV)                      │
     └─────────────────────────────────────────────────────────────┘
 
-    Inside the interception ③:
-      ┌─ body_jaspr ─────────────────────────────────────────────┐
-      │  extract_post_processing(i, acc, *kernel_args)(bitstr)   │
-      │  → skips quantum gates, replaces measurements with bits  │
-      │  → evaluates classical decoding + acc update natively    │
-      │  → returns (acc_out, *kernel_args)                       │
-      └──────────────────────────────────────────────────────────┘
+    Inside interception ③:
+      extract_post_processing(i, acc, *kernel_args)(bitstr)
+      → evaluates classical decoding + acc update natively
+      → returns (acc_out, *kernel_args)
+
 
 Key design properties
 ---------------------
 
-* **Single backend call per decorated invocation** — the circuit is
-  built once, the backend runs once, and only lightweight
-  post-processing varies per shot.
+* **Single backend call per invocation** — the circuit is built once,
+  the backend runs once, and only lightweight post-processing varies
+  per shot.
 * **No manual accumulator logic** — the Jaspr's own while-loop,
   accumulator typing, indexing, and update rules are reused via
-  :func:`eval_jaxpr`.  The module does not inspect accumulator
-  shapes, check ``is_ev`` booleans, or manually decode tuples.
+  :func:`eval_jaxpr`.  The module never inspects accumulator shapes
+  or manually decodes tuples.
 * **Dynamic *i* and *acc*** — :meth:`~Jaspr.extract_post_processing`
-  is called per iteration with the real loop-carried values, so
-  operations like ``acc.at[i].set(decoded)`` use the correct index.
+  is called per iteration with the real loop-carried values.
 * **Minimal interception surface** — only ``sampling_body_func`` is
-  intercepted; the while-loop, generic ``jit``/``pjit`` calls, and
-  quantum-kernel bookkeeping are all re-evaluated with the custom
-  evaluator propagating recursively.
+  intercepted; the while-loop, ``jit``/``pjit`` calls, and
+  quantum-kernel bookkeeping all propagate with the custom evaluator.
 
 .. rubric:: Usage
 
@@ -311,7 +342,6 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # variables.  Split them: the last N are the actual function
         # args (kernel_args + shots), everything before is captured.
         n_expected = len(inner_jaxpr.jaxpr.invars)
-        captured = invals[:-n_expected] if len(invals) > n_expected else ()
         actual_args = invals[-n_expected:]
         kernel_args = list(actual_args[:-1])
         shots = int(actual_args[-1])
@@ -342,10 +372,10 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 
         # ── Phase 2: dynamic loop evaluation ────────────────────────
         def post_proc(meas_results, *all_non_qs_args):
-            """Return ``(*kernel_args, acc_out)`` for one shot.
+            """Return ``(acc_out, *kernel_args)`` for one shot.
 
             *all_non_qs_args* receives the **actual** loop-carried
-            values ``(i, *kernel_args, acc)``, so the extracted
+            values ``(i, acc, *kernel_args)``, so the extracted
             post-processing function uses the real *i* and *acc*
             rather than hard-coded dummies.
             """
@@ -389,13 +419,13 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
         # ── Intercept sampling_body_func ────────────────────────────
         if prim_name in ("jit", "pjit") and eqn.params.get("name") == "sampling_body_func":
             invalues = extract_invalues(eqn, context_dic)
-            # invalues = [*captured, i, *kernel_args, acc, qs]
-            # acc is always at acc_pos, qs at -1, i at i_pos
+            # invalues = [*captured, i, acc, *kernel_args, qs]
+            # acc is at acc_pos, qs at -1, i at i_pos
             iteration = invalues[i_pos]
             qs_val = invalues[-1]
 
-            # post_proc(meas_bits, i, *kernel_args, acc)
-            # → (*kernel_args, acc_out)  [QS stripped by extract_post_processing]
+            # post_proc(meas_bits, i, acc, *kernel_args)
+            # → (acc_out, *kernel_args)  [QS stripped by extract_post_processing]
             results = post_proc(
                 meas_results[iteration], *invalues[:-1]
             )
