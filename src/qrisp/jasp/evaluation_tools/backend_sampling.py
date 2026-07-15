@@ -207,23 +207,17 @@ def find_named_jaxpr(jaxpr, target_name):
 def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     """Return ``fn(*kernel_args, shots) → result`` for a given eval Jaxpr.
 
-    Parameters
-    ----------
-    inner_jaxpr : ClosedJaxpr
-        The Jaxpr of ``sampling_eval_function`` or
-        ``expectation_value_eval_function``.
-    eval_name : str
-        Either ``"sampling_eval_function"`` or
-        ``"expectation_value_eval_function"``.
-    backend : Backend
-        The backend to execute circuits on.
+    **Phase 1 (static)** — extract the flat quantum circuit via
+    :meth:`~Jaspr.to_qc`, execute it **once** on the backend, and
+    collect all measurement bitstrings.
 
-    Returns
-    -------
-    callable
-        A function ``fn(*kernel_args, shots)`` that returns the same
-        result as the original eval function, but obtained via the
-        backend instead of the simulator.
+    **Phase 2 (dynamic)** — replay the JAX while-loop inside
+    *inner_jaxpr* with a custom :func:`~eval_jaxpr` evaluator that
+    intercepts the ``sampling_body_func`` pjit.  The interception
+    calls :meth:`~Jaspr.extract_post_processing` with the **actual**
+    loop-carried *i* and *acc* values, then feeds the pre-computed
+    measurement bits for that shot.  All accumulator typing, indexing,
+    and update logic is handled by the Jaspr itself.
     """
     body_jaxpr = find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
     if body_jaxpr is None:
@@ -231,72 +225,156 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
             "sampling_body_func not found inside eval function Jaxpr"
         )
     body_jaspr = Jaspr(body_jaxpr)
-    is_ev = eval_name == "expectation_value_eval_function"
 
     def backend_sampling_fn(*invals):
         # invals = (*kernel_args, shots)
         kernel_args = list(invals[:-1])
         shots = int(invals[-1])
 
-        # ── Build dummy args for circuit extraction ─────────────────
-        # body_jaspr invars (after @quantum_kernel flattening):
-        #   [i, acc, *kernel_args, qs]
-        # to_qc / extract_post_processing expect the same minus the
-        # trailing QuantumState.
+        # ── Phase 1: static analysis ────────────────────────────────
+        # Build dummy args for circuit extraction.  The circuit
+        # structure is independent of i and acc, so dummy values are
+        # fine here.
         body_acc_aval = body_jaspr.invars[1].aval
         dummy_acc = jnp.zeros(body_acc_aval.shape, dtype=body_acc_aval.dtype)
         to_qc_args = [0, dummy_acc] + kernel_args
         *_, qc = body_jaspr.to_qc(*to_qc_args)
+
+        # Run the backend ONCE.
         raw = backend.run(qc, shots=shots)
-        post_proc = body_jaspr.extract_post_processing(*to_qc_args)
 
-        # ── Decode every shot ───────────────────────────────────────
-        decoded_list = []
-        for bs, cnt in raw.items():
-            full_return = post_proc(bs)
-            if not isinstance(full_return, tuple):
-                full_return = (full_return,)
-            # full_return = (acc, *kernel_args)
-            acc_out = full_return[0]
-            if is_ev:
-                # EV accumulator: shape (1,) single, (n_returns,) multi.
-                # acc started at zeros, so acc == decoded value.
-                if (hasattr(acc_out, "shape")
-                        and acc_out.shape == (1,)):
-                    val = acc_out[0]          # single → scalar
-                else:
-                    val = acc_out             # multi  → vector
-            else:
-                # Sample accumulator: shape (shots,) or (shots, n).
-                # acc[i] = decoded; acc[0] is the decoded value.
-                if hasattr(acc_out, "shape") and acc_out.shape:
-                    val = acc_out[0]          # scalar or row vector
-                else:
-                    val = acc_out             # already a scalar
-            cnt = int(cnt)
-            if hasattr(val, "tolist"):
-                val = val.tolist()
-            if isinstance(val, (tuple, list)):
-                decoded_list.extend([tuple(val)] * cnt)
-            else:
-                decoded_list.extend([float(val)] * cnt)
-        np.random.shuffle(decoded_list)
+        # Expand & shuffle into a list of *shots* measurement arrays.
+        meas_results_list = []
+        for bitstring, count in raw.items():
+            bit_array = jnp.array([c == "1" for c in bitstring], dtype=jnp.bool_)
+            meas_results_list.extend([bit_array] * int(count))
+        np.random.shuffle(meas_results_list)
+        meas_results_array = jnp.stack(meas_results_list) if meas_results_list else jnp.array([], dtype=jnp.bool_)
 
-        # ── Assemble final result ───────────────────────────────────
-        if is_ev:
-            if decoded_list and isinstance(decoded_list[0],
-                                           (tuple, list)):
-                total = sum(jnp.asarray(x) for x in decoded_list)
-            else:
-                total = sum(decoded_list)
-            return jnp.array(total / shots, dtype=jnp.float64)
-        else:
-            if decoded_list and isinstance(decoded_list[0],
-                                           (tuple, list, np.ndarray)):
-                return jnp.stack([jnp.asarray(x) for x in decoded_list])
-            return jnp.array(decoded_list, dtype=jnp.float64)
+        # ── Phase 2: dynamic loop evaluation ────────────────────────
+        def post_proc(meas_results, *all_non_qs_args):
+            """Return ``(acc_out, *kernel_args)`` for one shot.
+
+            *all_non_qs_args* receives the **actual** loop-carried
+            values ``(i, acc, *kernel_args)``, so the extracted
+            post-processing function uses the real *i* and *acc*
+            rather than hard-coded dummies.
+            """
+            return body_jaspr.extract_post_processing(*all_non_qs_args)(
+                meas_results
+            )
+
+        loop_eqn_evaluator = _body_loop_evaluator(
+            post_proc, meas_results_array
+        )
+
+        # Evaluate the inner Jaspr (the ``sampling_eval_function`` /
+        # ``expectation_value_eval_function`` Jaxpr).  This runs the
+        # while-loop and extracts the final result — the Jaspr itself
+        # owns all accumulator typing and indexing logic.
+        return eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator)(
+            *invals
+        )
 
     return backend_sampling_fn
+
+
+def _body_loop_evaluator(post_proc, meas_results):
+    """Build an ``eqn_evaluator`` for the *inner_jaxpr*
+    (``sampling_eval_function`` / ``expectation_value_eval_function``).
+
+    Intercepts:
+    * ``sampling_body_func`` pjit — replaced by *post_proc* with the
+      pre-computed measurement bits for the current shot.
+    * ``jasp.create_quantum_kernel`` / ``jasp.consume_quantum_kernel``
+      — treated as no-ops (they produce/consume sentinel objects).
+    """
+
+    def eqn_evaluator(eqn, context_dic):
+        prim_name = eqn.primitive.name
+
+        # ── Intercept sampling_body_func ────────────────────────────
+        if prim_name in ("jit", "pjit") and eqn.params.get("name") == "sampling_body_func":
+            invalues = extract_invalues(eqn, context_dic)
+            # invalues = [i, acc, *kernel_args, qs]
+            iteration = invalues[0]
+            qs_val = invalues[-1]
+
+            # post_proc(meas_bits, i, acc, *kernel_args)
+            # → (acc_out, *kernel_args)   [QS stripped by extract_post_processing]
+            results = post_proc(
+                meas_results[iteration], *invalues[:-1]
+            )
+            if not isinstance(results, tuple):
+                results = (results,)
+
+            # Re-attach the QuantumState so the output arity matches
+            # the pjit equation's outvars.
+            results_with_qs = list(results) + [qs_val]
+            insert_outvalues(eqn, context_dic, results_with_qs)
+            return False
+
+        # ── Quantum-kernel bookkeeping (no-ops) ─────────────────────
+        if prim_name == "jasp.create_quantum_kernel":
+            # Produce a sentinel for the QuantumState output.
+            if eqn.outvars:
+                context_dic[eqn.outvars[0]] = object()
+            return False
+
+        if prim_name == "jasp.consume_quantum_kernel":
+            # Consumed — nothing to output.
+            return False
+        
+        if prim_name == "while":
+            invalues = extract_invalues(eqn, context_dic)
+            n_body_consts = eqn.params.get("body_nconsts", 0)
+            n_cond_consts = eqn.params.get("cond_nconsts", 0)
+            total_consts = n_body_consts + n_cond_consts
+
+            def body_fun(loop_state):
+                # loop_state = (cond_consts, body_consts, *carries)
+                body_consts = loop_state[n_cond_consts : total_consts]
+                carries = loop_state[total_consts:]
+                res = eval_jaxpr(
+                    eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator
+                )(*(list(body_consts) + list(carries)))
+                if not isinstance(res, tuple):
+                    res = (res,)
+                return loop_state[:total_consts] + tuple(res)
+
+            def cond_fun(loop_state):
+                cond_consts = loop_state[:n_cond_consts]
+                carries = loop_state[total_consts:]
+                return eval_jaxpr(
+                    eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
+                )(*(list(cond_consts) + list(carries)))
+
+            outvalues = jax.lax.while_loop(
+                cond_fun, body_fun, tuple(invalues)
+            )[total_consts:]
+            insert_outvalues(eqn, context_dic, outvalues)
+            return False
+
+        if prim_name in ("jit", "pjit") and eqn.params.get("name") != "sampling_body_func":
+            # Generic jit/pjit: propagate our evaluator recursively so
+            # that any nested while loops / sampling_body_func calls
+            # are still intercepted.
+            sub_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+            if sub_jaxpr is not None:
+                invalues = extract_invalues(eqn, context_dic)
+                outvals = eval_jaxpr(
+                    sub_jaxpr, eqn_evaluator=eqn_evaluator
+                )(*(list(sub_jaxpr.consts) + list(invalues)))
+                if len(sub_jaxpr.jaxpr.outvars) == 1:
+                    outvals = [outvals]
+                insert_outvalues(eqn, context_dic, outvals)
+                return False
+
+        # ── Default (all other primitives) ──────────────────────────
+        return True
+
+    return eqn_evaluator
+
 
 
 # ===========================================================================
@@ -417,42 +495,50 @@ class _BackendSampler:
         be_evaluator = _make_backend_eqn_evaluator(backend)
         _QS = jnp.array(0.0)  # sentinel for QuantumState placeholders
 
-        def eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
-            # Let the backend evaluator try first.
-            if be_evaluator(eqn, context_dic, eqn_evaluator) is False:
-                return False
+        # Use a factory to avoid parameter-name shadowing:
+        # the inner function captures itself via closure, so nested
+        # eval_jaxpr calls always receive the correct evaluator.
+        def make_outer_evaluator():
+            def eqn_evaluator(eqn, context_dic):
+                # Let the backend evaluator try first.
+                if be_evaluator(eqn, context_dic, eqn_evaluator) is False:
+                    return False
 
-            # -- default behaviour (mirrors simulate_jaspr) --
-            prim = eqn.primitive.name
-            if prim in ("jit", "pjit"):
-                invalues = extract_invalues(eqn, context_dic)
-                sub_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
-                    "call_jaxpr"
-                )
-                outvalues = eval_jaxpr(
-                    sub_jaxpr, eqn_evaluator=eqn_evaluator
-                )(*invalues)
-                if not isinstance(outvalues, (list, tuple)):
-                    outvalues = [outvalues]
-                insert_outvalues(eqn, context_dic, outvalues)
-                return False
-            elif prim == "jasp.create_quantum_kernel":
-                insert_outvalues(eqn, context_dic, _QS)
-                return False
-            elif prim == "jasp.consume_quantum_kernel":
-                return False
-            else:
-                return True
+                # -- default behaviour (mirrors simulate_jaspr) --
+                prim = eqn.primitive.name
+                if prim in ("jit", "pjit"):
+                    invalues = extract_invalues(eqn, context_dic)
+                    sub_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
+                        "call_jaxpr"
+                    )
+                    outvalues = eval_jaxpr(
+                        sub_jaxpr, eqn_evaluator=eqn_evaluator
+                    )(*invalues)
+                    if not isinstance(outvalues, (list, tuple)):
+                        outvalues = [outvalues]
+                    insert_outvalues(eqn, context_dic, outvalues)
+                    return False
+                elif prim == "jasp.create_quantum_kernel":
+                    insert_outvalues(eqn, context_dic, _QS)
+                    return False
+                elif prim == "jasp.consume_quantum_kernel":
+                    return False
+                else:
+                    return True
 
-        # ── JIT-evaluate the Jaspr ──────────────────────────────────
-        @jax.jit
-        def evaluate(*flat_args):
-            eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
-            return eval_fn(*flat_args, _QS)
+            return eqn_evaluator
 
+        eqn_evaluator = make_outer_evaluator()
+
+        # ── Evaluate the Jaspr ──────────────────────────────────────
+        # No @jax.jit — the Jaspr carries AbstractQuantumState values
+        # that JAX cannot lower to MLIR.  The pure_callback inside
+        # _make_backend_eqn_evaluator already provides the JIT
+        # boundary for the eval function.
         with fast_append(3):
             flat_args = list(tree_flatten(args)[0])
-            res = evaluate(*flat_args)
+            eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
+            res = eval_fn(*flat_args, _QS)
 
         # ── Strip the trailing QuantumState output ───────────────────
         if len(jaspr.jaxpr.outvars) == 2:
