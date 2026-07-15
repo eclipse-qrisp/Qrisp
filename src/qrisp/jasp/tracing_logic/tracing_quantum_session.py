@@ -150,6 +150,9 @@ class TracingQuantumSession:
 
     def register_qv(self, qv, size):
 
+        if self.abs_qst is None:
+            raise Exception("Tried to create QuantumVariable outside of a quantum tracing context (use jaspify, make_jaspr, sample or similar features to enter a quantum tracing context)")
+
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""

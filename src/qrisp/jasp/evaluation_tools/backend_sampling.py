@@ -42,7 +42,7 @@ Architecture
 
 **Piece 2 — :func:`backend_sampler` / :func:`_make_backend_sampler_wrapper`**
     The decorator that traces the user function with
-    :func:`~qrisp.jasp.make_jaspr`, wires piece 1 into the standard
+    :func:`~jax.make_jaxpr`, wires piece 1 into the standard
     Jaspr evaluation loop, and evaluates the Jaspr in pure Python
     (the ``pure_callback`` provides the JIT boundary).
 
@@ -67,13 +67,12 @@ Architecture
     result = main(1)  # JAX array, shape (100,), routed through backend
 """
 
-import jax.numpy as jnp
 from jax import ShapeDtypeStruct, pure_callback
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.tree_util import tree_flatten
 
 from qrisp.circuit import fast_append
 from qrisp.core import recursive_qv_search
-from qrisp.jasp import make_jaspr
+from qrisp.jasp import make_jaxpr
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     extract_invalues,
@@ -278,13 +277,24 @@ def _make_backend_sampler_wrapper(func, backend):
     """Return a callable that wraps *func* with backend-sampling."""
     def wrapper(*args, **kwargs):
         # ── Trace the decorated function ────────────────────────────
-        jaspr, out_tree = make_jaspr(func, return_shape=True)(
-            *args, **kwargs
-        )
+        # Use make_jaxpr (not make_jaspr) — we do NOT want a quantum
+        # tracing context for the outer orchestration function.
+        try:
+            jaspr, out_shape = make_jaxpr(func, return_shape=True)(
+                *args, **kwargs
+            )
+        except Exception as e:
+            if "quantum tracing context" in str(e):
+                raise RuntimeError(
+                    "Encountered a quantum operation in "
+                    "@backend_sampler without a surrounding "
+                    "sample() or expectation_value() call. "
+                    "Use @jaspify for single-shot simulation."
+                ) from e
+            raise
 
         # ── Build evaluators ────────────────────────────────────────
         be_evaluator = _make_backend_eqn_evaluator(backend)
-        _QS = jnp.array(0.0)  # sentinel for QuantumState placeholders
 
         # Use a factory to avoid parameter-name shadowing:
         # the inner function captures itself via closure, so nested
@@ -309,18 +319,6 @@ def _make_backend_sampler_wrapper(func, backend):
                         outvalues = [outvalues]
                     insert_outvalues(eqn, context_dic, outvalues)
                     return False
-                elif prim == "jasp.create_quantum_kernel":
-                    insert_outvalues(eqn, context_dic, _QS)
-                    return False
-                elif prim == "jasp.consume_quantum_kernel":
-                    return False
-                elif prim.startswith("jasp."):
-                    raise RuntimeError(
-                        f"Encountered quantum primitive '{prim}' in "
-                        f"@backend_sampler without a surrounding "
-                        f"sample() or expectation_value() call. "
-                        f"Use @jaspify for single-shot simulation."
-                    )
                 else:
                     return True
 
@@ -329,26 +327,14 @@ def _make_backend_sampler_wrapper(func, backend):
         eqn_evaluator = make_outer_evaluator()
 
         # ── Evaluate the Jaspr ──────────────────────────────────────
-        # No @jax.jit — the Jaspr carries AbstractQuantumState values
+        # No @jax.jit — the Jaxpr may carry AbstractQuantumState values
         # that JAX cannot lower to MLIR.  The pure_callback inside
         # _make_backend_eqn_evaluator already provides the JIT
         # boundary for the eval function.
         with fast_append(3):
             flat_args = list(tree_flatten(args)[0])
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
-            res = eval_fn(*flat_args, _QS)
-
-        # ── Strip the trailing QuantumState output ───────────────────
-        if len(jaspr.jaxpr.outvars) == 2:
-            res = res[0]
-        else:
-            res = res[:-1]
-
-        # ── Reconstruct PyTree ──────────────────────────────────────
-        if isinstance(res, tuple):
-            res = tree_unflatten(out_tree, res)
-        elif res is not None:
-            res = tree_unflatten(out_tree, [res])
+            res = eval_fn(*flat_args)
 
         # ── Safety check ────────────────────────────────────────────
         if len(recursive_qv_search(res)):
