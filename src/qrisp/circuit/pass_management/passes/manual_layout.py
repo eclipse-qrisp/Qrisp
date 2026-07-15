@@ -15,14 +15,6 @@
 ********************************************************************************
 """
 
-"""Manual qubit layout pass.
-
-Creates a pass function that re-indexes qubits according to a caller-supplied
-physical qubit mapping.  Logical qubit *i* is placed on physical qubit
-``qubit_mapping[i]``.  The output circuit may have more qubits than the
-input if the maximum physical index exceeds the logical qubit count.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable
