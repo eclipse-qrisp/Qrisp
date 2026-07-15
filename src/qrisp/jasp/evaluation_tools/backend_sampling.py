@@ -139,6 +139,15 @@ def backend_sampler(backend):
 
     .. warning::
 
+        The decorated function **must** use :func:`~qrisp.jasp.sample`
+        or :func:`~qrisp.jasp.expectation_value` to trigger quantum
+        execution.  Direct quantum operations (gates, measurements)
+        without a surrounding sample/EV call will raise a
+        :class:`RuntimeError` pointing you to
+        :func:`~qrisp.jasp.jaspify`.
+
+    .. warning::
+
         Sampling kernels that rely on **real-time feedback** (e.g.
         mid-circuit measurements whose outcomes condition subsequent
         gates) are **not supported**.  ``backend_sampler`` extracts
@@ -146,6 +155,16 @@ def backend_sampler(backend):
         before execution, so any classical control flow that depends
         on measurement results inside the kernel cannot be captured.
         Use :func:`~qrisp.jasp.jaspify` for such workloads.
+
+    .. note::
+
+        Only the quantum circuit is executed on the backend.  
+        All **orchestration logic** (the code
+        in the decorated function that calls :func:`~qrisp.jasp.sample`
+        and :func:`~qrisp.jasp.expectation_value`, passes arguments,
+        and combines results) is traced into a Jaspr and compiled via
+        :func:`jax.jit`.  This means the non-coherence wrapping logic
+        runs at JAX speed, even when orchestrating many sampling calls.
 
     Parameters
     ----------
@@ -244,14 +263,6 @@ def backend_sampler(backend):
         a, b = main()
         # Each call is independently routed through the backend.
 
-    .. note::
-
-        The decorated function **must** use :func:`~qrisp.jasp.sample`
-        or :func:`~qrisp.jasp.expectation_value` to trigger quantum
-        execution.  Direct quantum operations (gates, measurements)
-        without a surrounding sample/EV call will raise a
-        :class:`RuntimeError` pointing you to
-        :func:`~qrisp.jasp.jaspify`.
     """
     return lambda func: _make_backend_sampler_wrapper(func, backend)
 
