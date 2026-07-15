@@ -113,7 +113,7 @@ def _chebyshev_sum_commutator_coeffs(coeffs):
     return C
 
 
-def unary_prep(
+def create_unary_preps(
     d: int,
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
@@ -134,18 +134,31 @@ def unary_prep(
 
     Parameters
     ----------
-    anc : QuantumVariable
-        A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
-        Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
-    qm : QuantumVariable
-        A unary-encoded QuantumVariable of size d, representing the $m$ index.
-    qn : QuantumVariable
-        A unary-encoded QuantumVariable of size d, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the state.
     coeffs : ArrayLike, shape (d,), optional
         The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
         If None, defaults to a delta distribution on the highest order commutator.
+
+    Returns
+    -------
+    prep_right : Callable
+        A function that prepares the right side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
+        The function takes the following arguments:
+            anc : QuantumVariable
+                A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
+                Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
+            qm : QuantumVariable
+                A unary-encoded QuantumVariable of size d, representing the $m$ index.
+            qn : QuantumVariable
+                A unary-encoded QuantumVariable of size d, representing the $n$ index.
+    prep_left : Callable
+        A function that prepares the left side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
+        The function takes the same arguments as `prep_right`.
+    prep_anc_templates : List[QuantumVariableTemplate]
+        A list of QuantumVariable templates for the ancilla variables used in the state preparation.
+        The templates correspond to the following ancilla variables:
+            - anc : QuantumVariable of size $2\lceil\log_2(d)\rceil$.
 
     Notes
     -----
@@ -156,9 +169,10 @@ def unary_prep(
 
     """
 
+    n = int(np.ceil(np.log2(d + 1)))
+
     def target_state(d, coeffs):
 
-        n = int(np.ceil(np.log2(d + 1)))
         target = np.zeros(2 ** (2 * n), dtype=np.complex128)
 
         C_matrix = np.sqrt(_chebyshev_sum_commutator_coeffs(coeffs))
@@ -169,12 +183,12 @@ def unary_prep(
                 target[i + (j << n)] += C_matrix[i, j]
 
         return target
-    
+
     if coeffs is None:
         coeffs = np.zeros(d, dtype=np.complex128)
         coeffs[d - 1] = 1
 
-    def prep_right(anc, qm, qn):
+    def prep_right(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable) -> None:
 
         target = target_state(d, coeffs)
         prepare(anc, target)
@@ -186,8 +200,7 @@ def unary_prep(
         q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
         q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
 
-
-    def prep_left(anc, qm, qn):
+    def prep_left(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable) -> None:
 
         target = target_state(d, coeffs).conj()
         prepare(anc, target)
@@ -199,18 +212,11 @@ def unary_prep(
         q_switch(anc[:n], case_func, qm, branch_amount=d + 1)
         q_switch(anc[n:], case_func, qn, branch_amount=d + 1)
 
+    prep_anc_templates = [QuantumVariable(2 * n).template()]  # binary-encoded ancilla for coefficient preparation
+    return prep_right, prep_left, prep_anc_templates
 
-    return prep_right, prep_left
 
-
-def unary_walk_prep(
-    steps: QuantumVariable,
-    coins1: QuantumVariable,
-    coins2: QuantumVariable,
-    m_line: QuantumVariable,
-    n_line: QuantumVariable,
-    qm: QuantumVariable,
-    qn: QuantumVariable,
+def create_unary_prep_walk(
     d: int,
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
@@ -232,25 +238,42 @@ def unary_walk_prep(
 
     Parameters
     ----------
-    steps : QuantumVariable
-        A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
-    coins1 : QuantumVariable
-        An ancilla QuantumVariable of size d, used as the first set of coin variables to control the walk steps.
-    coins2 : QuantumVariable
-        An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
-    m_line : QuantumVariable
-        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $m$-axis, which encodes the index of $T_m(A)$.
-    n_line : QuantumVariable
-        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
-    qm : QuantumVariable
-        A unary-encoded QuantumVariable of size d, representing the $m$ index.
-    qn : QuantumVariable
-        A unary-encoded QuantumVariable of size d, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the walk.
     coeffs : ArrayLike, shape (d,), optional
         The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
         If None, defaults to a delta distribution on the highest order commutator.
+
+    Returns
+    -------
+    prep_right : Callable
+        A function that prepares the right side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
+        The function takes the following arguments:
+            steps : QuantumVariable
+                A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
+            coins1 : QuantumVariable
+                An ancilla QuantumVariable of size d, used as the first set of coin variables to control the walk steps.
+            coins2 : QuantumVariable
+                An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
+            m_line : QuantumVariable
+                A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $m$-axis, which encodes the index of $T_m(A)$.
+            n_line : QuantumVariable
+                A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
+            qm : QuantumVariable
+                A unary-encoded QuantumVariable of size d, representing the $m$ index.
+            qn : QuantumVariable
+                A unary-encoded QuantumVariable of size d, representing the $n$ index.
+    prep_left : Callable
+        A function that prepares the left side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
+        The function takes the same arguments as `prep_right`.
+    prep_anc_templates : List[QuantumVariableTemplate]
+        A list of QuantumVariable templates for the ancilla variables used in the state preparation.
+        The templates correspond to the following ancilla variables:
+            - steps : QuantumVariable of size d, for controlling the walk steps.
+            - coins1 : QuantumVariable of size d, for the first set of coin variables.
+            - coins2 : QuantumVariable of size d, for the second set of coin variables.
+            - m_line : QuantumVariable of size 2d+1, for the position along the $m$-axis.
+            - n_line : QuantumVariable of size 2d+1, for the position along the $n$-axis.
 
     Notes
     -----
@@ -271,19 +294,6 @@ def unary_walk_prep(
     size = 2 * d + 1
     origin = d  # The center of the array represents m=0 and n=0
 
-    if coeffs is None:
-        coeffs = np.zeros(d)
-        coeffs[d - 1] = 1
-    else:
-        # Rescale coefficients
-        coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)])
-        coeffs = coeffs / np.sum(coeffs)
-
-    if d > 1:
-        unary_prep(steps, coeffs)
-    else:
-        x(steps)
-
     # Define the parallel, O(1) depth shift operator
     def apply_symmetric_walk(coin, qv):
         # Layer 1: Swap all Even-Odd index pairs (0-1, 2-3, 4-5...)
@@ -296,7 +306,7 @@ def unary_walk_prep(
             for i in jrange((size - 1) // 2):
                 swap(qv[2 * i + 1], qv[2 * i + 2])
 
-    def inner_walk(coins1, coins2, m_line, n_line, step):
+    def inner_walk(steps, coins1, coins2, m_line, n_line, step):
 
         # Initialize the particles directly at the origin (m=0, n=0)
         x(m_line[origin])
@@ -319,18 +329,50 @@ def unary_walk_prep(
                 with control(c1):
                     apply_symmetric_walk(c2, n_line)
 
-    inner_walk(coins1, coins2, m_line, n_line, d)
+    if coeffs is None:
+        coeffs = np.zeros(d)
+        coeffs[d - 1] = 1
+    else:
+        # Rescale coefficients
+        coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)])
+        coeffs = coeffs / np.sum(coeffs)
 
-    for i in jrange(1, d + 1):
-        cx(m_line[origin - i], m_line[origin + i])
-        cx(n_line[origin - i], n_line[origin + i])
+    def prep_right(
+        steps: QuantumVariable,
+        coins1: QuantumVariable,
+        coins2: QuantumVariable,
+        m_line: QuantumVariable,
+        n_line: QuantumVariable,
+        qm: QuantumVariable,
+        qn: QuantumVariable,
+    ) -> None:
 
-    # Copy the position of the particles to the output variables in unary encoding
-    for i in jrange(1, d + 1):
-        with control(m_line[origin + i]):
-            x(qm[:i])
-        with control(n_line[origin + i]):
-            x(qn[:i])
+        if d > 1:
+            unary_prep(steps, coeffs)
+        else:
+            x(steps)
+
+        inner_walk(steps, coins1, coins2, m_line, n_line, d)
+
+        for i in jrange(1, d + 1):
+            cx(m_line[origin - i], m_line[origin + i])
+            cx(n_line[origin - i], n_line[origin + i])
+
+        # Copy the position of the particles to the output variables in unary encoding
+        for i in jrange(1, d + 1):
+            with control(m_line[origin + i]):
+                x(qm[:i])
+            with control(n_line[origin + i]):
+                x(qn[:i])
+
+    prep_anc_templates = [
+        QuantumVariable(d).template(),  # step ancilla variable for walk
+        QuantumVariable(d).template(),  # coin ancilla variable 1 for walk
+        QuantumVariable(d).template(),  # coin ancilla variable 2 for walk
+        QuantumVariable(2 * d + 1).template(),  # position ancilla variable m_line for walk
+        QuantumVariable(2 * d + 1).template(),  # position ancilla variable n_line for walk
+    ]
+    return prep_right, None, prep_anc_templates
 
 
 def apply_nested_commutators(
@@ -437,12 +479,12 @@ def apply_nested_commutators(
 
     d = len(coeffs)
     if method == "default":
-        prep_func_right, prep_func_left = unary_prep(d, coeffs)
-        num_prep_ancs = 1
+        prep_func_right, prep_func_left, prep_anc_templates = create_unary_preps(d, coeffs)
     elif method == "walk":
-        #prep_func = unary_walk_prep
-        #num_prep_ancs = 5
-        raise NotImplementedError("The 'walk' method is not yet implemented for nested commutators.")
+        prep_func_right, prep_func_left, prep_anc_templates = create_unary_prep_walk(d, coeffs)
+
+    num_prep_ancs = len(prep_anc_templates)
+    use_prep_pair = prep_func_left is not None
 
     A_walk = A.qubitization()
 
@@ -469,14 +511,14 @@ def apply_nested_commutators(
         anc_qbl = args[num_prep_ancs + 2]
 
         ancs_A = args[num_prep_ancs + 3 : num_prep_ancs + num_ancs_A + 3]
-        #qubits_A = sum([anc.reg for anc in ancs_A], [])
+        # qubits_A = sum([anc.reg for anc in ancs_A], [])
 
         ancs_B = args[num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3]
         operands = args[-num_ops:]
 
         # Apply weighted sum of nested commutators expansion in Chebyshev basis.
         # sum_{m,n} (-1)^n C_{m,n} T_m(A) B T_n(A)
-        #with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
+        # with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
 
         def select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands):
 
@@ -490,7 +532,8 @@ def apply_nested_commutators(
                 p(np.pi / 2, anc_qbl)
 
             # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
-            #z(outer_anc_right)
+            if not use_prep_pair:
+                z(outer_anc_right)
 
             # Apply T_n(A) from the right.
             for i in jrange(d):
@@ -517,44 +560,25 @@ def apply_nested_commutators(
             # Ensure that measurment in |0> yields the correct result.
             x(anc_qbl)
 
+        if use_prep_pair:
+            prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
+            select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
+            with invert():
+                prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
+        else:
+            with conjugate(prep_func_right)(*outer_ancs, outer_anc_left, outer_anc_right):
+                select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
 
-        prep_func_right(*outer_ancs, outer_anc_left, outer_anc_right)
-
-        select(outer_anc_left, outer_anc_right, anc_qbl, ancs_A, ancs_B, operands)
-
-        with invert():
-            prep_func_left(*outer_ancs, outer_anc_left, outer_anc_right)
-
-
-    if method == "default":
-        new_anc_templates = (
-            [
-                QuantumVariable(2 * n).template(),  # binary-encoded ancilla for coefficient preparation
-                QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
-                QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
-                QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
-            ]
-            + A_walk._anc_templates
-            + B._anc_templates
-        )
-
-    elif method == "walk":
-        new_anc_templates = (
-            [
-                QuantumVariable(d).template(),  # step ancilla variable for walk
-                QuantumVariable(d).template(),  # coin ancilla variable 1 for walk
-                QuantumVariable(d).template(),  # coin ancilla variable 2 for walk
-                QuantumVariable(2 * d + 1).template(),  # position ancilla variable m_line for walk
-                QuantumVariable(2 * d + 1).template(),  # position ancilla variable n_line for walk
-                QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
-                QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
-                QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
-                QuantumVariable(num_ancs_A).template(),
-                QuantumVariable(num_ancs_B).template(),
-            ]
-            + A_walk._anc_templates
-            + B._anc_templates
-        )
+    new_anc_templates = (
+        prep_anc_templates
+        + [
+            QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
+            QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
+            QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
+        ]
+        + A_walk._anc_templates
+        + B._anc_templates
+    )
 
     new_alpha = np.sum(np.abs(_chebyshev_sum_commutator_coeffs(coeffs))) * beta
 
