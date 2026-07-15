@@ -17,6 +17,7 @@
 
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 from qrisp import *
 from qrisp.jasp import *
@@ -570,3 +571,35 @@ def test_raises_without_sample():
         assert False, "should have raised RuntimeError"
     except RuntimeError:
         pass
+
+
+def test_raises_on_realtime_feedback():
+    """@backend_sampler raises RuntimeError for kernels with real-time
+    feedback (mid-circuit measurement whose classical post-processing
+    controls subsequent quantum gates)."""
+
+    def kernel():
+        qf = QuantumFloat(4)
+        h(qf[0])
+        m = measure(qf[0])
+        # Arithmetic on the measurement result — this becomes a
+        # ProcessedMeasurement during to_qc, which cannot be used
+        # to decide over further circuit construction.
+        processed = m + 1
+
+        def true_fun(qf):
+            x(qf[1])
+            return qf
+
+        def false_fun(qf):
+            return qf
+
+        qf = q_cond(processed > 0, true_fun, false_fun, qf)
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=10)()
+
+    with pytest.raises(RuntimeError, match="real-time feedback"):
+        main()

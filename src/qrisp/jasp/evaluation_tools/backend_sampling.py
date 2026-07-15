@@ -183,6 +183,13 @@ def backend_sampler(backend):
         If the decorated function contains quantum operations without
         a surrounding ``sample()`` or ``expectation_value()`` call.
         Use :func:`~qrisp.jasp.jaspify` for single-shot simulation.
+    RuntimeError
+        If a sampling kernel contains **real-time feedback**
+        (mid-circuit measurements whose outcomes — after classical
+        post-processing — control subsequent quantum gates).  The
+        kernel's quantum circuit must be fully static so it can be
+        extracted and executed once.  Use
+        :func:`~qrisp.jasp.jaspify` for such workloads.
 
     Examples
     --------

@@ -331,7 +331,21 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         to_qc_args = _extract_to_qc_args(
             inner_jaxpr, body_jaspr, *actual_args
         )
-        *_, qc = body_jaspr.to_qc(*to_qc_args)
+        try:
+            *_, qc = body_jaspr.to_qc(*to_qc_args)
+        except Exception as e:
+            if "real-time feedback" in str(e):
+                raise RuntimeError(
+                    "Failed to extract a static QuantumCircuit from "
+                    "the sampling kernel because it contains "
+                    "real-time feedback (mid-circuit measurements "
+                    "whose outcomes control subsequent quantum "
+                    "gates).  ``backend_sampler`` requires the "
+                    "kernel's quantum circuit to be fully static — "
+                    "use :func:`~qrisp.jasp.jaspify` for workloads "
+                    "with real-time feedback."
+                ) from e
+            raise
 
         # Run the backend ONCE.
         raw = backend.run(qc, shots=shots)
