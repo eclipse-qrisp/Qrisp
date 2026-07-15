@@ -137,19 +137,15 @@ def backend_sampler(backend):
     :func:`~qrisp.jasp.expectation_value` calls through a real backend
     instead of the Jaspify simulator.
 
-    Must be called with a backend::
+    .. warning::
 
-        @backend_sampler(backend=my_backend)
-        def main(): ...
-
-    How it works
-    ------------
-    Each ``sample()`` / ``expectation_value()`` call inside the
-    decorated function is intercepted.  The quantum circuit is
-    extracted **once**, executed on the backend for all shots, and the
-    classical post-processing (decoding, accumulator updates) is
-    replayed via the Jaspr's own while-loop — so all typing, indexing,
-    and loop logic comes from the Jaspr itself.
+        Sampling kernels that rely on **real-time feedback** (e.g.
+        mid-circuit measurements whose outcomes condition subsequent
+        gates) are **not supported**.  ``backend_sampler`` extracts
+        and flattens the quantum circuit into a single static circuit
+        before execution, so any classical control flow that depends
+        on measurement results inside the kernel cannot be captured.
+        Use :func:`~qrisp.jasp.jaspify` for such workloads.
 
     Parameters
     ----------
@@ -176,10 +172,10 @@ def backend_sampler(backend):
     .. code-block:: python
 
         from qrisp import QuantumFloat, h, measure
-        from qrisp.jasp import sample, backend_sampler
-        from qrisp.interface import VirtualBackend
+        from qrisp.jasp import sample, expectation_value, backend_sampler
+        from qrisp.interface import QrispSimulatorBackend
 
-        backend = VirtualBackend()
+        backend = QrispSimulatorBackend()
 
         @backend_sampler(backend=backend)
         def main(k):
@@ -196,9 +192,9 @@ def backend_sampler(backend):
 
     .. code-block:: python
 
-        from qrisp.interface import VirtualBackend
+        from qrisp.interface import QrispSimulatorBackend
 
-        backend = VirtualBackend()
+        backend = QrispSimulatorBackend()
 
         @backend_sampler(backend=backend)
         def main():
