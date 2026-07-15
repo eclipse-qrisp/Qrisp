@@ -586,6 +586,3 @@ class MathLogToLLVM(RewritePattern):
 
     Matches ``math.LogOp`` and replaces it with ``llvm.intr.log``.
     """
-
-
-

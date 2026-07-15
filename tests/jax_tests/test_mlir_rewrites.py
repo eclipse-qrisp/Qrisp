@@ -362,6 +362,7 @@ def _run_classical_lowering(module, ctx):
     from qrisp.jasp.mlir.mlir_rewrites.classical_lowering import (
         classical_to_llvm,
     )
+
     classical_to_llvm(ctx, module)
 
 
@@ -371,9 +372,7 @@ def _make_binary_func(arg_type, op_builder):
     ret = func.ReturnOp(result)
     block.add_ops([result] if not isinstance(result, list) else result)
     block.add_op(ret)
-    func_op = func.FuncOp(
-        "test", ([arg_type, arg_type], [arg_type]), Region([block])
-    )
+    func_op = func.FuncOp("test", ([arg_type, arg_type], [arg_type]), Region([block]))
     return builtin.ModuleOp([func_op]), block
 
 
