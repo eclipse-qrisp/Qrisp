@@ -133,6 +133,8 @@ skip = ".venv,.git,__pycache__,.ruff_cache,*.pyc,*.jpg,*.png,*.svg,*.egg-info,./
 builtin = "clear,rare,en-GB_to_en-US"
 check-filenames = true
 count = true
+# Skip lines containing embedded base64 image data (e.g. in Jupyter notebooks)
+ignore-regex = '"image/[a-z+]+": "[A-Za-z0-9+/=]+"'
 summary = true
 # anc       — ancilla qubit variable (src/qrisp/)
 # ket       — Dirac bra-ket notation (docstrings throughout)
