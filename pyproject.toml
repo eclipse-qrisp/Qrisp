@@ -134,7 +134,7 @@ exclude_path = [
   "__pycache__",
   ".ruff_cache",
   ".pytest_cache",
-  "*.ipynb",
+  "\\.ipynb$",
 ]
 exclude = [
   "discord\\.gg",
