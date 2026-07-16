@@ -74,7 +74,6 @@ jobs:
             --benchmark-min-rounds=5
 
       - name: Upload benchmark results
-        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-data-${{ matrix.python-version }}-${{ matrix.test-group.name }}
