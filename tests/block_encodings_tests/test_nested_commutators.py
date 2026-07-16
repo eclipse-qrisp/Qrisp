@@ -221,10 +221,22 @@ def test_nested_commutators(A, B, coeffs, description, method):
             "second order only",
         ),
         (
+            0.5 * X(0) * Z(1) + 0.2 * Y(0) * Y(1),
+            0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
+            np.array([1.0, 0.5, 1.0]),
+            "first, second, third order; normalization factor for A not equal to 1",
+        ),
+        (
             0.5 * X(0) * Z(1) + 0.5 * Y(0) * Y(1),
             0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
             np.array([0.5, -1.0]),
             "negative coefficients",
+        ),
+        (
+            0.5 * X(0) * Z(1) + 0.2 * Y(0) * Y(1),
+            0.5 * Z(0) * Z(1) + 0.5 * X(0) * Y(1),
+            np.array([1.0, -0.5, -1.0]),
+            "first, second, third order; normalization factor for A not equal to 1, negative coefficients",
         ),
     ],
 )
@@ -240,8 +252,18 @@ def test_nested_commutators_nomalization(A, B, coeffs, description, method):
 
     ad1 = A * B - B * A
     ad2 = A * ad1 - ad1 * A
+    ad3 = A * ad2 - ad2 * A
 
-    B_T = BlockEncoding.from_operator(ad2 + A)
+    # Weighted sum of nested commutators
+    coeffs_even = np.copy(coeffs)
+    coeffs_even[0::2] = 0
+    ad_sum_even = sum(c * ad for c, ad in zip(coeffs_even, [ad1, ad2, ad3]))
+
+    coeffs_odd = np.copy(coeffs)
+    coeffs_odd[1::2] = 0
+    ad_sum_odd = sum(c * ad for c, ad in zip(coeffs_odd, [ad1, ad2, ad3]))
+
+    B_ad_sum = BlockEncoding.from_operator(1.0j * ad_sum_odd + ad_sum_even + A)
 
     # BlockEncodings for A and B
     B_A = BlockEncoding.from_operator(A)
@@ -262,10 +284,10 @@ def test_nested_commutators_nomalization(A, B, coeffs, description, method):
     def main(BE):
         return BE.apply_rus(prep_b)()
 
-    res_dict_T = main(B_T)
-    amps_T = np.sqrt([res_dict_T.get(i, 0) for i in range(len(b))])
+    res_dict_ad_sum = main(B_ad_sum)
+    amps_ad_sum = np.sqrt([res_dict_ad_sum.get(i, 0) for i in range(len(b))])
 
     res_dict_C = main(B_C)
     amps_C = np.sqrt([res_dict_C.get(i, 0) for i in range(len(b))])
 
-    assert np.allclose(amps_T, amps_C, atol=1e-2)
+    assert np.allclose(amps_ad_sum, amps_C, atol=1e-2)
