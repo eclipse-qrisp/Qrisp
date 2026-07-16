@@ -62,6 +62,9 @@ Development
 * Added pytest coverage reporting to the CI test workflow
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
 
+* Added automated link checking via lychee, covering ``.md``, ``.rst``,
+  ``.html``, ``.py``, and ``.ipynb`` files in CI.
+
 First Time Contributors 🎉
 --------------------------
 
