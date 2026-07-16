@@ -55,7 +55,7 @@ def create_unary_preps(
 
     .. math::
 
-            \sum_{k=1}^dc_k\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A) 
+            \sum_{k=1}^dc_k\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A)
 
     The state preparation functions returned by this function prepare the following states:
 
@@ -80,7 +80,7 @@ def create_unary_preps(
     prep_right : Callable
         A function that prepares the right side of the state encoding the coefficients of the Chebyshev expansion of the weighted sum of nested commutators.
         The function takes the following arguments:
-        
+
         anc : QuantumVariable
             A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
             Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.

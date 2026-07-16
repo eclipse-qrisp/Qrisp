@@ -116,7 +116,6 @@ def create_unary_preps_walk(
       which are applied following the Hadamard gates to create the necessary interference patterns in the walk.
 
     """
-    from qrisp.algorithms.cks import unary_prep
 
     # 1. Define the 1D line size.
     # For depth d, the furthest the particle can walk is d steps.
@@ -125,7 +124,7 @@ def create_unary_preps_walk(
     origin = d  # The center of the array represents m=0 and n=0
 
     # Define the parallel, O(1) depth shift operator
-    def apply_symmetric_walk(coin, qv):
+    def apply_symmetric_walk(coin: QuantumVariable, qv: QuantumVariable) -> None:
         # Layer 1: Swap all Even-Odd index pairs (0-1, 2-3, 4-5...)
         with control(coin):
             for i in jrange(size // 2):
@@ -136,7 +135,14 @@ def create_unary_preps_walk(
             for i in jrange((size - 1) // 2):
                 swap(qv[2 * i + 1], qv[2 * i + 2])
 
-    def inner_walk(steps, coins1, coins2, m_line, n_line, step):
+    def inner_walk(
+        steps: QuantumVariable,
+        coins1: QuantumVariable,
+        coins2: QuantumVariable,
+        m_line: QuantumVariable,
+        n_line: QuantumVariable,
+        step: int,
+    ) -> None:
 
         # Initialize the particles directly at the origin (m=0, n=0)
         x(m_line[origin])

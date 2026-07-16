@@ -37,20 +37,20 @@ def _unary_angles(mags: "ArrayLike") -> "ArrayLike":
     rev_cumsum = jnp.cumsum(mags[::-1])[::-1]
     y_args = jnp.sqrt(rev_cumsum[1:])
     x_args = jnp.sqrt(mags[:-1])
-    
+
     phi = jnp.arctan2(y_args, x_args)
     return 2 * phi
 
 
 def _unary_phases(coeffs: "ArrayLike", conjugate: bool = False) -> "ArrayLike":
     """Computes the phase differences beta_j for each qubit.
-    
+
     Parameters
     ----------
     coeffs : ArrayLike
         1-D array of arbitrary complex Chebyshev coefficients.
     conjugate : bool
-        If True, computes phases to prepare the state with complex conjugate 
+        If True, computes phases to prepare the state with complex conjugate
         coefficients sqrt(c_k^*).
 
     Returns
@@ -60,14 +60,14 @@ def _unary_phases(coeffs: "ArrayLike", conjugate: bool = False) -> "ArrayLike":
     """
     # jnp.angle safely handles the complex plane and branch cuts
     theta = jnp.angle(coeffs) / 2.0
-    
+
     if conjugate:
         theta = -theta
-        
+
     # beta[0] = theta[0]
     # beta[j] = theta[j] - theta[j-1]
     beta = jnp.concatenate([jnp.array([theta[0]]), jnp.diff(theta)])
-    
+
     return beta
 
 
@@ -81,7 +81,7 @@ def _unary_prep(case: QuantumVariable, coeffs: "ArrayLike", conjugate: bool = Fa
     coeffs : ArrayLike
         1-D array of complex Chebyshev coefficients.
     conjugate : bool, optional
-        If True, prepares the state corresponding to the complex conjugates 
+        If True, prepares the state corresponding to the complex conjugates
         sqrt(c_k^*). Defaults to False.
     """
     # 1. Decouple magnitudes and phases
@@ -98,7 +98,7 @@ def _unary_prep(case: QuantumVariable, coeffs: "ArrayLike", conjugate: bool = Fa
             ry(phi[i], case[i + 1])
 
     # 3. Apply the phase differences unconditionally
-    # These single-qubit phase gates commute perfectly with the target 
+    # These single-qubit phase gates commute perfectly with the target
     # states of the unary encoding, avoiding any need for extra controls.
     for j in jrange(case.size):
         p(beta[j], case[j])
