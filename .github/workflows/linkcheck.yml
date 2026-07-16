@@ -34,9 +34,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[docs]"
+          make docs-install
+        working-directory: documentation
 
       - name: Check links with Sphinx linkcheck
         run: |
-          sphinx-build -b linkcheck -W documentation/source documentation/build/linkcheck
+          make linkcheck SPHINXOPTS="-W"
+        working-directory: documentation
+
+      - name: Check standalone files with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >
+            --verbose --no-progress
+            './README.md'
+            './src/**/*.md'
+            './.github/pull_request_template.md'
+            './src/**/*.py'
+            './tests/**/*.py'
+          fail: true
