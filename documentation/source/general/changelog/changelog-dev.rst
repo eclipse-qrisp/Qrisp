@@ -62,6 +62,10 @@ Development
 * Added pytest coverage reporting to the CI test workflow
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
 
+* Added ``pytest-benchmark`` to the test dependency group and configured
+  the CI workflow to auto-save benchmark results, compare against saved
+  baselines, and fail on regressions exceeding 5%.
+
 First Time Contributors 🎉
 --------------------------
 

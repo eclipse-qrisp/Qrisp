@@ -70,10 +70,10 @@ jobs:
             --benchmark-autosave \
             --benchmark-compare \
             --benchmark-compare-fail=min:5% \
-            --benchmark-warmup \
-            --benchmark-min-rounds=5
+            --benchmark-min-rounds=1
 
       - name: Upload benchmark results
+        if: hashFiles('.benchmarks/') != ''
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-data-${{ matrix.python-version }}-${{ matrix.test-group.name }}
