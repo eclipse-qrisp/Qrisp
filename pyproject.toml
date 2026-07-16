@@ -122,3 +122,37 @@ omit = ["*/__init__.py"]
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
+
+[tool.lychee]
+exclude_path = [
+  "node_modules",
+  ".git",
+  ".venv",
+  ".eggs",
+  "dist",
+  "build",
+  "__pycache__",
+  ".ruff_cache",
+  ".pytest_cache",
+  "*.ipynb",
+]
+exclude = [
+  "discord\\.gg",
+  "discord\\.com",
+  "img\\.shields\\.io",
+  "pypi\\.org",
+  "localhost",
+  "127\\.0\\.0\\.1",
+  "0\\.0\\.0\\.0",
+  "10\\.\\d+\\.\\d+\\.\\d+",
+  "172\\.1[6-9]\\.\\d+\\.\\d+",
+  "172\\.2[0-9]\\.\\d+\\.\\d+",
+  "172\\.3[0-1]\\.\\d+\\.\\d+",
+  "192\\.168\\.\\d+\\.\\d+",
+  "github\\.com/eclipse-qrisp/Qrisp/actions",
+]
+timeout = 30
+max_retries = 3
+max_concurrency = 20
+user_agent = "lychee-link-checker"
+accept = [200, 201, 202, 203, 204, 205, 206, 301, 302, 303, 307, 308, 429]
