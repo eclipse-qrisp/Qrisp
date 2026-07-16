@@ -32,6 +32,7 @@ def _get_backend():
     global _backend
     if _backend is None:
         from qrisp.default_backend import QrispSimulatorBackend
+
         _backend = QrispSimulatorBackend()
     return _backend
 
@@ -40,8 +41,10 @@ def _get_backend():
 # Basic expectation_value patterns
 # ===========================================================================
 
+
 def test_ev_hadamard():
     """⟨0|H Z H|0⟩ = 0 — equal superposition, expectation of 0 vs 1 is 0.5"""
+
     def kernel():
         qf = QuantumFloat(4)
         h(qf[0])
@@ -58,6 +61,7 @@ def test_ev_hadamard():
 
 def test_ev_deterministic():
     """State prepared in |5⟩ → expectation = 5.0"""
+
     def kernel():
         qf = QuantumFloat(4)
         qf[:] = 5
@@ -73,6 +77,7 @@ def test_ev_deterministic():
 
 def test_ev_uniform():
     """Uniform superposition of 0..7 → expectation ≈ 3.5"""
+
     def kernel():
         qf = QuantumFloat(3)
         h(qf)
@@ -88,6 +93,7 @@ def test_ev_uniform():
 
 def test_ev_boolean():
     """QuantumBool in |+⟩ → expectation ≈ 0.5"""
+
     def kernel():
         qbl = QuantumBool()
         h(qbl)
@@ -103,10 +109,13 @@ def test_ev_boolean():
 
 def test_ev_ghz():
     """GHZ: |0000⟩ + |1111⟩ → expectation ≈ 7.5 (50% 0, 50% 15)"""
+
     def kernel():
         qf = QuantumFloat(4)
         h(qf[0])
-        cx(qf[0], qf[1]); cx(qf[1], qf[2]); cx(qf[2], qf[3])
+        cx(qf[0], qf[1])
+        cx(qf[1], qf[2])
+        cx(qf[2], qf[3])
         return measure(qf)
 
     @backend_sampler(backend=_get_backend())
@@ -121,11 +130,14 @@ def test_ev_ghz():
 # Post-processing in expectation_value
 # ===========================================================================
 
+
 def test_ev_postproc():
     """E[measure(qf) * 2 + 1] with 2 random bits → expectation = (avg of {1,3,5,7}) = 4.0"""
+
     def kernel():
         qf = QuantumFloat(4)
-        h(qf[0]); h(qf[1])
+        h(qf[0])
+        h(qf[1])
         return measure(qf) * 2 + 1
 
     @backend_sampler(backend=_get_backend())
@@ -138,6 +150,7 @@ def test_ev_postproc():
 
 def test_ev_postproc_with_fn():
     """Expectation with explicit post_processor callable."""
+
     def post_processor(x):
         return x * x  # square the measurement
 
@@ -159,11 +172,14 @@ def test_ev_postproc_with_fn():
 # Comparison against jaspify
 # ===========================================================================
 
+
 def test_ev_compare_jaspify():
     """Backend sampler expectation_value matches jaspify."""
+
     def kernel():
         qf = QuantumFloat(4)
-        h(qf[0]); h(qf[1])
+        h(qf[0])
+        h(qf[1])
         return measure(qf)
 
     @backend_sampler(backend=_get_backend())
@@ -178,12 +194,12 @@ def test_ev_compare_jaspify():
     r_jaspify = float(jaspify_main())
 
     # Both should be ~1.5 (avg of 0,1,2,3)
-    assert abs(r_backend - r_jaspify) < 0.3, \
-        f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
+    assert abs(r_backend - r_jaspify) < 0.3, f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
 
 
 def test_ev_compare_jaspify_many_shots():
     """With many shots, backend and jaspify should converge."""
+
     def kernel():
         qf = QuantumFloat(3)
         h(qf)
@@ -201,16 +217,17 @@ def test_ev_compare_jaspify_many_shots():
     r_jaspify = float(jaspify_main())
 
     # Both should be ~3.5 (avg of 0..7)
-    assert abs(r_backend - r_jaspify) < 0.2, \
-        f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
+    assert abs(r_backend - r_jaspify) < 0.2, f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
 
 
 # ===========================================================================
 # Deterministic checks
 # ===========================================================================
 
+
 def test_ev_all_zeros():
     """All qubits in |0⟩ → expectation = 0.0"""
+
     def kernel():
         qf = QuantumFloat(5)
         return measure(qf)
@@ -225,6 +242,7 @@ def test_ev_all_zeros():
 
 def test_ev_all_ones():
     """All qubits in |1⟩ → expectation = 2^n - 1"""
+
     def kernel():
         qf = QuantumFloat(3)
         x(qf)
@@ -242,8 +260,10 @@ def test_ev_all_ones():
 # Edge cases
 # ===========================================================================
 
+
 def test_ev_dynamic_kernel_arg():
     """Dynamic kernel argument with expectation_value."""
+
     def kernel(size):
         qf = QuantumFloat(size)
         qf[:] = 3
@@ -259,9 +279,11 @@ def test_ev_dynamic_kernel_arg():
 
 def test_ev_large_qubits():
     """10-qubit register, only a few gates."""
+
     def kernel():
         qf = QuantumFloat(10)
-        h(qf[0]); h(qf[9])
+        h(qf[0])
+        h(qf[9])
         return measure(qf)
 
     @backend_sampler(backend=_get_backend())
@@ -274,6 +296,7 @@ def test_ev_large_qubits():
 
 def test_ev_zero_shots():
     """Zero shots should raise or return NaN."""
+
     def kernel():
         qf = QuantumFloat(4)
         return measure(qf)
@@ -292,6 +315,7 @@ def test_ev_zero_shots():
 
 def test_ev_multiple_calls():
     """Two expectation_value calls in one function."""
+
     def kernel_a():
         qf = QuantumFloat(4)
         qf[:] = 5
@@ -317,9 +341,11 @@ def test_ev_multiple_calls():
 # Backend integration
 # ===========================================================================
 
+
 def test_ev_custom_backend():
     """Custom backend options."""
     from qrisp.default_backend import QrispSimulatorBackend
+
     custom = QrispSimulatorBackend()
     custom.update_options(shots=500)
 
@@ -357,8 +383,10 @@ def test_ev_default_backend():
 # Mixed: sample + expectation_value in same function
 # ===========================================================================
 
+
 def test_ev_and_sample_together():
     """sample() and expectation_value() in the same decorated function."""
+
     def kernel():
         qf = QuantumFloat(4)
         qf[:] = 3

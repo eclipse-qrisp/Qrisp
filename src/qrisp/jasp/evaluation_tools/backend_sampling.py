@@ -90,6 +90,7 @@ __all__ = ["backend_sampler", "find_named_jaxpr"]
 # Eqn evaluator that intercepts eval functions with pure_callback
 # ===========================================================================
 
+
 def _make_backend_eqn_evaluator(backend):
     """Return an ``eqn_evaluator`` that replaces the eval functions with
     ``pure_callback`` calls.
@@ -99,6 +100,7 @@ def _make_backend_eqn_evaluator(backend):
     :func:`jax.pure_callback`.  Every other primitive falls through to
     default evaluation.
     """
+
     def eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
         name = eqn.params.get("name", "")
         prim = eqn.primitive.name
@@ -108,9 +110,7 @@ def _make_backend_eqn_evaluator(backend):
             "expectation_value_eval_function",
         ):
             invalues = extract_invalues(eqn, context_dic)
-            inner_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
-                "call_jaxpr"
-            )
+            inner_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
 
             fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
             result_shapes = ShapeDtypeStruct(
@@ -130,6 +130,7 @@ def _make_backend_eqn_evaluator(backend):
 # ===========================================================================
 # Decorator
 # ===========================================================================
+
 
 def backend_sampler(backend):
     r"""Decorator that routes :func:`~qrisp.jasp.sample` and
@@ -157,7 +158,7 @@ def backend_sampler(backend):
 
     .. note::
 
-        Only the quantum circuit is executed on the backend.  
+        Only the quantum circuit is executed on the backend.
         All **orchestration logic** (the code
         in the decorated function that calls :func:`~qrisp.jasp.sample`
         and :func:`~qrisp.jasp.expectation_value`, passes arguments,
@@ -275,14 +276,13 @@ def backend_sampler(backend):
 
 def _make_backend_sampler_wrapper(func, backend):
     """Return a callable that wraps *func* with backend-sampling."""
+
     def wrapper(*args, **kwargs):
         # ── Trace the decorated function ────────────────────────────
         # Use make_jaxpr (not make_jaspr) — we do NOT want a quantum
         # tracing context for the outer orchestration function.
         try:
-            jaspr, out_shape = make_jaxpr(func, return_shape=True)(
-                *args, **kwargs
-            )
+            jaspr, out_shape = make_jaxpr(func, return_shape=True)(*args, **kwargs)
         except Exception as e:
             if "quantum tracing context" in str(e):
                 raise RuntimeError(
@@ -315,16 +315,12 @@ def _make_backend_sampler_wrapper(func, backend):
 
                 # ── jit / pjit ──────────────────────────────────────
                 if prim in ("jit", "pjit"):
-                    closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
-                        "call_jaxpr"
-                    )
+                    closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
                     if closed_jaxpr is None:
                         return False
 
                     invalues = extract_invalues(eqn, context_dic)
-                    inner_eval = eval_jaxpr(
-                        closed_jaxpr, eqn_evaluator=eqn_evaluator
-                    )
+                    inner_eval = eval_jaxpr(closed_jaxpr, eqn_evaluator=eqn_evaluator)
                     outvals = inner_eval(*(invalues + list(closed_jaxpr.consts)))
 
                     if len(closed_jaxpr.jaxpr.outvars) == 1:
@@ -360,9 +356,7 @@ def _make_backend_sampler_wrapper(func, backend):
                             eqn_evaluator=eqn_evaluator,
                         )(*(consts + carries))
 
-                    outvals = jax.lax.while_loop(
-                        cond_fun, body_fun, tuple(invalues)
-                    )[n_all:]
+                    outvals = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[n_all:]
                     insert_outvalues(eqn, context_dic, outvals)
                     return False
 
@@ -371,13 +365,8 @@ def _make_backend_sampler_wrapper(func, backend):
                     import jax.lax
 
                     invalues = extract_invalues(eqn, context_dic)
-                    branches = [
-                        eval_jaxpr(b, eqn_evaluator=eqn_evaluator)
-                        for b in eqn.params["branches"]
-                    ]
-                    outvals = jax.lax.switch(
-                        invalues[0], branches, *invalues[1:]
-                    )
+                    branches = [eval_jaxpr(b, eqn_evaluator=eqn_evaluator) for b in eqn.params["branches"]]
+                    outvals = jax.lax.switch(invalues[0], branches, *invalues[1:])
                     if len(eqn.outvars) == 1:
                         outvals = (outvals,)
                     insert_outvalues(eqn, context_dic, outvals)
@@ -405,27 +394,19 @@ def _make_backend_sampler_wrapper(func, backend):
                             res = (res,)
                         return res[:n_carry], res[n_carry:] if len(res) > n_carry else ()
 
-                    carry_init = tuple(invalues[n_consts:n_consts + n_carry])
+                    carry_init = tuple(invalues[n_consts : n_consts + n_carry])
                     if n_carry == 1:
                         carry_init = carry_init[0]
-                    xs = tuple(invalues[n_consts + n_carry:])
+                    xs = tuple(invalues[n_consts + n_carry :])
                     if len(xs) == 1:
                         xs = xs[0]
 
-                    outvals = jax.lax.scan(
-                        body_fun, carry_init, xs, length=length
-                    )
+                    outvals = jax.lax.scan(body_fun, carry_init, xs, length=length)
 
                     # Result is (carry, ys); flatten for insert
-                    flat_out = (
-                        list(outvals[0]) if isinstance(outvals[0], tuple)
-                        else [outvals[0]]
-                    )
+                    flat_out = list(outvals[0]) if isinstance(outvals[0], tuple) else [outvals[0]]
                     if outvals[1] is not None:
-                        flat_out.extend(
-                            list(outvals[1]) if isinstance(outvals[1], tuple)
-                            else [outvals[1]]
-                        )
+                        flat_out.extend(list(outvals[1]) if isinstance(outvals[1], tuple) else [outvals[1]])
                     insert_outvalues(eqn, context_dic, tuple(flat_out))
                     return False
 
@@ -455,5 +436,5 @@ def _make_backend_sampler_wrapper(func, backend):
             )
         return res
 
-    wrapper.__name__ = getattr(func, '__name__', 'backend_sampler_wrapper')
+    wrapper.__name__ = getattr(func, "__name__", "backend_sampler_wrapper")
     return wrapper

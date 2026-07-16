@@ -27,6 +27,7 @@ def _backend_shots_marker(val):
     shot count inside a traced ``sampling_eval_function`` Jaxpr."""
     return val
 
+
 # The following function implements the sample feature.
 
 # The basic functionality would be relatively straightforward to implement,

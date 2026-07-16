@@ -150,6 +150,7 @@ from qrisp.jasp.jasp_expression.centerclass import Jaspr
 # Jaspr traversal utility
 # ===========================================================================
 
+
 def find_named_jaxpr(jaxpr, target_name):
     """Recursively find a ``jit`` / ``pjit`` sub-Jaxpr with the given name.
 
@@ -241,16 +242,12 @@ def _extract_to_qc_args(inner_jaxpr, body_jaspr, *invals):
         return True
 
     try:
-        eval_jaxpr(inner_jaxpr, eqn_evaluator=extraction_evaluator)(
-            *invals
-        )
+        eval_jaxpr(inner_jaxpr, eqn_evaluator=extraction_evaluator)(*invals)
     except _FirstBodyCall:
         pass
 
     if not captured_invalues:
-        raise RuntimeError(
-            "sampling_body_func was never called during extraction"
-        )
+        raise RuntimeError("sampling_body_func was never called during extraction")
 
     # invalues = [*captured, i, acc, *kernel_args, qs]
     # to_qc_args = [*captured, i, acc, *kernel_args]  (drop qs)
@@ -274,9 +271,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     """
     body_jaxpr = find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
     if body_jaxpr is None:
-        raise RuntimeError(
-            "sampling_body_func not found inside eval function Jaxpr"
-        )
+        raise RuntimeError("sampling_body_func not found inside eval function Jaxpr")
     body_jaspr = Jaspr(body_jaxpr)
 
     # ── Pre-compute invar positions ─────────────────────────────────
@@ -288,28 +283,20 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     acc_pos = None
     for idx, invar in enumerate(body_jaspr.invars):
         aval = invar.aval
-        if (type(aval) is type(acc_out_aval)
-                and aval.shape == acc_out_aval.shape
-                and aval.dtype == acc_out_aval.dtype):
+        if type(aval) is type(acc_out_aval) and aval.shape == acc_out_aval.shape and aval.dtype == acc_out_aval.dtype:
             acc_pos = idx
             break
     if acc_pos is None:
-        raise RuntimeError(
-            "Could not identify accumulator position in "
-            "sampling_body_func invars"
-        )
+        raise RuntimeError("Could not identify accumulator position in sampling_body_func invars")
 
     i_pos = None
     for idx in range(acc_pos):
         aval = body_jaspr.invars[idx].aval
-        if hasattr(aval, 'dtype') and aval.dtype == jnp.int64 and aval.shape == ():
+        if hasattr(aval, "dtype") and aval.dtype == jnp.int64 and aval.shape == ():
             i_pos = idx
             break
     if i_pos is None:
-        raise RuntimeError(
-            "Could not identify loop-index position in "
-            "sampling_body_func invars"
-        )
+        raise RuntimeError("Could not identify loop-index position in sampling_body_func invars")
 
     def backend_sampling_fn(*invals):
         # invals may include JAX-implicitly-prepended captured closure
@@ -328,9 +315,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # reconstruction needed.  Only pass the actual function args
         # (the last n_expected invals); outer captured vars are
         # consumed by the outer pjit, not by inner_jaxpr.
-        to_qc_args = _extract_to_qc_args(
-            inner_jaxpr, body_jaspr, *actual_args
-        )
+        to_qc_args = _extract_to_qc_args(inner_jaxpr, body_jaspr, *actual_args)
         try:
             *_, qc = body_jaspr.to_qc(*to_qc_args)
         except Exception as e:
@@ -367,21 +352,15 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
             post-processing function uses the real *i* and *acc*
             rather than hard-coded dummies.
             """
-            return body_jaspr.extract_post_processing(*all_non_qs_args)(
-                meas_results
-            )
+            return body_jaspr.extract_post_processing(*all_non_qs_args)(meas_results)
 
-        loop_eqn_evaluator = _body_loop_evaluator(
-            post_proc, meas_results_array, i_pos, acc_pos
-        )
+        loop_eqn_evaluator = _body_loop_evaluator(post_proc, meas_results_array, i_pos, acc_pos)
 
         # Evaluate the inner Jaspr (the ``sampling_eval_function`` /
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
         # while-loop and extracts the final result — the Jaspr itself
         # owns all accumulator typing and indexing logic.
-        return jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(
-            *invals
-        )
+        return jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(*invals)
 
     return backend_sampling_fn
 
@@ -389,6 +368,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 # ===========================================================================
 # Piece 2 — Eqn evaluator for the inner Jaspr
 # ===========================================================================
+
 
 def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
     """Build an ``eqn_evaluator`` for the *inner_jaxpr*
@@ -418,9 +398,7 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
 
             # post_proc(meas_bits, i, acc, *kernel_args)
             # → (acc_out, *kernel_args)  [QS stripped by extract_post_processing]
-            results = post_proc(
-                meas_results[iteration], *invalues[:-1]
-            )
+            results = post_proc(meas_results[iteration], *invalues[:-1])
             if not isinstance(results, tuple):
                 results = (results,)
 
@@ -449,11 +427,11 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
 
             def body_fun(loop_state):
                 # loop_state = (cond_consts, body_consts, *carries)
-                body_consts = loop_state[n_cond_consts : total_consts]
+                body_consts = loop_state[n_cond_consts:total_consts]
                 carries = loop_state[total_consts:]
-                res = eval_jaxpr(
-                    eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*(list(body_consts) + list(carries)))
+                res = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator)(
+                    *(list(body_consts) + list(carries))
+                )
                 if not isinstance(res, tuple):
                     res = (res,)
                 return loop_state[:total_consts] + tuple(res)
@@ -461,13 +439,11 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
             def cond_fun(loop_state):
                 cond_consts = loop_state[:n_cond_consts]
                 carries = loop_state[total_consts:]
-                return eval_jaxpr(
-                    eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*(list(cond_consts) + list(carries)))
+                return eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator)(
+                    *(list(cond_consts) + list(carries))
+                )
 
-            outvalues = jax.lax.while_loop(
-                cond_fun, body_fun, tuple(invalues)
-            )[total_consts:]
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[total_consts:]
             insert_outvalues(eqn, context_dic, outvalues)
             return False
 

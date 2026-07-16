@@ -580,6 +580,7 @@ class QAOAProblem:
 
         """
         from qrisp import QuantumVariableTemplate
+
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumArray):
@@ -590,6 +591,7 @@ class QAOAProblem:
                 return QuantumArray(qtype=template.construct(), shape=shape)
 
         elif isinstance(qarg, QuantumVariableTemplate):
+
             def qarg_prep():
                 return qarg.construct()
         else:

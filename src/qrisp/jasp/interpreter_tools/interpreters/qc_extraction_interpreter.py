@@ -705,16 +705,14 @@ def make_qc_extraction_eqn_evaluator(qc):
             if isinstance(definition, Jaspr):
                 inner_jaxpr = definition.jaxpr
                 inner_consts = definition.consts
-            elif hasattr(definition, 'jaxpr'):
+            elif hasattr(definition, "jaxpr"):
                 inner_jaxpr = definition.jaxpr
                 inner_consts = definition.consts
             else:
                 inner_jaxpr = definition
                 inner_consts = []
 
-            res = eval_jaxpr(inner_jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
-                *(inner_consts + invalues)
-            )
+            res = eval_jaxpr(inner_jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(*(inner_consts + invalues))
 
             if len(inner_jaxpr.outvars) == 1:
                 res = [res]

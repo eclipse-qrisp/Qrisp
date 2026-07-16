@@ -27,6 +27,7 @@ def _backend_shots_marker(val):
     shot count inside a traced expectation_value Jaxpr."""
     return val
 
+
 # The following function implements the expectation_value feature.
 # The basic functionality would be relatively straightforward to implement,
 # however there are some complications. The reason for that is that the resulting
@@ -223,6 +224,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 # arguments (before measurement ints).  When present the
                 # helper is named sampling_helper_2_mixed for detection.
                 if classical_tuple:
+
                     def sampling_helper_2_mixed(*args):
                         n_classical = len(classical_tuple)
                         classical_vals = args[:n_classical]
@@ -244,13 +246,16 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                                 c_idx += 1
 
                         return post_processor(*full)
+
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
+
                     def sampling_helper_2(*meas_ints):
                         res_list = []
                         for j in range(len(qv_tuple)):
                             res_list.append(qv_tuple[j].jdecoder(meas_ints[j]))
                         return post_processor(*res_list)
+
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
                 decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)

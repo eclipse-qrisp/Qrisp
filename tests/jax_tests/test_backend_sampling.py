@@ -33,6 +33,7 @@ def _get_backend():
     global _backend
     if _backend is None:
         from qrisp.default_backend import QrispSimulatorBackend
+
         _backend = QrispSimulatorBackend()
     return _backend
 
@@ -40,6 +41,7 @@ def _get_backend():
 # ===========================================================================
 # Basic sampling patterns
 # ===========================================================================
+
 
 def test_single_return_hadamard():
     """QuantumFloat(4) with H on qubit 0 → {0, 1}"""
@@ -125,7 +127,8 @@ def test_triple_return():
         c = QuantumFloat(2)
         h(a[0])
         x(b[0])
-        h(c[0]); h(c[1])
+        h(c[0])
+        h(c[1])
         return measure(a), measure(b), measure(c)
 
     @backend_sampler(backend=_get_backend())
@@ -143,12 +146,14 @@ def test_triple_return():
 # Classical post-processing
 # ===========================================================================
 
+
 def test_postproc_arithmetic():
     """measure(qf) * 2 + 1 → all odd"""
 
     def kernel():
         qf = QuantumFloat(4)
-        h(qf[0]); h(qf[1])
+        h(qf[0])
+        h(qf[1])
         mes = measure(qf)
         return mes * 2 + 1
 
@@ -167,7 +172,9 @@ def test_postproc_multi_step():
 
     def kernel():
         qf = QuantumFloat(5)
-        h(qf[0]); h(qf[1]); h(qf[2])
+        h(qf[0])
+        h(qf[1])
+        h(qf[2])
         a = measure(qf)
         b = a + 3
         c = b * 2
@@ -187,7 +194,8 @@ def test_postproc_jax_array():
 
     def kernel():
         qv = QuantumVariable(4)
-        h(qv[0]); h(qv[1])
+        h(qv[0])
+        h(qv[1])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         m2 = measure(qv[2])
@@ -230,6 +238,7 @@ def test_postproc_tuple_return():
 # Entanglement & controlled operations
 # ===========================================================================
 
+
 def test_bell_state():
     """Bell state: |00⟩ + |11⟩ → measure both qubits"""
 
@@ -255,7 +264,9 @@ def test_ghz_state():
     def kernel():
         qf = QuantumFloat(4)
         h(qf[0])
-        cx(qf[0], qf[1]); cx(qf[1], qf[2]); cx(qf[2], qf[3])
+        cx(qf[0], qf[1])
+        cx(qf[1], qf[2])
+        cx(qf[2], qf[3])
         return measure(qf)
 
     @backend_sampler(backend=_get_backend())
@@ -294,7 +305,9 @@ def test_multi_controlled_x():
     def kernel():
         qf = QuantumFloat(5)
         target = QuantumBool()
-        x(qf[0]); x(qf[1]); x(qf[2])
+        x(qf[0])
+        x(qf[1])
+        x(qf[2])
         mcx(qf[:3], target[0])
         return measure(target)
 
@@ -329,6 +342,7 @@ def test_inversion_environment():
 # Edge cases & robustness
 # ===========================================================================
 
+
 def test_dynamic_kernel_arg():
     """Kernel arg is dynamic (JAX tracer)"""
 
@@ -351,7 +365,8 @@ def test_large_qubit_count():
 
     def kernel():
         qf = QuantumFloat(10)
-        h(qf[0]); h(qf[9])
+        h(qf[0])
+        h(qf[9])
         return measure(qf[0]), measure(qf[9])
 
     @backend_sampler(backend=_get_backend())
@@ -408,6 +423,7 @@ def test_zero_shots():
 # Backend integration
 # ===========================================================================
 
+
 def test_custom_backend():
     """Backend with custom options"""
     from qrisp.default_backend import QrispSimulatorBackend
@@ -451,6 +467,7 @@ def test_default_backend():
 # Statistical distribution checks
 # ===========================================================================
 
+
 def test_statistical_uniformity():
     """Chi-squared-like: uniform superposition of 8 values, 2000 shots"""
 
@@ -483,7 +500,8 @@ def test_compare_with_jaspify():
 
     def kernel_qv():
         qf = QuantumFloat(4)
-        h(qf[0]); h(qf[1])
+        h(qf[0])
+        h(qf[1])
         return qf
 
     @backend_sampler(backend=_get_backend())
@@ -491,6 +509,7 @@ def test_compare_with_jaspify():
         def measured_kernel():
             qf = kernel_qv()
             return measure(qf)
+
         return sample(measured_kernel, shots=300)()
 
     @jaspify(terminal_sampling=True)
@@ -518,12 +537,14 @@ def test_compare_with_jaspify():
 # Corner cases
 # ===========================================================================
 
+
 def test_measure_all_qubits():
     """Kernel measures every qubit individually"""
 
     def kernel():
         qv = QuantumVariable(4)
-        h(qv[0]); h(qv[2])
+        h(qv[0])
+        h(qv[2])
         return measure(qv[0]), measure(qv[1]), measure(qv[2]), measure(qv[3])
 
     @backend_sampler(backend=_get_backend())
@@ -556,6 +577,7 @@ def test_parameterized_gates():
 # ===========================================================================
 # Error handling
 # ===========================================================================
+
 
 def test_raises_without_sample():
     """@backend_sampler raises if the function doesn't use sample()"""
@@ -608,6 +630,7 @@ def test_raises_on_realtime_feedback():
 # ===========================================================================
 # Control flow propagation tests
 # ===========================================================================
+
 
 def test_fori_loop_around_sample():
     """fori_loop orchestrating multiple sample() calls — the outer

@@ -151,7 +151,9 @@ class TracingQuantumSession:
     def register_qv(self, qv, size):
 
         if self.abs_qst is None:
-            raise Exception("Tried to create QuantumVariable outside of a quantum tracing context (use jaspify, make_jaspr, sample or similar features to enter a quantum tracing context)")
+            raise Exception(
+                "Tried to create QuantumVariable outside of a quantum tracing context (use jaspify, make_jaspr, sample or similar features to enter a quantum tracing context)"
+            )
 
         if self.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
