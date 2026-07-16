@@ -603,3 +603,169 @@ def test_raises_on_realtime_feedback():
 
     with pytest.raises(RuntimeError, match="real-time feedback"):
         main()
+
+
+# ===========================================================================
+# Control flow propagation tests
+# ===========================================================================
+
+def test_fori_loop_around_sample():
+    """fori_loop orchestrating multiple sample() calls — the outer
+    evaluator must propagate through the while loop created by fori_loop
+    and intercept each sample() inside."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        results = jnp.zeros((3, 50), dtype=jnp.float64)
+
+        def body(i, acc):
+            samples = sample(kernel, shots=50)()
+            acc = acc.at[i].set(samples)
+            return acc
+
+        return jax.lax.fori_loop(0, 3, body, results)
+
+    res = main()
+    assert res.shape == (3, 50)
+
+
+def test_cond_around_sample():
+    """jax.lax.cond choosing between two sampling kernels — the outer
+    evaluator must propagate through the cond and intercept both
+    branches."""
+
+    def kernel_a():
+        qf = QuantumFloat(4)
+        h(qf[0])
+        return measure(qf)
+
+    def kernel_b():
+        qf = QuantumFloat(4)
+        h(qf[1])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main(use_a):
+        def true_branch(_):
+            return sample(kernel_a, shots=30)()
+
+        def false_branch(_):
+            return sample(kernel_b, shots=30)()
+
+        return jax.lax.cond(use_a, true_branch, false_branch, None)
+
+    res_a = main(True)
+    res_b = main(False)
+    assert res_a.shape == (30,)
+    assert res_b.shape == (30,)
+
+
+def test_while_loop_around_sample():
+    """jax.lax.while_loop containing sample() calls — the outer evaluator
+    must propagate through the while loop body."""
+
+    def kernel():
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main(max_iter):
+        def cond_fun(state):
+            i, _ = state
+            return i < max_iter
+
+        def body_fun(state):
+            i, prev = state
+            samples = sample(kernel, shots=10)()
+            return i + 1, samples
+
+        _, final = jax.lax.while_loop(cond_fun, body_fun, (0, jnp.zeros(10)))
+        return final
+
+    res = main(4)
+    assert res.shape == (10,)
+
+
+def test_scan_around_sample():
+    """jax.lax.scan over a range, calling sample() each step — the outer
+    evaluator must propagate through scan."""
+
+    def kernel(i):
+        qf = QuantumFloat(3)
+        qf[:] = i
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        def body(carry, i):
+            samples = sample(kernel, shots=20)(i)
+            return carry, samples
+
+        _, results = jax.lax.scan(body, None, jnp.arange(4))
+        return results
+
+    res = main()
+    assert res.shape == (4, 20)
+
+
+def test_nested_jit_orchestrating_sample():
+    """A @jax.jit helper orchestrating a sample() call — the outer
+    evaluator must propagate through the nested jit to intercept
+    sample() inside."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf)
+        return measure(qf)
+
+    @jax.jit
+    def helper():
+        return sample(kernel, shots=40)()
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return helper()
+
+    res = main()
+    assert res.shape == (40,)
+
+
+def test_switch_around_sample():
+    """jax.lax.switch choosing among multiple kernels — the outer
+    evaluator must propagate through all branches."""
+
+    def kernel_0():
+        qf = QuantumFloat(4)
+        qf[:] = 0
+        return measure(qf)
+
+    def kernel_1():
+        qf = QuantumFloat(4)
+        qf[:] = 1
+        return measure(qf)
+
+    def kernel_2():
+        qf = QuantumFloat(4)
+        qf[:] = 2
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main(branch_idx):
+        branches = [
+            lambda _: sample(kernel_0, shots=20)(),
+            lambda _: sample(kernel_1, shots=20)(),
+            lambda _: sample(kernel_2, shots=20)(),
+        ]
+        return jax.lax.switch(branch_idx, branches, None)
+
+    for i in range(3):
+        res = main(i)
+        assert res.shape == (20,)

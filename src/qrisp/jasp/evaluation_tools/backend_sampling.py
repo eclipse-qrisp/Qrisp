@@ -390,28 +390,43 @@ def _make_backend_sampler_wrapper(func, backend):
                     invalues = extract_invalues(eqn, context_dic)
                     n_consts = eqn.params.get("num_consts", 0)
                     n_carry = eqn.params.get("num_carry", 0)
+                    length = eqn.params.get("length", None)
+
+                    const_args = tuple(invalues[:n_consts])
 
                     def body_fun(carry, x):
-                        all_in = tuple(carry) + tuple(x)
+                        carry_args = carry if isinstance(carry, tuple) else (carry,)
+                        xs_args = x if isinstance(x, tuple) else (x,)
                         res = eval_jaxpr(
                             eqn.params["jaxpr"],
                             eqn_evaluator=eqn_evaluator,
-                        )(*all_in)
+                        )(*(const_args + carry_args + xs_args))
                         if not isinstance(res, tuple):
                             res = (res,)
-                        n_c = len(carry) if isinstance(carry, tuple) else 1
-                        return res[:n_c], res[n_c:]
+                        return res[:n_carry], res[n_carry:] if len(res) > n_carry else ()
 
                     carry_init = tuple(invalues[n_consts:n_consts + n_carry])
-                    # Handle varyadic scan inputs (flat vs nested)
-                    xs_flat = invalues[n_consts + n_carry:]
+                    if n_carry == 1:
+                        carry_init = carry_init[0]
+                    xs = tuple(invalues[n_consts + n_carry:])
+                    if len(xs) == 1:
+                        xs = xs[0]
+
                     outvals = jax.lax.scan(
-                        body_fun, carry_init, xs_flat
+                        body_fun, carry_init, xs, length=length
                     )
-                    # Result is (carry, ys); insert flat
-                    flat_out = list(outvals[0]) if isinstance(outvals[0], tuple) else [outvals[0]]
-                    flat_out.extend(outvals[1] if isinstance(outvals[1], tuple) else [outvals[1]])
-                    insert_outvalues(eqn, context_dic, flat_out)
+
+                    # Result is (carry, ys); flatten for insert
+                    flat_out = (
+                        list(outvals[0]) if isinstance(outvals[0], tuple)
+                        else [outvals[0]]
+                    )
+                    if outvals[1] is not None:
+                        flat_out.extend(
+                            list(outvals[1]) if isinstance(outvals[1], tuple)
+                            else [outvals[1]]
+                        )
+                    insert_outvalues(eqn, context_dic, tuple(flat_out))
                     return False
 
                 else:
