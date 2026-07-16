@@ -76,6 +76,7 @@ dev-code-style = [
 ]
 dev-testing = [
     "pytest==9.1.0",
+    "pytest-benchmark>=5.1.0",
     "pytest-cov>=6.0",
     "qiskit-aer",
     "pyscf",

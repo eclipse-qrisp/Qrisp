@@ -43,9 +43,39 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
+
+      - name: Get latest main run ID
+        id: get-run-id
+        run: |
+          RUN_ID=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=main&status=success&per_page=1&event=push" \
+            | jq -r '.workflow_runs[0].id // empty')
+          echo "run-id=$RUN_ID" >> $GITHUB_OUTPUT
+
+      - name: Download benchmark baseline
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-data-${{ matrix.python-version }}-${{ matrix.test-group.name }}
+          path: .benchmarks/
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.get-run-id.outputs.run-id }}
+
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
           pytest ${{ matrix.test-group.paths }} \
             --cov=qrisp \
             --cov-report=term-missing \
-            --cov-branch
+            --cov-branch \
+            --benchmark-autosave \
+            --benchmark-compare \
+            --benchmark-compare-fail=min:5% \
+            --benchmark-warmup \
+            --benchmark-min-rounds=5
+
+      - name: Upload benchmark results
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-data-${{ matrix.python-version }}-${{ matrix.test-group.name }}
+          path: .benchmarks/
