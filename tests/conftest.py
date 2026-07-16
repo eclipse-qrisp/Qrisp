@@ -11,10 +11,7 @@ def pytest_pyfunc_call(pyfuncitem):
     testfunction = pyfuncitem.obj
 
     try:
-        fixture_values = {
-            name: pyfuncitem._request.getfixturevalue(name)
-            for name in pyfuncitem._fixtureinfo.argnames
-        }
+        fixture_values = {name: pyfuncitem._request.getfixturevalue(name) for name in pyfuncitem._fixtureinfo.argnames}
     except Exception:
         return
 
