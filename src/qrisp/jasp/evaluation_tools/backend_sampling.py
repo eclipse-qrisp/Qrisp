@@ -67,7 +67,7 @@ Architecture
     result = main(1)  # JAX array, shape (100,), routed through backend
 """
 
-from jax import ShapeDtypeStruct, pure_callback
+from jax import ShapeDtypeStruct, pure_callback, jit
 from jax.tree_util import tree_flatten
 
 from qrisp.circuit import fast_append
@@ -305,20 +305,115 @@ def _make_backend_sampler_wrapper(func, backend):
                 if be_evaluator(eqn, context_dic, eqn_evaluator) is False:
                     return False
 
-                # -- default behaviour (mirrors simulate_jaspr) --
+                # -- Propagate the custom evaluator downwards through
+                # control-flow and compilation primitives.  Each handler
+                # recursively calls eval_jaxpr with *eqn_evaluator* (our
+                # custom evaluator), so that sample() / expectation_value()
+                # calls nested inside jit, while, cond, or scan are
+                # intercepted and replaced with pure_callback.
                 prim = eqn.primitive.name
+
+                # ── jit / pjit ──────────────────────────────────────
                 if prim in ("jit", "pjit"):
-                    invalues = extract_invalues(eqn, context_dic)
-                    sub_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
+                    closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get(
                         "call_jaxpr"
                     )
-                    outvalues = eval_jaxpr(
-                        sub_jaxpr, eqn_evaluator=eqn_evaluator
-                    )(*invalues)
-                    if not isinstance(outvalues, (list, tuple)):
-                        outvalues = [outvalues]
-                    insert_outvalues(eqn, context_dic, outvalues)
+                    if closed_jaxpr is None:
+                        return False
+
+                    invalues = extract_invalues(eqn, context_dic)
+                    inner_eval = eval_jaxpr(
+                        closed_jaxpr, eqn_evaluator=eqn_evaluator
+                    )
+                    outvals = inner_eval(*(invalues + list(closed_jaxpr.consts)))
+
+                    if len(closed_jaxpr.jaxpr.outvars) == 1:
+                        outvals = [outvals]
+                    insert_outvalues(eqn, context_dic, outvals)
                     return False
+
+                # ── while ───────────────────────────────────────────
+                if prim == "while":
+                    import jax.lax
+
+                    invalues = extract_invalues(eqn, context_dic)
+                    n_cond = eqn.params["cond_nconsts"]
+                    n_body = eqn.params["body_nconsts"]
+                    n_all = n_cond + n_body
+
+                    def body_fun(val):
+                        consts = val[n_cond:n_all]
+                        carries = val[n_all:]
+                        res = eval_jaxpr(
+                            eqn.params["body_jaxpr"],
+                            eqn_evaluator=eqn_evaluator,
+                        )(*(consts + carries))
+                        if not isinstance(res, tuple):
+                            res = (res,)
+                        return val[:n_all] + tuple(res)
+
+                    def cond_fun(val):
+                        consts = val[:n_cond]
+                        carries = val[n_all:]
+                        return eval_jaxpr(
+                            eqn.params["cond_jaxpr"],
+                            eqn_evaluator=eqn_evaluator,
+                        )(*(consts + carries))
+
+                    outvals = jax.lax.while_loop(
+                        cond_fun, body_fun, tuple(invalues)
+                    )[n_all:]
+                    insert_outvalues(eqn, context_dic, outvals)
+                    return False
+
+                # ── cond ────────────────────────────────────────────
+                if prim == "cond":
+                    import jax.lax
+
+                    invalues = extract_invalues(eqn, context_dic)
+                    branches = [
+                        eval_jaxpr(b, eqn_evaluator=eqn_evaluator)
+                        for b in eqn.params["branches"]
+                    ]
+                    outvals = jax.lax.switch(
+                        invalues[0], branches, *invalues[1:]
+                    )
+                    if len(eqn.outvars) == 1:
+                        outvals = (outvals,)
+                    insert_outvalues(eqn, context_dic, outvals)
+                    return False
+
+                # ── scan ────────────────────────────────────────────
+                if prim == "scan":
+                    import jax.lax
+
+                    invalues = extract_invalues(eqn, context_dic)
+                    n_consts = eqn.params.get("num_consts", 0)
+                    n_carry = eqn.params.get("num_carry", 0)
+
+                    def body_fun(carry, x):
+                        all_in = tuple(carry) + tuple(x)
+                        res = eval_jaxpr(
+                            eqn.params["jaxpr"],
+                            eqn_evaluator=eqn_evaluator,
+                        )(*all_in)
+                        if not isinstance(res, tuple):
+                            res = (res,)
+                        n_c = len(carry) if isinstance(carry, tuple) else 1
+                        return res[:n_c], res[n_c:]
+
+                    carry_init = tuple(invalues[n_consts:n_consts + n_carry])
+                    # Handle varyadic scan inputs (flat vs nested)
+                    xs_flat = invalues[n_consts + n_carry:]
+                    outvals = jax.lax.scan(
+                        body_fun, carry_init, xs_flat
+                    )
+                    # Result is (carry, ys); insert flat
+                    flat_out = list(outvals[0]) if isinstance(outvals[0], tuple) else [outvals[0]]
+                    flat_out.extend(outvals[1] if isinstance(outvals[1], tuple) else [outvals[1]])
+                    insert_outvalues(eqn, context_dic, flat_out)
+                    return False
+
                 else:
                     return True
 
@@ -327,14 +422,14 @@ def _make_backend_sampler_wrapper(func, backend):
         eqn_evaluator = make_outer_evaluator()
 
         # ── Evaluate the Jaspr ──────────────────────────────────────
-        # No @jax.jit — the Jaxpr may carry AbstractQuantumState values
-        # that JAX cannot lower to MLIR.  The pure_callback inside
-        # _make_backend_eqn_evaluator already provides the JIT
-        # boundary for the eval function.
+        # The outer evaluator propagates through jit/pjit/while/cond/
+        # scan via the handlers above, replacing sample()/EV calls with
+        # pure_callback.  The resulting computation graph contains only
+        # classical JAX ops and pure_callback — safe for jit.
         with fast_append(3):
             flat_args = list(tree_flatten(args)[0])
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
-            res = eval_fn(*flat_args)
+            res = jit(eval_fn)(*flat_args)
 
         # ── Safety check ────────────────────────────────────────────
         if len(recursive_qv_search(res)):
