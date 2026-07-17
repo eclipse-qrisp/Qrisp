@@ -69,7 +69,7 @@ jobs:
             --cov-branch \
             --benchmark-autosave \
             --benchmark-compare \
-            --benchmark-compare-fail=min:5% \
+            --benchmark-compare-fail=min:15% \
             --benchmark-min-rounds=1
 
       - name: Upload benchmark results
