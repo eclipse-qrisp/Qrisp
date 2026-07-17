@@ -348,13 +348,18 @@ def terminal_sampling_evaluator(sampling_res_type):
                 "to sample with classical returns."
             )
 
-        # If the outer sampling_eval_function now returns a pytree (multiple
-        # outvars), split the flat 2D sampling result into individual 1D
-        # arrays to match the expected number of outputs.
+        # If the outer eval function now returns a pytree (multiple
+        # outvars), split the flat result into individual values to
+        # match the expected number of outputs.
+        # - "array" mode produces a 2D (shots, n) array → n × 1D arrays
+        # - "ev"   mode produces a 1D (n,) array      → n × 0D scalars
         if len(eqn.outvars) > 1 and len(decoded_meas_res) == 1:
             flat = decoded_meas_res[0]
-            if hasattr(flat, "ndim") and flat.ndim == 2 and flat.shape[1] == len(eqn.outvars):
-                decoded_meas_res = [flat[:, i] for i in range(flat.shape[1])]
+            if hasattr(flat, "ndim"):
+                if flat.ndim == 2 and flat.shape[1] == len(eqn.outvars):
+                    decoded_meas_res = [flat[:, i] for i in range(flat.shape[1])]
+                elif flat.ndim == 1 and flat.shape[0] == len(eqn.outvars):
+                    decoded_meas_res = [flat[i] for i in range(flat.shape[0])]
 
         insert_outvalues(eqn, context_dic, decoded_meas_res)
 
