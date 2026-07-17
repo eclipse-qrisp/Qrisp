@@ -51,7 +51,7 @@ iqm = [
     "iqm-pulse<13.0",
     "iqm-station-control-client==12.0.5",
     "iqm-exa-common==27.5.4",
-    "opentelemetry-exporter-otlp==1.27.0",
+    "opentelemetry-exporter-otlp==1.44.0",
     "iqm-data-definitions==2.22",
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
