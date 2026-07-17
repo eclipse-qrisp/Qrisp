@@ -109,10 +109,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     callable
         A classical, Jax traceable function.  For a kernel returning a single
         value the result is a 1D ``jax.Array`` of length ``shots``.  For a
-        kernel returning a tuple ``(a, b, c)`` the result is a tuple of three
-        1D arrays ``(array_a, array_b, array_c)``, each of length ``shots``.
-        Nested tuples and lists are preserved (e.g. ``(a, (b, c))`` →
-        ``(array_a, (array_b, array_c))`` and ``[a, b]`` → ``[array_a, array_b]``).
+        kernel returning a container (``tuple``, ``list``, ``dict``, or nested
+        combinations thereof) each leaf is replaced by a 1D array preserving
+        its native dtype — e.g. ``{'a': bool_array, 'b': float_array}``.
 
     Examples
     --------
@@ -252,6 +251,90 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         # traced Jaxpr without fragile position-based extraction.
         _backend_shots_marker(tracerized_shots)
 
+        # -----------------------------------------------------------------
+        # Typed pytree accumulator strategy
+        # -----------------------------------------------------------------
+        # The user's sampling kernel may return a single value or any
+        # JAX-supported pytree container — flat tuple, nested tuple,
+        # list, dict, or combinations thereof (e.g.
+        # ``{'x': (a, b), 'y': c}``).  We want the final result to mirror
+        # that structure, with each leaf replaced by a 1D JAX array of
+        # length *shots* preserving the leaf's native dtype.
+        #
+        # To avoid forcing all return values into a single flat 2D
+        # accumulator (which would coerce everything to float64), we
+        # build a **tuple of typed 1D accumulators** — one per leaf.
+        # The pytree structure is captured on the first iteration via
+        # ``tree_structure`` / ``tree_leaves`` and stored in
+        # ``return_amount``.  An ``AuxException`` then restarts the loop
+        # with the correctly-shaped accumulator tuple.
+        #
+        # On every iteration each leaf accumulator is updated
+        # independently with the corresponding decoded value, so
+        # ``bool`` stays ``bool``, ``int`` stays ``int``, etc.
+        # After the loop ``tree_unflatten`` rebuilds the original
+        # nested shape from the accumulator tuple — no post-hoc
+        # slicing or dtype casting needed.
+        #
+        # The two tiny helpers below encapsulate this logic so that
+        # the main loop body stays focused on quantum operations.
+        # -----------------------------------------------------------------
+
+        def _update_acc(acc, i, decoded_values, return_amount):
+            """Update *acc* at index *i* with *decoded_values*.
+
+            For pytree containers (``tuple``, ``list``, ``dict``) this
+            captures the structure and per-leaf dtypes/shapes on the first
+            iteration, raises :class:`AuxException` if *acc* is still a
+            plain 1D array, and updates a tuple of typed per-leaf
+            accumulators.  Each leaf accumulator has shape
+            ``(shots, *leaf_shape)`` so that array-valued leaves (e.g. a
+            ``(3,)`` array inside a tuple) naturally become
+            ``(shots, 3)`` in the result.
+            User-defined pytree types are rejected with a clear error.
+            Scalar returns take the fast path ``acc.at[i].set(value)``.
+            """
+            struct = tree_structure(decoded_values)
+            if struct.num_nodes > 1:                 # pytree container
+                if not isinstance(decoded_values, (tuple, list, dict)):
+                    raise TypeError(
+                        f"Unsupported return type {type(decoded_values).__name__!r}. "
+                        f"sample() supports tuple, list, and dict containers. "
+                        f"Convert the return value to one of these types."
+                    )
+                flat_values = tree_leaves(decoded_values)
+
+                if not return_amount:
+                    leaf_dtypes = []
+                    leaf_shapes = []
+                    for v in flat_values:
+                        try:
+                            leaf_dtypes.append(v.dtype)
+                            leaf_shapes.append(v.shape)
+                        except AttributeError:
+                            leaf_dtypes.append(None)
+                            leaf_shapes.append(())
+                    return_amount.append((struct, leaf_dtypes, leaf_shapes))
+
+                if not isinstance(acc, tuple):
+                    raise AuxException()
+
+                return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
+
+            return acc.at[i].set(decoded_values)     # scalar leaf
+
+        def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
+            """Build a tuple of typed zero-arrays, one per leaf.
+
+            Each accumulator has shape ``(shots, *leaf_shape)`` so that
+            array-valued leaves are stacked along the leading dimension.
+            """
+            return tuple(
+                jnp.zeros((shots,) + shape, dtype=dt)
+                if dt is not None else jnp.zeros((shots,) + shape)
+                for dt, shape in zip(leaf_dtypes, leaf_shapes)
+            )
+
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
         # The following function is the loop body, which is kernelized.
@@ -364,33 +447,17 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                 decoded_values = result
 
-            # ----------------------------------------------------------
-            # Detect tuple/list return structure (first iteration only)
-            # and flatten nested values so the flat accumulator can
-            # store them column-wise.  The structure descriptor is saved
-            # so we can rebuild the correct nesting after the loop.
-            # ----------------------------------------------------------
-            if isinstance(decoded_values, (tuple, list)):
-                struct = tree_structure(decoded_values)
-                if not return_amount:
-                    # First iteration: capture structure descriptor
-                    return_amount.append(struct)
-                if len(acc.shape) == 1:
-                    raise AuxException()
-                # Flatten for flat accumulator storage
-                decoded_values = tuple(tree_leaves(decoded_values))
-
-            # Insert into the accumulating array
-            acc = acc.at[i].set(decoded_values)
+            # Update the accumulator (handles scalar / tuple / list /
+            # nested returns transparently via typed per-leaf arrays).
+            acc = _update_acc(acc, i, decoded_values, return_amount)
 
             return (acc, *args[1:])
 
-        # On the first iteration the pytree structure of the return values
-        # is captured via tree_structure.  If the accumulator is 1D but
-        # the return is a tuple/list, AuxException is raised and the loop
-        # is re-executed with a 2D accumulator whose column count matches
-        # the number of leaf values.  After the loop the flat (shots, n)
-        # array is restructured into the original nested shape.
+        # On the first iteration the pytree structure and leaf dtypes of
+        # the return values are captured.  AuxException triggers a retry
+        # with a tuple of typed 1D accumulators.  After the loop the
+        # accumulator tuple is reconstructed into the original nested
+        # shape via tree_unflatten.
 
         return_amount = []
 
@@ -398,19 +465,15 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
         except AuxException:
-            struct = return_amount[0]
-            n_leaves = struct.num_leaves
+            struct, leaf_dtypes, leaf_shapes = return_amount[0]
+            init_acc = _make_init_acc(shots, leaf_dtypes, leaf_shapes)
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
                 sampling_body_func,
-                (jnp.zeros((shots, n_leaves)), *args),
+                (init_acc, *args),
             )
-            # Restructure flat (shots, n_leaves) array into the original
-            # nested tuple/list shape.  Each leaf becomes a 1D array.
-            flat_result = loop_res[0]
-            leaves = [flat_result[:, i] for i in range(n_leaves)]
-            return tree_unflatten(struct, leaves)
+            return tree_unflatten(struct, loop_res[0])
 
     from qrisp.jasp import terminal_sampling
 
