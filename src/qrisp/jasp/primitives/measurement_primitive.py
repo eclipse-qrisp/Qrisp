@@ -110,5 +110,5 @@ def reset_implementation(reset_object, qc):
     if isinstance(reset_object, Qubit):
         reset_object = [reset_object]
     for i in range(len(reset_object)):
-        qc.reset([reset_object[i]])
+        qc.reset(reset_object[i])
     return qc

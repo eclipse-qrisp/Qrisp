@@ -427,13 +427,6 @@ def _make_backend_sampler_wrapper(func, backend):
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
             res = jit(eval_fn)(*flat_args)
 
-        # ── Safety check ────────────────────────────────────────────
-        if len(recursive_qv_search(res)):
-            raise Exception(
-                "Tried to backend_sample a function returning a "
-                "QuantumVariable.  Use measure() to convert to classical "
-                "values before returning."
-            )
         return res
 
     wrapper.__name__ = getattr(func, "__name__", "backend_sampler_wrapper")
