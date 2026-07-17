@@ -66,33 +66,54 @@ def _to_tuple(x):
 
 
 class TestScalarReturns:
-
     def test_scalar_quantum_jit(self):
         def kernel():
-            qf = QuantumFloat(4); h(qf[0]); return qf
+            qf = QuantumFloat(4)
+            h(qf[0])
+            return qf
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert abs(float(main()) - 0.5) < 0.2
 
     def test_scalar_quantum_terminal(self):
         def kernel():
-            qf = QuantumFloat(4); h(qf[0]); return qf
+            qf = QuantumFloat(4)
+            h(qf[0])
+            return qf
+
         @jaspify(terminal_sampling=True)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert abs(float(main()) - 0.5) < 0.1
 
     def test_scalar_classical_jit(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); h(qf[1]); return measure(qf)
+            qf = QuantumFloat(3)
+            h(qf[0])
+            h(qf[1])
+            return measure(qf)
+
         @jaspify(terminal_sampling=False)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert abs(float(main()) - 1.5) < 0.3
 
     def test_scalar_classical_terminal_rejected(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); h(qf[1]); return measure(qf)
+            qf = QuantumFloat(3)
+            h(qf[0])
+            h(qf[1])
+            return measure(qf)
+
         @jaspify(terminal_sampling=True)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         with pytest.raises(Exception):
             main()
 
@@ -103,12 +124,18 @@ class TestScalarReturns:
 
 
 class TestFlatTupleReturns:
-
     def test_two_elements_jit(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); x(b[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            x(b[0])
+            return a, b
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
         assert abs(float(res[0]) - 0.5) < 0.2
@@ -116,27 +143,46 @@ class TestFlatTupleReturns:
 
     def test_three_elements_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); c = QuantumFloat(3)
-            h(a[0]); x(b[0]); return a, b, c
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            c = QuantumFloat(3)
+            h(a[0])
+            x(b[0])
+            return a, b, c
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 3
 
     def test_two_elements_terminal(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            return a, b
+
         @jaspify(terminal_sampling=True)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
 
     def test_classical_tuple_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); cx(a[0], b[0])
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            cx(a[0], b[0])
             return measure(a), measure(b)
+
         @jaspify(terminal_sampling=False)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert isinstance(main(), tuple) and len(main()) == 2
 
 
@@ -146,48 +192,76 @@ class TestFlatTupleReturns:
 
 
 class TestNestedReturns:
-
     def test_tuple_of_measured_leaves_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); x(b[0])
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            x(b[0])
             return a, (measure(b),)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
         assert isinstance(res[1], tuple) and len(res[1]) == 1
 
     def test_nested_undecoded_qv_raises_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); return a, (b,)
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            return a, (b,)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         with pytest.raises(Exception):
             main()
 
     def test_list_of_undecoded_qv_raises_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); return [a, b]
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            return [a, b]
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         with pytest.raises(Exception):
             main()
 
     def test_dict_of_undecoded_qv_raises_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0])
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
             return {"val": a, "aux": b}
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         with pytest.raises(Exception):
             main()
 
     def test_mixed_qv_classical_nested_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); h(b[1])
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            h(b[1])
             return a, (measure(b),)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
         assert isinstance(res[1], tuple) and len(res[1]) == 1
@@ -199,12 +273,18 @@ class TestNestedReturns:
 
 
 class TestDtypePreservation:
-
     def test_bool_in_flat_tuple_jit(self):
         def kernel():
-            qf = QuantumFloat(4); qb = QuantumBool(); h(qf[0]); h(qb); return qf, qb
+            qf = QuantumFloat(4)
+            qb = QuantumBool()
+            h(qf[0])
+            h(qb)
+            return qf, qb
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert res[0].dtype == jnp.float64
         assert res[1].dtype in (jnp.int64, jnp.float64)  # bool promotes under sum
@@ -216,21 +296,30 @@ class TestDtypePreservation:
 
 
 class TestArrayValuedLeaves:
-
     def test_array_and_scalar_jit(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); return jnp.array([1., 2., 3.]), qf
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return jnp.array([1.0, 2.0, 3.0]), qf
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert res[0].shape == (3,)
-        assert jnp.all(res[0] == jnp.array([1., 2., 3.]))
+        assert jnp.all(res[0] == jnp.array([1.0, 2.0, 3.0]))
 
     def test_array_inside_tuple_jit(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); return (jnp.ones(4), qf)
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return (jnp.ones(4), qf)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
         assert res[0].shape == (4,)
@@ -243,42 +332,71 @@ class TestArrayValuedLeaves:
 
 
 class TestPostProcessor:
-
     def test_structure_preserving_jit(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            return a, b
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS, post_processor=_double)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS, post_processor=_double)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
 
     def test_structure_preserving_terminal(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            return a, b
+
         @jaspify(terminal_sampling=True)
-        def main(): return expectation_value(kernel, shots=SHOTS, post_processor=_double)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS, post_processor=_double)()
+
         assert isinstance(main(), tuple) and len(main()) == 2
 
     def test_tuple_to_scalar_jit(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); x(b[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            x(b[0])
+            return a, b
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS, post_processor=_sum)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS, post_processor=_sum)()
+
         assert not isinstance(main(), tuple)
 
     def test_scalar_to_tuple_jit(self):
         def kernel():
-            qf = QuantumFloat(4); h(qf[0]); return qf
+            qf = QuantumFloat(4)
+            h(qf[0])
+            return qf
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS, post_processor=_to_tuple)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS, post_processor=_to_tuple)()
+
         res = main()
         assert isinstance(res, tuple) and len(res) == 2
 
     def test_tuple_to_scalar_terminal(self):
         def kernel():
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            return a, b
+
         @jaspify(terminal_sampling=True)
-        def main(): return expectation_value(kernel, shots=SHOTS, post_processor=_sum)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS, post_processor=_sum)()
+
         assert not isinstance(main(), tuple)
 
 
@@ -288,53 +406,82 @@ class TestPostProcessor:
 
 
 class TestEdgeCases:
-
     def test_user_defined_pytree_raises(self):
         from dataclasses import dataclass
         import jax.tree_util as jtu
 
         @dataclass
         class MyPytree:
-            x: object; y: object
-        jtu.register_pytree_node(MyPytree,
-            lambda obj: ((obj.x, obj.y), None),
-            lambda _, c: MyPytree(*c))
+            x: object
+            y: object
+
+        jtu.register_pytree_node(MyPytree, lambda obj: ((obj.x, obj.y), None), lambda _, c: MyPytree(*c))
 
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); return MyPytree(a, b)
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            return MyPytree(a, b)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         with pytest.raises(TypeError, match="Unsupported return type"):
             main()
 
     def test_single_element_tuple_becomes_scalar(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); return (qf,)
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return (qf,)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert not isinstance(main(), tuple)
 
     def test_pure_classical_multiple_jit(self):
         def kernel():
-            a = QuantumFloat(3); b = QuantumFloat(3); h(a[0]); h(b[1])
+            a = QuantumFloat(3)
+            b = QuantumFloat(3)
+            h(a[0])
+            h(b[1])
             return measure(a), measure(b), measure(a)
+
         @jaspify(terminal_sampling=False)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert isinstance(main(), tuple) and len(main()) == 3
 
     def test_mixed_quantum_classical_jit(self):
         def kernel():
-            qf = QuantumFloat(3); h(qf[0]); mes = measure(qf[1]); return qf, mes
+            qf = QuantumFloat(3)
+            h(qf[0])
+            mes = measure(qf[1])
+            return qf, mes
+
         @jaspify(terminal_sampling=False)
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert isinstance(main(), tuple) and len(main()) == 2
 
     def test_dynamic_kernel_arg_jit(self):
         def kernel(k):
-            a = QuantumFloat(4); b = QuantumFloat(4); h(a[0])
-            with control(a[0]): x(b[k]); return a, b
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            h(a[0])
+            with control(a[0]):
+                x(b[k])
+                return a, b
+
         @jaspify
-        def main(k): return expectation_value(kernel, shots=SHOTS)(k)
+        def main(k):
+            return expectation_value(kernel, shots=SHOTS)(k)
+
         assert isinstance(main(2), tuple) and len(main(2)) == 2
 
 
@@ -344,13 +491,17 @@ class TestEdgeCases:
 
 
 class TestStress:
-
     def test_many_return_values_jit(self):
         N = 6
+
         def kernel():
             qvs = QuantumArray(qtype=QuantumFloat(3), shape=(N,))
-            for qv in qvs: h(qv[0])
+            for qv in qvs:
+                h(qv[0])
             return tuple(qv for qv in qvs)
+
         @jaspify
-        def main(): return expectation_value(kernel, shots=SHOTS)()
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
         assert isinstance(main(), tuple) and len(main()) == N

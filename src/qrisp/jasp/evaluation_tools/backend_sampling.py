@@ -126,10 +126,7 @@ def _make_backend_eqn_evaluator(backend):
                 outvals = pure_callback(fn, result_shapes, *invalues)
                 outvals = [outvals]
             else:
-                result_shapes = [
-                    ShapeDtypeStruct(v.aval.shape, v.aval.dtype)
-                    for v in eqn.outvars
-                ]
+                result_shapes = [ShapeDtypeStruct(v.aval.shape, v.aval.dtype) for v in eqn.outvars]
                 outvals = pure_callback(fn, result_shapes, *invalues)
                 outvals = list(outvals)
 

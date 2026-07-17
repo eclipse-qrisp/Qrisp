@@ -332,6 +332,7 @@ class TestNestedTupleReturns:
     def test_mixed_quantum_classical_nested(self):
         """Top-level QuantumVariable is decoded; nested classical tuple
         passes through the post-processor unchanged."""
+
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
@@ -376,6 +377,7 @@ class TestListReturns:
 
     def test_nested_list_of_tuple_jit(self):
         """``return [ (a, b), c ]`` → ``[ (array_a, array_b), array_c ]``."""
+
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
@@ -618,6 +620,7 @@ class TestPostProcessor:
 
     def test_tuple_to_scalar_jit(self):
         """Post-processor combines two values into one."""
+
         def kernel():
             a = QuantumFloat(4)
             b = QuantumFloat(4)
@@ -633,6 +636,7 @@ class TestPostProcessor:
 
     def test_scalar_to_tuple_jit(self):
         """Post-processor expands a single value into a tuple."""
+
         def kernel():
             qf = QuantumFloat(4)
             h(qf[0])
@@ -673,6 +677,7 @@ class TestEdgeCases:
 
     def test_zero_shots_jit(self):
         """shots=0 raises ValueError at validation time."""
+
         def kernel():
             qf = QuantumFloat(3)
             h(qf[0])
@@ -687,6 +692,7 @@ class TestEdgeCases:
 
     def test_zero_shots_tuple_jit(self):
         """shots=0 raises ValueError (same as scalar case)."""
+
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
@@ -719,6 +725,7 @@ class TestEdgeCases:
     def test_single_element_tuple_becomes_scalar(self):
         """A 1-tuple return is unwrapped by the post-processor calling
         convention, so it reaches the accumulator as a scalar."""
+
         def kernel():
             qf = QuantumFloat(3)
             h(qf[0])
@@ -838,6 +845,7 @@ class TestEdgeCases:
     def test_identity_post_processor_preserves_structure(self):
         """Default (identity) post-processor preserves the interleaved
         order of quantum and classical returns."""
+
         def kernel():
             qf = QuantumFloat(4)
             qb = QuantumBool()
@@ -895,6 +903,7 @@ class TestStress:
 
     def test_nested_structure_many_leaves_jit(self):
         """Deeply nested structure with many leaves."""
+
         def kernel():
             qf1 = QuantumFloat(2)
             qf2 = QuantumFloat(2)
@@ -902,8 +911,7 @@ class TestStress:
             qf4 = QuantumFloat(2)
             h(qf1[0])
             h(qf3[1])
-            return {"a": (measure(qf1), [measure(qf2)]),
-                    "b": {"c": measure(qf3), "d": measure(qf4)}}
+            return {"a": (measure(qf1), [measure(qf2)]), "b": {"c": measure(qf3), "d": measure(qf4)}}
 
         @jaspify(terminal_sampling=False)
         def main():

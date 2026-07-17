@@ -213,7 +213,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
             Scalar returns take the fast path ``acc + jnp.array(value)``.
             """
             struct = tree_structure(decoded_values)
-            if struct.num_nodes > 1:                 # pytree container
+            if struct.num_nodes > 1:  # pytree container
                 if not isinstance(decoded_values, (tuple, list, dict)):
                     raise TypeError(
                         f"Unsupported return type {type(decoded_values).__name__!r}. "
@@ -359,7 +359,9 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 struct, leaf_dtypes, leaf_shapes = return_amount[0]
                 init_acc = _make_init_acc(leaf_dtypes, leaf_shapes)
                 loop_res = jax.lax.fori_loop(
-                    0, shots, sampling_body_func,
+                    0,
+                    shots,
+                    sampling_body_func,
                     (init_acc, *args),
                 )
                 acc_tuple = loop_res[0]
@@ -371,7 +373,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
 
     if return_dict:
         expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
-        _use_pytree_acc = False       # keep legacy flat-array format
+        _use_pytree_acc = False  # keep legacy flat-array format
     else:
         _use_pytree_acc = True
 

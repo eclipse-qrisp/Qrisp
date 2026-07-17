@@ -295,7 +295,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             Scalar returns take the fast path ``acc.at[i].set(value)``.
             """
             struct = tree_structure(decoded_values)
-            if struct.num_nodes > 1:                 # pytree container
+            if struct.num_nodes > 1:  # pytree container
                 if not isinstance(decoded_values, (tuple, list, dict)):
                     raise TypeError(
                         f"Unsupported return type {type(decoded_values).__name__!r}. "
@@ -321,7 +321,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                 return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
 
-            return acc.at[i].set(decoded_values)     # scalar leaf
+            return acc.at[i].set(decoded_values)  # scalar leaf
 
         def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
             """Build a tuple of typed zero-arrays, one per leaf.
@@ -330,8 +330,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             array-valued leaves are stacked along the leading dimension.
             """
             return tuple(
-                jnp.zeros((shots,) + shape, dtype=dt)
-                if dt is not None else jnp.zeros((shots,) + shape)
+                jnp.zeros((shots,) + shape, dtype=dt) if dt is not None else jnp.zeros((shots,) + shape)
                 for dt, shape in zip(leaf_dtypes, leaf_shapes)
             )
 
@@ -481,9 +480,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         if check_for_tracing_mode():
             if shots <= 0:
-                raise ValueError(
-                    f"shots must be a positive integer, got {shots}"
-                )
+                raise ValueError(f"shots must be a positive integer, got {shots}")
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
             return terminal_sampling(sampling_kernel, shots)(*args)
