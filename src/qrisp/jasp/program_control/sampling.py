@@ -17,6 +17,7 @@
 
 import jax
 import jax.numpy as jnp
+from jax.tree_util import tree_leaves, tree_structure, tree_unflatten
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
@@ -106,8 +107,12 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     Returns
     -------
     callable
-        A classical, Jax traceable function returning a jax array containing
-        the measurement results of each shot.
+        A classical, Jax traceable function.  For a kernel returning a single
+        value the result is a 1D ``jax.Array`` of length ``shots``.  For a
+        kernel returning a tuple ``(a, b, c)`` the result is a tuple of three
+        1D arrays ``(array_a, array_b, array_c)``, each of length ``shots``.
+        Nested tuples and lists are preserved (e.g. ``(a, (b, c))`` →
+        ``(array_a, (array_b, array_c))`` and ``[a, b]`` → ``[array_a, array_b]``).
 
     Examples
     --------
@@ -151,17 +156,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields
-        # [[3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]]
+        # Yields (a tuple of two 1D arrays)
+        # (Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64),
+        #  Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64))
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -203,11 +200,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sample(mixed_kernel, shots=20)()
 
         print(main())
-        # Yields e.g.:
-        # [[0. 0.]
-        #  [0. 0.]
-        #  [1. 0.]
-        #  ...]
+        # Yields e.g. (a tuple of two 1D arrays):
+        # (Array([0., 0., 1., ...], dtype=float64),
+        #  Array([0., 0., 0., ...], dtype=float64))
 
     .. note::
 
@@ -325,10 +320,6 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         else:
                             result = post_processor(*full)
 
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise AuxException()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
@@ -355,10 +346,6 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         else:
                             result = post_processor(*full)
 
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise AuxException()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
@@ -375,23 +362,35 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 else:
                     result = post_processor(*classical_tuple)
 
-                if isinstance(result, tuple):
-                    return_amount.append(len(result))
-                    if len(acc.shape) == 1:
-                        raise AuxException()
                 decoded_values = result
+
+            # ----------------------------------------------------------
+            # Detect tuple/list return structure (first iteration only)
+            # and flatten nested values so the flat accumulator can
+            # store them column-wise.  The structure descriptor is saved
+            # so we can rebuild the correct nesting after the loop.
+            # ----------------------------------------------------------
+            if isinstance(decoded_values, (tuple, list)):
+                struct = tree_structure(decoded_values)
+                if not return_amount:
+                    # First iteration: capture structure descriptor
+                    return_amount.append(struct)
+                if len(acc.shape) == 1:
+                    raise AuxException()
+                # Flatten for flat accumulator storage
+                decoded_values = tuple(tree_leaves(decoded_values))
 
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
 
             return (acc, *args[1:])
 
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
+        # On the first iteration the pytree structure of the return values
+        # is captured via tree_structure.  If the accumulator is 1D but
+        # the return is a tuple/list, AuxException is raised and the loop
+        # is re-executed with a 2D accumulator whose column count matches
+        # the number of leaf values.  After the loop the flat (shots, n)
+        # array is restructured into the original nested shape.
 
         return_amount = []
 
@@ -399,13 +398,19 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
         except AuxException:
+            struct = return_amount[0]
+            n_leaves = struct.num_leaves
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
                 sampling_body_func,
-                (jnp.zeros((shots, return_amount[0])), *args),
+                (jnp.zeros((shots, n_leaves)), *args),
             )
-            return loop_res[0]
+            # Restructure flat (shots, n_leaves) array into the original
+            # nested tuple/list shape.  Each leaf becomes a 1D array.
+            flat_result = loop_res[0]
+            leaves = [flat_result[:, i] for i in range(n_leaves)]
+            return tree_unflatten(struct, leaves)
 
     from qrisp.jasp import terminal_sampling
 

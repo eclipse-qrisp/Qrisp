@@ -113,12 +113,27 @@ def _make_backend_eqn_evaluator(backend):
             inner_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
 
             fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
-            result_shapes = ShapeDtypeStruct(
-                eqn.outvars[0].aval.shape,
-                eqn.outvars[0].aval.dtype,
-            )
-            outvals = pure_callback(fn, result_shapes, *invalues)
-            insert_outvalues(eqn, context_dic, [outvals])
+
+            # Build result shapes.  For a single output variable use a
+            # single ShapeDtypeStruct (callback returns a scalar); for
+            # multiple outputs (pytree returns from the new sample()
+            # signature) use a list so the callback returns a flat tuple.
+            if len(eqn.outvars) == 1:
+                result_shapes = ShapeDtypeStruct(
+                    eqn.outvars[0].aval.shape,
+                    eqn.outvars[0].aval.dtype,
+                )
+                outvals = pure_callback(fn, result_shapes, *invalues)
+                outvals = [outvals]
+            else:
+                result_shapes = [
+                    ShapeDtypeStruct(v.aval.shape, v.aval.dtype)
+                    for v in eqn.outvars
+                ]
+                outvals = pure_callback(fn, result_shapes, *invalues)
+                outvals = list(outvals)
+
+            insert_outvalues(eqn, context_dic, outvals)
             return False
 
         # Everything else: default evaluation.

@@ -360,7 +360,20 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
         # while-loop and extracts the final result — the Jaspr itself
         # owns all accumulator typing and indexing logic.
-        return jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(*invals)
+        result = jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(*invals)
+
+        # The result may now be a nested pytree (tuple/list of arrays)
+        # from the post-loop restructuring in sampling_eval_function.
+        # Flatten to a plain tuple so that pure_callback (which expects
+        # a flat sequence when given multiple result shapes) can consume it.
+        # (list is registered as a pytree node in sampling.py, so
+        # tree_leaves recurses into lists as well as tuples.)
+        if isinstance(result, (tuple, list)):
+            flat = jax.tree_util.tree_leaves(result)
+            if len(flat) == 1:
+                return flat[0]
+            return tuple(flat)
+        return result
 
     return backend_sampling_fn
 

@@ -96,8 +96,9 @@ def test_multi_return_cat_state():
         return sample(kernel, shots=300)(k)
 
     res = main(3)
-    assert res.shape == (300, 2)
-    pairs = {(float(r[0]), float(r[1])) for r in res[:200]}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(float(a), float(b)) for a, b in zip(res[0][:200], res[1][:200])}
     assert pairs == {(0.0, 0.0), (3.0, 3.0)}, f"got {pairs}"
 
 
@@ -136,10 +137,11 @@ def test_triple_return():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 3)
-    assert {float(r[0]) for r in res[:100]} == {0.0, 1.0}
-    assert {float(r[1]) for r in res[:100]} == {1.0}
-    assert len({float(r[2]) for r in res[:100]}) >= 3
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (300,) for r in res)
+    assert {float(a) for a in res[0][:100]} == {0.0, 1.0}
+    assert {float(b) for b in res[1][:100]} == {1.0}
+    assert len({float(c) for c in res[2][:100]}) >= 3
 
 
 # ===========================================================================
@@ -231,7 +233,8 @@ def test_postproc_tuple_return():
         return sample(kernel, shots=200, post_processor=post_processor)()
 
     res = main()
-    assert res.shape == (200, 2)
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (200,) for r in res)
 
 
 # ===========================================================================
@@ -253,8 +256,9 @@ def test_bell_state():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), bool(r[1])) for r in res[:200]}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(bool(a), bool(b)) for a, b in zip(res[0][:200], res[1][:200])}
     assert pairs == {(False, False), (True, True)}, f"got {pairs}"
 
 
@@ -294,8 +298,9 @@ def test_controlled_operation():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), float(r[1])) for r in res[:200]}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(bool(a), float(b)) for a, b in zip(res[0][:200], res[1][:200])}
     assert pairs == {(False, 0.0), (True, 5.0)}, f"got {pairs}"
 
 
@@ -374,7 +379,8 @@ def test_large_qubit_count():
         return sample(kernel, shots=100)()
 
     res = main()
-    assert res.shape == (100, 2)
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (100,) for r in res)
 
 
 def test_multiple_sample_calls():
@@ -552,9 +558,10 @@ def test_measure_all_qubits():
         return sample(kernel, shots=200)()
 
     res = main()
-    assert res.shape == (200, 4)
-    assert {bool(r[1]) for r in res[:100]} == {False}
-    assert {bool(r[3]) for r in res[:100]} == {False}
+    assert isinstance(res, tuple) and len(res) == 4
+    assert all(r.shape == (200,) for r in res)
+    assert {bool(b) for b in res[1][:100]} == {False}
+    assert {bool(b) for b in res[3][:100]} == {False}
 
 
 def test_parameterized_gates():
