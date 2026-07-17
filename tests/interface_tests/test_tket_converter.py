@@ -1,10 +1,13 @@
 # from qrisp.circuit.standard_operations import op_list
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
 np.random.seed(42)  # Deterministic for reproducible test results
 
 from qrisp import QuantumCircuit, QuantumVariable
+from qrisp.circuit import Operation
 from qrisp.circuit.standard_operations import (
     CPGate,
     CXGate,
@@ -27,6 +30,10 @@ from qrisp.circuit.standard_operations import (
     XGate,
     YGate,
     ZGate,
+)
+from qrisp.interface.converter.pytket_converter import (
+    create_tket_instruction,
+    pytket_converter,
 )
 
 
@@ -263,3 +270,144 @@ def test_to_pytket_measure():
     # Each measurement wires qubit k to the classical bit of the same index.
     expected_wiring = {(k, k) for k in range(num_qubits)}
     assert {(cmd.qubits[0].index[0], cmd.bits[0].index[0]) for cmd in measurements} == expected_wiring
+
+
+def test_to_pytket_gphase():
+    """to_pytket() preserves a global-phase gate exactly.
+
+    ``x, x`` is the identity, so ``gphase(theta)`` leaves the unitary as
+    ``e^{i*theta} * I``. Global phase is unobservable up to a phase factor, so
+    this compares the converted unitary against Qrisp's own get_unitary()
+    *exactly* to prove the phase itself is carried across.
+    """
+    pytest.importorskip("pytket")
+
+    theta = 0.5
+    qc = QuantumCircuit(1)
+    qc.x(0)
+    qc.x(0)
+    qc.gphase(theta, 0)
+
+    np.testing.assert_array_almost_equal(qc.to_pytket().get_unitary(), qc.get_unitary())
+
+
+# Multi-controlled gates route through the ControlledOperation branch and are
+# emitted as abstract CircBoxes. MCX (base name "x") and MCRX (base name "rx")
+# also exercise both sides of the single-character base-name check.
+_CONTROLLED_GATE_BUILDERS = {
+    "mcx": (4, lambda qc: qc.append(MCXGate(control_amount=3), [0, 1, 2, 3])),
+    "mcrx": (3, lambda qc: qc.append(MCRXGate(_GATE_THETA, control_amount=2), [0, 1, 2])),
+}
+
+
+@pytest.mark.parametrize("gate", sorted(_CONTROLLED_GATE_BUILDERS))
+def test_to_pytket_controlled_gate_unitary(gate):
+    """to_pytket() reproduces multi-controlled gates (ControlledOperation path).
+
+    Each is emitted as an abstract CircBox of its definition; the converted
+    unitary must match Qrisp's own up to a global phase.
+    """
+    pytest.importorskip("pytket")
+
+    num_qubits, build = _CONTROLLED_GATE_BUILDERS[gate]
+    qc = QuantumCircuit(num_qubits)
+    build(qc)
+
+    assert _matches_up_to_global_phase(qc.to_pytket().get_unitary(), qc.get_unitary())
+
+
+def test_to_pytket_composite_gate():
+    """to_pytket() reproduces a composite (non-elementary) gate's unitary.
+
+    A gate built from a sub-circuit has a ``definition`` but no elementary pytket
+    equivalent, so it exercises the CircBox path in ``create_tket_instruction``.
+    """
+    pytest.importorskip("pytket")
+
+    sub = QuantumCircuit(2)
+    sub.h(0)
+    sub.cx(0, 1)
+
+    qc = QuantumCircuit(2)
+    qc.append(sub.to_gate(name="myblock"), [0, 1])
+
+    assert _matches_up_to_global_phase(qc.to_pytket().get_unitary(), qc.get_unitary())
+
+
+def test_to_pytket_grover():
+    """to_pytket() reproduces a full Grover search circuit.
+
+    This is the converter's end-to-end regression: a compiled Grover session mixes
+    composite/controlled gates (mapped to CircBoxes), qubit (de)allocation, and the
+    diffuser's global-phase gate. The instance is deliberately small
+    (``QuantumFloat(2, -1)`` -> 9 qubits) so it stays within pytket's statevector
+    simulation limit. The converted statevector must match Qrisp's own up to a
+    global phase.
+    """
+    pytest.importorskip("pytket")
+
+    from math import pi
+
+    from qrisp.grover import diffuser
+
+    from qrisp import QuantumFloat, auto_uncompute, h, z
+
+    @auto_uncompute
+    def sqrt_oracle(qf):
+        temp_qbool = qf * qf == 0.25
+        z(temp_qbool)
+
+    qf = QuantumFloat(2, -1, signed=True)
+    n = qf.size
+    iterations = max(1, int(0.25 * pi * (2**n / 2) ** 0.5))
+
+    h(qf)
+    for _ in range(iterations):
+        sqrt_oracle(qf)
+        diffuser(qf)
+
+    qc = qf.qs.compile()
+
+    assert _matches_up_to_global_phase(qc.to_pytket().get_statevector(), qc.statevector_array())
+
+
+def test_create_tket_instruction_unknown_raises():
+    """create_tket_instruction() raises for an op with no pytket equivalent.
+
+    An operation whose name is not in the gate map and that has no ``definition``
+    cannot be converted, hitting the final ``else`` branch.
+    """
+    pytest.importorskip("pytket")
+
+    op = Operation(name="totally_unknown", num_qubits=1)
+
+    with pytest.raises(Exception, match="Could not convert"):
+        create_tket_instruction(op)
+
+
+def _make_import_fail():
+    """Patch ``__import__`` so importing pytket fails, simulating its absence."""
+    import builtins
+
+    real = builtins.__import__
+
+    def mock(name, *args, **kwargs):
+        if name == "pytket" or name.startswith("pytket."):
+            raise ModuleNotFoundError(f"No module named '{name}'")
+        return real(name, *args, **kwargs)
+
+    return patch("builtins.__import__", mock)
+
+
+def test_pytket_converter_import_error():
+    """pytket_converter() raises a clear ImportError when pytket is missing."""
+    with _make_import_fail():
+        with pytest.raises(ImportError, match="PyTket must be installed"):
+            pytket_converter(QuantumCircuit(1))
+
+
+def test_create_tket_instruction_import_error():
+    """create_tket_instruction() raises a clear ImportError when pytket is missing."""
+    with _make_import_fail():
+        with pytest.raises(ImportError, match="PyTket must be installed"):
+            create_tket_instruction(XGate())
