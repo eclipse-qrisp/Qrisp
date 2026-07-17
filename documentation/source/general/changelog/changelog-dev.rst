@@ -118,6 +118,11 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the ``to_pytket`` converter: ``u1`` angles are no longer divided by
+  ``pi`` twice, ``cp`` now maps to controlled-phase (``CU1``) instead of
+  ``CRz``, and global-phase (``gphase``) gates are now supported
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
+
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
