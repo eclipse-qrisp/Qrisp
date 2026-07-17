@@ -480,6 +480,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     def return_function(*args):
 
         if check_for_tracing_mode():
+            if shots <= 0:
+                raise ValueError(
+                    f"shots must be a positive integer, got {shots}"
+                )
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
             return terminal_sampling(sampling_kernel, shots)(*args)
