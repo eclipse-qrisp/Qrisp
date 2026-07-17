@@ -67,10 +67,10 @@ def create_tket_instruction(op):
     elif op.definition:
         # if complex definition we create an abstract circBox for the section
         tket_definition = pytket_converter(op.definition, boxFlag=True)
-        # might need adjustment
-        # if len(op.definition.clbits):
-        if tket_definition.n_qubits != op.num_qubits:
-            raise Exception
+        # Defensive check: the boxed definition should span the same number of
+        # qubits as the operation it represents.
+        if tket_definition.n_qubits != op.num_qubits:  # pragma: no cover
+            raise Exception("Converted definition of '" + str(op.name) + "' has a mismatched qubit count")
 
         tket_ins = CircBox(tket_definition)
 
@@ -83,7 +83,7 @@ def create_tket_instruction(op):
 def pytket_converter(qc, boxFlag=False):
     try:
         from pytket import Circuit, OpType, Qubit
-        from pytket.circuit import CircBox, Op, QControlBox
+        from pytket.circuit import CircBox
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
 
@@ -152,23 +152,13 @@ def pytket_converter(qc, boxFlag=False):
             continue
 
         elif op.name == "cx":
-            # maybe adjustment necessary here
-            if hasattr(op, "ctrl_state"):
-                tket_ins = OpType.CX
-            else:
-                tket_ins = OpType.CX
+            tket_ins = OpType.CX
 
         elif op.name == "cy":
-            if hasattr(op, "ctrl_state"):
-                tket_ins = OpType.CY
-            else:
-                tket_ins = OpType.CY
+            tket_ins = OpType.CY
 
         elif op.name == "cz":
-            if hasattr(op, "ctrl_state"):
-                tket_ins = OpType.CZ
-            else:
-                tket_ins = OpType.CZ
+            tket_ins = OpType.CZ
 
         elif op.name == "cp":
             # cp is the controlled-phase gate diag(1,1,1,e^{i*theta}); pytket's
@@ -198,40 +188,17 @@ def pytket_converter(qc, boxFlag=False):
             if len(base_name) == 1:
                 base_name = base_name.upper()
 
-            if 0 == 1:
-                # if op.base_operation.definition:
-                # old code relic -- buggy
-                # base_operation.definition doesnt convert correctly if mutiple abstract/costum gates are included
-                tket_definition = pytket_converter(op.base_operation.definition)
-                base_gate = tket_definition
-                if isinstance(base_gate, Circuit):
-                    tket_definition = pytket_converter(op.base_operation.definition, boxFlag=True)
-                    tket_definition.name = base_name
-                    tket_ins = CircBox(tket_definition)
-                else:
-                    tket_ins = QControlBox(Op.create(base_gate), len(op.controls))
-
-            else:
-                base_gate = pytket_converter(op.definition)
-
-                if isinstance(base_gate, Circuit):
-                    # circuit is returned as abstract CircBox --> pytket specific
-                    tket_definition = pytket_converter(op.definition, boxFlag=True)
-                    tket_definition.name = base_name
-                    tket_ins = CircBox(tket_definition)
-
-                else:
-                    # else a simpler multi controlled gate can be created
-                    tket_ins = QControlBox(Op.create(base_gate), len(op.controls))
+            # pytket_converter always returns a Circuit, so a controlled operation
+            # is always emitted as an abstract CircBox of its definition.
+            tket_definition = pytket_converter(op.definition, boxFlag=True)
+            tket_definition.name = base_name
+            tket_ins = CircBox(tket_definition)
 
         else:
             tket_ins = create_tket_instruction(op)
 
         if isinstance(tket_ins, CircBox):
             tket_qc.add_circbox(tket_ins, qubit_list)
-
-        elif isinstance(tket_ins, QControlBox):
-            tket_qc.add_qcontrolbox(tket_ins, qubit_list)
 
         elif clbit_list:
             # add other isinstance checks from above here aswell?
