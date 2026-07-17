@@ -54,6 +54,11 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the ``to_pytket`` converter: ``u1`` angles are no longer divided by
+  ``pi`` twice, ``cp`` now maps to controlled-phase (``CU1``) instead of
+  ``CRz``, and global-phase (``gphase``) gates are now supported
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
+
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
   (`PR #642 <https://github.com/eclipse-qrisp/Qrisp/pull/642>`_).
