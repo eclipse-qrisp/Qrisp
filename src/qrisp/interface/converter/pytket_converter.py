@@ -145,6 +145,12 @@ def pytket_converter(qc, boxFlag=False):
         if op.name in ["qb_alloc", "qb_dealloc"]:
             continue
 
+        elif op.name == "gphase":
+            # Global phase: pytket tracks it circuit-wide. add_phase takes
+            # half-turns, so params[0] (radians, not pi-scaled) is divided by pi.
+            tket_qc.add_phase(params[0] / np.pi)
+            continue
+
         elif op.name == "cx":
             # maybe adjustment necessary here
             if hasattr(op, "ctrl_state"):
