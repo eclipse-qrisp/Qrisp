@@ -15,6 +15,9 @@
 ********************************************************************************
 """
 
+from dataclasses import dataclass
+from typing import Optional
+
 import pytest
 
 from qrisp import (
@@ -36,44 +39,97 @@ from qrisp.jasp import jaspify
 # ---------------------------------------------------------------------------
 
 
-def test_thapliyal_adder_static_smoke_quantum_a():
-    """Quantum a + quantum b, equal size, no optional args."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
-    a[:] = 5
-    b[:] = 3
-    thapliyal_adder(a, b)
-    assert b.get_measurement() == {0: 1.0}  # (5+3) % 8
+@dataclass
+class _SmokeCase:
+    name: str
+    a_size: int
+    a_val: int
+    a_quantum: bool
+    b_size: int
+    b_val: int
+    expected_b: int
+    c_in_kind: Optional[str] = None  # None, "bool", "qubit"
+    c_in_val: int = 0
+    use_c_out: bool = False
+    expected_c_out: Optional[bool] = None
+    use_ctrl: bool = False
 
 
-def test_thapliyal_adder_static_smoke_classical_a():
-    """Classical a + quantum b."""
-    b = QuantumFloat(3)
-    b[:] = 3
-    thapliyal_adder(5, b)
-    assert b.get_measurement() == {0: 1.0}
+SMOKE_CASES = [
+    _SmokeCase("quantum_a", a_size=3, a_val=5, a_quantum=True, b_size=3, b_val=3, expected_b=0),  # (5+3)%8
+    _SmokeCase("classical_a", a_size=3, a_val=5, a_quantum=False, b_size=3, b_val=3, expected_b=0),  # (5+3)%8
+    _SmokeCase(
+        "cin", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=2, c_in_kind="bool", c_in_val=1, expected_b=6
+    ),  # 2+3+1
+    _SmokeCase(
+        "cin_qubit", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=2, c_in_kind="qubit", c_in_val=1, expected_b=6
+    ),  # 2+3+1
+    _SmokeCase(
+        "cout_overflow", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, use_c_out=True,
+        expected_b=1, expected_c_out=True,
+    ),  # (6+3)%8, overflow
+    _SmokeCase("ctrl", a_size=3, a_val=3, a_quantum=True, b_size=3, b_val=5, use_ctrl=True, expected_b=0),  # (5+3)%8
+    _SmokeCase(
+        "cin_and_cout", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, c_in_kind="bool", c_in_val=1,
+        use_c_out=True, expected_b=2, expected_c_out=True,
+    ),  # (6+3+1)%8, overflow
+    _SmokeCase(
+        "cin_qubit_and_cout", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, c_in_kind="qubit", c_in_val=1,
+        use_c_out=True, expected_b=2, expected_c_out=True,
+    ),  # (6+3+1)%8, overflow
+    _SmokeCase(
+        "cout_and_ctrl", a_size=3, a_val=6, a_quantum=True, b_size=3, b_val=6, use_c_out=True, use_ctrl=True,
+        expected_b=4, expected_c_out=True,
+    ),  # (6+6)%8, overflow
+    _SmokeCase(
+        "unequal_sizes_a_smaller", a_size=2, a_val=3, a_quantum=True, b_size=4, b_val=10, expected_b=13
+    ),  # (3+10)%16, a extended
+    _SmokeCase(
+        "unequal_sizes_a_larger", a_size=4, a_val=10, a_quantum=True, b_size=2, b_val=3, expected_b=1
+    ),  # (10+3)%4, a truncated
+]
 
 
-def test_thapliyal_adder_static_smoke_cin():
-    """c_in with classical a."""
-    b = QuantumFloat(3)
-    b[:] = 2
-    c_in = QuantumBool()
-    x(c_in[0])
-    thapliyal_adder(3, b, c_in=c_in)
-    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
+@pytest.mark.parametrize("case", SMOKE_CASES, ids=[c.name for c in SMOKE_CASES])
+def test_thapliyal_adder_static_smoke(case):
+    b = QuantumFloat(case.b_size)
+    b[:] = case.b_val
 
+    if case.a_quantum:
+        a = QuantumFloat(case.a_size)
+        a[:] = case.a_val
+    else:
+        a = case.a_val
 
-def test_thapliyal_adder_static_smoke_cin_qubit():
-    """c_in of type Qubit."""
-    b = QuantumFloat(3)
-    b[:] = 2
-    qv = QuantumVariable(1)
-    c_in = qv[0]
-    assert isinstance(c_in, Qubit)
-    x(c_in)
-    thapliyal_adder(3, b, c_in=c_in)
-    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
+    kwargs = {}
+
+    if case.c_in_kind == "bool":
+        c_in = QuantumBool()
+        if case.c_in_val:
+            x(c_in[0])
+        kwargs["c_in"] = c_in
+    elif case.c_in_kind == "qubit":
+        qv = QuantumVariable(1)
+        c_in = qv[0]
+        assert isinstance(c_in, Qubit)
+        if case.c_in_val:
+            x(c_in)
+        kwargs["c_in"] = c_in
+
+    if case.use_c_out:
+        c_out = QuantumBool()
+        kwargs["c_out"] = c_out
+
+    if case.use_ctrl:
+        ctrl = QuantumBool()
+        x(ctrl[0])
+        kwargs["ctrl"] = ctrl
+
+    thapliyal_adder(a, b, **kwargs)
+
+    assert b.get_measurement() == {case.expected_b: 1.0}
+    if case.expected_c_out is not None:
+        assert c_out.get_measurement() == {case.expected_c_out: 1.0}
 
 
 def test_thapliyal_adder_static_smoke_c_in_type_error():
@@ -88,83 +144,42 @@ def test_thapliyal_adder_static_smoke_c_in_type_error():
         thapliyal_adder(1, b, c_in=42)
 
 
-def test_thapliyal_adder_static_smoke_cout_overflow():
-    """c_out captures overflow."""
-    b = QuantumFloat(3)
-    b[:] = 6
-    c_out = QuantumBool()
-    thapliyal_adder(3, b, c_out=c_out)
-    assert b.get_measurement() == {1: 1.0}  # (6+3) % 8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_thapliyal_adder_static_smoke_ctrl():
-    """Controlled addition (ctrl kwarg)."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
+def test_thapliyal_adder_static_smoke_b_type_error():
+    """ValueError when b is not a QuantumVariable (a is quantum)."""
+    a = QuantumFloat(4)
     a[:] = 3
-    b[:] = 5
-    ctrl = QuantumBool()
-    x(ctrl[0])
-    thapliyal_adder(a, b, ctrl=ctrl)
-    assert b.get_measurement() == {0: 1.0}  # (5+3)%8
+    with pytest.raises(ValueError, match="The second argument must be of type QuantumVariable"):
+        thapliyal_adder(a, 5)
+    with pytest.raises(ValueError, match="The second argument must be of type QuantumVariable"):
+        thapliyal_adder(a, "invalid")
 
 
-def test_thapliyal_adder_static_smoke_cin_and_cout():
-    """c_in + c_out together."""
-    b = QuantumFloat(3)
-    b[:] = 6
-    c_in = QuantumBool()
-    x(c_in[0])
-    c_out = QuantumBool()
-    thapliyal_adder(3, b, c_in=c_in, c_out=c_out)
-    assert b.get_measurement() == {2: 1.0}  # (6 + 3 + 1) % 8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_thapliyal_adder_static_smoke_cin_qubit_and_cout():
-    """c_in of type Qubit with c_out together."""
-    b = QuantumFloat(3)
-    b[:] = 6
-    qv = QuantumVariable(1)
-    c_in = qv[0]
-    assert isinstance(c_in, Qubit)
-    x(c_in)
-    c_out = QuantumBool()
-    thapliyal_adder(3, b, c_in=c_in, c_out=c_out)
-    assert b.get_measurement() == {2: 1.0}  # (6 + 3 + 1) % 8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_thapliyal_adder_static_smoke_cout_and_ctrl():
-    """c_out + ctrl (ctrl=on)."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
-    a[:] = 6
-    b[:] = 6
-    c_out = QuantumBool()
-    ctrl = QuantumBool()
-    x(ctrl[0])
-    thapliyal_adder(a, b, c_out=c_out, ctrl=ctrl)
-    assert b.get_measurement() == {4: 1.0}  # (6+6)%8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_thapliyal_adder_static_smoke_unequal_sizes():
-    """a smaller than b (extension) and a larger than b (truncation/modulo)."""
-    a = QuantumFloat(2)
+def test_thapliyal_adder_static_smoke_c_out_type_error():
+    """TypeError when c_out is neither QuantumBool nor Qubit."""
+    a = QuantumFloat(4)
     b = QuantumFloat(4)
     a[:] = 3
-    b[:] = 10
-    thapliyal_adder(a, b)
-    assert b.get_measurement() == {13: 1.0}  # (3+10) % 16
+    b[:] = 4
+    with pytest.raises(TypeError, match="c_out must be of type QuantumBool or Qubit"):
+        thapliyal_adder(a, b, c_out=QuantumFloat(2))
+    with pytest.raises(TypeError, match="c_out must be of type QuantumBool or Qubit"):
+        thapliyal_adder(a, b, c_out="invalid")
+    with pytest.raises(TypeError, match="c_out must be of type QuantumBool or Qubit"):
+        thapliyal_adder(a, b, c_out=42)
 
-    a2 = QuantumFloat(4)
-    b2 = QuantumFloat(2)
-    a2[:] = 10
-    b2[:] = 3
-    thapliyal_adder(a2, b2)
-    assert b2.get_measurement() == {1: 1.0}  # (10+3) % 4
+
+def test_thapliyal_adder_static_smoke_c_out_qubit():
+    """c_out as a bare Qubit (not QuantumBool) exercises the plain-Qubit assignment branch."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 3
+    b[:] = 6
+    qv = QuantumVariable(1)
+    c_out = qv[0]
+    assert isinstance(c_out, Qubit)
+    thapliyal_adder(a, b, c_out=c_out)
+    assert b.get_measurement() == {1: 1.0}  # (6+3)%8, overflow
+    assert qv.get_measurement() == {"1": 1.0}
 
 
 def test_thapliyal_adder_static_smoke_inputs_unmodified():
