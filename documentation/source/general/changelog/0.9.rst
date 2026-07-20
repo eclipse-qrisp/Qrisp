@@ -165,15 +165,6 @@ just 3 clean ancillae. The adder requires dynamic (JASP) mode and supports
 ``c_in``, ``c_out``, and zero-overhead :func:`control <qrisp.control>`
 via the :func:`custom_control <qrisp.custom_control>` decorator.
 
-**Thapliyal adder refactor** (`issue #395 <https://github.com/eclipse-qrisp/Qrisp/issues/395>`_):
-The Thapliyal in-place adder from `arXiv:1712.02630 <https://arxiv.org/abs/1712.02630>`_
-is exposed as a new :func:`thapliyal_adder <qrisp.thapliyal_adder>` with a modern,
-Jasp-compatible signature mirroring :func:`cuccaro_adder <qrisp.cuccaro_adder>`.
-It works in both static and dynamic (JASP) modes, accepts a classical or quantum
-first operand, handles unequal register sizes (only the first operand is resized,
-giving modulo addition when it is truncated), and supports ``c_in``, ``c_out``, and
-a :func:`custom_control <qrisp.custom_control>`-based controlled version.
-
 **Arithmetic enhancements**: Gidney adder refactored
 (`PR #473 <https://github.com/eclipse-qrisp/Qrisp/pull/473>`_) with ``c_in``/``c_out``
 support; Cuccaro adder gains matching ``c_in``/``c_out`` interface
