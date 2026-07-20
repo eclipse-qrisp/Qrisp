@@ -27,6 +27,10 @@ Bug Fixes
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
 
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
 Compatibility
 -------------
 

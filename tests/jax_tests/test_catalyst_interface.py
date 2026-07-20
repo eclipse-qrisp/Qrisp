@@ -258,7 +258,7 @@ def test_parity_catalyst_with_scan():
 
 
 def test_nested_jit_with_closure_in_qjit():
-    """Regression test for nested jitted (pjit) equations whose jaxpr carries
+    """Regression test for nested jitted (jit) equations whose jaxpr carries
     non-empty consts (closed-over array values). Previously,
     ``get_traced_fun`` in ``catalyst_interpreter.py`` called
     ``eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)``, always passing an empty
