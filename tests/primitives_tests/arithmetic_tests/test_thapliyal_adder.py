@@ -65,21 +65,54 @@ SMOKE_CASES = [
         "cin_qubit", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=2, c_in_kind="qubit", c_in_val=1, expected_b=6
     ),  # 2+3+1
     _SmokeCase(
-        "cout_overflow", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, use_c_out=True,
-        expected_b=1, expected_c_out=True,
+        "cout_overflow",
+        a_size=3,
+        a_val=3,
+        a_quantum=False,
+        b_size=3,
+        b_val=6,
+        use_c_out=True,
+        expected_b=1,
+        expected_c_out=True,
     ),  # (6+3)%8, overflow
     _SmokeCase("ctrl", a_size=3, a_val=3, a_quantum=True, b_size=3, b_val=5, use_ctrl=True, expected_b=0),  # (5+3)%8
     _SmokeCase(
-        "cin_and_cout", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, c_in_kind="bool", c_in_val=1,
-        use_c_out=True, expected_b=2, expected_c_out=True,
+        "cin_and_cout",
+        a_size=3,
+        a_val=3,
+        a_quantum=False,
+        b_size=3,
+        b_val=6,
+        c_in_kind="bool",
+        c_in_val=1,
+        use_c_out=True,
+        expected_b=2,
+        expected_c_out=True,
     ),  # (6+3+1)%8, overflow
     _SmokeCase(
-        "cin_qubit_and_cout", a_size=3, a_val=3, a_quantum=False, b_size=3, b_val=6, c_in_kind="qubit", c_in_val=1,
-        use_c_out=True, expected_b=2, expected_c_out=True,
+        "cin_qubit_and_cout",
+        a_size=3,
+        a_val=3,
+        a_quantum=False,
+        b_size=3,
+        b_val=6,
+        c_in_kind="qubit",
+        c_in_val=1,
+        use_c_out=True,
+        expected_b=2,
+        expected_c_out=True,
     ),  # (6+3+1)%8, overflow
     _SmokeCase(
-        "cout_and_ctrl", a_size=3, a_val=6, a_quantum=True, b_size=3, b_val=6, use_c_out=True, use_ctrl=True,
-        expected_b=4, expected_c_out=True,
+        "cout_and_ctrl",
+        a_size=3,
+        a_val=6,
+        a_quantum=True,
+        b_size=3,
+        b_val=6,
+        use_c_out=True,
+        use_ctrl=True,
+        expected_b=4,
+        expected_c_out=True,
     ),  # (6+6)%8, overflow
     _SmokeCase(
         "unequal_sizes_a_smaller", a_size=2, a_val=3, a_quantum=True, b_size=4, b_val=10, expected_b=13
