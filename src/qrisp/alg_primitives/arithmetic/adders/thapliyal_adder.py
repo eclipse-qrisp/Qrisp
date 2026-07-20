@@ -106,11 +106,11 @@ def _uncompute_thapliyal_carry(a, b, carry_qubit):
 
     Unlike cuccaro_adder's carry-out (a non-destructive tap on a self-restoring wire),
     thapliyal_procedure's output_qubit is a genuinely exposed wire with no built-in
-    undo step (see THAPLIYAL_ADDER_REFACTOR_NOTES.md). This recomputes the same
-    boolean value independently via a scratch comparison (same trick as
-    uint_qq_less_than in uint_clifford_t_comparisons.py, using gidney_adder as the
-    reversible scratch arithmetic since, unlike cuccaro_adder, it accepts a plain
-    qubit-list target) and XORs it into carry_qubit to cancel it out.
+    undo step. This recomputes the same boolean value independently via a scratch
+    comparison (same trick as uint_qq_less_than in uint_clifford_t_comparisons.py,
+    using gidney_adder as the reversible scratch arithmetic since, unlike
+    cuccaro_adder, it accepts a plain qubit-list target) and XORs it into
+    carry_qubit to cancel it out.
 
     """
     comparison_anc = QuantumBool()
@@ -227,9 +227,8 @@ def thapliyal_adder(
     else:
         # Unlike cuccaro_adder's carry-out (a non-destructive tap on a
         # self-restoring wire, free when c_out isn't requested), Thapliyal's
-        # output_qubit is a genuinely exposed wire (see
-        # THAPLIYAL_ADDER_REFACTOR_NOTES.md). When the caller supplies c_out, we
-        # write directly into their qubit (same zero-overhead behavior as
+        # output_qubit is a genuinely exposed wire. When the caller supplies
+        # c_out, we write directly into their qubit (same zero-overhead behavior as
         # cuccaro_adder). Otherwise we still need a private ancilla for the
         # procedure to write into, and pay the extra comparator-based uncompute
         # cost to zero it before deleting (see _uncompute_thapliyal_carry).
@@ -248,17 +247,15 @@ def thapliyal_adder(
         # constant |1> ancilla for a[-1] and a copy of c_in for b[-1]. Since
         # AND(1, c_in) = c_in, this injects exactly a carry-in of c_in into the
         # real registers (verified numerically against all (a, b, c_in)
-        # combinations for small register sizes; see
-        # THAPLIYAL_ADDER_REFACTOR_NOTES.md).
+        # combinations for small register sizes).
         v_a0 = QuantumVariable(1)
         v_b0 = QuantumVariable(1)
         a_qubits = v_a0[:] + a_qubits[:]
         b = v_b0[:] + b[:]
 
-    # TODO: naive full-control fallback (see THAPLIYAL_ADDER_REFACTOR_NOTES.md,
-    # "hard, unresolved part") - controls every gate in both steps below instead of
-    # exploiting a MAJ/UMA-style split like cuccaro_adder does. Correct, not yet
-    # gate-optimal.
+    # TODO: naive full-control fallback - controls every gate in both steps below
+    # instead of exploiting a MAJ/UMA-style split like cuccaro_adder does. Correct,
+    # not yet gate-optimal.
     #
     # The v_a0/v_b0 prep and restore gates (when c_in is given) must live inside
     # the same ctrl-conditioned scope as the procedure itself: if ctrl is off, the

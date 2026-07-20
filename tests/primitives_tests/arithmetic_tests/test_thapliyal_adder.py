@@ -182,9 +182,8 @@ def test_thapliyal_adder_static_smoke_inputs_unmodified():
 # ---------------------------------------------------------------------------
 # Exhaustive tests via @jaspify.
 #
-# Unlike cuccaro_adder, thapliyal_adder's TR-gate step uses rx/p rotations
-# (see THAPLIYAL_ADDER_REFACTOR_NOTES.md) that the fast classical
-# @boolean_simulation evaluator can't process ("Classical function simulator
+# Unlike cuccaro_adder, thapliyal_adder's TR-gate step uses rx/p rotations that
+# the fast classical @boolean_simulation evaluator can't process ("Classical function simulator
 # can't process gate crx"), even though the whole circuit reduces to a boolean
 # permutation on computational basis states. So these tests fall back to
 # @jaspify (full statevector simulation of the traced program), which is
