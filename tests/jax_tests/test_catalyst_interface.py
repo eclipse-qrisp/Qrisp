@@ -257,6 +257,44 @@ def test_parity_catalyst_with_scan():
     assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
 
 
+def test_nested_jit_with_closure_in_qjit():
+    """Regression test for nested jitted (pjit) equations whose jaxpr carries
+    non-empty consts (closed-over array values). Previously,
+    ``get_traced_fun`` in ``catalyst_interpreter.py`` called
+    ``eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)``, always passing an empty
+    consts list. This raises
+    ``ValueError: foreach() argument 2 is shorter than argument 1`` whenever
+    the converted sub-jaxpr actually has constvars.
+
+    A plain ``jax.jit`` closing over a Python int/scalar does not reproduce
+    this, because such values get embedded as jaxpr literals rather than
+    consts. Closing over a >1-element array and indexing into it (as happens
+    e.g. inside ``qache``-d functions that reference module-level coefficient
+    arrays) reliably produces a sub-jaxpr with non-empty constvars/consts.
+    """
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    import jax.numpy as jnp
+
+    angles = jnp.array([0.1, 0.2, 0.3])
+
+    @qache
+    def apply_rotation(qf):
+        ry(angles[0], qf[0])
+        return measure(qf[0])
+
+    @qjit
+    def main():
+        qf = QuantumFloat(2)
+        return apply_rotation(qf)
+
+    # Must not raise ValueError: foreach() argument 2 is shorter than argument 1
+    main()
+
+
 def test_qjit_pytree():
     """Test that qjit preserves PyTree structure in return values."""
     try:
