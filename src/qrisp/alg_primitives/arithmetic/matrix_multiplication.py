@@ -555,8 +555,8 @@ def dot(a, b, out=None):
     >>> import numpy as np
     >>> from qrisp import QuantumFloat, QuantumArray, dot
     >>> qf = QuantumFloat(5,0, signed = False)
-    >>> q_arr_0 = QuantumArray(qf)
-    >>> q_arr_1 = QuantumArray(qf)
+    >>> q_arr_0 = QuantumArray(qf, shape = 2)
+    >>> q_arr_1 = QuantumArray(qf, shape = (2,2))
     >>> q_arr_0[:] = [2,3]
     >>> q_arr_1[:] = 2*np.eye(2)
     >>> res = dot(q_arr_0, q_arr_1)
@@ -565,8 +565,8 @@ def dot(a, b, out=None):
 
     Scalar-product:
 
-    >>> q_arr_0 = QuantumArray(qf)
-    >>> q_arr_1 = QuantumArray(qf)
+    >>> q_arr_0 = QuantumArray(qf, shape = 3)
+    >>> q_arr_1 = QuantumArray(qf, shape = 3)
     >>> q_arr_0[:] = [3,4,5]
     >>> q_arr_1[:] = [1,1,1]
     >>> res = dot(q_arr_0, q_arr_1)
@@ -576,8 +576,8 @@ def dot(a, b, out=None):
     Matrix-matrix multiplication
 
     >>> qf = QuantumFloat(3,0, signed = True)
-    >>> q_arr_0 = QuantumArray(qf)
-    >>> q_arr_1 = QuantumArray(qf)
+    >>> q_arr_0 = QuantumArray(qf, shape = (2,2))
+    >>> q_arr_1 = QuantumArray(qf, shape = (2,2))
     >>> q_arr_0[:] = [[0,1],[1,0]]
     >>> q_arr_1[:] = [[1,0],[0,-1]]
     >>> res = dot(q_arr_0, q_arr_1)
