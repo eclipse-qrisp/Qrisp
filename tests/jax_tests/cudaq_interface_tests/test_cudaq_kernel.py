@@ -169,6 +169,30 @@ def test_cudaq_kernel_algorithm():
     assert result is not None
 
 
+def test_cudaq_static_register():
+    """Test that a @cudaq_kernel with a large number of totally allocated qubits compared to peak allocations uses static register allocation to optimize memory usage."""
+
+    @cudaq_kernel
+    def main():
+        a = QuantumVariable(10)
+        x(a[0])
+        x(a[0])
+        a.delete()
+
+        b = QuantumVariable(10)
+        x(b[0])
+        x(b[0])
+        b.delete()
+
+        c = QuantumVariable(10)
+        x(c)
+
+        return measure(c)
+
+    result = main()
+    assert result == 1023
+
+
 # ---------------------------------------------------------------------------
 # Scalar parameter type tests
 # ---------------------------------------------------------------------------

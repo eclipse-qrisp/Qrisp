@@ -67,6 +67,8 @@ from cudaq.mlir.dialects import quake as cudaq_quake_dialect, cc as cudaq_cc_dia
 
 from xdsl.dialects.builtin import ModuleOp
 
+from qrisp.jasp.evaluation_tools.profiler import profile_jaspr
+from qrisp.jasp.interpreter_tools import jaspr_to_static_register_jaspr
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
@@ -206,6 +208,18 @@ def _normalize_xdsl_to_cudaq(mlir_str: str) -> str:
 # Main entry point
 # ------------------------------------------------------------------ #
 
+# ``cudaq.make_kernel()`` derives its "unique" kernel name from ``id(self)``
+# (the Python object's memory address, see CUDA-Q's ``PyKernel.__init__``).
+# If the throwaway ``PyKernel`` instance created below is allowed to be
+# garbage-collected, CPython can reuse its address for a later, unrelated
+# ``cudaq.make_kernel()`` call, producing a duplicate kernel/symbol name and
+# causing CUDA-Q's native runtime to crash (native abort) when launching a
+# kernel whose name collides with a different, already-registered module.
+# Keeping a permanent reference to every such kernel object prevents its
+# ``id()`` from ever being reused, guaranteeing name uniqueness for the
+# lifetime of the process.
+_KERNEL_NAME_KEEPALIVE: list = []
+
 
 def cudaq_kernel_from_xdsl_module(
     xdsl_module: ModuleOp,
@@ -286,8 +300,11 @@ def cudaq_kernel_from_xdsl_module(
 
     module = xdsl_module.clone()
 
-    # Get CUDA-Q naming from a dummy kernel
+    # Get CUDA-Q naming from a dummy kernel. This kernel object must never be
+    # garbage-collected (see _KERNEL_NAME_KEEPALIVE above), otherwise its
+    # id()-derived name could later collide with another kernel's name.
     kernel = cudaq.make_kernel()
+    _KERNEL_NAME_KEEPALIVE.append(kernel)
     func_name = kernel.funcName
     entry_point = kernel.funcNameEntryPoint
     uniq_name = func_name.replace("__nvqpp__mlirgen__", "")
@@ -498,8 +515,29 @@ def cudaq_kernel(
                 f"'{func_arg.__name__}'. Supported: {_supported}."
             )
 
+    jaspr = make_jaspr(func_arg)(*dummy_args)
+
     try:
-        mlir_module = jaspr_to_quake_mlir(make_jaspr(func_arg)(*dummy_args), execution_mode=execution_mode)
+        qubits_dict = profile_jaspr(jaspr, "num_qubits", meas_behavior='0', max_allocations=1000)(*dummy_args)
+        peak_allocations = qubits_dict.get("peak_allocations", 0)
+        total_allocated = qubits_dict.get("total_allocated", 0)
+
+        # Decide whether to use static register allocation based on peak vs total allocations.
+        # If total allocated qubits exceed 110% of peak allocations, we use static register allocation to optimize memory usage.
+        # Otherwise, we proceed with the original jaspr without static register allocation, 
+        # since CUDA-Q runtime is faster without static register reinterpretation.
+        use_static_register = total_allocated > peak_allocations * 1.1
+    except ValueError as e:
+        use_static_register = False
+
+    if use_static_register:
+        static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, peak_allocations)
+        new_jaspr = static_reg_jaspr
+    else:
+        new_jaspr = jaspr
+
+    try:
+        mlir_module = jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
     except Exception as e:
         raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}")
 
