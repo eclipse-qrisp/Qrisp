@@ -26,14 +26,14 @@ from qrisp import (
     QuantumBool,
     QuantumFloat,
     h,
-    x,
+    control,
     cx,
+    measure,
+    reset,
     rx,
     ry,
     rz,
-    rz,
-    measure,
-    control,
+    x,
 )
 from qrisp.jasp import q_while_loop, q_cond, qache
 from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
@@ -169,8 +169,11 @@ def test_cudaq_kernel_algorithm():
     assert result is not None
 
 
+@pytest.mark.timeout(30)
 def test_cudaq_static_register():
-    """Test that a @cudaq_kernel with a large number of totally allocated qubits compared to peak allocations uses static register allocation to optimize memory usage."""
+    """Test that a @cudaq_kernel with a large number of totally allocated qubits compared to peak allocations
+    uses static register allocation to optimize memory usage. This test is designed to run within 30 seconds,
+    demonstrating that static register allocation is effective in reducing memory usage and improving performance."""
 
     @cudaq_kernel
     def main():
@@ -191,6 +194,37 @@ def test_cudaq_static_register():
 
     result = main()
     assert result == 1023
+
+
+@pytest.mark.timeout(30)
+def test_cudaq_static_register_while_loop():
+    """Test that a @cudaq_kernel with a large number of totally allocated qubits compared to peak allocations
+    uses static register allocation to optimize memory usage. This test is designed to run within 30 seconds,
+    demonstrating that static register allocation is effective in reducing memory usage and improving performance."""
+
+    @cudaq_kernel
+    def main():
+
+        def body_fun(val):
+            i, acc = val
+
+            qf = QuantumFloat(10)
+            x(qf[1])
+            acc += measure(qf[1])
+            reset(qf)
+            qf.delete()
+
+            return i + 1, acc
+
+        def cond_fun(val):
+            return val[0] < 10
+
+        i, acc = q_while_loop(cond_fun, body_fun, (0, 0))
+
+        return acc
+
+    result = main()
+    assert result == 10
 
 
 # ---------------------------------------------------------------------------
