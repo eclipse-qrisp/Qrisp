@@ -74,7 +74,7 @@ from qrisp.jasp import (
     qache,
     quantum_kernel,
 )
-from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 
 
@@ -307,7 +307,7 @@ def test_quake_types_present():
 
 def test_parity_not_lowered():
     """jasp.parity ops are left in place (not lowered to Quake)."""
-    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
+    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
 
     # parity is not a gate name, but verify it's not in GATE_MAP
     assert get_gate_info("parity") is None
@@ -315,7 +315,7 @@ def test_parity_not_lowered():
 
 def test_gate_mapping_standard_gates():
     """Verify that all standard gates are in the gate map."""
-    from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info, GATE_MAP
+    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info, GATE_MAP
 
     expected_gates = {
         "h",

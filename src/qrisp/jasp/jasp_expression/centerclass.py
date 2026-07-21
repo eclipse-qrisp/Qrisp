@@ -1333,7 +1333,7 @@ class Jaspr(ClosedJaxpr):
             }
 
         """
-        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
+        from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir
 
         return jaspr_to_quake_mlir(self, execution_mode=execution_mode)
 

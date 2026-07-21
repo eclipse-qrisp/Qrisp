@@ -23,7 +23,7 @@ Usage example::
 
     from qrisp import QuantumVariable, h, cx, measure
     from qrisp.jasp import make_jaspr
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
+    from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
 
     def bell():
         qv = QuantumVariable(2)
@@ -65,19 +65,19 @@ from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr
 
-# from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
-from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
-from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
+# from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
+from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
+from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
 )
-from qrisp.jasp.mlir.quake_lowering.pass4_ranked_tensor_to_array import (
+from qrisp.jasp.cudaq_interface.quake_lowering.pass4_ranked_tensor_to_array import (
     lower_ranked_tensors,
 )
-from qrisp.jasp.mlir.quake_lowering.pass5_array_to_stdvec import (
+from qrisp.jasp.cudaq_interface.quake_lowering.pass5_array_to_stdvec import (
     lower_array_to_stdvec,
 )
-from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
+from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
 

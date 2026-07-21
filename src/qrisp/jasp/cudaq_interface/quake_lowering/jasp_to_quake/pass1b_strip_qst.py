@@ -68,11 +68,11 @@ from xdsl.pattern_rewriter import (
 )
 from xdsl.rewriter import Rewriter
 
-from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.helper_functions import (
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
     _is_qst,
     _is_qubit_array,
     _is_qubit,

@@ -35,7 +35,7 @@ from xdsl.pattern_rewriter import (
 )
 from xdsl.rewriter import InsertPoint
 
-from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
     VeqSizeOp,

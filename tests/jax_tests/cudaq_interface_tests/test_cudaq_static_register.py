@@ -22,7 +22,7 @@ import cudaq
 from qrisp import QuantumBool, QuantumFloat, QuantumVariable, control, cx, h, invert, measure, qache, x
 from qrisp.jasp import jaspr_to_static_register_jaspr, jrange, make_jaspr, q_while_loop
 from qrisp.jasp.cudaq_interface import cudaq_kernel, cudaq_kernel_from_xdsl_module
-from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir
 
 
 def test_cudaq_static_register():

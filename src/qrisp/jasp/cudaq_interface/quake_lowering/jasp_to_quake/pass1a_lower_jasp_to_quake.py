@@ -65,7 +65,7 @@ from xdsl.pattern_rewriter import (
 )
 from xdsl.rewriter import InsertPoint
 
-from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     AllocaOp,
     ConcatOp,
     DeallocOp,
@@ -78,7 +78,7 @@ from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
     VeqSizeOp,
     make_gate_op,
 )
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
 from qrisp.jasp.mlir.xdsl_dialect import (
     CreateQubitsOp,
     DeleteQubitsOp,
@@ -90,7 +90,7 @@ from qrisp.jasp.mlir.xdsl_dialect import (
     ResetOp as JaspResetOp,
     SliceOp,
 )
-from qrisp.jasp.mlir.quake_lowering.jasp_to_quake.helper_functions import (
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
     _is_qst,
     _is_qubit_array,
     _is_qubit,

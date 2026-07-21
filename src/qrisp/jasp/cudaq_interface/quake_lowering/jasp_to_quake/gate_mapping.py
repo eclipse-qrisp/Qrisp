@@ -48,7 +48,7 @@ from xdsl.ir import (
     Operation,
     SSAValue,
 )
-from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import make_gate_op
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import make_gate_op
 
 
 @dataclass(frozen=True)

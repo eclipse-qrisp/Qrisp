@@ -39,8 +39,8 @@ jaspr_to_quake_mlir
     Pipeline entry-point (:func:`jaspr_to_quake_mlir`).
 """
 
-from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
-from qrisp.jasp.mlir.quake_lowering.validation_tools import validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import validate_quake_mlir
 
 try:
     from qrisp.jasp.cudaq_interface import (
@@ -50,13 +50,13 @@ try:
     )
 except ImportError:
     pass
-from qrisp.jasp.mlir.quake_lowering.dialects.quake_dialect import (
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeDialect,
     QuakeMeasureType,
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcDialect, CcMeasureHandleType, CcStdVecType
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcDialect, CcMeasureHandleType, CcStdVecType
 
 __all__ = [
     "jaspr_to_quake_mlir",
