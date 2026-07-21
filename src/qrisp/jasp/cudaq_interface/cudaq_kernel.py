@@ -139,7 +139,7 @@ def cudaq_kernel(
 
         import cudaq
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import cudaq_kernel
+        from qrisp import cudaq_kernel
 
         @cudaq_kernel
         def bell():
@@ -155,7 +155,7 @@ def cudaq_kernel(
 
         import cudaq
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import cudaq_kernel
+        from qrisp import cudaq_kernel
 
         @cudaq_kernel
         def main():
@@ -174,7 +174,7 @@ def cudaq_kernel(
         import cudaq
         import numpy as np
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
+        from qrisp import cudaq_kernel, FixedShapeNDArray
 
         @cudaq_kernel
         def circuit(k: int):
@@ -200,7 +200,7 @@ def cudaq_kernel(
 
         import cudaq
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import cudaq_kernel
+        from qrisp import cudaq_kernel
 
         @cudaq_kernel(execution_mode="sample")
         def bell():

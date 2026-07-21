@@ -27,9 +27,8 @@ from qrisp.jasp.evaluation_tools.stim_extraction import *
 try:
     from qrisp.jasp.cudaq_interface import (
         FixedShapeNDArray,
-        cudaq_kernel_from_mlir,
-        run_quake_mlir,
-        qrisp_cudaq_kernel,
+        cudaq_kernel,
+        cudaq_kernel_from_xdsl_module,
     )
 except ImportError:
     pass

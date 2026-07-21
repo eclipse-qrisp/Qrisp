@@ -44,9 +44,8 @@ from qrisp.jasp.mlir.quake_lowering.validation_tools import validate_quake_mlir
 
 try:
     from qrisp.jasp.cudaq_interface import (
-        run_quake_mlir,
-        qrisp_cudaq_kernel,
-        cudaq_kernel_from_mlir,
+        cudaq_kernel,
+        cudaq_kernel_from_xdsl_module,
         FixedShapeNDArray,
     )
 except ImportError:
@@ -62,9 +61,8 @@ from qrisp.jasp.mlir.quake_lowering.dialects.cc_dialect import CcDialect, CcMeas
 __all__ = [
     "jaspr_to_quake_mlir",
     "validate_quake_mlir",
-    "run_quake_mlir",
-    "qrisp_cudaq_kernel",
-    "cudaq_kernel_from_mlir",
+    "cudaq_kernel",
+    "cudaq_kernel_from_xdsl_module",
     "FixedShapeNDArray",
     "QuakeDialect",
     "QuakeRefType",

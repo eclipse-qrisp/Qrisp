@@ -147,7 +147,7 @@ def cudaq_kernel_from_xdsl_module(
         from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import make_jaspr
         from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
-        from qrisp.jasp.cudaq_interface import cudaq_kernel_from_mlir
+        from qrisp.jasp.cudaq_interface import cudaq_kernel_from_xdsl_module
         import cudaq
 
         def bell():
