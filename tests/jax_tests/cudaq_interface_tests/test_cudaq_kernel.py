@@ -278,10 +278,10 @@ def test_bool_parameter():
 
 
 def test_fixed_shape_ndarray_float():
-    """FixedShapeNDArray(float, 3): zero angles leave qubit in |0> deterministically."""
+    """FixedShapeNDArray[float, 3]: zero angles leave qubit in |0> deterministically."""
 
     @cudaq_kernel
-    def float_arr_kernel(angles: FixedShapeNDArray(float, 3)):
+    def float_arr_kernel(angles: FixedShapeNDArray[float, 3]):
         qv = QuantumFloat(1)
         ry(angles[0], qv[0])
         return measure(qv[0])
@@ -290,10 +290,10 @@ def test_fixed_shape_ndarray_float():
 
 
 def test_fixed_shape_ndarray_int():
-    """FixedShapeNDArray(int, 2): integer element added to measurement."""
+    """FixedShapeNDArray[int, 2]: integer element added to measurement."""
 
     @cudaq_kernel
-    def int_arr_kernel(offsets: FixedShapeNDArray(int, 2)):
+    def int_arr_kernel(offsets: FixedShapeNDArray[int, 2]):
         qv = QuantumFloat(2)
         h(qv[0])
         return measure(qv[0]) + offsets[0]
@@ -340,7 +340,7 @@ def test_multishot_array_param_with_cudaq_run():
     """cudaq.run works with a FixedShapeNDArray kernel and zero angles."""
 
     @cudaq_kernel
-    def ry_kernel(angles: FixedShapeNDArray(float, 2)):
+    def ry_kernel(angles: FixedShapeNDArray[float, 2]):
         qv = QuantumFloat(1)
         ry(angles[0], qv[0])
         return measure(qv[0])
@@ -356,7 +356,7 @@ def test_dynamic_index_into_array_parameter():
     measure returns 0 and angles[0] = 0.0 is selected, leaving the qubit in |0⟩."""
 
     @cudaq_kernel
-    def circuit(angles: FixedShapeNDArray(float, 3)):
+    def circuit(angles: FixedShapeNDArray[float, 3]):
         qv = QuantumVariable(1)
         ind = jnp.int32(measure(qv[0]))
         rx(angles[ind], qv[0])
@@ -375,7 +375,7 @@ def test_dynamic_index_into_array_parameter_in_nested_function():
         rz(arr[0], qv[0])
 
     @cudaq_kernel
-    def test_circuit(angles: FixedShapeNDArray(float, 5)):
+    def test_circuit(angles: FixedShapeNDArray[float, 5]):
         qv = QuantumFloat(5)
 
         inner(angles, qv)
@@ -390,7 +390,7 @@ def test_dynamic_index_into_array_parameter_in_loop():
     """Dynamic index into a FixedShapeNDArray parameter inside a loop."""
 
     @cudaq_kernel
-    def test_circuit(angles: FixedShapeNDArray(float, 5)):
+    def test_circuit(angles: FixedShapeNDArray[float, 5]):
         qv = QuantumFloat(5)
 
         def cond_fun(val):
@@ -415,7 +415,7 @@ def test_static_index_into_array_parameter_in_cond():
     """Static index into a FixedShapeNDArray parameter inside a q_cond."""
 
     @cudaq_kernel
-    def test_circuit(angles: FixedShapeNDArray(float, 5)):
+    def test_circuit(angles: FixedShapeNDArray[float, 5]):
         qv = QuantumFloat(5)
         ind = jnp.int32(measure(qv[0]))
 
@@ -438,7 +438,7 @@ def test_dynamic_index_into_array_parameter_in_cond_in_loop():
     """Dynamic index into a FixedShapeNDArray parameter inside a q_cond in a loop."""
 
     @cudaq_kernel
-    def main(angles: FixedShapeNDArray(float, 5)):
+    def main(angles: FixedShapeNDArray[float, 5]):
         qv = QuantumFloat(5)
 
         def true_fun(qv, angles, ind):
@@ -470,7 +470,7 @@ def test_static_index_into_array_parameter():
     """Static index into a FixedShapeNDArray parameter. Parametrized ansatz with 4 layers, each taking an angle from the array."""
 
     @cudaq_kernel
-    def ansatz_kernel(params: FixedShapeNDArray(float, 4)):
+    def ansatz_kernel(params: FixedShapeNDArray[float, 4]):
         qv = QuantumVariable(4)
         for layer in range(4):
             beta = params[layer]
@@ -546,7 +546,7 @@ def test_traced_jax_array_arithmetic_triggers_helpful_safeguard_error():
     """Arithmetic on traced jax.numpy arrays should fail early with a helpful
     safeguard message for users."""
 
-    with pytest.raises(RuntimeError, match="traced jax.numpy arrays"):
+    with pytest.raises(RuntimeError, match="arithmetic on traced arrays"):
 
         @cudaq_kernel
         def bad_kernel(k: int):

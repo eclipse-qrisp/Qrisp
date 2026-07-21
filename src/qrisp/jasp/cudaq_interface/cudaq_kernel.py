@@ -98,7 +98,7 @@ def cudaq_kernel(
     Supported annotations:
 
     * ``int``, ``float``, ``bool`` — scalar values passed directly.
-    * :class:`FixedShapeNDArray` ``(dtype, size)`` — fixed-size NumPy array.
+    * :class:`FixedShapeNDArray` ``[dtype, size]`` — fixed-size NumPy array.
       Specify the element type (``float``, ``int``, or ``bool``) and the
       number of elements.  At runtime, pass a ``numpy.ndarray`` of the
       matching dtype and length.
@@ -186,7 +186,7 @@ def cudaq_kernel(
         print(cudaq.run(circuit, 3, shots_count=100))
 
         @cudaq_kernel
-        def circuit_arr(angles: FixedShapeNDArray(float, 3)):
+        def circuit_arr(angles: FixedShapeNDArray[float, 3]):
             qv = QuantumFloat(2)
             ry(angles[0], qv[0])
             return measure(qv[0])
@@ -217,7 +217,7 @@ def cudaq_kernel(
 
     sig = inspect.signature(func_arg)
     params = list(sig.parameters.values())
-    _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray(dtype, size)"]
+    _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray[dtype, size]"]
 
     dummy_args = []
     for p in params:

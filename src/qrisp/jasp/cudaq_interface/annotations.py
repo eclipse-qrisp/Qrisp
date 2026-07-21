@@ -33,6 +33,10 @@ class FixedShapeNDArray:
     shapes. The decorator uses the element type and size to generate a
     correctly-typed dummy value for tracing.
 
+    Use the subscript syntax ``FixedShapeNDArray[dtype, size]`` in
+    annotations, mirroring how Python's generics (e.g. ``list[int]``) are
+    used in type annotations, rather than calling the class directly.
+
     Parameters
     ----------
     dtype : type
@@ -50,7 +54,7 @@ class FixedShapeNDArray:
         from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
 
         @cudaq_kernel
-        def circuit(angles: FixedShapeNDArray(float, 3)):
+        def circuit(angles: FixedShapeNDArray[float, 3]):
             qv = QuantumFloat(2)
             ry(angles[0], qv[0])
             return measure(qv[0])
@@ -77,6 +81,18 @@ class FixedShapeNDArray:
         self.dtype = dtype
         self.size = size
         self._np_dtype, self.mlir_elem_type = self._DTYPE_MAP[dtype]
+
+    def __class_getitem__(cls, params):
+        """Enable ``FixedShapeNDArray[dtype, size]`` subscript syntax.
+
+        This mirrors how Python's generic types (e.g. ``list[int]``) are
+        written in annotations, so type checkers treat this as a
+        subscripted generic rather than flagging a class instance used
+        directly as an annotation.
+        """
+        if not isinstance(params, tuple):
+            params = (params,)
+        return cls(*params)
 
     def make_dummy(self) -> np.ndarray:
         """Return a zero-filled NumPy array of the correct dtype and size."""
