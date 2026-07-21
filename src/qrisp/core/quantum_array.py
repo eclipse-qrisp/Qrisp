@@ -354,7 +354,7 @@ class QuantumArray:
         for i in jrange(self.size):
             flat_self[i][:] = flattened_value_array[i]
 
-    def reshape(self, *args):
+    def reshape(self, *args, order="C"):
         """Adjusts the shape of the QuantumArray with similar semantics as
         `numpy.ndarray.reshape <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.reshape.html>`_.
 
@@ -412,7 +412,7 @@ class QuantumArray:
         else:
             shape = args
         res = copy.copy(self)
-        res.ind_array = self.ind_array.reshape(shape)
+        res.ind_array = self.ind_array.reshape(shape, order=order)
         return res
 
     def flatten(self):

@@ -47,4 +47,7 @@ jobs:
           pip install -e ".[${{ matrix.test-group.extras }}]"
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
-          pytest ${{ matrix.test-group.paths }}
+          pytest ${{ matrix.test-group.paths }} \
+            --cov=qrisp \
+            --cov-report=term-missing \
+            --cov-branch

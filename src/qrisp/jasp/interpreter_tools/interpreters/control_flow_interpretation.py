@@ -1,4 +1,5 @@
-"""********************************************************************************
+"""
+********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,7 +27,8 @@ from qrisp.jasp.interpreter_tools import (
 
 
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
-    """Evaluates a JAX condition equation within the context of the JASP interpreter.
+    """
+    Evaluates a JAX condition equation within the context of the JASP interpreter.
 
     This function handles the branching logic of jax.lax.cond or similar primitives.
     It determines which branch to execute based on the condition variable.
@@ -40,8 +42,8 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     Raises:
         Exception: If the condition variable depends on a Qrisp ProcessedMeasurement (real-time feedback),
                    which cannot be resolved during circuit generation/interpretation.
-
     """
+
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
 
@@ -63,7 +65,8 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
 
 
 def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False):
-    """Evaluates a JAX while loop equation within the context of the JASP interpreter.
+    """
+    Evaluates a JAX while loop equation within the context of the JASP interpreter.
 
     This handles `jax.lax.while_loop`, performing iterations as long as the condition function
     returns True.
@@ -76,9 +79,9 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, bre
 
     Raises:
         Exception: If the loop condition depends on a Qrisp ProcessedMeasurement.
-
     """
-    from qrisp.jasp.jasp_expression import ProcessedMeasurement
+
+    from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 
     # Parse parameter structure for constants and carry variables
     num_const_cond_args = while_loop_eqn.params["cond_nconsts"]
@@ -125,7 +128,8 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, bre
 
 
 def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
-    """Evaluates a JAX scan equation within the context of the JASP interpreter.
+    """
+    Evaluates a JAX scan equation within the context of the JASP interpreter.
 
     This handles `jax.lax.scan` (and `jax.lax.map` which lowers to scan). It iterates
     over input arrays, applying a function that carries state, and stacks the outputs.
@@ -134,8 +138,8 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
         scan_eq (jax.core.JaxprEqn): The equation representing the scan operation.
         context_dic (dict): Dictionary mapping variables to their values.
         eqn_evaluator (function, optional): Function to evaluate the scanned body equation.
-
     """
+
     invalues = extract_invalues(scan_eq, context_dic)
 
     f = eval_jaxpr(scan_eq.params["jaxpr"], eqn_evaluator=eqn_evaluator)
