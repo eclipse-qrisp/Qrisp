@@ -74,14 +74,13 @@ AbstractQuantumState, AbstractQubitArray, and ScalarList), no manual
 flatten/unflatten step is required.
 """
 
-from functools import lru_cache
-
 import jax.numpy as jnp
 from jax import jit, make_jaxpr
 from jax.lax import fori_loop
 from jax.lax import while_loop as jax_while_loop
 from jax.lax import cond as jax_cond
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
     AbstractQuantumState,
@@ -317,7 +316,7 @@ def make_static_register_interpreter(size):
     return transform
 
 
-@lru_cache(maxsize=int(1e5))
+@qrisp_lru_compilation_cache(maxsize=int(1e5))
 def jaspr_to_static_register_jaspr(jaspr, size):
     """
     Transform a jaspr to use a statically pre-allocated qubit register.
