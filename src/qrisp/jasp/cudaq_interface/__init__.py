@@ -32,7 +32,7 @@ Preferred import paths::
 
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
 from qrisp.jasp.cudaq_interface.cudaq_kernel import cudaq_kernel
-from qrisp.jasp.cudaq_interface.xdsl_ingestion import cudaq_kernel_from_xdsl_module
+from qrisp.jasp.cudaq_interface.cudaq_ingestion import cudaq_kernel_from_xdsl_module
 
 __all__ = [
     "cudaq_kernel",

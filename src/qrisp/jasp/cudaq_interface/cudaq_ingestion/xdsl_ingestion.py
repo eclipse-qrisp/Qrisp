@@ -29,8 +29,8 @@ from cudaq.mlir.dialects import quake as cudaq_quake_dialect, cc as cudaq_cc_dia
 
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.cudaq_prep import prepare_module_for_cudaq
-from qrisp.jasp.cudaq_interface.host_attributes import _get_llvm_attributes
+from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import prepare_module_for_cudaq
+from qrisp.jasp.cudaq_interface.cudaq_ingestion.host_attributes import _get_llvm_attributes
 
 
 # ------------------------------------------------------------------ #

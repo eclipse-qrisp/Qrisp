@@ -37,7 +37,7 @@
 #    lowering), we fall back to well-known platform defaults derived from
 #    the host's architecture and OS.
 #
-# 2. Interface Adaptation (cudaq_prep.py):
+# 2. Interface Adaptation (cudaq_ingestion/cudaq_prep.py):
 #    We inject the extracted hardware specifications
 #    into the Qrisp-generated MLIR. Crucially, we also clone the primary
 #    entry function to create a required `.run` variant. During this cloning,
@@ -63,7 +63,7 @@ from qrisp.jasp.interpreter_tools import jaspr_to_static_register_jaspr
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
-from qrisp.jasp.cudaq_interface.xdsl_ingestion import cudaq_kernel_from_xdsl_module
+from qrisp.jasp.cudaq_interface.cudaq_ingestion import cudaq_kernel_from_xdsl_module
 
 
 # ------------------------------------------------------------------ #
