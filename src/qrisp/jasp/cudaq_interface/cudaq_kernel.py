@@ -251,7 +251,7 @@ def cudaq_kernel(
         # Otherwise, we proceed with the original jaspr without static register allocation,
         # since CUDA-Q runtime is faster without static register reinterpretation.
         use_static_register = total_allocated > peak_allocations * 1.1
-    except ValueError as e:
+    except ValueError:
         use_static_register = False
 
     if use_static_register:
@@ -263,6 +263,6 @@ def cudaq_kernel(
     try:
         mlir_module = jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
     except Exception as e:
-        raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}")
+        raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}") from e
 
     return cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)

@@ -32,16 +32,12 @@ def assert_no_jasp(mlir_str: str) -> None:
 
 def assert_no_linalg(mlir_str: str) -> None:
     """Assert that no linalg operations remain in *mlir_str*."""
-    import re
-
     linalg_usage = re.findall(r"\blinalg\.\S+", mlir_str)
     assert not linalg_usage, f"Expected no linalg operations in Quake output, but found: {set(linalg_usage)}"
 
 
 def assert_no_scf(mlir_str: str) -> None:
     """Assert that no scf operations remain in *mlir_str*."""
-    import re
-
     scf_usage = re.findall(r"\bscf\.\S+", mlir_str)
     assert not scf_usage, f"Expected no scf operations in Quake output, but found: {set(scf_usage)}"
 

@@ -82,7 +82,7 @@ class GateInfo:
 # ===================================================================
 
 
-def _emit_sx(controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]) -> list[Operation]:
+def _emit_sx(controls: Sequence[SSAValue], _params: Sequence[SSAValue], targets: Sequence[SSAValue]) -> list[Operation]:
     """sx(q) = H(q) · S(q) · H(q)"""
 
     t = targets[0]
@@ -94,7 +94,7 @@ def _emit_sx(controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: 
 
 
 def _emit_sx_dg(
-    controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
+    controls: Sequence[SSAValue], _params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """sx†(q) = H(q) · S†(q) · H(q)"""
 
@@ -107,11 +107,11 @@ def _emit_sx_dg(
 
 
 def _emit_cgphase(
-    controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
+    _controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """cgphase(ϕ) between targets q0 and q1 = p(ϕ, q0)"""
 
-    t0, t1 = targets
+    t0, _t1 = targets
     phi = params[0]
     return [
         make_gate_op("p", [], [phi], [t0]),
@@ -119,7 +119,7 @@ def _emit_cgphase(
 
 
 def _emit_gphase(
-    controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
+    _controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """gphase(ϕ) on target q0 = p(ϕ, q0)"""
 

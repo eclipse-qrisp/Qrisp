@@ -49,7 +49,6 @@ from xdsl.dialects.builtin import (
     FunctionType,
     IndexType,
     IntegerAttr,
-    IntegerType,
     TensorType,
     Float64Type,
     Float32Type,
@@ -68,8 +67,6 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcPtrType,
     CcStoreOp,
     CcLoopOp,
-    CcConditionOp,
-    CcContinueOp,
 )
 
 # MLIR's sentinel for "dynamic dimension/offset"

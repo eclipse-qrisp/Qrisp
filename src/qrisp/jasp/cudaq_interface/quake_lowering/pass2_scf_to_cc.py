@@ -43,11 +43,11 @@ A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``, ``sle``) in
 ``A sge B`` to ``A sgt (B-1)`` and ``A sle B`` to ``A slt (B+1)`` before emitting the condition.
 """
 
-from typing import Optional, List, Any
+from typing import Optional, List
 
 from xdsl.dialects import scf, arith, tensor
 from xdsl.dialects.scf import IfOp, ForOp, WhileOp, YieldOp, ConditionOp
-from xdsl.dialects.builtin import IntegerAttr, i1, i64, ModuleOp, TensorType
+from xdsl.dialects.builtin import ModuleOp, TensorType
 from xdsl.ir import Block, Region, SSAValue, Operation, Attribute
 
 from xdsl.rewriter import Rewriter, InsertPoint

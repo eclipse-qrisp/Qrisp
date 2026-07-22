@@ -260,7 +260,6 @@ class StripQSTFromFor(RewritePattern):
                 _update_block_arg_types(block)
         _strip_qst_from_terminators(op)
 
-        new_res_types = _non_qst_result_types(op)
         body_region = op.detach_region(op.regions[0])
 
         # scf.for operands: [lb, ub, step, init_args...]
@@ -336,7 +335,7 @@ class StripQSTFromCall(RewritePattern):
         for t in op.result_types:
             if _is_qst(t):
                 continue
-            elif _is_qubit_array(t):
+            if _is_qubit_array(t):
                 new_result_types.append(QuakeVeqType())
             elif _is_qubit(t):
                 new_result_types.append(QuakeRefType())

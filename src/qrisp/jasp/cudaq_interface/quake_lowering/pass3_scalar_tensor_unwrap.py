@@ -348,6 +348,8 @@ class EraseDeadFromElements(RewritePattern):
 # Pass
 # ------------------------------------------------------------------ #
 class TensorUnwrapPass(ModulePass):
+    """xDSL ``ModulePass`` wrapper around :func:`unwrap_scalar_tensors`."""
+
     name = "tensor-unwrap"
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:

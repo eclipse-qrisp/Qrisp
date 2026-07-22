@@ -60,7 +60,6 @@ no ``!jasp.*`` types or tensor ops remain.
 """
 
 
-from xdsl.context import Context
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr

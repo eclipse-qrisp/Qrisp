@@ -330,7 +330,7 @@ class LowerQuantumGate(RewritePattern):
         for v in op.operands:
             if _is_qst(v.type):
                 continue
-            elif _is_qubit_type(v.type):
+            if _is_qubit_type(v.type):
                 qubit_operands.append(v)
             elif _is_numeric_type(v.type):
                 param_operands.append(_coerce_to_f64_for_rewriter(v, rewriter))
