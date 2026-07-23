@@ -372,6 +372,8 @@ def NZ(f):
 
 
 def synth_poly(truth_table, column=0, coeff=None):
+    from qrisp.alg_primitives.arithmetic.poly_tools import get_ordered_symbol_list
+
     if coeff is None:
         coeff = sp.symbols("".join([" x" + str(i) for i in range(truth_table.bit_amount)]))
         if truth_table.bit_amount == 1:
@@ -428,6 +430,7 @@ class LogicSynthGate(Operation):
 def check_synthesis(tt, gate, log_output=False):
     synth_correct = True
     from qrisp.core import QuantumSession, QuantumVariable
+    from qrisp.misc import int_encoder
 
     for i in range(tt.shape[0]):
         qs = QuantumSession()
