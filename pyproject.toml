@@ -60,7 +60,7 @@ docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
     "nbsphinx==0.9.8",
-    "ipykernel==7.2.0",
+    "ipykernel==7.3.0",
     "myst-parser==5.0.0",
     "texext==0.6.8",
     "numpydoc==1.10.0",
