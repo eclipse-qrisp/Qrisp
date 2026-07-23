@@ -61,7 +61,7 @@ docs = [
     "sphinx-toolbox==4.1.2",
     "nbsphinx==0.9.8",
     "ipykernel==7.3.0",
-    "myst-parser==5.0.0",
+    "myst-parser==5.1.0",
     "texext==0.6.8",
     "numpydoc==1.10.0",
     "sphinx-sitemap==2.9.0",
