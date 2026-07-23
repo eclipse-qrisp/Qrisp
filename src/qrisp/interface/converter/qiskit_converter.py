@@ -22,6 +22,8 @@ from qrisp.circuit import ClControlledOperation, ControlledOperation, PRXGate
 from qrisp.circuit.standard_operations import op_list
 from qrisp.misc import bin_rep
 
+_PHASE_TOLERANCE = 1e-10
+
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
 def convert_to_qiskit(qc, transpile=False):
@@ -155,6 +157,7 @@ def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
     from qiskit import QiskitError
     from qiskit.circuit import Barrier, Measure, Reset
+    from qiskit.circuit.library import UnitaryGate
 
     from qrisp.circuit import ControlledOperation
 
@@ -215,8 +218,6 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.RYGate(params[0])
     elif op.name == "rz":
         qiskit_ins = qsk_gates.RZGate(params[0])
-    elif op.name == "sx":
-        qiskit_ins = qsk_gates.SXGate()
     elif op.name == "h":
         qiskit_ins = qsk_gates.HGate()
 
@@ -229,9 +230,18 @@ def create_qiskit_instruction(op, params=[]):
     elif op.name == "s_dg":
         qiskit_ins = qsk_gates.SGate().inverse()
     elif op.name == "sx":
+        # Qiskit's SX includes exp(i*pi/4), while Qrisp's SX is a bare RX(pi/2).
         qiskit_ins = qsk_gates.SXGate()
+        phase = getattr(op, "global_phase", 0) - np.pi / 4
+        if abs(phase) > _PHASE_TOLERANCE:
+            qiskit_ins = UnitaryGate(np.exp(1j * phase) * qiskit_ins.to_matrix())
+            qiskit_ins.name = op.name
     elif op.name == "sx_dg":
         qiskit_ins = qsk_gates.SXdgGate()
+        phase = getattr(op, "global_phase", 0) + np.pi / 4
+        if abs(phase) > _PHASE_TOLERANCE:
+            qiskit_ins = UnitaryGate(np.exp(1j * phase) * qiskit_ins.to_matrix())
+            qiskit_ins.name = op.name
     elif op.name == "rzz":
         qiskit_ins = qsk_gates.RZZGate(params[0])
     elif op.name == "xxyy":
@@ -266,11 +276,14 @@ def create_qiskit_instruction(op, params=[]):
 
 op_dic = {op().name: op for op in op_list}
 op_dic["u"] = op_dic["u3"]
+op_dic["sxdg"] = op_dic["sx_dg"]
 
 
 def convert_from_qiskit(qiskit_qc):
     from qiskit import QuantumCircuit as QiskitQuantumCircuit
     from qiskit.circuit import ControlledGate, ParameterExpression
+    from qiskit.circuit.library import SXdgGate as QiskitSXdgGate
+    from qiskit.circuit.library import SXGate as QiskitSXGate
 
     from qrisp import Barrier, Clbit, ControlledOperation, QuantumCircuit, Qubit
 
@@ -358,6 +371,18 @@ def convert_from_qiskit(qiskit_qc):
         else:
             controlled_gate = False
 
+        # Store Qiskit's SX convention on the Qrisp operation itself so the
+        # phase remains relative, rather than global, when the gate is controlled.
+        if isinstance(qiskit_op, QiskitSXGate):
+            qiskit_sx_phase = np.pi / 4
+        elif isinstance(qiskit_op, QiskitSXdgGate):
+            qiskit_sx_phase = -np.pi / 4
+        else:
+            qiskit_sx_phase = 0
+
+        if qiskit_op.name in ["sx", "sx_dg", "sxdg"]:
+            params = []
+
         # Qiskit RGate → PRXGate
         if qiskit_op.name == "r":
             from qrisp.circuit import PRXGate as _PRXGate
@@ -374,6 +399,9 @@ def convert_from_qiskit(qiskit_qc):
                         op = convert_from_qiskit(qiskit_op.definition).to_gate(name=qiskit_op.name)
                     else:
                         raise Exception("Could not convert Qiskit operation " + str(qiskit_op.name) + " to Qrisp")
+
+        if qiskit_sx_phase:
+            op.global_phase += qiskit_sx_phase
 
         if controlled_gate:
             qiskit_op = qiskit_qc.data[i].operation
@@ -398,7 +426,7 @@ def convert_from_qiskit(qiskit_qc):
     # Propagate Qiskit's global phase (stored as a circuit attribute,
     # not an instruction).  Dropping it changes the unitary — critical
     # for controlled operations built from gate definitions with phase.
-    if abs(getattr(qiskit_qc, "global_phase", 0)) > 1e-10:
+    if abs(getattr(qiskit_qc, "global_phase", 0)) > _PHASE_TOLERANCE:
         qc.gphase(qiskit_qc.global_phase, qc.qubits[0])
 
     return qc

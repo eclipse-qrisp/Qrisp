@@ -24,6 +24,12 @@ from qiskit.quantum_info import Operator
 
 from qrisp import QuantumCircuit
 from qrisp.circuit import PRXGate
+from qrisp.circuit.standard_operations import (
+    SXDGGate as QrispSXDGGate,
+)
+from qrisp.circuit.standard_operations import (
+    SXGate as QrispSXGate,
+)
 from qrisp.interface.converter.qiskit_converter import (
     convert_from_qiskit,
     convert_to_qiskit,
@@ -425,6 +431,13 @@ class TestQrispToQiskitUnitary:
         qiskit_qc = convert_to_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
 
+    @pytest.mark.parametrize("gate", ["sx", "sx_dg"])
+    def test_sx(self, gate):
+        qc = QuantumCircuit(1)
+        getattr(qc, gate)(0)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
     def test_cx(self):
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
@@ -478,6 +491,13 @@ class TestQrispToQiskitUnitary:
         qiskit_qc = convert_to_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
 
+    @pytest.mark.parametrize("gate", [QrispSXGate(), QrispSXDGGate()], ids=["sx", "sx_dg"])
+    def test_controlled_sx(self, gate):
+        qc = QuantumCircuit(2)
+        qc.append(gate.control(), [0, 1])
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
 
 class TestQiskitToQrispUnitary:
     """Qiskit → Qrisp: compare unitaries directly (no round-trip)."""
@@ -522,6 +542,13 @@ class TestQiskitToQrispUnitary:
         qrisp_qc = convert_from_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
 
+    @pytest.mark.parametrize("gate", ["sx", "sxdg"])
+    def test_sx(self, gate):
+        qc = QiskitQC(1)
+        getattr(qc, gate)(0)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
     def test_cx(self):
         qc = QiskitQC(2)
         qc.cx(0, 1)
@@ -551,6 +578,16 @@ class TestQiskitToQrispUnitary:
 
         qc = QiskitQC(2)
         qc.append(RGate(0.6, 0.8).control(1), [0, 1])
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    @pytest.mark.parametrize("gate_name", ["SXGate", "SXdgGate"])
+    def test_controlled_sx(self, gate_name):
+        from qiskit.circuit import library as qiskit_gates
+
+        qc = QiskitQC(2)
+        gate = getattr(qiskit_gates, gate_name)()
+        qc.append(gate.control(1), [0, 1])
         qrisp_qc = convert_from_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
 
