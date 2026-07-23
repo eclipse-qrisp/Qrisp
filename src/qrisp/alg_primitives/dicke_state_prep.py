@@ -16,6 +16,7 @@
 """
 
 from collections.abc import Sequence
+from typing import Literal
 
 import jax.numpy as jnp
 
@@ -24,7 +25,7 @@ from qrisp.core import QuantumVariable, cx, ry
 from qrisp.jasp import jlen, jrange
 
 
-def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
+def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["deterministic", "divide-and-conquer"] = "deterministic") -> None:
     """Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
 
@@ -52,6 +53,19 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
 
     """
     n = jlen(qv)
+
+    if method == "deterministic":
+        apply_dicke_unitary(qv, n, k)
+    elif method == "divide-and-conquer":
+        ...
+    else:
+        raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
+
+
+
+
+
+def apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k:int) -> None:
 
     for offset in jrange(n - k):
         index2 = n - offset
