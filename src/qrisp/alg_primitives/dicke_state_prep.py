@@ -17,12 +17,15 @@
 
 from collections.abc import Sequence
 from typing import Literal
+import math
+from itertools import accumulate
 
 import jax.numpy as jnp
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, ry
 from qrisp.jasp import jlen, jrange
+from qrisp.environments import control
 
 
 def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["deterministic", "divide-and-conquer"] = "deterministic") -> None:
@@ -57,14 +60,33 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["
     if method == "deterministic":
         apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
-        divide(qv, n, k)
-        apply_dicke_unitary(...)
-        apply_dicke_unitary(...)
+        n1 = (n + 1) // 2    # ceil(n/2)
+        n2 = n // 2          # floor(n/2)
+        # WIP: CURRENTLY ASSUMING THAT k<n/2, LATER FIX THIS!
+        divide(qv, n1, n2, k)
+        apply_dicke_unitary(qv[:n1], n1, k)
+        apply_dicke_unitary(qv[n1:], n2, k)
     else:
         raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
 
 
 
+def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k:int) -> None:
+
+    x = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
+    s = list(accumulate(reversed(x)))
+    s.reverse()
+
+    for i in range(k+1):
+        param = 2 * jnp.arccos(jnp.sqrt(x[i] / s[i]))
+        if i == 0:
+            ry(param, qv[i])
+        else:
+            with control(qv[i - 1]):
+                ry(param, qv[i])
+
+    for i in range(k+1):
+        cx(qv[i], qv[n1+i])
 
 
 def apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k:int) -> None:
@@ -91,7 +113,6 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, low
         Index for indication of preparation steps, as seen in original algorithm.
 
     """
-    from qrisp.environments import control
 
     # index == highIndex
     param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
