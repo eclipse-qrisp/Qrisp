@@ -57,7 +57,9 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["
     if method == "deterministic":
         apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
-        ...
+        divide(qv, n, k)
+        apply_dicke_unitary(...)
+        apply_dicke_unitary(...)
     else:
         raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
 
