@@ -94,11 +94,15 @@ jobs:
 
       - name: Run benchmarks
         run: |
+          COMPARE_FAIL=""
+          if ls .benchmarks/*/*.json 1>/dev/null 2>&1; then
+            COMPARE_FAIL="--benchmark-compare-fail=min:15%"
+          fi
           QRISP_BENCHMARK_ALL=true pytest \
             ${{ matrix.test-group.paths }} \
             --benchmark-autosave \
             --benchmark-compare \
-            --benchmark-compare-fail=min:15% \
+            $COMPARE_FAIL \
             --benchmark-min-rounds=1
 
       - name: Upload benchmark results
