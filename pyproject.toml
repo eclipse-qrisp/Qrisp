@@ -76,6 +76,7 @@ dev-testing = [
     "pyscf",
     "cirq",
     "tqecd",
+    "iqm-client[qrisp]",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",

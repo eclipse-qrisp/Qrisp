@@ -15,25 +15,25 @@
 ********************************************************************************
 """
 
+class _MissingIQMBackend:
+    """Placeholder for :class:`IQMBackend` when the ``iqm`` package is not installed.
+
+    Attempting to instantiate this placeholder raises an :exc:`ImportError`
+    with instructions to install ``qrisp[iqm]``.
+    """
+
+    def __new__(cls, *args, **kwargs):
+        raise ImportError(
+            "The IQM backend requires the 'iqm' package, which is not installed.\n"
+            "Install it with: pip install qrisp[iqm]"
+        )
+
+
 try:
     from iqm.qrisp_iqm import IQMBackend
     _IQM_AVAILABLE = True
 except ImportError:
     _IQM_AVAILABLE = False
-
-    class _MissingIQMBackend:
-        """Placeholder for :class:`IQMBackend` when the ``iqm`` package is not installed.
-
-        Attempting to instantiate this placeholder raises an :exc:`ImportError`
-        with instructions to install ``qrisp[iqm]``.
-        """
-
-        def __new__(cls, *args, **kwargs):
-            raise ImportError(
-                "The IQM backend requires the 'iqm' package, which is not installed.\n"
-                "Install it with: pip install qrisp[iqm]"
-            )
-
     IQMBackend = _MissingIQMBackend
 
 __all__ = ["IQMBackend"]
