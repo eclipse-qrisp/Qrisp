@@ -62,6 +62,20 @@ Development
 * Added pytest coverage reporting to the CI test workflow
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
 
+Dependency Upgrades
+-------------------
+
+* Bumped myst-parser from 5.0.0 to 5.1.0
+  (`PR #729 <https://github.com/eclipse-qrisp/Qrisp/pull/729>`_).
+
+* Bumped ipykernel from 7.2.0 to 7.3.0
+  (`PR #734 <https://github.com/eclipse-qrisp/Qrisp/pull/734>`_).
+
+* Bumped pytest from 9.1.0 to 9.1.1
+  (`PR #723 <https://github.com/eclipse-qrisp/Qrisp/pull/723>`_).
+
+.. Add dependency upgrades above this line
+
 First Time Contributors 🎉
 --------------------------
 
