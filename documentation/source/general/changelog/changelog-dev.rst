@@ -40,6 +40,14 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
+  re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
+  The backend implementation and its tests live in the IQM client
+  repository.  The Qrisp-side module provides a placeholder with a
+  helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
+  not installed.
+  (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
 .. Add API changes above this line
 
 Development
@@ -73,6 +81,10 @@ Dependency Upgrades
 
 * Bumped pytest from 9.1.0 to 9.1.1
   (`PR #723 <https://github.com/eclipse-qrisp/Qrisp/pull/723>`_).
+
+* Replaced pinned IQM dependencies with ``iqm-client[qrisp]`` in the
+  ``iqm`` optional dependency group.
+  (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
 
 .. Add dependency upgrades above this line
 
