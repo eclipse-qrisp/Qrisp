@@ -64,15 +64,33 @@ If yes, describe the impact and migration path:
 
 ### Generative AI/LLM disclosure
 
-| Area | None | Partial | Full |
-|------|:----:|:-------:|:----:|
-| Architecture & Design | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
-| Code content | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
-| Code review | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
-| Tests | ❌ / ✅ | ❌ / ✅ | ❌ / ✅ |
+Code and Logic Architecture/Design:
 
-**Details:** Provide a detailed description of how AI/LLM tools were used across the checked areas above.
+- [ ] The code and logic architecture/design contain no generative AI/LLM
+- [ ] The code and logic architecture/design are partially performed by generative AI/LLM
+    - **X%** performed by the author(s)
+- [ ] The code and logic architecture/design are fully performed by generative AI/LLM
 
+Code content:
+
+- [ ] The code contains no generative AI/LLM work
+- [ ] The code is partially written by generative AI/LLM
+    - **X%** performed by the author(s)
+- [ ] The code is fully written by generative AI/LLM
+
+Code review:
+
+- [ ] The code review contains no generative AI/LLM
+- [ ] The code review is partially done by generative AI/LLM
+    - **X%** performed by the author(s)
+- [ ] The code review is fully done by generative AI/LLM
+
+Code tests:
+
+- [ ] The code tests contain no generative AI/LLM
+- [ ] The code tests are partially written by generative AI/LLM
+    - **X%** performed by the author(s)
+- [ ] The code tests are fully written by generative AI/LLM
 
 <!--
 Attribution: This disclosure template is adapted from

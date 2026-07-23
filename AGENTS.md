@@ -58,7 +58,7 @@ Source lives under `src/qrisp/`.
 ### Core Layer (`core/`)
 | File | Key class/function | Description |
 |---|---|---|
-| `quantum_variable.py` | `QuantumVariable` | Fundamental abstraction (register of qubits with name, size, encoder/decoder). Attributes: `.reg`, `.qs`, `.size`, `.name`. Methods: `get_measurement()`, `encode()`/`decoder()`, `delete()`. |
+| `quantum_variable.py` | `QuantumVariable` | Fundamental abstraction (register of qubits with name, size, encoder/decoder). Attributes: `.reg`, `.qs`, `.size`, `.name`. Methods: `get_measurement()`, `encoder()`/`decoder()`, `delete()`. |
 | `quantum_session.py` | `QuantumSession` (inherits `QuantumCircuit`) | Manages qubit allocation/deallocation and session merging. |
 | `compilation.py` | `qompiler` | Main compilation function (dynamic qubit allocation, MCX synthesis, depth reduction). |
 | `quantum_array.py` | `QuantumArray` | Array abstraction for quantum data. |
@@ -71,7 +71,7 @@ Source lives under `src/qrisp/`.
 | `QuantumBool` | `quantum_bool.py` | Single-qubit boolean, used for oracles and conditionals. |
 | `QuantumModulus` | `quantum_modulus.py` | Modular arithmetic (used in Shor). |
 | `QuantumChar` | `quantum_char.py` | Encodes characters. |
-| `QuantumString` | `quantum_string.py` | Encodes strings (list of `QuantumChar`s). |
+| `QuantumString` | `quantum_string.py` | Encodes strings (QuantumArray of `QuantumChar`s). |
 
 ### Environments (`environments/`)
 | Function/Class | Purpose |
@@ -94,7 +94,7 @@ Source lives under `src/qrisp/`.
 | `jrange(n)` | `program_control/jrange_iterator.py` | JAX-traceable replacement for `range()` inside traced functions. |
 | `qache(func)` | `tracing_logic/qaching.py` | Caches quantum function traces (like `jax.jit` for quantum subroutines). |
 | `quantum_kernel(func)` | `tracing_logic/quantum_kernel.py` | Marks function as independent quantum kernel for multi-QPU parallelism. |
-| `RUS(trial)` | `program_control/rus.py` | Repeat-Until-Success: re-executes `trial` until a condition on mid-circuit measurement is met. |
+| `@RUS` | `program_control/rus.py` | Repeat-Until-Success: re-executes a trial function until a condition on mid-circuit measurement is met. |
 | `q_while_loop`, `q_cond` | `program_control/prefix_control.py` | Jasp-compatible while-loop and conditional for traced quantum control flow. |
 | `stimulate(func)` | `evaluation_tools/jaspification.py` | Stim-based simulation entry point (analogous to `@jaspify`). |
 | `make_jaspr(func)` | `jasp_expression/centerclass.py` | Produces a `Jaspr` (subclass of `ClosedJaxpr`) from a traced function. |
@@ -103,13 +103,13 @@ Source lives under `src/qrisp/`.
 | Function | File | Description |
 |---|---|---|
 | `QFT(qv, inv=False)` | `qft.py` | Quantum Fourier Transform. |
-| `QPE(qv, U, precision)` | `qpe.py` | Quantum Phase Estimation. |
-| `IQPE(qv, U, precision)` | `iterative_qpe.py` | Iterative (single-ancilla) QPE. |
-| `QAE(state_prep, oracle, precision)` | `qae.py` | Quantum Amplitude Estimation. |
-| `IQAE(state_prep, oracle, eps, alpha)` | `iterative_qae.py` | Iterative QAE with precision ε and confidence α. |
+| `QPE(args, U, precision)` | `qpe.py` | Quantum Phase Estimation. |
+| `IQPE(args, U, precision)` | `iterative_qpe.py` | Iterative (single-ancilla) QPE. |
+| `QAE(args, state_function, oracle_function, precision)` | `qae.py` | Quantum Amplitude Estimation. |
+| `IQAE(qargs, state_function, eps, alpha)` | `iterative_qae.py` | Iterative QAE with precision ε and confidence α. |
 | `amplitude_amplification(...)` | `amplitude_amplification.py` | Grover-style amplitude amplification. |
-| `LCU(coeffs, unitaries)` | `lcu.py` | Linear Combination of Unitaries. |
-| `reflection(state, phase)` | `reflection.py` | Reflection operator about a state. |
+| `LCU(operand_prep, state_prep, unitaries)` | `lcu.py` | Linear Combination of Unitaries. |
+| `reflection(qargs, state_function, phase)` | `reflection.py` | Reflection operator about a state. |
 | `dicke_state(qv, k)` | `dicke_state_prep.py` | Prepares Dicke state (equal superposition of all states with Hamming weight k). |
 | `unbalanced_w_state(qv, amplitudes)` | `unbalanced_w_state.py` | Prepares generalized W state with arbitrary amplitudes. |
 | `arithmetic/` | (subpackage) | Adders, comparisons, ripple multiplication/division, matrix multiplication, polynomial evaluation. |
@@ -145,11 +145,11 @@ Source lives under `src/qrisp/`.
 | Component | File | Purpose |
 |---|---|---|
 | `@auto_uncompute` | `uncomputation.py` | Automatic uncomputation decorator — reverses ancilla computations. |
-| `unqomp` | `qc_transformations/unqomp.py` | Uncomputation algorithm at circuit level. |
+| `uncompute_qc` | `qc_transformations/unqomp.py` | Uncomputation algorithm at circuit level. |
 | `lightcone_reduction` | `qc_transformations/light_cone_reduction.py` | Removes gates outside the causal cone of measured qubits. |
 | `parallelize_qc` | `qc_transformations/qc_parallelization.py` | Parallelizes independent circuit operations. |
-| `memory_management` | `qc_transformations/memory_management.py` | Qubit reuse and deallocation optimization. |
-| `permeability_dag` | `permeability_dag.py` | DAG-based gate commutation analysis for optimization. |
+| `optimize_allocations` | `qc_transformations/memory_management.py` | Qubit reuse and deallocation optimization. |
+| `PermeabilityGraph` / `dag_from_qc()` | `permeability_dag.py` | DAG-based gate commutation analysis for optimization. |
 
 ### Circuit IR (`circuit/`)
 | File | Description |
