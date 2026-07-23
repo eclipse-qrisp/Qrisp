@@ -58,7 +58,7 @@ catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
-    "sphinx-toolbox==4.1.2",
+    "sphinx-toolbox==4.2.0",
     "nbsphinx==0.9.8",
     "ipykernel==7.3.0",
     "myst-parser==5.1.0",
