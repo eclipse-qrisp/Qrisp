@@ -15,6 +15,7 @@
 ********************************************************************************
 """
 
+
 class _MissingIQMBackend:
     """Placeholder for :class:`IQMBackend` when the ``iqm`` package is not installed.
 
@@ -31,6 +32,7 @@ class _MissingIQMBackend:
 
 try:
     from iqm.qrisp_iqm import IQMBackend
+
     _IQM_AVAILABLE = True
 except ImportError:
     _IQM_AVAILABLE = False
