@@ -101,7 +101,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
 
     This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by ``k`` ones and changes it
     into a superposition :math:`\frac{1}{\sqrt{\binom{n}{k}}} \sum_{k_1 = 0}^k \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}} |0\rangle^{\otimes n_1-k_1} |1\rangle^{\otimes k_1} |0\rangle^{\otimes n_2-k+k_1} |1\rangle^{\otimes k-k_1}`,
-    read for the "conquer" step.
+    ready for the "conquer" step.
     
     Parameters
     ----------
