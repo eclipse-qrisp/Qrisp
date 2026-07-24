@@ -34,10 +34,10 @@ def dicke_state(
     method: Literal["deterministic", "divide-and-conquer"] = "divide-and-conquer",
 ) -> None:
     """Dicke State initialization of a QuantumVariable.
-    
+
     A Dicke state is an equal positive superposition of all basis states with a given Hamming weight. We label the Dicke
     state of Hamming weight :math:`k` on :math:`n` qubits as :math:`D(n, k)`.
-    
+
 
     Parameters
     ----------
@@ -101,7 +101,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
     This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by ``k`` ones and changes it
     into a superposition :math:`\frac{1}{\sqrt{\binom{n}{k}}} \sum_{k_1 = 0}^k \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}} |0\rangle^{\otimes n_1-k_1} |1\rangle^{\otimes k_1} |0\rangle^{\otimes n_2-k+k_1} |1\rangle^{\otimes k-k_1}`,
     ready for the "conquer" step.
-    
+
     Parameters
     ----------
     qv : QuantumVariable
@@ -113,7 +113,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
         The size of the second half of the quantum variable.
     k : int
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
-    
+
     """
 
     # Variables that follow :math:`x_i` and :math:`s_i` from the paper https://arxiv.org/pdf/2112.12435 (page 8).
