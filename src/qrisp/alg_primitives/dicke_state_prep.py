@@ -33,15 +33,23 @@ def dicke_state(
     k: int,
     method: Literal["deterministic", "divide-and-conquer"] = "divide-and-conquer",
 ) -> None:
-    """Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
-    This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
+    """Dicke State initialization of a QuantumVariable.
+    
+    A Dicke state is an equal positive superposition of all basis states with a given Hamming weight. We label the Dicke
+    state of Hamming weight :math:`k` on :math:`n` qubits as :math:`D(n, k)`.
+    
 
     Parameters
     ----------
     qv : QuantumVariable
-        Initial quantum variable to be prepared. Has to be in target subspace.
+        Initial quantum variable to be prepared. Has to be in the state |00...011...1> where the number of 1's is equal
+        to ``k``.
     k : int
-        The Hamming weight (i.e. number of "ones") for the desired dicke state.
+        The Hamming weight (i.e. number of "ones") for the desired Dicke state.
+    method : Literal["deterministic", "divide-and-conquer"]
+        The method to be used for preparing the Dicke state. "deterministic" implements the preparation from
+        https://arxiv.org/pdf/1904.07358. "divide-and-conquer" implements the preparation from
+        https://arxiv.org/pdf/2112.12435. The code largely uses the notation from these two papers.
 
 
     Examples
@@ -61,31 +69,54 @@ def dicke_state(
     """
     n = jlen(qv)
 
+    # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
     large_k = False
     if k > n // 2:
         large_k = True
-        x(qv[n - k : k])  # Partially undo the initial state.
+        x(qv[n - k : k])  # Partially undo the initial state, reducing its Hamming weight from k to n-k.
         k = n - k
 
     if method == "deterministic":
-        apply_dicke_unitary(qv, n, k)
+        _apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
         n1 = (n + 1) // 2  # ceil(n/2)
         n2 = n // 2  # floor(n/2)
 
-        divide(qv, n1, n2, k)
+        _divide(qv, n1, n2, k)
 
-        apply_dicke_unitary(qv[:n1], n1, k)
-        apply_dicke_unitary(qv[n1:], n2, k)
+        _apply_dicke_unitary(qv[:n1], n1, k)
+        _apply_dicke_unitary(qv[n1:], n2, k)
 
     else:
         raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
 
+    # If we were prepating D(n, n-k), now we apply the X gates to transform it into D(n, k).
     if large_k:
         x(qv)
 
 
-def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
+def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
+    r"""
+    The "divide" step of the "divide-and-conquer" method of creating Dicke states.
+
+    This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by ``k`` ones and changes it
+    into a superposition :math:`\frac{1}{\sqrt{\binom{n}{k}}} \sum_{k_1 = 0}^k \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}} |0\rangle^{\otimes n_1-k_1} |1\rangle^{\otimes k_1} |0\rangle^{\otimes n_2-k+k_1} |1\rangle^{\otimes k-k_1}`,
+    read for the "conquer" step.
+    
+    Parameters
+    ----------
+
+    qv : QuantumVariable
+        The quantum variable to be divided. Has to be in the state |00...011...1> where the number of 1's is equal
+        to ``k``.
+    n1 : int
+        The size of the first half of the quantum variable.
+    n2 : int
+        The size of the second half of the quantum variable.
+    k : int
+        The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
+    
+    """
 
     xi = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
     si = list(accumulate(reversed(xi)))
@@ -103,7 +134,19 @@ def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> N
         cx(qv[n1 - 1 - i], qv[n1 + n2 - k + i])
 
 
-def apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
+def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
+    """
+    The Dicke unitary constructed according to Lemma 2 in https://arxiv.org/pdf/1904.07358.
+
+    Parameters
+    ----------
+
+    n : int
+        The size of the quantum variable.
+    k : int
+        The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
+    """
+
 
     for offset in jrange(n - k):
         index2 = n - offset
