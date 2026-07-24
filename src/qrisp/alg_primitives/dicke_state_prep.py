@@ -15,17 +15,17 @@
 ********************************************************************************
 """
 
-from collections.abc import Sequence
-from typing import Literal
 import math
+from collections.abc import Sequence
 from itertools import accumulate
+from typing import Literal
 
 import jax.numpy as jnp
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, ry, x
-from qrisp.jasp import jlen, jrange
 from qrisp.environments import control
+from qrisp.jasp import jlen, jrange
 
 
 def dicke_state(
@@ -70,9 +70,8 @@ def dicke_state(
     n = jlen(qv)
 
     # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
-    large_k = False
-    if k > n // 2:
-        large_k = True
+    large_k = k > n // 2
+    if large_k:
         x(qv[n - k : k])  # Partially undo the initial state, reducing its Hamming weight from k to n-k.
         k = n - k
 
