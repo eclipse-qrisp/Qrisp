@@ -104,7 +104,6 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
     
     Parameters
     ----------
-
     qv : QuantumVariable
         The quantum variable to be divided. Has to be in the state |00...011...1> where the number of 1's is equal
         to ``k``.
@@ -117,6 +116,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
     
     """
 
+    # Variables that follow :math:`x_i` and :math:`s_i` from the paper https://arxiv.org/pdf/2112.12435 (page 8).
     xi = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
     si = list(accumulate(reversed(xi)))
     si.reverse()
@@ -139,13 +139,13 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) 
 
     Parameters
     ----------
-
+    qv : QuantumVariable
+        Initial quantum variable to be prepared. Has to be in target subspace.
     n : int
         The size of the quantum variable.
     k : int
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
     """
-
 
     for offset in jrange(n - k):
         index2 = n - offset
