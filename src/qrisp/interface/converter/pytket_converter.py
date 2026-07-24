@@ -15,82 +15,123 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from qrisp import ControlledOperation
 
+if TYPE_CHECKING:
+    from pytket import Circuit, OpType
+    from pytket.circuit import CircBox
 
-def create_tket_instruction(op):
-    try:
-        from pytket import OpType
-        from pytket.circuit import CircBox
-    except (ModuleNotFoundError, ImportError) as exc:
-        raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
+    from qrisp.circuit import Operation, QuantumCircuit
 
-    if op.name == "rxx":
-        tket_ins = OpType.XXPhase
-    elif op.name == "rzz":
-        tket_ins = OpType.ZZPhase
-    elif op.name == "ryy":
-        tket_ins = OpType.YYPhase
-    elif op.name == "measure":
-        tket_ins = OpType.Measure
-    elif op.name == "swap":
-        tket_ins = OpType.SWAP
-    elif op.name == "h":
-        tket_ins = OpType.H
-    elif op.name == "p":
-        tket_ins = OpType.Rz
-    elif op.name == "x":
-        tket_ins = OpType.X
-    elif op.name == "y":
-        tket_ins = OpType.Y
-    elif op.name == "z":
-        tket_ins = OpType.Z
-    elif op.name == "rx":
-        tket_ins = OpType.Rx
-    elif op.name == "ry":
-        tket_ins = OpType.Ry
-    elif op.name == "rz":
-        tket_ins = OpType.Rz
-    elif op.name == "s":
-        tket_ins = OpType.S
-    elif op.name == "s_dg":
-        tket_ins = OpType.Sdg
-    elif op.name == "t":
-        tket_ins = OpType.T
-    elif op.name == "t_dg":
-        tket_ins = OpType.Tdg
-    elif op.name == "u3":
-        tket_ins = OpType.U3
+# Maps a Qrisp operation name to the corresponding pytket ``OpType`` attribute
+# name. Values are strings (resolved via ``getattr`` inside the converter) so this
+# table can live at module level without importing pytket eagerly.
+_GATE_OPTYPES = {
+    "h": "H",
+    "x": "X",
+    "y": "Y",
+    "z": "Z",
+    "s": "S",
+    "s_dg": "Sdg",
+    "t": "T",
+    "t_dg": "Tdg",
+    "sx": "SX",
+    "sx_dg": "SXdg",
+    "id": "noop",
+    "rx": "Rx",
+    "ry": "Ry",
+    "rz": "Rz",
+    "p": "Rz",
+    "u1": "Rz",
+    "u3": "U3",
+    "cx": "CX",
+    "cy": "CY",
+    "cz": "CZ",
+    "cp": "CU1",
+    "rxx": "XXPhase",
+    "rzz": "ZZPhase",
+    "ryy": "YYPhase",
+    "swap": "SWAP",
+    "measure": "Measure",
+}
 
-    elif op.definition:
-        # if complex definition we create an abstract circBox for the section
+
+def create_tket_instruction(op: Operation) -> OpType | CircBox:
+    """Map a single Qrisp operation to its pytket instruction.
+
+    Parameters
+    ----------
+    op : Operation
+        The Qrisp operation to convert.
+
+    Returns
+    -------
+    pytket.OpType or pytket.circuit.CircBox
+        An elementary ``OpType`` for a known gate, or a ``CircBox`` wrapping the
+        operation's definition for a composite gate.
+
+    Raises
+    ------
+    ValueError
+        If the operation is neither a known gate nor decomposable via a
+        ``definition``.
+
+    """
+    from pytket import OpType
+    from pytket.circuit import CircBox
+
+    if op.name in _GATE_OPTYPES:
+        return getattr(OpType, _GATE_OPTYPES[op.name])
+
+    if op.definition:
+        # Composite gate: wrap its definition as an abstract CircBox.
         tket_definition = pytket_converter(op.definition, boxFlag=True)
-        # Defensive check: the boxed definition should span the same number of
-        # qubits as the operation it represents.
         if tket_definition.n_qubits != op.num_qubits:  # pragma: no cover
-            raise Exception("Converted definition of '" + str(op.name) + "' has a mismatched qubit count")
+            raise ValueError("Converted definition of '" + str(op.name) + "' has a mismatched qubit count")
 
-        tket_ins = CircBox(tket_definition)
+        return CircBox(tket_definition)
 
-    else:
-        raise Exception("Could not convert operation " + str(op.name) + " to PyTket")
-
-    return tket_ins
+    raise ValueError("Could not convert operation " + str(op.name) + " to PyTket")
 
 
-def pytket_converter(qc, boxFlag=False):
+def pytket_converter(qc: QuantumCircuit, boxFlag: bool = False) -> Circuit:
+    """Convert a Qrisp QuantumCircuit to a pytket Circuit.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The Qrisp circuit to convert.
+    boxFlag : bool, optional
+        If True, build the circuit for use as an abstract ``CircBox``: qubits are
+        indexed positionally rather than by named identifier. Used internally when
+        recursing into composite/controlled gate definitions. The default is False.
+
+    Returns
+    -------
+    pytket.Circuit
+        A pytket Circuit equivalent to the input Qrisp circuit.
+
+    Raises
+    ------
+    ImportError
+        If pytket is not installed.
+
+    """
     try:
-        from pytket import Circuit, OpType, Qubit
+        from pytket import Circuit, Qubit
         from pytket.circuit import CircBox
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
 
-    # This dic gives the qiskit qubits/clbits when presented with their identifier
+    # This dict gives the pytket qubits/clbits when presented with their identifier.
     qubit_dic = {}
     tket_qc = Circuit()
-    # stringListQubs = []
     tketQubits = []
     for i in range(len(qc.qubits)):
         # add a named qubit
@@ -107,16 +148,17 @@ def pytket_converter(qc, boxFlag=False):
 
     clbit_dic = {}
     # Add Clbits
-    tketClbits = []
     if len(qc.clbits):
         c_reg = tket_qc.add_c_register(name="creg_std", size=len(qc.clbits))
     for i in range(len(qc.clbits)):
         clbit_dic[qc.clbits[i].identifier] = c_reg[i]
-        # this will hopefully be used one day, when other simulators other than Aer are used with this backend, or... quantinuum decides to fix their backend integration
-        # will throw an error on Aer backend and QASM converter, since they apparently only supports a single classical register, which is a lie
-        """ tketClbits.append(Bit( name = str(qc.clbits[i].identifier)))
-        clbit_dic[qc.clbits[i].identifier] = tketClbits[-1]
-        tket_qc.add_bit(tketClbits[-1]) """
+        # NOTE: all clbits share a single register ("creg_std"). An older constraint
+        # (Aer / QASM only accepting one classical register) no longer applies --
+        # verified that multiple registers now run on AerBackend -- so this is just a
+        # simplification. A per-bit alternative (named Bits) is kept for reference:
+        # tketClbits.append(Bit(name=str(qc.clbits[i].identifier)))
+        # clbit_dic[qc.clbits[i].identifier] = tketClbits[-1]
+        # tket_qc.add_bit(tketClbits[-1])
 
     for i in range(len(qc.data)):
         op = qc.data[i].op
@@ -126,84 +168,39 @@ def pytket_converter(qc, boxFlag=False):
         qubit_list = [qubit_dic[qubit.identifier] for qubit in qc.data[i].qubits]
         clbit_list = [clbit_dic[clbit.identifier] for clbit in qc.data[i].clbits]
 
-        if op.name in [
-            "cp",
-            "p",
-            "rx",
-            "rz",
-            "ry",
-            "rxx",
-            "rzz",
-            "ryy",
-            "u1",
-            "u3",
-        ]:  # and not boxFlag:
-            # pytket expects angles in pi multiples
+        # pytket expects rotation angles in half-turns (pi multiples).
+        if op.name in ["cp", "p", "rx", "rz", "ry", "rxx", "rzz", "ryy", "u1", "u3"]:
             params = [index / np.pi for index in params]
 
-        # add_gate
         if op.name in ["qb_alloc", "qb_dealloc"]:
             continue
 
-        elif op.name == "gphase":
-            # Global phase: pytket tracks it circuit-wide. add_phase takes
-            # half-turns, so params[0] (radians, not pi-scaled) is divided by pi.
+        if op.name == "gphase":
+            # Global phase: pytket tracks it circuit-wide via add_phase (half-turns).
             tket_qc.add_phase(params[0] / np.pi)
             continue
 
-        elif op.name == "cx":
-            tket_ins = OpType.CX
-
-        elif op.name == "cy":
-            tket_ins = OpType.CY
-
-        elif op.name == "cz":
-            tket_ins = OpType.CZ
-
-        elif op.name == "cp":
-            # cp is the controlled-phase gate diag(1,1,1,e^{i*theta}); pytket's
-            # CU1 is exactly controlled-U1 (CRz is a different gate). (#630)
-            tket_ins = OpType.CU1
-
-        elif op.name == "sx":
-            # bugged -> params empty
+        if op.name in ["sx", "sx_dg", "id"]:
+            # Qrisp attaches spurious params to these; pytket takes none.
             params = []
-            tket_ins = OpType.SX
-        elif op.name == "sx_dg":
-            # bugged -> params empty
-            params = []
-            tket_ins = OpType.SXdg
 
-        elif op.name == "u1":
-            # angle already converted to pi-units in the block above (#631)
-            tket_ins = OpType.Rz
-        elif op.name == "id":
-            params = []
-            # bugged
-            tket_ins = OpType.noop
-
-        elif issubclass(op.__class__, ControlledOperation):
+        if op.name not in _GATE_OPTYPES and issubclass(op.__class__, ControlledOperation):
+            # A composite controlled operation (e.g. mcx) is emitted as an abstract
+            # CircBox of its definition.
             base_name = op.base_operation.name
-
             if len(base_name) == 1:
                 base_name = base_name.upper()
 
-            # pytket_converter always returns a Circuit, so a controlled operation
-            # is always emitted as an abstract CircBox of its definition.
             tket_definition = pytket_converter(op.definition, boxFlag=True)
             tket_definition.name = base_name
             tket_ins = CircBox(tket_definition)
-
         else:
             tket_ins = create_tket_instruction(op)
 
         if isinstance(tket_ins, CircBox):
             tket_qc.add_circbox(tket_ins, qubit_list)
-
         elif clbit_list:
-            # add other isinstance checks from above here aswell?
             tket_qc.add_gate(tket_ins, params, qubit_list + clbit_list)
-
         else:
             tket_qc.add_gate(tket_ins, params, qubit_list)
 
