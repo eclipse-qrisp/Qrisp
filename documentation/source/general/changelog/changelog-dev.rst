@@ -74,6 +74,9 @@ Dependency Upgrades
 * Bumped pytest from 9.1.0 to 9.1.1
   (`PR #723 <https://github.com/eclipse-qrisp/Qrisp/pull/723>`_).
 
+* Bumped ``actions/setup-python`` from 6 to 7
+  (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
