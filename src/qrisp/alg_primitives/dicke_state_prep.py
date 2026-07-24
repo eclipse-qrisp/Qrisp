@@ -28,8 +28,11 @@ from qrisp.jasp import jlen, jrange
 from qrisp.environments import control
 
 
-
-def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["deterministic", "divide-and-conquer"] = "divide-and-conquer") -> None:
+def dicke_state(
+    qv: QuantumVariable | Sequence[Qubit],
+    k: int,
+    method: Literal["deterministic", "divide-and-conquer"] = "divide-and-conquer",
+) -> None:
     """Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
 
@@ -59,23 +62,21 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["
     n = jlen(qv)
 
     large_k = False
-    if k>n // 2:
+    if k > n // 2:
         large_k = True
-        x(qv[n-k:k]) # Partially undo the initial state.
-        k = n-k
-
+        x(qv[n - k : k])  # Partially undo the initial state.
+        k = n - k
 
     if method == "deterministic":
         apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
-        n1 = (n + 1) // 2    # ceil(n/2)
-        n2 = n // 2          # floor(n/2)
-        
+        n1 = (n + 1) // 2  # ceil(n/2)
+        n2 = n // 2  # floor(n/2)
+
         divide(qv, n1, n2, k)
 
         apply_dicke_unitary(qv[:n1], n1, k)
         apply_dicke_unitary(qv[n1:], n2, k)
-
 
     else:
         raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
@@ -83,7 +84,8 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int, method: Literal["
     if large_k:
         x(qv)
 
-def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k:int) -> None:
+
+def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
 
     xi = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
     si = list(accumulate(reversed(xi)))
@@ -92,16 +94,16 @@ def divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k:int) -> No
     for i in range(k):
         param = 2 * jnp.arccos(jnp.sqrt(xi[i] / si[i]))
         if i == 0:
-            ry(param, qv[n1-1-i])
+            ry(param, qv[n1 - 1 - i])
         else:
-            with control(qv[n1-i]):
-                ry(param, qv[n1-1-i])
+            with control(qv[n1 - i]):
+                ry(param, qv[n1 - 1 - i])
 
     for i in range(k):
-        cx(qv[n1-1-i], qv[n1+n2-k+i])
+        cx(qv[n1 - 1 - i], qv[n1 + n2 - k + i])
 
 
-def apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k:int) -> None:
+def apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
 
     for offset in jrange(n - k):
         index2 = n - offset
@@ -127,7 +129,7 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, low
     """
 
     if len(qv) == 1:
-        return # If there is just one qubit, do nothing.
+        return  # If there is just one qubit, do nothing.
 
     # index == highIndex
     param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
