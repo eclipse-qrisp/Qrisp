@@ -118,9 +118,11 @@ Other New Features
 Bug Fixes
 ---------
 
-* Fixed the ``to_pytket`` converter: ``u1`` angles are no longer divided by
-  ``pi`` twice, ``cp`` now maps to controlled-phase (``CU1``) instead of
-  ``CRz``, and global-phase (``gphase``) gates are now supported
+* Fixed and refactored the ``to_pytket`` converter: ``u1`` angles are no longer
+  divided by ``pi`` twice, ``cp`` now maps to controlled-phase (``CU1``) instead
+  of ``CRz``, and global-phase (``gphase``) gates are now supported. The gate
+  mapping was consolidated into a lookup table, dead code removed, and converter
+  unit-test coverage substantially increased
   (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
 
 * Fixed a failure when a function decorated with
