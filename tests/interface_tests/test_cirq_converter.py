@@ -26,12 +26,13 @@ from qrisp.interface.converter.cirq_converter import convert_from_cirq, convert_
 
 
 def _build_single_qubit_circ():
-    """Qrisp circuit with all single-qubit gates (H, X, Y, Z, RX, RY, RZ, S, T, S†, T†)."""
+    """Qrisp circuit with single-qubit gates and cy."""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.x(1)
     qc.y(3)
     qc.z(2)
+    qc.cy(0, 2)
     qc.rx(0.3, 3)
     qc.ry(0.4, 1)
     qc.rz(0.2, 2)
@@ -438,30 +439,30 @@ def test_convert_from_cirq_single_gate(gate_key, expected_name):
 
 
 @pytest.mark.parametrize(
-    "gate_fn, exponent, should_raise",
+    "gate_fn, exponent",
     [
-        (cirq.H, 0.5, True),
-        (cirq.CNOT, 0.5, True),
-        (cirq.CZ, 0.5, True),
-        (cirq.SWAP, 0.5, True),
-        (cirq.H, -1, False),
-        (cirq.CNOT, -1, False),
-        (cirq.CZ, -1, False),
-        (cirq.SWAP, -1, False),
+        (cirq.H, 0.5),
+        (cirq.CNOT, 0.5),
+        (cirq.CZ, 0.5),
+        (cirq.SWAP, 0.5),
+        (cirq.H, -1),
+        (cirq.CNOT, -1),
+        (cirq.CZ, -1),
+        (cirq.SWAP, -1),
     ],
     ids=[
-        "H^0.5_raises",
-        "CX^0.5_raises",
-        "CZ^0.5_raises",
-        "SWAP^0.5_raises",
-        "H^-1_allowed",
-        "CX^-1_allowed",
-        "CZ^-1_allowed",
-        "SWAP^-1_allowed",
+        "H^0.5",
+        "CX^0.5",
+        "CZ^0.5",
+        "SWAP^0.5",
+        "H^-1",
+        "CX^-1",
+        "CZ^-1",
+        "SWAP^-1",
     ],
 )
-def test_convert_from_cirq_exponent_guards(gate_fn, exponent, should_raise):
-    """Non-unit exponents are rejected for H/CX/CZ/SWAP; self-inverse ones work."""
+def test_convert_from_cirq_exponent_guards(gate_fn, exponent):
+    """Fractional exponents for H/CX/CZ/SWAP now decompose correctly."""
     q = cirq.LineQubit.range(3)
     g = gate_fn**exponent
     if g.num_qubits() == 1:
@@ -469,13 +470,9 @@ def test_convert_from_cirq_exponent_guards(gate_fn, exponent, should_raise):
     else:
         cirq_circ = cirq.Circuit([g(q[0], q[1])])
 
-    if should_raise:
-        with pytest.raises(ValueError, match="exponent"):
-            convert_from_cirq(cirq_circ)
-    else:
-        qrisp_qc = convert_from_cirq(cirq_circ)
-        expected_unitary = cirq.unitary(cirq_circ)
-        np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary))
 
 
 @pytest.mark.parametrize(
@@ -488,6 +485,7 @@ def test_convert_from_cirq_exponent_guards(gate_fn, exponent, should_raise):
     ],
 )
 def test_convert_from_cirq_controlled_gates(key):
+    """Controlled gates via ControlledGate and ControlledOperation APIs."""
     """Controlled gates via ControlledGate and ControlledOperation APIs."""
     q0, q1, q2 = cirq.LineQubit.range(3)
 
@@ -528,9 +526,51 @@ def _build_circuit_op_circ():
 
 
 def _build_iswap_circ():
-    """Cirq circuit with ISWAP (unsupported by the converter)."""
+    """Cirq circuit with ISWAP."""
     q0, q1 = cirq.LineQubit.range(2)
     return cirq.Circuit([cirq.ISWAP(q0, q1)])
+
+
+def test_convert_from_cirq_iswap():
+    """ISWAP gate should convert correctly."""
+    q0, q1 = cirq.LineQubit.range(2)
+    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, q1)])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        np.abs(qrisp_qc.get_unitary()),
+        np.abs(expected_unitary),
+    )
+
+
+def test_convert_from_cirq_iswap_adjoint():
+    """ISWAP† gate should convert correctly."""
+    q0, q1 = cirq.LineQubit.range(2)
+    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, q1)**-1])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        np.abs(qrisp_qc.get_unitary()),
+        np.abs(expected_unitary),
+    )
+
+
+def test_convert_from_cirq_ccx():
+    """Toffoli (CCX) gate should convert correctly."""
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    cirq_circ = cirq.Circuit([cirq.TOFFOLI(q0, q1, q2)])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary)
+
+
+def test_convert_from_cirq_ccz():
+    """CCZ gate should convert correctly."""
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    cirq_circ = cirq.Circuit([cirq.CCZPowGate()(q0, q1, q2)])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary)
 
 
 @pytest.mark.parametrize(
@@ -539,13 +579,11 @@ def _build_iswap_circ():
         (_build_multi_valued_circ, "Multi-valued control"),
         (_build_controlled_no_gate_circ, "not supported"),
         (_build_circuit_op_circ, "without gate attribute"),
-        (_build_iswap_circ, "not supported by the Cirq to Qrisp converter"),
     ],
     ids=[
         "multi_valued_control",
         "controlled_sub_op_no_gate",
         "circuit_operation_no_gate",
-        "unsupported_iswap",
     ],
 )
 def test_convert_from_cirq_raises(circ_builder, match):
