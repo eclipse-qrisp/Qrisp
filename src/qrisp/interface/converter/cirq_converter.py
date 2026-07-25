@@ -21,6 +21,61 @@ from qrisp.circuit import ControlledOperation
 from qrisp.circuit import standard_operations as ops
 
 
+def _transpile_to_known_gates(qrisp_circuit, gate_map):
+    """Transpile unknown gates until all gates are in gate_map.
+
+    Parameters
+    ----------
+    qrisp_circuit : QuantumCircuit
+        The Qrisp circuit whose unknown gates will be transpiled.
+    gate_map : dict
+        Mapping of gate names to Cirq gates. Any gate whose name is not a
+        key is considered unknown and will be transpiled.
+
+    Returns
+    -------
+    QuantumCircuit
+        A transpiled circuit where every gate name is a key in gate_map.
+
+    Raises
+    ------
+    ValueError
+        If unknown gates cannot be fully decomposed.
+    """
+
+    def _unknown_names(circ):
+        return {instr.op.name for instr in circ.data if instr.op.name not in gate_map}
+
+    while True:
+        unknown = _unknown_names(qrisp_circuit)
+        if not unknown:
+            break
+
+        def _transpile_predicate(op, _unknown=unknown):
+            return op.name in _unknown
+
+        try:
+            transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
+        except Exception as exc:
+            raise ValueError(
+                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to Cirq converter."
+            ) from exc
+
+        new_unknown = _unknown_names(transpiled)
+        if new_unknown == unknown:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(
+                f"The following gates could not be decomposed into elementary "
+                f"instructions: {names}. Try transpiling the circuit with "
+                f"Qrisp's transpile() method before calling to_cirq(), or "
+                f"use only gates supported natively by the converter."
+            )
+
+        qrisp_circuit = transpiled
+
+    return qrisp_circuit
+
+
 def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
     """Convert a Qrisp QuantumCircuit to a Cirq Circuit.
 
@@ -110,36 +165,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         "qb_dealloc": None,
     }
 
-    # repeatedly transpile unknown gates until only known ones remain
-    def _unknown_names(circ):
-        return {instr.op.name for instr in circ.data if instr.op.name not in gate_map}
-
-    while True:
-        unknown = _unknown_names(qrisp_circuit)
-        if not unknown:
-            break
-
-        def _transpile_predicate(op, _unknown=unknown):
-            return op.name in _unknown
-
-        try:
-            transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
-        except Exception as exc:
-            raise ValueError(
-                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to Cirq converter."
-            ) from exc
-
-        new_unknown = _unknown_names(transpiled)
-        if new_unknown == unknown:
-            names = ", ".join(sorted(unknown))
-            raise ValueError(
-                f"The following gates could not be decomposed into elementary "
-                f"instructions: {names}. Try transpiling the circuit with "
-                f"Qrisp's transpile() method before calling to_cirq(), or "
-                f"use only gates supported natively by the converter."
-            )
-
-        qrisp_circuit = transpiled
+    qrisp_circuit = _transpile_to_known_gates(qrisp_circuit, gate_map)
 
     # create an empty Cirq circuit
     cirq_circ = Circuit()
