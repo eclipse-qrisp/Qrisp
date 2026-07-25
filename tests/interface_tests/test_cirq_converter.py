@@ -546,7 +546,7 @@ def test_convert_from_cirq_iswap():
 def test_convert_from_cirq_iswap_adjoint():
     """ISWAP† gate should convert correctly."""
     q0, q1 = cirq.LineQubit.range(2)
-    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, q1)**-1])
+    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, q1) ** -1])
     qrisp_qc = convert_from_cirq(cirq_circ)
     expected_unitary = cirq.unitary(cirq_circ)
     np.testing.assert_array_almost_equal(

@@ -257,10 +257,7 @@ def _fractional_swap_gate(exp):
     """Build SWAP^t as a custom gate using eigenvalue decomposition."""
     from qrisp.circuit import Operation
 
-    swap_mat = np.array([[1, 0, 0, 0],
-                         [0, 0, 1, 0],
-                         [0, 1, 0, 0],
-                         [0, 0, 0, 1]], dtype=complex)
+    swap_mat = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)
     vals, vecs = np.linalg.eigh(swap_mat)
     vals_t = np.array([np.exp(1j * np.pi * exp), 1.0, 1.0, 1.0])
     swap_pow = (vecs * vals_t) @ vecs.conj().T
@@ -302,7 +299,7 @@ def convert_from_cirq(cirq_circuit):
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("Cirq must be installed to be able to use the Cirq to Qrisp converter.") from exc
     from qrisp import QuantumCircuit
-    from qrisp.circuit import Operation, standard_operations as ops
+    from qrisp.circuit import standard_operations as ops
 
     # setup: qubit map and gate lookup table
     all_qs = cirq_circuit.all_qubits()
@@ -498,6 +495,7 @@ def convert_from_cirq(cirq_circuit):
                     f"{exp}."
                 )
             from qrisp.circuit.standard_operations import ZGate
+
             qrisp_op = ZGate().control(2)
 
         else:
