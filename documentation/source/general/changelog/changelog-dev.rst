@@ -10,6 +10,10 @@ changelog enforcement.
 Other New Features
 ------------------
 
+* Added :func:`ISwapGate <qrisp.ISwapGate>` as a first-class gate in
+  :mod:`qrisp.circuit.standard_operations`, including the convenience method
+  :meth:`qc.iswap <qrisp.QuantumCircuit.iswap>`.
+
 .. Add other new features above this line
 
 Bug Fixes

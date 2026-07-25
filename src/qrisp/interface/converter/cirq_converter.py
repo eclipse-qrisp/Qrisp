@@ -249,11 +249,13 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
 
     qrisp_circuit = _transpile_to_known_gates(qrisp_circuit, gate_map)
 
+    # create an empty Cirq circuit
     cirq_circ = Circuit()
 
     if cirq_qubits is None:
         cirq_qubits = [LineQubit(i) for i in range(len(qrisp_circuit.qubits))]
 
+    # create a mapping of Qrisp qubits to Cirq qubits
     qubit_map = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = cirq_qubits[i]
@@ -263,6 +265,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         qubits = instr.qubits
         params = instr.op.params if hasattr(instr.op, "params") else []
 
+        # global phase
         if name == "gphase":
             cirq_circ.append(GlobalPhaseGate(np.exp(1j * params[0]))())
             continue
@@ -270,14 +273,18 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         cirq_gate = gate_map[name]
         cirq_op_qubits = [qubit_map[q] for q in qubits]
 
+        # gate with no direct Cirq equivalent
         if cirq_gate is None:
+            # decompose via its .definition circuit (e.g. xxyy, rxx, rzz)
             if instr.op.definition:
                 cirq_circ.append(convert_to_cirq(instr.op.definition, cirq_op_qubits))
                 continue
+            # qb_alloc/qb_dealloc are bookkeeping ops with no circuit effect
             if name not in ("qb_alloc", "qb_dealloc"):
                 raise ValueError(f"{name} gate has no Cirq equivalent and no definition to decompose.")
             continue
 
+        # controlled operations (multi-qubit)
         if isinstance(instr.op, ControlledOperation):
             base = _build_cirq_gate(name, params, cirq_gate, controlled_base=True)
             control_values = _ctrl_state_to_cirq_values(instr.op.ctrl_state)
@@ -454,17 +461,7 @@ def _conv_iswap(inner_gate):
             f"not the fractional-power variant with exponent "
             f"{exp}."
         )
-    tmp = QuantumCircuit(2)
-    tmp.cx(tmp.qubits[0], tmp.qubits[1])
-    tmp.h(tmp.qubits[0])
-    tmp.cx(tmp.qubits[1], tmp.qubits[0])
-    tmp.s(tmp.qubits[0])
-    tmp.cx(tmp.qubits[1], tmp.qubits[0])
-    tmp.s_dg(tmp.qubits[0])
-    tmp.h(tmp.qubits[0])
-    tmp.cx(tmp.qubits[0], tmp.qubits[1])
-    op = tmp.to_gate()
-    op.name = "iswap"
+    op = ops.ISwapGate()
     if np.isclose(exp % 4, 3.0):
         op = op.inverse()
     return op
@@ -553,6 +550,7 @@ def convert_from_cirq(cirq_circuit):  # noqa: PLR0912, PLR0915
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("Cirq must be installed to be able to use the Cirq to Qrisp converter.") from exc
 
+    # setup: qubit map and gate lookup table
     all_qs = cirq_circuit.all_qubits()
     qc = QuantumCircuit(len(all_qs))
 
@@ -566,7 +564,9 @@ def convert_from_cirq(cirq_circuit):  # noqa: PLR0912, PLR0915
         ) from exc
     qubit_map = {q: qc.qubits[i] for i, q in enumerate(cirq_qubits)}
 
+    # main conversion loop
     for op in cirq_circuit.all_operations():
+        # Extract the gate, unwrapping ControlledOperation if present
         if isinstance(op, cirq.ControlledOperation):
             sub_op = op.sub_operation
             gate = getattr(sub_op, "gate", None)
@@ -581,12 +581,17 @@ def convert_from_cirq(cirq_circuit):  # noqa: PLR0912, PLR0915
                 )
             orig_controls = None
 
+        # Global phase in Cirq acts on 0 qubits; Qrisp requires a qubit
+        # argument, so map it to the first available qubit.  Handled
+        # outside the dict because of this special qubit-mapping logic.
         if isinstance(gate, cirq.GlobalPhaseGate):
             phi = np.angle(gate.coefficient)
             if cirq_qubits:
                 qc.append(ops.GPhaseGate(phi), [qubit_map[cirq_qubits[0]]])
             continue
 
+        # Measurement uses the circuit's measure() method for automatic
+        # classical-bit allocation.  Cannot go through the gate dict.
         if isinstance(gate, cirq.MeasurementGate):
             qrisp_qubits = [qubit_map[q] for q in op.qubits]
             if len(qrisp_qubits) == 1:
@@ -595,8 +600,10 @@ def convert_from_cirq(cirq_circuit):  # noqa: PLR0912, PLR0915
                 qc.measure(qrisp_qubits)
             continue
 
+        # Unwrap nested ControlledGate layers (e.g. cirq.X.controlled())
         inner_gate, ctrl_layers = _unpack_cirq_control_layers(gate)
 
+        # Convert the innermost gate to a Qrisp operation
         qrisp_op = None
         for gate_type, converter in _get_gate_converters():
             if isinstance(inner_gate, gate_type):
@@ -605,8 +612,10 @@ def convert_from_cirq(cirq_circuit):  # noqa: PLR0912, PLR0915
         if qrisp_op is None:
             raise ValueError(f"Gate {gate} is not supported by the Cirq to Qrisp converter.")
 
+        # Wrap any ControlledGate layers (inside-out)
         qrisp_op = _apply_ctrl_layers(qrisp_op, ctrl_layers)
 
+        # Wrap any outer ControlledOperation and append
         if orig_controls is not None:
             controls, sub_qubits, cv = orig_controls
             ctrl_state = _cirq_values_to_ctrl_str(cv, op)

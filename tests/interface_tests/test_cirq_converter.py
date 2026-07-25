@@ -26,7 +26,7 @@ from qrisp.interface.converter.cirq_converter import convert_from_cirq, convert_
 
 
 def _build_single_qubit_circ():
-    """Qrisp circuit with single-qubit gates and cy."""
+    """Qrisp circuit with all single-qubit gates (H, X, Y, Z, RX, RY, RZ, S, T, S†, T†) and cy."""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.x(1)
@@ -321,6 +321,7 @@ def _build_mixed_roundtrip():
         _build_two_qubit_roundtrip,
         _build_gphase_roundtrip,
         _build_swap_roundtrip,
+        _build_iswap_circ,
         _build_mixed_roundtrip,
     ],
     ids=[
@@ -329,6 +330,7 @@ def _build_mixed_roundtrip():
         "two_qubit",
         "gphase",
         "swap",
+        "iswap",
         "mixed",
     ],
 )
@@ -485,7 +487,6 @@ def test_convert_from_cirq_exponent_guards(gate_fn, exponent):
     ],
 )
 def test_convert_from_cirq_controlled_gates(key):
-    """Controlled gates via ControlledGate and ControlledOperation APIs."""
     """Controlled gates via ControlledGate and ControlledOperation APIs."""
     q0, q1, q2 = cirq.LineQubit.range(3)
 

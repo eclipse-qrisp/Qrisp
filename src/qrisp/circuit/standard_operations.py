@@ -606,6 +606,35 @@ def SwapGate():
     return res
 
 
+def ISwapGate():
+    """Return an iSWAP gate.
+
+    Returns
+    -------
+    :class:`.Operation`
+        The iSWAP gate operation.
+
+    """
+    from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+    temp_qc = QuantumCircuit(2)
+    temp_qc.cx(temp_qc.qubits[0], temp_qc.qubits[1])
+    temp_qc.h(temp_qc.qubits[0])
+    temp_qc.cx(temp_qc.qubits[1], temp_qc.qubits[0])
+    temp_qc.s(temp_qc.qubits[0])
+    temp_qc.cx(temp_qc.qubits[1], temp_qc.qubits[0])
+    temp_qc.s_dg(temp_qc.qubits[0])
+    temp_qc.h(temp_qc.qubits[0])
+    temp_qc.cx(temp_qc.qubits[0], temp_qc.qubits[1])
+
+    res = temp_qc.to_gate(name="iswap")
+
+    res.permeability = {0: False, 1: False}
+    res.is_qfree = True
+
+    return res
+
+
 def QubitAlloc():
     """Return an internal qubit-allocation marker.
 
@@ -668,6 +697,7 @@ op_list = [
     QubitDealloc,
     GPhaseGate,
     SwapGate,
+    ISwapGate,
     U1Gate,
     IDGate,
     RGate,

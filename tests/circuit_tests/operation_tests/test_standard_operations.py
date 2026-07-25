@@ -39,6 +39,7 @@ from qrisp.circuit.standard_operations import (
     RXGate,
     RXXGate,
     RZZGate,
+    ISwapGate,
     SwapGate,
     SXDGGate,
     SXGate,
@@ -286,6 +287,52 @@ class TestSwapGate:
         gate = SwapGate()
         inv = gate.inverse()
         assert np.allclose(inv.get_unitary(), gate.get_unitary(), atol=1e-6)
+
+
+class TestISwapGate:
+    """Tests for ISwapGate."""
+
+    def test_iswap_name(self):
+        """ISwapGate has name 'iswap' and no parameters."""
+        gate = ISwapGate()
+        assert gate.name == "iswap"
+        assert gate.params == []
+
+    def test_iswap_permeability_and_qfree(self):
+        """ISwapGate has permeability False on both qubits and is qfree."""
+        gate = ISwapGate()
+        assert gate.permeability[0] is False
+        assert gate.permeability[1] is False
+        assert gate.is_qfree is True
+
+    def test_iswap_unitary(self):
+        """ISwapGate unitary matches the analytical iSWAP matrix."""
+        expected = np.array(
+            [[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0], [0, 0, 0, 1]],
+            dtype=complex,
+        )
+        assert np.allclose(ISwapGate().get_unitary(), expected, atol=1e-6)
+
+    def test_iswap_is_unitary(self):
+        """ISWAP satisfies U @ U† = I."""
+        u = ISwapGate().get_unitary()
+        assert np.allclose(u @ u.conj().T, np.eye(4), atol=1e-6)
+
+    def test_iswap_inverse(self):
+        """ISwapGate.inverse() matches ISWAP†."""
+        gate = ISwapGate()
+        inv = gate.inverse()
+        expected_inv = np.array(
+            [[1, 0, 0, 0], [0, 0, -1j, 0], [0, -1j, 0, 0], [0, 0, 0, 1]],
+            dtype=complex,
+        )
+        assert np.allclose(inv.get_unitary(), expected_inv, atol=1e-6)
+
+    def test_iswap_inverse_times_iswap_is_identity(self):
+        """ISWAP† @ ISWAP = I."""
+        u = ISwapGate().get_unitary()
+        u_inv = ISwapGate().inverse().get_unitary()
+        assert np.allclose(u_inv @ u, np.eye(4), atol=1e-6)
 
 
 class TestRXXGate:

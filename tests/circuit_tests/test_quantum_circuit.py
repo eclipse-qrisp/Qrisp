@@ -603,6 +603,7 @@ class TestQuantumCircuitMethods:
         [
             (2, lambda qc: (qc.h(0), qc.cx(0, 1))),
             (2, lambda qc: qc.swap(0, 1)),
+            (2, lambda qc: qc.iswap(0, 1)),
             (3, lambda qc: (qc.h(0), qc.cx(0, 1), qc.cx(1, 2), qc.ry(np.pi / 6, 2))),
         ],
     )
@@ -2220,6 +2221,13 @@ class TestQuantumCircuitGateMethods:
         assert len(qc.data) == 1
         assert qc.data[0].op.name == "id"
 
+    def test_iswap_appends_correct_instruction(self):
+        """Iswap appends exactly one instruction named 'iswap'."""
+        qc = QuantumCircuit(2)
+        qc.iswap(0, 1)
+        assert len(qc.data) == 1
+        assert qc.data[0].op.name == "iswap"
+
     def test_id_is_identity_unitary(self):
         """The identity gate leaves the unitary unchanged."""
         qc = QuantumCircuit(1)
@@ -2354,6 +2362,14 @@ class TestQuantumCircuitGateMethodUnitaries:
         expected = np.eye(4, dtype=complex)
         expected[2:4, 2:4] = rx_u
         assert np.allclose(u, expected, atol=1e-10)
+
+    def test_iswap_unitary(self):
+        """qc.iswap produces the iSWAP unitary."""
+        from qrisp.circuit.standard_operations import ISwapGate
+
+        qc = QuantumCircuit(2)
+        qc.iswap(0, 1)
+        assert np.allclose(qc.get_unitary(), ISwapGate().get_unitary(), atol=1e-10)
 
 
 class TestQuantumCircuitExternalConversions:
