@@ -341,16 +341,165 @@ def convert_from_cirq(cirq_circuit):
         ) from exc
     qubit_map = {q: qc.qubits[i] for i, q in enumerate(cirq_qubits)}
 
-    # Maps Cirq gate types to Qrisp gate *callables* (not instances), so
-    # each use gets a fresh object and no two operations share a gate.
-    gate_map = {
-        cirq.HPowGate: ops.HGate,
-        cirq.CXPowGate: ops.CXGate,
-        cirq.CZPowGate: ops.CZGate,
-        cirq.SwapPowGate: ops.SwapGate,
-        cirq.IdentityGate: ops.IDGate,
-        cirq.ResetChannel: ops.Reset,
-    }
+    # ----------------------------------------------------------------------
+    # Registry of converter functions keyed by Cirq gate type.
+    # isinstance is used for dispatch so subclass relationships
+    # (e.g. cirq.X is _PauliX, a subclass of XPowGate) work correctly.
+    # ----------------------------------------------------------------------
+
+    def _conv_h(inner_gate):
+        """Convert cirq.HPowGate to a Qrisp HGate (or fractional power)."""
+        if not np.isclose(inner_gate.exponent % 2, 1.0):
+            return _fractional_h_gate(inner_gate.exponent)
+        return ops.HGate()
+
+    def _conv_cx(inner_gate):
+        """Convert cirq.CXPowGate to a Qrisp CXGate (or fractional power)."""
+        if not np.isclose(inner_gate.exponent % 2, 1.0):
+            return _fractional_cx_gate(inner_gate.exponent)
+        return ops.CXGate()
+
+    def _conv_cz(inner_gate):
+        """Convert cirq.CZPowGate to a Qrisp CZGate (or fractional power)."""
+        if not np.isclose(inner_gate.exponent % 2, 1.0):
+            return _fractional_cz_gate(inner_gate.exponent)
+        return ops.CZGate()
+
+    def _conv_swap(inner_gate):
+        """Convert cirq.SwapPowGate to a Qrisp SwapGate (or fractional power)."""
+        if not np.isclose(inner_gate.exponent % 2, 1.0):
+            return _fractional_swap_gate(inner_gate.exponent)
+        return ops.SwapGate()
+
+    def _conv_id(inner_gate):
+        """Convert cirq.IdentityGate to a Qrisp IDGate."""
+        return ops.IDGate()
+
+    def _conv_reset(inner_gate):
+        """Convert cirq.ResetChannel to a Qrisp Reset."""
+        return ops.Reset()
+
+    def _convert_pauli_pow(inner_gate, rotation_cls, rotation_fn, specials, fallback_fn):
+        """Convert a Cirq Pauli power gate to a Qrisp operation.
+
+        Handles the common pattern shared by XPowGate, YPowGate, and
+        ZPowGate: subclass check for the explicit rotation variant
+        (Rx/Ry/Rz), exponent-based dispatch for standard Pauli powers
+        (X, SX, S, T, …), and a generic fallback.
+
+        Parameters
+        ----------
+        inner_gate : cirq.XPowGate | cirq.YPowGate | cirq.ZPowGate
+            The inner (non-controlled) gate to convert.
+        rotation_cls : type
+            The rotation subclass to check via isinstance (e.g. cirq.Rx).
+        rotation_fn : Callable[[float], Operation]
+            Factory for the rotation gate (e.g. ops.RXGate).
+        specials : list[tuple[float, Callable[[], Operation]]]
+            List of (exponent_mod_4, factory) pairs for standard powers.
+        fallback_fn : Callable[[float], Operation]
+            Factory for the generic fallback (e.g. ops.PGate).
+
+        Returns
+        -------
+        Operation
+        """
+        exp = inner_gate.exponent
+        if isinstance(inner_gate, rotation_cls):
+            return rotation_fn(exp * np.pi)
+        for modulus, factory in specials:
+            if np.isclose(exp % 4, modulus):
+                return factory()
+        return fallback_fn(exp * np.pi)
+
+    def _conv_x(inner_gate):
+        """Convert cirq.XPowGate to X, SX, SX†, or RX."""
+        return _convert_pauli_pow(inner_gate, cirq.Rx, ops.RXGate, [
+            (1.0, ops.XGate),
+            (0.5, ops.SXGate),
+            (3.5, ops.SXDGGate),
+        ], ops.RXGate)
+
+    def _conv_y(inner_gate):
+        """Convert cirq.YPowGate to Y or RY."""
+        return _convert_pauli_pow(inner_gate, cirq.Ry, ops.RYGate, [
+            (1.0, ops.YGate),
+        ], ops.RYGate)
+
+    def _conv_z(inner_gate):
+        """Convert cirq.ZPowGate to Z, S, S†, T, T†, or P."""
+        return _convert_pauli_pow(inner_gate, cirq.Rz, ops.RZGate, [
+            (1.0, ops.ZGate),
+            (0.5, ops.SGate),
+            (3.5, lambda: ops.SGate().inverse()),
+            (0.25, ops.TGate),
+            (3.75, lambda: ops.TGate().inverse()),
+        ], ops.PGate)
+
+    def _conv_iswap(inner_gate):
+        """Convert cirq.ISwapPowGate to a Qrisp iSWAP (or its adjoint)."""
+        exp = inner_gate.exponent
+        if not np.isclose(exp % 2, 1.0):
+            raise ValueError(
+                f"Only the full ISwapPowGate "
+                f"(exponent 1, -1, 3, ...) can be converted, "
+                f"not the fractional-power variant with exponent "
+                f"{exp}."
+            )
+        tmp = QuantumCircuit(2)
+        tmp.cx(tmp.qubits[0], tmp.qubits[1])
+        tmp.h(tmp.qubits[0])
+        tmp.cx(tmp.qubits[1], tmp.qubits[0])
+        tmp.s(tmp.qubits[0])
+        tmp.cx(tmp.qubits[1], tmp.qubits[0])
+        tmp.s_dg(tmp.qubits[0])
+        tmp.h(tmp.qubits[0])
+        tmp.cx(tmp.qubits[0], tmp.qubits[1])
+        op = tmp.to_gate()
+        op.name = "iswap"
+        if np.isclose(exp % 4, 3.0):
+            op = op.inverse()
+        return op
+
+    def _conv_ccx(inner_gate):
+        """Convert cirq.CCXPowGate to a Qrisp Toffoli (MCXGate with 2 controls)."""
+        exp = inner_gate.exponent
+        if not np.isclose(exp % 2, 1.0):
+            raise ValueError(
+                f"Only the full CCXPowGate (Toffoli) "
+                f"(exponent 1, -1, 3, ...) can be converted, "
+                f"not the fractional-power variant with exponent "
+                f"{exp}."
+            )
+        return ops.MCXGate(control_amount=2)
+
+    def _conv_ccz(inner_gate):
+        """Convert cirq.CCZPowGate to a doubly-controlled Z gate."""
+        exp = inner_gate.exponent
+        if not np.isclose(exp % 2, 1.0):
+            raise ValueError(
+                f"Only the full CCZPowGate "
+                f"(exponent 1, -1, 3, ...) can be converted, "
+                f"not the fractional-power variant with exponent "
+                f"{exp}."
+            )
+        from qrisp.circuit.standard_operations import ZGate
+        return ZGate().control(2)
+
+    _GATE_CONVERTERS = [
+        (cirq.HPowGate, _conv_h),
+        (cirq.CXPowGate, _conv_cx),
+        (cirq.CZPowGate, _conv_cz),
+        (cirq.SwapPowGate, _conv_swap),
+        (cirq.IdentityGate, _conv_id),
+        (cirq.ResetChannel, _conv_reset),
+        (cirq.XPowGate, _conv_x),
+        (cirq.YPowGate, _conv_y),
+        (cirq.ZPowGate, _conv_z),
+        (cirq.ISwapPowGate, _conv_iswap),
+        (cirq.CCXPowGate, _conv_ccx),
+        (cirq.CCZPowGate, _conv_ccz),
+    ]
 
     # main conversion loop
     for op in cirq_circuit.all_operations():
@@ -406,125 +555,13 @@ def convert_from_cirq(cirq_circuit):
             ctrl_layers.append((inner_gate.num_controls(), ctrl_state))
             inner_gate = inner_gate.sub_gate
 
-        # Convert the innermost gate to a Qrisp operation
+        # Convert the innermost gate via the registry
         qrisp_op = None
-
-        # Dict lookup by exact type for gates whose Qrisp equivalent is
-        # fixed or follows a simple (attr, multiplier) pattern.
-        converter = gate_map.get(type(inner_gate))
-        if converter is not None:
-            if type(inner_gate) in {cirq.HPowGate, cirq.CXPowGate, cirq.CZPowGate, cirq.SwapPowGate}:
-                if not np.isclose(inner_gate.exponent % 2, 1.0):
-                    exp = inner_gate.exponent
-                    if isinstance(inner_gate, cirq.HPowGate):
-                        qrisp_op = _fractional_h_gate(exp)
-                    elif isinstance(inner_gate, cirq.CXPowGate):
-                        qrisp_op = _fractional_cx_gate(exp)
-                    elif isinstance(inner_gate, cirq.CZPowGate):
-                        qrisp_op = _fractional_cz_gate(exp)
-                    elif isinstance(inner_gate, cirq.SwapPowGate):
-                        qrisp_op = _fractional_swap_gate(exp)
-                else:
-                    qrisp_op = converter()
-            else:
-                qrisp_op = converter()
-
-        # XPowGate uses isinstance to catch cirq.X (type _PauliX, a
-        # subclass).  The exponent selects X, SX, SX†, or generic RX.
-        elif isinstance(inner_gate, cirq.XPowGate):
-            exp = inner_gate.exponent
-            if isinstance(inner_gate, cirq.Rx):
-                qrisp_op = ops.RXGate(exp * np.pi)
-            elif np.isclose(exp % 4, 1.0):
-                qrisp_op = ops.XGate()
-            elif np.isclose(exp % 4, 0.5):
-                qrisp_op = ops.SXGate()
-            elif np.isclose(exp % 4, 3.5):
-                qrisp_op = ops.SXDGGate()
-            else:
-                qrisp_op = ops.RXGate(exp * np.pi)
-
-        # YPowGate: same subclass issue with cirq.Y (type _PauliY).
-        elif isinstance(inner_gate, cirq.YPowGate):
-            exp = inner_gate.exponent
-            if isinstance(inner_gate, cirq.Ry):
-                qrisp_op = ops.RYGate(exp * np.pi)
-            elif np.isclose(exp % 4, 1.0):
-                qrisp_op = ops.YGate()
-            else:
-                qrisp_op = ops.RYGate(exp * np.pi)
-
-        # ZPowGate: catches cirq.Z (type _PauliZ) and exponent-based
-        # variants like S (exp=0.5), T (exp=0.25), etc.
-        elif isinstance(inner_gate, cirq.ZPowGate):
-            exp = inner_gate.exponent
-            if isinstance(inner_gate, cirq.Rz):
-                qrisp_op = ops.RZGate(exp * np.pi)
-            elif np.isclose(exp % 4, 1.0):
-                qrisp_op = ops.ZGate()
-            elif np.isclose(exp % 4, 0.5):
-                qrisp_op = ops.SGate()
-            elif np.isclose(exp % 4, 3.5):
-                qrisp_op = ops.SGate().inverse()
-            elif np.isclose(exp % 4, 0.25):
-                qrisp_op = ops.TGate()
-            elif np.isclose(exp % 4, 3.75):
-                qrisp_op = ops.TGate().inverse()
-            else:
-                qrisp_op = ops.PGate(exp * np.pi)
-
-        # ISwapPowGate: iSWAP and its adjoint
-        elif isinstance(inner_gate, cirq.ISwapPowGate):
-            exp = inner_gate.exponent
-            if not np.isclose(exp % 2, 1.0):
-                raise ValueError(
-                    f"Only the full ISwapPowGate "
-                    f"(exponent 1, -1, 3, ...) can be converted, "
-                    f"not the fractional-power variant with exponent "
-                    f"{exp}."
-                )
-            # Build iSWAP with a definition circuit for roundtrip support
-            tmp = QuantumCircuit(2)
-            tmp.cx(tmp.qubits[0], tmp.qubits[1])
-            tmp.h(tmp.qubits[0])
-            tmp.cx(tmp.qubits[1], tmp.qubits[0])
-            tmp.s(tmp.qubits[0])
-            tmp.cx(tmp.qubits[1], tmp.qubits[0])
-            tmp.s_dg(tmp.qubits[0])
-            tmp.h(tmp.qubits[0])
-            tmp.cx(tmp.qubits[0], tmp.qubits[1])
-            qrisp_op = tmp.to_gate()
-            qrisp_op.name = "iswap"
-            if np.isclose(exp % 4, 3.0):
-                qrisp_op = qrisp_op.inverse()
-
-        # CCXPowGate: Toffoli (doubly-controlled X)
-        elif isinstance(inner_gate, cirq.CCXPowGate):
-            exp = inner_gate.exponent
-            if not np.isclose(exp % 2, 1.0):
-                raise ValueError(
-                    f"Only the full CCXPowGate (Toffoli) "
-                    f"(exponent 1, -1, 3, ...) can be converted, "
-                    f"not the fractional-power variant with exponent "
-                    f"{exp}."
-                )
-            qrisp_op = ops.MCXGate(control_amount=2)
-
-        # CCZPowGate: doubly-controlled Z
-        elif isinstance(inner_gate, cirq.CCZPowGate):
-            exp = inner_gate.exponent
-            if not np.isclose(exp % 2, 1.0):
-                raise ValueError(
-                    f"Only the full CCZPowGate "
-                    f"(exponent 1, -1, 3, ...) can be converted, "
-                    f"not the fractional-power variant with exponent "
-                    f"{exp}."
-                )
-            from qrisp.circuit.standard_operations import ZGate
-
-            qrisp_op = ZGate().control(2)
-
-        else:
+        for gate_type, converter in _GATE_CONVERTERS:
+            if isinstance(inner_gate, gate_type):
+                qrisp_op = converter(inner_gate)
+                break
+        if qrisp_op is None:
             raise ValueError(f"Gate {gate} is not supported by the Cirq to Qrisp converter.")
 
         # Wrap any ControlledGate layers (inside-out)
