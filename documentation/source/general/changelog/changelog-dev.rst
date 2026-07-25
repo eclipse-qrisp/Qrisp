@@ -19,12 +19,7 @@ Bug Fixes
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
   (`PR #642 <https://github.com/eclipse-qrisp/Qrisp/pull/642>`_).
 
-* Fixed bugs in the Cirq converter: added ``cy`` to the ``convert_to_cirq``
-  gate map; added ``ISwapPowGate``, ``CCXPowGate`` (Toffoli), and
-  ``CCZPowGate`` support to ``convert_from_cirq``; removed the
-  ``exponent_guarded`` restriction and added fractional-exponent
-  decompositions for ``HPowGate``, ``CXPowGate``, ``CZPowGate``, and
-  ``SwapPowGate``
+* Fixed bugs in the Cirq converter and added support for additional gates
   (`PR #768 <https://github.com/eclipse-qrisp/Qrisp/pull/768>`_).
 
 * Updated Qiskit example in documentation to use ``AerSimulator`` instead of the

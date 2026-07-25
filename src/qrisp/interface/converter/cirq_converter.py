@@ -13,7 +13,7 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
-"""  # noqa: D205, D208
+"""
 
 import numpy as np
 
@@ -199,41 +199,14 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         rz,
     )
 
-    def _build_controlled_base(name, params, cirq_gate):
-        """Build the base cirq gate for a ControlledOperation.
-
-        Used by convert_to_cirq to handle Qrisp gates whose cirq equivalent
-        differs when used as the base of a controlled gate:
-        - sx/sx_dg -> XPowGate with explicit exponent (the gate_map entry
-          is the class, not an instance)
-        - p -> ZPowGate with exponent from params
-        - cx/cz -> X/Z instead of CNOT/CZ (controlled-CX uses X as base)
-        """
-        known = {
-            "sx": XPowGate(exponent=0.5),
-            "sx_dg": XPowGate(exponent=-0.5),
-            "cx": X,
-            "cz": Z,
-        }
-        if name in known:
-            return known[name]
-        if name == "p" and params:
-            return ZPowGate(exponent=params[0] / np.pi)
-        if params:
-            return cirq_gate(*params)
-        return cirq_gate
-
-    def _build_simple_gate(name, params, cirq_gate):
-        """Build the cirq gate for a non-controlled Qrisp instruction.
-
-        Used by convert_to_cirq to handle the same sx/sx_dg/p
-        special cases as _build_controlled_base but without the cx/cz
-        overrides (non-controlled CNOT/CZ from gate_map are already correct).
-        """
+    def _build_cirq_gate(name, params, cirq_gate, *, controlled_base=False):
         known = {
             "sx": XPowGate(exponent=0.5),
             "sx_dg": XPowGate(exponent=-0.5),
         }
+        if controlled_base:
+            known["cx"] = X
+            known["cz"] = Z
         if name in known:
             return known[name]
         if name == "p":
@@ -306,26 +279,30 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             continue
 
         if isinstance(instr.op, ControlledOperation):
-            base = _build_controlled_base(name, params, cirq_gate)
+            base = _build_cirq_gate(name, params, cirq_gate, controlled_base=True)
             control_values = _ctrl_state_to_cirq_values(instr.op.ctrl_state)
             controlled = base.controlled(num_controls=len(instr.op.ctrl_state), control_values=control_values)
             cirq_circ.append(controlled(*cirq_op_qubits))
             continue
 
-        gate = _build_simple_gate(name, params, cirq_gate)
+        gate = _build_cirq_gate(name, params, cirq_gate)
         cirq_circ.append(gate(*cirq_op_qubits))
 
     return cirq_circ
 
 
-def _fractional_h_gate(exp):
-    """Build H^t as a custom gate using eigenvalue decomposition."""
-    h_mat = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
-    vals, vecs = np.linalg.eigh(h_mat)
-    h_pow = vecs @ np.diag([1, np.exp(1j * np.pi * exp)]) @ vecs.conj().T
-    op = Operation(name="h", num_qubits=1)
-    op.unitary = h_pow
+def _fractional_power_op(unitary_matrix, exponent, name, num_qubits):
+    vals, vecs = np.linalg.eigh(unitary_matrix)
+    vals_t = np.where(np.isclose(vals, -1), np.exp(1j * np.pi * exponent), 1.0)
+    pow_mat = (vecs * vals_t) @ vecs.conj().T
+    op = Operation(name=name, num_qubits=num_qubits)
+    op.unitary = pow_mat
     return op
+
+
+def _fractional_h_gate(exp):
+    h_mat = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
+    return _fractional_power_op(h_mat, exp, "h", 1)
 
 
 def _conv_h(inner_gate):
@@ -360,14 +337,8 @@ def _conv_cz(inner_gate):
 
 
 def _fractional_swap_gate(exp):
-    """Build SWAP^t as a custom gate using eigenvalue decomposition."""
     swap_mat = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)
-    vals, vecs = np.linalg.eigh(swap_mat)
-    vals_t = np.array([np.exp(1j * np.pi * exp), 1.0, 1.0, 1.0])
-    swap_pow = (vecs * vals_t) @ vecs.conj().T
-    op = Operation(name="swap", num_qubits=2)
-    op.unitary = swap_pow
-    return op
+    return _fractional_power_op(swap_mat, exp, "swap", 2)
 
 
 def _conv_swap(inner_gate):
