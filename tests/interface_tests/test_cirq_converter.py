@@ -298,6 +298,13 @@ def _build_swap_roundtrip():
     return qc
 
 
+def _build_iswap_roundtrip():
+    """Qrisp circuit with ISWAP."""
+    qc = QuantumCircuit(2)
+    qc.iswap(0, 1)
+    return qc
+
+
 def _build_mixed_roundtrip():
     """Qrisp circuit mixing single-qubit, two-qubit, and parametrized gates."""
     qc = QuantumCircuit(4)
@@ -321,7 +328,7 @@ def _build_mixed_roundtrip():
         _build_two_qubit_roundtrip,
         _build_gphase_roundtrip,
         _build_swap_roundtrip,
-        _build_iswap_circ,
+        _build_iswap_roundtrip,
         _build_mixed_roundtrip,
     ],
     ids=[
@@ -524,12 +531,6 @@ def _build_circuit_op_circ():
     q0 = cirq.LineQubit(0)
     inner = cirq.FrozenCircuit([cirq.X(q0)])
     return cirq.Circuit([cirq.CircuitOperation(inner, use_repetition_ids=True)])
-
-
-def _build_iswap_circ():
-    """Cirq circuit with ISWAP."""
-    q0, q1 = cirq.LineQubit.range(2)
-    return cirq.Circuit([cirq.ISWAP(q0, q1)])
 
 
 def test_convert_from_cirq_iswap():
