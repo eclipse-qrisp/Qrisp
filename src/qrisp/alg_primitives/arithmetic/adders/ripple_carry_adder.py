@@ -16,7 +16,7 @@
 """
 
 from qrisp import *
-from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
+from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_adder
 
 
 class RemovedFunctionError(Exception):
@@ -185,7 +185,9 @@ def inpl_add(
             qs.cx(qf2[-1], ancilla_var[i])
 
     if adder == "thapliyal":
-        thapliyal_procedure(qubit_list_2[:-1], qubit_list_1[:-1], qubit_list_1[-1])
+        # Add qf2's bits (a) into qf1's bits (b) in place, routing the carry-out
+        # into qf1's final (sign) qubit via the public adder's c_out slot.
+        thapliyal_adder(qubit_list_2[:-1], qubit_list_1[:-1], c_out=qubit_list_1[-1])
     else:
         raise Exception("Adder " + adder + " not implemented")
 

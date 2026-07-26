@@ -50,62 +50,14 @@ def _tr_gate(a, b, c):
         _tr_gate_body(a, b, c)
 
 
-def thapliyal_procedure(qubit_list_1, qubit_list_2, output_qubit):
-    """Apply the 6-step Thapliyal ripple procedure (arXiv:1712.02630) to raw
-    qubit lists, using free-function primitives (cx/mcx/_tr_gate) and jrange so the
-    loop bounds may be traced values, making it usable in both static and dynamic
-    (Jasp) mode. This is the low-level helper that inpl_add drives directly;
-    thapliyal_adder wraps it with the full size-handling / c_in / c_out / ctrl API.
-
-    qubit_list_1 and qubit_list_2 must have equal length; the loop count is derived
-    from qubit_list_1 via jlen (works for both static lists and traced sizes), the
-    same way cuccaro_adder derives its own register size.
-
-    Descending loops (steps 2 and 4) are rewritten as forward jrange loops with a
-    computed index, mirroring the UMA-reversal pattern in cuccaro_adder.
-
-    """
-    n = jlen(qubit_list_1)
-
-    # Step 1
-    for i in jrange(1, n):
-        cx(qubit_list_1[i], qubit_list_2[i])
-
-    # Step 2
-    cx(qubit_list_1[-1], output_qubit)
-
-    for j in jrange(n - 2):
-        i = n - 2 - j
-        cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 3
-    for i in jrange(n - 1):
-        mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
-
-    # Step 4
-    _tr_gate(qubit_list_1[-1], qubit_list_2[-1], output_qubit)
-
-    for j in jrange(n - 1):
-        i = n - 2 - j
-        _tr_gate(qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1])
-
-    # Step 5
-    for i in jrange(1, n - 1):
-        cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 6
-    for i in jrange(1, n):
-        cx(qubit_list_1[i], qubit_list_2[i])
-
-
 def _uncompute_thapliyal_carry(a, b, carry_qubit):
     """Zeroes carry_qubit, given carry_qubit currently holds (a > b) as an unsigned,
-    equal-bit-length comparison (this is what thapliyal_procedure leaves behind in
+    equal-bit-length comparison (this is what the ripple procedure leaves behind in
     its output_qubit once a is restored and b holds the final sum). a and b are left
     unmodified.
 
     Unlike cuccaro_adder's carry-out (a non-destructive tap on a self-restoring wire),
-    thapliyal_procedure's output_qubit is a genuinely exposed wire with no built-in
+    the Thapliyal output_qubit is a genuinely exposed wire with no built-in
     undo step. This recomputes the same boolean value independently via a scratch
     comparison (same trick as uint_qq_less_than in uint_clifford_t_comparisons.py,
     using gidney_adder as the reversible scratch arithmetic since, unlike
@@ -127,8 +79,8 @@ def _uncompute_thapliyal_carry(a, b, carry_qubit):
 
 @custom_control
 def thapliyal_adder(
-    a: int | QuantumVariable,
-    b: QuantumVariable,
+    a: int | QuantumVariable | list,
+    b: QuantumVariable | list,
     c_in: QuantumBool | Qubit | None = None,
     c_out: QuantumBool | Qubit | None = None,
     ctrl: QuantumBool | None = None,
@@ -148,7 +100,7 @@ def thapliyal_adder(
 
     Parameters
     ----------
-    a : int or QuantumVariable
+    a : int, QuantumVariable or list[Qubit]
         The value that should be added.
     b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
@@ -186,8 +138,10 @@ def thapliyal_adder(
     {9: 1.0}
 
     """
-    # convert the classical input to a quantum input
-    if not isinstance(a, QuantumVariable):
+    # convert the classical input to a quantum input. A raw list[Qubit] counts as
+    # a quantum register (this is how inpl_add drives the adder), so only genuine
+    # classical scalars fall through to the encoder branch below.
+    if not isinstance(a, (QuantumVariable, list)):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = b.duplicate()
 
@@ -199,13 +153,15 @@ def thapliyal_adder(
         q_a.delete()
         return
 
-    if not isinstance(b, QuantumVariable):
+    if not isinstance(b, (QuantumVariable, list)):
         raise ValueError("The second argument must be of type QuantumVariable.")
 
     # when the inputs are of unequal length
-    # pad the size of the input with the smaller size
-    dim_a = a.size
-    dim_b = b.size
+    # pad the size of the input with the smaller size. Register sizes come from
+    # .size for a QuantumVariable and jlen for a raw qubit list (jlen handles both
+    # static lists and traced sizes).
+    dim_a = a.size if isinstance(a, QuantumVariable) else jlen(a)
+    dim_b = b.size if isinstance(b, QuantumVariable) else jlen(b)
 
     # reduce the size of a to the size of b if a is larger than b
     effective_size_a = jnp.minimum(dim_a, dim_b)
@@ -269,7 +225,44 @@ def thapliyal_adder(
             x(v_a0[0])
             cx(c_in, v_b0[0])
 
-        thapliyal_procedure(a_qubits, b, output_qubit)
+        # --- 6-step Thapliyal ripple (arXiv:1712.02630) ---
+        # a_qubits and b have equal length; the loop count is derived from a_qubits
+        # via jlen (works for both static lists and traced sizes), the same way
+        # cuccaro_adder derives its own register size. Descending loops (steps 2 and
+        # 4) are rewritten as forward jrange loops with a computed index, mirroring
+        # the UMA-reversal pattern in cuccaro_adder.
+        n = jlen(a_qubits)
+
+        # Step 1
+        for i in jrange(1, n):
+            cx(a_qubits[i], b[i])
+
+        # Step 2
+        cx(a_qubits[-1], output_qubit)
+
+        for j in jrange(n - 2):
+            i = n - 2 - j
+            cx(a_qubits[i], a_qubits[i + 1])
+
+        # Step 3
+        for i in jrange(n - 1):
+            mcx([a_qubits[i], b[i]], a_qubits[i + 1])
+
+        # Step 4
+        _tr_gate(a_qubits[-1], b[-1], output_qubit)
+
+        for j in jrange(n - 1):
+            i = n - 2 - j
+            _tr_gate(a_qubits[i], b[i], a_qubits[i + 1])
+
+        # Step 5
+        for i in jrange(1, n - 1):
+            cx(a_qubits[i], a_qubits[i + 1])
+
+        # Step 6
+        for i in jrange(1, n):
+            cx(a_qubits[i], b[i])
+
         if output_anc is not None:
             # output_qubit now holds the carry-out (a > b); since it's not
             # exposed via c_out, zero it back out so it can be deleted (see
