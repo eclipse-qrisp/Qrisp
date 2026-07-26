@@ -31,7 +31,7 @@ from qrisp.qtypes import QuantumBool
 # Adder based on https://arxiv.org/abs/1712.02630
 
 
-def _tr_gate(a, b, c):
+def _tr_gate(a: Qubit, b: Qubit, c: Qubit) -> None:
     """TR gate, as proposed in arXiv:1712.02630 (Section 3).
 
     (A, B, C) -> (A, A^B, A*(~B)^C). Used directly in the with-input-carry adder
@@ -50,7 +50,7 @@ def _tr_gate(a, b, c):
         rx(np.pi / 2, c)
 
 
-def _peres_gate(a, b, c):
+def _peres_gate(a: Qubit, b: Qubit, c: Qubit) -> None:
     """Peres gate: (A, B, C) -> (A, A^B, A*B^C).
 
     Step 4 of the ripple procedure (Section 4 of arXiv:1712.02630, "Methodology 1:
@@ -63,7 +63,7 @@ def _peres_gate(a, b, c):
         _tr_gate(a, b, c)
 
 
-def thapliyal_procedure(qubit_list_1, qubit_list_2, output_qubit):
+def thapliyal_procedure(qubit_list_1: list[Qubit], qubit_list_2: list[Qubit], output_qubit: Qubit) -> None:
     """Apply the 6-step Thapliyal ripple procedure (arXiv:1712.02630) to raw
     qubit lists, using free-function primitives (cx/mcx/_peres_gate) and jrange so the
     loop bounds may be traced values, making it usable in both static and dynamic
@@ -111,7 +111,7 @@ def thapliyal_procedure(qubit_list_1, qubit_list_2, output_qubit):
         cx(qubit_list_1[i], qubit_list_2[i])
 
 
-def _uncompute_thapliyal_carry(a, b, carry_qubit):
+def _uncompute_thapliyal_carry(a: list[Qubit], b: QuantumVariable | list[Qubit], carry_qubit: Qubit) -> None:
     """Zeroes carry_qubit, given carry_qubit currently holds (a > b) as an unsigned,
     equal-bit-length comparison (this is what the ripple procedure leaves behind in
     its output_qubit once a is restored and b holds the final sum). a and b are left
@@ -128,7 +128,7 @@ def _uncompute_thapliyal_carry(a, b, carry_qubit):
     """
     comparison_anc = QuantumBool()
 
-    def inv_gidney(x, y):
+    def inv_gidney(x: list[Qubit], y: list[Qubit]) -> None:
         with invert():
             gidney_adder(x, y)
 
