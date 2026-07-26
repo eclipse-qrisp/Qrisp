@@ -32,7 +32,12 @@ from qrisp.qtypes import QuantumBool
 
 
 def _tr_gate(a, b, c):
-    # TR gate (arXiv:1712.02630): (A, B, C) -> (A, A^B, A*(~B)^C).
+    """TR gate, as proposed in arXiv:1712.02630 (Section 3).
+
+    (A, B, C) -> (A, A^B, A*(~B)^C). Used directly in the with-input-carry adder
+    design (not implemented here); in the no-input-carry design implemented by this
+    module, its inverse is used instead (see _peres_gate).
+    """
     with control(b):
         rx(-np.pi / 2, c)
     p(-np.pi / 4, b)
@@ -46,9 +51,14 @@ def _tr_gate(a, b, c):
 
 
 def _peres_gate(a, b, c):
-    # Peres gate (arXiv:1712.02630): (A, B, C) -> (A, A^B, A*B^C). Step 4 of the
-    # adder calls for the Peres gate, which is the inverse of the TR gate (the paper
-    # states the two are inverses of each other), so we invert _tr_gate here.
+    """Peres gate: (A, B, C) -> (A, A^B, A*B^C).
+
+    Step 4 of the ripple procedure (Section 4 of arXiv:1712.02630, "Methodology 1:
+    Reversible Adder Circuit With No Input Carry") calls for the Peres gate. The
+    paper states the TR and Peres gates are inverse of each other (Section 3), so
+    this is implemented as invert(_tr_gate) rather than as its own gate
+    decomposition.
+    """
     with invert():
         _tr_gate(a, b, c)
 

@@ -351,8 +351,7 @@ def _mk_add_cout_qq(c_in_val):
 
 
 def _mk_add_ctrl(c_in_val, use_kwarg, ctrl_val):
-    """c_in_val: 0 or 1.  use_kwarg: bool — ctrl= vs with control().  ctrl_val: 0 or
-    1 — when 0 the addition must be a no-op."""
+    """c_in_val, ctrl_val: 0 or 1.  use_kwarg: ctrl= vs with control().  ctrl_val=0 -> no-op."""
 
     @jaspify
     def add(N, L, j, k):
@@ -377,8 +376,7 @@ def _mk_add_ctrl(c_in_val, use_kwarg, ctrl_val):
 
 
 def _mk_add_ctrl_qubit(c_in_val, use_kwarg, ctrl_val):
-    """c_in_val: 0 or 1; c_in is a bare Qubit.  use_kwarg: bool — ctrl= vs with
-    control().  ctrl_val: 0 or 1 — when 0 the addition must be a no-op."""
+    """Like _mk_add_ctrl but c_in is a bare Qubit.  ctrl_val=0 -> no-op."""
 
     @jaspify
     def add(N, L, j, k):
@@ -404,8 +402,7 @@ def _mk_add_ctrl_qubit(c_in_val, use_kwarg, ctrl_val):
 
 
 def _mk_add_cout_ctrl(c_in_val, ctrl_val):
-    """c_in_val: 0 or 1.  c_out and ctrl together.  ctrl_val: 0 or 1 — when 0 the
-    addition must be a no-op and c_out must stay |0>."""
+    """c_in_val, ctrl_val: 0 or 1.  c_out and ctrl together.  ctrl_val=0 -> no-op (c_out stays |0>)."""
 
     @jaspify
     def add(L, j, k):
