@@ -31,7 +31,8 @@ from qrisp.qtypes import QuantumBool
 # Adder based on https://arxiv.org/abs/1712.02630
 
 
-def _tr_gate_body(a, b, c):
+def _tr_gate(a, b, c):
+    # TR gate (arXiv:1712.02630): (A, B, C) -> (A, A^B, A*(~B)^C).
     with control(b):
         rx(-np.pi / 2, c)
     p(-np.pi / 4, b)
@@ -44,10 +45,12 @@ def _tr_gate_body(a, b, c):
         rx(np.pi / 2, c)
 
 
-def _tr_gate(a, b, c):
-    # Error in Thapliyal paper? Doesn't work if there is no inverse here
+def _peres_gate(a, b, c):
+    # Peres gate (arXiv:1712.02630): (A, B, C) -> (A, A^B, A*B^C). Step 4 of the
+    # adder calls for the Peres gate, which is the inverse of the TR gate (the paper
+    # states the two are inverses of each other), so we invert _tr_gate here.
     with invert():
-        _tr_gate_body(a, b, c)
+        _tr_gate(a, b, c)
 
 
 def _uncompute_thapliyal_carry(a, b, carry_qubit):
@@ -248,12 +251,12 @@ def thapliyal_adder(
         for i in jrange(n - 1):
             mcx([a_qubits[i], b[i]], a_qubits[i + 1])
 
-        # Step 4
-        _tr_gate(a_qubits[-1], b[-1], output_qubit)
+        # Step 4 (Peres gate, per the paper)
+        _peres_gate(a_qubits[-1], b[-1], output_qubit)
 
         for j in jrange(n - 1):
             i = n - 2 - j
-            _tr_gate(a_qubits[i], b[i], a_qubits[i + 1])
+            _peres_gate(a_qubits[i], b[i], a_qubits[i + 1])
 
         # Step 5
         for i in jrange(1, n - 1):
