@@ -63,6 +63,54 @@ def _peres_gate(a, b, c):
         _tr_gate(a, b, c)
 
 
+def thapliyal_procedure(qubit_list_1, qubit_list_2, output_qubit):
+    """Apply the 6-step Thapliyal ripple procedure (arXiv:1712.02630) to raw
+    qubit lists, using free-function primitives (cx/mcx/_peres_gate) and jrange so the
+    loop bounds may be traced values, making it usable in both static and dynamic
+    (Jasp) mode. thapliyal_adder drives this helper, wrapping it with the full
+    size-handling / c_in / c_out / ctrl API.
+
+    qubit_list_1 and qubit_list_2 must have equal length; the loop count is derived
+    from qubit_list_1 via jlen (works for both static lists and traced sizes), the
+    same way cuccaro_adder derives its own register size.
+
+    Descending loops (steps 2 and 4) are rewritten as forward jrange loops with a
+    computed index, mirroring the UMA-reversal pattern in cuccaro_adder.
+
+    """
+    n = jlen(qubit_list_1)
+
+    # Step 1
+    for i in jrange(1, n):
+        cx(qubit_list_1[i], qubit_list_2[i])
+
+    # Step 2
+    cx(qubit_list_1[-1], output_qubit)
+
+    for j in jrange(n - 2):
+        i = n - 2 - j
+        cx(qubit_list_1[i], qubit_list_1[i + 1])
+
+    # Step 3
+    for i in jrange(n - 1):
+        mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
+
+    # Step 4 (Peres gate, per the paper)
+    _peres_gate(qubit_list_1[-1], qubit_list_2[-1], output_qubit)
+
+    for j in jrange(n - 1):
+        i = n - 2 - j
+        _peres_gate(qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1])
+
+    # Step 5
+    for i in jrange(1, n - 1):
+        cx(qubit_list_1[i], qubit_list_1[i + 1])
+
+    # Step 6
+    for i in jrange(1, n):
+        cx(qubit_list_1[i], qubit_list_2[i])
+
+
 def _uncompute_thapliyal_carry(a, b, carry_qubit):
     """Zeroes carry_qubit, given carry_qubit currently holds (a > b) as an unsigned,
     equal-bit-length comparison (this is what the ripple procedure leaves behind in
@@ -238,44 +286,7 @@ def thapliyal_adder(
             x(v_a0[0])
             cx(c_in, v_b0[0])
 
-        # --- 6-step Thapliyal ripple (arXiv:1712.02630) ---
-        # a_qubits and b have equal length; the loop count is derived from a_qubits
-        # via jlen (works for both static lists and traced sizes), the same way
-        # cuccaro_adder derives its own register size. Descending loops (steps 2 and
-        # 4) are rewritten as forward jrange loops with a computed index, mirroring
-        # the UMA-reversal pattern in cuccaro_adder.
-        n = jlen(a_qubits)
-
-        # Step 1
-        for i in jrange(1, n):
-            cx(a_qubits[i], b[i])
-
-        # Step 2
-        cx(a_qubits[-1], output_qubit)
-
-        for j in jrange(n - 2):
-            i = n - 2 - j
-            cx(a_qubits[i], a_qubits[i + 1])
-
-        # Step 3
-        for i in jrange(n - 1):
-            mcx([a_qubits[i], b[i]], a_qubits[i + 1])
-
-        # Step 4 (Peres gate, per the paper)
-        _peres_gate(a_qubits[-1], b[-1], output_qubit)
-
-        for j in jrange(n - 1):
-            i = n - 2 - j
-            _peres_gate(a_qubits[i], b[i], a_qubits[i + 1])
-
-        # Step 5
-        for i in jrange(1, n - 1):
-            cx(a_qubits[i], a_qubits[i + 1])
-
-        # Step 6
-        for i in jrange(1, n):
-            cx(a_qubits[i], b[i])
-
+        thapliyal_procedure(a_qubits, b, output_qubit)
         if output_anc is not None:
             # output_qubit now holds the carry-out (a > b); since it's not
             # exposed via c_out, zero it back out so it can be deleted (see
