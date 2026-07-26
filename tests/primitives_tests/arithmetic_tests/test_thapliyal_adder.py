@@ -350,8 +350,9 @@ def _mk_add_cout_qq(c_in_val):
     return add
 
 
-def _mk_add_ctrl(c_in_val, use_kwarg):
-    """c_in_val: 0 or 1.  use_kwarg: bool — ctrl= vs with control()."""
+def _mk_add_ctrl(c_in_val, use_kwarg, ctrl_val):
+    """c_in_val: 0 or 1.  use_kwarg: bool — ctrl= vs with control().  ctrl_val: 0 or
+    1 — when 0 the addition must be a no-op."""
 
     @jaspify
     def add(N, L, j, k):
@@ -360,7 +361,8 @@ def _mk_add_ctrl(c_in_val, use_kwarg):
         A[:] = j
         B[:] = k
         qbl = QuantumBool()
-        qbl.flip()  # ctrl is always |1>
+        if ctrl_val:
+            qbl.flip()
         c_in = QuantumBool()
         if c_in_val:
             c_in.flip()
@@ -374,8 +376,9 @@ def _mk_add_ctrl(c_in_val, use_kwarg):
     return add
 
 
-def _mk_add_ctrl_qubit(c_in_val, use_kwarg):
-    """c_in_val: 0 or 1; c_in is a bare Qubit.  use_kwarg: bool — ctrl= vs with control()."""
+def _mk_add_ctrl_qubit(c_in_val, use_kwarg, ctrl_val):
+    """c_in_val: 0 or 1; c_in is a bare Qubit.  use_kwarg: bool — ctrl= vs with
+    control().  ctrl_val: 0 or 1 — when 0 the addition must be a no-op."""
 
     @jaspify
     def add(N, L, j, k):
@@ -384,7 +387,8 @@ def _mk_add_ctrl_qubit(c_in_val, use_kwarg):
         A[:] = j
         B[:] = k
         qbl = QuantumBool()
-        qbl.flip()  # ctrl is always |1>
+        if ctrl_val:
+            qbl.flip()
         qv = QuantumVariable(1)
         c_in = qv[0]
         if c_in_val:
@@ -399,8 +403,9 @@ def _mk_add_ctrl_qubit(c_in_val, use_kwarg):
     return add
 
 
-def _mk_add_cout_ctrl(c_in_val):
-    """c_in_val: 0 or 1.  c_out and ctrl together, ctrl is always |1>."""
+def _mk_add_cout_ctrl(c_in_val, ctrl_val):
+    """c_in_val: 0 or 1.  c_out and ctrl together.  ctrl_val: 0 or 1 — when 0 the
+    addition must be a no-op and c_out must stay |0>."""
 
     @jaspify
     def add(L, j, k):
@@ -413,7 +418,8 @@ def _mk_add_cout_ctrl(c_in_val):
             c_in.flip()
         c_out = QuantumBool()
         ctrl = QuantumBool()
-        ctrl.flip()
+        if ctrl_val:
+            ctrl.flip()
         thapliyal_adder(A, B, c_in=c_in, c_out=c_out, ctrl=ctrl)
         return measure(A), measure(B), measure(c_out)
 
@@ -528,14 +534,19 @@ def _run_ctrl_exhaustive():
     # non-ctrl basic/cin/cout tests above.
     for c_in_val in (0, 1):
         for use_kwarg in (False, True):
-            add = _mk_add_ctrl(c_in_val, use_kwarg)
-            for N in (2,):
-                for L in (2,):
-                    for j in range(1 << N):
-                        for k in range(1 << L):
-                            A, B = add(N, L, j, k)
-                            assert A == j
-                            assert B == (k + j + c_in_val) % (1 << L)
+            for ctrl_val in (0, 1):
+                add = _mk_add_ctrl(c_in_val, use_kwarg, ctrl_val)
+                for N in (2,):
+                    for L in (2,):
+                        for j in range(1 << N):
+                            for k in range(1 << L):
+                                A, B = add(N, L, j, k)
+                                assert A == j
+                                # ctrl off -> addition is a no-op (B unchanged)
+                                if ctrl_val:
+                                    assert B == (k + j + c_in_val) % (1 << L)
+                                else:
+                                    assert B == k
 
 
 def test_thapliyal_adder_ctrl_dynamic():
@@ -545,14 +556,19 @@ def test_thapliyal_adder_ctrl_dynamic():
 def _run_ctrl_qubit_exhaustive():
     for c_in_val in (0, 1):
         for use_kwarg in (False, True):
-            add = _mk_add_ctrl_qubit(c_in_val, use_kwarg)
-            for N in (2,):
-                for L in (2,):
-                    for j in range(1 << N):
-                        for k in range(1 << L):
-                            A, B = add(N, L, j, k)
-                            assert A == j
-                            assert B == (k + j + c_in_val) % (1 << L)
+            for ctrl_val in (0, 1):
+                add = _mk_add_ctrl_qubit(c_in_val, use_kwarg, ctrl_val)
+                for N in (2,):
+                    for L in (2,):
+                        for j in range(1 << N):
+                            for k in range(1 << L):
+                                A, B = add(N, L, j, k)
+                                assert A == j
+                                # ctrl off -> addition is a no-op (B unchanged)
+                                if ctrl_val:
+                                    assert B == (k + j + c_in_val) % (1 << L)
+                                else:
+                                    assert B == k
 
 
 def test_thapliyal_adder_ctrl_qubit_dynamic():
@@ -561,15 +577,21 @@ def test_thapliyal_adder_ctrl_qubit_dynamic():
 
 def _run_cout_ctrl_exhaustive():
     for c_in_val in (0, 1):
-        add = _mk_add_cout_ctrl(c_in_val)
-        for L in (2,):
-            for j in range(1 << L):
-                for k in range(1 << L):
-                    total = k + j + c_in_val
-                    A_res, B_res, cout = add(L, j, k)
-                    assert A_res == j
-                    assert B_res == total % (1 << L)
-                    assert cout == (total >= (1 << L))
+        for ctrl_val in (0, 1):
+            add = _mk_add_cout_ctrl(c_in_val, ctrl_val)
+            for L in (2,):
+                for j in range(1 << L):
+                    for k in range(1 << L):
+                        total = k + j + c_in_val
+                        A_res, B_res, cout = add(L, j, k)
+                        assert A_res == j
+                        if ctrl_val:
+                            assert B_res == total % (1 << L)
+                            assert cout == (total >= (1 << L))
+                        else:
+                            # ctrl off -> no-op: B unchanged and c_out stays |0>
+                            assert B_res == k
+                            assert not cout
 
 
 def test_thapliyal_adder_cout_ctrl_dynamic():
