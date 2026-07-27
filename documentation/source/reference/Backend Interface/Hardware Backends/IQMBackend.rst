@@ -10,7 +10,7 @@ Qrisp backend for executing circuits on IQM quantum hardware.
 Install with ``pip install qrisp[iqm]``.
 
 Full API documentation:
-`IQMBackend <https://docs.iqm.tech/iqm-client/api/qrisp_iqm/iqm.qrisp_iqm.backends.IQMBackend.html>`_
+`IQMBackend <https://docs.iqm.tech/sdk4_6/iqm-client/api/qrisp_iqm/iqm.qrisp_iqm.backends.IQMBackend.html>`_
 
 Quickstart
 ----------
