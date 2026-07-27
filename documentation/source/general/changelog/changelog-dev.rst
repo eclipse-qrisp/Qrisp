@@ -85,6 +85,9 @@ Dependency Upgrades
 * Replaced pinned IQM dependencies with ``iqm-client[qrisp]`` in the
   ``iqm`` optional dependency group.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+  
+* Bumped ``actions/setup-python`` from 6 to 7
+  (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
 
 .. Add dependency upgrades above this line
 
