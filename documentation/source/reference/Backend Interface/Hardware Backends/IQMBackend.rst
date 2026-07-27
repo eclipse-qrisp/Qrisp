@@ -1,5 +1,3 @@
-.. _IQMBackend:
-
 IQMBackend
 ==========
 
@@ -21,7 +19,8 @@ Quickstart
 
    backend = IQMBackend(
        token="YOUR_API_TOKEN",
-       device_instance="garnet"
+       device_instance="garnet",
+       server_url="https://resonance.iqm.tech/"
    )
 
    from qrisp import QuantumCircuit
