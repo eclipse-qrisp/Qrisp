@@ -47,12 +47,7 @@ dependencies = [
 aqt = ["qiskit-aqt-provider>=1.15.0"]
 qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
 iqm = [
-    "iqm-client[qiskit]>=33.0.3,<34.0.0",
-    "iqm-pulse<13.0",
-    "iqm-station-control-client==12.0.5",
-    "iqm-exa-common==27.5.4",
-    "opentelemetry-exporter-otlp==1.27.0",
-    "iqm-data-definitions==2.22",
+    "iqm-client[qrisp]"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
@@ -81,6 +76,7 @@ dev-testing = [
     "pyscf",
     "cirq",
     "tqecd",
+    "iqm-client[qrisp]",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
