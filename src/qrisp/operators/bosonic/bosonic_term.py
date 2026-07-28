@@ -19,6 +19,7 @@
 # BosonicTerm
 #
 import numpy as np
+import warnings
 
 from qrisp.operators.fermionic.visualization import a_, c_
 from qrisp.operators.qubit import A, C, Z, P0, P1
@@ -169,16 +170,30 @@ class BosonicTerm:
         For their embedding into qubits, an arbitrary binary encoding can be chosen,
         but the Gray encoding appears tailor-made for the structure of ladder operators.
         """
-        if not np.isclose(np.log2(truncation)%1, 0):
-            raise Warning("truncation is not a power of 2, could be chosen larger with same amount of qubits.")
+        if not np.isclose(np.log2(truncation)%1, 0) and binary_encoding != "one_hot":
+            warnings.warn("truncation is not a power of 2, could be chosen larger with same amount of qubits.")
         if binary_encoding == "gray_code":
             encoder = gray_code
+        elif binary_encoding == "standard_binary":
+            encoder = standard_binary
+        elif binary_encoding == "one_hot":
+            encoder = one_hot
         else:
             raise Exception(f"Don't know binary encoding type {binary_encoding}")
+            
+        gate_mapping = {
+                (0, 0): P0,
+                (1, 1): P1,
+                (0, 1): A,
+                (1, 0): C
+            }
         
-        indices_present = set([x[0] for x in ladder_list])
+        indices_present = set([x[0] for x in self.ladder_list])
         
-        n_qubits = int(np.log2(truncation)) + 1
+        if binary_encoding != "one_hot":
+            n_qubits = int(np.ceil(np.log2(truncation)))
+        else:
+            n_qubits = truncation
         
         binary_rep = encoder(n_qubits)
         
@@ -198,17 +213,12 @@ class BosonicTerm:
             for i in range(truncation):
                 for j in range(truncation):
                     if not np.isclose(M[i][j], 0.):
+                        temp2 = 1
                         for k in range(n_qubits):
                             c1, c2 = binary_rep[i][k], binary_rep[j][k]
-                            qb_ind = ind*n_qubits+k
-                            if (c1, c2) == (0, 0):
-                                temp += M[i][j] * P0(qb_ind)
-                            elif (c1, c2) == (1, 1):
-                                temp += M[i][j] * P1(qb_ind)
-                            elif (c1, c2) == (0, 1):
-                                temp += M[i][j] * A(qb_ind)
-                            elif (c1, c2) == (1, 0):
-                                temp += M[i][j] * C(qb_ind)
+                            qb_ind = ind*n_qubits + k
+                            temp2 *= gate_mapping[(c1, c2)](qb_ind)
+                        temp += M[i][j] * temp2
             
             res *= temp
       
@@ -228,7 +238,7 @@ def c_matrix(N):
             k=-1
         ).astype(complex)
 
-#Compute the Gray code
+#Return the Gray code
 def gray_code(n):
     code = []
     for i in range(n):
@@ -243,3 +253,17 @@ def gray_code(n):
         code.append(temp)
 
     return np.transpose(np.asarray(code)).tolist()
+    
+#Return standard binary
+def standard_binary(n):
+    code = []
+    for i in range(2**n):
+        code.append([int(x) for x in bin(i)[:1:-1].ljust(n,'0')])
+    return code
+
+#Return one-hot encoding
+def one_hot(n):
+    code = []
+    for i in range(n):
+        code.append(i*[0] + [1] + (n-i-1)*[0]) 
+    return code
