@@ -17,7 +17,8 @@
 
 from jax.core import AbstractValue, ShapedArray, Tracer
 
-from qrisp.jasp.primitives import AbstractQubit, QuantumPrimitive
+from qrisp.jasp.primitives.abstract_qubit import AbstractQubit
+from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 get_qubit_p = QuantumPrimitive("get_qubit")
 get_size_p = QuantumPrimitive("get_size")
@@ -26,6 +27,8 @@ fuse_p = QuantumPrimitive("fuse")
 
 
 class AbstractQubitArray(AbstractValue):
+    """JAX abstract value representing a traced array of qubits."""
+
     def __init__(self):
         self.vma = None
         AbstractValue.__init__(self)
@@ -49,38 +52,42 @@ class AbstractQubitArray(AbstractValue):
                 stop = get_size(tracer) - 1
 
             return slice_qb_array(tracer, start, stop)
-        else:
-            id_tuple = (id(tracer), id(key))
-            from qrisp.jasp import TracingQuantumSession
 
-            qs = TracingQuantumSession.get_instance()
-            if id_tuple not in qs.qubit_cache:
-                from qrisp.jasp import get_qubit
+        id_tuple = (id(tracer), id(key))
+        # Deferred import: qrisp.jasp.tracing_logic is loaded after
+        # qrisp.jasp.primitives, so this can't be a top-level import.
+        from qrisp.jasp import TracingQuantumSession
 
-                qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
-            return qs.qubit_cache[id_tuple]
+        qs = TracingQuantumSession.get_instance()
+        if id_tuple not in qs.qubit_cache:
+            qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
+        return qs.qubit_cache[id_tuple]
 
 
 def get_qubit(qb_array, index):
+    """Bind the get_qubit primitive."""
     if not isinstance(index, (Tracer, int)):
         index = int(index)
     return get_qubit_p.bind(qb_array, index)
 
 
 def get_size(qb_array):
+    """Bind the get_size primitive."""
     return get_size_p.bind(qb_array)
 
 
 def slice_qb_array(qb_array, start, stop):
+    """Bind the slice primitive."""
     return slice_p.bind(qb_array, start, stop)
 
 
 def fuse_qb_array(qb_array_0, qb_array_1):
+    """Bind the fuse primitive."""
     return fuse_p.bind(qb_array_0, qb_array_1)
 
 
 @get_qubit_p.def_abstract_eval
-def get_qubit_abstract_eval(qb_array, index):
+def get_qubit_abstract_eval(_qb_array, _index):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -96,7 +103,7 @@ def get_qubit_abstract_eval(qb_array, index):
 
 
 @get_size_p.def_abstract_eval
-def get_size_abstract_eval(qb_array):
+def get_size_abstract_eval(_qb_array):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -112,7 +119,7 @@ def get_size_abstract_eval(qb_array):
 
 
 @slice_p.def_abstract_eval
-def get_slice_abstract_eval(qb_array, start, stop):
+def get_slice_abstract_eval(_qb_array, _start, _stop):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -129,7 +136,7 @@ def get_slice_abstract_eval(qb_array, start, stop):
 
 @fuse_p.def_abstract_eval
 def fuse_abstract_eval(arg_0, arg_1):
-
+    """Abstract evaluation of the fuse primitive."""
     if not isinstance(arg_0, (AbstractQubit, AbstractQubitArray)):
         raise Exception(f"Tried to fuse type {type(arg_0)}")
     if not isinstance(arg_1, (AbstractQubit, AbstractQubitArray)):
