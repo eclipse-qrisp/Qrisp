@@ -354,6 +354,11 @@ def extract_post_processing(jaspr, *args):
 
         # Create initial context with static args
         context_dic = ContextDict()
+        # jaxpr-level constants (e.g. array literals like scan's xs, hoisted out
+        # of the traced function) are bound to inner_jaxpr.constvars positionally,
+        # the same convention eval_jaxpr uses in abstract_interpreter.py.
+        for var, val in zip(inner_jaxpr.constvars, consts):
+            context_dic[var] = val
         for var, val in static_value_map.items():
             context_dic[var] = val
 
