@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+import jax.lax
 import jax.numpy as jnp
 
 from qrisp.jasp.interpreter_tools import (
@@ -215,5 +216,123 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
         ys = [jnp.stack(col) for col in ys_collection]
 
     outvalues = list(carry) + ys
+
+    insert_outvalues(scan_eq, context_dic, outvalues)
+
+
+def evaluate_while_loop_under_trace(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn):
+    """
+    Evaluates a JAX while loop equation by reinterpreting the body/condition Jaxprs
+    with the given eqn_evaluator and replaying them via ``jax.lax.while_loop``,
+    preserving the loop structure under an active trace.
+
+    Unlike :func:`evaluate_while_loop`, which unrolls the loop eagerly using concrete
+    Python truthiness (for use outside of tracing mode), this function is meant to be
+    called *while* the interpreter itself is being traced (e.g. to compile a profiling
+    metric, or to build a post-processing Jaxpr) -- the resulting while_loop primitive
+    is a real traced JAX operation.
+
+    Args:
+        while_loop_eqn (jax.core.JaxprEqn): The equation representing the while loop.
+        context_dic (dict): Dictionary mapping variables to their values.
+        eqn_evaluator (function, optional): Function to evaluate equations within the
+                                            body/condition Jaxprs. Defaults to exec_eqn.
+    """
+
+    invalues = extract_invalues(while_loop_eqn, context_dic)
+
+    body_jaxpr = while_loop_eqn.params["body_jaxpr"]
+    cond_jaxpr = while_loop_eqn.params["cond_jaxpr"]
+    body_nconsts = while_loop_eqn.params["body_nconsts"]
+    cond_nconsts = while_loop_eqn.params["cond_nconsts"]
+    overall_constant_amount = body_nconsts + cond_nconsts
+
+    body_eval = eval_jaxpr(body_jaxpr, eqn_evaluator=eqn_evaluator)
+    cond_eval = eval_jaxpr(cond_jaxpr, eqn_evaluator=eqn_evaluator)
+
+    def body_fun(val):
+        constants = val[cond_nconsts:overall_constant_amount]
+        carries = val[overall_constant_amount:]
+        body_res = body_eval(*(constants + carries))
+        body_res = body_res if isinstance(body_res, tuple) else (body_res,)
+        return val[:overall_constant_amount] + body_res
+
+    def cond_fun(val):
+        constants = val[:cond_nconsts]
+        carries = val[overall_constant_amount:]
+        return cond_eval(*(constants + carries))
+
+    outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
+
+    insert_outvalues(while_loop_eqn, context_dic, outvalues)
+
+
+def evaluate_scan_under_trace(scan_eq, context_dic, eqn_evaluator=exec_eqn):
+    """
+    Evaluates a JAX scan equation by reinterpreting the body Jaxpr with the given
+    eqn_evaluator and replaying it via ``jax.lax.scan``, preserving the loop
+    structure under an active trace.
+
+    Unlike :func:`evaluate_scan`, which unrolls the scan eagerly with a plain Python
+    for-loop (for use outside of tracing mode), this function is meant to be called
+    *while* the interpreter itself is being traced -- the resulting scan primitive is
+    a real traced JAX operation.
+
+    Args:
+        scan_eq (jax.core.JaxprEqn): The equation representing the scan operation.
+        context_dic (dict): Dictionary mapping variables to their values.
+        eqn_evaluator (function, optional): Function to evaluate the scanned body
+                                            equation. Defaults to exec_eqn.
+    """
+
+    invalues = extract_invalues(scan_eq, context_dic)
+
+    num_consts = scan_eq.params["num_consts"]
+    num_carry = scan_eq.params["num_carry"]
+    length = scan_eq.params["length"]
+    reverse = scan_eq.params.get("reverse", False)
+    unroll = scan_eq.params.get("unroll", 1)
+
+    consts = invalues[:num_consts]
+    init = invalues[num_consts : num_consts + num_carry]
+    xs = invalues[num_consts + num_carry :]
+
+    scan_body = eval_jaxpr(scan_eq.params["jaxpr"], eqn_evaluator=eqn_evaluator)
+
+    if num_consts > 0:
+
+        def wrapped_body(carry, x):
+            carry_args = list(carry) if isinstance(carry, tuple) else [carry]
+            x_args = list(x) if isinstance(x, tuple) else [x]
+            args = consts + carry_args + x_args
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            new_carry = result[0] if num_carry == 1 else result[:num_carry]
+            return new_carry, result[num_carry:]
+
+    else:
+
+        def wrapped_body(carry, x):
+            carry_args = list(carry) if isinstance(carry, tuple) else [carry]
+            x_args = list(x) if isinstance(x, tuple) else [x]
+            args = carry_args + x_args
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            new_carry = result[0] if num_carry == 1 else result[:num_carry]
+            return new_carry, result[num_carry:]
+
+    xs_arg = xs[0] if len(xs) == 1 else tuple(xs)
+    init_arg = init[0] if len(init) == 1 else tuple(init)
+
+    final_carry, ys = jax.lax.scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+
+    if not isinstance(final_carry, tuple):
+        final_carry = (final_carry,)
+    if not isinstance(ys, tuple):
+        ys = (ys,)
+
+    outvalues = final_carry + ys
 
     insert_outvalues(scan_eq, context_dic, outvalues)

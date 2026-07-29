@@ -26,6 +26,10 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+    evaluate_scan_under_trace,
+    evaluate_while_loop_under_trace,
+)
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
@@ -292,35 +296,7 @@ def extract_post_processing(jaspr, *args):
 
             # Handle while loops
             if eqn.primitive.name == "while":
-                import jax.lax
-
-                invalues = extract_invalues(eqn, context_dic)
-
-                overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
-
-                # Reinterpreted body and cond function
-                def body_fun(val):
-                    constants = val[eqn.params["cond_nconsts"] : overall_constant_amount]
-                    carries = val[overall_constant_amount:]
-
-                    body_res = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=eval_eqn)(*(constants + carries))
-
-                    if not isinstance(body_res, tuple):
-                        body_res = (body_res,)
-
-                    return val[:overall_constant_amount] + tuple(body_res)
-
-                def cond_fun(val):
-                    constants = val[: eqn.params["cond_nconsts"]]
-                    carries = val[overall_constant_amount:]
-
-                    res = eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eval_eqn)(*(constants + carries))
-
-                    return res
-
-                outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
-
-                insert_outvalues(eqn, context_dic, outvalues)
+                evaluate_while_loop_under_trace(eqn, context_dic, eqn_evaluator=eval_eqn)
                 return False
 
             # Handle conditional (cond/switch)
@@ -344,73 +320,7 @@ def extract_post_processing(jaspr, *args):
 
             # Handle scan/map loops
             if eqn.primitive.name == "scan":
-                import jax.lax
-
-                invalues = extract_invalues(eqn, context_dic)
-
-                # Reinterpret the scan body function
-                scan_body = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eval_eqn)
-
-                # Extract scan parameters
-                num_consts = eqn.params["num_consts"]
-                num_carry = eqn.params["num_carry"]
-                length = eqn.params["length"]
-                reverse = eqn.params.get("reverse", False)
-                unroll = eqn.params.get("unroll", 1)
-
-                # Separate inputs
-                consts = invalues[:num_consts]
-                init = invalues[num_consts : num_consts + num_carry]
-                xs = invalues[num_consts + num_carry :]
-
-                # Create a wrapper function that includes constants
-                if num_consts > 0:
-
-                    def wrapped_body(carry, x):
-                        args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
-                        result = scan_body(*args)
-                        if not isinstance(result, tuple):
-                            result = (result,)
-                        return result[:num_carry], result[num_carry:]
-
-                else:
-
-                    def wrapped_body(carry, x):
-                        args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
-                        result = scan_body(*args)
-                        if not isinstance(result, tuple):
-                            result = (result,)
-                        return result[:num_carry], result[num_carry:]
-
-                # Call JAX scan with the reinterpreted body
-                if len(xs) == 1:
-                    xs_arg = xs[0]
-                else:
-                    xs_arg = tuple(xs)
-
-                if len(init) == 1:
-                    init_arg = init[0]
-                else:
-                    init_arg = tuple(init)
-
-                final_carry, ys = jax.lax.scan(
-                    wrapped_body,
-                    init_arg,
-                    xs_arg,
-                    length=length,
-                    reverse=reverse,
-                    unroll=unroll,
-                )
-
-                # Prepare output
-                if not isinstance(final_carry, tuple):
-                    final_carry = (final_carry,)
-                if not isinstance(ys, tuple):
-                    ys = (ys,)
-
-                outvalues = final_carry + ys
-
-                insert_outvalues(eqn, context_dic, outvalues)
+                evaluate_scan_under_trace(eqn, context_dic, eqn_evaluator=eval_eqn)
                 return False
 
             # For other primitives, use default evaluation
