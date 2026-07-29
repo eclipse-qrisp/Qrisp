@@ -286,7 +286,15 @@ def _process_jit_equation(
 
     invalues = extract_invalues(eqn, context_dic)
 
-    # If there are only classical values, we attempt to compile using the jax pipeline
+    # If there are only classical values, we attempt to compile using the jax pipeline.
+    # This is required, not just an optimization: quantum primitives only have real
+    # side effects in their impl rule, which bind() invokes for concrete/eager values.
+    # While jax.jit is tracing (as it does here, via compile_cl_func), bind() instead
+    # invokes abstract_eval, which for every quantum primitive does nothing but a
+    # shape/type check and returns a fresh AbstractQuantumState() -- no interaction
+    # with a BufferedQuantumState at all. So jitting a subgraph that carries a quantum
+    # type across its boundary would silently drop every quantum operation inside it
+    # instead of raising an error, which is why we must rule this out first.
     for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
         if isinstance(
             var.aval,
