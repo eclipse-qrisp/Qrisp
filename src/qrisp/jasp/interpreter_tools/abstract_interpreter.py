@@ -15,7 +15,7 @@
 ********************************************************************************
 """
 
-from typing import Callable, Sequence
+from typing import Any, Callable
 
 import jax.numpy as jnp
 from jax import make_jaxpr
@@ -237,7 +237,7 @@ def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> list:
     return [context_dic[invar] for invar in eqn.invars]
 
 
-def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence) -> None:
+def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Any) -> None:
     """Insert the output values of an equation into the context dictionary.
 
     Parameters
@@ -248,8 +248,9 @@ def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequenc
     context_dic : ContextDict
         The context dictionary where the output values will be stored.
 
-    outvalues : Sequence
-        The output values to be inserted into the context dictionary.
+    outvalues : Any
+        A Sequence of output values (one per eqn.outvars) if the primitive has
+        multiple results; otherwise the single output value itself, of any type.
 
     """
     if eqn.primitive.multiple_results:

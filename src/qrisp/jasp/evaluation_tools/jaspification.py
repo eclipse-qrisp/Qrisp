@@ -19,9 +19,9 @@ from collections.abc import Callable
 from typing import Any, Literal
 
 import jax
-from jax._src.lib.mlir import ir
 from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn
 from jax.tree_util import tree_flatten, tree_unflatten
+from jaxlib.mlir import ir
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit import fast_append
@@ -139,10 +139,14 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
 
     if func is None:
         return lambda x: jaspify(x, terminal_sampling=terminal_sampling)
+    # Narrowed rebinding: pyright doesn't propagate the "func is not None" narrowing
+    # above into the return_function closure below, since it captures func by
+    # reference. Rebinding to a fresh, explicitly-typed name fixes that.
+    checked_func: Callable = func
 
     def return_function(*args) -> Any:
         # Use return_shape=True to capture the output PyTree structure
-        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
+        jaspr, out_tree = make_jaspr(checked_func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
 
         # Reconstruct the PyTree structure from flat results
@@ -159,7 +163,7 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
     return return_function
 
 
-def stimulate(func: Callable | None = None) -> Callable:
+def stimulate(func: Callable) -> Callable:
     """This function leverages the
     `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
     to evaluate a Jasp-traceable function containing only Clifford gates.
@@ -328,7 +332,7 @@ def _process_jit_equation(
 
 
 def simulate_jaspr(
-    jaxpr: Jaxpr | ClosedJaxpr | Jaspr,
+    jaxpr: ClosedJaxpr | Jaspr,
     *args,
     terminal_sampling: bool = False,
     simulator: Literal["qrisp", "stim"] = "qrisp",
