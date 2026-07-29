@@ -49,6 +49,8 @@ from qrisp.jasp import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
     evaluate_scan_under_trace,
+    flatten_signature,
+    unflatten_signature,
 )
 
 greek_letters = symbols(
@@ -619,36 +621,3 @@ def ensure_conversion(jaxpr):
     from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_jaxpr
 
     return jaspr_to_catalyst_jaxpr(jaxpr)
-
-
-def flatten_signature(values, variables):
-    values = list(values)
-    flattened_values = []
-    for i in range(len(variables)):
-        var = variables[i]
-        value = values.pop(0)
-        if isinstance(var.aval, AbstractQuantumState):
-            flattened_values.extend((value[0], *value[1].flatten()[0]))
-        elif isinstance(var.aval, AbstractQubitArray):
-            flattened_values.extend(value.flatten()[0])
-        else:
-            flattened_values.append(value)
-
-    return flattened_values
-
-
-def unflatten_signature(values, variables):
-    values = list(values)
-    unflattened_values = []
-    for var in variables:
-        if isinstance(var.aval, AbstractQuantumState):
-            catalyst_register_tracer = values.pop(0)
-            jlist_tuple = (values.pop(0), values.pop(0))
-            unflattened_values.append((catalyst_register_tracer, Jlist.unflatten([], jlist_tuple)))
-        elif isinstance(var.aval, AbstractQubitArray):
-            jlist_tuple = (values.pop(0), values.pop(0))
-            unflattened_values.append(Jlist.unflatten([], jlist_tuple))
-        else:
-            unflattened_values.append(values.pop(0))
-
-    return unflattened_values

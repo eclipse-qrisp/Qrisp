@@ -27,6 +27,7 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+    evaluate_cond_under_trace,
     evaluate_scan_under_trace,
     evaluate_while_loop_under_trace,
 )
@@ -301,21 +302,7 @@ def extract_post_processing(jaspr, *args):
 
             # Handle conditional (cond/switch)
             if eqn.primitive.name == "cond":
-                import jax.lax
-
-                invalues = extract_invalues(eqn, context_dic)
-
-                # Reinterpret branches
-                branch_list = []
-                for i in range(len(eqn.params["branches"])):
-                    branch_list.append(eval_jaxpr(eqn.params["branches"][i], eqn_evaluator=eval_eqn))
-
-                outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
-
-                if len(eqn.outvars) == 1:
-                    outvalues = (outvalues,)
-
-                insert_outvalues(eqn, context_dic, outvalues)
+                evaluate_cond_under_trace(eqn, context_dic, eqn_evaluator=eval_eqn)
                 return False
 
             # Handle scan/map loops

@@ -16,20 +16,23 @@
 ********************************************************************************
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import jax.lax
 import jax.numpy as jnp
-from jax.extend.core import JaxprEqn
+from jax import Array
+from jax.extend.core import JaxprEqn, Literal, Var
 
 from qrisp.jasp.interpreter_tools import (
     ContextDict,
+    Jlist,
     eval_jaxpr,
     exec_eqn,
     extract_invalues,
     insert_outvalues,
 )
+from qrisp.jasp.primitives import AbstractQuantumState, AbstractQubitArray
 
 
 def evaluate_cond_eqn(cond_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
@@ -234,6 +237,36 @@ def evaluate_scan(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Ca
     insert_outvalues(scan_eq, context_dic, outvalues)
 
 
+def evaluate_cond_under_trace(cond_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
+    """
+    Evaluates a JAX cond equation by reinterpreting each branch Jaxpr with the given
+    eqn_evaluator and replaying it via ``jax.lax.switch``, preserving the branch
+    structure under an active trace.
+
+    Unlike :func:`evaluate_cond_eqn`, which picks and evaluates a single branch eagerly
+    using a concrete Python index (for use outside of tracing mode), this function is
+    meant to be called *while* the interpreter itself is being traced -- the resulting
+    switch primitive is a real traced JAX operation.
+
+    Args:
+        cond_eqn (jax.core.JaxprEqn): The equation representing the conditional.
+        context_dic (dict): Dictionary mapping variables to their values.
+        eqn_evaluator (function, optional): Function to evaluate equations within each
+                                            branch Jaxpr. Defaults to exec_eqn.
+    """
+
+    invalues = extract_invalues(cond_eqn, context_dic)
+
+    branch_fns = [eval_jaxpr(branch_jaxpr, eqn_evaluator=eqn_evaluator) for branch_jaxpr in cond_eqn.params["branches"]]
+
+    # invalues[0] is the branch index/predicate encoding; the remaining invalues
+    # are the operands/carries passed to whichever branch ends up selected.
+    outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
+    outvalues = (outvalues,) if len(cond_eqn.outvars) == 1 else outvalues
+
+    insert_outvalues(cond_eqn, context_dic, outvalues)
+
+
 def evaluate_while_loop_under_trace(
     while_loop_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn
 ) -> None:
@@ -352,3 +385,104 @@ def evaluate_scan_under_trace(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_e
     outvalues = final_carry + ys
 
     insert_outvalues(scan_eq, context_dic, outvalues)
+
+
+# ---------------------------------------------------------------------------
+# Signature flatten/unflatten helpers
+#
+# Shared by catalyst_interpreter.py and cl_func_interpreter.py, which both
+# represent AbstractQuantumState as (state, Jlist) and AbstractQubitArray as a
+# bare Jlist, but need a flat list of plain JAX values wherever they hand
+# operands to a native jax.lax control-flow primitive (switch/while_loop) or
+# jax.jit. The two representations only differ in what "state" is (a packed
+# classical bit array for cl_func, a Catalyst quantum-register tracer for
+# catalyst) -- something this pair of functions never inspects, so the exact
+# same logic serves both.
+# ---------------------------------------------------------------------------
+
+
+def unflatten_signature(values: Sequence[Any], variables: Sequence[Var | Literal]) -> list[Any]:
+    """Convert flattened JAX values back to structured quantum types.
+
+    During JAX tracing, quantum types (AbstractQuantumState, AbstractQubitArray)
+    are flattened into multiple array values. This function reconstructs the
+    original structure.
+
+    Parameters
+    ----------
+    values : Sequence[Any]
+        Flattened sequence of JAX array values (cl_func_interpreter.py's callers
+        pass a tuple, catalyst_interpreter.py's pass a list -- this function
+        converts to a list itself either way, so it doesn't care which).
+    variables : Sequence[Var | Literal]
+        List of JAX variables describing the expected types.
+
+    Returns
+    -------
+    list[Any]
+        List of values with quantum types reconstructed:
+        - AbstractQuantumState -> (state, Jlist)
+        - AbstractQubitArray -> Jlist
+        - Other types -> unchanged
+
+    """
+    # Rebound under a new name: `values` is declared as tuple (its incoming type),
+    # so reassigning it to a list here would conflict with that declared type.
+    remaining_values: list[Any] = list(values)
+    unflattened_values: list[Any] = []
+
+    for var in variables:
+        if isinstance(var.aval, AbstractQuantumState):
+            # Reconstruct (state, free_qubits_jlist) tuple
+            state = remaining_values.pop(0)
+            jlist_tuple = (remaining_values.pop(0), remaining_values.pop(0))
+            unflattened_values.append((state, Jlist.unflatten([], jlist_tuple)))
+        elif isinstance(var.aval, AbstractQubitArray):
+            # Reconstruct Jlist from (array, counter) tuple
+            jlist_tuple = (remaining_values.pop(0), remaining_values.pop(0))
+            unflattened_values.append(Jlist.unflatten([], jlist_tuple))
+        else:
+            # Classical values pass through unchanged
+            unflattened_values.append(remaining_values.pop(0))
+
+    return unflattened_values
+
+
+def flatten_signature(values: list[Any], variables: Sequence[Var | Literal]) -> list[Array]:
+    """Flatten structured quantum types into plain JAX arrays.
+
+    Quantum types need to be flattened for JAX operations like switch and
+    while_loop that expect flat argument lists.
+
+    Parameters
+    ----------
+    values : list[Any]
+        List of values that may include quantum types.
+    variables : Sequence[Var | Literal]
+        List of JAX variables describing the types.
+
+    Returns
+    -------
+    list[Array]
+        Flattened list of JAX arrays:
+        - AbstractQuantumState (state, Jlist) -> [state, array, counter]
+        - AbstractQubitArray Jlist -> [array, counter]
+        - Other types -> unchanged
+
+    """
+    remaining_values = list(values)
+    flattened_values: list[Array] = []
+
+    for var in variables:
+        value = remaining_values.pop(0)
+        if isinstance(var.aval, AbstractQuantumState):
+            # Flatten (state, Jlist) -> [state, jlist.array, jlist.counter]
+            flattened_values.extend((value[0], *value[1].flatten()[0]))
+        elif isinstance(var.aval, AbstractQubitArray):
+            # Flatten Jlist -> [array, counter]
+            flattened_values.extend(value.flatten()[0])
+        else:
+            # Classical values pass through unchanged
+            flattened_values.append(value)
+
+    return flattened_values

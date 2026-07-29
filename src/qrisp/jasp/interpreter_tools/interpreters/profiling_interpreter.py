@@ -48,6 +48,7 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+    evaluate_cond_under_trace,
     evaluate_scan_under_trace,
     evaluate_while_loop_under_trace,
 )
@@ -428,16 +429,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
-            branch_fns = [
-                eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
-                for branch_jaxpr in eqn.params["branches"]
-            ]
-
-            # invalues[0] is the branch index/predicate encoding
-            # remaining invalues are operands/carries passed to the branches
-            outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
-            outvalues = (outvalues,) if len(eqn.outvars) == 1 else outvalues
-            insert_outvalues(eqn, context_dic, outvalues)
+            evaluate_cond_under_trace(eqn, context_dic, eqn_evaluator=profiling_eqn_evaluator)
 
         elif eqn.primitive.name == "while":
             evaluate_while_loop_under_trace(eqn, context_dic, eqn_evaluator=profiling_eqn_evaluator)

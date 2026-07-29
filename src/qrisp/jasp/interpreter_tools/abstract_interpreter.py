@@ -90,8 +90,13 @@ class ContextDict(dict):
         static Jaxpr structure  <-->  dynamic metric-specific semantics
     """
 
-    def __getitem__(self, key):
-        """Override to handle Jaxpr literals and automatic JAX scalar conversion."""
+    def __getitem__(self, key) -> Any:
+        """Override to handle Jaxpr literals and automatic JAX scalar conversion.
+
+        Return type is genuinely Any: values are whatever the active interpreter
+        chose to store for a variable (a Jlist, a tuple, a plain Array, ...), not
+        just the int/float/passthrough cases handled directly in this method.
+        """
         if isinstance(key, Literal):
             res = key.val
         else:
