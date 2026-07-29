@@ -22,21 +22,8 @@ from jax.lax import add_p, sub_p
 from sympy import lambdify
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, extract_invalues, insert_outvalues, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
-
-
-def copy_jaxpr_eqn(eqn):
-    return JaxprEqn(
-        primitive=eqn.primitive,
-        invars=list(eqn.invars),
-        outvars=list(eqn.outvars),
-        params=dict(eqn.params),
-        source_info=eqn.source_info,
-        effects=eqn.effects,
-        ctx=eqn.ctx,
-    )
-
 
 qc_var_count = np.zeros(1, dtype=np.int64)
 
@@ -204,9 +191,7 @@ def invert_jaspr(jaspr):
         jaspr.consts,
     )
 
-    processed_jaxpr = make_jaxpr(eval_jaxpr(temp_jaxpr, eqn_evaluator=eqn_evaluator))(
-        *[invar.aval for invar in jaspr.invars]
-    )
+    processed_jaxpr = reinterpret(temp_jaxpr, eqn_evaluator)
 
     from qrisp.jasp import Jaspr
 

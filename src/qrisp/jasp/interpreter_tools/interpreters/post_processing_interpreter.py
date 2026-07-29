@@ -123,10 +123,12 @@ def extract_post_processing(jaspr, *args):
         QuantumPrimitive,
     )
 
-    # Get the inner jaxpr
-    if isinstance(jaspr.jaxpr, ClosedJaxpr):
-        inner_jaxpr = jaspr.jaxpr.jaxpr
-        consts = jaspr.jaxpr.consts
+    # Get the inner jaxpr. Note: jaspr itself (a Jaspr) is the ClosedJaxpr -- it wraps
+    # a plain, never-closed jax.extend.core.Jaxpr as its own .jaxpr attribute, so the
+    # ClosedJaxpr check and .consts access both have to happen on jaspr, not jaspr.jaxpr.
+    if isinstance(jaspr, ClosedJaxpr):
+        inner_jaxpr = jaspr.jaxpr
+        consts = jaspr.consts
     else:
         inner_jaxpr = jaspr.jaxpr
         consts = []

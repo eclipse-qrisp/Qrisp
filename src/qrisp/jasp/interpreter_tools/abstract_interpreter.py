@@ -265,3 +265,23 @@ def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Any) ->
             context_dic[outvar] = value
     else:
         context_dic[eqn.outvars[0]] = outvalues
+
+
+def copy_jaxpr_eqn(eqn: JaxprEqn) -> JaxprEqn:
+    """Return a new JaxprEqn with the same content as eqn.
+
+    ``JaxprEqn`` is immutable, so IR-rewriting passes that need to swap out an
+    equation's invars/outvars/params in place (rather than mutate the original)
+    construct a fresh copy first. ``invars``/``outvars``/``params`` are copied
+    into new containers so that mutating them on the result (e.g. ``new_eqn =
+    copy_jaxpr_eqn(eqn); new_eqn.invars.pop(0)``) does not alias the original.
+    """
+    return JaxprEqn(
+        primitive=eqn.primitive,
+        invars=list(eqn.invars),
+        outvars=list(eqn.outvars),
+        params=dict(eqn.params),
+        source_info=eqn.source_info,
+        effects=eqn.effects,
+        ctx=eqn.ctx,
+    )
