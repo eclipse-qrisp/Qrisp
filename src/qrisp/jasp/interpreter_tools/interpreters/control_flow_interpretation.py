@@ -16,10 +16,15 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
+from typing import Any
+
 import jax.lax
 import jax.numpy as jnp
+from jax.extend.core import JaxprEqn
 
 from qrisp.jasp.interpreter_tools import (
+    ContextDict,
     eval_jaxpr,
     exec_eqn,
     extract_invalues,
@@ -27,7 +32,7 @@ from qrisp.jasp.interpreter_tools import (
 )
 
 
-def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
+def evaluate_cond_eqn(cond_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
     """
     Evaluates a JAX condition equation within the context of the JASP interpreter.
 
@@ -48,16 +53,17 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
 
+    # Deferred import: qc_extraction_interpreter (where ProcessedMeasurement is
+    # defined) is loaded after control_flow_interpretation within
+    # interpreter_tools.interpreters, so this can't be a top-level import.
     from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 
     if isinstance(invalues[0], ProcessedMeasurement):
         raise Exception("Tried to convert real-time feedback into QuantumCircuit")
 
-    # Iterate through branches to find the one matching the condition index (invalues[0])
-    for i in range(len(cond_eqn.params["branches"])):
-        if int(invalues[0]) == i:
-            res = eval_jaxpr(cond_eqn.params["branches"][i], eqn_evaluator=eqn_evaluator)(*invalues[1:])
-            break
+    # invalues[0] is the branch index to execute
+    branch_jaxpr = cond_eqn.params["branches"][int(invalues[0])]
+    res = eval_jaxpr(branch_jaxpr, eqn_evaluator=eqn_evaluator)(*invalues[1:])
 
     if not isinstance(res, tuple):
         res = (res,)
@@ -65,7 +71,12 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     insert_outvalues(cond_eqn, context_dic, res)
 
 
-def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False):
+def evaluate_while_loop(
+    while_loop_eqn: JaxprEqn,
+    context_dic: ContextDict,
+    eqn_evaluator: Callable = exec_eqn,
+    break_after_first_iter: bool = False,
+) -> None:
     """
     Evaluates a JAX while loop equation within the context of the JASP interpreter.
 
@@ -82,6 +93,9 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, bre
         Exception: If the loop condition depends on a Qrisp ProcessedMeasurement.
     """
 
+    # Deferred import: qc_extraction_interpreter (where ProcessedMeasurement is
+    # defined) is loaded after control_flow_interpretation within
+    # interpreter_tools.interpreters, so this can't be a top-level import.
     from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 
     # Parse parameter structure for constants and carry variables
@@ -89,7 +103,7 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, bre
     num_const_body_args = while_loop_eqn.params["body_nconsts"]
     overall_constant_amount = num_const_cond_args + num_const_body_args
 
-    def break_condition(invalues):
+    def break_condition(invalues: list) -> Any:
         """Helper to evaluate the loop condition jaxpr."""
         constants = invalues[:num_const_cond_args]
         carries = invalues[overall_constant_amount:]
@@ -128,7 +142,7 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, bre
     insert_outvalues(while_loop_eqn, context_dic, outvalues)
 
 
-def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
+def evaluate_scan(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
     """
     Evaluates a JAX scan equation within the context of the JASP interpreter.
 
@@ -220,7 +234,9 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
     insert_outvalues(scan_eq, context_dic, outvalues)
 
 
-def evaluate_while_loop_under_trace(while_loop_eqn, context_dic, eqn_evaluator=exec_eqn):
+def evaluate_while_loop_under_trace(
+    while_loop_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn
+) -> None:
     """
     Evaluates a JAX while loop equation by reinterpreting the body/condition Jaxprs
     with the given eqn_evaluator and replaying them via ``jax.lax.while_loop``,
@@ -250,14 +266,14 @@ def evaluate_while_loop_under_trace(while_loop_eqn, context_dic, eqn_evaluator=e
     body_eval = eval_jaxpr(body_jaxpr, eqn_evaluator=eqn_evaluator)
     cond_eval = eval_jaxpr(cond_jaxpr, eqn_evaluator=eqn_evaluator)
 
-    def body_fun(val):
+    def body_fun(val: tuple) -> tuple:
         constants = val[cond_nconsts:overall_constant_amount]
         carries = val[overall_constant_amount:]
         body_res = body_eval(*(constants + carries))
         body_res = body_res if isinstance(body_res, tuple) else (body_res,)
         return val[:overall_constant_amount] + body_res
 
-    def cond_fun(val):
+    def cond_fun(val: tuple) -> Any:
         constants = val[:cond_nconsts]
         carries = val[overall_constant_amount:]
         return cond_eval(*(constants + carries))
@@ -267,7 +283,7 @@ def evaluate_while_loop_under_trace(while_loop_eqn, context_dic, eqn_evaluator=e
     insert_outvalues(while_loop_eqn, context_dic, outvalues)
 
 
-def evaluate_scan_under_trace(scan_eq, context_dic, eqn_evaluator=exec_eqn):
+def evaluate_scan_under_trace(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
     """
     Evaluates a JAX scan equation by reinterpreting the body Jaxpr with the given
     eqn_evaluator and replaying it via ``jax.lax.scan``, preserving the loop
@@ -301,7 +317,7 @@ def evaluate_scan_under_trace(scan_eq, context_dic, eqn_evaluator=exec_eqn):
 
     if num_consts > 0:
 
-        def wrapped_body(carry, x):
+        def wrapped_body(carry: Any, x: Any) -> tuple[Any, tuple]:
             carry_args = list(carry) if isinstance(carry, tuple) else [carry]
             x_args = list(x) if isinstance(x, tuple) else [x]
             args = consts + carry_args + x_args
@@ -313,7 +329,7 @@ def evaluate_scan_under_trace(scan_eq, context_dic, eqn_evaluator=exec_eqn):
 
     else:
 
-        def wrapped_body(carry, x):
+        def wrapped_body(carry: Any, x: Any) -> tuple[Any, tuple]:
             carry_args = list(carry) if isinstance(carry, tuple) else [carry]
             x_args = list(x) if isinstance(x, tuple) else [x]
             args = carry_args + x_args

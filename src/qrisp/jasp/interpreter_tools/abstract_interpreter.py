@@ -232,7 +232,7 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic: ContextDict, eqn_evaluator: 
             exec_eqn(eqn, context_dic)
 
 
-def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> list:
     """Extract input variable values from the context dictionary."""
     return [context_dic[invar] for invar in eqn.invars]
 
