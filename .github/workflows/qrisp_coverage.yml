@@ -43,91 +43,72 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
 
-      - name: Derive test files for changed sources
+      - name: Derive test groups for changed sources
         id: test-files
         run: |
           python << 'PYEOF'
           import os, subprocess, sys
 
-          ALL_TESTS = "tests"
+          ALL_TESTS = 'tests'
 
-          def write(test_paths, cov_include):
+          def write_output(test_paths, cov_include):
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write(f'test_paths={test_paths}\n')
                   f.write(f'cov_include={cov_include}\n')
 
-          TEST_MAP = {
-              'src/qrisp/typing.py': 'tests/test_typing.py',
-              'src/qrisp/default_backend.py': 'tests/core_tests/test_default_backend.py',
-              'src/qrisp/helloworld.py': 'tests/core_tests/test_hello_world.py',
-              'alg_primitives': 'tests/primitives_tests',
-              'jasp': 'tests/jax_tests',
-              'simulator': 'tests/interface_tests',
+          def fallback():
+              write_output(ALL_TESTS, 'qrisp')
+              sys.exit(0)
+
+          MODULE_GROUP = {
+              'circuit': 'core',
+              'core': 'core',
+              'environments': 'core',
+              'qtypes': 'core',
+              'misc': 'core',
+              'permeability': 'core',
+              'alg_primitives': 'core',
+              'jasp': 'core',
+              'typing.py': 'core',
+              'default_backend.py': 'core',
+              'helloworld.py': 'core',
+              'algorithms': 'algorithms-and-integrations',
+              'operators': 'algorithms-and-integrations',
+              'block_encodings': 'algorithms-and-integrations',
+              'simulator': 'algorithms-and-integrations',
+              'interface': 'algorithms-and-integrations',
           }
 
-          # Modules mapping to test dirs — convention: tests/<module>_tests
-          MODULE_DIR = {
-              'alg_primitives': 'tests/primitives_tests',
-              'jasp': 'tests/jax_tests',
-              'simulator': 'tests/interface_tests',
-              'environments': 'tests/core_tests',
-              'qtypes': 'tests/core_tests',
-              'misc': 'tests/core_tests',
-              'permeability': 'tests/core_tests',
+          TEST_GROUPS = {
+              'core': 'tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py',
+              'algorithms-and-integrations': 'tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests',
           }
-
-          def test_dir(module):
-              return MODULE_DIR.get(module, f'tests/{module}_tests')
 
           changed = []
           if os.environ.get('EVENT_NAME') == 'pull_request':
               ref = os.environ['BASE_REF']
-              r = subprocess.run(['git', 'diff', '--name-only', f'origin/{ref}...HEAD',
-                                  '--', 'src/qrisp/*.py', 'src/qrisp/**/*.py'],
-                                 capture_output=True, text=True)
+              r = subprocess.run(
+                  ['git', 'diff', '--name-only', f'origin/{ref}...HEAD',
+                   '--', 'src/qrisp/'],
+                  capture_output=True, text=True)
               changed = [f.strip() for f in r.stdout.strip().split('\n') if f.strip()]
 
           if not changed:
-              write(ALL_TESTS, 'qrisp')
-              sys.exit(0)
+              fallback()
 
-          # If __init__.py changed or any file can't be mapped, run all tests
-          test_files = []
+          groups = set()
           for src in changed:
-              if src in TEST_MAP:
-                  test_files.append(TEST_MAP[src])
-              elif src == 'src/qrisp/__init__.py' or src.endswith('/__init__.py'):
-                  write(ALL_TESTS, 'qrisp')
-                  sys.exit(0)
-              elif not src.startswith('src/qrisp/'):
-                  write(ALL_TESTS, 'qrisp')
-                  sys.exit(0)
-              else:
-                  rel = src[len('src/qrisp/'):]
-                  parts = rel.split('/')
-                  tdir = test_dir(parts[0])
-                  if not os.path.isdir(tdir):
-                      write(ALL_TESTS, 'qrisp')
-                      sys.exit(0)
-                  name = parts[-1].replace('.py', '')
-                  if len(parts) == 2:
-                      candidate = f'{tdir}/test_{name}.py'
-                  elif parts[0] == 'jasp':
-                      candidate = f'{tdir}/test_{name}.py'
-                  elif rel.startswith('alg_primitives/mcx_algs/'):
-                      c1 = f'tests/core_tests/mcx_tests/test_{name}.py'
-                      c2 = f'tests/core_tests/mcx_tests/test_{name}_mcx.py'
-                      candidate = c1 if os.path.exists(c1) else c2
-                  else:
-                      c1 = f'{tdir}/{parts[1]}_tests/test_{name}.py'
-                      candidate = c1 if os.path.exists(c1) else f'{tdir}/test_{name}.py'
-                  if not os.path.exists(candidate):
-                      write(ALL_TESTS, 'qrisp')
-                      sys.exit(0)
-                  test_files.append(candidate)
+              if src == 'src/qrisp/__init__.py':
+                  fallback()
+              rel = src[len('src/qrisp/'):]
+              module = rel.split('/')[0]
+              group = MODULE_GROUP.get(module)
+              if group is None:
+                  fallback()
+              groups.add(group)
 
-          test_files = list(dict.fromkeys(test_files))
-          write(' '.join(test_files), ','.join(changed))
+          test_paths = ' '.join(TEST_GROUPS[g] for g in groups)
+          write_output(test_paths, ','.join(changed))
           PYEOF
         env:
           EVENT_NAME: ${{ github.event_name }}
