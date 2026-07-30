@@ -36,27 +36,53 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
-      - name: Determine coverage targets
+      - name: Determine coverage targets and test paths
         id: cov-targets
         run: |
+          ALL_TESTS="tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             git fetch origin ${{ github.base_ref }}
             CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'src/qrisp/*.py' 'src/qrisp/**/*.py' || true)
             if [[ -z "$CHANGED" ]]; then
               echo "targets=--cov=qrisp" >> "$GITHUB_OUTPUT"
-            else
-              ARGS=""
-              while IFS= read -r file; do
-                ARGS="$ARGS --cov=$file"
-              done <<< "$CHANGED"
-              echo "targets=$ARGS" >> "$GITHUB_OUTPUT"
+              echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
+            COV_ARGS=""
+            TEST_PATHS=""
+            add_dir() { [[ " $TEST_PATHS " == *" $1 "* ]] || TEST_PATHS="$TEST_PATHS $1"; }
+            while IFS= read -r file; do
+              COV_ARGS="$COV_ARGS --cov=$file"
+              case "$file" in
+                src/qrisp/__init__.py)              ALL=1 ;;
+                src/qrisp/circuit/*)                 add_dir tests/circuit_tests ;;
+                src/qrisp/core/*)                    add_dir tests/core_tests ;;
+                src/qrisp/primitives/*|src/qrisp/alg_primitives/*) add_dir tests/primitives_tests ;;
+                src/qrisp/jasp/*)                    add_dir tests/jax_tests ;;
+                src/qrisp/algorithms/*)              add_dir tests/algorithms_tests ;;
+                src/qrisp/operators/*)               add_dir tests/operators_tests ;;
+                src/qrisp/block_encodings/*)         add_dir tests/block_encodings_tests ;;
+                src/qrisp/interface/*|src/qrisp/simulator/*) add_dir tests/interface_tests ;;
+                src/qrisp/environments/*|src/qrisp/qtypes/*) add_dir tests/core_tests ;;
+                src/qrisp/typing.py)                 add_dir tests/test_typing.py ;;
+                src/qrisp/default_backend.py|src/qrisp/helloworld.py) add_dir tests/core_tests ;;
+                *)                                   ALL=1 ;;
+              esac
+            done <<< "$CHANGED"
+            if [[ "$ALL" == "1" ]]; then
+              echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
+            else
+              echo "test_paths=$TEST_PATHS" >> "$GITHUB_OUTPUT"
+            fi
+            echo "targets=$COV_ARGS" >> "$GITHUB_OUTPUT"
           else
             echo "targets=--cov=qrisp" >> "$GITHUB_OUTPUT"
+            echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
           fi
       - name: Test with pytest and coverage
         run: |
-          pytest tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests \
+          pytest ${{ steps.cov-targets.outputs.test_paths }} \
             ${{ steps.cov-targets.outputs.targets }} \
             --cov-report=term-missing \
             --cov-branch
