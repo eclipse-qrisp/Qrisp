@@ -172,31 +172,34 @@ def decompose_eqn_evaluator(eqn, context_dic):
         return False  # equation handled; skip default exec_eqn
 
     elif eqn.primitive.name == "jit":
-        new_eqn = copy_jaxpr_eqn(eqn)
-        new_eqn.params["jaxpr"] = _decompose_sub_jaxpr(eqn.params["jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("jaxpr",))
 
     elif eqn.primitive.name == "while":
-        new_eqn = copy_jaxpr_eqn(eqn)
-        new_eqn.params["body_jaxpr"] = _decompose_sub_jaxpr(eqn.params["body_jaxpr"])
-        new_eqn.params["cond_jaxpr"] = _decompose_sub_jaxpr(eqn.params["cond_jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("body_jaxpr", "cond_jaxpr"))
 
     elif eqn.primitive.name == "cond":
-        new_eqn = copy_jaxpr_eqn(eqn)
-        new_eqn.params["branches"] = tuple(_decompose_sub_jaxpr(branch) for branch in eqn.params["branches"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, tuple_params=("branches",))
 
     elif eqn.primitive.name == "scan":
-        new_eqn = copy_jaxpr_eqn(eqn)
-        new_eqn.params["jaxpr"] = _decompose_sub_jaxpr(eqn.params["jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("jaxpr",))
 
     return True  # fall back to default execution
+
+
+def _decompose_and_exec(eqn, context_dic, params=(), tuple_params=()):
+    """Copy eqn, recursively decompose the named sub-jaxpr param(s), then execute.
+
+    `params` names params holding a single sub-jaxpr to decompose in place (e.g.
+    "jaxpr", or both "body_jaxpr"/"cond_jaxpr" for while); `tuple_params` names
+    params holding a tuple of sub-jaxprs (e.g. "branches" for cond).
+    """
+    new_eqn = copy_jaxpr_eqn(eqn)
+    for name in params:
+        new_eqn.params[name] = _decompose_sub_jaxpr(new_eqn.params[name])
+    for name in tuple_params:
+        new_eqn.params[name] = tuple(_decompose_sub_jaxpr(sub) for sub in new_eqn.params[name])
+    exec_eqn(new_eqn, context_dic)
+    return False
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var

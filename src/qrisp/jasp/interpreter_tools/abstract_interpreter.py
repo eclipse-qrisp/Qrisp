@@ -285,3 +285,35 @@ def copy_jaxpr_eqn(eqn: JaxprEqn) -> JaxprEqn:
         effects=eqn.effects,
         ctx=eqn.ctx,
     )
+
+
+def insert_call_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Any, n_outvars: int) -> None:
+    """Insert the result of evaluating a call-like (jit/pjit) equation's callee.
+
+    Wraps a bare (non-multi-value) result into a length-1 list first, since the
+    callee returns its single output unwrapped while ``insert_outvalues``
+    expects a proper sequence whenever the call primitive itself has multiple
+    results (which it always does for jit/pjit call equations, even when the
+    callee happens to return exactly one value).
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The call-like (jit/pjit) equation whose outputs are being inserted.
+
+    context_dic : ContextDict
+        The context dictionary where the output values will be stored.
+
+    outvalues : Any
+        The raw result of evaluating the callee -- a single value if it only
+        returns one output, otherwise a sequence of values.
+
+    n_outvars : int
+        The number of outputs the callee itself declares. Callers differ on
+        exactly which count they pass (the callee's own outvars vs. the call
+        equation's outvars), since the two always agree for a call primitive.
+
+    """
+    if n_outvars == 1:
+        outvalues = [outvalues]
+    insert_outvalues(eqn, context_dic, outvalues)

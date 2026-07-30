@@ -17,10 +17,12 @@
 
 import numpy as np
 from jax.api_util import debug_info
-from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal
 from numba import njit
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_jaxpr
 
 # In newer versions, Jax enforces providing a debug info object
 # to the Jaxpr constructor. This object contains metadata information
@@ -85,59 +87,24 @@ def collect_environments(closed_jaxpr):
         eqn = eqn_list[j]
 
         if eqn.primitive.name == "jit":
-            new_params = dict(eqn.params)
-
             collected_jaspr = collect_environments(eqn.params["jaxpr"])
-
-            new_params["jaxpr"] = collected_jaspr
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
+            eqn = copy_jaxpr_eqn(eqn)
+            eqn.params["jaxpr"] = collected_jaspr
 
         if eqn.primitive.name == "cond":
-            new_params = dict(eqn.params)
-
             branch_list = []
 
             for i in range(len(eqn.params["branches"])):
                 collected_branch_jaxpr = collect_environments(eqn.params["branches"][i])
                 branch_list.append(collected_branch_jaxpr)
 
-            new_params["branches"] = tuple(branch_list)
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
+            eqn = copy_jaxpr_eqn(eqn)
+            eqn.params["branches"] = tuple(branch_list)
 
         if eqn.primitive.name == "while":
-            new_params = dict(eqn.params)
-
             body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
-
-            new_params["body_jaxpr"] = body_collected_jaspr
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
+            eqn = copy_jaxpr_eqn(eqn)
+            eqn.params["body_jaxpr"] = body_collected_jaspr
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
@@ -219,13 +186,7 @@ def collect_environments(closed_jaxpr):
     else:
         # Return the transformed equation
 
-        res_jaxpr = Jaxpr(
-            constvars=closed_jaxpr.jaxpr.constvars,
-            invars=closed_jaxpr.jaxpr.invars,
-            outvars=closed_jaxpr.jaxpr.outvars,
-            eqns=new_eqn_list,
-            debug_info=closed_jaxpr.jaxpr.debug_info,
-        )
+        res_jaxpr = rebuild_jaxpr(closed_jaxpr.jaxpr, eqns=new_eqn_list)
 
         return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
 
@@ -262,6 +223,42 @@ def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
 
     # The result is the intersection between both sets of variables
     return list(set(outvars).intersection(required_remainder_vars + return_vars))
+
+
+def _register_vars(variables, var_to_int_dic, int_to_var_dic):
+    """Translate a sequence of Jaxpr variables into their tracked integer ids,
+    assigning a fresh id to any variable seen for the first time.
+
+    Literal values (which can wrap an unhashable constant, e.g. an array) raise
+    TypeError on the dict lookup and are silently skipped, since they aren't SSA
+    variables that need id-tracking.
+    """
+    integers = []
+    for var in variables:
+        try:
+            integers.append(var_to_int_dic[var])
+        # This represents the case that the variable has not been converted yet
+        except KeyError:
+            var_to_int_dic[var] = len(var_to_int_dic)
+            int_to_var_dic[var_to_int_dic[var]] = var
+            integers.append(var_to_int_dic[var])
+        # This represents the case that the variable is a Literal
+        except TypeError:
+            continue
+    return integers
+
+
+def _slice_field(values, index_tracker, point, from_start):
+    """Slice one of VarTracker's parallel (values, index_tracker) pairs.
+
+    If from_start, keep values/index positions from `point` onward (used by
+    slice_start), re-basing the index_tracker to start at 0. Otherwise, keep
+    values/index positions up to (and including) `point` (used by slice_end).
+    """
+    boundary = index_tracker[point]
+    if from_start:
+        return values[boundary:], [i - boundary for i in index_tracker[point:]]
+    return values[:boundary], index_tracker[: point + 1]
 
 
 class VarTracker:
@@ -318,59 +315,17 @@ class VarTracker:
 
     def __init__(self, eqn_list):
 
-        # Initialize the translation dics
-        var_to_int_dic = {}
-        int_to_var_dic = {}
+        self.var_to_int_dic = {}
+        self.int_to_var_dic = {}
 
-        # Initialize the variable lists
-        eqn_invar_list = []
-        eqn_outvar_list = []
+        self.eqn_invar_list = []
+        self.eqn_outvar_list = []
 
-        # Initialize the index trackers
-        outvar_eqn_index_tracker = [0]
-        invar_eqn_index_tracker = [0]
+        self.invar_eqn_index_tracker = [0]
+        self.outvar_eqn_index_tracker = [0]
 
-        # Fill the variable lists
         for eqn in eqn_list:
-            invar_integers = []
-            for var in eqn.invars:
-                try:
-                    invar_integers.append(var_to_int_dic[var])
-                # This represents the case that the variable has not been
-                # converted yet
-                except KeyError:
-                    var_to_int_dic[var] = len(var_to_int_dic)
-                    int_to_var_dic[var_to_int_dic[var]] = var
-                    invar_integers.append(var_to_int_dic[var])
-                # This represents the case that the variable is a Literal
-                except TypeError:
-                    continue
-            outvar_integers = []
-            for var in eqn.outvars:
-                try:
-                    outvar_integers.append(var_to_int_dic[var])
-                except KeyError:
-                    var_to_int_dic[var] = len(var_to_int_dic)
-                    int_to_var_dic[var_to_int_dic[var]] = var
-                    outvar_integers.append(var_to_int_dic[var])
-                except TypeError:
-                    continue
-
-            eqn_invar_list.extend(invar_integers)
-            invar_eqn_index_tracker.append(len(eqn_invar_list))
-
-            eqn_outvar_list.extend(outvar_integers)
-            outvar_eqn_index_tracker.append(len(eqn_outvar_list))
-
-        # Store the attributes
-        self.var_to_int_dic = var_to_int_dic
-        self.int_to_var_dic = int_to_var_dic
-
-        self.eqn_invar_list = eqn_invar_list
-        self.eqn_outvar_list = eqn_outvar_list
-
-        self.invar_eqn_index_tracker = invar_eqn_index_tracker
-        self.outvar_eqn_index_tracker = outvar_eqn_index_tracker
+            self.append(eqn)
 
     def append(self, eqn):
         """Adds the equation eqn to the list of tracked equations.
@@ -380,32 +335,10 @@ class VarTracker:
         eqn : jax.core.Equation
 
         """
-        # Perform similar logic as in __init__
-        invar_integers = []
-        for var in eqn.invars:
-            try:
-                invar_integers.append(self.var_to_int_dic[var])
-            except KeyError:
-                self.var_to_int_dic[var] = len(self.var_to_int_dic)
-                self.int_to_var_dic[self.var_to_int_dic[var]] = var
-                invar_integers.append(self.var_to_int_dic[var])
-            except TypeError:
-                continue
-        outvar_integers = []
-        for var in eqn.outvars:
-            try:
-                outvar_integers.append(self.var_to_int_dic[var])
-            except KeyError:
-                self.var_to_int_dic[var] = len(self.var_to_int_dic)
-                self.int_to_var_dic[self.var_to_int_dic[var]] = var
-                outvar_integers.append(self.var_to_int_dic[var])
-            except TypeError:
-                continue
-
-        self.eqn_invar_list.extend(invar_integers)
+        self.eqn_invar_list.extend(_register_vars(eqn.invars, self.var_to_int_dic, self.int_to_var_dic))
         self.invar_eqn_index_tracker.append(len(self.eqn_invar_list))
 
-        self.eqn_outvar_list.extend(outvar_integers)
+        self.eqn_outvar_list.extend(_register_vars(eqn.outvars, self.var_to_int_dic, self.int_to_var_dic))
         self.outvar_eqn_index_tracker.append(len(self.eqn_outvar_list))
 
     def slice_start(self, starting_point):
@@ -419,19 +352,12 @@ class VarTracker:
         """
         res = VarTracker([])
 
-        # Identify where the invar list has to be sliced from
-        invar_starting_point = self.invar_eqn_index_tracker[starting_point]
-        # Slice the invar list
-        res.eqn_invar_list = self.eqn_invar_list[invar_starting_point:]
-        # Slice the index tracker and ensure it starts from 0
-        res.invar_eqn_index_tracker = [i - invar_starting_point for i in self.invar_eqn_index_tracker[starting_point:]]
-
-        # Same for the outvars
-        outvar_starting_point = self.outvar_eqn_index_tracker[starting_point]
-        res.eqn_outvar_list = self.eqn_outvar_list[outvar_starting_point:]
-        res.outvar_eqn_index_tracker = [
-            i - outvar_starting_point for i in self.outvar_eqn_index_tracker[starting_point:]
-        ]
+        res.eqn_invar_list, res.invar_eqn_index_tracker = _slice_field(
+            self.eqn_invar_list, self.invar_eqn_index_tracker, starting_point, from_start=True
+        )
+        res.eqn_outvar_list, res.outvar_eqn_index_tracker = _slice_field(
+            self.eqn_outvar_list, self.outvar_eqn_index_tracker, starting_point, from_start=True
+        )
 
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic
@@ -449,14 +375,12 @@ class VarTracker:
         """
         res = VarTracker([])
 
-        # Perform similar slicing logic as in slice_start
-        invar_end_point = self.invar_eqn_index_tracker[end_point]
-        res.eqn_invar_list = self.eqn_invar_list[:invar_end_point]
-        res.invar_eqn_index_tracker = self.invar_eqn_index_tracker[: end_point + 1]
-
-        outvar_end_point = self.outvar_eqn_index_tracker[end_point]
-        res.eqn_outvar_list = self.eqn_outvar_list[:outvar_end_point]
-        res.outvar_eqn_index_tracker = self.outvar_eqn_index_tracker[: end_point + 1]
+        res.eqn_invar_list, res.invar_eqn_index_tracker = _slice_field(
+            self.eqn_invar_list, self.invar_eqn_index_tracker, end_point, from_start=False
+        )
+        res.eqn_outvar_list, res.outvar_eqn_index_tracker = _slice_field(
+            self.eqn_outvar_list, self.outvar_eqn_index_tracker, end_point, from_start=False
+        )
 
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic

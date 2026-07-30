@@ -32,21 +32,28 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 """
 
 
+import types
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Sequence, Tuple
 
 import jax
 from jax import pure_callback
 from jax._src.core import ClosedJaxpr, Jaxpr, JaxprEqn
+from jax.tree_util import tree_flatten
 from jax.typing import ArrayLike
+
+if TYPE_CHECKING:
+    from qrisp.jasp.jasp_expression import Jaspr
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     ContextDict,
     eval_jaxpr,
     extract_invalues,
+    insert_call_outvalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
     evaluate_cond_under_trace,
     evaluate_scan_under_trace,
@@ -482,12 +489,104 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             else:
                 outvalues = profiler(*invalues)
 
-            if len(eqn.outvars) == 1:
-                outvalues = (outvalues,)
-
-            insert_outvalues(eqn, context_dic, outvalues)
+            insert_call_outvalues(eqn, context_dic, outvalues, len(eqn.outvars))
 
         else:
             return True
 
     return profiling_eqn_evaluator
+
+
+def build_metric_profiler(jaspr: "Jaspr", metric: BaseMetric, callback_threshold: int | None = None) -> Callable:
+    """Build a profiler function for an arbitrary metric over a Jaspr.
+
+    Centralizes the call-graph-analysis + jit + STATIC_TYPES-argument-filtering
+    boilerplate shared by get_count_ops_profiler/get_depth_profiler/
+    get_num_qubits_profiler -- the only thing that varies between those three is
+    which BaseMetric subclass is used and what (if any) auxiliary data (e.g. a
+    profiling_dic) they return alongside the profiler.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr expression to profile.
+
+    metric : BaseMetric
+        The metric instance to profile with (e.g. a CountOpsMetric, DepthMetric,
+        or NumQubitsMetric).
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to trigger
+        ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
+        entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
+        (fastest compilation).
+
+    Returns
+    -------
+    Callable
+        A profiler function taking the same *args the Jaspr itself takes.
+
+    """
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats, callback_threshold)
+    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+
+    def profiler(*args):
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        # Import here to avoid circular import issues
+        from qrisp.operators import FermionicOperator, QubitOperator
+
+        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+        initial_metric = metric.initial_metric()
+
+        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
+        return jitted_evaluator(*filtered_args)
+
+    return profiler
+
+
+def get_cached_jaspr(function: Any, args: Tuple[Any, ...], meas_behavior: Any) -> "Jaspr":
+    """Return the cached Jaspr trace of ``function`` called with ``args``.
+
+    Centralizes the ``jaspr_dict`` cache-key construction (argument-type signature +
+    shape signature + ``hash(meas_behavior)``) and miss-fill via ``make_jaspr``
+    shared by the count_ops/depth/num_qubits profiler decorators in
+    ``evaluation_tools/profiler.py``. The cache is stored as a ``jaspr_dict``
+    attribute on ``function`` itself, so repeated calls with the same function and
+    a matching cache key reuse the same trace.
+
+    Parameters
+    ----------
+    function : Any
+        The Jasp-traceable function being profiled. Typed ``Any`` rather than
+        ``Callable`` because this function monkey-patches a ``jaspr_dict`` cache
+        attribute directly onto it, which the ``Callable`` protocol doesn't declare.
+
+    args : tuple
+        The arguments ``function`` is being called with.
+
+    meas_behavior : str | Callable
+        The measurement behavior, included in the cache key since it can affect
+        the resulting trace.
+
+    Returns
+    -------
+    Jaspr
+        The (possibly cached) Jaspr trace of ``function(*args)``.
+
+    """
+    # Import here to avoid circular import issues
+    from qrisp.jasp import make_jaspr
+
+    if not hasattr(function, "jaspr_dict"):
+        function.jaspr_dict = {}
+
+    signature = tuple(type(arg) for arg in args)
+    shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
+    hash_key = (signature, shape_signature, hash(meas_behavior))
+
+    if hash_key not in function.jaspr_dict:
+        function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
+
+    return function.jaspr_dict[hash_key]

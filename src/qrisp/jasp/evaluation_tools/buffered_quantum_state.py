@@ -84,14 +84,18 @@ class BufferedQuantumState:
         self.qubit_counter += 1
         return qb
 
+    def _bump_gate_count(self, key: str, amount: int = 1) -> None:
+        """Increment gate_counts[key] by amount, initializing it to amount if absent."""
+        try:
+            self.gate_counts[key] += amount
+        except KeyError:
+            self.gate_counts[key] = amount
+
     def append(self, op: Operation, qubits: Sequence[Qubit]) -> None:
         """Buffer a gate application without touching the backend state yet."""
         self.buffer_qc.append(op, qubits)
-        try:
-            if op.name not in ("qb_alloc", "qb_dealloc"):
-                self.gate_counts[op.name] += 1
-        except KeyError:
-            self.gate_counts[op.name] = 1
+        if op.name not in ("qb_alloc", "qb_dealloc"):
+            self._bump_gate_count(op.name)
 
     def apply_buffer(self) -> None:
         """Flush every buffered gate into the backend quantum state."""
@@ -124,10 +128,7 @@ class BufferedQuantumState:
     def measure(self, qubit: Sequence[Qubit], track_measurement: bool = True) -> bool:
         """Measure a qubit, flushing the buffer first."""
         if track_measurement:
-            try:
-                self.gate_counts["measure"] += 1
-            except KeyError:
-                self.gate_counts["measure"] = 1
+            self._bump_gate_count("measure")
 
         self.apply_buffer()
         if self.simulator == "qrisp":
@@ -171,10 +172,7 @@ class BufferedQuantumState:
         combine terminal sampling with simulator="stim", so this restriction is
         never actually hit in practice.
         """
-        try:
-            self.gate_counts["measure"] += len(qubits)
-        except KeyError:
-            self.gate_counts["measure"] = len(qubits)
+        self._bump_gate_count("measure", len(qubits))
 
         self.apply_buffer()
         assert isinstance(self.quantum_state, QuantumState)

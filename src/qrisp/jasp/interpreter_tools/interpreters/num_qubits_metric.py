@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-import types
 from typing import Callable, Tuple
 
 import jax
@@ -23,11 +22,9 @@ import jax.numpy as jnp
 from jax.random import key
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     BaseMetric,
-    eval_jaxpr,
-    make_profiling_eqn_evaluator,
+    build_metric_profiler,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
@@ -302,27 +299,7 @@ def get_num_qubits_profiler(
     """
     num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
 
-    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
-    # stats are threaded into the profiling evaluator so that frequently
-    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
-    # to avoid XLA compilation blowup (see profiling_interpreter.py).
-    _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric, call_graph_stats, callback_threshold)
-    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
-
-    def num_qubits_profiler(*args):
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        # Import here to avoid circular import issues
-        from qrisp.operators import FermionicOperator, QubitOperator
-
-        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
-
-        initial_metric = num_qubits_metric.initial_metric()
-
-        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
-        return jitted_evaluator(*filtered_args)
-
-    return num_qubits_profiler, None
+    return build_metric_profiler(jaspr, num_qubits_metric, callback_threshold), None
 
 
 def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> dict:

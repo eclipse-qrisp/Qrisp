@@ -44,24 +44,10 @@ class AbstractQubitArray(AbstractValue):
 
     def _getitem(self, tracer, key):
         if isinstance(key, slice):
-            start = key.start
-            if key.start is None:
-                start = 0
-            stop = key.stop
-            if key.stop is None:
-                stop = get_size(tracer) - 1
-
+            start, stop = _normalize_slice_bounds(tracer, key)
             return slice_qb_array(tracer, start, stop)
 
-        id_tuple = (id(tracer), id(key))
-        # Deferred import: qrisp.jasp.tracing_logic is loaded after
-        # qrisp.jasp.primitives, so this can't be a top-level import.
-        from qrisp.jasp import TracingQuantumSession
-
-        qs = TracingQuantumSession.get_instance()
-        if id_tuple not in qs.qubit_cache:
-            qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
-        return qs.qubit_cache[id_tuple]
+        return _get_or_cache_qubit(tracer, key)
 
 
 def get_qubit(qb_array, index):
@@ -79,6 +65,32 @@ def get_size(qb_array):
 def slice_qb_array(qb_array, start, stop):
     """Bind the slice primitive."""
     return slice_p.bind(qb_array, start, stop)
+
+
+def _normalize_slice_bounds(tracer, key: slice) -> tuple:
+    """Normalize a slice key's start/stop into concrete bounds for a QubitArray.
+
+    ``stop`` defaults to the array's full size, matching Python's usual exclusive-stop
+    slicing convention (not ``size - 1``). Only step=1 (or unspecified) is supported.
+    """
+    if key.step is not None and key.step != 1:
+        raise NotImplementedError("Slicing a QubitArray only supports step=1")
+    start = key.start if key.start is not None else 0
+    stop = key.stop if key.stop is not None else get_size(tracer)
+    return start, stop
+
+
+def _get_or_cache_qubit(tracer, key):
+    """Look up (or bind and cache) the Qubit at index/key ``key`` of ``tracer``."""
+    # Deferred import: qrisp.jasp.tracing_logic is loaded after
+    # qrisp.jasp.primitives, so this can't be a top-level import.
+    from qrisp.jasp import TracingQuantumSession
+
+    qs = TracingQuantumSession.get_instance()
+    id_tuple = (id(tracer), id(key))
+    if id_tuple not in qs.qubit_cache:
+        qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
+    return qs.qubit_cache[id_tuple]
 
 
 def fuse_qb_array(qb_array_0, qb_array_1):

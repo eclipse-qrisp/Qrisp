@@ -355,12 +355,11 @@ def simulate_jaspr(
     if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
         return None
 
-    if simulator == "stim":
-        if terminal_sampling:
-            raise Exception("Terminal sampling with stim is currently not implemented")
-    elif simulator != "qrisp":
-        raise Exception(f"Don't know simulator {simulator}")
+    if simulator == "stim" and terminal_sampling:
+        raise Exception("Terminal sampling with stim is currently not implemented")
 
+    # An invalid simulator value raises identically, one line below, from
+    # BufferedQuantumState.__init__ -- no need to duplicate that check here.
     args = list(tree_flatten(args)[0]) + [BufferedQuantumState(simulator)]
 
     def eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool:

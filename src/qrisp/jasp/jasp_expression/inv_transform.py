@@ -17,12 +17,13 @@
 
 import numpy as np
 from jax import make_jaxpr
-from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Var
 from jax.lax import add_p, sub_p
 from sympy import lambdify
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, extract_invalues, insert_outvalues, reinterpret
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_jaxpr
 from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
 
 qc_var_count = np.zeros(1, dtype=np.int64)
@@ -181,13 +182,7 @@ def invert_jaspr(jaspr):
             return True
 
     temp_jaxpr = ClosedJaxpr(
-        Jaxpr(
-            invars=list(jaspr.invars),
-            outvars=jaspr.outvars[:-1] + [current_abs_qst],
-            constvars=jaspr.constvars,
-            eqns=non_op_eqs + op_eqs,
-            debug_info=jaspr.debug_info,
-        ),
+        rebuild_jaxpr(jaspr, eqns=non_op_eqs + op_eqs, outvars=jaspr.outvars[:-1] + [current_abs_qst]),
         jaspr.consts,
     )
 

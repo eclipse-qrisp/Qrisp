@@ -24,7 +24,7 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     eval_jaxpr_with_context_dic,
     extract_invalues,
-    insert_outvalues,
+    insert_call_outvalues,
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
     evaluate_cond_under_trace,
@@ -288,13 +288,9 @@ def extract_post_processing(jaspr, *args):
                 # Call it with the current evaluator, including the constants
                 outvals = cached_eval_func(eval_eqn)(*(invalues + list(closed_jaxpr.consts)))
 
-                # Handle wrapping based on the number of outputs in the inner jaxpr
                 # Note: Our QuantumState representation is (meas_arr, last_popped) tuple,
                 # which can confuse isinstance(outvals, tuple) checks. Use the jaxpr outvars count.
-                if len(closed_jaxpr.jaxpr.outvars) == 1:
-                    outvals = [outvals]
-
-                insert_outvalues(eqn, context_dic, outvals)
+                insert_call_outvalues(eqn, context_dic, outvals, len(closed_jaxpr.jaxpr.outvars))
                 return False
 
             # Handle while loops
