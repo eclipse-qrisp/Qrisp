@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   coverage:
-    name: Coverage (Py3.12.*)
+    name: Py3.12.*
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -27,66 +27,164 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
       - name: Set up Python 3.12.*
         uses: actions/setup-python@v7
         with:
           python-version: "3.12.*"
           cache: 'pip'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
-      - name: Determine coverage targets and test paths
-        id: cov-targets
-        run: |
-          ALL_TESTS="tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git fetch origin ${{ github.base_ref }}
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'src/qrisp/*.py' 'src/qrisp/**/*.py' || true)
-            if [[ -z "$CHANGED" ]]; then
-              echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
-              echo "cov_include=qrisp" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            TEST_PATHS=""
-            add_dir() { [[ " $TEST_PATHS " == *" $1 "* ]] || TEST_PATHS="$TEST_PATHS $1"; }
-            while IFS= read -r file; do
-              case "$file" in
-                src/qrisp/__init__.py)              ALL=1 ;;
-                src/qrisp/circuit/*)                 add_dir tests/circuit_tests ;;
-                src/qrisp/core/*)                    add_dir tests/core_tests ;;
-                src/qrisp/primitives/*|src/qrisp/alg_primitives/*) add_dir tests/primitives_tests ;;
-                src/qrisp/jasp/*)                    add_dir tests/jax_tests ;;
-                src/qrisp/algorithms/*)              add_dir tests/algorithms_tests ;;
-                src/qrisp/operators/*)               add_dir tests/operators_tests ;;
-                src/qrisp/block_encodings/*)         add_dir tests/block_encodings_tests ;;
-                src/qrisp/interface/*|src/qrisp/simulator/*) add_dir tests/interface_tests ;;
-                src/qrisp/environments/*|src/qrisp/qtypes/*) add_dir tests/core_tests ;;
-                src/qrisp/typing.py)                 add_dir tests/test_typing.py ;;
-                src/qrisp/default_backend.py|src/qrisp/helloworld.py) add_dir tests/core_tests ;;
-                *)                                   ALL=1 ;;
-              esac
-            done <<< "$CHANGED"
-            if [[ "$ALL" == "1" ]]; then
-              echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
-            else
-              echo "test_paths=$TEST_PATHS" >> "$GITHUB_OUTPUT"
-            fi
-            CHANGED_CSV=$(echo "$CHANGED" | tr '\n' ',' | sed 's/,$//')
-            echo "cov_include=$CHANGED_CSV" >> "$GITHUB_OUTPUT"
-          else
-            echo "test_paths=$ALL_TESTS" >> "$GITHUB_OUTPUT"
-            echo "cov_include=qrisp" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Test with pytest and coverage
+      - name: Derive test files for changed sources
+        id: test-files
         run: |
-          pytest ${{ steps.cov-targets.outputs.test_paths }} \
+          python << 'PYEOF'
+          import os, subprocess, sys
+
+          event_name = os.environ.get('EVENT_NAME', '')
+          base_ref = os.environ.get('BASE_REF', '')
+
+          ALL_TESTS = "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+
+          MODULE_MAP = {
+              'core': 'tests/core_tests',
+              'circuit': 'tests/circuit_tests',
+              'alg_primitives': 'tests/primitives_tests',
+              'primitives': 'tests/primitives_tests',
+              'jasp': 'tests/jax_tests',
+              'algorithms': 'tests/algorithms_tests',
+              'operators': 'tests/operators_tests',
+              'block_encodings': 'tests/block_encodings_tests',
+              'interface': 'tests/interface_tests',
+              'simulator': 'tests/interface_tests',
+              'environments': 'tests/core_tests',
+              'qtypes': 'tests/core_tests',
+              'misc': 'tests/core_tests',
+              'permeability': 'tests/core_tests',
+          }
+
+          SPECIAL_FILES = {
+              'src/qrisp/typing.py': 'tests/test_typing.py',
+              'src/qrisp/default_backend.py': 'tests/core_tests/test_default_backend.py',
+              'src/qrisp/helloworld.py': 'tests/core_tests/test_hello_world.py',
+          }
+
+          def derive_candidates(src_file):
+              if src_file in SPECIAL_FILES:
+                  return [SPECIAL_FILES[src_file]]
+
+              if not src_file.startswith('src/qrisp/'):
+                  return []
+
+              relative = src_file[len('src/qrisp/'):]
+
+              if relative.endswith('/__init__.py') or relative == '__init__.py':
+                  return ['__INIT__PY__']
+
+              parts = relative.split('/')
+              module = parts[0]
+
+              if module not in MODULE_MAP:
+                  return []
+
+              test_base = MODULE_MAP[module]
+              filename = parts[-1]
+              name = filename.replace('.py', '')
+
+              if len(parts) == 2:
+                  return [f'{test_base}/test_{name}.py']
+
+              first_sub = parts[1]
+
+              if relative.startswith('alg_primitives/mcx_algs/'):
+                  return [
+                      f'tests/core_tests/mcx_tests/test_{name}.py',
+                      f'tests/core_tests/mcx_tests/test_{name}_mcx.py',
+                  ]
+
+              if module == 'jasp':
+                  return [f'{test_base}/test_{name}.py']
+
+              candidates = [f'{test_base}/{first_sub}_tests/test_{name}.py']
+              candidates.append(f'{test_base}/test_{name}.py')
+              return candidates
+
+          changed = []
+          if event_name == 'pull_request' and base_ref:
+              result = subprocess.run(
+                  ['git', 'diff', '--name-only', f'origin/{base_ref}...HEAD', '--', 'src/qrisp/*.py', 'src/qrisp/**/*.py'],
+                  capture_output=True, text=True
+              )
+              changed = [f.strip() for f in result.stdout.strip().split('\n') if f.strip()]
+
+          if not changed:
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'test_paths={ALL_TESTS}\n')
+                  f.write('cov_include=qrisp\n')
+              sys.exit(0)
+
+          init_dirs = set()
+          non_init = []
+
+          for src in changed:
+              candidates = derive_candidates(src)
+              if candidates == ['__INIT__PY__']:
+                  rel = src[len('src/qrisp/'):]
+                  if rel == '__init__.py':
+                      init_dirs.add('ALL')
+                  else:
+                      mod = rel.split('/')[0]
+                      init_dirs.add(MODULE_MAP.get(mod, 'ALL'))
+              else:
+                  non_init.append((src, candidates))
+
+          if 'ALL' in init_dirs:
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'test_paths={ALL_TESTS}\n')
+                  f.write('cov_include=qrisp\n')
+              sys.exit(0)
+
+          test_files = list(init_dirs)
+          missing = []
+
+          for src, candidates in non_init:
+              found = [p for p in candidates if os.path.exists(p)]
+              if found:
+                  test_files.extend(found)
+              else:
+                  missing.append((src, '  ||  '.join(candidates) if candidates else 'NO MODULE MAPPING'))
+
+          if missing:
+              print('ERROR: Missing test files for changed source files:')
+              for src, tried in missing:
+                  print(f'  {src}')
+                  print(f'    Tried: {tried}')
+              sys.exit(1)
+
+          test_files = list(dict.fromkeys(test_files))
+          cov_include = ','.join(changed)
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"test_paths={' '.join(test_files)}\n")
+              f.write(f'cov_include={cov_include}\n')
+          PYEOF
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+
+      - name: Run related tests
+        run: |
+          pytest ${{ steps.test-files.outputs.test_paths }} \
             --cov=qrisp \
             --cov-branch
+
       - name: Report coverage for changed files
         run: |
-          INCLUDE="${{ steps.cov-targets.outputs.cov_include }}"
+          INCLUDE="${{ steps.test-files.outputs.cov_include }}"
           if [[ "$INCLUDE" == "qrisp" ]]; then
             coverage report --show-missing --omit='*/__init__.py'
           else
