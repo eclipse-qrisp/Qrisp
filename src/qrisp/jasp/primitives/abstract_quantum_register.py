@@ -74,7 +74,7 @@ def _normalize_slice_bounds(tracer, key: slice) -> tuple:
     slicing convention (not ``size - 1``). Only step=1 (or unspecified) is supported.
     """
     if key.step is not None and key.step != 1:
-        raise NotImplementedError("Slicing a QubitArray only supports step=1")
+        raise NotImplementedError("Slicing with DynamicQubitArray only supports step=1")
     start = key.start if key.start is not None else 0
     stop = key.stop if key.stop is not None else get_size(tracer)
     return start, stop
