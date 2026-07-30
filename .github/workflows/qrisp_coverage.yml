@@ -18,20 +18,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        test-group:
-          - name: core
-            paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
-          - name: algorithms-and-integrations
-            paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
-
-    name: ${{ matrix.test-group.name }}
+  coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -41,34 +30,19 @@ jobs:
       - run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
-      - name: Run ${{ matrix.test-group.name }} tests with coverage
+      - name: Run core tests with coverage
         run: |
-          pytest ${{ matrix.test-group.paths }} \
+          pytest tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py \
             --cov=qrisp \
             --cov-branch \
             --cov-report=term:skip-covered
-        env:
-          COVERAGE_FILE: .coverage.${{ matrix.test-group.name }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-data-${{ matrix.test-group.name }}
-          path: .coverage.${{ matrix.test-group.name }}
-
-  report:
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12.*"
-      - run: pip install coverage
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: coverage-data-*
-          merge-multiple: true
-      - name: Combine and report coverage
+      - name: Run algorithms-and-integrations tests with coverage
         run: |
-          coverage combine
+          pytest tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests \
+            --cov=qrisp \
+            --cov-branch \
+            --cov-report=term:skip-covered \
+            --cov-append
+      - name: Report coverage
+        run: |
           coverage report --show-missing --omit='*/__init__.py'
