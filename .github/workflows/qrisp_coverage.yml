@@ -1,7 +1,3 @@
-# Runs selectively: only tests related to changed src/qrisp/ files are executed.
-# Coverage is scoped to just the changed files.
-# Falls back to full suite if selective mapping fails.
-
 name: Coverage
 
 on:
@@ -22,114 +18,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  coverage:
-    name: Py3.12.*
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group:
+          - name: core
+            paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
+          - name: algorithms-and-integrations
+            paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+
+    name: ${{ matrix.test-group.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0  # need full history for git diff against base
-
-      - name: Set up Python 3.12.*
-        uses: actions/setup-python@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12.*"
           cache: 'pip'
-
-      - name: Install dependencies
-        run: |
+      - run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
-
-      - name: Derive test groups for changed sources
-        id: test-files
+      - name: Run ${{ matrix.test-group.name }} tests with coverage
         run: |
-          python << 'PYEOF'
-          import os, subprocess, sys
-
-          ALL_TESTS = 'tests'
-
-          def write_output(test_paths, cov_include):
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write(f'test_paths={test_paths}\n')
-                  f.write(f'cov_include={cov_include}\n')
-
-          def fallback():
-              write_output(ALL_TESTS, 'qrisp')
-              sys.exit(0)
-
-          MODULE_GROUP = {
-              'circuit': 'core',
-              'core': 'core',
-              'environments': 'core',
-              'qtypes': 'core',
-              'misc': 'core',
-              'permeability': 'core',
-              'alg_primitives': 'core',
-              'jasp': 'core',
-              'typing.py': 'core',
-              'default_backend.py': 'core',
-              'helloworld.py': 'core',
-              'algorithms': 'algorithms-and-integrations',
-              'operators': 'algorithms-and-integrations',
-              'block_encodings': 'algorithms-and-integrations',
-              'simulator': 'algorithms-and-integrations',
-              'interface': 'algorithms-and-integrations',
-          }
-
-          TEST_GROUPS = {
-              'core': 'tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py',
-              'algorithms-and-integrations': 'tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests',
-          }
-
-          changed = []
-          if os.environ.get('EVENT_NAME') == 'pull_request':
-              ref = os.environ['BASE_REF']
-              r = subprocess.run(
-                  ['git', 'diff', '--name-only', f'origin/{ref}...HEAD',
-                   '--', 'src/qrisp/'],
-                  capture_output=True, text=True)
-              changed = [f.strip() for f in r.stdout.strip().split('\n') if f.strip()]
-
-          if not changed:
-              fallback()
-
-          groups = set()
-          for src in changed:
-              if src == 'src/qrisp/__init__.py':
-                  fallback()
-              rel = src[len('src/qrisp/'):]
-              module = rel.split('/')[0]
-              group = MODULE_GROUP.get(module)
-              if group is None:
-                  fallback()
-              groups.add(group)
-
-          test_paths = ' '.join(TEST_GROUPS[g] for g in groups)
-          write_output(test_paths, ','.join(changed))
-          PYEOF
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_REF: ${{ github.base_ref }}
-
-      # Run pytest on just the derived test paths.
-      # --cov=qrisp instruments the whole package so imports are tracked correctly.
-      # The separate report step below filters the output to only changed files.
-      - name: Run related tests
-        run: |
-          pytest ${{ steps.test-files.outputs.test_paths }} \
+          pytest ${{ matrix.test-group.paths }} \
             --cov=qrisp \
-            --cov-branch
+            --cov-branch \
+            --cov-report=term:skip-covered
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.test-group.name }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data-${{ matrix.test-group.name }}
+          path: .coverage.${{ matrix.test-group.name }}
 
-      # coverage report --include filters to only the changed src files,
-      # so the output shows coverage for exactly what was modified, not the entire package.
-      - name: Report coverage for changed files
+  report:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12.*"
+      - run: pip install coverage
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-data-*
+          merge-multiple: true
+      - name: Combine and report coverage
         run: |
-          INCLUDE="${{ steps.test-files.outputs.cov_include }}"
-          if [[ "$INCLUDE" == "qrisp" ]]; then
-            coverage report --show-missing --omit='*/__init__.py'
-          else
-            coverage report --include="$INCLUDE" --show-missing --omit='*/__init__.py'
-          fi
+          coverage combine
+          coverage report --show-missing --omit='*/__init__.py'
