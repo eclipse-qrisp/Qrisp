@@ -34,6 +34,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v7
         with:
@@ -43,9 +45,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,catalyst,xdsl,iqm]"
+      - name: Determine coverage targets
+        id: cov-targets
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }}
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'src/qrisp/*.py' 'src/qrisp/**/*.py' || true)
+            if [[ -z "$CHANGED" ]]; then
+              echo "targets=--cov=qrisp" >> "$GITHUB_OUTPUT"
+            else
+              ARGS=""
+              while IFS= read -r file; do
+                ARGS="$ARGS --cov=$file"
+              done <<< "$CHANGED"
+              echo "targets=$ARGS" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "targets=--cov=qrisp" >> "$GITHUB_OUTPUT"
+          fi
       - name: Test with pytest and coverage (${{ matrix.test-group.name }})
         run: |
           pytest ${{ matrix.test-group.paths }} \
-            --cov=qrisp \
+            ${{ steps.cov-targets.outputs.targets }} \
             --cov-report=term-missing \
             --cov-branch
