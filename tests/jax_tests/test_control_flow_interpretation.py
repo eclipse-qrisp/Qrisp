@@ -187,7 +187,7 @@ def test_control_flow_interpretation():
 
 
 def test_qswitch_prepare_invert_control():
-    # Regression test (issue #421): prepare(..., method = "qswitch") used to raise
+    # Regression test (issue #412): prepare(..., method = "qswitch") used to raise
     # "ValueError: Tried to evaluate jaxpr with insufficient arguments"
     # when used within an InversionEnvironment or a ControlEnvironment.
     # This is because prepare_qswitch's case functions close over classical
