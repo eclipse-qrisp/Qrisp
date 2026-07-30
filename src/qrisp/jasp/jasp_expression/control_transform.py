@@ -16,12 +16,12 @@
 """
 
 import numpy as np
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Var
+from jax.extend.core import JaxprEqn, Var
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQubit
 
 
@@ -137,8 +137,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["body_nconsts"] += 1
 
         else:
-            new_jaxpr = rebuild_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["body_jaxpr"].consts)
+            new_params["body_jaxpr"] = rebuild_closed_jaxpr(new_params["body_jaxpr"])
 
         if isinstance(cond_jaxpr.invars[-1].aval, AbstractQuantumState) and isinstance(
             cond_jaxpr.outvars[-1].aval, AbstractQuantumState
@@ -146,8 +145,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["cond_jaxpr"] = control_jaspr(Jaspr(eqn.params["cond_jaxpr"]))
 
         else:
-            new_jaxpr = rebuild_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["cond_jaxpr"].consts)
+            new_params["cond_jaxpr"] = rebuild_closed_jaxpr(new_params["cond_jaxpr"])
 
         control_var_count[0] += 1
         temp = JaxprEqn(

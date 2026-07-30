@@ -17,7 +17,7 @@
 
 from typing import TYPE_CHECKING
 
-from jax.extend.core import Jaxpr
+from jax.extend.core import ClosedJaxpr, Jaxpr
 
 if TYPE_CHECKING:
     from qrisp.jasp.jasp_expression.centerclass import Jaspr
@@ -61,3 +61,33 @@ def rebuild_jaxpr(base: "Jaxpr | Jaspr", *, eqns=None, outvars=None) -> Jaxpr:
         effects=base.effects,
         debug_info=base.debug_info,
     )
+
+
+def rebuild_closed_jaxpr(base: "ClosedJaxpr | Jaspr", *, eqns=None, outvars=None) -> ClosedJaxpr:
+    """Like rebuild_jaxpr, but also re-wraps the result in a ClosedJaxpr using
+    base's own consts.
+
+    Centralizes the "rebuild_jaxpr(...), then wrap in ClosedJaxpr(result,
+    base.consts)" pairing that every current rebuild_jaxpr call site performs
+    immediately afterward.
+
+    Parameters
+    ----------
+    base : ClosedJaxpr | Jaspr
+        The ClosedJaxpr (or Jaspr) whose constvars/invars/effects/debug_info/
+        consts are carried over unchanged.
+
+    eqns : list[JaxprEqn] | None, optional
+        The new equation list. Defaults to base's own eqns when omitted.
+
+    outvars : list | None, optional
+        The new outvars list. Defaults to base's own outvars when omitted.
+
+    Returns
+    -------
+    ClosedJaxpr
+        A new ClosedJaxpr with the requested overrides applied, wrapping
+        base's original consts.
+
+    """
+    return ClosedJaxpr(rebuild_jaxpr(base.jaxpr, eqns=eqns, outvars=outvars), base.consts)

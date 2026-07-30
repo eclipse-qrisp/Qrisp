@@ -17,12 +17,12 @@
 
 import numpy as np
 from jax.api_util import debug_info
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal
+from jax.extend.core import JaxprEqn, Literal
 from numba import njit
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
 
 # In newer versions, Jax enforces providing a debug info object
 # to the Jaxpr constructor. This object contains metadata information
@@ -185,10 +185,7 @@ def collect_environments(closed_jaxpr):
         return res
     else:
         # Return the transformed equation
-
-        res_jaxpr = rebuild_jaxpr(closed_jaxpr.jaxpr, eqns=new_eqn_list)
-
-        return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
+        return rebuild_closed_jaxpr(closed_jaxpr, eqns=new_eqn_list)
 
 
 def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):

@@ -213,8 +213,10 @@ def _decompose_sub_jaxpr(jaxpr):
     if isinstance(jaxpr, Jaspr):
         return decompose_composite_gates(jaxpr)
     elif isinstance(jaxpr, ClosedJaxpr):
-        inner = reinterpret(jaxpr.jaxpr, decompose_eqn_evaluator)
-        return ClosedJaxpr(inner, jaxpr.consts)
+        # Passing jaxpr itself (not jaxpr.jaxpr) lets reinterpret() re-wrap the
+        # result in a ClosedJaxpr with the original consts internally, instead
+        # of duplicating that step here.
+        return reinterpret(jaxpr, decompose_eqn_evaluator)
     else:
         return jaxpr
 
