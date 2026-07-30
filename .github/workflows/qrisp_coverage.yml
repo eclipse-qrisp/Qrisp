@@ -19,27 +19,18 @@ concurrency:
 
 jobs:
   coverage:
-    name: Coverage (Py${{ matrix.python-version }})
+    name: Coverage (Py3.12.*)
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12.*"]
-        test-group:
-          - name: core
-            paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
-          - name: algorithms-and-integrations
-            paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
 
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.12.*
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12.*"
           cache: 'pip'
       - name: Install dependencies
         run: |
@@ -63,9 +54,9 @@ jobs:
           else
             echo "targets=--cov=qrisp" >> "$GITHUB_OUTPUT"
           fi
-      - name: Test with pytest and coverage (${{ matrix.test-group.name }})
+      - name: Test with pytest and coverage
         run: |
-          pytest ${{ matrix.test-group.paths }} \
+          pytest tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests \
             ${{ steps.cov-targets.outputs.targets }} \
             --cov-report=term-missing \
             --cov-branch
