@@ -27,6 +27,11 @@ Bug Fixes
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
 
+* Fixed jasp-mode crashes when tracing a ``while``/``scan`` loop with a
+  single carried value, uncovered while removing duplicated interpreter
+  code across four execution backends
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+
 Compatibility
 -------------
 
@@ -69,6 +74,13 @@ Development
 
 * Added pytest coverage reporting to the CI test workflow
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
+
+* Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
+  subsystem, consolidating control-flow, equation-copying, and caching logic
+  that had been independently duplicated across the Catalyst,
+  classical-simulation, profiling, and post-processing backends into shared
+  helper functions
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
 
 Dependency Upgrades
 -------------------
