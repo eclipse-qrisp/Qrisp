@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.5"
+version = "0.9.6"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -47,12 +47,7 @@ dependencies = [
 aqt = ["qiskit-aqt-provider>=1.15.0"]
 qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
 iqm = [
-    "iqm-client[qiskit]>=33.0.3,<34.0.0",
-    "iqm-pulse<13.0",
-    "iqm-station-control-client==12.0.5",
-    "iqm-exa-common==27.5.4",
-    "opentelemetry-exporter-otlp==1.27.0",
-    "iqm-data-definitions==2.22",
+    "iqm-client[qrisp]"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
@@ -61,8 +56,8 @@ docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
     "nbsphinx==0.9.8",
-    "ipykernel==7.2.0",
-    "myst-parser==5.0.0",
+    "ipykernel==7.3.0",
+    "myst-parser==5.1.0",
     "texext==0.6.8",
     "numpydoc==1.10.0",
     "sphinx-sitemap==2.9.0",
@@ -76,13 +71,14 @@ dev-code-style = [
     "ruff",
 ]
 dev-testing = [
-    "pytest==9.1.0",
+    "pytest==9.1.1",
     "pytest-cov>=6.0",
     "pytest-timeout==2.4.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
     "tqecd",
+    "iqm-client[qrisp]",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
