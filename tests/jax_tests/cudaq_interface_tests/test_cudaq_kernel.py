@@ -175,7 +175,7 @@ def test_cudaq_static_register():
     uses static register allocation to optimize memory usage. This test is designed to run within 30 seconds,
     demonstrating that static register allocation is effective in reducing memory usage and improving performance."""
 
-    @cudaq_kernel
+    @cudaq_kernel(register_size=10)
     def main():
         a = QuantumVariable(10)
         x(a[0])
@@ -202,7 +202,7 @@ def test_cudaq_static_register_while_loop():
     uses static register allocation to optimize memory usage. This test is designed to run within 30 seconds,
     demonstrating that static register allocation is effective in reducing memory usage and improving performance."""
 
-    @cudaq_kernel
+    @cudaq_kernel(register_size=10)
     def main():
 
         def body_fun(val):

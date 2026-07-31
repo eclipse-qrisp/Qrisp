@@ -80,6 +80,7 @@ _ANNOTATION_TO_DUMMY = {
 def cudaq_kernel(
     func_arg: Callable | None = None,
     execution_mode: Literal["run", "sample"] = "run",
+    register_size: int | None = None,
 ) -> PyKernelDecorator:
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
@@ -118,6 +119,8 @@ def cudaq_kernel(
         - ``"sample"`` — compile the kernel for use with ``cudaq.sample``;
           measurements are collected by the runtime across all shots and returned
           as a ``SampleResult`` histogram.
+    register_size : int, optional
+        If specified, the kernel will be compiled with a fixed register size.
 
     Returns
     -------
@@ -213,7 +216,7 @@ def cudaq_kernel(
 
     """
     if func_arg is None:
-        return lambda x: cudaq_kernel(x, execution_mode=execution_mode)
+        return lambda x: cudaq_kernel(x, execution_mode=execution_mode, register_size=register_size)
 
     sig = inspect.signature(func_arg)
     params = list(sig.parameters.values())
@@ -241,22 +244,32 @@ def cudaq_kernel(
 
     jaspr = make_jaspr(func_arg)(*dummy_args)
 
-    try:
-        qubits_dict = profile_jaspr(jaspr, "num_qubits", meas_behavior="0", max_allocations=1000)(*dummy_args)
-        peak_allocations = qubits_dict.get("peak_allocations", 0)
-        total_allocated = qubits_dict.get("total_allocated", 0)
+    # NOTE: THe flowing code is commented out because:
+    # 1. The conversion to static register will likely not be necessary with a future CUDA-Q version: https://github.com/NVIDIA/cuda-quantum/pull/4945
+    # This can currently only be tested when installing CUDA-Q from source, as the latest release (0.15) does not include this change.
+    # 2. Use of profiler for deciding whether to use static register allocation could break for certain edge cases.
 
-        # Decide whether to use static register allocation based on peak vs total allocations.
-        # If total allocated qubits exceed 110% of peak allocations, we use static register allocation to optimize memory usage.
-        # Otherwise, we proceed with the original jaspr without static register allocation,
-        # since CUDA-Q runtime is faster without static register reinterpretation.
-        use_static_register = total_allocated > peak_allocations * 1.1
-    except ValueError:
-        use_static_register = False
+    # try:
+    #    qubits_dict = profile_jaspr(jaspr, "num_qubits", meas_behavior="0", max_allocations=1000)(*dummy_args)
+    #    peak_allocations = qubits_dict.get("peak_allocations", 0)
+    #    total_allocated = qubits_dict.get("total_allocated", 0)
 
-    if use_static_register:
-        static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, peak_allocations)
-        new_jaspr = static_reg_jaspr
+    # Decide whether to use static register allocation based on peak vs total allocations.
+    # If total allocated qubits exceed 110% of peak allocations, we use static register allocation to optimize memory usage.
+    # Otherwise, we proceed with the original jaspr without static register allocation,
+    # since CUDA-Q runtime is faster without static register reinterpretation.
+    #    use_static_register = total_allocated > peak_allocations * 1.1
+    # except ValueError:
+    #    use_static_register = False
+
+    # if use_static_register:
+    #    static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, peak_allocations)
+    #    new_jaspr = static_reg_jaspr
+    # else:
+    #    new_jaspr = jaspr
+
+    if register_size is not None:
+        new_jaspr = jaspr_to_static_register_jaspr(jaspr, register_size)
     else:
         new_jaspr = jaspr
 
