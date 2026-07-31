@@ -289,10 +289,16 @@ class StripQSTFromIndexSwitch(RewritePattern):
                 _update_block_arg_types(block)
         _strip_qst_from_terminators(op)
 
-        # Erase QST results directly
-        for res in op.results:
-            if _is_qst(res.type):
-                res.erase(safe_erase=False)
+        new_res_types = _non_qst_result_types(op)
+        cases = op.cases
+        num_cases = len(op.case_regions)
+        default_region = op.detach_region(op.regions[0])
+        case_regions = [op.detach_region(op.regions[0]) for _ in range(num_cases)]
+
+        new_switch = IndexSwitchOp(op.arg, cases, default_region, case_regions, new_res_types)
+
+        new_results = _build_result_mapping(op.results, new_switch.results)
+        rewriter.replace_matched_op(new_switch, new_results, safe_erase=False)
 
 
 # ===========================================================================

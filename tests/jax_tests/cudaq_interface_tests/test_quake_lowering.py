@@ -460,6 +460,43 @@ def test_decomposed_gates_sx():
     validate_quake_mlir(mlir)
 
 
+# ---------------------------------------------------------------------------
+# Test scf.index_switch QST stripping (q_switch with >=3 branches)
+# ---------------------------------------------------------------------------
+
+
+def test_q_switch_three_branches_strips_qst():
+    """A classical-index ``q_switch`` with >=3 branches lowers to
+    ``scf.index_switch`` (rather than ``scf.if``), which PASS 1b must strip
+    of ``!jasp.QuantumState`` and PASS 2 must convert to a ``cc.if`` chain.
+    """
+    from qrisp.jasp import q_switch
+
+    def circuit(idx):
+        qv = QuantumVariable(1)
+
+        def f0(q):
+            x(q[0])
+            return q
+
+        def f1(q):
+            y(q[0])
+            return q
+
+        def f2(q):
+            z(q[0])
+            return q
+
+        qv = q_switch(idx, [f0, f1, f2], qv)
+        return measure(qv)
+
+    xdsl_module = _lower(circuit, 0)
+
+    mlir = str(xdsl_module)
+    assert "cc.if" in mlir, "Expected scf.index_switch to be lowered to a cc.if chain"
+    validate_quake_mlir(mlir)
+
+
 def test_decomposed_gates():
     """Decomposed gates (rxx, rzz, xxyy) emit the expected sequence of quake ops."""
 

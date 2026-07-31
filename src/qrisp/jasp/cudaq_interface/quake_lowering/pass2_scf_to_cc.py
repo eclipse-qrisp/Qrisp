@@ -46,8 +46,8 @@ A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``, ``sle``) in
 from typing import Optional, List
 
 from xdsl.dialects import scf, arith, tensor
-from xdsl.dialects.scf import IfOp, ForOp, WhileOp, YieldOp, ConditionOp
-from xdsl.dialects.builtin import ModuleOp, TensorType
+from xdsl.dialects.scf import IfOp, ForOp, WhileOp, IndexSwitchOp, YieldOp, ConditionOp
+from xdsl.dialects.builtin import ModuleOp, TensorType, IntegerType, IntegerAttr
 from xdsl.ir import Block, Region, SSAValue, Operation, Attribute
 
 from xdsl.rewriter import Rewriter, InsertPoint
@@ -79,6 +79,7 @@ def lower_scf_to_cc(module: ModuleOp) -> None:
                 ScfIfPattern(),
                 ScfWhilePattern(),
                 ScfForPattern(),
+                ScfIndexSwitchPattern(),
             ]
         ),
         walk_regions_first=True,  # Enables bottom-up traversal (replaces manual _process_region recursion)
@@ -405,3 +406,79 @@ class ScfWhilePattern(RewritePattern):
                 res.replace_all_uses_with(scalar_res)
 
         rewriter.erase_op(while_op)
+
+
+class ScfIndexSwitchPattern(RewritePattern):
+    """Pattern to convert ``scf.index_switch`` → a chain of nested ``cc.if`` ops.
+
+    CC has no native switch construct, so the (index-typed) selector is cast
+    to ``i64`` and compared for equality against each case value, building
+    the branches outermost-first (case 0 tested first, falling through to
+    the next case, and finally to the default region).
+    """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, switch_op: IndexSwitchOp, rewriter: PatternRewriter) -> None:
+        result_types: List[Attribute] = []
+        for t in switch_op.result_types:
+            if _is_rank0_tensor(t):
+                elem_t = _get_element_type(t)
+                result_types.append(elem_t if elem_t else t)
+            else:
+                result_types.append(t)
+
+        def _convert_region(region: Region) -> Region:
+            for block in region.blocks:
+                for op in list(block.ops):
+                    if isinstance(op, scf.YieldOp):
+                        unwrapped = [_unwrap(v, op) for v in op.operands]
+                        cc_continue = CcContinueOp(*unwrapped)
+                        block.insert_ops_before([cc_continue], op)
+                        Rewriter.erase_op(op, safe_erase=False)
+            return region
+
+        case_values = list(switch_op.cases.iter_values())
+        num_cases = len(case_values)
+
+        # regions layout: (default_region, *case_regions)
+        default_region = _convert_region(switch_op.detach_region(switch_op.regions[0]))
+        case_regions = [_convert_region(switch_op.detach_region(switch_op.regions[0])) for _ in range(num_cases)]
+
+        arg_cast = arith.IndexCastOp(switch_op.arg, IntegerType(64))
+        rewriter.insert_op(arg_cast, InsertPoint.before(switch_op))
+
+        # Nest cases last-to-first (excluding case 0), each falling back to
+        # the previously built (inner) region on mismatch.
+        current_else = default_region
+        for value, region in list(zip(case_values, case_regions))[:0:-1]:
+            const_op = arith.ConstantOp(IntegerAttr(value, IntegerType(64)))
+            cmp_op = arith.CmpiOp(arg_cast.result, const_op.result, "eq")
+            block = Block()
+            block.add_op(const_op)
+            block.add_op(cmp_op)
+            nested_if = CcIfOp(cmp_op.result, result_types, region, current_else)
+            block.add_op(nested_if)
+            block.add_op(CcContinueOp(*nested_if.res))
+            current_else = Region([block])
+
+        # Case 0's comparison is inserted directly into the parent block.
+        const_op = arith.ConstantOp(IntegerAttr(case_values[0], IntegerType(64)))
+        cmp_op = arith.CmpiOp(arg_cast.result, const_op.result, "eq")
+        rewriter.insert_op([const_op, cmp_op], InsertPoint.before(switch_op))
+        cc_if = CcIfOp(cmp_op.result, result_types, case_regions[0], current_else)
+        rewriter.insert_op(cc_if, InsertPoint.before(switch_op))
+
+        for i, res in enumerate(switch_op.results):
+            orig_type = res.type
+            scalar_res = cc_if.res[i]
+            if _is_rank0_tensor(orig_type):
+                wrap = tensor.FromElementsOp.create(
+                    operands=[scalar_res],
+                    result_types=[orig_type],
+                )
+                rewriter.insert_op(wrap, InsertPoint.before(switch_op))
+                res.replace_all_uses_with(wrap.results[0])
+            else:
+                res.replace_all_uses_with(scalar_res)
+
+        rewriter.erase_op(switch_op)

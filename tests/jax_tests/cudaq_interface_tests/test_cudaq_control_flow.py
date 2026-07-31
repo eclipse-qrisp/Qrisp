@@ -28,6 +28,7 @@ from qrisp import (
     measure,
     rx,
     x,
+    y,
     z,
 )
 from qrisp.jasp import (
@@ -35,6 +36,7 @@ from qrisp.jasp import (
     q_while_loop,
     q_cond,
     q_fori_loop,
+    q_switch,
 )
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 
@@ -145,6 +147,78 @@ def test_q_cond():
 
     results = cudaq.run(circuit, shots_count=10)
     assert results == 10 * [1]
+
+
+# ---------------------------------------------------------------------------
+# Test q_switch (classical index)
+# ---------------------------------------------------------------------------
+
+
+def test_q_switch_two_branches_classical():
+    """Classical-index q_switch with 2 branches lowers to scf.if."""
+
+    @cudaq_kernel
+    def circuit(idx: int):
+        def f0(v):
+            return v + 10
+
+        def f1(v):
+            return v + 20
+
+        return q_switch(idx, [f0, f1], 0)
+
+    assert cudaq.run(circuit, 0, shots_count=3) == 3 * [10]
+    assert cudaq.run(circuit, 1, shots_count=3) == 3 * [20]
+
+
+def test_q_switch_three_branches_classical():
+    """Classical-index q_switch with >=3 branches lowers to scf.index_switch."""
+
+    @cudaq_kernel
+    def circuit(idx: int):
+        def f0(v):
+            return v + 3
+
+        def f1(v):
+            return v + 2
+
+        def f2(v):
+            return v + 1
+
+        return q_switch(idx, [f0, f1, f2], 0)
+
+    assert cudaq.run(circuit, 0, shots_count=3) == 3 * [3]
+    assert cudaq.run(circuit, 1, shots_count=3) == 3 * [2]
+    assert cudaq.run(circuit, 2, shots_count=3) == 3 * [1]
+
+
+def test_q_switch_three_branches_quantum():
+    """Classical-index q_switch with >=3 branches, each branch applying a gate
+    to a quantum operand (exercises QST threading through scf.index_switch).
+    """
+
+    @cudaq_kernel
+    def circuit(idx: int):
+        qv = QuantumVariable(1)
+
+        def f0(q):
+            x(q[0])
+            return q
+
+        def f1(q):
+            y(q[0])
+            return q
+
+        def f2(q):
+            z(q[0])
+            return q
+
+        qv = q_switch(idx, [f0, f1, f2], qv)
+        return measure(qv)
+
+    assert cudaq.run(circuit, 0, shots_count=3) == 3 * [1]
+    assert cudaq.run(circuit, 1, shots_count=3) == 3 * [1]
+    assert cudaq.run(circuit, 2, shots_count=3) == 3 * [0]
 
 
 # ---------------------------------------------------------------------------
