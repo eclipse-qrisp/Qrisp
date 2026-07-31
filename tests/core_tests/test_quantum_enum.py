@@ -86,8 +86,8 @@ def test_OneHot_decoding():
         pass
 
     q_color = QuantumColor()
-    with pytest.raises(ValueError, match="Can not decode value"):
-        result = q_color.decoder(0)
+    result = q_color.decoder(0)
+    assert result is None
 
 
 def test_Binary_decoding():
@@ -105,8 +105,8 @@ def test_Binary_decoding():
         pass
 
     q_color = QuantumColor()
-    with pytest.raises(ValueError, match="Can not decode value outside of range"):
-        result = q_color.decoder(3)
+    result = q_color.decoder(3)
+    assert result is None
 
 
 def test_OneHot_apply_phase_if_eq():

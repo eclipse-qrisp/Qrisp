@@ -100,7 +100,7 @@ class QuantumEnum(QuantumVariable):
                     if i in range(len(enum_cls.__members__.items())):
                         return enum_cls(i)
                     else:
-                        raise ValueError("Can not decode value outside of range")
+                        return None
 
                 cls.decoder = decoder
 
@@ -160,7 +160,7 @@ class QuantumEnum(QuantumVariable):
                     if i in [member.value for member in enum_cls]:
                         return enum_cls(i)
                     else:
-                        raise ValueError("Can not decode value")
+                        return None
 
                 cls.decoder = decoder
 
