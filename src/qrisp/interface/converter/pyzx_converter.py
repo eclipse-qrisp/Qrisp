@@ -15,7 +15,9 @@
 ********************************************************************************
 """
 
+from qrisp import QuantumCircuit, RYGate, RZGate, SXGate, SwapGate, HGate, ZGate, u3Gate
 import numpy as np
+from functools import partial
 
 
 def convert_to_pyzx(qrisp_circuit):
@@ -50,45 +52,7 @@ def convert_to_pyzx(qrisp_circuit):
         from pyzx import Circuit
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
-    """    
-    from pyzx.circuit import (
-        NOT,
-        Y, 
-        Z, 
-        HAD, 
-        XPhase, 
-        YPhase, 
-        ZPhase, 
-        U2, 
-        U3, 
-        S, 
-        T, 
-        SX, 
-        SWAP, 
-        RXX, 
-        RZZ, 
-        CNOT,
-        CY, 
-        CZ, 
-        CHAD, 
-        CSX, 
-        XCX, 
-        CRX, 
-        CRY, 
-        CRZ, 
-        CPhase, 
-        CU3, 
-        CU, 
-        CSWAP, 
-        Tofolli, 
-        CCZ, 
-        ParityPhase, 
-        FSim,
-        Measurement,
-        PhaseGadget, 
-        ConditionalGate
-    )
-    """
+
     gate_map = {
         "cx": "CNOT",
         "cz": "CZ",
@@ -118,7 +82,7 @@ def convert_to_pyzx(qrisp_circuit):
         "qb_alloc": None,
         "qb_dealloc": None,
     }
-    
+
     # repeatedly transpile unknown gates until only known ones remain
     def _unknown_names(circuit):
         return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
@@ -149,34 +113,41 @@ def convert_to_pyzx(qrisp_circuit):
             )
 
         qrisp_circuit = transpiled
-         
+
     num_qubits = qrisp_circuit.num_qubits()
     pyzx_circuit = Circuit(num_qubits)
-    
+
     qubit_map = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = i
-        
+
     for instr in qrisp_circuit.data:
         name = instr.op.name
         qubits = instr.qubits
         params = instr.op.params if hasattr(instr.op, "params") else []
-        
+
         pyxz_gate = gate_map[name]
         pyxz_op_qubits = [qubit_map[q] for q in qubits]
-        
+
         # gate with no direct PyXZ equivalent
         if pyxz_gate is None:
-            if name in ["id", "qb_alloc", "qb_dealloc"]:
+            if name in ["id", "gphase", "qb_alloc", "qb_dealloc"]:
                 pass
-            # decompose via its .definition circuit (e.g. xxyy, rxx, rzz)
+            elif name == "s_dg":
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, -np.pi/2)
+            elif name == "t_dg":
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, -np.pi/4)
+            elif name == "p":
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0])
+            elif name == "sx_dg":
+                pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, -np.pi/2)
+            # decompose via its .definition circuit (e.g. xxyy)
             elif instr.op.definition:
                 pyzx_circuit.append(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
             else:
                 raise ValueError(f"{name} gate has no PyXZ equivalent and no definition to decompose.")
             continue
-        
-        
+
         if params:
             if name in ["rx", "ry", "rz", "rxx", "rzz"]:
                 pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, phase=params[0])
@@ -184,8 +155,116 @@ def convert_to_pyzx(qrisp_circuit):
                 raise ValueError(f"{name} gate has a parameter but is not in rx, ry, rz, rxx, rzz.")
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
-        
-        
+
+
     return pyzx_circuit
         
     
+def convert_from_pyzx(pyzx_circuit):
+    """Convert a PyZX QuantumCircuit to a Qrisp Circuit.
+
+    Parameters
+    ----------
+    pyzx_circuit : QuantumCircuit
+        The Qrisp QuantumCircuit to convert.
+
+    Returns
+    -------
+    qrisp.QuantumCircuit
+        A qrisp.QuantumCircuit equivalent to the input PyZX circuit.
+
+    Raises
+    ------
+    ValueError
+        If a gate is not supported by the converter.
+
+    Notes
+    -----
+    Gates that exist in PyZX but not in Qrisp are either substituted directly if they
+    have a straightforward equivalent (applies to U2 and several controlled gates),
+    or it is used PyZX's to_basic_gates() method to decompose those gates.
+    """
+    qc = QuantumCircuit(pyzx_circuit.qubits)
+
+    gate_map = {
+        #single-qubit gates
+        "NOT": qc.x,
+        "Y": qc.y,
+        "Z": qc.z,
+        "HAD": qc.h,
+        "XPhase": qc.rx,
+        "YPhase": qc.ry,
+        "ZPhase": qc.rz,
+        "U2": partial(qc.u3, np.pi/2),
+        "U3": qc.u3,
+        "SX": qc.sx,
+        "S": qc.s,
+        "T": qc.t,
+
+        #multi-qubits gates
+        "CNOT": qc.cx,
+        "CY": qc.cy,
+        "CZ": qc.cz,
+        "CRX": qc.crx,
+        "CRY": lambda x,y,phase: qc.append(RYGate(phase).control(), [x,y]),
+        "CRZ": lambda x,y,phase: qc.append(RZGate(phase).control(), [x,y]),
+        "CSX": lambda x,y: qc.append(SXGate().control(), [x,y]),
+        "CPhase": qc.cp,
+        "ParityPhase": None,
+        "PhaseGadget": None,
+        "XCX": None,
+        "SWAP": qc.swap,
+        "CSWAP": lambda x,y,z: qc.append(SwapGate().control(), [x,y,z]),
+        "CHAD": lambda x,y: qc.append(HGate().control(), [x,y]),
+        "TOF": qc.ccx,
+        "CCZ": lambda x,y,z: qc.append(ZGate().control(2), [x,y,z]),
+        "CU3": lambda x,y,theta,phi,lam: qc.append(u3Gate(theta,phi,lam).control(), [x,y]),
+        "RZZ": qc.rzz,
+        "RXX": qc.rxx,
+        "FSim": None,
+
+        #non-unitary operations
+        "Measurement": qc.measure,
+        "Reset": qc.reset,
+        "InitAncilla": None,
+        "PostSelect": None,
+        "DiscardBit": None,
+        "ConditionalGate": None,
+    }
+
+    def add_gate(gate):
+        #single-qubit, parameter-free gates and non-unitary operations
+        if gate.name in ["NOT", "Y", "Z", "HAD", "SX", "S", "T", "Measurement", "Reset"]:
+            gate_map[gate.name](gate.target)
+        #single-qubit, one-parameter gates
+        elif gate.name in ["XPhase", "YPhase", "ZPhase"]:
+            gate_map[gate.name](gate.phase, gate.target)
+        #single-qubit, multi-parameter gates
+        elif gate.name in ["U2", "U3"]:
+            gate_map[gate.name](*gate.phases, gate.target)
+
+        #two-qubit, paratemeter-free gates
+        elif gate.name in ["CNOT", "CY", "CZ", "CSX", "SWAP", "CHAD"]:
+            gate_map[gate.name](gate.control, gate.target)
+        #two-qubit, one-paratemeter gates
+        elif gate.name in ["CRX", "CRY", "CRZ", "CPhase", "RZZ", "RXX"]:
+            gate_map[gate.name](gate.phase, gate.control, gate.target)
+        #two-qubit, multi-paratemeter gates
+        elif gate.name in ["CU3"]:
+            gate_map[gate.name](*gate.phases, gate.control, gate.target)
+        #multi-qubit, paratemeter-free gates
+        elif gate.name in ["CSWAP", "TOF", "CCZ"]:
+            gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
+
+    for gate in pyzx_circuit.gates:
+        if gate_map[gate.name] is not None:
+            add_gate(gate)
+        else:
+            #try with pyzx's basic gate decomposition
+            for _gate in gate.to_basic_gates():
+                if gate_map[_gate.name] is not None:
+                    add_gate(_gate)
+                else:
+                    raise ValueError(f"{_gate.name} gate has no Qrisp equivalent and cannot be decomposed either.")
+
+    return qc
