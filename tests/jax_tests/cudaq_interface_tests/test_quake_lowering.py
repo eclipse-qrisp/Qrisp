@@ -704,6 +704,51 @@ def test_negative_indexing():
     assert result == 10 * [1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
 
 
+def test_constant_nonneg_index_skips_normalization_scaffold():
+    """A compile-time-constant, non-negative index (e.g. qv[0]) needs no
+    sign check: no cmpi/select (and no veq_size lookup) should be emitted."""
+
+    def main():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        return measure(qv[0])
+
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
+    assert "arith.cmpi" not in mlir
+    assert "arith.select" not in mlir
+    assert "quake.veq_size" not in mlir
+    validate_quake_mlir(mlir)
+
+    kernel = cudaq_kernel(main)
+    result = cudaq.run(kernel, shots_count=10)
+    assert result == 10 * [1]
+
+
+def test_constant_negative_index_skips_cmpi_select():
+    """A compile-time-constant negative index (e.g. qv[-1]) has a
+    statically-known sign: only the addi (idx + size) is needed, no
+    cmpi/select."""
+
+    def main():
+        qv = QuantumVariable(3)
+        x(qv[-1])
+        return measure(qv[2])
+
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
+    assert "arith.cmpi" not in mlir
+    assert "arith.select" not in mlir
+    assert "arith.addi" in mlir, "Expected idx + size(veq) addi for a negative constant index"
+    validate_quake_mlir(mlir)
+
+    kernel = cudaq_kernel(main)
+    result = cudaq.run(kernel, shots_count=10)
+    assert result == 10 * [1]
+
+
 def test_math():
     """Test that classical math operations are correctly lowered to arith/math ops and can be used in the quantum program."""
 

@@ -17,6 +17,7 @@
 
 from xdsl.dialects import arith, tensor
 from xdsl.dialects.builtin import (
+    DenseIntOrFPElementsAttr,
     IntegerAttr,
     IntegerType,
     Float16Type,
@@ -136,8 +137,47 @@ def _coerce_to_f64_for_rewriter(val: SSAValue, rewriter: PatternRewriter) -> SSA
     raise ValueError(f"Cannot coerce {scalar.type} to f64")
 
 
+def _try_get_constant_int(value: SSAValue) -> int | None:
+    """Return the compile-time integer value feeding *value*, if any.
+
+    Sees through a single ``tensor.extract`` (the standard rank-0
+    tensor-scalar round-trip emitted for jasp indices) down to the
+    underlying ``arith.constant`` (scalar or dense-tensor), else None.
+    """
+    owner = value.owner
+    if isinstance(owner, tensor.ExtractOp):
+        owner = owner.tensor.owner
+
+    if not isinstance(owner, arith.ConstantOp):
+        return None
+
+    attr = owner.value
+    if isinstance(attr, IntegerAttr):
+        return attr.value.data
+    if isinstance(attr, DenseIntOrFPElementsAttr):
+        values = list(attr.get_values())
+        if len(values) == 1:
+            return values[0]
+    return None
+
+
 def _normalize_index_for_veq_rewriter(veq: SSAValue, idx: SSAValue, rewriter: PatternRewriter) -> SSAValue:
-    """Python-style negative indexing: if idx < 0, return idx + size(veq)."""
+    """Python-style negative indexing: if idx < 0, return idx + size(veq).
+
+    When ``idx`` is already a compile-time constant, its sign is known
+    statically, so the cmpi/select scaffold is skipped: a non-negative
+    constant is used as-is, and a negative one only needs the addi (no
+    cmpi/select needed since the branch is resolved).
+    """
+    const_idx = _try_get_constant_int(idx)
+    if const_idx is not None:
+        if const_idx >= 0:
+            return idx
+        size = VeqSizeOp(veq)
+        idx_plus_size = arith.AddiOp(idx, size.result)
+        rewriter.insert_op([size, idx_plus_size], InsertPoint.before(rewriter.current_operation))
+        return idx_plus_size.result
+
     size = VeqSizeOp(veq)
     zero = arith.ConstantOp(IntegerAttr(0, 64))
     is_neg = arith.CmpiOp(idx, zero.result, "slt")
