@@ -126,7 +126,6 @@ def convert_to_pyzx(qrisp_circuit):
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = i
         
-    
 
     for instr in qrisp_circuit.data:
         name = instr.op.name
@@ -159,7 +158,7 @@ def convert_to_pyzx(qrisp_circuit):
             if name in ["rx", "ry", "rz", "u3", "rxx", "rzz"]:
                 pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[p/np.pi for p in params])
             else:
-                raise ValueError(f"{name} gate has a parameter but is not in rx, ry, rz, rxx, rzz.")
+                raise ValueError(f"{name} gate has a parameter but is not in rx, ry, rz, u3, rxx, rzz.")
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 

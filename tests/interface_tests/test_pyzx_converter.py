@@ -31,8 +31,10 @@ def _build_multi_qubit_qrisp_circuit():
     """Qrisp circuit with multi-qubit gates."""
     qc = QuantumCircuit(4)
     qc.cx(0,1)
+    qc.cy(2,3)
     qc.cz(0,2)
     qc.swap(2, 3)
+    qc.xxyy(0, 1, 2, 3)
     qc.rxx(0.1, 0, 3)
     qc.rzz(0.2, 1, 2)
     return qc
@@ -57,7 +59,6 @@ def _build_single_qubit_pyzx_circuit():
 def _build_multi_qubit_pyzx_circuit():
     """PyZX circuit with multi-qubit gates."""
     c = Circuit(4)
-
     c.add_gate("CNOT", 0, 1)
     c.add_gate("CY", 2, 3)
     c.add_gate("CZ", 1, 2)
@@ -67,6 +68,9 @@ def _build_multi_qubit_pyzx_circuit():
     c.add_gate("CPhase", 0, 1, Fraction(4,5))
     c.add_gate("ParityPhase", Fraction(6,5), 0, 2, 3)
     c.add_gate("XCX", 0, 1)
+    #SX gate has a different phase definition in PyZX, hence CSX gives a unitary that is equivalent, but does not only differ in a global phase
+    #leave out for now
+    #c.add_gate("CSX", 0, 1)
     c.add_gate("SWAP", 0, 2)
     c.add_gate("CSWAP", 0, 1, 3)
     c.add_gate("CHAD", 0, 1)
@@ -104,20 +108,12 @@ def _test_pyzx_to_qrisp(c):
 def _test_roundtrip(qc):
     c = qc.to_pyzx()
     qc2 = QuantumCircuit.from_pyzx(c)
-    
-    qc_U = qc.get_unitary()
-    qc2_U = qc2.get_unitary()
-    
-    _compare_unitaries(qc_U, qc2_U)
-    
+    _compare_unitaries(qc.get_unitary(), qc2.get_unitary())
+
 def _test_roundtrip_reverse(c):
     qc = QuantumCircuit.from_pyzx(c)
     c2 = qc.to_pyzx()
-    
-    c_U = c.to_matrix()
-    c2_U = c2.to_matrix()
-    
-    _compare_unitaries(c_U, c2_U)
+    _compare_unitaries(c.to_matrix(), c2.to_matrix())
 
 
 
@@ -133,12 +129,12 @@ def test_multi_qubit_circuit_qrisp_to_pyzx():
 def test_single_qubit_circuit_pyzx_to_qrisp():
     c = _build_single_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
-    
+
 def test_multi_qubit_circuit_pyzx_to_qrisp():
     c = _build_multi_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
-    
-    
+
+
 def test_single_qubit_circuit_roundtrip():
     qc = _build_single_qubit_qrisp_circuit()
     _test_roundtrip(qc)
@@ -147,17 +143,16 @@ def test_multi_qubit_circuit_roundtrip():
     qc = _build_multi_qubit_qrisp_circuit()
     _test_roundtrip(qc)
 
-    
+
 def test_single_qubit_circuit_roundtrip_reverse():
     c = _build_single_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
-    
+
 def test_multi_qubit_circuit_roundtrip_reverse():
     c = _build_multi_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
 
 
-    
 def test_qrisp_transpilation():
     """Test transpilation capability of converter for a circuit that has to be transpiled.
     Example taken from test_cirq_converter.py"""
@@ -176,4 +171,19 @@ def test_qrisp_transpilation():
     
     _test_qrisp_to_pyzx(qc)
     _test_roundtrip(qc)
-    
+
+
+def test_non_unitaries():
+    """Test measurement and reset"""
+    qc = QuantumCircuit(2)
+    qc.measure(0)
+    qc.reset(1)
+    c = qc.to_pyzx()
+    assert [g.name for g in c.gates] == ['Measurement', 'Reset']
+    assert [g.target for g in c.gates] == [0,1]
+
+    c = Circuit(2)
+    c.add_gate("Measurement", 0)
+    c.add_gate("Reset", 1)
+    qc = QuantumCircuit.from_pyzx(c)
+    assert [g.op.name for g in qc.data] == ["measure", "reset"]
