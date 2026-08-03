@@ -15,6 +15,8 @@
 ********************************************************************************
 """
 
+from collections import Counter
+
 import pytest
 
 import cudaq
@@ -24,15 +26,21 @@ from qrisp import (
     QuantumVariable,
     QuantumBool,
     QuantumFloat,
+    cx,
+    cyclic_shift,
     h,
     mcx,
+    prepare,
+    reflection,
+    rx,
     x,
     z,
     p,
     ry,
     measure,
 )
-from qrisp.alg_primitives import amplitude_amplification, q_switch, QPE, QFT
+from qrisp.alg_primitives import amplitude_amplification, q_switch, QAE, QPE, QFT, IQPE
+from qrisp.jasp import jrange
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 from qrisp.operators import X, Y, Z
 
@@ -181,3 +189,93 @@ def test_trotterization():
         return measure(qv)
 
     results = cudaq.run(main, shots_count=10)
+
+
+def test_quantum_amplitude_estimation():
+    """Test that quantum amplitude estimation produces the expected output state."""
+
+    def state_function(qb):
+        ry(np.pi / 4, qb)
+
+    def oracle_function(qb):
+        z(qb)
+
+    @cudaq_kernel
+    def main():
+        qb = QuantumBool()
+        res = QAE([qb], state_function, oracle_function, precision=3)
+        return measure(res)
+
+    results = cudaq.run(main, shots_count=100)
+    counts = Counter(results)
+    assert counts[0.125] > 0
+    assert counts[0.875] > 0
+    assert counts[0.125] + counts[0.875] == 100
+
+
+def test_iterative_quantum_phase_estimation():
+    """Test that iterative quantum phase estimation produces the expected output state."""
+
+    def U(qv):
+        x = 1 / 2**3
+        y = 1 / 2**2
+        rx(x * 2 * np.pi, qv[0])
+        rx(y * 2 * np.pi, qv[1])
+
+    @cudaq_kernel
+    def main():
+        qv = QuantumVariable(2)
+        x(qv)
+        h(qv)
+        return IQPE(qv, U, precision=4)
+
+    results = cudaq.run(main, shots_count=10)
+    expected = 1 / 2**3 + 1 / 2**2
+    assert np.allclose(results, expected)
+
+
+def test_reflection():
+    """Test that reflection around a GHZ state maps |1...1> back to |0...0>."""
+
+    def ghz(qv):
+        h(qv[0])
+        for i in jrange(1, qv.size):
+            cx(qv[0], qv[i])
+
+    @cudaq_kernel
+    def main():
+        qv = QuantumVariable(5)
+        x(qv)
+        reflection(qv, ghz)
+        return measure(qv)
+
+    results = cudaq.run(main, shots_count=10)
+    assert results == 10 * [0]
+
+
+def test_prepare():
+    """Test that prepare produces the equal superposition encoded by the target amplitude vector."""
+
+    @cudaq_kernel
+    def main():
+        qv = QuantumFloat(2)
+        prepare(qv, [1.0, 1.0, 1.0, 1.0])
+        return measure(qv)
+
+    results = cudaq.run(main, shots_count=100)
+    counts = Counter(results)
+    assert set(counts) == {0, 1, 2, 3}
+
+
+def test_cyclic_shift():
+    """Test that cyclic_shift rotates the basis state of a QuantumFloat by the given amount."""
+
+    @cudaq_kernel
+    def main():
+        qv = QuantumFloat(3)
+        qv[:] = 1
+        cyclic_shift(qv, shift_amount=2)
+        return measure(qv)
+
+    results = cudaq.run(main, shots_count=10)
+    assert results == 10 * [4]
