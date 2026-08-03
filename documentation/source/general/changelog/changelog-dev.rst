@@ -84,6 +84,14 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
+  re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
+  The backend implementation and its tests live in the IQM client
+  repository.  The Qrisp-side module provides a placeholder with a
+  helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
+  not installed.
+  (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
 .. Add API changes above this line
 
 Development
@@ -103,8 +111,31 @@ Development
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
 
-* Added pytest coverage reporting to the CI test workflow
-  (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
+* Added pytest coverage reporting to the CI test workflow and selective
+  coverage reporting for the ``qrisp`` package.
+  (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
+   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
+
+Dependency Upgrades
+-------------------
+
+* Bumped myst-parser from 5.0.0 to 5.1.0
+  (`PR #729 <https://github.com/eclipse-qrisp/Qrisp/pull/729>`_).
+
+* Bumped ipykernel from 7.2.0 to 7.3.0
+  (`PR #734 <https://github.com/eclipse-qrisp/Qrisp/pull/734>`_).
+
+* Bumped pytest from 9.1.0 to 9.1.1
+  (`PR #723 <https://github.com/eclipse-qrisp/Qrisp/pull/723>`_).
+
+* Replaced pinned IQM dependencies with ``iqm-client[qrisp]`` in the
+  ``iqm`` optional dependency group.
+  (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+  
+* Bumped ``actions/setup-python`` from 6 to 7
+  (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
+
+.. Add dependency upgrades above this line
 
 First Time Contributors 🎉
 --------------------------
