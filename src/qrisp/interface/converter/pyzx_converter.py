@@ -26,7 +26,7 @@ def convert_to_pyzx(qrisp_circuit):
 
     Parameters
     ----------
-    qrisp_circuit : QuantumCircuit
+    qrisp_circuit : qrisp.QuantumCircuit
         The Qrisp QuantumCircuit to convert.
 
     Returns
@@ -37,7 +37,7 @@ def convert_to_pyzx(qrisp_circuit):
     Raises
     ------
     ImportError
-        If PyZ is not installed.
+        If PyZX is not installed.
     ValueError
         If a gate is not supported by the converter.
 
@@ -171,8 +171,8 @@ def convert_from_pyzx(pyzx_circuit):
 
     Parameters
     ----------
-    pyzx_circuit : QuantumCircuit
-        The Qrisp QuantumCircuit to convert.
+    pyzx_circuit : pyzx.Circuit
+        The PyZX Circuit to convert.
 
     Returns
     -------
