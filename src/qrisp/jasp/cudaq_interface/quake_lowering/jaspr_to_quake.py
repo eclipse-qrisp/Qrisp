@@ -50,6 +50,9 @@ The lowering consists of the following passes:
    (where they have no SSA results) with ``cc.if`` / ``cc.loop``.
 3. **PASS 3** (:mod:`.pass3_scalar_tensor_unwrap`) – Fold trivial rank-0 tensor
    constants / extracts into scalars.
+3b. **PASS 3B** (:mod:`.pass3b_static_veq_alloca`) – Rewrite constant-sized
+    ``quake.alloca`` register allocations from ``!quake.veq<?>[%n]`` to
+    ``!quake.veq<N>``.
 4. **PASS 4** (:mod:`.pass4_ranked_tensor_to_array`) – Lower ranked tensor constants
     and accesses to CC array operations.
 5. **PASS 5** (:mod:`.pass5_array_to_stdvec`) – Rewrite static array pointer
@@ -69,6 +72,9 @@ from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake
 from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.pass3b_static_veq_alloca import (
+    staticize_veq_alloca,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.pass4_ranked_tensor_to_array import (
     lower_ranked_tensors,
@@ -140,6 +146,9 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
 
     # Step 3 – PASS 3: scalar tensor unwrapping + scalar constant folding.
     unwrap_scalar_tensors(module)
+
+    # Step 3b – PASS 3B: constant-sized veq allocations become statically-sized.
+    staticize_veq_alloca(module)
 
     # Step 4 – PASS 4: ranked tensor → CC array lowering.
     lower_ranked_tensors(module)

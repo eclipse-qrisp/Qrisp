@@ -204,16 +204,23 @@ def test_parameterized_gate_functional_type():
     validate_quake_mlir(mlir)
 
 
-def test_veq_size_functional_type():
-    """quake.veq_size must use functional-type: (!quake.veq<?>) -> i64."""
-    from qrisp.jasp import jrange
+# ---------------------------------------------------------------------------
+# Test dynamic-sized veq
+# ---------------------------------------------------------------------------
 
-    def circuit():
-        qv = QuantumVariable(3)
+
+def test_dynamic_veq_size_functional_type():
+    """For a traced (non-constant) size, quake.veq_size keeps the dynamic
+    !quake.veq<?> type and uses functional-type: (!quake.veq<?>) -> i64."""
+
+    # Size is a traced argument (not a constant), so the alloca stays dynamic
+    # (pass3b only staticizes constant-sized allocas).
+    def circuit(n):
+        qv = QuantumVariable(n)
         h(qv[qv.size - 1])
         return qv
 
-    xdsl_module = _lower(circuit)
+    xdsl_module = _lower(circuit, 3)
 
     mlir = str(xdsl_module)
     # veq_size op should use functional-type with parens if present
@@ -222,19 +229,92 @@ def test_veq_size_functional_type():
     validate_quake_mlir(mlir)
 
 
-def test_alloca_veq_format():
-    """quake.alloca !quake.veq<?>[%n : i64] — type before size in brackets."""
+def test_dynamic_alloca_veq_format():
+    """For a traced (non-constant) size, quake.alloca keeps the dynamic format
+    !quake.veq<?>[%n : i64] — type before size in brackets."""
 
-    def circuit():
-        qv = QuantumVariable(4)
+    # Size is a traced argument (not a constant), so the alloca stays dynamic
+    # (pass3b only staticizes constant-sized allocas).
+    def circuit(n):
+        qv = QuantumVariable(n)
         return qv
 
-    xdsl_module = _lower(circuit)
+    xdsl_module = _lower(circuit, 4)
 
     mlir = str(xdsl_module)
     # The alloca must print the type first, then size in brackets
     assert "quake.alloca !quake.veq<?>[" in mlir, "alloca format should be '!quake.veq<?>[%n : i64]'"
     validate_quake_mlir(mlir)
+
+
+# ---------------------------------------------------------------------------
+# Test static-sized veq (pass3b: constant-sized quake.alloca staticization)
+# ---------------------------------------------------------------------------
+
+
+def test_alloca_staticized_for_constant_size():
+    """A constant-sized QuantumVariable is allocated with a static !quake.veq<N>."""
+
+    def circuit():
+        qv = QuantumVariable(5)
+        h(qv[0])
+        return measure(qv)
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    assert "quake.alloca !quake.veq<5>" in mlir
+    assert "veq<?>[" not in mlir, "no dynamic alloca expected for a constant size"
+    validate_quake_mlir(mlir)
+
+
+def test_static_veq_transparent_uses_stay_static():
+    """extract_ref/veq_size/dealloc on a static veq keep the static type, no relax_size."""
+
+    def circuit():
+        qv = QuantumVariable(4)
+        x(qv[0])
+        result = measure(qv)
+        return result
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    assert "quake.alloca !quake.veq<4>" in mlir
+    assert "quake.extract_ref %0[" in mlir or "!quake.veq<4>, i64) -> !quake.ref" in mlir
+    assert "quake.relax_size" not in mlir, "transparent consumers should not need a relax_size cast"
+    validate_quake_mlir(mlir)
+
+
+def test_static_veq_control_flow_gets_relax_size():
+    """A constant-sized veq carried through q_fori_loop is staticized, with
+    quake.relax_size bridging the loop's dynamically-typed block argument."""
+    from qrisp.jasp import q_fori_loop
+
+    def circuit():
+        qv = QuantumVariable(5)
+
+        def body_fun(i, val):
+            acc, qv = val
+            x(qv[i])
+            return acc + 1, qv
+
+        acc, qv = q_fori_loop(0, 5, body_fun, (0, qv))
+        return measure(qv)
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    # The alloca itself is staticized...
+    assert "quake.alloca !quake.veq<5>" in mlir
+    # ...and a relax_size cast bridges it into the loop's dynamic block argument.
+    assert "quake.relax_size" in mlir
+    assert "veq<?>[" not in mlir, "no dynamic alloca expected for a constant size"
+    validate_quake_mlir(mlir)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=5)
+    assert result == 5 * [31], f"Expected all 5 qubits flipped (0b11111 = 31), got {result}"
 
 
 # ---------------------------------------------------------------------------
@@ -847,12 +927,12 @@ def test_bell_circuit_full_format():
     assert 'cudaq.kernel = "true"' in mlir
     assert 'cudaq.entrypoint = "true"' in mlir
 
-    # Alloca
-    assert "quake.alloca !quake.veq<?>[" in mlir
+    # Alloca (constant size 2, no control flow -> statically-sized veq)
+    assert "quake.alloca !quake.veq<2>" in mlir
 
     # extract_ref with functional-type
-    assert "(!quake.veq<?>" in mlir and "-> !quake.ref" in mlir, (
-        "extract_ref must use functional-type format: (!quake.veq<?>, idx) -> !quake.ref"
+    assert "(!quake.veq<2>" in mlir and "-> !quake.ref" in mlir, (
+        "extract_ref must use functional-type format: (!quake.veq<2>, idx) -> !quake.ref"
     )
 
     # H gate
