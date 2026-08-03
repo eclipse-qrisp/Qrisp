@@ -147,7 +147,7 @@ def _rewrite_func_def(func_op, rewrites: list) -> None:
 
 def _process_func(func_op, func_rewrites: dict) -> None:
     """Process a function: materialize arrays, rewrite accesses, rewrite calls."""
-    func_array_map: dict[SSAValue, tuple[SSAValue, any, int]] = {}
+    func_array_map: dict[SSAValue, tuple[SSAValue, any]] = {}
     _process_block_recursive(func_op.body, func_array_map, func_rewrites)
 
 
@@ -156,21 +156,13 @@ def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dic
     for block in region.blocks:
         _process_block(block, array_map)
         _rewrite_calls_in_block(block, func_rewrites, array_map)
-        # Second dead-constant sweep: call rewriting may have removed the last
-        # use of a tensor constant that Phase 3 inside _process_block couldn't
-        # erase yet (because the call site still held a reference).
-        _erase_dead_tensor_constants(block)
         for op in list(block.ops):
             if isinstance(op, CcLoopOp):
                 _rewrite_cc_loop_tensor_args(op, array_map)
-                for nested_region in op.regions:
-                    _process_block_recursive(nested_region, array_map, func_rewrites)
-            else:
-                for nested_region in op.regions:
-                    _process_block_recursive(nested_region, array_map, func_rewrites)
-        # Third dead-constant sweep: cc.loop arg rewriting may have removed the
-        # last use of a tensor constant that the second sweep above couldn't erase
-        # yet (because cc.loop still held references at that point).
+            for nested_region in op.regions:
+                _process_block_recursive(nested_region, array_map, func_rewrites)
+        # Dead-constant sweep: call/loop-arg rewriting above may have dropped
+        # the last use of a tensor constant that _process_block couldn't erase.
         _erase_dead_tensor_constants(block)
 
 
@@ -186,8 +178,7 @@ def _process_block(block: Block, array_map: dict) -> None:
     # Phase 0: Register ptr-typed block arguments.
     for arg in block.args:
         if isinstance(arg.type, CcPtrType) and isinstance(arg.type.element_type, CcArrayType):
-            inner = arg.type.element_type
-            array_map[arg] = (arg, inner.element_type, inner.size.value.data)
+            array_map[arg] = (arg, arg.type.element_type.element_type)
 
     # Phase 1: Materialize ranked tensor constants (only if they have uses).
     for op in list(block.ops):
@@ -201,11 +192,6 @@ def _process_block(block: Block, array_map: dict) -> None:
             _rewrite_tensor_extract(op, block, array_map)
         elif op.name == "tensor.extract_slice":
             _rewrite_extract_slice_chain(op, block, array_map)
-
-    # Phase 3: Erase dead tensor constants.
-    for op in list(block.ops):
-        if isinstance(op, arith.ConstantOp) and _is_ranked_1_tensor(op.result.type) and not any(op.result.uses):
-            Rewriter.erase_op(op, safe_erase=False)
 
 
 # ===================================================================
@@ -259,15 +245,8 @@ def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
         elif init_val in array_map:
             ptr_val = array_map[init_val][0]
         else:
-            # Try to find it by identity in array_map
-            ptr_val = None
-            for mapped_tensor, (mapped_ptr, _, _) in array_map.items():
-                if mapped_tensor is init_val:
-                    ptr_val = mapped_ptr
-                    break
-            if ptr_val is None:
-                # Cannot find a ptr for this tensor - skip
-                continue
+            # Cannot find a ptr for this tensor - skip
+            continue
 
         rewrites[idx] = (ptr_val, ptr_type, elem_type, size)
 
@@ -290,7 +269,7 @@ def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
                 old_arg = block.args[idx]
                 Rewriter.replace_value_with_new_type(old_arg, ptr_type)
                 # Register in array_map so nested accesses can find it
-                array_map[old_arg] = (old_arg, elem_type, size)
+                array_map[old_arg] = (old_arg, elem_type)
 
     # 3. Update the cc.loop's result types
     for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
@@ -298,7 +277,7 @@ def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
             res = loop_op.res[idx]
             Rewriter.replace_value_with_new_type(res, ptr_type)
             # Register the loop result in array_map too
-            array_map[res] = (res, elem_type, size)
+            array_map[res] = (res, elem_type)
 
 
 # ===================================================================
@@ -395,7 +374,7 @@ def _materialize_array(const_op, block: Block, array_map: dict) -> None:
             store = CcStoreOp(scalar_const.result, ptr.result)
         block.insert_ops_before([store], const_op)
 
-    array_map[const_op.result] = (alloca.result, elem_type, size)
+    array_map[const_op.result] = (alloca.result, elem_type)
 
 
 def _materialize_tensor_value(
@@ -449,7 +428,7 @@ def _rewrite_tensor_extract(extract_op, block: Block, array_map: dict) -> None:
     indices = list(extract_op.indices)
     if not indices or source not in array_map:
         return
-    arr_ptr, elem_type, _ = array_map[source]
+    arr_ptr, elem_type = array_map[source]
     loaded = _emit_load_from_array(arr_ptr, indices[0], elem_type, block, extract_op)
     extract_op.result.replace_all_uses_with(loaded)
     Rewriter.erase_op(extract_op, safe_erase=False)
@@ -465,7 +444,7 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
     source = slice_op.operands[0]
     if source not in array_map:
         return
-    arr_ptr, elem_type, _ = array_map[source]
+    arr_ptr, elem_type = array_map[source]
 
     offset = _get_static_offset(slice_op)
     collapse_op = _find_single_user(slice_op.results[0], "tensor.collapse_shape")
