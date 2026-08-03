@@ -413,7 +413,7 @@ def _materialize_tensor_value(
     block.insert_ops_before([alloca], insert_before)
 
     for i in range(size):
-        idx = arith.ConstantOp(IntegerAttr(i, i64))
+        idx = arith.ConstantOp(IntegerAttr(i, IndexType()))
         extract = tensor.ExtractOp(tensor_val, [idx.result], elem_type)
         block.insert_ops_before([idx, extract], insert_before)
         if i == 0:

@@ -137,3 +137,29 @@ def test_array_dynamic_index_in_qache():
 
     results = cudaq.run(main, shots_count=10)
     assert results == 10 * [0]
+
+
+def test_array_returned_then_passed_to_qache():
+    """An array returned from one @qache function and forwarded as an argument
+    to another is not yet a materialized CC array at the second call site
+    (it is a func.call result, not a local tensor constant), exercising the
+    non-constant tensor materialization fallback in PASS 4.
+    """
+
+    @qache
+    def make_angles():
+        return jnp.array([0.0, 3.14159265])
+
+    @qache
+    def apply_angle(arr, qv):
+        rx(arr[1], qv[0])
+        return measure(qv[0])
+
+    @cudaq_kernel
+    def main():
+        arr = make_angles()
+        qv = QuantumVariable(1)
+        return apply_angle(arr, qv)
+
+    results = cudaq.run(main, shots_count=10)
+    assert results == 10 * [1]
