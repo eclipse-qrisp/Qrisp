@@ -18,6 +18,7 @@
 from qrisp import QuantumCircuit, RYGate, RZGate, SXGate, SwapGate, HGate, ZGate, u3Gate
 import numpy as np
 from functools import partial
+from fractions import Fraction
 
 
 def convert_to_pyzx(qrisp_circuit):
@@ -52,9 +53,12 @@ def convert_to_pyzx(qrisp_circuit):
         from pyzx import Circuit
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
+    from pyzx import settings
+    settings.strict_phase_types = False     #this enables PyZX to (approximately) convert float phases to a Fraction
 
     gate_map = {
         "cx": "CNOT",
+        "cy": "CY",
         "cz": "CZ",
         "swap": "SWAP",
         "h": "HAD",
@@ -64,23 +68,24 @@ def convert_to_pyzx(qrisp_circuit):
         "rx": "XPhase",
         "ry": "YPhase",
         "rz": "ZPhase",
+        "u3": "U3",
         "s": "S",
         "t": "T",
         "s_dg": None,
         "t_dg": None,
-        "measure": "Measurement",
-        "reset": "Reset",
-        "id": None,
         "p": None,
         "sx": "SX",
         "sx_dg": None,
-        "gphase": None,
         "xxyy": None,
         "rxx": "RXX",
         "rzz": "RZZ",
-        # skip qubit allocation and deallocation ops in the converter
+        "measure": "Measurement",
+        "reset": "Reset",
+        # skip qubit allocation and deallocation ops in the converter, as well as identity and global phases
         "qb_alloc": None,
         "qb_dealloc": None,
+        "gphase": None,
+        "id": None,
     }
 
     # repeatedly transpile unknown gates until only known ones remain
@@ -120,6 +125,8 @@ def convert_to_pyzx(qrisp_circuit):
     qubit_map = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = i
+        
+    
 
     for instr in qrisp_circuit.data:
         name = instr.op.name
@@ -134,13 +141,13 @@ def convert_to_pyzx(qrisp_circuit):
             if name in ["id", "gphase", "qb_alloc", "qb_dealloc"]:
                 pass
             elif name == "s_dg":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, -np.pi/2)
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1,2))
             elif name == "t_dg":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, -np.pi/4)
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1,4))
             elif name == "p":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0])
+                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0]/np.pi)
             elif name == "sx_dg":
-                pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, -np.pi/2)
+                pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1,2))
             # decompose via its .definition circuit (e.g. xxyy)
             elif instr.op.definition:
                 pyzx_circuit.append(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
@@ -149,8 +156,8 @@ def convert_to_pyzx(qrisp_circuit):
             continue
 
         if params:
-            if name in ["rx", "ry", "rz", "rxx", "rzz"]:
-                pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, phase=params[0])
+            if name in ["rx", "ry", "rz", "u3", "rxx", "rzz"]:
+                pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[p/np.pi for p in params])
             else:
                 raise ValueError(f"{name} gate has a parameter but is not in rx, ry, rz, rxx, rzz.")
         else:
@@ -206,8 +213,8 @@ def convert_from_pyzx(pyzx_circuit):
         "CY": qc.cy,
         "CZ": qc.cz,
         "CRX": qc.crx,
-        "CRY": lambda x,y,phase: qc.append(RYGate(phase).control(), [x,y]),
-        "CRZ": lambda x,y,phase: qc.append(RZGate(phase).control(), [x,y]),
+        "CRY": lambda phase,x,y: qc.append(RYGate(phase).control(), [x,y]),
+        "CRZ": lambda phase,x,y: qc.append(RZGate(phase).control(), [x,y]),
         "CSX": lambda x,y: qc.append(SXGate().control(), [x,y]),
         "CPhase": qc.cp,
         "ParityPhase": None,
@@ -216,9 +223,9 @@ def convert_from_pyzx(pyzx_circuit):
         "SWAP": qc.swap,
         "CSWAP": lambda x,y,z: qc.append(SwapGate().control(), [x,y,z]),
         "CHAD": lambda x,y: qc.append(HGate().control(), [x,y]),
-        "TOF": qc.ccx,
+        "Tof": qc.ccx,
         "CCZ": lambda x,y,z: qc.append(ZGate().control(2), [x,y,z]),
-        "CU3": lambda x,y,theta,phi,lam: qc.append(u3Gate(theta,phi,lam).control(), [x,y]),
+        "CU3": lambda theta,phi,lam,x,y: qc.append(u3Gate(theta,phi,lam).control(), [x,y]),
         "RZZ": qc.rzz,
         "RXX": qc.rxx,
         "FSim": None,
@@ -232,28 +239,29 @@ def convert_from_pyzx(pyzx_circuit):
         "ConditionalGate": None,
     }
 
+
     def add_gate(gate):
         #single-qubit, parameter-free gates and non-unitary operations
         if gate.name in ["NOT", "Y", "Z", "HAD", "SX", "S", "T", "Measurement", "Reset"]:
             gate_map[gate.name](gate.target)
         #single-qubit, one-parameter gates
         elif gate.name in ["XPhase", "YPhase", "ZPhase"]:
-            gate_map[gate.name](gate.phase, gate.target)
+            gate_map[gate.name](float(gate.phase)*np.pi, gate.target)
         #single-qubit, multi-parameter gates
         elif gate.name in ["U2", "U3"]:
-            gate_map[gate.name](*gate.phases, gate.target)
+            gate_map[gate.name](*[float(p)*np.pi for p in gate.phases], gate.target)
 
         #two-qubit, paratemeter-free gates
         elif gate.name in ["CNOT", "CY", "CZ", "CSX", "SWAP", "CHAD"]:
             gate_map[gate.name](gate.control, gate.target)
         #two-qubit, one-paratemeter gates
         elif gate.name in ["CRX", "CRY", "CRZ", "CPhase", "RZZ", "RXX"]:
-            gate_map[gate.name](gate.phase, gate.control, gate.target)
+            gate_map[gate.name](float(gate.phase)*np.pi, gate.control, gate.target)
         #two-qubit, multi-paratemeter gates
         elif gate.name in ["CU3"]:
-            gate_map[gate.name](*gate.phases, gate.control, gate.target)
+            gate_map[gate.name](*[float(p)*np.pi for p in gate.phases], gate.control, gate.target)
         #multi-qubit, paratemeter-free gates
-        elif gate.name in ["CSWAP", "TOF", "CCZ"]:
+        elif gate.name in ["CSWAP", "Tof", "CCZ"]:
             gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
 
     for gate in pyzx_circuit.gates:
