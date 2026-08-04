@@ -117,7 +117,7 @@ rhs_type = ["classical", "quantum"]
 instances = [
     # (size1, exp1, val1, size2, exp2, val2)
     pytest.param(3, 0, 2, 3, 0, 1, id="QuantumFloat case 1"),
-    # pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"),
+    # pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"), # Skipped because if included, would lead to high runtime
 ]
 
 
@@ -126,9 +126,6 @@ instances = [
 @pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
 def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
     """Comparison operations on QuantumFloat with classical or quantum RHS."""
-
-    if op in (operator.eq, operator.ne):
-        pytest.skip("Equality and inequality comparisons on QuantumFloat are not supported.")
 
     @cudaq_kernel
     def main():
