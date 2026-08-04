@@ -58,7 +58,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
-        The function may **not** receive quantum arguments because a quantum
+        The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
     shots : int or jax.core.Tracer
@@ -200,9 +200,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 # Measure quantum registers only.
                 @qache
                 def sampling_helper_1(*args):
-                    res_list = []
-                    for reg in args:
-                        res_list.append(measure(reg))
+                    res_list = [measure(reg) for reg in args]
                     return tuple(res_list)
 
                 measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
@@ -218,20 +216,12 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                         classical_vals = args[:n_classical]
                         meas_ints = args[n_classical:]
 
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_vals[c_idx])
-                                c_idx += 1
+                        q_iter = iter(decoded_q)
+                        c_iter = iter(classical_vals)
+
+                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
                         return post_processor(*full)
 
@@ -239,9 +229,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 else:
 
                     def sampling_helper_2(*meas_ints):
-                        res_list = []
-                        for j in range(len(qv_tuple)):
-                            res_list.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        res_list = [qv.jdecoder(meas) for qv, meas in zip(qv_tuple, meas_ints)]
                         return post_processor(*res_list)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
