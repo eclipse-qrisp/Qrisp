@@ -31,6 +31,7 @@ https://nvidia.github.io/cuda-quantum/latest/specification/quake-dialect.html
 from collections.abc import Sequence
 
 from xdsl.dialects.builtin import (
+    IntegerAttr,
     i64,
     i1,
 )
@@ -68,12 +69,29 @@ class QuakeRefType(ParametrizedAttribute, TypeAttribute):
 
 @irdl_attr_definition
 class QuakeVeqType(ParametrizedAttribute, TypeAttribute):
-    """Quake qubit-register reference type ``!quake.veq<?>`` (dynamic size)."""
+    """Quake qubit-register reference type: ``!quake.veq<?>`` (dynamic size)
+    or ``!quake.veq<N>`` (static size).
+
+    Use size=-1 (the default) to represent a dynamic size.
+    """
 
     name = "quake.veq"
 
+    size: IntegerAttr
+
+    def __init__(self, size: int = -1) -> None:
+        super().__init__(IntegerAttr(size, i64))
+
+    @property
+    def is_static(self) -> bool:
+        return self.size.value.data >= 0
+
     def print_parameters(self, printer: Printer) -> None:
-        printer.print_string("<?>")
+        size_val = self.size.value.data
+        if size_val < 0:
+            printer.print_string("<?>")
+        else:
+            printer.print_string(f"<{size_val}>")
 
 
 @irdl_attr_definition
@@ -100,27 +118,38 @@ class AllocaOp(IRDLOperation):
 
         %ref = quake.alloca !quake.ref
 
-    Register::
+    Dynamically-sized register::
 
         %veq = quake.alloca !quake.veq<?>[%n : i64]
+
+    Statically-sized register (constructed with an ``int`` size, no operand)::
+
+        %veq = quake.alloca !quake.veq<5>
     """
 
     name = "quake.alloca"
-    size = var_operand_def(AnyAttr())  # empty for single qubit, [i64] for veq
+    size = var_operand_def(AnyAttr())  # empty for single qubit or static veq, [i64] for dynamic veq
     result = result_def(AnyAttr())  # QuakeRefType or QuakeVeqType
 
-    def __init__(self, size: SSAValue | None = None) -> None:
+    def __init__(self, size: SSAValue | int | None = None) -> None:
         if size is None:
             super().__init__(operands=[[]], result_types=[QuakeRefType()])
+        elif isinstance(size, int):
+            super().__init__(operands=[[]], result_types=[QuakeVeqType(size)])
         else:
             super().__init__(operands=[[size]], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
         size_ops = list(self.size)
         if size_ops:
-            printer.print_string(" !quake.veq<?>[")
+            printer.print_string(" ")
+            printer.print_attribute(self.result.type)
+            printer.print_string("[")
             printer.print_ssa_value(size_ops[0])
             printer.print_string(" : i64]")
+        elif isinstance(self.result.type, QuakeVeqType):
+            printer.print_string(" ")
+            printer.print_attribute(self.result.type)
         else:
             printer.print_string(" !quake.ref")
 
@@ -191,7 +220,9 @@ class VeqSizeOp(IRDLOperation):
     def print(self, printer: Printer) -> None:
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
-        printer.print_string(" : (!quake.veq<?>) -> i64")
+        printer.print_string(" : (")
+        printer.print_attribute(self.veq.type)
+        printer.print_string(") -> i64")
 
 
 @irdl_op_definition
@@ -221,6 +252,27 @@ class SubVeqOp(IRDLOperation):
         printer.print_attribute(self.lo.type)
         printer.print_string(", ")
         printer.print_attribute(self.hi.type)
+        printer.print_string(") -> !quake.veq<?>")
+
+
+@irdl_op_definition
+class RelaxSizeOp(IRDLOperation):
+    """Cast a statically-sized veq to the dynamically-sized variant:
+    ``quake.relax_size %veq : (!quake.veq<5>) -> !quake.veq<?>``.
+    """
+
+    name = "quake.relax_size"
+    veq = operand_def(QuakeVeqType)
+    result = result_def(QuakeVeqType)
+
+    def __init__(self, veq: SSAValue) -> None:
+        super().__init__(operands=[veq], result_types=[QuakeVeqType()])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.veq)
+        printer.print_string(" : (")
+        printer.print_attribute(self.veq.type)
         printer.print_string(") -> !quake.veq<?>")
 
 
@@ -500,6 +552,7 @@ class QuakeDialect(Dialect):
         ExtractRefOp,
         VeqSizeOp,
         SubVeqOp,
+        RelaxSizeOp,
         ConcatOp,
         MzOp,
         DiscriminateOp,
