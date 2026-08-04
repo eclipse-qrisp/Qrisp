@@ -91,6 +91,27 @@ def test_invert():
     assert results == 10 * [0]
 
 
+def test_invert_quantum_variable():
+    """Regression test: invert()'s while-loop lowering previously treated the
+    sge (signed greater-or-equal) condition as a strict greater-than, causing
+    the loop to miss the final iteration. See
+    https://github.com/NVIDIA/cuda-quantum/issues/4401
+    """
+
+    def main():
+        qv = QuantumVariable(3)
+        with invert():
+            x(qv)
+        return measure(qv)
+
+    xdsl_module = _lower(main)
+    validate_quake_mlir(str(xdsl_module))
+
+    kernel = cudaq_kernel(main)
+    result = cudaq.run(kernel, shots_count=10)
+    assert result == 10 * [7], f"Expected all qubits flipped to 1 (7), got {result}"
+
+
 def test_conjugate():
 
     @cudaq_kernel

@@ -875,30 +875,6 @@ def test_gate_application_quantum_variable():
     result = cudaq.run(kernel, shots_count=10)
 
 
-def test_invert_quantum_variable():
-    """Test that invert works when applied to a QuantumVariable.
-
-    Previouly, the condition lowering for the while loop used in invert was incorrectly treating the sge (signed greater-than-or-equal) condition as a strict greater-than,
-    causing the loop to miss the final iteration where the last qubit is flipped. This test verifies that all qubits are correctly flipped to 1,
-    confirming that the loop boundary condition is now correctly implemented. See https://github.com/NVIDIA/cuda-quantum/issues/4401
-    """
-
-    def main():
-        qv = QuantumVariable(3)
-        with invert():
-            x(qv)
-        return measure(qv)
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
-
-    kernel = cudaq_kernel(main)
-    result = cudaq.run(kernel, shots_count=10)
-    assert result == 10 * [7], f"Expected all qubits flipped to 1 (7), got {result}"
-
-
 # ---------------------------------------------------------------------------
 # Function calls and kernel decorators (@qache, @quantum_kernel)
 # ---------------------------------------------------------------------------
