@@ -15,6 +15,8 @@
 ********************************************************************************
 """
 
+import warnings
+
 import cudaq
 import jax
 
@@ -33,12 +35,32 @@ from qrisp import (
 )
 from qrisp.jasp import (
     jrange,
+    make_jaspr,
     q_while_loop,
     q_cond,
     q_fori_loop,
     q_switch,
 )
 from qrisp.jasp.cudaq_interface import cudaq_kernel
+from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _lower(circuit_fn, *trace_args):
+    """Build the Jaspr for *circuit_fn* and lower it to Quake MLIR.
+
+    Returns the xDSL module. Deprecation warnings from xDSL internals
+    are silenced.
+    """
+    jaspr = make_jaspr(circuit_fn)(*trace_args)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        xdsl_module = jaspr_to_quake_mlir(jaspr)
+    return xdsl_module
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +241,37 @@ def test_q_switch_three_branches_quantum():
     assert cudaq.run(circuit, 0, shots_count=3) == 3 * [1]
     assert cudaq.run(circuit, 1, shots_count=3) == 3 * [1]
     assert cudaq.run(circuit, 2, shots_count=3) == 3 * [0]
+
+
+def test_q_switch_three_branches_strips_qst():
+    """A classical-index ``q_switch`` with >=3 branches lowers to
+    ``scf.index_switch`` (rather than ``scf.if``), which PASS 1b must strip
+    of ``!jasp.QuantumState`` and PASS 2 must convert to a ``cc.if`` chain.
+    """
+
+    def circuit(idx):
+        qv = QuantumVariable(1)
+
+        def f0(q):
+            x(q[0])
+            return q
+
+        def f1(q):
+            y(q[0])
+            return q
+
+        def f2(q):
+            z(q[0])
+            return q
+
+        qv = q_switch(idx, [f0, f1, f2], qv)
+        return measure(qv)
+
+    xdsl_module = _lower(circuit, 0)
+
+    mlir = str(xdsl_module)
+    assert "cc.if" in mlir, "Expected scf.index_switch to be lowered to a cc.if chain"
+    validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
