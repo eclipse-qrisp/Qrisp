@@ -579,6 +579,7 @@ class TestArrayValuedLeaves:
     def test_single_non_scalar_array_jit(self):
         """Kernel returns a single non-scalar JAX array (not inside a
         tuple).  The result should stack along the leading dimension."""
+
         def kernel():
             qf = QuantumFloat(3)
             h(qf[0])

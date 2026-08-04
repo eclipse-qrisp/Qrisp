@@ -256,9 +256,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 # Non-scalar leaf array — capture shape and retry
                 if not return_amount:
                     leaf_dtype = getattr(decoded_values, "dtype", None)
-                    return_amount.append(
-                        (struct, [leaf_dtype], [leaf_shape])
-                    )
+                    return_amount.append((struct, [leaf_dtype], [leaf_shape]))
                 raise AuxException()
 
             # Second pass: acc is a 1-tuple of shaped accumulators

@@ -328,6 +328,7 @@ class TestArrayValuedLeaves:
     def test_single_non_scalar_array_jit(self):
         """Kernel returns a single non-scalar JAX array.  The mean should
         preserve the array shape (not broadcast into a scalar)."""
+
         def kernel():
             qf = QuantumFloat(3)
             h(qf[0])
