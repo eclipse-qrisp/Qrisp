@@ -4,8 +4,37 @@ Qrisp 0.10
 ==========
 
 Qrisp 0.10 continues to push the boundaries of high-level quantum programming.
-This release brings a streamlined contribution experience with automated
-changelog enforcement.
+The headline feature is a new **CUDA-Q interface**, letting Qrisp kernels compile
+and run directly on NVIDIA's `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_
+platform. This release also brings a streamlined contribution experience with
+automated changelog enforcement.
+
+CUDA-Q Interface
+-----------------
+
+Qrisp code can now be compiled and executed on `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_,
+NVIDIA's platform for hybrid quantum-classical computing
+(`PR #549 <https://github.com/eclipse-qrisp/Qrisp/pull/549>`_). A new lowering
+pipeline translates Jaspr programs into CUDA-Q's Quake MLIR dialect via
+`xDSL <https://xdsl.dev/>`_, so that Jasp-traceable Qrisp functions can be
+run as a native CUDA-Q kernel.
+
+* The :func:`cudaq_kernel <qrisp.jasp.cudaq_interface.cudaq_kernel>` decorator
+  turns a Qrisp function into a CUDA-Q kernel, executable with ``cudaq.run``
+  or, via ``execution_mode="sample"``, with ``cudaq.sample``.
+* Hybrid control flow lowers natively to Quake, including mid-circuit
+  measurement with feed-forward, ``q_while_loop``, ``q_cond``, and
+  ``q_switch``, allowing measurement outcomes to influence subsequent
+  quantum operations at runtime.
+* Kernels support scalar (``int``, ``float``, ``bool``) and array
+  parameters via :class:`FixedShapeNDArray <qrisp.jasp.cudaq_interface.FixedShapeNDArray>`,
+  as well as multiple return values, enabling runtime-configurable circuits
+  without recompilation.
+* Existing Qrisp functionality - including :ref:`QuantumFloat <QuantumFloat>`
+  arithmetic, algorithm primitives, and block encodings - carries over to the CUDA-Q backend.
+
+See the new :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` for a hands-on
+introduction, from a first Bell-state kernel to hybrid variational workflows.
 
 Other New Features
 ------------------
@@ -34,6 +63,11 @@ Compatibility
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
+  Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
+  hybrid quantum-classical workflows
+  (`PR #549 <https://github.com/eclipse-qrisp/Qrisp/pull/549>`_).
 
 .. Add new tutorials above this line
 
@@ -70,7 +104,7 @@ Development
 * Added pytest coverage reporting to the CI test workflow and selective
   coverage reporting for the ``qrisp`` package.
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
-   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
+  `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
 Dependency Upgrades
 -------------------
