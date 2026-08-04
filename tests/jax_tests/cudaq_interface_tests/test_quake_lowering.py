@@ -421,7 +421,7 @@ def test_bell_circuit_full_format():
     assert 'cudaq.kernel = "true"' in mlir
     assert 'cudaq.entrypoint = "true"' in mlir
 
-    # Alloca (constant size 2, no control flow -> statically-sized veq)
+    # Alloca (constant size 2 -> statically-sized veq)
     assert "quake.alloca !quake.veq<2>" in mlir
 
     # extract_ref with functional-type
