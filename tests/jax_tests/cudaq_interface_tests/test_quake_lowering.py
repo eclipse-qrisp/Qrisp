@@ -24,10 +24,10 @@ Coverage
 - Parameterized gates (rz, rx, u3).
 - Controlled gates (cx, ccx).
 - Reset operation.
-- SCF control-flow lowering (jrange loop).
+- SCF control-flow lowering (QuantumVariable-wide loops, q_switch index-switch).
 - Interface invariant: no ``!jasp.*`` types in the output.
-- Negative test: ``jasp.parity`` is left in place (not lowered).
-- Negative test: unsupported gate emits a warning and is left in place.
+- Negative test: ``jasp.parity`` raises ``NotImplementedError`` (not supported).
+- Negative test: an unsupported/unknown gate raises ``NotImplementedError``.
 """
 
 import warnings
@@ -40,10 +40,8 @@ import cudaq
 
 from qrisp import (
     QuantumVariable,
-    QuantumBool,
     QuantumFloat,
     h,
-    mcx,
     x,
     y,
     z,
@@ -67,7 +65,6 @@ from qrisp import (
     measure,
     control,
     invert,
-    conjugate,
 )
 from qrisp.jasp import (
     make_jaspr,
@@ -206,7 +203,6 @@ def test_parameterized_gate_functional_type():
 
 def test_veq_size_functional_type():
     """quake.veq_size must use functional-type: (!quake.veq<?>) -> i64."""
-    from qrisp.jasp import jrange
 
     def circuit():
         qv = QuantumVariable(3)
@@ -305,12 +301,38 @@ def test_quake_types_present():
     validate_quake_mlir(mlir)
 
 
-def test_parity_not_lowered():
-    """jasp.parity ops are left in place (not lowered to Quake)."""
-    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
+def test_parity_raises_not_implemented_error():
+    """jasp.parity has no Quake equivalent; lowering it must raise NotImplementedError."""
+    from qrisp.jasp import parity
 
-    # parity is not a gate name, but verify it's not in GATE_MAP
-    assert get_gate_info("parity") is None
+    def circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        x(qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return parity(m0, m1)
+
+    with pytest.raises(NotImplementedError, match="jasp.parity"):
+        _lower(circuit)
+
+
+def test_unsupported_gate_raises_not_implemented_error():
+    """An unknown/unsupported gate raises NotImplementedError during lowering
+    (rather than emitting a warning and leaving the op in place)."""
+    from unittest.mock import patch
+
+    def circuit():
+        qv = QuantumVariable(1)
+        h(qv[0])
+        return qv
+
+    with patch(
+        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake.get_gate_info",
+        return_value=None,
+    ):
+        with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):
+            _lower(circuit)
 
 
 def test_gate_mapping_standard_gates():
@@ -524,13 +546,15 @@ def test_decomposed_gates():
 
 
 def test_parameterized_gate():
-    """rz / rx gates carry floating-point parameters."""
+    """rz / rx / ry / p gates carry floating-point parameters."""
 
     def circuit():
         qv = QuantumVariable(2)
         rz(0.5, qv[0])
         rx(1.0, qv[1])
         rx(1, qv[1])  # Test that integer literals are also accepted as parameters and correctly typed as f64
+        ry(0.3, qv[0])
+        p(0.7, qv[1])
         return qv
 
     xdsl_module = _lower(circuit)
@@ -538,6 +562,8 @@ def test_parameterized_gate():
     mlir = str(xdsl_module)
     assert "quake.rz" in mlir, "Expected quake.rz in output"
     assert "quake.rx" in mlir, "Expected quake.rx in output"
+    assert "quake.ry" in mlir, "Expected quake.ry in output"
+    assert "quake.r1" in mlir, "Expected quake.r1 in output for p gate"
     # Parameters should appear as f64 scalars
     assert "f64" in mlir, "Expected f64 parameter type in output"
     validate_quake_mlir(mlir)

@@ -38,6 +38,7 @@ Jasp op                   Quake op(s)
 ``jasp.quantum_gate``     ``quake.<gate>``  (dispatched via gate_mapping)
 ``jasp.measure``          ``quake.mz`` + ``quake.discriminate``
 ``jasp.reset``            ``quake.reset``
+``jasp.parity``           not supported — raises ``NotImplementedError``
 ``jasp.create_quantum_kernel``        dropped in PASS 1b
 ``jasp.consume_quantum_kernel``       dropped in PASS 1b
 ========================  ==========================================
@@ -86,6 +87,7 @@ from qrisp.jasp.mlir.xdsl_dialect import (
     GetQubitOp,
     GetSizeOp,
     MeasureOp as JaspMeasureOp,
+    ParityOp,
     QuantumGateOp,
     ResetOp as JaspResetOp,
     SliceOp,
@@ -135,6 +137,7 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
         LowerQuantumGate(),
         LowerMeasure(execution_mode),
         LowerReset(),
+        LowerParity(),
     ]
 
     applier = GreedyRewritePatternApplier(patterns)
@@ -475,3 +478,11 @@ class LowerReset(RewritePattern):
 
         _thread_qst(op)
         rewriter.erase_op(op)
+
+
+class LowerParity(RewritePattern):
+    """``jasp.parity`` has no Quake equivalent; lowering it is unsupported."""
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: ParityOp, rewriter: PatternRewriter) -> None:
+        raise NotImplementedError("Lowering failed: 'jasp.parity' is not supported by the Quake lowering backend.")
