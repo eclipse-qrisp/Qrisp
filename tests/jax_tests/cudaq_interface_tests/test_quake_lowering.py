@@ -463,7 +463,7 @@ def test_single_qubit_gates():
 
 
 def test_decomposed_gates_sx():
-    """Decomposed gates (sx, sx_dg) emit the expected sequence of quake ops."""
+    """sx / sx_dg lower to quake.rx(±π/2), matching Qrisp's RX(±π/2) definition."""
 
     def circuit():
         qv = QuantumVariable(2)
@@ -475,10 +475,9 @@ def test_decomposed_gates_sx():
     xdsl_module = _lower(circuit)
 
     mlir = str(xdsl_module)
-    # Check that the expected sequence of ops for sx/sx_dg is present
-    assert "quake.h" in mlir, "Expected quake.h in output for sx decomposition"
-    assert "quake.s" in mlir, "Expected quake.s in output for sx decomposition"
-    assert "quake.s<adj>" in mlir, "Expected quake.s<adj> in output for sx_dg decomposition"
+    assert "quake.rx" in mlir, "Expected quake.rx in output for sx/sx_dg"
+    assert "1.5707963267948966" in mlir, "Expected a pi/2 constant angle in output"
+    assert "-1.5707963267948966" in mlir, "Expected a -pi/2 constant angle in output for sx_dg"
     validate_quake_mlir(mlir)
 
 
