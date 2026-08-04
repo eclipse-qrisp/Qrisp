@@ -18,16 +18,19 @@
 """
 Tests for the Jasp → Quake (memory-semantics) lowering backend.
 
-Coverage
+Sections
 --------
-- Basic quantum circuit (alloc, gate, measure, dealloc).
-- Parameterized gates (rz, rx, u3).
-- Controlled gates (cx, ccx).
-- Reset operation.
-- SCF control-flow lowering (QuantumVariable-wide loops, q_switch index-switch).
-- Interface invariant: no ``!jasp.*`` types in the output.
-- Negative test: ``jasp.parity`` raises ``NotImplementedError`` (not supported).
-- Negative test: an unsupported/unknown gate raises ``NotImplementedError``.
+- Basic circuit structure: allocation, extraction, deallocation.
+- Interface invariants: Quake types present, no ``!jasp.*`` types leak, kernel attributes.
+- MLIR assembly-format validity (exact CUDA-Q Quake dialect printed syntax).
+- Gate mapping and lowering: single/multi-qubit, parameterized, decomposed, controlled gates.
+- Qubit indexing (constant/dynamic/negative indices).
+- Classical math lowering (arith/math ops mixed with quantum control flow).
+- Measurement.
+- QuantumVariable-wide gate application (while-loop lowering).
+- Control flow: q_switch (SCF index_switch lowering).
+- Function calls and kernel decorators (``@qache``, ``@quantum_kernel``).
+- Negative tests: unsupported constructs raise ``NotImplementedError``.
 """
 
 import warnings
@@ -100,7 +103,7 @@ def assert_return_type(mlir: str, expected_type: str):
 
 
 # ---------------------------------------------------------------------------
-# Tests
+# Basic circuit structure: allocation, extraction, deallocation
 # ---------------------------------------------------------------------------
 
 
@@ -115,6 +118,93 @@ def test_alloc_and_dealloc():
 
     mlir = str(xdsl_module)
     assert "quake.alloca" in mlir, "Expected quake.alloca in output"
+    validate_quake_mlir(mlir)
+
+
+def test_multi_qubit_alloc():
+    """Multiple QuantumVariable allocations produce multiple quake.alloca ops."""
+
+    def circuit():
+        qv1 = QuantumVariable(2)
+        qv2 = QuantumVariable(3)
+        h(qv1[0])
+        x(qv2[0])
+        return measure(qv1[0]), measure(qv2[0])
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    # At least two alloca ops
+    alloca_count = mlir.count("quake.alloca")
+    assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
+    validate_quake_mlir(mlir)
+
+
+def test_extract_ref():
+    """get_qubit → quake.extract_ref."""
+
+    def circuit():
+        qv = QuantumVariable(3)
+        h(qv[0])
+        cx(qv[0], qv[2])
+        return qv
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
+    validate_quake_mlir(mlir)
+
+
+# ---------------------------------------------------------------------------
+# Interface invariants: Quake types present, no Jasp types leak, kernel attributes
+# ---------------------------------------------------------------------------
+
+
+def test_quake_types_present():
+    """Output should contain quake.* types and ops."""
+
+    def circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        return measure(qv)
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    assert "!quake.veq<?>" in mlir or "!quake.ref" in mlir, "Expected Quake qubit types in output"
+    assert "quake." in mlir, "Expected Quake ops in output"
+    validate_quake_mlir(mlir)
+
+
+def test_no_jasp_types_in_output():
+    """Interface invariant: output must not contain any !jasp.* types."""
+
+    def bell():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        return measure(qv)
+
+    xdsl_module = _lower(bell)
+
+    mlir = str(xdsl_module)
+    validate_quake_mlir(mlir)
+
+
+def test_cudaq_kernel_attribute():
+    """Lowered function should carry cudaq.kernel and cudaq.entrypoint attributes."""
+
+    def simple():
+        qv = QuantumVariable(1)
+        h(qv[0])
+        return measure(qv)
+
+    xdsl_module = _lower(simple)
+
+    mlir = str(xdsl_module)
+    assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
+    assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
     validate_quake_mlir(mlir)
 
 
@@ -233,29 +323,8 @@ def test_alloca_veq_format():
     validate_quake_mlir(mlir)
 
 
-# ---------------------------------------------------------------------------
-# Test
-# ---------------------------------------------------------------------------
-
-
-def test_extract_ref():
-    """get_qubit → quake.extract_ref."""
-
-    def circuit():
-        qv = QuantumVariable(3)
-        h(qv[0])
-        cx(qv[0], qv[2])
-        return qv
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
-    validate_quake_mlir(mlir)
-
-
-def test_no_jasp_types_in_output():
-    """Interface invariant: output must not contain any !jasp.* types."""
+def test_bell_circuit_full_format():
+    """Full Bell circuit MLIR format validation — spot-check every key op."""
 
     def bell():
         qv = QuantumVariable(2)
@@ -266,73 +335,36 @@ def test_no_jasp_types_in_output():
     xdsl_module = _lower(bell)
 
     mlir = str(xdsl_module)
+
+    # Function attributes
+    assert 'cudaq.kernel = "true"' in mlir
+    assert 'cudaq.entrypoint = "true"' in mlir
+
+    # Alloca
+    assert "quake.alloca !quake.veq<?>[" in mlir
+
+    # extract_ref with functional-type
+    assert "(!quake.veq<?>" in mlir and "-> !quake.ref" in mlir, (
+        "extract_ref must use functional-type format: (!quake.veq<?>, idx) -> !quake.ref"
+    )
+
+    # H gate
+    assert "(!quake.ref) -> ()" in mlir
+
+    # CX gate (quake.x with control)
+    assert "(!quake.ref, !quake.ref) -> ()" in mlir
+
+    # Measurement with correct i64 type
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+
     validate_quake_mlir(mlir)
 
 
-def test_cudaq_kernel_attribute():
-    """Lowered function should carry cudaq.kernel and cudaq.entrypoint attributes."""
-
-    def simple():
-        qv = QuantumVariable(1)
-        h(qv[0])
-        return measure(qv)
-
-    xdsl_module = _lower(simple)
-
-    mlir = str(xdsl_module)
-    assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
-    assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
-    validate_quake_mlir(mlir)
-
-
-def test_quake_types_present():
-    """Output should contain quake.* types and ops."""
-
-    def circuit():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        return measure(qv)
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    assert "!quake.veq<?>" in mlir or "!quake.ref" in mlir, "Expected Quake qubit types in output"
-    assert "quake." in mlir, "Expected Quake ops in output"
-    validate_quake_mlir(mlir)
-
-
-def test_parity_raises_not_implemented_error():
-    """jasp.parity has no Quake equivalent; lowering it must raise NotImplementedError."""
-    from qrisp.jasp import parity
-
-    def circuit():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        x(qv[1])
-        m0 = measure(qv[0])
-        m1 = measure(qv[1])
-        return parity(m0, m1)
-
-    with pytest.raises(NotImplementedError, match="jasp.parity"):
-        _lower(circuit)
-
-
-def test_unsupported_gate_raises_not_implemented_error():
-    """An unknown/unsupported gate raises NotImplementedError during lowering
-    (rather than emitting a warning and leaving the op in place)."""
-    from unittest.mock import patch
-
-    def circuit():
-        qv = QuantumVariable(1)
-        h(qv[0])
-        return qv
-
-    with patch(
-        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake.get_gate_info",
-        return_value=None,
-    ):
-        with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):
-            _lower(circuit)
+# ---------------------------------------------------------------------------
+# Gate mapping and lowering: single/multi-qubit, parameterized,
+# decomposed, controlled gates
+# ---------------------------------------------------------------------------
 
 
 def test_gate_mapping_standard_gates():
@@ -365,80 +397,6 @@ def test_gate_mapping_standard_gates():
     for gate in expected_gates:
         info = get_gate_info(gate)
         assert info is not None, f"Expected gate '{gate}' in GATE_MAP"
-
-
-def test_func_call_lowering():
-    """
-    Test that a function call to a separate @qache function is correctly lowered.
-    No unsupported jasp types should be present in the output.
-    """
-
-    @qache
-    def test():
-        qv = QuantumVariable(2)
-        return qv
-
-    def main():
-        qv = test()
-        return qv
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    assert "test" in mlir, "Expected call to 'test' function in output"
-    assert "quake.alloca" in mlir, "Expected quake.alloca in output for test function"
-    assert "quake.veq" in mlir, "Expected quake.veq type in output for test function"
-    # No jasp types should be present in the output
-    validate_quake_mlir(mlir)
-
-
-def test_quantum_kernel_lowering():
-    """Test that a function decorated with @quantum_kernel is correctly lowered."""
-
-    @quantum_kernel
-    def test_kernel():
-        qv = QuantumVariable(3)
-        return measure(qv[0])
-
-    def main():
-        res = test_kernel()
-        return res
-
-    xdsl_module = _lower(main)
-
-    mlir = str(xdsl_module)
-    assert "cudaq.kernel" in mlir
-    validate_quake_mlir(mlir)
-
-
-# ---------------------------------------------------------------------------
-# Test quantum variable allocation
-# and gate application functions acting on qubits
-# ---------------------------------------------------------------------------
-
-
-def test_multi_qubit_alloc():
-    """Multiple QuantumVariable allocations produce multiple quake.alloca ops."""
-
-    def circuit():
-        qv1 = QuantumVariable(2)
-        qv2 = QuantumVariable(3)
-        h(qv1[0])
-        x(qv2[0])
-        return measure(qv1[0]), measure(qv2[0])
-
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    # At least two alloca ops
-    alloca_count = mlir.count("quake.alloca")
-    assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
-    validate_quake_mlir(mlir)
-
-
-# ---------------------------------------------------------------------------
-# Test gate application functions acting on qubits
-# ---------------------------------------------------------------------------
 
 
 def test_single_qubit_gates():
@@ -478,43 +436,6 @@ def test_decomposed_gates_sx():
     assert "quake.rx" in mlir, "Expected quake.rx in output for sx/sx_dg"
     assert "1.5707963267948966" in mlir, "Expected a pi/2 constant angle in output"
     assert "-1.5707963267948966" in mlir, "Expected a -pi/2 constant angle in output for sx_dg"
-    validate_quake_mlir(mlir)
-
-
-# ---------------------------------------------------------------------------
-# Test scf.index_switch QST stripping (q_switch with >=3 branches)
-# ---------------------------------------------------------------------------
-
-
-def test_q_switch_three_branches_strips_qst():
-    """A classical-index ``q_switch`` with >=3 branches lowers to
-    ``scf.index_switch`` (rather than ``scf.if``), which PASS 1b must strip
-    of ``!jasp.QuantumState`` and PASS 2 must convert to a ``cc.if`` chain.
-    """
-    from qrisp.jasp import q_switch
-
-    def circuit(idx):
-        qv = QuantumVariable(1)
-
-        def f0(q):
-            x(q[0])
-            return q
-
-        def f1(q):
-            y(q[0])
-            return q
-
-        def f2(q):
-            z(q[0])
-            return q
-
-        qv = q_switch(idx, [f0, f1, f2], qv)
-        return measure(qv)
-
-    xdsl_module = _lower(circuit, 0)
-
-    mlir = str(xdsl_module)
-    assert "cc.if" in mlir, "Expected scf.index_switch to be lowered to a cc.if chain"
     validate_quake_mlir(mlir)
 
 
@@ -631,7 +552,13 @@ def test_cgphase_gate():
     validate_quake_mlir(mlir)
 
 
+# ---------------------------------------------------------------------------
+# Qubit indexing (constant / dynamic / negative indices)
+# ---------------------------------------------------------------------------
+
+
 def test_negative_indexing():
+    """Negative indexing (e.g. qv[-1]) is supported and lowers to quake.extract_ref with idx + size(veq)."""
 
     def main():
         qv = QuantumVariable(3)
@@ -694,6 +621,11 @@ def test_constant_negative_index_skips_cmpi_select():
     assert result == 10 * [1]
 
 
+# ---------------------------------------------------------------------------
+# Classical math lowering
+# ---------------------------------------------------------------------------
+
+
 def test_math():
     """Test that classical math operations are correctly lowered to arith/math ops and can be used in the quantum program."""
 
@@ -714,7 +646,7 @@ def test_math():
 
 
 # ---------------------------------------------------------------------------
-# Test measure qubit
+# Measurement
 # ---------------------------------------------------------------------------
 
 
@@ -736,11 +668,6 @@ def test_measure_single_qubit():
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
     assert result == 10 * [1]
-
-
-# ---------------------------------------------------------------------------
-# Test measure QuantumVariable
-# ---------------------------------------------------------------------------
 
 
 def test_measure_quantum_variable():
@@ -783,8 +710,7 @@ def test_measure_single_qubit_quantum_variable():
 
 
 # ---------------------------------------------------------------------------
-# Test gate application functions acting on QuantumVariables
-# (uses while loop)
+# QuantumVariable-wide gate application (while-loop lowering)
 # ---------------------------------------------------------------------------
 
 
@@ -875,8 +801,7 @@ def test_invert_quantum_variable():
 
     Previouly, the condition lowering for the while loop used in invert was incorrectly treating the sge (signed greater-than-or-equal) condition as a strict greater-than,
     causing the loop to miss the final iteration where the last qubit is flipped. This test verifies that all qubits are correctly flipped to 1,
-    confirming that the loop boundary condition is now correctly implemented (hotfix in _scf_to_cc.py to convert sge to sgt).
-    https://github.com/NVIDIA/cuda-quantum/issues/4401
+    confirming that the loop boundary condition is now correctly implemented. See https://github.com/NVIDIA/cuda-quantum/issues/4401
     """
 
     def main():
@@ -896,43 +821,125 @@ def test_invert_quantum_variable():
 
 
 # ---------------------------------------------------------------------------
-# Test algorithms
+# Control flow: q_switch (SCF index_switch lowering)
 # ---------------------------------------------------------------------------
 
 
-def test_bell_circuit_full_format():
-    """Full Bell circuit MLIR format validation — spot-check every key op."""
+def test_q_switch_three_branches_strips_qst():
+    """A classical-index ``q_switch`` with >=3 branches lowers to
+    ``scf.index_switch`` (rather than ``scf.if``), which PASS 1b must strip
+    of ``!jasp.QuantumState`` and PASS 2 must convert to a ``cc.if`` chain.
+    """
+    from qrisp.jasp import q_switch
 
-    def bell():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        cx(qv[0], qv[1])
+    def circuit(idx):
+        qv = QuantumVariable(1)
+
+        def f0(q):
+            x(q[0])
+            return q
+
+        def f1(q):
+            y(q[0])
+            return q
+
+        def f2(q):
+            z(q[0])
+            return q
+
+        qv = q_switch(idx, [f0, f1, f2], qv)
         return measure(qv)
 
-    xdsl_module = _lower(bell)
+    xdsl_module = _lower(circuit, 0)
 
     mlir = str(xdsl_module)
-
-    # Function attributes
-    assert 'cudaq.kernel = "true"' in mlir
-    assert 'cudaq.entrypoint = "true"' in mlir
-
-    # Alloca
-    assert "quake.alloca !quake.veq<?>[" in mlir
-
-    # extract_ref with functional-type
-    assert "(!quake.veq<?>" in mlir and "-> !quake.ref" in mlir, (
-        "extract_ref must use functional-type format: (!quake.veq<?>, idx) -> !quake.ref"
-    )
-
-    # H gate
-    assert "(!quake.ref) -> ()" in mlir
-
-    # CX gate (quake.x with control)
-    assert "(!quake.ref, !quake.ref) -> ()" in mlir
-
-    # Measurement with correct i64 type
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
-
+    assert "cc.if" in mlir, "Expected scf.index_switch to be lowered to a cc.if chain"
     validate_quake_mlir(mlir)
+
+
+# ---------------------------------------------------------------------------
+# Function calls and kernel decorators (@qache, @quantum_kernel)
+# ---------------------------------------------------------------------------
+
+
+def test_func_call_lowering():
+    """
+    Test that a function call to a separate @qache function is correctly lowered.
+    No unsupported jasp types should be present in the output.
+    """
+
+    @qache
+    def test():
+        qv = QuantumVariable(2)
+        return qv
+
+    def main():
+        qv = test()
+        return qv
+
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
+    assert "test" in mlir, "Expected call to 'test' function in output"
+    assert "quake.alloca" in mlir, "Expected quake.alloca in output for test function"
+    assert "quake.veq" in mlir, "Expected quake.veq type in output for test function"
+    # No jasp types should be present in the output
+    validate_quake_mlir(mlir)
+
+
+def test_quantum_kernel_lowering():
+    """Test that a function decorated with @quantum_kernel is correctly lowered."""
+
+    @quantum_kernel
+    def test_kernel():
+        qv = QuantumVariable(3)
+        return measure(qv[0])
+
+    def main():
+        res = test_kernel()
+        return res
+
+    xdsl_module = _lower(main)
+
+    mlir = str(xdsl_module)
+    assert "cudaq.kernel" in mlir
+    validate_quake_mlir(mlir)
+
+
+# ---------------------------------------------------------------------------
+# Negative tests: unsupported constructs raise NotImplementedError
+# ---------------------------------------------------------------------------
+
+
+def test_parity_raises_not_implemented_error():
+    """jasp.parity has no Quake equivalent; lowering it must raise NotImplementedError."""
+    from qrisp.jasp import parity
+
+    def circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        x(qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return parity(m0, m1)
+
+    with pytest.raises(NotImplementedError, match="jasp.parity"):
+        _lower(circuit)
+
+
+def test_unsupported_gate_raises_not_implemented_error():
+    """An unknown/unsupported gate raises NotImplementedError during lowering
+    (rather than emitting a warning and leaving the op in place)."""
+    from unittest.mock import patch
+
+    def circuit():
+        qv = QuantumVariable(1)
+        h(qv[0])
+        return qv
+
+    with patch(
+        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake.get_gate_info",
+        return_value=None,
+    ):
+        with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):
+            _lower(circuit)
