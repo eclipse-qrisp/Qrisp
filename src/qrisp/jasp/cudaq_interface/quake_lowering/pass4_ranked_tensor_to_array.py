@@ -305,7 +305,7 @@ def _rewrite_calls_in_block(block: Block, func_rewrites: dict, array_map: dict) 
         new_call = func_dialect.CallOp(op.callee, new_operands, list(op.result_types))
         block.insert_ops_before([new_call], op)
         for old_res, new_res in zip(op.results, new_call.results):
-            old_res.replace_by(new_res)
+            old_res.replace_all_uses_with(new_res)
         Rewriter.erase_op(op, safe_erase=False)
 
 
