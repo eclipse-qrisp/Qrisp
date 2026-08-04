@@ -298,10 +298,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                         full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
+                        result = post_processor(*full)
 
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
@@ -315,21 +312,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     def sampling_helper_2(*meas_ints):
                         decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_tuple[c_idx])
-                                c_idx += 1
-
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
+                        result = post_processor(*decoded_q)
 
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
@@ -346,10 +329,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                if len(classical_tuple) > 1:
-                    result = post_processor(*classical_tuple)
-                else:
-                    result = post_processor(*classical_tuple)
+                result = post_processor(*classical_tuple)
 
                 if isinstance(result, tuple):
                     return_amount.append(len(result))
