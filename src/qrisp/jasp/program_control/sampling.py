@@ -303,7 +303,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
                             if len(acc.shape) == 1:
-                                raise AuxException()
+                                raise _MultiReturnDetected()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
@@ -317,7 +317,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
                             if len(acc.shape) == 1:
-                                raise AuxException()
+                                raise _MultiReturnDetected()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
@@ -334,7 +334,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 if isinstance(result, tuple):
                     return_amount.append(len(result))
                     if len(acc.shape) == 1:
-                        raise AuxException()
+                        raise _MultiReturnDetected()
                 decoded_values = result
 
             # Insert into the accumulating array
@@ -354,7 +354,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         try:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
-        except AuxException:
+        except _MultiReturnDetected:
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
@@ -375,5 +375,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values
+    (a tuple) instead of a single scalar.  This triggers a retry of the
+    sampling loop with a multi-dimensional accumulator of the correct shape."""

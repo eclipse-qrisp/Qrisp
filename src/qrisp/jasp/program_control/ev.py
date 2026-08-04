@@ -245,7 +245,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 # initialization command of return_amount
                 return_amount.append(len(decoded_values))
                 if acc.shape[0] == 1:
-                    raise AuxException()
+                    raise _MultiReturnDetected()
 
             # Turn into jax array and add to the accumulator
             meas_res = jnp.array(decoded_values)
@@ -267,7 +267,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             # loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
             return loop_res[0][0] / shots
-        except AuxException:
+        except _MultiReturnDetected:
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
             return loop_res[0] / shots
 
@@ -280,5 +280,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values
+    (a tuple) instead of a single scalar.  This triggers a retry of the
+    sampling loop with a multi-dimensional accumulator of the correct shape."""

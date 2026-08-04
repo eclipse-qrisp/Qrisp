@@ -278,7 +278,7 @@ def simulate_jaspr(
 
                 if function_name in translation_dic:
                     if _jaspr_has_name(jaxpr, "sampling_helper_2_mixed"):
-                        raise Exception(
+                        raise ValueError(
                             "Terminal sampling does not support classical "
                             "return values. Use terminal_sampling=False "
                             "to sample with classical returns."
