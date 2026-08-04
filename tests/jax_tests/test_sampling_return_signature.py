@@ -576,6 +576,23 @@ class TestArrayValuedLeaves:
         assert res[1].shape == (SHOTS, 5)
         assert res[2].shape == (SHOTS,)
 
+    def test_single_non_scalar_array_jit(self):
+        """Kernel returns a single non-scalar JAX array (not inside a
+        tuple).  The result should stack along the leading dimension."""
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            # single 2D array return — no tuple wrapper
+            return jnp.array([[1, 2], [3, 4]])
+
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (SHOTS, 2, 2)
+        assert jnp.all(res[0] == jnp.array([[1, 2], [3, 4]]))
+
 
 # =============================================================================
 # 8. Post-processor

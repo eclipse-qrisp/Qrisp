@@ -240,7 +240,32 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
 
                 return tuple(a + v for a, v in zip(acc, flat_values))
 
-            return acc + jnp.array(decoded_values)
+            # ----------------------------------------------------------
+            # Single leaf (scalar or array — not a container).
+            # True scalars take the fast path; arrays with shape need a
+            # shaped accumulator, captured via AuxException.
+            # ----------------------------------------------------------
+            if not isinstance(acc, tuple):
+                try:
+                    leaf_shape = decoded_values.shape
+                except AttributeError:
+                    leaf_shape = ()
+                if leaf_shape == ():
+                    return acc + jnp.array(decoded_values)  # true scalar
+
+                # Non-scalar leaf array — capture shape and retry
+                if not return_amount:
+                    leaf_dtype = getattr(decoded_values, "dtype", None)
+                    return_amount.append(
+                        (struct, [leaf_dtype], [leaf_shape])
+                    )
+                raise AuxException()
+
+            # Second pass: acc is a 1-tuple of shaped accumulators
+            return tuple(a + v for a, v in zip(acc, [decoded_values]))
+
+            # Second pass: acc is a 1-tuple of shaped accumulators
+            return tuple(a + v for a, v in zip(acc, [decoded_values]))
 
         def _make_init_acc(leaf_dtypes, leaf_shapes):
             """Build a tuple of typed zero-arrays, one per leaf.

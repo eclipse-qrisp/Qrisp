@@ -321,7 +321,29 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                 return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
 
-            return acc.at[i].set(decoded_values)  # scalar leaf
+            # ----------------------------------------------------------
+            # Single leaf (scalar or array — not a container).
+            # True scalars take the fast path; arrays with shape need a
+            # shaped accumulator, captured via AuxException.
+            # ----------------------------------------------------------
+            if not isinstance(acc, tuple):
+                try:
+                    leaf_shape = decoded_values.shape
+                except AttributeError:
+                    leaf_shape = ()
+                if leaf_shape == ():
+                    return acc.at[i].set(decoded_values)  # true scalar
+
+                # Non-scalar leaf array — capture shape and retry
+                if not return_amount:
+                    leaf_dtype = getattr(decoded_values, "dtype", None)
+                    return_amount.append(
+                        (struct, [leaf_dtype], [leaf_shape])
+                    )
+                raise AuxException()
+
+            # Second pass: acc is a 1-tuple of shaped accumulators
+            return tuple(a.at[i].set(v) for a, v in zip(acc, [decoded_values]))
 
         def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
             """Build a tuple of typed zero-arrays, one per leaf.

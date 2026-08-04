@@ -325,6 +325,22 @@ class TestArrayValuedLeaves:
         assert res[0].shape == (4,)
         assert jnp.allclose(res[0], jnp.ones(4))
 
+    def test_single_non_scalar_array_jit(self):
+        """Kernel returns a single non-scalar JAX array.  The mean should
+        preserve the array shape (not broadcast into a scalar)."""
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return jnp.array([[1.0, 2.0], [3.0, 4.0]])
+
+        @jaspify
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (2, 2)
+        assert jnp.allclose(res, jnp.array([[1.0, 2.0], [3.0, 4.0]]))
+
 
 # =============================================================================
 # 6. Post-processor
