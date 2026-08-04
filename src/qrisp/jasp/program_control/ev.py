@@ -52,6 +52,16 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
     measured and decoded; classical values are interleaved in-place.
 
+    .. note::
+
+        When used inside :func:`~qrisp.jasp.jaspify` with
+        ``terminal_sampling=True``, the same restrictions apply as for
+        :func:`~qrisp.jasp.sample`: kernels that return classical values are
+        rejected, and kernels whose quantum state depends on mid-circuit
+        measurement outcomes may produce invalid results.  Use
+        ``terminal_sampling=False`` (the default) for those cases.  See
+        :func:`~qrisp.jasp.terminal_sampling` for details.
+
     Parameters
     ----------
     state_prep : callable

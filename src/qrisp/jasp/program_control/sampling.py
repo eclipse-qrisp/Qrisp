@@ -70,6 +70,15 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         that return *only* classical values.  Use ``terminal_sampling=False``
         for those cases.
 
+        Even when the kernel returns only
+        :ref:`QuantumVariables <QuantumVariable>`, terminal sampling relies on
+        the quantum state being **independent** of mid-circuit measurement
+        outcomes.  If a classical measurement result influences the quantum
+        circuit (e.g. via :func:`control <qrisp.control>`), terminal sampling
+        may produce an invalid distribution because it simulates the quantum
+        part only once.  See :func:`~qrisp.jasp.terminal_sampling` for details
+        and an example.
+
     Parameters
     ----------
     sampling_kernel : callable
