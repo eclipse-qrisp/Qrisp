@@ -22,7 +22,11 @@ from qrisp import (
     z,
 )
 from qrisp.circuit import ControlledOperation, QuantumCircuit
-from qrisp.interface.converter.cirq_converter import convert_from_cirq, convert_to_cirq
+from qrisp.interface.converter.cirq_converter import (
+    convert_from_cirq,
+    convert_to_cirq,
+    _decompose_unknown_ops,
+)
 
 
 def _build_single_qubit_circ():
@@ -471,7 +475,11 @@ def test_convert_from_cirq_single_gate(gate_key, expected_name):
     ],
 )
 def test_convert_from_cirq_exponent_guards(gate_fn, exponent):
-    """Fractional exponents for H/CX/CZ/SWAP now decompose correctly."""
+    """Fractional exponents for H/CX/CZ/SWAP now decompose correctly.
+
+    The comparison is phase-exact (no abs), so global-phase errors in the
+    conversion would be caught.
+    """
     q = cirq.LineQubit.range(3)
     g = gate_fn**exponent
     if g.num_qubits() == 1:
@@ -481,7 +489,157 @@ def test_convert_from_cirq_exponent_guards(gate_fn, exponent):
 
     qrisp_qc = convert_from_cirq(cirq_circ)
     expected_unitary = cirq.unitary(cirq_circ)
-    np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary))
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary, decimal=5)
+
+
+@pytest.mark.parametrize(
+    "gate_fn, qubit_count",
+    [
+        (lambda q: (cirq.X.controlled() ** 0.25)(q[0], q[1]), 2),
+        (lambda q: cirq.CXPowGate(exponent=0.5)(q[0], q[1]), 2),
+        (lambda q: (cirq.H.controlled() ** 0.5)(q[0], q[1]), 2),
+        (lambda q: (cirq.SWAP**0.5)(q[0], q[1]).controlled_by(q[2]), 3),
+        (lambda q: (cirq.ISWAP**0.5)(q[0], q[1]), 2),
+        (lambda q: (cirq.X.controlled() ** 2)(q[0], q[1]), 2),
+        (lambda q: cirq.CCXPowGate(exponent=0.5)(q[0], q[1], q[2]), 3),
+        (lambda q: cirq.CCZPowGate(exponent=0.5)(q[0], q[1], q[2]), 3),
+    ],
+    ids=[
+        "controlled_x_fractional",
+        "cx_fractional",
+        "controlled_h_fractional",
+        "controlled_swap_fractional",
+        "iswap_fractional",
+        "controlled_x_even",
+        "ccx_fractional",
+        "ccz_fractional",
+    ],
+)
+def test_convert_from_cirq_fractional_powers_phase_exact(gate_fn, qubit_count):
+    """Fractional and even power gates in controlled contexts preserve cirq's exact phase.
+
+    Cirq uses the convention X^t = exp(i*pi*t/2) * RX(pi*t).  A direct
+    conversion of the controlled variant would turn that global phase into
+    a *relative* phase between control branches; these gates are therefore
+    decomposed by cirq first.  The unitary comparison is phase-exact so
+    any phase error would be caught.
+
+    The round-trip (convert back to cirq) additionally verifies that the
+    resulting operations' *definitions* are correct, not just their
+    reported unitaries.
+    """
+    q = cirq.LineQubit.range(qubit_count)
+    cirq_circ = cirq.Circuit([gate_fn(q)])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), cirq.unitary(cirq_circ), decimal=5
+    )
+    # Round-trip back to cirq to verify the operations' *definitions* are
+    # correct, not just their reported unitaries.  Skipped when transpilation
+    # dropped redundant (identity-supporting) qubits.
+    u_roundtrip = cirq.unitary(convert_to_cirq(qrisp_qc))
+    if u_roundtrip.shape == cirq.unitary(cirq_circ).shape:
+        np.testing.assert_array_almost_equal(u_roundtrip, cirq.unitary(cirq_circ), decimal=5)
+
+
+def test_convert_from_cirq_even_powers_are_identity():
+    """Even powers of X convert to the identity gate (phase-exact)."""
+    q0, q1 = cirq.LineQubit.range(2)
+
+    qrisp_qc = convert_from_cirq(cirq.Circuit([cirq.X(q0) ** 2]))
+    assert qrisp_qc.data[0].op.name == "id"
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), np.eye(2))
+
+    qrisp_qc = convert_from_cirq(cirq.Circuit([cirq.X(q0) ** -1]))
+    assert qrisp_qc.data[0].op.name == "x"
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), cirq.unitary(cirq.X))
+
+    qrisp_qc = convert_from_cirq(cirq.Circuit([(cirq.X.controlled() ** 2)(q0, q1)]))
+    np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), np.eye(4))
+
+
+def test_convert_from_cirq_fractional_iswap_decomposes():
+    """Fractional ISWAP powers are decomposed by cirq instead of raising."""
+    q0, q1 = cirq.LineQubit.range(2)
+    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, q1) ** 0.5])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert len(qrisp_qc.data) > 1
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), cirq.unitary(cirq_circ), decimal=5
+    )
+
+
+@pytest.mark.parametrize(
+    "cirq_circ",
+    [
+        cirq.Circuit([(cirq.X.controlled() ** 0.25)(cirq.LineQubit(0), cirq.LineQubit(1))]),
+        cirq.Circuit([(cirq.H.controlled() ** 0.5)(cirq.LineQubit(0), cirq.LineQubit(1))]),
+    ],
+    ids=["controlled_x_fractional_roundtrip", "controlled_h_fractional_roundtrip"],
+)
+def test_convert_from_cirq_fractional_controlled_statevector(cirq_circ):
+    """Full statevector (incl. global phase) matches for fractional controlled gates."""
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.statevector_array(),
+        cirq.final_state_vector(cirq_circ),
+        decimal=5,
+    )
+
+
+# -----------------------------------------------------------------------
+# Documented global-phase deviations (xfail, strict)
+#
+# Cirq's convention is X^t = exp(i*pi*t/2) * RX(pi*t) (likewise for Y),
+# whereas Qrisp's RX/RY carry no phase and SXGate == RX(pi/2).  For an
+# uncontrolled gate this only costs a global phase, which is unobservable
+# and tolerated by mitiq's up-to-global-phase comparisons.  Controlled
+# fractional powers are converted exactly via cirq.decompose instead (see
+# test_convert_from_cirq_fractional_powers_phase_exact).
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Qrisp RX/RY carry no global phase; cirq uses X^t = exp(i*pi*t/2)*RX(pi*t). "
+    "Standalone fractional X/Y powers therefore match only up to a global phase.",
+)
+@pytest.mark.parametrize(
+    "gate",
+    [cirq.X**0.25, cirq.Y**0.25, cirq.X**0.1, cirq.Y**0.9],
+    ids=["X^0.25", "Y^0.25", "X^0.1", "Y^0.9"],
+)
+def test_standalone_fractional_pauli_phase_exact_xfail(gate):
+    """Phase-exact (no abs) conversion of a standalone fractional Pauli power.
+
+    Documents the known global-phase deviation. If this ever starts passing,
+    the converter became phase-exact and the xfail marker should be removed.
+    """
+    q0 = cirq.LineQubit(0)
+    cirq_circ = cirq.Circuit([gate(q0)])
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), cirq.unitary(cirq_circ), decimal=5
+    )
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Qrisp SXGate == RX(pi/2), cirq X**0.5 == exp(i*pi/4)*RX(pi/2); "
+    "to_cirq(sx) differs by a global phase.",
+)
+def test_to_cirq_sx_phase_exact_xfail():
+    """Phase-exact to_cirq of sx/sx_dg.
+
+    Documents the known global-phase deviation in the Qrisp->Cirq direction
+    (see the Notes section of convert_to_cirq). If this ever starts passing,
+    the xfail marker should be removed.
+    """
+    qc = QuantumCircuit(1)
+    qc.sx(0)
+    np.testing.assert_array_almost_equal(
+        qc.get_unitary(), cirq.unitary(convert_to_cirq(qc)), decimal=5
+    )
 
 
 @pytest.mark.parametrize(
@@ -509,28 +667,6 @@ def test_convert_from_cirq_controlled_gates(key):
 
     expected_unitary = cirq.unitary(cirq_circ)
     np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary)
-
-
-def _build_multi_valued_circ():
-    """Cirq circuit with multi-valued control (0 OR 1) on first control qubit."""
-    q0, q1, q2 = cirq.LineQubit.range(3)
-    g = cirq.ControlledGate(cirq.X, control_values=[(0, 1), 1])
-    return cirq.Circuit([g(q0, q1, q2)])
-
-
-def _build_controlled_no_gate_circ():
-    """Cirq ControlledOperation wrapping a CircuitOperation (no .gate attribute on sub_op)."""
-    q0, q1 = cirq.LineQubit.range(2)
-    inner = cirq.FrozenCircuit([cirq.X(q0)])
-    co = cirq.CircuitOperation(inner, use_repetition_ids=True)
-    return cirq.Circuit([cirq.ControlledOperation([q1], co)])
-
-
-def _build_circuit_op_circ():
-    """Cirq circuit with a bare CircuitOperation (no .gate attribute)."""
-    q0 = cirq.LineQubit(0)
-    inner = cirq.FrozenCircuit([cirq.X(q0)])
-    return cirq.Circuit([cirq.CircuitOperation(inner, use_repetition_ids=True)])
 
 
 def test_convert_from_cirq_iswap():
@@ -575,23 +711,167 @@ def test_convert_from_cirq_ccz():
     np.testing.assert_array_almost_equal(qrisp_qc.get_unitary(), expected_unitary)
 
 
-@pytest.mark.parametrize(
-    "circ_builder, match",
-    [
-        (_build_multi_valued_circ, "Multi-valued control"),
-        (_build_controlled_no_gate_circ, "not supported"),
-        (_build_circuit_op_circ, "without gate attribute"),
-    ],
-    ids=[
-        "multi_valued_control",
-        "controlled_sub_op_no_gate",
-        "circuit_operation_no_gate",
-    ],
-)
-def test_convert_from_cirq_raises(circ_builder, match):
-    """Verify convert_from_cirq raises ValueError for unsupported Cirq circuits."""
-    with pytest.raises(ValueError, match=match):
-        convert_from_cirq(circ_builder())
+def test_convert_from_cirq_unsupported_gate_raises():
+    """A custom Cirq gate without _decompose_ still raises ValueError."""
+    class _UnsupportedGate(cirq.Gate):
+        def _num_qubits_(self): return 1
+        def _unitary_(self): return np.array([[1, 0], [0, -1]])
+    q0 = cirq.LineQubit(0)
+    circ = cirq.Circuit([_UnsupportedGate()(q0)])
+    with pytest.raises(ValueError, match="could not be decomposed"):
+        convert_from_cirq(circ)
+
+
+# -----------------------------------------------------------------------
+# Direct unit tests for _decompose_unknown_ops
+# -----------------------------------------------------------------------
+
+
+def test_decompose_known_gates_pass_through():
+    """A circuit with all-known gates is returned unchanged."""
+    q = cirq.LineQubit(0)
+    circ = cirq.Circuit([cirq.H(q), cirq.X(q), cirq.Z(q)])
+    result = _decompose_unknown_ops(circ)
+    assert result == circ
+
+
+def test_decompose_empty_circuit():
+    """An empty circuit passes through without error."""
+    circ = cirq.Circuit()
+    result = _decompose_unknown_ops(circ)
+    assert result == circ
+
+
+def test_decompose_fsim_gate():
+    """FSimGate (previously unsupported) should decompose successfully."""
+    q0, q1 = cirq.LineQubit.range(2)
+    circ = cirq.Circuit([cirq.FSimGate(theta=0.5, phi=0.25)(q0, q1)])
+    result = _decompose_unknown_ops(circ)
+    # Should produce more ops than the single FSimGate
+    assert len(list(result.all_operations())) > 1
+    qc = convert_from_cirq(result)
+    np.testing.assert_array_almost_equal(
+        np.abs(qc.get_unitary()), np.abs(cirq.unitary(circ))
+    )
+
+
+def test_decompose_cswap_gate():
+    """CSwapGate (Fredkin) should decompose successfully."""
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    circ = cirq.Circuit([cirq.CSWAP(q0, q1, q2)])
+    result = _decompose_unknown_ops(circ)
+    assert len(list(result.all_operations())) > 1
+    qc = convert_from_cirq(result)
+    np.testing.assert_array_almost_equal(
+        np.abs(qc.get_unitary()), np.abs(cirq.unitary(circ))
+    )
+
+
+def test_decompose_unknown_gate_raises():
+    """A gate without _decompose_ raises ValueError with a descriptive message."""
+    class _StuckGate(cirq.Gate):
+        def _num_qubits_(self): return 1
+        def _unitary_(self): return np.array([[1, 0], [0, -1]])
+    q0 = cirq.LineQubit(0)
+    circ = cirq.Circuit([_StuckGate()(q0)])
+    with pytest.raises(ValueError, match="could not be decomposed"):
+        _decompose_unknown_ops(circ)
+
+
+def test_decompose_multi_valued_control():
+    """Multi-valued control (0 OR 1) now decomposes successfully.
+    
+    The redundant control qubit is dropped by Cirq during decomposition,
+    so the resulting circuit has fewer qubits. We verify unitary is correct
+    on the remaining subsystem.
+    """
+    from cirq.ops.control_values import ProductOfSums
+
+    q0, q1 = cirq.LineQubit.range(2)
+    cv = ProductOfSums([(0, 1)])
+    g = cirq.ControlledGate(cirq.X, control_values=cv)
+    circ = cirq.Circuit([cirq.GateOperation(g, [q0, q1])])
+    result = _decompose_unknown_ops(circ)
+    assert len(list(result.all_operations())) > 0
+    # The decomposed circuit should work for X gate on the second qubit
+    qc = convert_from_cirq(result)
+    assert qc.data[0].op.name == "x"
+
+
+def test_decompose_circuit_operation():
+    """CircuitOperation (no .gate) is decomposed into a simple operation."""
+    q0 = cirq.LineQubit(0)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    circ = cirq.Circuit([cirq.CircuitOperation(inner, use_repetition_ids=True)])
+    result = _decompose_unknown_ops(circ)
+    ops = list(result.all_operations())
+    assert len(ops) == 1
+    assert isinstance(ops[0].gate, cirq.XPowGate)
+
+
+def test_decompose_controlled_circuit_operation():
+    """ControlledOperation wrapping a CircuitOperation is decomposed."""
+    q0, q1 = cirq.LineQubit.range(2)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    co = cirq.CircuitOperation(inner, use_repetition_ids=True)
+    circ = cirq.Circuit([cirq.ControlledOperation([q1], co)])
+    result = _decompose_unknown_ops(circ)
+    qc = convert_from_cirq(result)
+    np.testing.assert_array_almost_equal(
+        np.abs(qc.get_unitary()), np.abs(cirq.unitary(circ))
+    )
+
+
+def test_decompose_multiple_unsupported_gates():
+    """Multiple unsupported gates in sequence all get decomposed."""
+    q0, q1 = cirq.LineQubit.range(2)
+    circ = cirq.Circuit([
+        cirq.FSimGate(theta=0.3, phi=0.1)(q0, q1),
+        cirq.FSimGate(theta=0.7, phi=0.4)(q0, q1),
+    ])
+    result = _decompose_unknown_ops(circ)
+    qc = convert_from_cirq(result)
+    np.testing.assert_array_almost_equal(
+        np.abs(qc.get_unitary()), np.abs(cirq.unitary(circ))
+    )
+
+
+def test_decompose_iterative_progress():
+    """Decomposition that requires multiple iterations still succeeds.
+    
+    A ControlledOp with multi-valued control (0 OR 1) on one qubit and
+    normal control on another.  Cirq drops the redundant control qubit
+    during decomposition, reducing the circuit width.
+    """
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    g = cirq.ControlledGate(cirq.X, control_values=[(0, 1), 1])
+    circ = cirq.Circuit([g(q0, q1, q2)])
+    result = _decompose_unknown_ops(circ)
+    # Redundant qubit q0 was dropped — should work on remaining qubits
+    qc = convert_from_cirq(result)
+    assert len(qc.data) > 0
+
+
+def test_convert_from_cirq_circuit_operation():
+    """CircuitOperation (no .gate attribute) should now be decomposed."""
+    q0 = cirq.LineQubit(0)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    circ = cirq.Circuit([cirq.CircuitOperation(inner, use_repetition_ids=True)])
+    qrisp_qc = convert_from_cirq(circ)
+    assert qrisp_qc.data[0].op.name == "x"
+
+
+def test_convert_from_cirq_controlled_circuit_operation():
+    """ControlledOperation wrapping a CircuitOperation should be decomposed."""
+    q0, q1 = cirq.LineQubit.range(2)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    co = cirq.CircuitOperation(inner, use_repetition_ids=True)
+    circ = cirq.Circuit([cirq.ControlledOperation([q1], co)])
+    qrisp_qc = convert_from_cirq(circ)
+    expected_unitary = cirq.unitary(circ)
+    np.testing.assert_array_almost_equal(
+        np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary)
+    )
 
 
 def _empty_circ():
@@ -732,18 +1012,6 @@ def test_convert_from_cirq_mixed_qubit_types():
             convert_from_cirq(circ)
 
 
-def _build_multi_valued_inner_circ():
-    """GateOperation wrapping a ControlledGate with multi-valued control (0 OR 1),
-    triggering error in the ControlledGate unwrap while-loop.
-    """
-    from cirq.ops.control_values import ProductOfSums
-
-    q0, q1 = cirq.LineQubit.range(2)
-    cv = ProductOfSums([(0, 1)])
-    g = cirq.ControlledGate(cirq.X, control_values=cv)
-    return cirq.Circuit([cirq.GateOperation(g, [q0, q1])])
-
-
 def _build_invalid_control_inner_circ():
     """GateOperation wrapping a ControlledGate with control value 2 (bypassed Cirq validation),
     triggering unsupported-value error in the unwrap while-loop.
@@ -771,11 +1039,10 @@ def _build_invalid_control_outer_circ():
 @pytest.mark.parametrize(
     "circ_builder, match",
     [
-        (_build_multi_valued_inner_circ, "Multi-valued control"),
-        (_build_invalid_control_inner_circ, "Unsupported control value"),
-        (_build_invalid_control_outer_circ, "Unsupported control value"),
+        (_build_invalid_control_inner_circ, "could not be decomposed"),
+        (_build_invalid_control_outer_circ, "could not be decomposed"),
     ],
-    ids=["multi_valued_inner", "invalid_control_inner", "invalid_control_outer"],
+    ids=["invalid_control_inner", "invalid_control_outer"],
 )
 def test_convert_from_cirq_control_value_errors(circ_builder, match):
     """Control value validation errors in both unwrap and extra_controls paths."""
