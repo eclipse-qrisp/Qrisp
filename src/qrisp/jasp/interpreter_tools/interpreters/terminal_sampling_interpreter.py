@@ -200,7 +200,9 @@ def terminal_sampling_evaluator(sampling_res_type):
                 if function_name == "user_func":
                     pass
 
-                # This case describes the logic to use the simulator sampling features
+                # This case describes the logic to use the simulator sampling features.
+                # sampling_helper_1 only appears for quantum returns; classical
+                # returns bypass the helpers and are handled after the while loop.
                 if function_name == "sampling_helper_1":
                     # Collect the qubits to be measured into a single list
                     qubits = []
@@ -232,9 +234,12 @@ def terminal_sampling_evaluator(sampling_res_type):
                     outvalues = [0] * len(eqn.outvars)
                     insert_outvalues(eqn, context_dic, outvalues)
 
+                # sampling_helper_2 only appears for quantum returns; classical
+                # returns bypass the helpers and are handled after the while loop.
+                #
                 # Each int in the values of meas_res_dic represents the values
-                # of all QuantumVariables. We therefore need to "split" the ints
-                # into the appropriate parts and decode them.
+                # of all QuantumVariables.  We therefore need to "split" the
+                # ints into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
                     if sampling_res_type == "ev":
@@ -251,13 +256,12 @@ def terminal_sampling_evaluator(sampling_res_type):
                     # Iterate through the sampled values
                     for k, v in meas_res_dic.items():
                         # We now evaluate the function that was previously traced
-                        # to perform the decoding. The first few arguments of this
-                        # function are the integers to be decoded.
-
-                        # We therefore use the traced Jaspr to perform the decoding
-                        # by modifying the input values.
+                        # to perform the decoding.  The first few arguments of
+                        # this function are the integers to be decoded.
+                        #
+                        # We therefore use the traced Jaspr to perform the
+                        # decoding by modifying the input values.
                         new_invalues = list(invalues)
-
                         j = 0
                         for i in range(len(return_signature)):
                             # Split the integers into intervals ranging from
@@ -268,23 +272,19 @@ def terminal_sampling_evaluator(sampling_res_type):
                             j += return_signature[i]
 
                         # Evaluate the decoder
-                        # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
-
                         outvalues = decoder(*new_invalues)
 
-                        # We now build the key for the result dic
-                        # For that we turn the jax types into the corresponding
+                        # We now build the key for the result dict.
+                        # For that we turn the Jax types into the corresponding
                         # Python types.
-
+                        #
                         # This treats the case that the decoder returned only
                         # a single result (instead of a tuple).
                         if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues * v
                             elif sampling_res_type == "array":
-                                # sampling_res.extend(v*[outvalues[0]])
                                 sampling_res_dict[outvalues.item()] = v
-                                # sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 if type(v) not in [int, float]:
@@ -295,9 +295,8 @@ def terminal_sampling_evaluator(sampling_res_type):
                                     else:
                                         raise
                                 sampling_res[key.item()] = v
-
-                        # If the user given function returned more than one
-                        # value, the key is a tuple to be build up
+                        # If the user function returned more than one value,
+                        # the key is a tuple to be built up.
                         elif sampling_res_type == "ev":
                             sampling_res += jnp.array(outvalues) * v
                         elif sampling_res_type == "array":
@@ -317,13 +316,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                         counts = np.array(list(sampling_res_dict.values()))
                         sampling_res = np.repeat(keys, counts, axis=0)
                         np.random.shuffle(sampling_res)
-
                     elif sampling_res_type == "ev":
                         sampling_res = sampling_res / shots
                         if sampling_res.shape[0] == 1:
                             sampling_res = sampling_res[0]
                     elif sampling_res_type == "dict":
-                        # Sort the counts such the most probable values come first
+                        # Sort the counts such that the most probable values
+                        # come first.
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
 
@@ -338,6 +337,16 @@ def terminal_sampling_evaluator(sampling_res_type):
 
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
+
+        # If decoded_meas_res is still empty, the pure-classical path was
+        # taken (sampling_helper_2 was never called).  Terminal sampling
+        # cannot handle this — raise instead of silently tiling.
+        if not decoded_meas_res:
+            raise ValueError(
+                "Terminal sampling does not support classical "
+                "return values. Use terminal_sampling=False "
+                "to sample with classical returns."
+            )
 
         insert_outvalues(eqn, context_dic, decoded_meas_res)
 
