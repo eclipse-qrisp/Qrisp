@@ -637,8 +637,8 @@ Qiskit Runtime service and supports both single-job and session execution modes:
    )
 
 
-:ref:`IQMBackend`
----------------------
+:doc:`IQMBackend <Hardware Backends/IQMBackend>`
+------------------------------------------------
 
 .. note::
 
