@@ -5,7 +5,16 @@ import pytest
 
 from qrisp import QuantumCircuit
 from qrisp.circuit import Operation
-from qrisp.circuit.standard_operations import MCRXGate, MCXGate, U1Gate
+from qrisp.circuit.standard_operations import (
+    MCRXGate,
+    MCXGate,
+    PGate,
+    RGate,
+    RXGate,
+    U1Gate,
+    YGate,
+    ZGate,
+)
 from qrisp.interface.converter.pytket_converter import (
     create_tket_instruction,
     pytket_converter,
@@ -242,3 +251,124 @@ def test_pytket_converter_import_error():
     with patch("builtins.__import__", _fail_pytket_import):
         with pytest.raises(ImportError, match="PyTket must be installed"):
             pytket_converter(QuantumCircuit(1))
+
+
+# ---------------------------------------------------------------------------
+# Smoke tests for known-broken converter behaviour. Each test documents a
+# *known* bug and is expected to FAIL until the underlying issue is fixed. The
+# owner is noted in each docstring (pytket converter / qrisp / pytket), along
+# with the upstream Qrisp issue number where one exists
+# (https://github.com/eclipse-qrisp/Qrisp/issues). Findings without an issue
+# number are not yet tracked upstream and should be reported/fixed in Qrisp.
+# ---------------------------------------------------------------------------
+
+# Finding 1a (pytket converter): ctrl_state is silently dropped for the four
+# elementary single-control gates. op.name == "cx"/"cy"/"cz"/"cp" hits the
+# _GATE_OPTYPES lookup table (pytket_converter.py:89) before the
+# ControlledOperation branch (pytket_converter.py:187), so a flipped control
+# becomes a plain gate with no warning. Expected unitary: X/Y/Z/P applied only
+# when the control is |0>.
+#
+# TODO: not tracked upstream yet -- should be fixed in Qrisp (the pytket
+# converter must respect ctrl_state for elementary controlled gates).
+@pytest.mark.parametrize(
+    "op",
+    [
+        MCXGate(control_amount=1, ctrl_state=0),
+        YGate().control(1, ctrl_state=0),
+        ZGate().control(1, ctrl_state=0),
+        PGate(0.5).control(1, ctrl_state=0),
+    ],
+)
+def test_smoke_ctrl_state_elementary_controlled_gate(op):
+    qc = QuantumCircuit(2)
+    qc.append(op, [0, 1])
+
+    assert _matches_up_to_global_phase(
+        pytket_converter(qc).get_unitary(), qc.get_unitary()
+    )
+
+
+# Finding 1b (pytket converter): "p" maps to OpType.Rz (pytket_converter.py:50),
+# whose rotation-convention global phase e^{-i theta/2} is invisible for a lone
+# p gate but accumulates inside composite-box definitions (gray synthesis uses
+# P gates), leaving the whole box phase-shifted. Strict equality must hold for
+# the multi-controlled X gate; it currently fails.
+#
+# TODO: not tracked upstream yet -- should be fixed in Qrisp by mapping "p" to
+# pytket's relative-phase gate OpType.U1.
+def test_smoke_p_to_rz_global_phase_in_controlled_box():
+    qc = QuantumCircuit(4)
+    qc.append(MCXGate(control_amount=3), [0, 1, 2, 3])
+
+    assert np.allclose(qc.to_pytket().get_unitary(), qc.get_unitary(), atol=1e-8)
+
+
+# Finding 1c (pytket converter): standard ops missing from the lookup table and
+# without a definition raise instead of converting. RGate ("r"), barrier,
+# reset and classically-controlled ops all hit ValueError in
+# create_tket_instruction (pytket_converter.py:100).
+#
+# TODO: not tracked upstream yet -- should be fixed in Qrisp (either add these
+# to the converter's gate map or give the Qrisp ops a definition). The RGate
+# case is partially tracked by #629 (wrong-axis unitary; a fix there would give
+# RGate a definition and let the converter emit it).
+def test_smoke_rgate_converts():
+    qc = QuantumCircuit(1)
+    qc.append(RGate(0.7, 0.5), [0])
+
+    pytket_converter(qc)  # currently raises ValueError
+
+
+def test_smoke_barrier_converts():
+    qc = QuantumCircuit(2)
+    qc.barrier()
+
+    pytket_converter(qc)  # currently raises ValueError
+
+
+def test_smoke_reset_converts():
+    qc = QuantumCircuit(2)
+    qc.reset(0)
+
+    pytket_converter(qc)  # currently raises ValueError
+
+
+def test_smoke_c_if_converts():
+    qc = QuantumCircuit(2, 2)
+    qc.h(0)
+    qc.append(qc.data[0].op.c_if(1, 1), [0], [0])
+
+    pytket_converter(qc)  # currently raises ValueError
+
+
+# Finding 2a (qrisp): RGate.get_unitary() deviates from the standard
+# exp(-i theta/2 (cos phi X + sin phi Y)) by a factor of i on the off-diagonals.
+# Tracked upstream as https://github.com/eclipse-qrisp/Qrisp/issues/629.
+def test_smoke_rgate_qrisp_unitary_standard_axis():
+    theta, phi = 0.7, 0.5
+    u_expected = np.array(
+        [
+            [np.cos(theta / 2), -1j * np.exp(-1j * phi) * np.sin(theta / 2)],
+            [-1j * np.exp(1j * phi) * np.sin(theta / 2), np.cos(theta / 2)],
+        ]
+    )
+
+    assert np.allclose(RGate(theta, phi).get_unitary(), u_expected, atol=1e-8)
+
+
+# Finding 2b (qrisp): QuantumCircuit.get_unitary() emits spurious ~1e-7
+# off-diagonal entries where the unitary should vanish. This sits at the noise
+# floor of downstream equivalence checks (see qBraid #1311). Related upstream
+# issue: https://github.com/eclipse-qrisp/Qrisp/issues/632 (the "context-
+# dependent" MCRXGate flakiness there stems from this noise, not from the
+# converter's qubit ordering, which is correct on this HEAD).
+def test_smoke_qrisp_get_unitary_noise():
+    qc = QuantumCircuit(4)
+    qc.append(RXGate(0.7).control(3, method="gray_pt"), [0, 1, 2, 3])
+
+    u = qc.get_unitary()
+    # A controlled-RX acts on one 2x2 block per control state; all other entries
+    # must vanish exactly.
+    spurious = np.abs(u)[np.abs(u) < 0.1]
+    assert spurious.max() < 1e-9
