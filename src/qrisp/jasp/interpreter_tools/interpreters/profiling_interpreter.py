@@ -35,7 +35,8 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 import types
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Callable, Dict, Sequence, Tuple
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 import jax
 from jax import pure_callback

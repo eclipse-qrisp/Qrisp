@@ -15,7 +15,8 @@
 ********************************************************************************
 """
 
-from typing import Any, Callable, Iterator, List, Tuple
+from collections.abc import Callable, Iterator
+from typing import Any, List, Tuple
 
 import jax
 import jax.numpy as jnp

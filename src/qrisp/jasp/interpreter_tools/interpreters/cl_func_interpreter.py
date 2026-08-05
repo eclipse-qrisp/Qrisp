@@ -51,8 +51,8 @@
 # 3. Producing a standard ClosedJaxpr that can be JIT-compiled by JAX
 
 from collections import OrderedDict
-from collections.abc import Sequence
-from typing import Any, Callable
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
