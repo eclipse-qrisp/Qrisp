@@ -50,22 +50,45 @@ def compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-    >>> from qrisp import QuantumCircuit, PassManager, compress_layers
-    >>> qc = QuantumCircuit(3)
-    >>> qc.h(0)
-    >>> qc.cx(0, 1)
-    >>> qc.h(2)       # independent of qb_0, qb_1 — can move up
-    >>> qc.cx(1, 2)
-    >>> print(qc)
-    ...
-    >>> pm = PassManager()
-    >>> pm += compress_layers
-    >>> compact_qc = pm.run(qc)
-    >>> print(compact_qc)
-    ...
+    Consider two independent qubit chains.  Writing the first chain
+    completely before the second is natural for a programmer but forces
+    Stim to draw the second chain *after* the first, wasting timeline
+    space::
 
-    The ``h(2)`` gate will be moved before ``cx(0, 1)`` because it acts on
-    a disjoint qubit set.
+        >>> from qrisp import QuantumCircuit, compress_layers
+        >>> qc = QuantumCircuit(6)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.cx(1, 2)
+        >>> qc.h(5)
+        >>> qc.cx(5, 4)
+        >>> qc.cx(4, 3)
+        >>> _ = qc.to_stim()  # convert to Stim for visualisation
+
+    .. image:: /_static/compress_layers_before.svg
+       :alt: Stim timeline diagram before compress_layers
+
+    The second chain (qubits 3–5) sits far to the right even though it
+    shares no qubits with the first chain.  ``compress_layers`` reorders
+    the instructions so that independent gates occupy the same time layer::
+
+        >>> qc = compress_layers(qc)    # or via PassManager
+        >>> _ = qc.to_stim()
+
+    .. image:: /_static/compress_layers_after.svg
+       :alt: Stim timeline diagram after compress_layers
+
+    Both chains now execute in parallel — the Stim timeline diagram
+    becomes roughly half as wide.  The relative order of the three gates
+    on each chain (``H → CX → CX``) is preserved, guaranteeing that the
+    circuit semantics are unchanged.
+
+    The pass can also be used inside a :class:`~qrisp.PassManager`::
+
+        >>> from qrisp import PassManager
+        >>> pm = PassManager()
+        >>> pm += compress_layers
+        >>> qc = pm.run(qc)
 
     """
     # ------------------------------------------------------------------
