@@ -37,6 +37,8 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Recursively dissolve synthesized gates into elementary gates
    * - :doc:`gray_synth_toffoli <gray_synth_toffoli>`
      - Synthesize Toffoli gates using Gray-code decomposition
+   * - :doc:`insert_stim_noise <insert_stim_noise>`
+     - Insert a circuit-level Stim noise model (one channel per qubit per layer)
    * - :doc:`manual_layout <manual_layout>`
      - Re-index qubits according to a user-supplied mapping
    * - :doc:`remove_barriers <remove_barriers>`
@@ -63,6 +65,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    convert_to_prx
    decompose
    gray_synth_toffoli
+   insert_stim_noise
    manual_layout
    remove_barriers
    resolve_swaps

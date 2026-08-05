@@ -69,6 +69,28 @@ New Features
   bookkeeping instructions are excluded from the scheduling clock so they
   do not inflate layer counts.
 
+- **insert_stim_noise — circuit-level Stim noise model**
+  The new :func:`~qrisp.insert_stim_noise` pass annotates a
+  :class:`~qrisp.QuantumCircuit` with the circuit-level depolarizing noise
+  model used for quantum error-correction benchmarks.  Every qubit receives
+  exactly one noise channel per physical time step: ``DEPOLARIZE2`` after a
+  two-qubit gate, ``DEPOLARIZE1`` after a one-qubit gate or for each layer a
+  qubit idles through, ``X_ERROR`` before a measurement and after a reset.
+  The channels are :class:`~qrisp.misc.stim_tools.StimNoiseGate` operations,
+  which act as identities for the Qrisp simulator and become genuine noisy
+  channels under :meth:`~qrisp.QuantumCircuit.to_stim`.
+
+  The pass inserts only — the instruction order of the input circuit, and
+  with it the Stim measurement record, is preserved.  Instructions that carry
+  no physical time step (``qb_alloc`` / ``qb_dealloc``, the global phase
+  ``gphase``, and the ``parity`` annotation that becomes a Stim ``DETECTOR``)
+  neither receive noise nor create a noise layer.  With the default
+  ``only_necessary=True`` a channel the circuit already carries is respected
+  rather than duplicated, where "already carries" means an exactly matching
+  channel type on exactly the matching qubits, at its expected position;
+  its error probability may differ.  Gates on more than two qubits are
+  rejected with a ``ValueError`` before any output is produced.
+
 Improvements
 ------------
 

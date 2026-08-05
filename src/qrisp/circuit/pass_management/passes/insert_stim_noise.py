@@ -62,7 +62,7 @@ program that writes two independent qubit chains one after the other has layer
 0 instructions at both the start and the middle of the data list.  So "append
 the idle noise at the end of the layer" has no single well-defined position
 unless the circuit is reordered into layer order first - which is precisely
-what this pass must not do.
+what this pass must not do in order to not change the measurement record.
 
 The way out is the observation that a noise instruction on qubit ``q`` only has
 to be ordered correctly with respect to *other instructions on* ``q``.  Noise
@@ -337,10 +337,26 @@ def insert_stim_noise(
       directly after the gate / before the measurement / after the reset they
       already annotate.  With ``only_necessary=False`` the full noise model is
       applied on top of any user-placed noise.
+    * *Reading the output — repeated targets.*  Stim merges consecutive
+      identical channels into a single instruction, so a qubit that idles
+      through several time steps appears more than once in the target list:
+      ``DEPOLARIZE1(0.001) 0 0 0 2 2`` applies the channel three times to qubit
+      ``0`` and twice to qubit ``2``.  Each target is an independent
+      application, so this is exactly equivalent to five separate instructions,
+      one per idle time step.
+    * *Reading the output — placement of idle noise.*  Because the instruction
+      order of the input is preserved, a qubit's idle noise is emitted at the
+      latest still-correct position rather than spread across the round: right
+      before the next instruction that touches the qubit, at the next barrier,
+      or at the end of the circuit.  Nothing acts on the qubit in between, so
+      the resulting channels compose identically — only the layout of the
+      printed circuit differs.  Run :ref:`compress_layers` afterwards to
+      distribute the instructions over the timeline for visualisation.
 
     Examples
     --------
-    Insert a uniform noise model into a small circuit and inspect the result::
+    **A first noise model.**  Insert a uniform model into a Bell-state circuit
+    and inspect the Stim output::
 
         >>> from qrisp import QuantumCircuit, insert_stim_noise
         >>> qc = QuantumCircuit(2)
@@ -350,10 +366,67 @@ def insert_stim_noise(
         ...     qc.measure(q)
         >>> noisy = insert_stim_noise(0.01, 0.02, 0.001)(qc)
         >>> print(noisy.to_stim())
+        H 0
+        DEPOLARIZE1(0.01) 0 1
+        CX 0 1
+        DEPOLARIZE2(0.02) 0 1
+        X_ERROR(0.001) 0
+        M 0
+        X_ERROR(0.001) 1
+        M 1
 
-    By default the pass only adds noise where it is missing.  If the user has
-    already placed a matching noise instruction, it is respected and not
-    duplicated::
+    Three time steps, three noise instructions per qubit.  In the first one
+    ``H`` acts on qubit ``0`` while qubit ``1`` idles, and both therefore get a
+    ``DEPOLARIZE1`` - Stim prints them as a single instruction with two targets.
+    The ``CX`` gets a correlated ``DEPOLARIZE2`` over both qubits, and each
+    measurement is preceded by its readout bit flip.
+
+    **A syndrome-extraction round.**  The typical target of this pass: one round
+    of a repetition-code parity check, closed by a detector and a barrier::
+
+        >>> from qrisp import QuantumCircuit, insert_stim_noise
+        >>> qc = QuantumCircuit(3)
+        >>> qc.cx(0, 1)                        # data 0 -> ancilla 1
+        >>> qc.cx(2, 1)                        # data 2 -> ancilla 1
+        >>> qc.measure(1)
+        >>> _ = qc.parity([qc.clbits[0]])      # becomes a Stim DETECTOR
+        >>> qc.reset(1)
+        >>> qc.barrier(qc.qubits)              # becomes a Stim TICK
+        >>> print(insert_stim_noise(0.001, 0.01, 0.005)(qc).to_stim())
+        CX 0 1
+        DEPOLARIZE2(0.01) 0 1
+        DEPOLARIZE1(0.001) 2
+        CX 2 1
+        DEPOLARIZE2(0.01) 2 1
+        X_ERROR(0.005) 1
+        M 1
+        DETECTOR rec[-1]
+        R 1
+        X_ERROR(0.005) 1
+        DEPOLARIZE1(0.001) 0 0 0 2 2
+        TICK
+
+    The round has four time steps: the two ``CX`` layers, the measurement and
+    the reset.  The ancilla ``1`` is busy in all four and collects exactly four
+    channels.  The data qubits ``0`` and ``2`` are busy in one each and idle
+    through the other three, which is what the two ``DEPOLARIZE1`` instructions
+    account for - three applications on qubit ``0`` and, together with the early
+    one, three on qubit ``2`` (see the notes on reading the output above).
+    Note that the ``DETECTOR`` does not produce a round of idle noise: it is a
+    classical annotation, not a time step.
+
+    Repeating the round and rendering the Stim timeline diagram before and after
+    the pass shows the model in context — every qubit carries one channel per
+    time step, and the rounds are separated by the ``TICK`` of the barrier:
+
+    .. image:: /_static/insert_stim_noise_before.svg
+       :alt: Stim timeline diagram of two noiseless syndrome extraction rounds
+
+    .. image:: /_static/insert_stim_noise_after.svg
+       :alt: Stim timeline diagram of the same rounds after insert_stim_noise
+
+    **Respecting hand-placed noise.**  By default the pass only adds noise where
+    it is missing.  A channel the user already placed is kept as-is::
 
         >>> from qrisp import QuantumCircuit, insert_stim_noise
         >>> from qrisp.misc.stim_tools import StimNoiseGate
@@ -366,15 +439,19 @@ def insert_stim_noise(
         DEPOLARIZE2(0.05) 0 1
         DEPOLARIZE1(0.01) 2
 
-    The user's ``DEPOLARIZE2`` is kept and no second ``DEPOLARIZE2`` is
-    inserted after the ``CX``; only the idle qubit (``2``) receives its
-    ``DEPOLARIZE1`` for that layer.  Pass ``only_necessary=False`` to insert
-    the noise model unconditionally.
+    The user's ``DEPOLARIZE2`` is kept at its own strength and no second
+    ``DEPOLARIZE2`` is inserted after the ``CX``; only the idle qubit (``2``)
+    receives its ``DEPOLARIZE1`` for that layer.  The match has to be exact:
+    had the user placed a ``DEPOLARIZE1``, or a ``DEPOLARIZE2`` on a different
+    pair of qubits, the model's own ``DEPOLARIZE2`` would still be inserted.
+    Pass ``only_necessary=False`` to apply the full model unconditionally.
 
-    The pass can also be composed with other passes inside a
-    :class:`~qrisp.PassManager`::
+    **Composition.**  The pass can be used inside a
+    :class:`~qrisp.PassManager`.  Running :ref:`compress_layers` afterwards
+    reorders the result into layer order, which compacts the Stim timeline
+    diagram::
 
-        >>> from qrisp import PassManager
+        >>> from qrisp import PassManager, compress_layers
         >>> pm = PassManager()
         >>> pm += insert_stim_noise(depolarize_1_strength=1e-3,
         ...                         depolarize_2_strength=1e-3,
