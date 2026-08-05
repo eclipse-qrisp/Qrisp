@@ -64,10 +64,19 @@ def _peres_gate(a: Qubit, b: Qubit, c: Qubit) -> None:
 
 
 def thapliyal_procedure(qubit_list_1: list[Qubit], qubit_list_2: list[Qubit], output_qubit: Qubit) -> None:
-    """Apply the 6-step Thapliyal ripple procedure (arXiv:1712.02630) to raw
-    qubit lists, using free-function primitives (cx/mcx/_peres_gate) and jrange so the
-    loop bounds may be traced values, making it usable in both static and dynamic
-    (Jasp) mode. thapliyal_adder drives this helper, wrapping it with the full
+    """Apply the 6-step Thapliyal ripple-carry procedure to raw qubit lists.
+
+    This is the *no-input-carry* construction of arXiv:1712.02630 (Section 4,
+    "Methodology 1: Reversible Adder Circuit With No Input Carry"). The paper gives a
+    separate *with-input-carry* construction (Section 5, "Methodology 2"), which is
+    NOT implemented here: this procedure has no carry-in slot, so it cannot accept
+    one. thapliyal_adder still exposes a c_in argument, but synthesizes it externally
+    by prepending a virtual bit position to the registers rather than switching to
+    the Section 5 circuit.
+
+    Uses free-function primitives (cx/mcx/_peres_gate) and jrange so the loop bounds
+    may be traced values, making it usable in both static and dynamic (Jasp) mode.
+    thapliyal_adder drives this helper, wrapping it with the full
     size-handling / c_in / c_out / ctrl API.
 
     qubit_list_1 and qubit_list_2 must have equal length; the loop count is derived
@@ -76,7 +85,6 @@ def thapliyal_procedure(qubit_list_1: list[Qubit], qubit_list_2: list[Qubit], ou
 
     Descending loops (steps 2 and 4) are rewritten as forward jrange loops with a
     computed index, mirroring the UMA-reversal pattern in cuccaro_adder.
-
     """
     n = jlen(qubit_list_1)
 
