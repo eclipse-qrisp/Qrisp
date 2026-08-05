@@ -496,21 +496,24 @@ def _conv_h(inner_gate):
     return ops.HGate()
 
 
-def _conv_cx(inner_gate):
-    """Convert cirq.CXPowGate into a CXGate — odd-integer exponents only.
+def _constant_converter(op_factory):
+    """Wrap an op factory so it fits the converter dispatch signature.
 
-    Fractional and even exponents get decomposed by cirq instead (see
-    _needs_cirq_decomposition), because cirq's phase convention
-    X^t = exp(i*pi*t/2) * RX(pi*t) can't be reproduced exactly by a Qrisp
-    controlled rotation.
+    Some cirq gates map straight onto a fixed Qrisp op regardless of their
+    details — CXPowGate -> CXGate, IdentityGate -> IDGate, and so on.  This
+    takes the op factory (e.g. ``ops.CXGate``) and wraps it into a converter
+    that accepts the inner gate and simply ignores it, so we can drop it
+    straight into the _GATE_CONVERTERS registry like any other converter.
+
+    Note we call ``op_factory()`` afresh on every invocation rather than
+    caching a single op instance, so each converted instruction gets its own
+    operation.
     """
-    if not np.isclose(inner_gate.exponent % 2, 1.0):
-        raise ValueError(
-            f"Only odd-integer exponents of CXPowGate can be converted "
-            f"directly (got {inner_gate.exponent}). Fractional powers are "
-            f"decomposed automatically by the converter."
-        )
-    return ops.CXGate()
+
+    def converter(inner_gate):
+        return op_factory()
+
+    return converter
 
 
 def _fractional_cz_gate(exp):
@@ -541,16 +544,6 @@ def _conv_swap(inner_gate):
     if not np.isclose(inner_gate.exponent % 2, 1.0):
         return _fractional_swap_gate(inner_gate.exponent)
     return ops.SwapGate()
-
-
-def _conv_id(inner_gate):
-    """Convert cirq.IdentityGate into a Qrisp IDGate."""
-    return ops.IDGate()
-
-
-def _conv_reset(inner_gate):
-    """Convert cirq.ResetChannel into a Qrisp Reset."""
-    return ops.Reset()
 
 
 def _convert_pauli_pow(inner_gate, rotation_cls, rotation_fn, specials, fallback_fn):
@@ -702,66 +695,17 @@ def _conv_z(inner_gate):
 def _conv_iswap(inner_gate):
     """Convert cirq.ISwapPowGate into an iSWAP (or iSWAP^dag).
 
-    Only odd-integer exponents (mod 2 == 1) can be handled directly:
+    Only odd-integer exponents (mod 2 == 1) ever reach us here:
         exponent % 4 == 1.0  ->  iSWAP
         exponent % 4 == 3.0  ->  iSWAP^dag
 
-    Fractional and even exponents are handed off to cirq.decompose via
-    _needs_cirq_decomposition, so the ValueError below is really just a
-    safety net.
+    Fractional and even exponents get decomposed by cirq first (see
+    _needs_cirq_decomposition).
     """
-    exp = inner_gate.exponent
-    if not np.isclose(exp % 2, 1.0):
-        raise ValueError(
-            f"Only the full ISwapPowGate "
-            f"(exponent 1, -1, 3, ...) can be converted, "
-            f"not the fractional-power variant with exponent "
-            f"{exp}."
-        )
     op = ops.ISwapGate()
-    if np.isclose(exp % 4, 3.0):
+    if np.isclose(inner_gate.exponent % 4, 3.0):
         op = op.inverse()
     return op
-
-
-def _conv_ccx(inner_gate):
-    """Convert cirq.CCXPowGate into a doubly-controlled X (Toffoli).
-
-    Only odd-integer exponents (mod 2 == 1) are handled directly;
-    fractional and even exponents are handed off to cirq.decompose via
-    _needs_cirq_decomposition.
-
-    Fun fact: cirq.TOFFOLI is actually a ``cirq.ControlledGate(cirq.X, 2)``,
-    which _unpack_cirq_control_layers unwraps for us.  This converter only
-    sees the case where a *native* CCXPowGate shows up.
-    """
-    exp = inner_gate.exponent
-    if not np.isclose(exp % 2, 1.0):
-        raise ValueError(
-            f"Only the full CCXPowGate (Toffoli) "
-            f"(exponent 1, -1, 3, ...) can be converted, "
-            f"not the fractional-power variant with exponent "
-            f"{exp}."
-        )
-    return ops.MCXGate(control_amount=2)
-
-
-def _conv_ccz(inner_gate):
-    """Convert cirq.CCZPowGate into a doubly-controlled Z.
-
-    Only odd-integer exponents (mod 2 == 1) are handled directly;
-    fractional and even exponents are handed off to cirq.decompose via
-    _needs_cirq_decomposition.
-    """
-    exp = inner_gate.exponent
-    if not np.isclose(exp % 2, 1.0):
-        raise ValueError(
-            f"Only the full CCZPowGate "
-            f"(exponent 1, -1, 3, ...) can be converted, "
-            f"not the fractional-power variant with exponent "
-            f"{exp}."
-        )
-    return ops.ZGate().control(2)
 
 
 _GATE_CONVERTERS = None
@@ -791,17 +735,17 @@ def _get_gate_converters():
     if _GATE_CONVERTERS is None:
         _GATE_CONVERTERS = [
             (cirq.HPowGate, _conv_h),
-            (cirq.CXPowGate, _conv_cx),
+            (cirq.CXPowGate, _constant_converter(ops.CXGate)),
             (cirq.CZPowGate, _conv_cz),
             (cirq.SwapPowGate, _conv_swap),
-            (cirq.IdentityGate, _conv_id),
-            (cirq.ResetChannel, _conv_reset),
+            (cirq.IdentityGate, _constant_converter(ops.IDGate)),
+            (cirq.ResetChannel, _constant_converter(ops.Reset)),
             (cirq.XPowGate, _conv_x),
             (cirq.YPowGate, _conv_y),
             (cirq.ZPowGate, _conv_z),
             (cirq.ISwapPowGate, _conv_iswap),
-            (cirq.CCXPowGate, _conv_ccx),
-            (cirq.CCZPowGate, _conv_ccz),
+            (cirq.CCXPowGate, _constant_converter(lambda: ops.MCXGate(control_amount=2))),
+            (cirq.CCZPowGate, _constant_converter(lambda: ops.ZGate().control(2))),
         ]
     return _GATE_CONVERTERS
 
