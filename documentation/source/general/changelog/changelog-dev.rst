@@ -53,6 +53,9 @@ API Changes
 Development
 -----------
 
+* Added a PyZX converter
+  (`PR #782 <https://github.com/eclipse-qrisp/Qrisp/pull/782>`_).
+
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
 
