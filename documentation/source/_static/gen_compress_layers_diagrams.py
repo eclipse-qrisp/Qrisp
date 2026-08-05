@@ -1,4 +1,5 @@
 """Generate Stim SVG diagrams for compress_layers documentation."""
+
 from qrisp import QuantumCircuit, compress_layers
 
 qc = QuantumCircuit(6)

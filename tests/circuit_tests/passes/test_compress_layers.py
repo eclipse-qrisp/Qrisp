@@ -95,7 +95,7 @@ class TestCompressLayersReordering:
         qc = QuantumCircuit(3)
         qc.h(0)
         qc.cx(0, 1)
-        qc.h(2)       # independent
+        qc.h(2)  # independent
         qc.cx(1, 2)
 
         result = compress_layers(qc)
@@ -108,7 +108,7 @@ class TestCompressLayersReordering:
         qc = QuantumCircuit(4)
         qc.cx(0, 1)
         qc.h(2)
-        qc.cx(2, 3)   # h(2) and cx(2,3) share qubit 2 → must stay ordered
+        qc.cx(2, 3)  # h(2) and cx(2,3) share qubit 2 → must stay ordered
 
         result = compress_layers(qc)
         names = _gate_names(result)
