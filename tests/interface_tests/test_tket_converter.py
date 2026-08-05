@@ -262,6 +262,7 @@ def test_pytket_converter_import_error():
 # number are not yet tracked upstream and should be reported/fixed in Qrisp.
 # ---------------------------------------------------------------------------
 
+
 # Finding 1a (pytket converter): ctrl_state is silently dropped for the four
 # elementary single-control gates. op.name == "cx"/"cy"/"cz"/"cp" hits the
 # _GATE_OPTYPES lookup table (pytket_converter.py:89) before the
@@ -275,6 +276,7 @@ def test_pytket_converter_import_error():
     "op",
     [
         MCXGate(control_amount=1, ctrl_state=0),
+        MCXGate(control_amount=1, ctrl_state="0"),
         YGate().control(1, ctrl_state=0),
         ZGate().control(1, ctrl_state=0),
         PGate(0.5).control(1, ctrl_state=0),
@@ -284,9 +286,7 @@ def test_smoke_ctrl_state_elementary_controlled_gate(op):
     qc = QuantumCircuit(2)
     qc.append(op, [0, 1])
 
-    assert _matches_up_to_global_phase(
-        pytket_converter(qc).get_unitary(), qc.get_unitary()
-    )
+    assert _matches_up_to_global_phase(pytket_converter(qc).get_unitary(), qc.get_unitary())
 
 
 # Finding 1b (pytket converter): "p" maps to OpType.Rz (pytket_converter.py:50),
@@ -300,6 +300,28 @@ def test_smoke_ctrl_state_elementary_controlled_gate(op):
 def test_smoke_p_to_rz_global_phase_in_controlled_box():
     qc = QuantumCircuit(4)
     qc.append(MCXGate(control_amount=3), [0, 1, 2, 3])
+
+    assert np.allclose(qc.to_pytket().get_unitary(), qc.get_unitary(), atol=1e-8)
+
+
+# Finding 1b at its smallest scale: even a lone p(0.7) is not phase-exact after
+# conversion, because "p" maps to OpType.Rz (rotation convention, diag
+# (e^{-i theta/2}, e^{i theta/2})) instead of pytket's relative-phase U1
+# (diag(1, e^{i theta})). The difference is a pure global phase here, so this
+# only fails under a strict (global-phase-sensitive) comparison.
+def test_smoke_p_phase_exact():
+    qc = QuantumCircuit(1)
+    qc.p(0.7, 0)
+
+    assert np.allclose(qc.to_pytket().get_unitary(), qc.get_unitary(), atol=1e-8)
+
+
+# Qrisp's SXGate and pytket's OpType.SX differ by a global phase (the same
+# SX-convention discrepancy flagged for the qiskit converter in Qrisp PR #672).
+# Global-phase-insensitive comparisons are unaffected; strict ones fail.
+def test_smoke_sx_phase_exact():
+    qc = QuantumCircuit(1)
+    qc.sx(0)
 
     assert np.allclose(qc.to_pytket().get_unitary(), qc.get_unitary(), atol=1e-8)
 
