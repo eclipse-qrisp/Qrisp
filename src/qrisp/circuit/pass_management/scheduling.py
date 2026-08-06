@@ -175,7 +175,11 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     Instructions that act on disjoint resources share a layer; instructions
     that touch a common qubit/clbit are forced into successive layers.
     Transparent instructions (see :func:`is_transparent`) ride along at the
-    current layer of their resources without advancing the clock.
+    current layer of their resources without advancing the clock.  They do still
+    constrain those resources, though: an instruction written after a transparent
+    one is never scheduled ahead of it.  A two-qubit error channel spanning a
+    deep and a shallow qubit therefore pulls the shallow qubit's next gate up to
+    its own layer instead of letting it slip in front.
 
     A barrier raises a lower bound ("floor") on the layer of every subsequent
     instruction touching one of **its own** qubits, so it forces those qubits'
@@ -313,6 +317,14 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
             # leave the clock untouched so several of them can share a layer.
             for r in resources:
                 last_time[r] = t
+        else:
+            # A transparent instruction occupies no time step, but it is still an
+            # ordering constraint: whatever follows it on these resources must not
+            # be scheduled ahead of it.  Fencing instead of occupying is what
+            # keeps several transparent instructions - and the next real gate -
+            # free to share the layer.
+            for r in resources:
+                floor[r] = max(floor[r], t)
 
     if noise_gate_type is not None:
         _place_error_channels(qc, layers, noise_gate_type)
@@ -436,5 +448,36 @@ def _place_error_channels(qc: QuantumCircuit, layers: list[int], noise_gate_type
             continue
         if written_into is None or not isinstance(instr.op, noise_gate_type):
             continue
-        target = written_into if limits[i] is None else min(written_into, limits[i])
+
+        annotated = _annotated_readout_layer(data, layers, i)
+        if annotated is not None:
+            # Readout noise belongs to the measurement in front of it, which is
+            # a *later* layer than the one the channel was written into - so the
+            # upper clamp deliberately does not apply here.
+            target = annotated
+        else:
+            target = written_into if limits[i] is None else min(written_into, limits[i])
         layers[i] = max(layers[i], target)
+
+
+def _annotated_readout_layer(data: list, layers: list[int], i: int) -> int | None:
+    """Layer of the measurement the channel at index *i* annotates, if any.
+
+    Gate noise is written *after* the gate it belongs to, but readout noise is
+    written *before* its measurement — that is how a measurement error is
+    modelled.  A channel therefore belongs to the layer of the measurement it
+    directly precedes, not to the layer of the gate behind it.
+
+    "Directly precedes" is meant literally: the very next instruction, sharing a
+    qubit.  Anything looser would also capture a gate's own trailing channel,
+    whose next time step on that qubit may well be a measurement several
+    instructions later.
+    """
+    if i + 1 >= len(data):
+        return None
+    following = data[i + 1]
+    if following.op.name != "measure":
+        return None
+    if not set(data[i].qubits) & set(following.qubits):
+        return None
+    return layers[i + 1]

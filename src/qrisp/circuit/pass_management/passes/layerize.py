@@ -188,21 +188,27 @@ def layerize(insert_barriers: bool = False) -> CircuitPass:
             boundary_marked = True
 
         for layer, _, instr in ordered:
-            # Only instructions that occupy a physical time step delimit one.  A
-            # layer holding nothing but barriers or bookkeeping is not a time
-            # step, so marking around it would add a TICK for an empty moment.
-            occupies_step = not is_transparent(instr)
+            # A barrier *is* a boundary rather than something sitting inside a
+            # time step, so it never opens one.  Everything else belongs to its
+            # layer and must land on the layer's side of the boundary - including
+            # instructions transparent to the layer clock, such as the readout
+            # noise written in front of a measurement.
+            is_barrier = instr.op.name == "barrier"
 
             # Opening a new time step: close the previous one first.
-            if occupies_step and previous_step is not None and layer != previous_step:
+            if not is_barrier and previous_step is not None and layer != previous_step:
                 mark_boundary()
 
             new_qc.append(instr)
 
-            if occupies_step:
+            # Only instructions that occupy a physical time step make their layer
+            # one.  A layer holding nothing but barriers or bookkeeping is not a
+            # time step, so it must not become the reference for the next
+            # boundary - that would add a TICK for an empty moment.
+            if not is_transparent(instr):
                 previous_step = layer
                 boundary_marked = False
-            elif is_full_width_barrier(instr, new_qc):
+            elif is_barrier and is_full_width_barrier(instr, new_qc):
                 boundary_marked = True
 
         # Close the final time step, so the number of TICKs equals the number
