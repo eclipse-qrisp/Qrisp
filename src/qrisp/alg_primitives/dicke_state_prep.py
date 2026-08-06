@@ -73,9 +73,8 @@ def dicke_state(
     # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
     large_k = k > n // 2
     # Partially undo the initial state, reducing its Hamming weight from k to n-k.
-    q_cond(large_k, x, lambda qv: qv, qv[n - k : k]) # Equivalent to: `if large_k: x(qv[n-k:k])`
-    k = lax.cond(large_k, lambda k: n - k, lambda k: k, k) # Equivalent to: `k = n - k if large_k else k`
-
+    q_cond(large_k, x, lambda qv: qv, qv[n - k : k])  # Equivalent to: `if large_k: x(qv[n-k:k])`
+    k = lax.cond(large_k, lambda k: n - k, lambda k: k, k)  # Equivalent to: `k = n - k if large_k else k`
 
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
@@ -97,11 +96,21 @@ def dicke_state(
 
 
 def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
-    r"""
-    The "divide" step of the "divide-and-conquer" method of creating Dicke states.
+    r"""Execute the "divide" step of the "divide-and-conquer" method of creating Dicke states.
 
-    This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by ``k`` ones and changes it
-    into a superposition :math:`\frac{1}{\sqrt{\binom{n}{k}}} \sum_{k_1 = 0}^k \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}} |0\rangle^{\otimes n_1-k_1} |1\rangle^{\otimes k_1} |0\rangle^{\otimes n_2-k+k_1} |1\rangle^{\otimes k-k_1}`,
+    This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by
+    ``k`` ones and changes it into a superposition
+
+    .. math::
+
+        \frac{1}{\sqrt{\binom{n}{k}}}
+        \sum_{k_1 = 0}^k
+        \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}}
+        |0\rangle^{\otimes n_1-k_1}
+        |1\rangle^{\otimes k_1}
+        |0\rangle^{\otimes n_2-k+k_1}
+        |1\rangle^{\otimes k-k_1}
+
     ready for the "conquer" step.
 
     Parameters
@@ -117,7 +126,6 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
 
     """
-
     # Variables that follow :math:`x_i` and :math:`s_i` from the paper https://arxiv.org/pdf/2112.12435 (page 8).
     xi = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
     si = list(accumulate(reversed(xi)))
@@ -136,8 +144,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
 
 
 def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
-    """
-    The Dicke unitary constructed according to Lemma 2 in https://arxiv.org/pdf/1904.07358.
+    """Apply the Dicke unitary constructed according to Lemma 2 in https://arxiv.org/pdf/1904.07358.
 
     Parameters
     ----------
@@ -147,8 +154,8 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) 
         The size of the quantum variable.
     k : int
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
-    """
 
+    """
     for offset in jrange(n - k):
         index2 = n - offset
         split_cycle_shift(qv, index2, k)
@@ -159,7 +166,9 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) 
 
 
 def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, lowIndex: int) -> None:
-    """Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
+    """Apply the *Split & Cyclic Shift* unitary :math:`SCS_{n, k}` defined in https://arxiv.org/abs/1904.07358.
+
+    Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to `qv` in place.
 
     Parameters
     ----------
@@ -171,7 +180,6 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, low
         Index for indication of preparation steps, as seen in original algorithm.
 
     """
-
     if len(qv) == 1:
         return  # If there is just one qubit, do nothing.
 
