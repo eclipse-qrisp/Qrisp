@@ -72,6 +72,11 @@ class TensorFactor:
         if matrix.size >= 2**6 and matrix.dtype != np.dtype("O"):
             matrix = matrix * (np.abs(matrix) > float_thresh)
 
+        # Match the dtype of the state to avoid mixing e.g. complex64 states with
+        # complex128 unitaries, which the numba contraction kernels cannot handle
+        if matrix.dtype != self.tensor_array.data.dtype and self.tensor_array.data.dtype != np.dtype("O"):
+            matrix = matrix.astype(self.tensor_array.data.dtype)
+
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)
 
