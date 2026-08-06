@@ -40,8 +40,8 @@ def promote_barriers(qc: QuantumCircuit) -> QuantumCircuit:
         Promotion adds scheduling constraints the circuit did not have.  Qubits
         the original barrier did not name must now synchronise with it, which
         widens the schedule. When inserting noise automatically, this can inflate
-        the idle-noise budget — every qubit picks up a noise instruction for each 
-        time step the promoted barrier creates. 
+        the idle-noise budget — every qubit picks up a noise instruction for each
+        time step the promoted barrier creates.
 
     Parameters
     ----------

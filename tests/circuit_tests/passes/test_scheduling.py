@@ -111,12 +111,62 @@ class TestAsapLayersTransparency:
         qc.append(StimNoiseGate("DEPOLARIZE2", 0.01), qc.qubits)
         assert asap_layers(qc) == [0, 0, 1, 1]
 
-    def test_several_noise_gates_share_a_layer(self):
+    def test_channels_on_disjoint_qubits_share_a_layer(self):
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[0]])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
+        assert asap_layers(qc) == [0, 0, 0, 0]
+
+
+class TestAsapLayersOneErrorPerLayer:
+    """A qubit carries at most one error channel per time step."""
+
+    def test_two_idle_channels_occupy_two_layers(self):
+        """A second error on a qubit is a second error, so it is a second layer."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
+        assert asap_layers(qc) == [0, 0, 1]
+
+    def test_gate_noise_and_readout_noise_split(self):
+        """Gate noise takes the layer's slot, so readout noise moves on to the
+        measurement's layer without needing to be recognised as readout noise.
+        """
+        qc = QuantumCircuit(1, 1)
+        qc.h(0)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.001), [qc.qubits[0]])
+        qc.append(StimNoiseGate("X_ERROR", 0.005), [qc.qubits[0]])
+        qc.measure(qc.qubits[0], qc.clbits[0])
+        assert asap_layers(qc) == [0, 0, 1, 1]
+
+    def test_channels_pile_up_across_layers(self):
         qc = QuantumCircuit(1)
         qc.h(0)
-        qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[0]])
-        qc.append(StimNoiseGate("X_ERROR", 0.01), [qc.qubits[0]])
-        assert asap_layers(qc) == [0, 0, 0]
+        for _ in range(4):
+            qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        assert asap_layers(qc) == [0, 0, 1, 2, 3]
+
+    def test_a_two_qubit_channel_needs_both_slots_free(self):
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
+        qc.append(StimNoiseGate("DEPOLARIZE2", 0.01), qc.qubits)
+        # q1's slot in layer 0 is taken, so the two-qubit channel moves on even
+        # though q0's slot is still free.
+        assert asap_layers(qc) == [0, 0, 1]
+
+    def test_pushed_channel_does_not_overtake_the_next_gate(self):
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.append(StimNoiseGate("Z_ERROR", 0.5), [qc.qubits[0]])
+        qc.x(0)
+
+        names = [instr.op.name for instr in layerize()(qc).data]
+        assert names == ["h", "stim.X_ERROR", "stim.Z_ERROR", "x"]
 
 
 class TestAsapLayersErrorChannels:
@@ -144,9 +194,10 @@ class TestAsapLayersErrorChannels:
         assert asap_layers(qc) == [0, 0, 1, 1, 2, 2, 2]
 
     def test_channel_never_overtakes_a_gate_on_its_own_qubit(self):
-        """The upper clamp: data order is not layer-monotone, so pushing a
-        channel to the nearest preceding time step must not move it past a
-        later gate on its own qubit.
+        """Data order is not layer-monotone, so a channel placed in the layer it
+        was written into must not end up emitted after a gate it was written in
+        front of.  It may *share* that gate's layer - the fence pulls the gate up
+        rather than holding the channel back - as long as the order survives.
         """
         qc = QuantumCircuit(3)
         qc.h(0)
@@ -156,9 +207,13 @@ class TestAsapLayersErrorChannels:
         qc.append(StimNoiseGate("X_ERROR", 0.01), [qc.qubits[0]])
         qc.x(0)
 
-        layers = asap_layers(qc)
-        channel_layer, gate_layer = layers[4], layers[5]
-        assert channel_layer < gate_layer, f"channel overtook its own gate: {layers}"
+        # Both the channel and the gate it precedes act on q0; the circuit also
+        # contains an x on q2, so match on the qubit rather than the name alone.
+        q0 = qc.qubits[0]
+        out = layerize()(qc).data
+        channel = next(i for i, instr in enumerate(out) if "X_ERROR" in instr.op.name)
+        gate = next(i for i, instr in enumerate(out) if instr.op.name == "x" and q0 in instr.qubits)
+        assert channel < gate, f"channel overtook its own gate: {[i.op.name for i in out]}"
 
     def test_channel_cannot_be_pushed_across_a_barrier(self):
         qc = QuantumCircuit(2)
@@ -272,11 +327,16 @@ class TestIntraLayerSubsteps:
         assert intra_layer_substeps(qc, asap_layers(qc)) == [0, 0, 0]
 
     def test_reuse_of_a_qubit_advances_the_substep(self):
+        """A gate and the channel annotating it share a layer, so the channel
+        needs a second sub-step to be drawn in its own column.
+        """
         qc = QuantumCircuit(2)
         qc.h(0)
         qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
-        qc.append(StimNoiseGate("Z_ERROR", 0.5), [qc.qubits[0]])
-        assert intra_layer_substeps(qc, asap_layers(qc)) == [0, 1, 2]
+        qc.x(0)
+        layers = asap_layers(qc)
+        assert layers == [0, 0, 1]
+        assert intra_layer_substeps(qc, layers) == [0, 1, 0]
 
     def test_substeps_are_per_layer(self):
         """Each layer counts from zero again."""

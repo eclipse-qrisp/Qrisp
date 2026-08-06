@@ -47,7 +47,9 @@ def layerize(insert_barriers: bool = False) -> CircuitPass:
     own: ``qb_alloc`` / ``qb_dealloc``, ``gphase``, ``parity``, barriers and
     Stim noise channels.  Consequently, running this pass *after* a
     noise-insertion pass keeps every noise channel adjacent to the gate it
-    annotates.
+    annotates.  A qubit does carry at most one noise channel per layer, though —
+    a second error on the same qubit is a second error, and belongs to the next
+    time step.
 
     Barriers act on the qubits they name and nothing else, so an instruction
     on unrelated qubits may legally move past a partial barrier.

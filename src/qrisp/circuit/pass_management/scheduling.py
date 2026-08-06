@@ -187,12 +187,20 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     not name are left alone.  The barrier's own reported layer is that floor,
     i.e. the layer it opens.
 
-    Error channels get one refinement on top of plain transparency: they are
-    placed in the layer they were *written into* rather than in the layer of the
-    last gate on their own qubits.  Without it, an idle channel — one on a qubit
-    that has no gate in the layer it annotates — would drift back to that
-    qubit's previous gate and be visualised in an earlier time step than the
-    error it represents.
+    Error channels follow two extra rules, because their layer is a statement
+    about the noise model rather than about resource availability:
+
+    * They are placed in the layer they were *written into* — that of the most
+      recent instruction occupying a time step — rather than in the layer of the
+      last gate on their own qubits.  Otherwise an *idle* channel, one on a qubit
+      with no gate in the layer it annotates, would drift back to that qubit's
+      previous gate and be reported a time step too early.
+    * A qubit carries **at most one error channel per layer**.  A second channel
+      on the same qubit is a second error, so it moves on to the next layer whose
+      slot is free.  This is what keeps two consecutive idle errors from
+      collapsing into one time step, and it places readout noise — written
+      *before* its measurement, after that layer's gate noise — in the
+      measurement's layer without any special case for measurements.
 
     Parameters
     ----------
@@ -255,6 +263,16 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     >>> asap_layers(qc)
     [0, 0, 0]
 
+    A second error on the same qubit moves on to the next layer, since a qubit
+    cannot pick up two errors in one time step:
+
+    >>> qc = QuantumCircuit(2)
+    >>> qc.h(0)
+    >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
+    >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
+    >>> asap_layers(qc)
+    [0, 0, 1]
+
     """
     noise_gate_type = _stim_noise_gate_type()
 
@@ -262,11 +280,19 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     # first real instruction on a resource lands in layer 0.
     last_time: dict[object, int] = defaultdict(lambda: -1)
 
-    # Per-resource lower bound on the layer of subsequent instructions.  Only
-    # barriers raise it; it is what makes them act as fences.  -1 means "no
-    # fence yet", which a barrier can never produce (its boundary is always at
-    # least 0), so an unfenced resource is never clamped.
+    # Per-resource lower bound on the layer of subsequent instructions.  Barriers
+    # and transparent instructions raise it; it is what makes them act as fences.
+    # -1 means "no fence yet", a value neither can produce (both fence at layer 0
+    # or later), so an unfenced resource is never clamped.
     floor: dict[object, int] = defaultdict(lambda: -1)
+
+    # ``(resource, layer)`` pairs whose error slot is already taken.  A qubit
+    # carries at most one error channel per layer.
+    error_slots: set[tuple[object, int]] = set()
+
+    # Layer of the most recent instruction that occupied a time step - the layer
+    # an error channel written here is annotating.
+    current_step = 0
 
     layers: list[int] = []
 
@@ -298,9 +324,29 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
             layers.append(boundary)
             continue
 
-        transparent = name in TRANSPARENT_OP_NAMES or (
-            noise_gate_type is not None and isinstance(instr.op, noise_gate_type)
-        )
+        if noise_gate_type is not None and isinstance(instr.op, noise_gate_type):
+            # An error channel occupies no time step of its own, but a qubit can
+            # only carry *one* error per time step - a second one is a second
+            # error, and belongs to the next.  So a channel starts in the layer
+            # it was written into (never before its qubits' own last gate or
+            # fence) and moves on until it finds a layer whose error slot is
+            # free.
+            t = max(
+                current_step,
+                max(last_time[r] for r in resources),
+                max(floor[r] for r in resources),
+            )
+            while any((r, t) in error_slots for r in resources):
+                t += 1
+            for r in resources:
+                error_slots.add((r, t))
+                # Fence at the layer the channel actually ended up in, so a gate
+                # written after it cannot be scheduled ahead of it.
+                floor[r] = max(floor[r], t)
+            layers.append(t)
+            continue
+
+        transparent = name in TRANSPARENT_OP_NAMES
 
         # ASAP: the earliest layer in which every resource is free.
         t = max(last_time[r] for r in resources)
@@ -315,6 +361,7 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
         if not transparent:
             # Only real instructions occupy their resources; transparent ones
             # leave the clock untouched so several of them can share a layer.
+            current_step = t
             for r in resources:
                 last_time[r] = t
         else:
@@ -325,9 +372,6 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
             # free to share the layer.
             for r in resources:
                 floor[r] = max(floor[r], t)
-
-    if noise_gate_type is not None:
-        _place_error_channels(qc, layers, noise_gate_type)
 
     return layers
 
@@ -402,82 +446,3 @@ def intra_layer_substeps(qc: QuantumCircuit, layers: list[int]) -> list[int]:
         substeps.append(substep)
 
     return substeps
-
-
-def _place_error_channels(qc: QuantumCircuit, layers: list[int], noise_gate_type: type) -> None:
-    """Move error channels into the layer they were written into, in place.
-
-    Plain transparency puts an error channel in the layer of the last gate on
-    its own qubits.  That is right for a channel annotating a gate, but wrong
-    for an *idle* channel: the qubit has no gate in the layer being annotated,
-    so the channel drifts back to an earlier one and is drawn in the wrong time
-    step.
-
-    The layer a channel was written into is the layer of the nearest preceding
-    instruction that occupies a time step.  Two clamps keep the move sound:
-
-    * never earlier than the transparent placement, which is what respects
-      barriers and the last gate on the channel's own qubits;
-    * never at or past the next instruction occupying a time step on any of the
-      channel's own resources, so a channel can never overtake a gate it was
-      written in front of.  This matters because layers are not monotone along
-      ``qc.data`` (see :func:`asap_layers`), so the nearest preceding time step
-      can belong to an unrelated, much later part of the circuit.
-    """
-    data = qc.data
-
-    # For each instruction, the layer of the next time-step-occupying
-    # instruction on any of its own resources - the upper clamp.
-    next_step_on: dict[object, int] = {}
-    limits: list[int | None] = [None] * len(data)
-    for i in range(len(data) - 1, -1, -1):
-        instr = data[i]
-        resources = [*instr.qubits, *instr.clbits]
-        if not is_transparent(instr):
-            for r in resources:
-                next_step_on[r] = layers[i]
-            continue
-        following = [next_step_on[r] for r in resources if r in next_step_on]
-        limits[i] = min(following) - 1 if following else None
-
-    # The layer each instruction was written into - the target.
-    written_into: int | None = None
-    for i, instr in enumerate(data):
-        if not is_transparent(instr):
-            written_into = layers[i]
-            continue
-        if written_into is None or not isinstance(instr.op, noise_gate_type):
-            continue
-
-        annotated = _annotated_readout_layer(data, layers, i)
-        if annotated is not None:
-            # Readout noise belongs to the measurement in front of it, which is
-            # a *later* layer than the one the channel was written into - so the
-            # upper clamp deliberately does not apply here.
-            target = annotated
-        else:
-            target = written_into if limits[i] is None else min(written_into, limits[i])
-        layers[i] = max(layers[i], target)
-
-
-def _annotated_readout_layer(data: list, layers: list[int], i: int) -> int | None:
-    """Layer of the measurement the channel at index *i* annotates, if any.
-
-    Gate noise is written *after* the gate it belongs to, but readout noise is
-    written *before* its measurement — that is how a measurement error is
-    modelled.  A channel therefore belongs to the layer of the measurement it
-    directly precedes, not to the layer of the gate behind it.
-
-    "Directly precedes" is meant literally: the very next instruction, sharing a
-    qubit.  Anything looser would also capture a gate's own trailing channel,
-    whose next time step on that qubit may well be a measurement several
-    instructions later.
-    """
-    if i + 1 >= len(data):
-        return None
-    following = data[i + 1]
-    if following.op.name != "measure":
-        return None
-    if not set(data[i].qubits) & set(following.qubits):
-        return None
-    return layers[i + 1]
