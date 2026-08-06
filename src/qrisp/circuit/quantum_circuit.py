@@ -2030,6 +2030,22 @@ class QuantumCircuit:
 
             Stim can only process/represent Clifford operations.
 
+        **Time steps.**
+        Stim marks the boundary between two time steps with a ``TICK``.  A
+        ``TICK`` is emitted for every **full-width** barrier and for nothing
+        else: a barrier over a subset of the qubits is a local compiler fence
+        with no timeline meaning, and produces no annotation.  See
+        :meth:`barrier` for the full rule, :func:`~qrisp.promote_barriers` for
+        widening local fences into time boundaries, and :func:`~qrisp.layerize`
+        (with ``insert_barriers=True``) for deriving one boundary per layer from
+        an ASAP schedule.
+
+        ``TICK`` is a pure annotation: Stim executes instructions in the order
+        they are written, so a ``TICK`` never reorders anything and never
+        affects sampling or the detector error model.  Barrier-derived ``TICK``\\ s 
+        therefore only matter for timeline diagrams and for external tools 
+        reading the emitted circuit.
+
         Parameters
         ----------
         return_measurement_map : bool, optional
@@ -2753,11 +2769,45 @@ class QuantumCircuit:
         """Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
         and compiler directives.
 
+        A barrier means "do not reorder across me", and it says that about the
+        qubits it names and no others: a pass such as :func:`~qrisp.layerize` may
+        freely move an instruction on an unnamed qubit past it.  Called without
+        arguments the barrier names every qubit of the circuit, so the common
+        "fence everything" spelling behaves as expected.
+
+        The width of a barrier decides what it means when the circuit is
+        exported to Stim via :meth:`to_stim`:
+
+        * A **full-width** barrier is a global time-step boundary and becomes a
+          Stim ``TICK``.
+        * A **partial** barrier is a local fence and produces no ``TICK``, since
+          a time step is inherently global and this one constrains only part of
+          the register.
+
+        Use :func:`~qrisp.promote_barriers` to widen local fences into global
+        time boundaries — which is also the only way to get time boundaries out
+        of a circuit traced with Jasp, where the full width of the register is
+        unknown until extraction.
+
         Parameters
         ----------
         qubits : QubitLike | None
             The qubits to apply the barrier on. If ``None``, the barrier spans all
             qubits in the circuit. The default is ``None``.
+
+        Examples
+        --------
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2)
+        >>> qc.h(0)
+        >>> qc.barrier([qc.qubits[0]])      # local fence on q0
+        >>> qc.h(0)
+        >>> qc.to_stim().num_ticks
+        0
+        >>> qc.barrier()                    # global time boundary
+        >>> qc.h(0)
+        >>> qc.to_stim().num_ticks
+        1
 
         """
         if qubits is None:

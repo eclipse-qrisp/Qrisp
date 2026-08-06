@@ -472,7 +472,7 @@ class TestLayerizeInsertBarriers:
         assert _gate_names(result).count("barrier") == expected_layers == 3
         assert result.to_stim().num_ticks == 3
 
-    def test_partial_barrier_does_not_count_as_a_boundary(self):
+    def test_partial_barrier_does_not_count_as_a_boundary(self, _stim):
         """A local fence is not a time boundary, so the layer still gets marked."""
         qc = QuantumCircuit(3)
         qc.h(0)
@@ -483,6 +483,8 @@ class TestLayerizeInsertBarriers:
         names = _gate_names(result)
         # Two layers -> two full-width barriers, plus the user's partial one.
         assert names.count("barrier") == 3
+        # Only the two synthesized full-width barriers become TICKs.
+        assert result.to_stim().num_ticks == 2
 
     def test_idempotent(self, _stim):
         qc = QuantumCircuit(3)

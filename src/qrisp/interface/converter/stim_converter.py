@@ -104,6 +104,7 @@ def qrisp_to_stim(
     import stim
 
     from qrisp.circuit.operation import ClControlledOperation
+    from qrisp.circuit.pass_management.scheduling import is_full_width_barrier
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
@@ -213,9 +214,14 @@ def qrisp_to_stim(
             # R is reset to |0⟩ state
             stim_circuit.append("R", qubit_indices)
 
-            # Handle reset operations
         elif op_name == "barrier":
-            stim_circuit.append("TICK")
+            # A barrier is a compiler constraint scoped to the qubits it names,
+            # while a Stim TICK is a global time-step boundary.  The two coincide
+            # exactly for a full-width barrier, so only that becomes a TICK; a
+            # partial barrier is a local fence with no timeline meaning.  Use
+            # promote_barriers to widen local fences into time boundaries.
+            if is_full_width_barrier(instr, qc):
+                stim_circuit.append("TICK")
 
         elif isinstance(op, StimNoiseGate):
             if op.pauli_string is None:

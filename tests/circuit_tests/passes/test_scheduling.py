@@ -20,6 +20,7 @@ from __future__ import annotations
 import pytest
 
 from qrisp.circuit import QuantumCircuit
+from qrisp.circuit.pass_management.passes import layerize
 from qrisp.circuit.pass_management.scheduling import (
     asap_layers,
     intra_layer_substeps,
@@ -375,3 +376,51 @@ class TestIsFullWidthBarrier:
         qc = QuantumCircuit(1)
         qc.barrier([qc.qubits[0]])
         assert is_full_width_barrier(qc.data[0], qc)
+
+
+# ---------------------------------------------------------------------------
+# Stim conversion: TICK only for full-width barriers
+# ---------------------------------------------------------------------------
+
+
+class TestBarrierToTick:
+    """A barrier becomes a TICK exactly when it is a global time boundary."""
+
+    def test_full_width_barrier_ticks(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.barrier()
+        qc.h(0)
+        assert qc.to_stim().num_ticks == 1
+
+    def test_partial_barrier_does_not_tick(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.barrier([qc.qubits[0]])
+        qc.h(0)
+        assert qc.to_stim().num_ticks == 0
+
+    def test_barrier_over_every_qubit_explicitly_ticks(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.barrier(list(qc.qubits))
+        qc.h(0)
+        assert qc.to_stim().num_ticks == 1
+
+    def test_mixed_barriers(self):
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.barrier([qc.qubits[0]])
+        qc.h(0)
+        qc.barrier()
+        qc.h(0)
+        assert qc.to_stim().num_ticks == 1
+
+    def test_partial_barrier_still_fences_the_compiler(self):
+        """Losing the TICK must not lose the reordering constraint."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.barrier([qc.qubits[0]])
+        qc.x(0)
+        names = [instr.op.name for instr in layerize()(qc).data]
+        assert names.index("h") < names.index("barrier") < names.index("x")

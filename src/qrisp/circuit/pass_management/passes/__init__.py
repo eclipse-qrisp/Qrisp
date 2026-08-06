@@ -27,6 +27,7 @@ from qrisp.circuit.pass_management.passes.decompose import decompose
 from qrisp.circuit.pass_management.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
 from qrisp.circuit.pass_management.passes.layerize import layerize
 from qrisp.circuit.pass_management.passes.manual_layout import manual_layout
+from qrisp.circuit.pass_management.passes.promote_barriers import promote_barriers
 from qrisp.circuit.pass_management.passes.remove_barriers import remove_barriers
 from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.pass_management.passes.reverse_parallelize import reverse_parallelize
@@ -46,6 +47,7 @@ __all__ = [
     "is_toffoli",
     "layerize",
     "manual_layout",
+    "promote_barriers",
     "remove_barriers",
     "resolve_swaps",
     "reverse_parallelize",

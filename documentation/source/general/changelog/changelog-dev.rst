@@ -74,12 +74,27 @@ New Features
   back into the circuit as barriers, giving one ``TICK`` per time step in the
   Stim output.
 
+- **promote_barriers — widen barriers to the full circuit**
+  The new :func:`~qrisp.promote_barriers` pass rewrites every barrier in a
+  circuit to span all of its qubits, which is how a local fence is declared to
+  be a global time boundary.  Promotion adds scheduling constraints, so it 
+  is an explicit opt-in: it widens the schedule and inflates the idle-noise
+  budget of the qubits the original barriers did not name.
+
 Improvements
 ------------
 
 - Updated docstrings for ``sample()``, ``expectation_value()``, and
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
+
+- **A Stim** ``TICK`` **is now emitted only for full-width barriers.**  A
+  barrier constrains the qubits it names, while a ``TICK`` is a global
+  time-step boundary; the two coincide exactly for a full-width barrier.  A
+  barrier over part of the register is a local fence and no longer produces a
+  ``TICK`` — use :func:`~qrisp.promote_barriers` to widen one.  These
+  ``TICK``\ s are purely presentational: :func:`~qrisp.find_detectors` strips
+  every incoming ``TICK`` and regenerates the moment structure it needs.
 
 Other New Features
 ------------------

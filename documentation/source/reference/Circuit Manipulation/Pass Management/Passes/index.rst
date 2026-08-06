@@ -39,6 +39,8 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Reorder instructions into as-soon-as-possible (ASAP) layers
    * - :doc:`manual_layout <manual_layout>`
      - Re-index qubits according to a user-supplied mapping
+   * - :doc:`promote_barriers <promote_barriers>`
+     - Widen every barrier to the full circuit, turning local fences into global time boundaries
    * - :doc:`remove_barriers <remove_barriers>`
      - Remove barrier instructions from the circuit
    * - :doc:`resolve_swaps <resolve_swaps>`
@@ -64,6 +66,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    gray_synth_toffoli
    layerize
    manual_layout
+   promote_barriers
    remove_barriers
    resolve_swaps
    reverse_parallelize
