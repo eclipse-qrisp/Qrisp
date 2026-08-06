@@ -398,8 +398,8 @@ class QiskitBackend(Backend):
 
         shots : int or list[int] or None, optional
             Number of shots.  If ``None``, the backend's ``shots`` option is
-            used. If a ``list[int]`` is provided, the Qiskit sampler does not
-            support per-circuit shot counts, so all circuits are run at
+            used. If a ``list[int]`` is provided, Qiskit applies a single shot
+            count to the whole submission, so all circuits are run at
             ``max(shots)`` and a ``UserWarning`` is emitted.
 
         Returns
