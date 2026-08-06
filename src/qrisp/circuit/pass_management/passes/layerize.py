@@ -29,7 +29,7 @@ from qrisp.circuit.pass_management.scheduling import (
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
-def compress_layers(insert_barriers: bool = False) -> CircuitPass:
+def layerize(insert_barriers: bool = False) -> CircuitPass:
     """Create a pass that reorders instructions into "as-soon-as-possible" (ASAP) layers.
 
     Each instruction is assigned the earliest layer where all of its qubits
@@ -77,7 +77,7 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
     Stim to draw the second chain *after* the first, wasting timeline
     space::
 
-        >>> from qrisp import QuantumCircuit, compress_layers
+        >>> from qrisp import QuantumCircuit, layerize
         >>> qc = QuantumCircuit(6)
         >>> qc.h(0)
         >>> qc.cx(0, 1)
@@ -87,18 +87,18 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
         >>> qc.cx(4, 3)
         >>> _ = qc.to_stim()  # convert to Stim for visualisation
 
-    .. image:: /_static/compress_layers_before.svg
-       :alt: Stim timeline diagram before compress_layers
+    .. image:: /_static/layerize_before.svg
+       :alt: Stim timeline diagram before layerize
 
-    The second chain (qubits 3–5) sits far to the right even though it
-    shares no qubits with the first chain.  ``compress_layers`` reorders
-    the instructions so that independent gates occupy the same time layer::
+    The second chain (qubits 3–5) sits far to the right even though it shares no
+    qubits with the first chain.  ``layerize`` reorders the instructions so that
+    independent gates occupy the same time layer::
 
-        >>> qc = compress_layers()(qc)    # or via PassManager
+        >>> qc = layerize()(qc)    # or via PassManager
         >>> _ = qc.to_stim()
 
-    .. image:: /_static/compress_layers_after.svg
-       :alt: Stim timeline diagram after compress_layers
+    .. image:: /_static/layerize_after.svg
+       :alt: Stim timeline diagram after layerize
 
     Both chains now execute in parallel — the Stim timeline diagram
     becomes roughly half as wide.  The relative order of the three gates
@@ -109,7 +109,7 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
 
         >>> from qrisp import PassManager
         >>> pm = PassManager()
-        >>> pm += compress_layers()
+        >>> pm += layerize()
         >>> qc = pm.run(qc)
 
     Instructions annotating a gate — error channels, for instance — are grouped
@@ -121,7 +121,7 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
     >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
     >>> qc.h(1)
     >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
-    >>> print(compress_layers()(qc).to_stim())
+    >>> print(layerize()(qc).to_stim())
     H 0 1
     X_ERROR(0.5) 0 1
 
@@ -135,27 +135,27 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
     >>> qc.h(0)
     >>> qc.h(2)
     >>> qc.cx(0, 1)
-    >>> compressed = compress_layers(insert_barriers=True)(qc)
-    >>> [instr.op.name for instr in compressed.data]
+    >>> layerized = layerize(insert_barriers=True)(qc)
+    >>> [instr.op.name for instr in layerized.data]
     ['h', 'h', 'barrier', 'cx', 'barrier']
 
     Each of those barriers becomes a ``TICK``, so the Stim timeline carries
     exactly one time-step boundary per layer:
 
-    >>> compressed.to_stim().num_ticks
+    >>> layerized.to_stim().num_ticks
     2
 
     Applying the pass again changes nothing, because every boundary is
     already marked:
 
-    >>> twice = compress_layers(insert_barriers=True)(compressed)
-    >>> [instr.op.name for instr in twice.data] == [instr.op.name for instr in compressed.data]
+    >>> twice = layerize(insert_barriers=True)(layerized)
+    >>> [instr.op.name for instr in twice.data] == [instr.op.name for instr in layerized.data]
     True
 
     """
 
     @CircuitPass
-    def _compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
+    def _layerize(qc: QuantumCircuit) -> QuantumCircuit:
         layers = asap_layers(qc)
         substeps = intra_layer_substeps(qc, layers)
 
@@ -212,4 +212,4 @@ def compress_layers(insert_barriers: bool = False) -> CircuitPass:
 
         return new_qc
 
-    return _compress_layers
+    return _layerize

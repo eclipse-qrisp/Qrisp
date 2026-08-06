@@ -18,7 +18,7 @@ Shared as-soon-as-possible (ASAP) scheduling utilities for circuit passes.
 
 Several passes need the same notion of a circuit *layer* (time step):
 
-* :func:`~qrisp.compress_layers` reorders instructions into layers.
+* :func:`~qrisp.layerize` reorders instructions into layers.
 * ``insert_stim_noise`` gives every qubit one noise instruction per layer.
 
 Both used to carry their own scheduler, and the two disagreed about what a
@@ -209,7 +209,7 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     may rely on the former and must not assume the latter.  In particular, a
     coherent time axis (and hence a ``TICK`` stream) only exists once the
     instructions have been sorted into layer order — which is what
-    :func:`~qrisp.compress_layers` does.
+    :func:`~qrisp.layerize` does.
 
     Indices may be negative: a transparent instruction on an otherwise
     untouched qubit reports ``-1``, which is what places allocation markers

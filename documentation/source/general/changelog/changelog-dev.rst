@@ -61,8 +61,8 @@ New Features
   * Raises ``RuntimeError`` when quantum operations are used without a
     surrounding ``sample()`` / ``expectation_value()`` call.
 
-- **compress_layers — ASAP circuit scheduling pass**
-  The new :func:`~qrisp.compress_layers` pass reorders circuit instructions
+- **layerize — ASAP circuit scheduling pass**
+  The new :func:`~qrisp.layerize` pass reorders circuit instructions
   into as-soon-as-possible layers: gates acting on disjoint qubits are
   pulled into the same time layer, compacting the Stim timeline diagram
   without changing circuit semantics.  Only instructions that represent a
@@ -70,7 +70,7 @@ New Features
   the time step of the gate it annotates, and each layer is emitted so that
   Stim actually draws it in parallel.
 
-  ``compress_layers(insert_barriers=True)`` additionally writes the schedule
+  ``layerize(insert_barriers=True)`` additionally writes the schedule
   back into the circuit as barriers, giving one ``TICK`` per time step in the
   Stim output.
 
