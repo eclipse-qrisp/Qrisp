@@ -722,7 +722,7 @@ class QuantumCircuit:
         Returns
         -------
         numpy.ndarray
-            The unitary matrix. ``dtype`` is ``complex64`` for numeric
+            The unitary matrix. ``dtype`` is ``complex128`` for numeric
             circuits and ``object`` for symbolic ones.
 
 
@@ -743,7 +743,7 @@ class QuantumCircuit:
         array([[ 1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],
                [ 0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j],
                [ 0.+0.j,  0.+0.j,  1.+0.j,  0.+0.j],
-               [ 0.+0.j,  0.+0.j,  0.+0.j, -1.+0.j]], dtype=complex64)
+               [ 0.+0.j,  0.+0.j,  0.+0.j, -1.+0.j]], dtype=complex128)
 
         We now synthesize the exact same QuantumCircuit, but this time ``phi`` is a SymPy
         symbol.
