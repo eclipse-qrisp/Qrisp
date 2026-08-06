@@ -26,9 +26,7 @@ from collections.abc import Mapping
 from typing import cast
 
 from qiskit import QuantumCircuit, transpile
-from qiskit.primitives import BackendSamplerV2
 from qiskit.providers import Backend as QiskitBackendBase
-from qiskit.providers import BackendV2
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
 from qrisp.interface.backend import Backend
@@ -69,8 +67,21 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
     return mapping.get(name, JobStatus.RUNNING)
 
 
+def _merge_counts(counts: Mapping) -> dict:
+    """Strip register separators from bitstring keys, summing any keys that collide.
+
+    Qiskit separates classical registers with a space (``"01 10"``); Qrisp
+    expects a single contiguous bitstring.
+    """
+    merged: dict = {}
+    for key, val in counts.items():
+        clean_key = re.sub(r"\W", "", key)
+        merged[clean_key] = merged.get(clean_key, 0) + val
+    return merged
+
+
 class QiskitJob(Job):
-    """A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.
+    """A :class:`~qrisp.interface.Job` that wraps a Qiskit job.
 
     One ``QiskitJob`` is created per :meth:`QiskitBackend.run_async` call,
     regardless of how many circuits were submitted.  Internally it holds
@@ -80,7 +91,19 @@ class QiskitJob(Job):
     :meth:`result` blocks until the Qiskit job reaches a terminal state,
     delegating the actual waiting to Qiskit's own ``job.result()`` call.
     No Qrisp-level threading primitives are required here because Qiskit's
-    ``SamplerV2.run()`` is already asynchronous.
+    ``run()`` is already asynchronous.
+
+    Parameters
+    ----------
+    backend : QiskitBackend
+        The Qrisp backend that created this job.
+
+    qiskit_job : Job
+        The underlying Qiskit job object.
+
+    num_circuits : int
+        How many circuits were submitted in this job.
+
     """
 
     def __init__(
@@ -98,6 +121,19 @@ class QiskitJob(Job):
         self._qiskit_job = qiskit_job
         self._num_circuits = num_circuits
         self._cached_result: JobResult | None = None
+
+    def _extract_counts(self, qiskit_result) -> list[dict]:
+        """Read per-circuit counts out of the ``Result`` returned by ``Backend.run()``."""
+        if not hasattr(qiskit_result, "get_counts"):
+            raise TypeError(
+                f"Expected a Qiskit Result with a get_counts() method, got "
+                f"{type(qiskit_result).__name__}. Backends whose run() does not return a "
+                "Result need their own QiskitJob subclass overriding _extract_counts()."
+            )
+        # get_counts() returns a single Counts for one experiment, a list for several.
+        counts = qiskit_result.get_counts()
+        counts_list = [counts] if isinstance(counts, Mapping) else list(counts)
+        return [_merge_counts(counts_list[i]) for i in range(self._num_circuits)]
 
     # ------------------------------------------------------------------
     # Abstract interface
@@ -159,17 +195,7 @@ class QiskitJob(Job):
             raise JobFailureError(f"Qiskit job {self._job_id!r} failed: {exc}") from exc
 
         self._last_known_status = JobStatus.DONE
-        counts_list = []
-        for i in range(self._num_circuits):
-            counts_dict = {}
-            for reg_name in qiskit_result[i].data:
-                reg_data = getattr(qiskit_result[i].data, reg_name)
-                for key, val in reg_data.get_counts().items():
-                    clean_key = re.sub(r"\W", "", key)
-                    counts_dict[clean_key] = counts_dict.get(clean_key, 0) + val
-            counts_list.append(counts_dict)
-
-        self._cached_result = JobResult(counts_list)
+        self._cached_result = JobResult(self._extract_counts(qiskit_result))
         return self._cached_result
 
     def cancel(self) -> bool:
@@ -205,9 +231,21 @@ class QiskitBackend(Backend):
 
     Circuits are converted from Qrisp's internal representation to Qiskit
     ``QuantumCircuit`` objects, transpiled for the target backend, and
-    submitted through Qiskit's ``SamplerV2`` primitive.
+    submitted through the backend's own ``run()`` method.
     A ``QiskitJob`` handle is returned immediately; call
     :meth:`Job.result` to block and retrieve the :class:`~qrisp.interface.JobResult`.
+
+    .. note::
+
+        Submission deliberately goes through ``Backend.run()`` rather than
+        Qiskit's ``BackendSamplerV2`` primitive. ``BackendSamplerV2``
+        reconstructs its output from the ``memory`` field of the result and
+        parses each entry as a hexadecimal string. Not every provider honours
+        that convention (``qiskit-iqm``, for instance, writes plain binary
+        bitstrings), which yields either an ``OverflowError`` or, worse,
+        silently wrong counts. Reading counts directly via
+        ``Result.get_counts()`` avoids the ambiguity, and Qrisp never needs
+        per-shot memory anyway.
 
     Parameters
     ----------
@@ -242,7 +280,8 @@ class QiskitBackend(Backend):
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
     ``QuantumCircuit``, converts it directly to a Qiskit ``QuantumCircuit``,
-    transpiles it for the target backend, and submits it through ``SamplerV2``. Internally, ``run_async`` returns a ``QiskitJob``
+    transpiles it for the target backend, and submits it through the backend's
+    ``run()`` method. Internally, ``run_async`` returns a ``QiskitJob``
     immediately; :meth:`~qrisp.interface.Backend.run` then blocks on
     ``job.result()`` until execution completes and the counts are returned to
     ``get_measurement``:
@@ -285,6 +324,10 @@ class QiskitBackend(Backend):
 
     """
 
+    #: Job wrapper matching the submission path in :meth:`_submit`. Subclasses
+    #: that submit differently pair their own :class:`QiskitJob` subclass here.
+    _job_class: type[QiskitJob] = QiskitJob
+
     def __init__(
         self,
         backend: QiskitBackendBase | None = None,
@@ -304,7 +347,6 @@ class QiskitBackend(Backend):
                 ) from exc
 
         self.backend = backend
-        self.sampler = BackendSamplerV2(backend=cast(BackendV2, backend))
 
         # Fall back to the Qiskit backend's own name/options when not provided.
         # Only use the backend's options when they are a plain Mapping (e.g. dict).
@@ -322,6 +364,14 @@ class QiskitBackend(Backend):
     def _default_options(cls):
         """Return the default runtime options (shots=1024)."""
         return {"shots": 1024}
+
+    def _submit(self, qiskit_circuits: list[QuantumCircuit], shots: int):
+        """Hand a batch of transpiled circuits to the Qiskit backend and return its job.
+
+        Subclasses override this (together with :attr:`_job_class`) when their
+        provider requires a different submission path.
+        """
+        return self.backend.run(qiskit_circuits, shots=shots)
 
     @property
     def max_circuits(self) -> int | None:
@@ -394,11 +444,32 @@ class QiskitBackend(Backend):
 
             qiskit_circuits.append(transpile(new_qc, backend=self.backend))
 
-        # Submit all circuits in a single SamplerV2 call and wrap the result.
-        qiskit_job = self.sampler.run(qiskit_circuits, shots=n_shots)
-        job = QiskitJob(backend=self, qiskit_job=qiskit_job, num_circuits=len(circuits))
+        # Submit all circuits in a single call and wrap the resulting job.
+        qiskit_job = self._submit(qiskit_circuits, n_shots)
+        job = self._job_class(backend=self, qiskit_job=qiskit_job, num_circuits=len(circuits))
         job.submit()
         return job
+
+
+class QiskitRuntimeJob(QiskitJob):
+    """A :class:`QiskitJob` whose underlying job came from a ``SamplerV2`` primitive.
+
+    ``SamplerV2`` returns a ``PrimitiveResult`` rather than a ``Result``: counts
+    live in a per-circuit ``DataBin``, one field per classical register, instead
+    of behind a single ``get_counts()`` call.
+    """
+
+    def _extract_counts(self, qiskit_result) -> list[dict]:
+        """Read per-circuit counts out of the ``PrimitiveResult`` returned by ``SamplerV2``."""
+        counts_list = []
+        for i in range(self._num_circuits):
+            counts_dict: dict = {}
+            for reg_name in qiskit_result[i].data:
+                reg_data = getattr(qiskit_result[i].data, reg_name)
+                for key, val in _merge_counts(reg_data.get_counts()).items():
+                    counts_dict[key] = counts_dict.get(key, 0) + val
+            counts_list.append(counts_dict)
+        return counts_list
 
 
 class QiskitRuntimeBackend(QiskitBackend):
@@ -465,6 +536,8 @@ class QiskitRuntimeBackend(QiskitBackend):
 
     """
 
+    _job_class = QiskitRuntimeJob
+
     def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None):
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
@@ -482,8 +555,10 @@ class QiskitRuntimeBackend(QiskitBackend):
         # into the runtime options seen by Qrisp callers.
         super().__init__(backend=ibm_backend, options=self._default_options())
 
-        # Replace the BackendSamplerV2 created by the parent with the IBM Runtime
-        # SamplerV2, which is required for actual IBM hardware execution.
+        # Unlike the parent class, this backend submits through the SamplerV2
+        # primitive: IBMBackend.run() still exists but raises IBMBackendError
+        # ("Support for backend.run() has been removed"), so primitives are the
+        # only route to IBM hardware.
         if mode == "session":
             self.session = Session(ibm_backend)
             self.sampler = SamplerV2(self.session)
@@ -496,6 +571,10 @@ class QiskitRuntimeBackend(QiskitBackend):
     def _default_options(cls):
         """Return the default runtime options (shots=1000)."""
         return {"shots": 1000}
+
+    def _submit(self, qiskit_circuits, shots):
+        """Submit through the IBM Runtime ``SamplerV2`` instead of ``Backend.run()``."""
+        return self.sampler.run(qiskit_circuits, shots=shots)
 
     def close_session(self):
         """Close the IBM Runtime session opened during construction.
