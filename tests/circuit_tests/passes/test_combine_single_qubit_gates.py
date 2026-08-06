@@ -60,19 +60,17 @@ class TestIdentityCancellation:
         result = combine_single_qubit_gates(qc)
         assert len(result.data) == 0
 
-    def test_h_then_h_combined(self):
-        """H followed by H on the same qubit is combined into a single gate.
+    def test_h_then_h_cancels(self):
+        """H followed by H on the same qubit → identity.
 
-        Qrisp's H gate has tiny (~1e-16) imaginary components that push
-        the norm of H² − I just above the 1e-10 cancellation threshold,
-        so the two H gates are combined rather than cancelled.
+        The combine pass works in float64 precision, so the norm of H² − I
+        lies below the cancellation threshold and the two H gates cancel.
         """
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.h(0)
         result = combine_single_qubit_gates(qc)
-        # H² ≈ I within ~1e-7, so the pass combines them into one u3 gate.
-        assert len(result.data) == 1
+        assert len(result.data) == 0
 
     def test_rx_pi_then_rx_minus_pi_cancels(self):
         """RX(π) then RX(−π) → identity."""

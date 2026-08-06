@@ -23,7 +23,7 @@ from numba import njit
 from qrisp import ControlledOperation, fast_append
 from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
 
-np_dtype = np.complex64
+np_dtype = np.complex128
 
 id_matrix = np.eye(2, dtype=np_dtype)
 
