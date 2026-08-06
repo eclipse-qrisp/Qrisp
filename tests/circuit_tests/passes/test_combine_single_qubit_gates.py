@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from qrisp.circuit.operation import ControlledOperation
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
@@ -77,6 +78,20 @@ class TestIdentityCancellation:
         qc = QuantumCircuit(1)
         qc.rx(np.pi, 0)
         qc.rx(-np.pi, 0)
+        result = combine_single_qubit_gates(qc)
+        assert len(result.data) == 0
+
+    @pytest.mark.parametrize("gate_name", ["rx", "ry", "rz"])
+    def test_rotation_pi_half_then_inverse_cancels(self, gate_name):
+        """R(π/2) then R(−π/2) on the same qubit → identity.
+
+        The combine pass works in float64 precision, so the residual of
+        R(π/2)·R(−π/2) lies below the cancellation threshold and the two
+        gates cancel.
+        """
+        qc = QuantumCircuit(1)
+        getattr(qc, gate_name)(np.pi / 2, 0)
+        getattr(qc, gate_name)(-np.pi / 2, 0)
         result = combine_single_qubit_gates(qc)
         assert len(result.data) == 0
 

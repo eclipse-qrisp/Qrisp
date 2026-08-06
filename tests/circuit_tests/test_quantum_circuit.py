@@ -28,7 +28,7 @@ from sympy import symbols
 
 from qrisp.circuit import Clbit, Instruction, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.standard_operations import CXGate, Measurement, XGate
+from qrisp.circuit.standard_operations import CXGate, Measurement, RXGate, XGate
 from qrisp.permeability import PermeabilityGraph
 
 
@@ -620,6 +620,22 @@ class TestQuantumCircuitMethods:
         qc.h(0)
         u = qc.get_unitary()
         assert np.allclose(u, u.conj().T)
+
+    def test_get_unitary_controlled_gate_precision(self):
+        """Regression test: phase-tolerant controlled gates have vanishing
+        off-diagonal entries.
+
+        The unitary used to be computed in ``complex64``, leaving spurious
+        ~1e-7 entries where the matrix must vanish exactly. With
+        ``complex128`` these sit at float64 round-off level (~1e-16).
+        """
+        qc = QuantumCircuit(4)
+        qc.append(RXGate(0.7).control(3, method="gray_pt"), [0, 1, 2, 3])
+
+        u = qc.get_unitary()
+        assert u.dtype == np.complex128
+        spurious = np.abs(u)[np.abs(u) < 0.1]
+        assert spurious.max() < 1e-12
 
     # ------------------------------------------------------------------ #
     # get_unitary — docstring examples                                   #
@@ -1879,6 +1895,20 @@ class TestQuantumCircuitRunAndStatevector:
         qc.ry(np.pi / 3, 2)
         sv = qc.statevector_array()
         assert np.isclose(np.linalg.norm(sv), 1.0, atol=1e-5)
+
+    def test_statevector_array_dtype_is_complex64(self):
+        """The simulator statevector stays in complex64 precision.
+
+        ``get_unitary`` now computes in ``complex128``, but the simulator
+        keeps its state in ``complex64`` (the gate matrix is cast to the
+        state's dtype in ``apply_matrix``), so the statevector dtype is
+        unchanged.
+        """
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        sv = qc.statevector_array()
+        assert sv.dtype == np.complex64
 
 
 class TestQuantumCircuitFromQasmFile:
