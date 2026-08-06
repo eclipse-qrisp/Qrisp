@@ -59,7 +59,7 @@ Bug Fixes
   rebuilds counts from the hex-encoded ``memory`` field.
   :class:`~qrisp.interface.QiskitRuntimeBackend` continues to use
   ``SamplerV2``, which IBM Runtime requires
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
 
 Compatibility
 -------------
