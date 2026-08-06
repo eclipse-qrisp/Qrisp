@@ -1,8 +1,10 @@
 from qrisp import QuantumCircuit, QuantumVariable
 from pyzx import Circuit
-from fractions import Fraction
 
+from fractions import Fraction
 import numpy as np
+from unittest.mock import MagicMock
+import pytest
 
 
 def _build_single_qubit_qrisp_circuit():
@@ -81,13 +83,29 @@ def _build_multi_qubit_pyzx_circuit():
     c.add_gate("TOF", 1, 2, 3)
     c.add_gate("CCZ", 0, 2, 3)
     c.add_gate("CU3", 0, 1, Fraction(6, 5), Fraction(3, 2), Fraction(7, 4))
+    c.add_gate("CU", 1, 3, Fraction(7, 9), Fraction(6, 5), Fraction(3, 2), Fraction(7, 4))
     c.add_gate("RZZ", 0, 2, Fraction(2, 9))
     c.add_gate("RXX", 0, 2, Fraction(7, 10))
 
     return c
 
 
+def _build_mock_qrisp_circuit():
+    """Qrisp circuit with a MagicMock operation (triggers Exception during conversion)."""
+    qc = QuantumCircuit(1)
+    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
+    return qc
+
+
+def _build_mock_pyzx_circuit():
+    """Qrisp circuit with a MagicMock operation (triggers Exception during conversion)."""
+    c = Circuit(1)
+    c.add_gate(MagicMock(name="some_gate"), 0)
+    return c
+
+
 def _compare_unitaries(U1, U2):
+    """Compare two unitaries, taking into account a potential phase mismatch"""
     # PyZX does not keep track of global phases and instead normalizes the phase,
     # which leads to a potential phase mismatch.
     # We determine the phase difference by dividing the matrix entries with the largest magnitude
@@ -98,63 +116,75 @@ def _compare_unitaries(U1, U2):
 
 
 def _test_qrisp_to_pyzx(qc):
+    """Test conversion of qrisp circuit qc to pyzx circuit"""
     c = qc.to_pyzx()
     _compare_unitaries(qc.get_unitary(), c.to_matrix())
 
 
 def _test_pyzx_to_qrisp(c):
+    """Test conversion of pyzx circuit c to qrisp circuit"""
     qc = QuantumCircuit.from_pyzx(c)
     _compare_unitaries(qc.get_unitary(), c.to_matrix())
 
 
 def _test_roundtrip(qc):
+    """Test roundtrip starting from qrisp circuit qc"""
     c = qc.to_pyzx()
     qc2 = QuantumCircuit.from_pyzx(c)
     _compare_unitaries(qc.get_unitary(), qc2.get_unitary())
 
 
 def _test_roundtrip_reverse(c):
+    """Test roundtrip starting from pyzx circuit c"""
     qc = QuantumCircuit.from_pyzx(c)
     c2 = qc.to_pyzx()
     _compare_unitaries(c.to_matrix(), c2.to_matrix())
 
 
 def test_single_qubit_circuit_qrisp_to_pyzx():
+    """Test conversion of qrisp circuit to pyzx circuit for single qubit gates"""
     qc = _build_single_qubit_qrisp_circuit()
     _test_qrisp_to_pyzx(qc)
 
 
 def test_multi_qubit_circuit_qrisp_to_pyzx():
+    """Test conversion of qrisp circuit to pyzx circuit for multi qubit gates"""
     qc = _build_multi_qubit_qrisp_circuit()
     _test_qrisp_to_pyzx(qc)
 
 
 def test_single_qubit_circuit_pyzx_to_qrisp():
+    """Test conversion of pyzx circuit to qrisp circuit for single qubit gates"""
     c = _build_single_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
 
 
 def test_multi_qubit_circuit_pyzx_to_qrisp():
+    """Test conversion of pyzx circuit to qrisp circuit for multi qubit gates"""
     c = _build_multi_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
 
 
 def test_single_qubit_circuit_roundtrip():
+    """Test roundtrip starting from qrisp circuit for single qubit gates"""
     qc = _build_single_qubit_qrisp_circuit()
     _test_roundtrip(qc)
 
 
 def test_multi_qubit_circuit_roundtrip():
+    """Test roundtrip starting from qrisp circuit for multi qubit gates"""
     qc = _build_multi_qubit_qrisp_circuit()
     _test_roundtrip(qc)
 
 
 def test_single_qubit_circuit_roundtrip_reverse():
+    """Test roundtrip starting from pyzx circuit for single qubit gates"""
     c = _build_single_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
 
 
 def test_multi_qubit_circuit_roundtrip_reverse():
+    """Test roundtrip starting from pyzx circuit for multi qubit gates"""
     c = _build_multi_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
 
@@ -194,3 +224,15 @@ def test_non_unitaries():
     c.add_gate("Reset", 1)
     qc = QuantumCircuit.from_pyzx(c)
     assert [g.op.name for g in qc.data] == ["measure", "reset"]
+
+
+def test_error_qrisp_to_pyzx():
+    qc = _build_mock_qrisp_circuit()
+    with pytest.raises(ValueError):
+        c = qc.to_pyzx()
+
+
+def test_error_pyzx_to_qrisp():
+    c = _build_mock_pyzx_circuit()
+    with pytest.raises(ValueError):
+        qc = QuantumCircuit.from_pyzx(c)

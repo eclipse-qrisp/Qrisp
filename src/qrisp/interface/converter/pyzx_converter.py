@@ -21,7 +21,7 @@ from functools import partial
 from fractions import Fraction
 
 
-def convert_to_pyzx(qrisp_circuit):
+def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     """Convert a Qrisp QuantumCircuit to a PyZX Circuit.
 
     Parameters
@@ -105,7 +105,7 @@ def convert_to_pyzx(qrisp_circuit):
             transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
         except Exception as exc:
             raise ValueError(
-                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to Cirq converter."
+                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to PyZX converter."
             ) from exc
 
         new_unknown = _unknown_names(transpiled)
@@ -223,6 +223,7 @@ def convert_from_pyzx(pyzx_circuit):
         "Tof": qc.ccx,
         "CCZ": lambda x, y, z: qc.append(ZGate().control(2), [x, y, z]),
         "CU3": lambda theta, phi, lam, x, y: qc.append(u3Gate(theta, phi, lam).control(), [x, y]),
+        "CU": None,
         "RZZ": qc.rzz,
         "RXX": qc.rxx,
         "FSim": None,
@@ -260,14 +261,17 @@ def convert_from_pyzx(pyzx_circuit):
             gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
 
     for gate in pyzx_circuit.gates:
-        if gate_map[gate.name] is not None:
-            add_gate(gate)
+        if gate.name in gate_map:
+            if gate_map[gate.name] is not None:
+                add_gate(gate)
+            else:
+                # try with pyzx's basic gate decomposition
+                for _gate in gate.to_basic_gates():
+                    if _gate.name in gate_map and gate_map[_gate.name] is not None:
+                        add_gate(_gate)
+                    else:
+                        raise ValueError(f"{_gate.name} gate has no Qrisp equivalent and cannot be decomposed either.")
         else:
-            # try with pyzx's basic gate decomposition
-            for _gate in gate.to_basic_gates():
-                if gate_map[_gate.name] is not None:
-                    add_gate(_gate)
-                else:
-                    raise ValueError(f"{_gate.name} gate has no Qrisp equivalent and cannot be decomposed either.")
+            raise ValueError(f"{gate.name} of PyZX is unknown and thus cannot be converted to Qrisp.")
 
     return qc
