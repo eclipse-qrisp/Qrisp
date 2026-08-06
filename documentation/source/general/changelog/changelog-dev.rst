@@ -62,12 +62,17 @@ New Features
     surrounding ``sample()`` / ``expectation_value()`` call.
 
 - **compress_layers — ASAP circuit scheduling pass**
-  The new :class:`~qrisp.compress_layers` pass reorders circuit instructions
+  The new :func:`~qrisp.compress_layers` pass reorders circuit instructions
   into as-soon-as-possible layers: gates acting on disjoint qubits are
   pulled into the same time layer, compacting the Stim timeline diagram
-  without changing circuit semantics.  ``qb_alloc`` / ``qb_dealloc``
-  bookkeeping instructions are excluded from the scheduling clock so they
-  do not inflate layer counts.
+  without changing circuit semantics.  Only instructions that represent a
+  physical time step advance the layer clock, so each error channel stays in
+  the time step of the gate it annotates, and each layer is emitted so that
+  Stim actually draws it in parallel.
+
+  ``compress_layers(insert_barriers=True)`` additionally writes the schedule
+  back into the circuit as barriers, giving one ``TICK`` per time step in the
+  Stim output.
 
 Improvements
 ------------

@@ -17,7 +17,7 @@ with open("documentation/source/_static/compress_layers_before.svg", "w") as f:
 print("Saved before diagram")
 
 # After
-qc_after = compress_layers(qc)
+qc_after = compress_layers()(qc)
 stim_after = qc_after.to_stim()
 svg_after = str(stim_after.diagram(type="timeline-svg"))
 with open("documentation/source/_static/compress_layers_after.svg", "w") as f:

@@ -17,16 +17,20 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections.abc import Callable
 
-from qrisp.circuit.instruction import Instruction
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.pass_management.scheduling import (
+    asap_layers,
+    intra_layer_substeps,
+    is_full_width_barrier,
+    is_transparent,
+)
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
-@CircuitPass
-def compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
-    """Reorder circuit instructions into "as-soon-as-possible" (ASAP) layers.
+def compress_layers(insert_barriers: bool = False) -> CircuitPass:
+    """Create a pass that reorders instructions into "as-soon-as-possible" (ASAP) layers.
 
     Each instruction is assigned the earliest layer where all of its qubits
     (and classical bits) are free.  Instructions that act on disjoint sets of
@@ -38,15 +42,33 @@ def compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
     draws gates strictly in the order they appear in the circuit data, so
     calling this pass first yields a visually compacted timeline diagram.
 
+    Instructions that do not correspond to a physical time step ride along in
+    the layer of the gate they belong to instead of opening a layer of their
+    own: ``qb_alloc`` / ``qb_dealloc``, ``gphase``, ``parity``, barriers and
+    Stim noise channels.  Consequently, running this pass *after* a
+    noise-insertion pass keeps every noise channel adjacent to the gate it
+    annotates.
+
+    Barriers act on the qubits they name and nothing else, so an instruction
+    on unrelated qubits may legally move past a partial barrier.
+
     Parameters
     ----------
-    qc : QuantumCircuit
-        The input quantum circuit.
+    insert_barriers : bool, optional
+        If ``True``, emit a full-width barrier at every layer boundary, which
+        turns the ASAP schedule into an explicit time axis: each barrier
+        becomes a ``TICK`` in the Stim output, giving one ``TICK`` per time
+        step.  A boundary that already carries a full-width barrier is left
+        alone, so the pass is idempotent and never produces an empty moment
+        (a doubled ``TICK``).  A *partial* barrier is a local fence rather than
+        a time boundary and does not count as a mark.  The default is
+        ``False``.
 
     Returns
     -------
-    QuantumCircuit
-        A new circuit with instructions reordered into ASAP layers.
+    CircuitPass
+        The configured pass, mapping a :class:`~qrisp.QuantumCircuit` to a new
+        circuit with instructions reordered into ASAP layers.
 
     Examples
     --------
@@ -72,7 +94,7 @@ def compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
     shares no qubits with the first chain.  ``compress_layers`` reorders
     the instructions so that independent gates occupy the same time layer::
 
-        >>> qc = compress_layers(qc)    # or via PassManager
+        >>> qc = compress_layers()(qc)    # or via PassManager
         >>> _ = qc.to_stim()
 
     .. image:: /_static/compress_layers_after.svg
@@ -87,66 +109,107 @@ def compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
 
         >>> from qrisp import PassManager
         >>> pm = PassManager()
-        >>> pm += compress_layers
+        >>> pm += compress_layers()
         >>> qc = pm.run(qc)
 
+    Instructions annotating a gate — error channels, for instance — are grouped
+    so that Stim can still draw the layer in parallel:
+
+    >>> from qrisp.misc.stim_tools import StimNoiseGate
+    >>> qc = QuantumCircuit(2)
+    >>> qc.h(0)
+    >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+    >>> qc.h(1)
+    >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
+    >>> print(compress_layers()(qc).to_stim())
+    H 0 1
+    X_ERROR(0.5) 0 1
+
+    Without the grouping, Stim would receive ``H 0``, ``X_ERROR 0``, ``H 1``,
+    ``X_ERROR 1`` and draw four columns instead of two.
+
+    With ``insert_barriers=True`` the resulting schedule is written back into
+    the circuit as barriers, one per time step:
+
+    >>> qc = QuantumCircuit(3)
+    >>> qc.h(0)
+    >>> qc.h(2)
+    >>> qc.cx(0, 1)
+    >>> compressed = compress_layers(insert_barriers=True)(qc)
+    >>> [instr.op.name for instr in compressed.data]
+    ['h', 'h', 'barrier', 'cx', 'barrier']
+
+    Each of those barriers becomes a ``TICK``, so the Stim timeline carries
+    exactly one time-step boundary per layer:
+
+    >>> compressed.to_stim().num_ticks
+    2
+
+    Applying the pass again changes nothing, because every boundary is
+    already marked:
+
+    >>> twice = compress_layers(insert_barriers=True)(compressed)
+    >>> [instr.op.name for instr in twice.data] == [instr.op.name for instr in compressed.data]
+    True
+
     """
-    # ------------------------------------------------------------------
-    # Map each qubit / clbit to its latest occupied time-step.
-    # Start at -1 so the first instruction touching a resource can be
-    # placed at step 0.
-    # ------------------------------------------------------------------
-    last_time = defaultdict(lambda: -1)  # type: dict[object, int]
 
-    # ------------------------------------------------------------------
-    # First pass: compute the ASAP layer for every instruction.
-    # ------------------------------------------------------------------
-    layers: list[int] = []
+    @CircuitPass
+    def _compress_layers(qc: QuantumCircuit) -> QuantumCircuit:
+        layers = asap_layers(qc)
+        substeps = intra_layer_substeps(qc, layers)
 
-    for instr in qc.data:
-        # Collect all resources (qubits + clbits) touched by this
-        # instruction.
-        resources: list[object] = []
-        resources.extend(instr.qubits)
-        resources.extend(instr.clbits)
+        # Sort instructions by their layer, and within a layer by their drawing
+        # sub-step so that everything Stim can draw side by side is emitted
+        # consecutively.  The sort is stable, which is what keeps the per-qubit
+        # instruction order intact.
+        ordered = sorted(zip(layers, substeps, qc.data, strict=True), key=lambda item: item[:2])
 
-        # Bookkeeping instructions (qb_alloc / qb_dealloc) do not
-        # correspond to physical quantum operations and should not
-        # influence the scheduling of real gates.  They are placed at
-        # the current layer of their qubits but do not advance the
-        # clock.
-        is_bookkeeping = instr.op.name in ("qb_alloc", "qb_dealloc")
+        new_qc = qc.clearcopy()
 
-        if resources:
-            t = max(last_time[r] for r in resources)
-        else:
-            # Barrier-like instructions that touch no qubits: place them
-            # after everything seen so far.
-            t = max(last_time.values(), default=-1)
+        if not insert_barriers:
+            for *_, instr in ordered:
+                new_qc.append(instr)
+            return new_qc
 
-        if not is_bookkeeping:
-            t += 1
+        # Whether a full-width barrier has been emitted since the last time
+        # step.  Tracking the whole run of transparent instructions rather than
+        # just the immediately preceding one makes the duplicate suppression
+        # independent of where exactly a barrier sorts within its layer, and so
+        # of the scheduler's barrier-layer convention.
+        boundary_marked = False
+        previous_step: int | None = None
 
-        layers.append(t)
+        def mark_boundary() -> None:
+            nonlocal boundary_marked
+            if boundary_marked:
+                return
+            new_qc.barrier()
+            boundary_marked = True
 
-        if not is_bookkeeping:
-            for r in resources:
-                last_time[r] = t
+        for layer, _, instr in ordered:
+            # Only instructions that occupy a physical time step delimit one.  A
+            # layer holding nothing but barriers or bookkeeping is not a time
+            # step, so marking around it would add a TICK for an empty moment.
+            occupies_step = not is_transparent(instr)
 
-    # ------------------------------------------------------------------
-    # Second pass: sort instructions by their layer, preserving the
-    # original order for instructions in the same layer (stable sort).
-    # ------------------------------------------------------------------
-    paired = list(zip(layers, qc.data, strict=False))
-    paired.sort(key=lambda item: item[0])  # stable → original order kept
-    reordered_data = [instr for _, instr in paired]
+            # Opening a new time step: close the previous one first.
+            if occupies_step and previous_step is not None and layer != previous_step:
+                mark_boundary()
 
-    # ------------------------------------------------------------------
-    # Build the output circuit.
-    # ------------------------------------------------------------------
-    new_qc = qc.clearcopy()
+            new_qc.append(instr)
 
-    for instr in reordered_data:
-        new_qc.append(instr)
+            if occupies_step:
+                previous_step = layer
+                boundary_marked = False
+            elif is_full_width_barrier(instr, new_qc):
+                boundary_marked = True
 
-    return new_qc
+        # Close the final time step, so the number of TICKs equals the number
+        # of time steps rather than being one short.
+        if previous_step is not None:
+            mark_boundary()
+
+        return new_qc
+
+    return _compress_layers
