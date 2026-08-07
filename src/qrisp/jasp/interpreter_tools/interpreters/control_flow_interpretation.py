@@ -238,23 +238,25 @@ def evaluate_scan(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Ca
 
 
 def evaluate_cond_under_trace(cond_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
+    """Evaluate a JAX cond equation while preserving its branch structure under an active trace.
+
+    Reinterprets each branch Jaxpr with the given eqn_evaluator and replays it via
+    ``jax.lax.switch``. Unlike :func:`evaluate_cond_eqn`, which picks and evaluates a
+    single branch eagerly using a concrete Python index (for use outside of tracing
+    mode), this function is meant to be called *while* the interpreter itself is
+    being traced -- the resulting switch primitive is a real traced JAX operation.
+
+    Parameters
+    ----------
+    cond_eqn : jax.extend.core.JaxprEqn
+        The equation representing the conditional.
+    context_dic : ContextDict
+        Dictionary mapping variables to their values.
+    eqn_evaluator : Callable, optional
+        Function to evaluate equations within each branch Jaxpr. The default
+        is exec_eqn.
+
     """
-    Evaluates a JAX cond equation by reinterpreting each branch Jaxpr with the given
-    eqn_evaluator and replaying it via ``jax.lax.switch``, preserving the branch
-    structure under an active trace.
-
-    Unlike :func:`evaluate_cond_eqn`, which picks and evaluates a single branch eagerly
-    using a concrete Python index (for use outside of tracing mode), this function is
-    meant to be called *while* the interpreter itself is being traced -- the resulting
-    switch primitive is a real traced JAX operation.
-
-    Args:
-        cond_eqn (jax.core.JaxprEqn): The equation representing the conditional.
-        context_dic (dict): Dictionary mapping variables to their values.
-        eqn_evaluator (function, optional): Function to evaluate equations within each
-                                            branch Jaxpr. Defaults to exec_eqn.
-    """
-
     invalues = extract_invalues(cond_eqn, context_dic)
 
     branch_fns = [eval_jaxpr(branch_jaxpr, eqn_evaluator=eqn_evaluator) for branch_jaxpr in cond_eqn.params["branches"]]
@@ -270,24 +272,27 @@ def evaluate_cond_under_trace(cond_eqn: JaxprEqn, context_dic: ContextDict, eqn_
 def evaluate_while_loop_under_trace(
     while_loop_eqn: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn
 ) -> None:
+    """Evaluate a JAX while-loop equation while preserving its loop structure under an active trace.
+
+    Reinterprets the body/condition Jaxprs with the given eqn_evaluator and replays
+    them via ``jax.lax.while_loop``. Unlike :func:`evaluate_while_loop`, which
+    unrolls the loop eagerly using concrete Python truthiness (for use outside of
+    tracing mode), this function is meant to be called *while* the interpreter
+    itself is being traced (e.g. to compile a profiling metric, or to build a
+    post-processing Jaxpr) -- the resulting while_loop primitive is a real traced
+    JAX operation.
+
+    Parameters
+    ----------
+    while_loop_eqn : jax.extend.core.JaxprEqn
+        The equation representing the while loop.
+    context_dic : ContextDict
+        Dictionary mapping variables to their values.
+    eqn_evaluator : Callable, optional
+        Function to evaluate equations within the body/condition Jaxprs. The
+        default is exec_eqn.
+
     """
-    Evaluates a JAX while loop equation by reinterpreting the body/condition Jaxprs
-    with the given eqn_evaluator and replaying them via ``jax.lax.while_loop``,
-    preserving the loop structure under an active trace.
-
-    Unlike :func:`evaluate_while_loop`, which unrolls the loop eagerly using concrete
-    Python truthiness (for use outside of tracing mode), this function is meant to be
-    called *while* the interpreter itself is being traced (e.g. to compile a profiling
-    metric, or to build a post-processing Jaxpr) -- the resulting while_loop primitive
-    is a real traced JAX operation.
-
-    Args:
-        while_loop_eqn (jax.core.JaxprEqn): The equation representing the while loop.
-        context_dic (dict): Dictionary mapping variables to their values.
-        eqn_evaluator (function, optional): Function to evaluate equations within the
-                                            body/condition Jaxprs. Defaults to exec_eqn.
-    """
-
     invalues = extract_invalues(while_loop_eqn, context_dic)
 
     body_jaxpr = while_loop_eqn.params["body_jaxpr"]
@@ -317,23 +322,24 @@ def evaluate_while_loop_under_trace(
 
 
 def evaluate_scan_under_trace(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
+    """Evaluate a JAX scan equation while preserving its loop structure under an active trace.
+
+    Reinterprets the body Jaxpr with the given eqn_evaluator and replays it via
+    ``jax.lax.scan``. Unlike :func:`evaluate_scan`, which unrolls the scan eagerly
+    with a plain Python for-loop (for use outside of tracing mode), this function is
+    meant to be called *while* the interpreter itself is being traced -- the
+    resulting scan primitive is a real traced JAX operation.
+
+    Parameters
+    ----------
+    scan_eq : jax.extend.core.JaxprEqn
+        The equation representing the scan operation.
+    context_dic : ContextDict
+        Dictionary mapping variables to their values.
+    eqn_evaluator : Callable, optional
+        Function to evaluate the scanned body equation. The default is exec_eqn.
+
     """
-    Evaluates a JAX scan equation by reinterpreting the body Jaxpr with the given
-    eqn_evaluator and replaying it via ``jax.lax.scan``, preserving the loop
-    structure under an active trace.
-
-    Unlike :func:`evaluate_scan`, which unrolls the scan eagerly with a plain Python
-    for-loop (for use outside of tracing mode), this function is meant to be called
-    *while* the interpreter itself is being traced -- the resulting scan primitive is
-    a real traced JAX operation.
-
-    Args:
-        scan_eq (jax.core.JaxprEqn): The equation representing the scan operation.
-        context_dic (dict): Dictionary mapping variables to their values.
-        eqn_evaluator (function, optional): Function to evaluate the scanned body
-                                            equation. Defaults to exec_eqn.
-    """
-
     invalues = extract_invalues(scan_eq, context_dic)
 
     num_consts = scan_eq.params["num_consts"]
