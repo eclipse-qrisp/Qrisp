@@ -204,18 +204,23 @@ def insert_stim_noise(
         Pauli-``X`` (bit-flip) error probability ``px`` applied around
         measurements and resets.
     only_necessary : bool, default True
-        When ``True``, the pass only inserts noise where the circuit does
-        not already contain it: no channel is inserted where the circuit
-        already carries an **exactly matching** one, that is a
+        When ``True``, the pass only inserts noise where the circuit does not
+        already contain it: no channel is inserted where the circuit already
+        carries an **exactly matching** one, that is a
         :class:`~qrisp.misc.stim_tools.StimNoiseGate` of the same Stim type
         acting on exactly the same qubits, directly after the gate, directly
-        before the measurement, or directly after the reset.  The error
-        probability is not compared, so a user-placed channel of a different
-        strength is respected.  Anything else (a different channel type, a
-        different set of qubits, a channel on the other side of the
-        instruction) does not count as a match and the noise model is applied
-        regardless.  When ``False``, the full noise model is inserted
-        unconditionally.
+        before the measurement, or directly after the reset.  "Directly" is
+        meant per qubit: an instruction on an unrelated qubit may sit in between
+        without breaking the match, since it says nothing about the qubits the
+        channel annotates.  The error probability is not compared, so a
+        user-placed channel of a different strength is respected.  Anything else
+        (a different channel type, a different set of qubits, a channel on the
+        other side of the instruction) does not count as a match and the noise
+        model is applied regardless — a ``DEPOLARIZE1`` after an entangling gate
+        earns no special treatment and the ``DEPOLARIZE2`` goes in anyway.  Each
+        channel annotates at most one instruction; see the note below on
+        ``reset`` / ``X_ERROR`` / ``measure``.  When ``False``, the full noise
+        model is inserted unconditionally.
 
     Returns
     -------
@@ -271,8 +276,17 @@ def insert_stim_noise(
       also consume the noise slot of their qubits: no additional idle noise
       is stacked on top of them, and no duplicate channel is inserted
       directly after the gate / before the measurement / after the reset they
-      already annotate.  With ``only_necessary=False`` the full noise model is
-      applied on top of any user-placed noise.
+      already annotate.  A fully hand-annotated circuit therefore comes out
+      unchanged.  With ``only_necessary=False`` the full noise model is applied
+      on top of any user-placed noise.
+    * *A channel annotates at most one instruction.*  The rules of the model
+      overlap in position — the channel after a reset is also the channel before
+      whatever reads the qubit next — so ``reset``, ``X_ERROR``, ``measure``
+      written in that order has both instructions expecting exactly that
+      ``X_ERROR``.  Letting them share it would leave one of their two time steps
+      with no noise at all, so it is attributed to the instruction whose time step
+      it was scheduled into (the ``reset``) and the other one is amended with a
+      channel of its own.
     * *Reading the output — repeated targets.*  Stim merges consecutive
       identical channels into a single instruction, so a qubit that idles
       through several time steps appears more than once in the target list:
@@ -380,9 +394,33 @@ def insert_stim_noise(
 
     The user's ``DEPOLARIZE2`` is kept at its own strength and no second
     ``DEPOLARIZE2`` is inserted after the ``CX``; only the idle qubit (``2``)
-    receives its ``DEPOLARIZE1`` for that layer.  The match has to be exact:
-    had the user placed a ``DEPOLARIZE1``, or a ``DEPOLARIZE2`` on a different
-    pair of qubits, the model's own ``DEPOLARIZE2`` would still be inserted.
+    receives its ``DEPOLARIZE1`` for that layer.
+
+    "Directly after" is meant per qubit, not per list position, so an instruction
+    on an unrelated qubit may sit in between without breaking the match::
+
+        >>> qc = QuantumCircuit(3)
+        >>> qc.cx(0, 1)
+        >>> qc.h(2)                                                    # unrelated
+        >>> qc.append(StimNoiseGate("DEPOLARIZE2", 0.05), qc.qubits[:2])
+        >>> print(insert_stim_noise(0.01, 0.02, 0.001)(qc).to_stim())
+        CX 0 1
+        H 2
+        DEPOLARIZE1(0.01) 2
+        DEPOLARIZE2(0.05) 0 1
+
+    The match does have to be exact, though.  Had the user placed a
+    ``DEPOLARIZE1``, or a ``DEPOLARIZE2`` on a different pair of qubits, the
+    model's own ``DEPOLARIZE2`` would still be inserted::
+
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cx(0, 1)
+        >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.05), [qc.qubits[0]])
+        >>> print(insert_stim_noise(0.01, 0.02, 0.001)(qc).to_stim())
+        CX 0 1
+        DEPOLARIZE2(0.02) 0 1
+        DEPOLARIZE1(0.05) 0
+
     Pass ``only_necessary=False`` to apply the full model unconditionally.
 
     **Composition — reading the model off the output.**  The pass belongs in a
@@ -409,20 +447,20 @@ def insert_stim_noise(
         >>> qc.reset(1)
         >>> print(pm.run(qc).to_stim())
         CX 0 1
-        DEPOLARIZE1(0.001) 2
         DEPOLARIZE2(0.001) 0 1
+        DEPOLARIZE1(0.001) 2
         TICK
         CX 2 1
-        DEPOLARIZE1(0.001) 0
         DEPOLARIZE2(0.001) 2 1
+        DEPOLARIZE1(0.001) 0
         TICK
         X_ERROR(0.001) 1
         DEPOLARIZE1(0.001) 0 2
         M 1
         TICK
         R 1
-        DEPOLARIZE1(0.001) 0 2
         X_ERROR(0.001) 1
+        DEPOLARIZE1(0.001) 0 2
         TICK
 
     Four time steps, four ``TICK``\\ s, and in each of them qubits ``0``, ``1``
@@ -508,11 +546,30 @@ def insert_stim_noise(
         # an instruction - a measured qubit (X_ERROR), a gate qubit (depolarizing
         # channel) or a qubit carrying user noise (slot consumed).  Every other
         # qubit of the layer is idling and owes a DEPOLARIZE1.
+        #
+        # ``chain[qubit]``: the instructions acting on that qubit, in order, with
+        # the ones that take no time step left out.  This is the per-qubit thread
+        # of the scheduler's dependency graph, and it is what "the channel right
+        # after this gate" has to mean: positions in ``qc.data`` say nothing, since
+        # an instruction on an unrelated qubit may sit between a gate and the
+        # channel annotating it.  ``chain_pos`` records where each instruction sits
+        # in the thread of each of its qubits, so a neighbour is an index lookup.
         noise_layers: set[int] = set()
         handled: dict[int, set] = defaultdict(set)
+        chain: dict[object, list[int]] = defaultdict(list)
+        chain_pos: list[dict] = [{} for _ in data]
 
         for idx, instr in enumerate(data):
-            if roles[idx] in ("barrier", "transparent"):
+            if roles[idx] == "transparent":
+                # Skipped rather than threaded, so that a ``gphase`` or an
+                # allocation marker between a gate and its channel does not hide
+                # the one from the other.  Barriers *are* threaded: a fence ends
+                # the time step, so nothing across it annotates anything.
+                continue
+            for q in instr.qubits:
+                chain_pos[idx][q] = len(chain[q])
+                chain[q].append(idx)
+            if roles[idx] == "barrier":
                 continue
             noise_layers.add(layers[idx])
             handled[layers[idx]].update(instr.qubits)
@@ -546,31 +603,52 @@ def insert_stim_noise(
                 pos += 1
             idle_pos[qubit] = pos
 
-        def _already_annotated(idx: int, stim_name: str, qubits, before: bool) -> bool:
-            """Return whether the instruction at *idx* already carries the expected channel.
+        # Channels of the input that have been accepted as some instruction's
+        # annotation.  A channel annotates one instruction, never two - see
+        # ``_claim``.
+        claimed: set[int] = set()
 
-            The instruction must be directly preceded (``before=True``) or
-            followed (``before=False``) by a ``StimNoiseGate`` of Stim type
-            *stim_name* acting on exactly *qubits*.  The error probability is
-            deliberately not compared, so user-placed noise of a different
-            strength is respected.
+        def _neighbour(idx: int, qubit, before: bool) -> int | None:
+            """Return the instruction next to *idx* on *qubit*'s thread, if any."""
+            pos = chain_pos[idx][qubit] + (-1 if before else 1)
+            if 0 <= pos < len(chain[qubit]):
+                return chain[qubit][pos]
+            return None
+
+        def _claim(idx: int, stim_name: str, qubits, before: bool) -> bool:
+            """Accept an existing channel as the annotation of *idx*, if there is one.
+
+            The channel has to sit directly before (``before=True``) or directly
+            after the instruction on the thread of every one of *qubits*, be of
+            Stim type *stim_name*, and act on exactly *qubits*.  The error
+            probability is deliberately not compared, so a hand-placed channel of
+            a different strength is respected.
             """
-            # The match has to be exact in both the channel type and the qubit
-            # set, because the rules of the noise model overlap in position: the
-            # instruction after a gate is also the instruction before whatever
-            # comes next.  A loose match would let a single user-placed
-            # X_ERROR count both as the gate's depolarizing channel and as the
-            # following measurement's bit-flip error, dropping one of the two
-            # channels the model calls for.
+            # The type has to match exactly.  A ``DEPOLARIZE1`` after an
+            # entangling gate is not the channel the model calls for, so it earns
+            # no special treatment and the ``DEPOLARIZE2`` goes in regardless.
             #
-            # Adjacency is evaluated on the *input* circuit.  Since the emitter
-            # only inserts, and inserts nothing between a gate and a matching
-            # neighbour, input adjacency implies output adjacency.
-            j = idx - 1 if before else idx + 1
-            if not 0 <= j < len(data):
+            # The claim is exclusive because the rules overlap in position: the
+            # channel after a reset is also the channel before whatever reads the
+            # qubit next.  Written out, ``reset -> X_ERROR -> measure`` has both
+            # instructions expecting exactly this channel, and letting them share
+            # it would leave one of their two time steps with no noise at all.
+            # Whoever comes first on the thread takes it - which is the one the
+            # channel shares a layer with, since a channel joins the layer of the
+            # instruction it follows - and the other one is amended below.
+            neighbours = {_neighbour(idx, q, before) for q in qubits}
+            if len(neighbours) != 1:
+                # The qubits disagree about what sits next to them, so whatever is
+                # there does not annotate this instruction as a whole.
+                return False
+            (j,) = neighbours
+            if j is None or j in claimed or roles[j] != "noise":
                 return False
             adj = data[j]
-            return is_error_channel(adj) and adj.op.stim_name == stim_name and set(adj.qubits) == set(qubits)
+            if adj.op.stim_name != stim_name or set(adj.qubits) != set(qubits):
+                return False
+            claimed.add(j)
+            return True
 
         for idx, instr in enumerate(data):
             role = roles[idx]
@@ -619,10 +697,12 @@ def insert_stim_noise(
                 # --- X_ERROR BEFORE the measurement ---
                 # The bit flip has to happen before the qubit is read out, so
                 # that it can actually corrupt the outcome.
-                if not (only_necessary and _already_annotated(idx, "X_ERROR", qubits, before=True)):
-                    # One channel per qubit: X_ERROR is single-qubit, while a
-                    # measurement instruction may in principle carry several.
-                    for q in qubits:
+                #
+                # One channel per qubit: X_ERROR is single-qubit, while a
+                # measurement instruction may in principle carry several, so each
+                # is claimed and amended on its own.
+                for q in qubits:
+                    if not (only_necessary and _claim(idx, "X_ERROR", [q], before=True)):
                         new_qc.append(StimNoiseGate("X_ERROR", X_error_strength), [q])
                 new_qc.append(instr)
                 continue
@@ -632,8 +712,8 @@ def insert_stim_noise(
                 # Mirror image of the measurement: a reset defines the state, so
                 # the imperfection has to be applied to the fresh state.
                 new_qc.append(instr)
-                if not (only_necessary and _already_annotated(idx, "X_ERROR", qubits, before=False)):
-                    for q in qubits:
+                for q in qubits:
+                    if not (only_necessary and _claim(idx, "X_ERROR", [q], before=False)):
                         new_qc.append(StimNoiseGate("X_ERROR", X_error_strength), [q])
                 continue
 
@@ -649,7 +729,7 @@ def insert_stim_noise(
             else:
                 stim_name, strength = "DEPOLARIZE1", depolarize_1_strength
 
-            if not (only_necessary and _already_annotated(idx, stim_name, qubits, before=False)):
+            if not (only_necessary and _claim(idx, stim_name, qubits, before=False)):
                 new_qc.append(StimNoiseGate(stim_name, strength), qubits)
 
         # Whatever is still owed belongs to trailing layers in which the qubit

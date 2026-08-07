@@ -594,10 +594,33 @@ def test_only_necessary_skips_before_measurement():
     # Only the user's X_ERROR before the measurement.
     assert len(x_errors) == 1
     assert list(x_errors[0].op.params) == [0.05]
-    # The X_ERROR annotates the measurement only. It must not also be counted
-    # as the depolarizing channel of the preceding h, which still needs one.
+    # An X_ERROR is not the channel the h calls for, so it annotates the
+    # measurement only and the h still gets its own DEPOLARIZE1.
     assert _noise_names(noisy).count("DEPOLARIZE1") == 1
     _assert_one_noise_per_layer(qc, noisy, 2)
+    _assert_model_verifies(qc)
+
+
+def test_a_channel_annotates_only_one_instruction():
+    """``reset -> X_ERROR -> measure``: the one genuinely ambiguous case.
+
+    Both instructions call for exactly an ``X_ERROR`` on this qubit, and the
+    hand-placed one sits directly between them.  It cannot annotate both -- that
+    would leave one of the two time steps with no noise at all -- so it goes to
+    the instruction whose layer it shares, and the other one is amended.
+    """
+    qc = QuantumCircuit(1, 1)
+    qc.reset(0)
+    qc.append(StimNoiseGate("X_ERROR", 0.05), [qc.qubits[0]])
+    qc.measure(qc.qubits[0], qc.clbits[0])
+
+    # The channel is scheduled into the reset's layer, so the reset keeps it.
+    assert asap_layers(qc) == [0, 0, 1]
+
+    noisy = insert_stim_noise(P1, P2, PX)(qc)
+    x_errors = [i for i in noisy.data if isinstance(i.op, StimNoiseGate)]
+    assert [list(i.op.params) for i in x_errors] == [[0.05], [PX]]
+    _assert_model_verifies(qc)
 
 
 def test_only_necessary_requires_matching_channel():
@@ -612,14 +635,61 @@ def test_only_necessary_requires_matching_channel():
 
 
 def test_only_necessary_requires_matching_qubits():
-    # The user's DEPOLARIZE2 covers only two of the three qubits of the
-    # (decomposed) gate pair, so it does not match the expected channel.
+    # The user's channel covers only one qubit of the entangled pair, so it is
+    # not the channel the model expects and the DEPOLARIZE2 goes in anyway.
     qc = QuantumCircuit(2)
     qc.cx(0, 1)
     qc.append(StimNoiseGate("DEPOLARIZE1", P1), [qc.qubits[1]])
 
     noisy = insert_stim_noise(P1, P2, PX)(qc)
     assert _noise_names(noisy).count("DEPOLARIZE2") == 1
+
+
+def test_only_necessary_survives_interleaving():
+    """A hand-placed channel counts wherever it sits in the instruction list.
+
+    The channel annotates ``h(0)`` but an instruction on an unrelated qubit was
+    written between the two.  Asking whether the *neighbouring* entry of
+    ``qc.data`` is the expected channel would answer no here and insert a second
+    one, giving q0 two errors in one time step.  What matters is the layer.
+    """
+    interleaved = QuantumCircuit(2)
+    interleaved.h(0)
+    interleaved.reset(1)
+    interleaved.append(StimNoiseGate("DEPOLARIZE1", 0.5), [interleaved.qubits[0]])
+    interleaved.cx(0, 1)
+
+    adjacent = QuantumCircuit(2)
+    adjacent.h(0)
+    adjacent.append(StimNoiseGate("DEPOLARIZE1", 0.5), [adjacent.qubits[0]])
+    adjacent.reset(1)
+    adjacent.cx(0, 1)
+
+    for name, qc in [("interleaved", interleaved), ("adjacent", adjacent)]:
+        noisy = _assert_model_verifies(qc)
+        strengths = sorted(i.op.params[0] for i in noisy.data if isinstance(i.op, StimNoiseGate))
+        # The user's 0.5 is kept and never doubled: q0 gets it for the h's step,
+        # the reset gets its X_ERROR, and the cx gets its DEPOLARIZE2.
+        assert strengths == sorted([0.5, PX, P2]), f"{name}: {strengths}"
+
+
+@pytest.mark.parametrize(
+    ("build", "expected_added"),
+    [
+        # readout noise written before an instruction on an unrelated qubit
+        (lambda qc, q: (qc.append(StimNoiseGate("X_ERROR", 0.5), [q[0]]), qc.h(1), qc.measure(0)), 1),
+        # reset noise separated from its reset the same way
+        (lambda qc, q: (qc.reset(0), qc.h(1), qc.append(StimNoiseGate("X_ERROR", 0.5), [q[0]])), 1),
+    ],
+    ids=["readout", "reset"],
+)
+def test_interleaved_measurement_and_reset_noise(build, expected_added):
+    """Only the untouched qubit's channel is added, not a duplicate on q0."""
+    qc = QuantumCircuit(2, 1)
+    build(qc, qc.qubits)
+
+    noisy = _assert_model_verifies(qc)
+    assert len(noisy.data) - len(qc.data) == expected_added
 
 
 def test_only_necessary_ignores_strength():

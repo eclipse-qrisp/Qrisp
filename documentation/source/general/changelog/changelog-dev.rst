@@ -99,9 +99,13 @@ New Features
   neither receive noise nor create a noise layer.  With the default
   ``only_necessary=True`` a channel the circuit already carries is respected
   rather than duplicated, where "already carries" means an exactly matching
-  channel type on exactly the matching qubits, at its expected position;
-  its error probability may differ.  Gates on more than two qubits are
-  rejected with a ``ValueError`` before any output is produced.
+  channel type on exactly the matching qubits, directly next to the instruction
+  it annotates on the thread of each of those qubits; its error probability may
+  differ, and an instruction on an unrelated qubit in between does not break the
+  match.  Each channel annotates at most one instruction, so
+  ``reset``/``X_ERROR``/``measure`` gives the hand-placed channel to the ``reset``
+  it shares a time step with and amends the measurement.  Gates on more than two
+  qubits are rejected with a ``ValueError`` before any output is produced.
 
   The pass shares its scheduler with :func:`~qrisp.layerize`, so the layers it
   inserts noise for are the layers ``layerize`` later draws.  Running
