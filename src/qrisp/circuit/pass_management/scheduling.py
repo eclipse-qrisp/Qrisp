@@ -14,67 +14,61 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 
-Shared as-soon-as-possible (ASAP) scheduling utilities for circuit passes.
+As-soon-as-possible (ASAP) circuit scheduling.
 
-Several passes need the same notion of a circuit *layer* (time step):
+A circuit *layer* is one time step.  :func:`~qrisp.layerize` reorders instructions
+into layers using the schedule computed here.
 
-* :func:`~qrisp.layerize` reorders instructions into layers.
-* ``insert_stim_noise`` gives every qubit one noise instruction per layer.
+:func:`asap_schedule` walks the circuit's dependency graph and fills one layer at
+a time with everything that fits.  A qubit or clbit admits **one gate**, **one
+error channel** and **any number of other annotations** per layer.  That is the
+whole rule; ASAP layering is what the gate slot alone produces.
 
-Both used to carry their own scheduler, and the two disagreed about what a
-layer is — most visibly about barriers and about which instructions advance the
-clock.  This module is the single definition both consume.
+Working on the dependency graph keeps the result faithful to the input: an
+instruction is only released once all of its predecessors are out, so it can
+never be emitted ahead of one it was written after.
 
-Two conventions are worth spelling out, because passes downstream rely on them.
+Two consequences are worth stating here, because callers depend on them.
 
-**Barriers are scoped to the qubits they name.**  A barrier is a compiler
-constraint ("do not reorder across me"), and it constrains exactly its own
-qubits: instructions on *other* qubits may freely move past it.  Note that
-``QuantumCircuit.barrier()`` without arguments names every qubit, so the common
-"fence everything" spelling is unaffected.  A global time boundary is therefore
-spelled as a full-width barrier — see :func:`is_full_width_barrier` and
-:func:`~qrisp.promote_barriers`.
+**A barrier only constrains the qubits it names.**  It ends the layer for those
+qubits and leaves the rest alone, so an instruction on an unrelated qubit may
+move past it.  ``QuantumCircuit.barrier()`` names every qubit, so the usual
+full-circuit fence still works, and only such a full-width barrier is a time
+boundary — see :func:`~qrisp.circuit.is_full_width_barrier`.
 
-**Barriers open the layer that follows them.**  A barrier occupies no time step
-of its own; its reported layer is the layer of the instructions it fences off,
-i.e. it sits at the *near* side of the boundary it creates.  Passes that need to
-ask "is this layer boundary already marked by a barrier?" can therefore look at
-the instruction opening the new layer.
+**A gate and the error channel annotating it share a layer, two errors do not.**
+The second error on a qubit belongs to the next layer.  This is also what puts
+readout noise, written in front of a measurement, in the measurement's layer:
+that layer's gate noise has already taken the qubit's error slot.
 """
 
 from __future__ import annotations
 
 import functools
-from collections import defaultdict
+from typing import NamedTuple
 
 from qrisp.circuit.instruction import Instruction
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 __all__ = [
-    "TRANSPARENT_OP_NAMES",
+    "Schedule",
     "asap_layers",
-    "intra_layer_substeps",
-    "is_full_width_barrier",
+    "asap_schedule",
+    "is_error_channel",
     "is_transparent",
 ]
 
-# Instructions that do not represent a physical time step.  They do not advance
-# the layer clock and (for noise passes) receive no noise instruction:
+# Operations that take no time step and cannot be recognised structurally:
 #
 # * ``qb_alloc`` / ``qb_dealloc`` are bookkeeping markers.
-# * ``gphase`` is a one-qubit Operation in Qrisp, but it only records a global
-#   phase and is therefore not a physical gate.  (It really does carry a qubit,
-#   so it cannot be recognised by its qubit count - hence this list.)
-# * ``parity`` carries no qubits at all - it becomes a Stim ``DETECTOR`` or
-#   ``OBSERVABLE_INCLUDE`` annotation, i.e. classical post-processing.  It does
-#   however carry clbits, so without this list it would look like an ordinary
-#   resource-consuming instruction and occupy a time step of its own.
+# * ``gphase`` records a global phase, but carries a qubit like a real gate.
+# * ``parity`` becomes a Stim ``DETECTOR`` or ``OBSERVABLE_INCLUDE``, i.e.
+#   classical post-processing, but carries clbits like a real instruction.
 # * ``barrier`` is a scheduling constraint rather than an operation.
 #
-# ``StimNoiseGate`` operations and instructions without any resources are
-# transparent as well, but are recognised structurally in :func:`is_transparent`
-# rather than listed here.
-TRANSPARENT_OP_NAMES = frozenset({"qb_alloc", "qb_dealloc", "gphase", "parity", "barrier"})
+# Error channels and instructions acting on nothing are recognised in
+# :func:`is_transparent` itself.
+_TRANSPARENT_OP_NAMES = frozenset({"qb_alloc", "qb_dealloc", "gphase", "parity", "barrier"})
 
 
 @functools.lru_cache(maxsize=1)
@@ -93,12 +87,12 @@ def _stim_noise_gate_type() -> type | None:
 
 
 def is_transparent(instr: Instruction) -> bool:
-    """Check whether *instr* is transparent to the layer clock.
+    """Check whether *instr* takes no time step of its own.
 
-    A transparent instruction rides along at the current layer of its resources
-    instead of opening a new one, and therefore does not count as a time step.
-    This keeps a noise instruction in the same layer as the gate it annotates,
-    and keeps bookkeeping markers from inflating the layer count.
+    Such an instruction rides along in the layer of the gate it belongs to, so it
+    does not add to the circuit depth.  This covers barriers, ``qb_alloc`` /
+    ``qb_dealloc``, ``gphase``, ``parity``, Stim error channels, and anything
+    acting on no resources at all.
 
     Parameters
     ----------
@@ -108,7 +102,7 @@ def is_transparent(instr: Instruction) -> bool:
     Returns
     -------
     bool
-        ``True`` if the instruction does not occupy a physical time step.
+        ``True`` if the instruction takes no time step.
 
     Examples
     --------
@@ -121,7 +115,7 @@ def is_transparent(instr: Instruction) -> bool:
     [False, True]
 
     """
-    if instr.op.name in TRANSPARENT_OP_NAMES:
+    if instr.op.name in _TRANSPARENT_OP_NAMES:
         return True
     if not instr.qubits and not instr.clbits:
         # Nothing to schedule against, so nothing to advance.
@@ -130,77 +124,228 @@ def is_transparent(instr: Instruction) -> bool:
     return noise_gate_type is not None and isinstance(instr.op, noise_gate_type)
 
 
-def is_full_width_barrier(instr: Instruction, qc: QuantumCircuit) -> bool:
-    """Check whether *instr* is a barrier spanning every qubit of *qc*.
+def is_error_channel(instr: Instruction) -> bool:
+    """Check whether *instr* is a Stim error channel.
 
-    Full width is what separates the two things a barrier can mean.  A
-    full-width barrier is a **global time boundary** — it becomes a ``TICK`` in
-    the Stim output.  A partial barrier is a **local fence** on the qubits it
-    names and produces no timeline annotation.
+    Error channels are the only instructions the schedule rations: a qubit takes
+    at most one per layer.  Allocation markers, ``gphase`` and ``parity`` also
+    take no time step but are not rationed, so the two have to be told apart.
 
     Parameters
     ----------
     instr : Instruction
         The instruction to classify.
-    qc : QuantumCircuit
-        The circuit whose register defines "full width".
 
     Returns
     -------
     bool
-        ``True`` if *instr* is a barrier that names all of ``qc.qubits``.
+        ``True`` if the operation is a ``StimNoiseGate``.  Always ``False``
+        without Stim installed, which is safe: a circuit cannot contain one.
 
     Examples
     --------
     >>> from qrisp import QuantumCircuit
-    >>> from qrisp.circuit.pass_management.scheduling import is_full_width_barrier
-    >>> qc = QuantumCircuit(3)
-    >>> qc.barrier()            # no arguments -> spans the whole register
-    >>> qc.barrier([qc.qubits[0]])
-    >>> [is_full_width_barrier(instr, qc) for instr in qc.data]
-    [True, False]
+    >>> from qrisp.circuit.pass_management.scheduling import is_error_channel
+    >>> from qrisp.misc.stim_tools import StimNoiseGate
+    >>> qc = QuantumCircuit(1)
+    >>> qc.h(0)
+    >>> qc.append(StimNoiseGate("X_ERROR", 0.1), [qc.qubits[0]])
+    >>> [is_error_channel(instr) for instr in qc.data]
+    [False, True]
 
     """
-    if instr.op.name != "barrier":
-        return False
-    if not qc.qubits:
-        # Degenerate register: there is nothing for a barrier to fail to span.
-        return True
-    return len(set(instr.qubits)) == len(qc.qubits)
+    noise_gate_type = _stim_noise_gate_type()
+    return noise_gate_type is not None and isinstance(instr.op, noise_gate_type)
+
+
+def _resources(instr: Instruction) -> list:
+    """Return the qubits and clbits *instr* acts on.
+
+    Clbits count as resources, so that a ``parity`` follows the measurements it
+    reads and two measurements writing one clbit do not share a layer.
+    """
+    return [*instr.qubits, *instr.clbits]
+
+
+def _dependency_graph(qc: QuantumCircuit) -> tuple[list[int], list[list[int]]]:
+    """Link consecutive instructions on a shared resource.
+
+    That is the whole ordering the schedule has to respect, barrier fences
+    included: a barrier shares a qubit with everything it fences.
+
+    Returns
+    -------
+    tuple[list[int], list[list[int]]]
+        The predecessor count and the successors of each instruction.
+    """
+    data = qc.data
+    predecessors: list[set[int]] = [set() for _ in data]
+    successors: list[list[int]] = [[] for _ in data]
+    last_on: dict[object, int] = {}
+
+    for i, instr in enumerate(data):
+        resources = _resources(instr)
+        if not resources and i:
+            # Nothing to order it against, so pin it behind the instruction it
+            # was written after rather than letting it float to the front.
+            predecessors[i].add(i - 1)
+        for r in resources:
+            if r in last_on:
+                # A set, so a two-qubit gate following the same instruction on
+                # both of its qubits still counts that dependency once.
+                predecessors[i].add(last_on[r])
+            last_on[r] = i
+
+    for i, preds in enumerate(predecessors):
+        for j in preds:
+            successors[j].append(i)
+
+    return [len(p) for p in predecessors], successors
+
+
+class Schedule(NamedTuple):
+    """The result of :func:`asap_schedule`."""
+
+    layers: list[int]
+    """Layer of every instruction, indexed like ``qc.data``."""
+
+    order: list[int]
+    """Indices into ``qc.data``, in the order to emit them in."""
+
+
+def asap_schedule(qc: QuantumCircuit) -> Schedule:
+    """Schedule *qc* into as-soon-as-possible layers.
+
+    The schedule walks the circuit's dependency graph, filling one layer at a
+    time with everything that fits.  What fits is decided per qubit and clbit:
+
+    * **one gate**, so instructions sharing a resource land in successive layers
+      and instructions on disjoint resources share one;
+    * **one error channel**, so a gate and its noise share a layer but a second
+      error on the same qubit moves to the next;
+    * **any number of other annotations** — ``qb_alloc`` / ``qb_dealloc``,
+      ``gphase``, ``parity`` — since they cost no time;
+    * **a barrier ends the layer** for the qubits it names.  It needs no slot of
+      its own, so it does not add to the depth, but nothing else on those qubits
+      may join afterwards.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The circuit to schedule.
+
+    Returns
+    -------
+    Schedule
+        The layer of every instruction, and the order to emit them in.
+
+    Notes
+    -----
+    ``layers`` increases along the instructions of a single resource, but not
+    along ``qc.data``: two independent qubit chains both start at layer 0.  A
+    time axis therefore only exists once the instructions are put in ``order``,
+    which is what :func:`~qrisp.layerize` does.
+
+    ``order`` is a topological order, so emitting in it preserves the circuit
+    semantics.  Each group in it acts on disjoint resources, which is what lets
+    Stim draw a layer as a single column.
+
+    Stacking more error channels on a qubit than there are layers to hold them
+    pushes that qubit's next gate later, since each error takes a time step of
+    its own.  That is the honest reading of the input: fifteen errors in a row
+    are fifteen errors, not one time step.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumCircuit
+    >>> from qrisp.circuit.pass_management.scheduling import asap_schedule
+    >>> qc = QuantumCircuit(4)
+    >>> qc.h(0)
+    >>> qc.cx(0, 1)
+    >>> qc.h(2)
+    >>> qc.cx(2, 3)
+    >>> schedule = asap_schedule(qc)
+    >>> schedule.layers
+    [0, 1, 0, 1]
+    >>> schedule.order
+    [0, 2, 1, 3]
+
+    """
+    data = qc.data
+    remaining, successors = _dependency_graph(qc)
+
+    ready = {i for i, count in enumerate(remaining) if count == 0}
+    layers = [0] * len(data)
+    order: list[int] = []
+
+    # Per-resource state of the layer being built, all cleared per layer.
+    gates: set[object] = set()  # gate slot taken
+    errors: set[object] = set()  # error slot taken
+    closed: set[object] = set()  # a barrier ended the layer here
+    layer = 0
+
+    def fits(i: int) -> bool:
+        """Check whether instruction *i* can still join the current layer."""
+        instr = data[i]
+        resources = _resources(instr)
+        if instr.op.name == "barrier":
+            # A barrier ends a layer instead of occupying it, so it always fits -
+            # including into a layer another barrier has already closed.
+            return True
+        if not closed.isdisjoint(resources):
+            return False
+        if is_error_channel(instr):
+            return errors.isdisjoint(resources)
+        if is_transparent(instr):
+            return True
+        return gates.isdisjoint(resources)
+
+    def occupy(i: int) -> None:
+        """Record what instruction *i* uses up in the current layer."""
+        instr = data[i]
+        resources = _resources(instr)
+        if instr.op.name == "barrier":
+            closed.update(resources)
+        elif is_error_channel(instr):
+            errors.update(resources)
+        elif not is_transparent(instr):
+            gates.update(resources)
+
+    while ready:
+        gates.clear()
+        errors.clear()
+        closed.clear()
+
+        # Fill the layer in groups.  Every instruction in ``ready`` acts on
+        # resources disjoint from the others, since two instructions sharing one
+        # are always linked, so a whole group can be admitted at once.  Releasing
+        # it unblocks successors, which may still fit - a gate's error channel,
+        # say - so keep going until nothing does.
+        while True:
+            group = sorted(i for i in ready if fits(i))
+            if not group:
+                break
+            for i in group:
+                occupy(i)
+                layers[i] = layer
+                order.append(i)
+                ready.discard(i)
+            for i in group:
+                for j in successors[i]:
+                    remaining[j] -= 1
+                    if remaining[j] == 0:
+                        ready.add(j)
+
+        layer += 1
+
+    return Schedule(layers, order)
 
 
 def asap_layers(qc: QuantumCircuit) -> list[int]:
-    """Assign an as-soon-as-possible layer (time step) to every instruction.
+    """Return the layer of every instruction in ``qc.data``.
 
-    Instructions that act on disjoint resources share a layer; instructions
-    that touch a common qubit/clbit are forced into successive layers.
-    Transparent instructions (see :func:`is_transparent`) ride along at the
-    current layer of their resources without advancing the clock.  They do still
-    constrain those resources, though: an instruction written after a transparent
-    one is never scheduled ahead of it.  A two-qubit error channel spanning a
-    deep and a shallow qubit therefore pulls the shallow qubit's next gate up to
-    its own layer instead of letting it slip in front.
-
-    A barrier raises a lower bound ("floor") on the layer of every subsequent
-    instruction touching one of **its own** qubits, so it forces those qubits'
-    later instructions strictly past its earlier ones.  Qubits the barrier does
-    not name are left alone.  The barrier's own reported layer is that floor,
-    i.e. the layer it opens.
-
-    Error channels follow two extra rules, because their layer is a statement
-    about the noise model rather than about resource availability:
-
-    * They are placed in the layer they were *written into* — that of the most
-      recent instruction occupying a time step — rather than in the layer of the
-      last gate on their own qubits.  Otherwise an *idle* channel, one on a qubit
-      with no gate in the layer it annotates, would drift back to that qubit's
-      previous gate and be reported a time step too early.
-    * A qubit carries **at most one error channel per layer**.  A second channel
-      on the same qubit is a second error, so it moves on to the next layer whose
-      slot is free.  This is what keeps two consecutive idle errors from
-      collapsing into one time step, and it places readout noise — written
-      *before* its measurement, after that layer's gate noise — in the
-      measurement's layer without any special case for measurements.
+    A wrapper around :func:`asap_schedule` for callers that need the layers but
+    not the emission order.
 
     Parameters
     ----------
@@ -210,22 +355,7 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     Returns
     -------
     list[int]
-        The layer index of every instruction in ``qc.data``, in the order the
-        instructions appear there.
-
-    Notes
-    -----
-    The returned indices are non-decreasing along the instructions of any
-    *single* resource, but not along ``qc.data`` as a whole: two independent
-    qubit chains written one after the other both start at layer 0.  Consumers
-    may rely on the former and must not assume the latter.  In particular, a
-    coherent time axis (and hence a ``TICK`` stream) only exists once the
-    instructions have been sorted into layer order — which is what
-    :func:`~qrisp.layerize` does.
-
-    Indices may be negative: a transparent instruction on an otherwise
-    untouched qubit reports ``-1``, which is what places allocation markers
-    ahead of the first real layer.
+        The layer index of every instruction, indexed like ``qc.data``.
 
     Examples
     --------
@@ -250,22 +380,12 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     >>> qc.h(0)
     >>> qc.h(1)
     >>> asap_layers(qc)
-    [0, 1, 1, 0]
-
-    An error channel stays in the layer it was written into, even on a qubit
-    that has no gate there:
-
-    >>> from qrisp.misc.stim_tools import StimNoiseGate
-    >>> qc = QuantumCircuit(2)
-    >>> qc.h(0)
-    >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[0]])
-    >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
-    >>> asap_layers(qc)
-    [0, 0, 0]
+    [0, 0, 1, 0]
 
     A second error on the same qubit moves on to the next layer, since a qubit
     cannot pick up two errors in one time step:
 
+    >>> from qrisp.misc.stim_tools import StimNoiseGate
     >>> qc = QuantumCircuit(2)
     >>> qc.h(0)
     >>> qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
@@ -274,175 +394,4 @@ def asap_layers(qc: QuantumCircuit) -> list[int]:
     [0, 0, 1]
 
     """
-    noise_gate_type = _stim_noise_gate_type()
-
-    # Latest layer occupied by each qubit / clbit.  -1 means "untouched", so the
-    # first real instruction on a resource lands in layer 0.
-    last_time: dict[object, int] = defaultdict(lambda: -1)
-
-    # Per-resource lower bound on the layer of subsequent instructions.  Barriers
-    # and transparent instructions raise it; it is what makes them act as fences.
-    # -1 means "no fence yet", a value neither can produce (both fence at layer 0
-    # or later), so an unfenced resource is never clamped.
-    floor: dict[object, int] = defaultdict(lambda: -1)
-
-    # ``(resource, layer)`` pairs whose error slot is already taken.  A qubit
-    # carries at most one error channel per layer.
-    error_slots: set[tuple[object, int]] = set()
-
-    # Layer of the most recent instruction that occupied a time step - the layer
-    # an error channel written here is annotating.
-    current_step = 0
-
-    layers: list[int] = []
-
-    for instr in qc.data:
-        name = instr.op.name
-
-        # Clbits count as resources: a measurement and a later instruction
-        # reading the same clbit must not share a time step.
-        resources = [*instr.qubits, *instr.clbits]
-
-        if not resources:
-            # Nothing to schedule against and nothing that could depend on it:
-            # join the layer currently in progress without advancing anything.
-            layers.append(max(0, max(last_time.values(), default=-1)))
-            continue
-
-        if name == "barrier":
-            # A fence *between* layers: it occupies no time step of its own
-            # (and so generates no noise), but everything it names must move
-            # strictly past everything it named before.  The bound is taken
-            # over the barrier's own resources only - a partial barrier is a
-            # local fence, not a global synchronisation point.
-            boundary = max(
-                max(last_time[r] for r in resources) + 1,
-                max(floor[r] for r in resources),
-            )
-            for r in resources:
-                floor[r] = boundary
-            layers.append(boundary)
-            continue
-
-        if noise_gate_type is not None and isinstance(instr.op, noise_gate_type):
-            # An error channel occupies no time step of its own, but a qubit can
-            # only carry *one* error per time step - a second one is a second
-            # error, and belongs to the next.  So a channel starts in the layer
-            # it was written into (never before its qubits' own last gate or
-            # fence) and moves on until it finds a layer whose error slot is
-            # free.
-            t = max(
-                current_step,
-                max(last_time[r] for r in resources),
-                max(floor[r] for r in resources),
-            )
-            while any((r, t) in error_slots for r in resources):
-                t += 1
-            for r in resources:
-                error_slots.add((r, t))
-                # Fence at the layer the channel actually ended up in, so a gate
-                # written after it cannot be scheduled ahead of it.
-                floor[r] = max(floor[r], t)
-            layers.append(t)
-            continue
-
-        transparent = name in TRANSPARENT_OP_NAMES
-
-        # ASAP: the earliest layer in which every resource is free.
-        t = max(last_time[r] for r in resources)
-        if not transparent:
-            t += 1
-        # Respect fences.  This also applies to transparent instructions, which
-        # would otherwise be free to drift back across a barrier on their own
-        # qubits.
-        t = max(t, max(floor[r] for r in resources))
-        layers.append(t)
-
-        if not transparent:
-            # Only real instructions occupy their resources; transparent ones
-            # leave the clock untouched so several of them can share a layer.
-            current_step = t
-            for r in resources:
-                last_time[r] = t
-        else:
-            # A transparent instruction occupies no time step, but it is still an
-            # ordering constraint: whatever follows it on these resources must not
-            # be scheduled ahead of it.  Fencing instead of occupying is what
-            # keeps several transparent instructions - and the next real gate -
-            # free to share the layer.
-            for r in resources:
-                floor[r] = max(floor[r], t)
-
-    return layers
-
-
-def intra_layer_substeps(qc: QuantumCircuit, layers: list[int]) -> list[int]:
-    """Assign each instruction a drawing sub-step within its layer.
-
-    A layer says "all of this happens in one time step".  Stim, however, renders
-    instructions strictly in the order they appear and does not go back to fill
-    an earlier column, so the *order within a layer* decides whether the layer
-    is drawn as one parallel column or smeared across several.  Emitting
-    ``H 0 | X_ERROR 0 | H 5 | X_ERROR 5`` puts the two ``H`` gates in different
-    columns even though they share a layer.
-
-    The sub-step is an ASAP schedule *inside* the layer in which every
-    instruction consumes its resources — including the ones that are transparent
-    to the layer clock.  Sorting a layer by it groups everything that can be
-    drawn side by side: all first-use instructions, then all second-use ones,
-    and so on.  The example above becomes ``H 0 | H 5 | X_ERROR 0 | X_ERROR 5``,
-    which Stim draws as two columns.
-
-    This is purely presentational and never changes semantics: instructions that
-    share a resource get strictly increasing sub-steps, so their relative order
-    is preserved, and only instructions on disjoint resources can move past one
-    another.
-
-    Parameters
-    ----------
-    qc : QuantumCircuit
-        The circuit the layers were computed for.
-    layers : list[int]
-        The layer of every instruction, as returned by :func:`asap_layers`.
-
-    Returns
-    -------
-    list[int]
-        The sub-step of every instruction in ``qc.data``.  Sort the circuit by
-        ``(layer, substep)`` — stably — to get a layer-parallel instruction
-        order.
-
-    Examples
-    --------
-    >>> from qrisp import QuantumCircuit
-    >>> from qrisp.circuit.pass_management.scheduling import asap_layers, intra_layer_substeps
-    >>> from qrisp.misc.stim_tools import StimNoiseGate
-    >>> qc = QuantumCircuit(2)
-    >>> qc.h(0)
-    >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
-    >>> qc.h(1)
-    >>> qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
-    >>> layers = asap_layers(qc)
-    >>> layers
-    [0, 0, 0, 0]
-    >>> intra_layer_substeps(qc, layers)
-    [0, 1, 0, 1]
-
-    """
-    # Per layer, the next free sub-step of each resource.
-    occupied: dict[int, dict[object, int]] = {}
-    substeps: list[int] = []
-
-    for instr, layer in zip(qc.data, layers, strict=True):
-        resources = [*instr.qubits, *instr.clbits]
-        if not resources:
-            substeps.append(0)
-            continue
-
-        slots = occupied.setdefault(layer, {})
-        substep = max(slots.get(r, 0) for r in resources)
-        for r in resources:
-            slots[r] = substep + 1
-        substeps.append(substep)
-
-    return substeps
+    return asap_schedule(qc).layers

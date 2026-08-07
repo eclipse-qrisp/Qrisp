@@ -104,7 +104,7 @@ def qrisp_to_stim(
     import stim
 
     from qrisp.circuit.operation import ClControlledOperation
-    from qrisp.circuit.pass_management.scheduling import is_full_width_barrier
+    from qrisp.circuit.quantum_circuit import is_full_width_barrier
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )

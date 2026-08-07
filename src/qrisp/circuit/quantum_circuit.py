@@ -2042,8 +2042,8 @@ class QuantumCircuit:
 
         ``TICK`` is a pure annotation: Stim executes instructions in the order
         they are written, so a ``TICK`` never reorders anything and never
-        affects sampling or the detector error model.  Barrier-derived ``TICK``\\ s 
-        therefore only matter for timeline diagrams and for external tools 
+        affects sampling or the detector error model.  Barrier-derived ``TICK``\\ s
+        therefore only matter for timeline diagrams and for external tools
         reading the emitted circuit.
 
         Parameters
@@ -2931,6 +2931,45 @@ class QuantumCircuit:
 
         """
         self.append(ops.IDGate(), [qubits])
+
+
+def is_full_width_barrier(instr: Instruction, qc: QuantumCircuit) -> bool:
+    """Check whether *instr* is a barrier spanning every qubit of *qc*.
+
+    The width of a barrier decides what it means, as described in
+    :meth:`QuantumCircuit.barrier`.  A full-width barrier is a global time
+    boundary and becomes a ``TICK`` in the Stim output.  A partial barrier only
+    fences the qubits it names and produces no ``TICK``.
+
+    Parameters
+    ----------
+    instr : Instruction
+        The instruction to classify.
+    qc : QuantumCircuit
+        The circuit whose register defines "full width".
+
+    Returns
+    -------
+    bool
+        ``True`` if *instr* is a barrier that names all of ``qc.qubits``.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumCircuit
+    >>> from qrisp.circuit import is_full_width_barrier
+    >>> qc = QuantumCircuit(3)
+    >>> qc.barrier()            # no arguments -> spans the whole register
+    >>> qc.barrier([qc.qubits[0]])
+    >>> [is_full_width_barrier(instr, qc) for instr in qc.data]
+    [True, False]
+
+    """
+    if instr.op.name != "barrier":
+        return False
+    if not qc.qubits:
+        # Degenerate register: there is nothing for a barrier to fail to span.
+        return True
+    return len(set(instr.qubits)) == len(qc.qubits)
 
 
 def _convert_qb_item(

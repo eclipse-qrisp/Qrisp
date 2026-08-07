@@ -21,7 +21,8 @@ import pytest
 
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes import promote_barriers
-from qrisp.circuit.pass_management.scheduling import asap_layers, is_full_width_barrier
+from qrisp.circuit.pass_management.scheduling import asap_layers
+from qrisp.circuit.quantum_circuit import is_full_width_barrier
 
 pytest.importorskip("stim")
 

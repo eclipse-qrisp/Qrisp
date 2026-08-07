@@ -23,10 +23,11 @@ from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes import layerize
 from qrisp.circuit.pass_management.scheduling import (
     asap_layers,
-    intra_layer_substeps,
-    is_full_width_barrier,
+    asap_schedule,
+    is_error_channel,
     is_transparent,
 )
+from qrisp.circuit.quantum_circuit import is_full_width_barrier
 from qrisp.circuit.standard_operations import QubitAlloc, QubitDealloc
 
 stim = pytest.importorskip("stim")
@@ -85,9 +86,9 @@ class TestAsapLayersTransparency:
         qc.append(QubitAlloc(), [qc.qubits[1]])
         qc.cx(0, 1)
         qc.append(QubitDealloc(), [qc.qubits[0]])
-        # allocs ride at their qubit's current layer (-1 = untouched), the
-        # dealloc rides in the cx layer, and neither adds a layer of its own.
-        assert asap_layers(qc) == [-1, 0, -1, 1, 1]
+        # The allocs ride along in the layer of the gate they precede and the
+        # dealloc in the layer of the cx; none of them adds a layer of its own.
+        assert asap_layers(qc) == [0, 0, 0, 1, 1]
 
     def test_gphase_is_transparent(self):
         qc = QuantumCircuit(1)
@@ -118,6 +119,56 @@ class TestAsapLayersTransparency:
         qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[0]])
         qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[1]])
         assert asap_layers(qc) == [0, 0, 0, 0]
+
+
+class TestLayerBudget:
+    """Per qubit per layer: one gate, one error channel, any other annotations."""
+
+    def test_one_gate_one_error_and_any_annotations(self):
+        from qrisp.circuit.standard_operations import QubitAlloc, QubitDealloc
+
+        qc = QuantumCircuit(1)
+        qc.append(QubitAlloc(), [qc.qubits[0]])
+        qc.gphase(0.5, 0)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.append(QubitDealloc(), [qc.qubits[0]])
+        # All of it fits in one layer: one gate, one error, three annotations.
+        assert asap_layers(qc) == [0, 0, 0, 0, 0]
+
+    def test_a_second_gate_needs_a_second_layer(self):
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        assert asap_layers(qc) == [0, 1]
+
+    def test_a_second_error_needs_a_second_layer(self):
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.append(StimNoiseGate("Z_ERROR", 0.5), [qc.qubits[0]])
+        assert asap_layers(qc) == [0, 0, 1]
+
+    def test_stacked_errors_delay_the_following_gate(self):
+        """Each error takes a time step, so the gate behind them moves back.
+
+        Deliberate: five errors in a row are five errors, not one time step.  The
+        gate shares the last of those layers, since it needs the gate slot rather
+        than the error slot.
+        """
+        qc = QuantumCircuit(1)
+        for _ in range(5):
+            qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.x(0)
+        assert asap_layers(qc) == [0, 1, 2, 3, 4, 4]
+
+    def test_a_single_error_does_not_delay_the_following_gate(self):
+        """The realistic case: idle noise beside a gate in the same time step."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
+        qc.x(1)
+        assert asap_layers(qc) == [0, 0, 0]
 
 
 class TestAsapLayersOneErrorPerLayer:
@@ -222,16 +273,18 @@ class TestAsapLayersErrorChannels:
         qc.barrier()
         qc.h(1)
 
-        layers = asap_layers(qc)
-        assert layers[1] < layers[2], f"channel crossed the barrier: {layers}"
+        names = [instr.op.name for instr in layerize()(qc).data]
+        assert names.index("stim.DEPOLARIZE1") < names.index("barrier"), names
 
-    def test_bookkeeping_is_not_pulled_forward(self):
-        """Only error channels get the refinement - allocs still float to the front."""
+    def test_bookkeeping_is_not_rationed(self):
+        """Only error channels are one-per-layer; allocation markers are free."""
         qc = QuantumCircuit(2)
         qc.append(QubitAlloc(), [qc.qubits[0]])
         qc.h(0)
-        qc.append(QubitAlloc(), [qc.qubits[1]])
-        assert asap_layers(qc) == [-1, 0, -1]
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        # The alloc must not consume q0's error slot, or the gate noise would be
+        # pushed out of the layer of the gate it annotates.
+        assert asap_layers(qc) == [0, 0, 0]
 
 
 class TestAsapLayersBarriers:
@@ -244,7 +297,7 @@ class TestAsapLayersBarriers:
         qc.h(0)
         qc.h(1)
         # h(1) stays in layer 0: the barrier never named its qubit.
-        assert asap_layers(qc) == [0, 1, 1, 0]
+        assert asap_layers(qc) == [0, 0, 1, 0]
 
     def test_full_width_barrier_synchronises_everything(self):
         qc = QuantumCircuit(2)
@@ -252,16 +305,15 @@ class TestAsapLayersBarriers:
         qc.barrier()
         qc.h(1)
         # h(1) is pushed past the barrier because the barrier names q1 too.
-        assert asap_layers(qc) == [0, 1, 1]
+        assert asap_layers(qc) == [0, 0, 1]
 
-    def test_barrier_opens_the_layer_it_fences_off(self):
-        """The barrier's own layer is the layer of what follows it, not its own."""
+    def test_barrier_closes_the_layer_it_rides_in(self):
+        """A barrier occupies no time step: it is reported in the layer it ends."""
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.barrier()
         qc.h(0)
-        layers = asap_layers(qc)
-        assert layers == [0, 1, 1]
+        assert asap_layers(qc) == [0, 0, 1]
 
     def test_barrier_blocks_two_independent_chains_separately(self):
         """§2.8 of the barrier/TICK design note: a fence on chain A only."""
@@ -300,7 +352,7 @@ class TestAsapLayersBarriers:
         qc.barrier()
         qc.h(0)
         # The second barrier finds no new instructions to fence off.
-        assert asap_layers(qc) == [0, 1, 1, 1]
+        assert asap_layers(qc) == [0, 0, 0, 1]
 
     def test_noise_gate_cannot_drift_back_across_a_barrier(self):
         """A transparent instruction still respects a fence on its own qubit."""
@@ -316,40 +368,51 @@ class TestAsapLayersBarriers:
 # ---------------------------------------------------------------------------
 
 
-class TestIntraLayerSubsteps:
-    """Sub-steps decide how a layer is drawn, not what it means."""
+class TestScheduleOrder:
+    """The emission order groups a layer into parallel columns."""
 
-    def test_disjoint_instructions_share_a_substep(self):
-        qc = QuantumCircuit(4)
+    @staticmethod
+    def _names(qc):
+        schedule = asap_schedule(qc)
+        return [qc.data[i].op.name for i in schedule.order]
+
+    def test_order_is_a_permutation(self):
+        qc = QuantumCircuit(3, 1)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.h(2)
+        qc.measure(qc.qubits[1], qc.clbits[0])
+        assert sorted(asap_schedule(qc).order) == list(range(len(qc.data)))
+
+    def test_order_respects_shared_resources(self):
+        """A topological order: nothing is emitted before something it follows."""
+        qc = QuantumCircuit(3, 1)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.cx(0, 1)
+        qc.h(2)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[2]])
+        qc.barrier([qc.qubits[0]])
+        qc.measure(qc.qubits[0], qc.clbits[0])
+        qc.parity([qc.clbits[0]])
+
+        position = {i: p for p, i in enumerate(asap_schedule(qc).order)}
+        seen: dict[object, int] = {}
+        for i, instr in enumerate(qc.data):
+            for r in [*instr.qubits, *instr.clbits]:
+                if r in seen:
+                    assert position[seen[r]] < position[i], f"{i} overtook {seen[r]}"
+                seen[r] = i
+
+    def test_disjoint_gates_are_emitted_together(self):
+        qc = QuantumCircuit(3)
         qc.h(0)
         qc.h(1)
         qc.h(2)
-        assert intra_layer_substeps(qc, asap_layers(qc)) == [0, 0, 0]
-
-    def test_reuse_of_a_qubit_advances_the_substep(self):
-        """A gate and the channel annotating it share a layer, so the channel
-        needs a second sub-step to be drawn in its own column.
-        """
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
-        qc.x(0)
-        layers = asap_layers(qc)
-        assert layers == [0, 0, 1]
-        assert intra_layer_substeps(qc, layers) == [0, 1, 0]
-
-    def test_substeps_are_per_layer(self):
-        """Each layer counts from zero again."""
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
-        qc.x(0)
-        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
-        assert asap_layers(qc) == [0, 0, 1, 1]
-        assert intra_layer_substeps(qc, asap_layers(qc)) == [0, 1, 0, 1]
+        assert asap_schedule(qc).order == [0, 1, 2]
 
     def test_interleaved_chains_pack_in_parallel(self):
-        """The two chains' gates share a sub-step, and so do their channels."""
+        """Both chains' gates come out together, then both their channels."""
         qc = QuantumCircuit(6)
         qc.h(0)
         qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
@@ -358,24 +421,22 @@ class TestIntraLayerSubsteps:
         qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[5]])
         qc.cx(5, 4)
 
-        layers = asap_layers(qc)
-        substeps = intra_layer_substeps(qc, layers)
-        assert layers == [0, 0, 1, 0, 0, 1]
-        assert substeps == [0, 1, 0, 0, 1, 0]
+        schedule = asap_schedule(qc)
+        assert schedule.layers == [0, 0, 1, 0, 0, 1]
+        assert schedule.order == [0, 3, 1, 4, 2, 5]
 
-    def test_clbits_count_towards_substeps(self):
+    def test_a_gate_and_its_channel_keep_their_order(self):
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.x(0)
+        assert self._names(qc) == ["h", "stim.X_ERROR", "x"]
+
+    def test_parity_follows_its_measurement(self):
         qc = QuantumCircuit(1, 1)
         qc.measure(qc.qubits[0], qc.clbits[0])
         qc.parity([qc.clbits[0]])
-        # The parity shares the clbit with the measurement, so it cannot be
-        # drawn in the same column even though they share a layer.
-        assert asap_layers(qc) == [0, 0]
-        assert intra_layer_substeps(qc, asap_layers(qc)) == [0, 1]
-
-    def test_resource_less_instruction_gets_substep_zero(self):
-        qc = QuantumCircuit(1)
-        qc.h(0)
-        assert intra_layer_substeps(qc, asap_layers(qc)) == [0]
+        assert asap_schedule(qc).order == [0, 1]
 
 
 class TestIsTransparent:

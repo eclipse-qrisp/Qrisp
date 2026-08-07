@@ -515,18 +515,12 @@ class TestLayerizeInsertBarriers:
 
         result = layerize(insert_barriers=True)(qc)
 
-        # No barrier may come between a gate and the channel annotating it, and
-        # the idle channel on q2 stays in the layer it was written into.
+        # Two time steps, so two barriers - and neither of them may come between
+        # a gate and the channel annotating it.
         names = _gate_names(result)
-        assert names == [
-            "h",
-            "stim.DEPOLARIZE1",
-            "stim.DEPOLARIZE1",
-            "barrier",
-            "cx",
-            "stim.DEPOLARIZE2",
-            "barrier",
-        ]
+        assert names.count("barrier") == 2
+        assert names.index("h") < names.index("barrier")
+        assert names.index("cx") > names.index("barrier")
 
         first, second = _moments(result.to_stim())
         assert ("H", (0,)) in first
@@ -535,8 +529,8 @@ class TestLayerizeInsertBarriers:
         assert ("CX", (0, 1)) in second
         assert any(name == "DEPOLARIZE2" and set(targets) == {0, 1} for name, targets in second)
 
-    def test_error_channels_do_not_advance_the_clock(self, _stim):
-        """A run of error channels must not each earn a tick of its own."""
+    def test_no_tick_holds_two_errors_on_one_qubit(self, _stim):
+        """Three errors on one qubit are three errors, so three time steps."""
         from qrisp.misc.stim_tools import StimNoiseGate
 
         qc = QuantumCircuit(1)
@@ -544,9 +538,23 @@ class TestLayerizeInsertBarriers:
         for _ in range(3):
             qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[0]])
 
-        result = layerize(insert_barriers=True)(qc)
-        assert _gate_names(result).count("barrier") == 1
-        assert result.to_stim().num_ticks == 1
+        stim_circuit = layerize(insert_barriers=True)(qc).to_stim()
+        assert stim_circuit.num_ticks == 3
+        for moment in _moments(stim_circuit):
+            noisy = [q for name, qubits in moment if "ERROR" in name or "DEPOLARIZE" in name for q in qubits]
+            assert len(noisy) == len(set(noisy)), f"two errors on one qubit in a tick: {moment}"
+
+    def test_errors_on_disjoint_qubits_share_a_tick(self, _stim):
+        """Only a repeat on the *same* qubit costs a time step."""
+        from qrisp.misc.stim_tools import StimNoiseGate
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(2)
+        for k in (0, 2):
+            qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[k]])
+
+        assert layerize(insert_barriers=True)(qc).to_stim().num_ticks == 1
 
     def test_bookkeeping_does_not_create_a_layer(self, _stim):
         """qb_alloc / qb_dealloc must not earn a TICK of their own."""

@@ -25,23 +25,22 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 def promote_barriers(qc: QuantumCircuit) -> QuantumCircuit:
     """Widen every barrier in the circuit to span the full circuit.
 
-    Only a full-width barrier is a global time boundary, and only a global time
-    boundary becomes a ``TICK`` in the Stim output.  This pass is therefore what
-    gives a Jasp-traced circuit its ``TICK``\\ s: while tracing, the qubits
-    belonging to the program are not known yet, so a barrier can only be written
-    over a static qubit list and comes out partial.  Barriering a **single
-    qubit** is enough — promotion widens whatever it finds, so the traced barrier
-    only has to mark the spot::
+    Only a full-width barrier becomes a ``TICK`` in the Stim output, so this pass
+    is what gives a Jasp-traced circuit its ``TICK``\\ s.  While tracing, the
+    qubits belonging to the program are not known yet, so a barrier can only be
+    written over a static qubit list and comes out partial.  Barriering a
+    **single qubit** is enough: the pass widens whatever it finds, so the traced
+    barrier only has to mark the spot::
 
         trace local barriers → extract to QuantumCircuit → promote_barriers → TICK
 
     .. warning::
 
-        Promotion adds scheduling constraints the circuit did not have.  Qubits
+        Promotion adds scheduling constraints the circuit did not have: qubits
         the original barrier did not name must now synchronise with it, which
-        widens the schedule. When inserting noise automatically, this can inflate
-        the idle-noise budget — every qubit picks up a noise instruction for each
-        time step the promoted barrier creates.
+        widens the schedule.  With automatic noise insertion this also inflates
+        the idle-noise budget, since every qubit picks up a noise instruction for
+        each time step the promoted barrier creates.
 
     Parameters
     ----------

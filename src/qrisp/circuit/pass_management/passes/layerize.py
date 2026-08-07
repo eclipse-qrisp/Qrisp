@@ -21,50 +21,44 @@ from collections.abc import Callable
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.pass_management.scheduling import (
-    asap_layers,
-    intra_layer_substeps,
-    is_full_width_barrier,
+    asap_schedule,
+    is_error_channel,
     is_transparent,
 )
-from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.quantum_circuit import QuantumCircuit, is_full_width_barrier
 
 
 def layerize(insert_barriers: bool = False) -> CircuitPass:
     """Create a pass that reorders instructions into "as-soon-as-possible" (ASAP) layers.
 
-    Each instruction is assigned the earliest layer where all of its qubits
-    (and classical bits) are free.  Instructions that act on disjoint sets of
-    qubits can therefore appear in the same layer, which compacts the
-    timeline.  The relative order of instructions that share a qubit is
-    preserved, so the circuit semantics are unchanged.
+    Each instruction goes in the earliest layer where all of its qubits and
+    classical bits are free, so instructions on disjoint qubits end up in the
+    same layer.  Instructions sharing a qubit keep their relative order, which
+    leaves the circuit semantics unchanged.
 
-    This pass is especially useful before exporting a circuit to Stim: Stim
-    draws gates strictly in the order they appear in the circuit data, so
-    calling this pass first yields a visually compacted timeline diagram.
+    This is mainly useful before exporting to Stim.  Stim draws gates in the
+    order they appear in the circuit, so running this pass first gives a compact
+    timeline diagram.
 
-    Instructions that do not correspond to a physical time step ride along in
-    the layer of the gate they belong to instead of opening a layer of their
-    own: ``qb_alloc`` / ``qb_dealloc``, ``gphase``, ``parity``, barriers and
-    Stim noise channels.  Consequently, running this pass *after* a
-    noise-insertion pass keeps every noise channel adjacent to the gate it
-    annotates.  A qubit does carry at most one noise channel per layer, though —
-    a second error on the same qubit is a second error, and belongs to the next
+    ``qb_alloc`` / ``qb_dealloc``, ``gphase``, ``parity``, barriers and Stim
+    noise channels take no time step of their own and ride along in the layer of
+    the gate they belong to.  Running this pass *after* a noise-insertion pass
+    therefore keeps every noise channel next to its gate.  A qubit does take at
+    most one noise channel per layer: a second error on it belongs to the next
     time step.
 
-    Barriers act on the qubits they name and nothing else, so an instruction
-    on unrelated qubits may legally move past a partial barrier.
+    Barriers only act on the qubits they name, so an instruction on unrelated
+    qubits may move past a partial barrier.
 
     Parameters
     ----------
     insert_barriers : bool, optional
-        If ``True``, emit a full-width barrier at every layer boundary, which
-        turns the ASAP schedule into an explicit time axis: each barrier
-        becomes a ``TICK`` in the Stim output, giving one ``TICK`` per time
-        step.  A boundary that already carries a full-width barrier is left
-        alone, so the pass is idempotent and never produces an empty moment
-        (a doubled ``TICK``).  A *partial* barrier is a local fence rather than
-        a time boundary and does not count as a mark.  The default is
-        ``False``.
+        If ``True``, emit a full-width barrier at every layer boundary.  Each
+        one becomes a ``TICK`` in the Stim output, giving one ``TICK`` per time
+        step.  Boundaries that already carry a full-width barrier are left alone,
+        so the pass stays idempotent and never produces a doubled ``TICK``.  A
+        partial barrier only fences its own qubits and does not count as a
+        boundary.  The default is ``False``.
 
     Returns
     -------
@@ -158,27 +152,23 @@ def layerize(insert_barriers: bool = False) -> CircuitPass:
 
     @CircuitPass
     def _layerize(qc: QuantumCircuit) -> QuantumCircuit:
-        layers = asap_layers(qc)
-        substeps = intra_layer_substeps(qc, layers)
-
-        # Sort instructions by their layer, and within a layer by their drawing
-        # sub-step so that everything Stim can draw side by side is emitted
-        # consecutively.  The sort is stable, which is what keeps the per-qubit
-        # instruction order intact.
-        ordered = sorted(zip(layers, substeps, qc.data, strict=True), key=lambda item: item[:2])
+        # The scheduler already returns the order to emit in: one group of
+        # independent instructions at a time, which is what lets Stim draw a
+        # layer as a single column.
+        schedule = asap_schedule(qc)
+        ordered = [(schedule.layers[i], qc.data[i]) for i in schedule.order]
 
         new_qc = qc.clearcopy()
 
         if not insert_barriers:
-            for *_, instr in ordered:
+            for _, instr in ordered:
                 new_qc.append(instr)
             return new_qc
 
-        # Whether a full-width barrier has been emitted since the last time
-        # step.  Tracking the whole run of transparent instructions rather than
-        # just the immediately preceding one makes the duplicate suppression
-        # independent of where exactly a barrier sorts within its layer, and so
-        # of the scheduler's barrier-layer convention.
+        # Whether a full-width barrier has been emitted since the last time step.
+        # Tracking a whole run rather than just the previous instruction is what
+        # makes the duplicate suppression independent of where a barrier happens
+        # to sit within its layer.
         boundary_marked = False
         previous_step: int | None = None
 
@@ -189,12 +179,10 @@ def layerize(insert_barriers: bool = False) -> CircuitPass:
             new_qc.barrier()
             boundary_marked = True
 
-        for layer, _, instr in ordered:
-            # A barrier *is* a boundary rather than something sitting inside a
-            # time step, so it never opens one.  Everything else belongs to its
-            # layer and must land on the layer's side of the boundary - including
-            # instructions transparent to the layer clock, such as the readout
-            # noise written in front of a measurement.
+        for layer, instr in ordered:
+            # A barrier is a boundary, not something inside a time step, so it
+            # never opens one.  Everything else belongs to its layer and has to
+            # land on that layer's side of the boundary - readout noise included.
             is_barrier = instr.op.name == "barrier"
 
             # Opening a new time step: close the previous one first.
@@ -203,18 +191,17 @@ def layerize(insert_barriers: bool = False) -> CircuitPass:
 
             new_qc.append(instr)
 
-            # Only instructions that occupy a physical time step make their layer
-            # one.  A layer holding nothing but barriers or bookkeeping is not a
-            # time step, so it must not become the reference for the next
-            # boundary - that would add a TICK for an empty moment.
-            if not is_transparent(instr):
+            # A layer holding nothing but barriers or bookkeeping is not a time
+            # step, so it must not become the reference for the next boundary -
+            # that would add a TICK for an empty moment.  A layer holding only
+            # error channels *is* one: an idle error is something happening.
+            if not is_transparent(instr) or is_error_channel(instr):
                 previous_step = layer
                 boundary_marked = False
             elif is_barrier and is_full_width_barrier(instr, new_qc):
                 boundary_marked = True
 
-        # Close the final time step, so the number of TICKs equals the number
-        # of time steps rather than being one short.
+        # Close the final time step, so there are as many TICKs as time steps.
         if previous_step is not None:
             mark_boundary()
 
