@@ -45,6 +45,7 @@ that layer's gate noise has already taken the qubit's error slot.
 from __future__ import annotations
 
 import functools
+from collections import Counter
 from typing import NamedTuple
 
 from qrisp.circuit.instruction import Instruction
@@ -69,6 +70,28 @@ __all__ = [
 # Error channels and instructions acting on nothing are recognised in
 # :func:`is_transparent` itself.
 _TRANSPARENT_OP_NAMES = frozenset({"qb_alloc", "qb_dealloc", "gphase", "parity", "barrier"})
+
+_MEASUREMENT_OP_NAMES = frozenset({"measure", "measurement"})
+
+# A layer is drained one kind of instruction at a time, in this order.  Stim
+# draws instructions in the order they are written, so draining by kind is what
+# gives a layer a gate column, a channel column and a measurement column instead
+# of one column with all three in it.
+#
+# Resets are drained with the gates although Stim's ``R`` is measurement-like: a
+# reset is *followed* by its error channel, so draining it last would push that
+# channel into a second channel round.
+_KIND_GATE = 0
+_KIND_ERROR = 1
+_KIND_MEASUREMENT = 2
+# A barrier ends its layer, so it must not close its qubits while rounds of that
+# layer are still to come.
+_KIND_BARRIER = 3
+# Bookkeeping draws nothing and costs nothing, so it is taken on sight in
+# whichever round it turns up in rather than waiting for a turn of its own.
+_KIND_BOOKKEEPING = 4
+
+_DRAIN_ORDER = (_KIND_GATE, _KIND_ERROR, _KIND_MEASUREMENT, _KIND_BARRIER)
 
 
 @functools.lru_cache(maxsize=1)
@@ -167,6 +190,24 @@ def _resources(instr: Instruction) -> list:
     return [*instr.qubits, *instr.clbits]
 
 
+def _kind(instr: Instruction) -> int:
+    """Return which round of its layer *instr* is drained in.
+
+    See ``_DRAIN_ORDER``.  ``_KIND_BOOKKEEPING`` is not in that order: such an
+    instruction is taken in whichever round it becomes available in rather than
+    waiting for a round of its own.
+    """
+    if instr.op.name == "barrier":
+        return _KIND_BARRIER
+    if is_error_channel(instr):
+        return _KIND_ERROR
+    if is_transparent(instr):
+        return _KIND_BOOKKEEPING
+    if instr.op.name in _MEASUREMENT_OP_NAMES:
+        return _KIND_MEASUREMENT
+    return _KIND_GATE
+
+
 def _dependency_graph(qc: QuantumCircuit) -> tuple[list[int], list[list[int]]]:
     """Link consecutive instructions on a shared resource.
 
@@ -247,8 +288,8 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
     which is what :func:`~qrisp.layerize` does.
 
     ``order`` is a topological order, so emitting in it preserves the circuit
-    semantics.  Each group in it acts on disjoint resources, which is what lets
-    Stim draw a layer as a single column.
+    semantics.  Instructions that share a layer come out consecutively, in groups
+    acting on disjoint resources.
 
     Stacking more error channels on a qubit than there are layers to hold them
     pushes that qubit's next gate later, since each error takes a time step of
@@ -311,30 +352,62 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
         elif not is_transparent(instr):
             gates.update(resources)
 
+    # How often each qubit has been used in the layer being built.  Cleared per
+    # layer, since that is where a fresh column starts.
+    used: Counter = Counter()
+
     while ready:
         gates.clear()
         errors.clear()
         closed.clear()
+        used.clear()
 
-        # Fill the layer in groups.  Every instruction in ``ready`` acts on
-        # resources disjoint from the others, since two instructions sharing one
-        # are always linked, so a whole group can be admitted at once.  Releasing
-        # it unblocks successors, which may still fit - a gate's error channel,
-        # say - so keep going until nothing does.
-        while True:
-            group = sorted(i for i in ready if fits(i))
-            if not group:
-                break
-            for i in group:
-                occupy(i)
-                layers[i] = layer
-                order.append(i)
-                ready.discard(i)
-            for i in group:
-                for j in successors[i]:
-                    remaining[j] -= 1
-                    if remaining[j] == 0:
-                        ready.add(j)
+        # Fill the layer one kind at a time: every gate that fits, then every
+        # error channel, then every measurement, then the barriers.  Each round
+        # is emitted as one group, which is what Stim draws as one column.
+        #
+        # Within a round, every instruction in ``ready`` acts on resources
+        # disjoint from the others, since two instructions sharing one are always
+        # linked, so the whole group can be admitted at once.  Releasing it
+        # unblocks successors, which may be of the same kind and still fit - a
+        # gate behind an allocation marker, say - so each round repeats until
+        # nothing of its kind is left.
+        #
+        # The whole sweep then repeats until it admits nothing, because draining
+        # one kind can release an instruction of a kind already drained: the gate
+        # behind an idle channel shares a time step with the gate beside it, and
+        # a single sweep would push it into the next one.
+        progress = True
+        while progress:
+            progress = False
+            for kind in _DRAIN_ORDER:
+                while True:
+                    group = [i for i in ready if _kind(data[i]) in (kind, _KIND_BOOKKEEPING) and fits(i)]
+                    if not group:
+                        break
+                    progress = True
+
+                    # Lead with whatever sits on the busiest qubits of the layer
+                    # so far.  Stim only starts a new column where a target
+                    # collides with the column it is filling, so a round whose
+                    # first instruction happens to miss the previous one gets
+                    # drawn inside it and the round is split in two.  Every
+                    # instruction here acts on resources disjoint from the
+                    # others, so reordering them is free; ``i`` keeps it
+                    # deterministic.
+                    group.sort(key=lambda i: (-sum(used[q] for q in data[i].qubits), i))
+                    used.update(q for i in group for q in data[i].qubits)
+
+                    for i in group:
+                        occupy(i)
+                        layers[i] = layer
+                        order.append(i)
+                        ready.discard(i)
+                    for i in group:
+                        for j in successors[i]:
+                            remaining[j] -= 1
+                            if remaining[j] == 0:
+                                ready.add(j)
 
         layer += 1
 
