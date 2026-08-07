@@ -30,7 +30,7 @@ Bug Fixes
 * Fixed a bug where :func:`prepare <qrisp.prepare>` with ``method="qswitch"``
   raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
   :func:`control <qrisp.control>` environment in Jasp mode
-  (`Issue #412 <https://github.com/eclipse-qrisp/Qrisp/issues/412>`_).
+  (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
 Compatibility
 -------------
