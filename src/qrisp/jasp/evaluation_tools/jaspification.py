@@ -251,6 +251,40 @@ def stimulate(func: Callable) -> Callable:
     return return_function
 
 
+def _try_terminal_sampling(
+    eqn: JaxprEqn,
+    context_dic: ContextDict,
+    eqn_evaluator: Callable,
+    function_name: str,
+    jaxpr: Jaxpr,
+) -> bool:
+    """Handle eqn via the terminal-sampling evaluator, if function_name names one.
+
+    Returns
+    -------
+    bool
+        True if eqn was fully handled by a terminal-sampling evaluator.
+
+    """
+    translation_dic = {
+        "expectation_value_eval_function": "ev",
+        "sampling_eval_function": "array",
+        "dict_sampling_eval_function": "dict",
+    }
+
+    if function_name not in translation_dic:
+        return False
+
+    if _jaspr_has_name(jaxpr, "sampling_helper_2_mixed"):
+        raise ValueError(
+            "Terminal sampling does not support classical "
+            "return values. Use terminal_sampling=False "
+            "to sample with classical returns."
+        )
+    terminal_sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator=eqn_evaluator)
+    return True
+
+
 def _process_jit_equation(
     eqn: JaxprEqn,
     context_dic: ContextDict,
@@ -273,16 +307,8 @@ def _process_jit_equation(
     function_name = eqn.params["name"]
     jaxpr = eqn.params["jaxpr"]
 
-    if terminal_sampling:
-        translation_dic = {
-            "expectation_value_eval_function": "ev",
-            "sampling_eval_function": "array",
-            "dict_sampling_eval_function": "dict",
-        }
-
-        if function_name in translation_dic:
-            terminal_sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator=eqn_evaluator)
-            return False
+    if terminal_sampling and _try_terminal_sampling(eqn, context_dic, eqn_evaluator, function_name, jaxpr):
+        return False
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -402,3 +428,19 @@ def compile_cl_func(jaxpr: Jaxpr, function_name: str) -> tuple[Callable, list[bo
 
     """
     return jax.jit(eval_jaxpr(jaxpr)), [True]
+
+
+def _jaspr_has_name(jaxpr, target_name):
+    """Return True if *target_name* appears as a ``jit`` call name in *jaxpr*
+    or its nested sub-jaxprs, skipping ``user_func`` subtrees."""
+    for eqn in jaxpr.jaxpr.eqns:
+        if eqn.primitive.name == "jit":
+            if eqn.params.get("name") == target_name:
+                return True
+            if eqn.params.get("name") == "user_func":
+                continue  # don't descend into arbitrary user state-prep
+        for key in ("jaxpr", "body_jaxpr"):
+            sub = eqn.params.get(key)
+            if sub is not None and _jaspr_has_name(sub, target_name):
+                return True
+    return False

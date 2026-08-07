@@ -7,6 +7,28 @@ Qrisp 0.10 continues to push the boundaries of high-level quantum programming.
 This release brings a streamlined contribution experience with automated
 changelog enforcement.
 
+New Features
+------------
+
+- **sample() and expectation_value() now accept arbitrary return values**
+  Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
+  :func:`~qrisp.jasp.expectation_value`) may now return classical values
+  from mid-circuit measurements, ``QuantumVariable``\ s, or a mixture of
+  both.  Previously only ``QuantumVariable`` returns were supported.
+  ``QuantumVariable``\ s in the return are automatically measured and
+  decoded; classical values are interleaved in-place.
+
+  Terminal sampling (decorator and Japify with ``terminal_sampling=True``) 
+  rejects kernels that return classical values with a descriptive 
+  error — use ``terminal_sampling=False`` (the default) for those cases.
+
+Improvements
+------------
+
+- Updated docstrings for ``sample()``, ``expectation_value()``, and
+  ``terminal_sampling()`` to use "sampling kernel" terminology and document
+  the new arbitrary-return-value capability.
+
 Other New Features
 ------------------
 
@@ -72,8 +94,10 @@ Development
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
 
-* Added pytest coverage reporting to the CI test workflow
-  (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_).
+* Added pytest coverage reporting to the CI test workflow and selective
+  coverage reporting for the ``qrisp`` package.
+  (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
+   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
 * Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
   subsystem, consolidating control-flow, equation-copying, and caching logic
