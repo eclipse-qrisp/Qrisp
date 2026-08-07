@@ -37,8 +37,6 @@ jobs:
       - name: Codespell
         run: |
           codespell || {
-            echo "::warning::The Qrisp project uses American English. Found spelling issues (see above)."
-            echo "::warning::Run 'codespell' locally to see the full list, or 'codespell -w' to auto-fix."
-            echo "::warning::To suppress: add '# codespell:ignore' to the line, or add the keyword to 'ignore-words-list' in pyproject.toml."
+            echo "::warning title=Codespell::The Qrisp project uses American English. Found spelling issues (see above).%0ARun 'codespell' locally to see the full list, or 'codespell -w' to auto-fix.%0ATo suppress: add '# codespell:ignore' to the line, or add the keyword to 'ignore-words-list' in pyproject.toml."
             exit 1
           }
