@@ -53,6 +53,26 @@ Bug Fixes
   single carried value, uncovered while removing duplicated interpreter
   code across four execution backends
   (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+  
+* Fixed :class:`~qrisp.interface.QiskitBackend` failing with
+  ``OverflowError: int too big to convert`` — or, for small classical
+  registers, silently returning wrong counts — on providers that report
+  measurement results as binary rather than hexadecimal strings, such as
+  ``qiskit-iqm``.  Circuits are now submitted through the wrapped backend's
+  own ``run()`` method and counts are read via ``Result.get_counts()``,
+  instead of going through Qiskit's ``BackendSamplerV2`` primitive, which
+  rebuilds counts from the hex-encoded ``memory`` field.
+  :class:`~qrisp.interface.QiskitRuntimeBackend` continues to use
+  ``SamplerV2``, which IBM Runtime requires.  Passing a real IBM Quantum
+  backend to :class:`~qrisp.interface.QiskitBackend` now raises a ``TypeError``
+  pointing at :class:`~qrisp.interface.QiskitRuntimeBackend`; IBM *fake*
+  backends are unaffected
+  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/788>`_).
+
+* Fixed a bug where :func:`prepare <qrisp.prepare>` with ``method="qswitch"``
+  raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
+  :func:`control <qrisp.control>` environment in Jasp mode
+  (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
 Compatibility
 -------------

@@ -102,7 +102,30 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         invars = list(eqn.invars)
         if isinstance(eqn.params["jaxpr"], Jaspr):
-            new_params["jaxpr"] = new_params["jaxpr"].control(1)
+            orig_jaxpr = eqn.params["jaxpr"]
+            controlled_jaxpr = orig_jaxpr.control(1)
+
+            # Jaspr.control() may retrieve a pre-cached ctrl_jaspr (populated
+            # by the custom_control decorator's own retrace via make_jaspr),
+            # or build one via multi_control_jaspr. Either way, values that
+            # are only used inside nested jit/cond/while sub-equations (e.g.
+            # arrays closed over by q_switch case functions) can end up
+            # reclassified as unexpected constvars during that retrace. Fold
+            # any such constvars back into genuine invars so the wrapping
+            # equation's invars line up with the controlled callee's real
+            # invars, see fold_extra_constvars_into_invars.
+            from qrisp.jasp.jasp_expression.inv_transform import fold_extra_constvars_into_invars
+
+            # controlled_jaxpr.invars starts with the newly added control
+            # qubit (see custom_control_environment.ammended_func /
+            # multi_control_jaspr), so any newly introduced constvars must be
+            # folded back in right after it to line up with the wrapping
+            # equation's [ctrl_qubit_var] + eqn.invars ordering.
+            normalized = fold_extra_constvars_into_invars(controlled_jaxpr, len(orig_jaxpr.constvars), insert_at=1)
+            if normalized is not controlled_jaxpr:
+                controlled_jaxpr = Jaspr(normalized)
+
+            new_params["jaxpr"] = controlled_jaxpr
             new_params["name"] = "c" + new_params["name"]
 
             invars = [ctrl_qubit_var] + eqn.invars
