@@ -27,7 +27,7 @@ def promote_barriers(qc: QuantumCircuit) -> QuantumCircuit:
 
     Only a full-width barrier becomes a ``TICK`` in the Stim output, so this pass
     is what gives a Jasp-traced circuit its ``TICK``\\ s.  While tracing, the
-    qubits belonging to the program are not known yet, so a barrier can only be
+    qubits belonging to the program are not yet concrete, so a barrier can only be
     written over a static qubit list and comes out partial.  Barriering a
     **single qubit** is enough: the pass widens whatever it finds, so the traced
     barrier only has to mark the spot::
