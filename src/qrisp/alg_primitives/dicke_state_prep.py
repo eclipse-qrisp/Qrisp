@@ -16,22 +16,29 @@
 """
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, get_args, TypeAlias, assert_never
 
 import jax.numpy as jnp
-from jax import lax
+from jax import lax, Array
 from jax.scipy.special import gammaln
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, ry, x
 from qrisp.environments import control
-from qrisp.jasp import jlen, jrange, q_cond, q_fori_loop
+from qrisp.jasp import jlen, jrange, q_cond
+
+# The state preparation methods that :func:`dicke_state` knows about.
+DickeStateMethod: TypeAlias = Literal["deterministic", "divide-and-conquer"]
+
+# The same methods as a runtime tuple, derived from ``DickeStateMethod`` so that the two cannot drift apart.
+_METHODS: tuple[DickeStateMethod, ...] = get_args(DickeStateMethod)
+
 
 
 def dicke_state(
     qv: QuantumVariable | Sequence[Qubit],
-    k: int,
-    method: Literal["deterministic", "divide-and-conquer"] = "divide-and-conquer",
+    k: int | Array,
+    method: DickeStateMethod = "divide-and-conquer",
 ) -> None:
     """Dicke State initialization of a QuantumVariable.
 
@@ -52,6 +59,11 @@ def dicke_state(
         https://arxiv.org/pdf/2112.12435. The code largely uses the notation from these two papers.
 
 
+    Raises
+    ------
+    ValueError
+        If ``method`` is neither "deterministic" nor "divide-and-conquer".
+
     Examples
     --------
     We initiate a QuantumVariable in the "0011" state and from this create the Dicke state with Hamming weight 2.
@@ -67,13 +79,16 @@ def dicke_state(
         dicke_state(qv, 2)
 
     """
+    if method not in _METHODS:
+        raise ValueError(f"Unknown `method`: {method!r}. Possible methods are: {', '.join(map(repr, _METHODS))}.")
+
     n = jlen(qv)
 
     # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
     large_k = k > n // 2
     # Partially undo the initial state, reducing its Hamming weight from k to n-k.
-    q_cond(large_k, x, lambda qv: qv, qv[n - k : k])  # Equivalent to: `if large_k: x(qv[n-k:k])`
-    k = lax.cond(large_k, lambda k: n - k, lambda k: k, k)  # Equivalent to: `k = n - k if large_k else k`
+    q_cond(large_k, x, lambda qv: qv, qv[n - k: jnp.maximum(k, n - k)])  # Equivalent to: `if large_k: x(qv[n-k:k])`
+    k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`
 
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
@@ -87,29 +102,44 @@ def dicke_state(
         _apply_dicke_unitary(qv[n1:], n2, k)
 
     else:
-        raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
+        assert_never(method)
 
-    # If we were prepating D(n, n-k), now we apply the X gates to transform it into D(n, k).
+    # If we were preparing D(n, n-k), now we apply the X gates to transform it into D(n, k).
     q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
 
 
-def _log_binom(n: int, k: int) -> float:
-    r"""Jasp/Jax-traceable way to calculate :math:`\log{\binom{n}{k}}`.
-    
-    Returns ``-inf`` outside ``0 <= k <= n``.
+def _log_binom(n: int | Array, k: int | Array) -> Array:
+    r"""Compute :math:`\log \binom{n}{k}` in a Jasp/Jax-traceable way.
+ 
+    Staying in log space keeps the intermediate values finite: :math:`\binom{n}{k}` itself overflows a 64 bit float
+    at around :math:`n = 1030`, while its logarithm does not.
+ 
+    Parameters
+    ----------
+    n : int
+        The size of the set to choose from. May be a traced value.
+    k : int
+        The number of elements to choose. May be a traced value.
+ 
+    Returns
+    -------
+    Array
+        A float64 scalar holding :math:`\log \binom{n}{k}`, or ``-jnp.inf`` outside of ``0 <= k <= n``, i.e. wherever
+        the binomial coefficient vanishes.
+ 
     """
-    n = jnp.asarray(n, dtype=jnp.float64)
-    k = jnp.asarray(k, dtype=jnp.float64)
-    valid = (k >= 0) & (k <= n)
-    k_safe = jnp.clip(k, 0.0, jnp.maximum(n, 0.0))
+    n_f = jnp.asarray(n, dtype=jnp.float64)
+    k_f = jnp.asarray(k, dtype=jnp.float64)
+    valid = (k_f >= 0) & (k_f <= n_f)
+    k_safe = jnp.clip(k_f, 0.0, jnp.maximum(n_f, 0.0))
     return jnp.where(
         valid,
-        gammaln(n + 1.0) - gammaln(k_safe + 1.0) - gammaln(n - k_safe + 1.0),
+        gammaln(n_f + 1.0) - gammaln(k_safe + 1.0) - gammaln(n_f - k_safe + 1.0),
         -jnp.inf,
     )
 
 
-def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
+def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Array, k: int | Array) -> None:
     r"""Execute the "divide" step of the "divide-and-conquer" method of creating Dicke states.
 
     This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by
@@ -140,29 +170,37 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
 
     """
-    n = n1 + n2
-    log_total = _log_binom(n, k)
 
-    def weight(i):
-        """w_i = x_i / C(n, k); the w_i sum to 1."""
-        return jnp.exp(_log_binom(n1, i) + _log_binom(n2, k - i) - log_total)
+    def log_x(i: int | Array) -> Array:
+        r"""Compute :math:`\log x_i`, following :math:`x_i` from page 8 of https://arxiv.org/pdf/2112.12435.
 
-    def tail(i):
-        """s_i / C(n, k) = sum_{j >= i} w_j.
+        That is, :math:`x_i = \binom{n_1}{i} \binom{n_2}{k-i}`, which is ``-jnp.inf`` in log space whenever one of
+        the two binomial coefficients vanishes.
+        """
+        return _log_binom(n1, i) + _log_binom(n2, k - i)
 
-        Recomputed from scratch rather than carried, so that each iteration of
-        the quantum loop depends only on i and the loop stays invertible. This
-        is O(k) per step, but it is classical arithmetic with no quantum
-        operations in it.
+    def log_s(i: int | Array) -> Array:
+        r"""Compute :math:`\log s_i`, following :math:`s_i = \sum_{j \geq i} x_j` from the same page of the paper.
+
+        Accumulating with ``jnp.logaddexp`` keeps the sum in log space throughout, so neither :math:`x_i` nor
+        :math:`s_i` ever has to be represented as a float. Only their ratio leaves log space, and that ratio lies in
+        :math:`[0, 1]` by construction.
+
+        The sum is recomputed from scratch for every ``i`` rather than carried between iterations, so that each
+        iteration of the quantum loop depends only on ``i`` and the loop stays invertible. This costs
+        :math:`\mathcal{O}(k)` per step, but it is classical arithmetic with no quantum operations in it.
         """
         return lax.fori_loop(
-            i, k + 1,
-            lambda j, acc: acc + weight(j),
-            jnp.asarray(0.0, dtype=jnp.float64),
+            i,
+            k + 1,
+            lambda j, acc: jnp.logaddexp(acc, log_x(j)),
+            jnp.asarray(-jnp.inf, dtype=jnp.float64),
         )
 
-    def angle(i):
-        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(weight(i) / tail(i), 0.0, 1.0)))
+    def angle(i: int | Array) -> Array:
+        r"""Compute the rotation angle :math:`2 \arccos \sqrt{x_i / s_i}` for the (controlled) RY gate at step ``i``."""
+        ratio = jnp.exp(log_x(i) - log_s(i))
+        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(ratio, 0.0, 1.0)))
 
     # i = 0 is the only iteration without a control qubit.
     for _ in jrange(jnp.where(k > 0, 1, 0)):
@@ -176,23 +214,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
         cx(qv[n1 - 1 - i], qv[n1 + n2 - k + i])
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
+def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k: int | Array) -> None:
     """Apply the Dicke unitary constructed according to Lemma 2 in https://arxiv.org/pdf/1904.07358.
 
     Parameters
@@ -214,7 +236,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) 
         split_cycle_shift(qv, index, index - 1)
 
 
-def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, lowIndex: int) -> None:
+def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int | Array, lowIndex: int | Array) -> None:
     """Apply the *Split & Cyclic Shift* unitary :math:`SCS_{n, k}` defined in https://arxiv.org/abs/1904.07358.
 
     Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to `qv` in place.
