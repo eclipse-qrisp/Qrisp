@@ -15,18 +15,17 @@
 ********************************************************************************
 """
 
-import math
 from collections.abc import Sequence
-from itertools import accumulate
 from typing import Literal
 
 import jax.numpy as jnp
 from jax import lax
+from jax.scipy.special import gammaln
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, ry, x
 from qrisp.environments import control
-from qrisp.jasp import jlen, jrange, q_cond
+from qrisp.jasp import jlen, jrange, q_cond, q_fori_loop
 
 
 def dicke_state(
@@ -91,8 +90,23 @@ def dicke_state(
         raise ValueError(f"Unknown `method`: {method}. Possible methods are: 'deterministic' and 'divide-and-conquer'.")
 
     # If we were prepating D(n, n-k), now we apply the X gates to transform it into D(n, k).
-    if large_k:
-        x(qv)
+    q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
+
+
+def _log_binom(n: int, k: int) -> float:
+    r"""Jasp/Jax-traceable way to calculate :math:`\log{\binom{n}{k}}`.
+    
+    Returns ``-inf`` outside ``0 <= k <= n``.
+    """
+    n = jnp.asarray(n, dtype=jnp.float64)
+    k = jnp.asarray(k, dtype=jnp.float64)
+    valid = (k >= 0) & (k <= n)
+    k_safe = jnp.clip(k, 0.0, jnp.maximum(n, 0.0))
+    return jnp.where(
+        valid,
+        gammaln(n + 1.0) - gammaln(k_safe + 1.0) - gammaln(n - k_safe + 1.0),
+        -jnp.inf,
+    )
 
 
 def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> None:
@@ -126,21 +140,56 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int, n2: int, k: int) -> 
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
 
     """
-    # Variables that follow :math:`x_i` and :math:`s_i` from the paper https://arxiv.org/pdf/2112.12435 (page 8).
-    xi = [math.comb(n1, i) * math.comb(n2, k - i) for i in range(k + 1)]
-    si = list(accumulate(reversed(xi)))
-    si.reverse()
+    n = n1 + n2
+    log_total = _log_binom(n, k)
 
-    for i in range(k):
-        param = 2 * jnp.arccos(jnp.sqrt(xi[i] / si[i]))
-        if i == 0:
-            ry(param, qv[n1 - 1 - i])
-        else:
-            with control(qv[n1 - i]):
-                ry(param, qv[n1 - 1 - i])
+    def weight(i):
+        """w_i = x_i / C(n, k); the w_i sum to 1."""
+        return jnp.exp(_log_binom(n1, i) + _log_binom(n2, k - i) - log_total)
 
-    for i in range(k):
+    def tail(i):
+        """s_i / C(n, k) = sum_{j >= i} w_j.
+
+        Recomputed from scratch rather than carried, so that each iteration of
+        the quantum loop depends only on i and the loop stays invertible. This
+        is O(k) per step, but it is classical arithmetic with no quantum
+        operations in it.
+        """
+        return lax.fori_loop(
+            i, k + 1,
+            lambda j, acc: acc + weight(j),
+            jnp.asarray(0.0, dtype=jnp.float64),
+        )
+
+    def angle(i):
+        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(weight(i) / tail(i), 0.0, 1.0)))
+
+    # i = 0 is the only iteration without a control qubit.
+    for _ in jrange(jnp.where(k > 0, 1, 0)):
+        ry(angle(0), qv[n1 - 1])
+
+    for i in jrange(1, k):
+        with control(qv[n1 - i]):
+            ry(angle(i), qv[n1 - 1 - i])
+
+    for i in jrange(k):
         cx(qv[n1 - 1 - i], qv[n1 + n2 - k + i])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) -> None:
@@ -156,7 +205,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int, k: int) 
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
 
     """
-    for offset in jrange(n - k):
+    for offset in jrange(jnp.where(k > 0, n - k, 0)): # If `k == 0`, we don't execute anything. D(n, 0) = |00 ... 0>
         index2 = n - offset
         split_cycle_shift(qv, index2, k)
 
@@ -180,9 +229,6 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, low
         Index for indication of preparation steps, as seen in original algorithm.
 
     """
-    if len(qv) == 1:
-        return  # If there is just one qubit, do nothing.
-
     # index == highIndex
     param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
     cx(qv[highIndex - 2], qv[highIndex - 1])
