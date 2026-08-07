@@ -58,8 +58,11 @@ Bug Fixes
   instead of going through Qiskit's ``BackendSamplerV2`` primitive, which
   rebuilds counts from the hex-encoded ``memory`` field.
   :class:`~qrisp.interface.QiskitRuntimeBackend` continues to use
-  ``SamplerV2``, which IBM Runtime requires
-  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  ``SamplerV2``, which IBM Runtime requires.  Passing a real IBM Quantum
+  backend to :class:`~qrisp.interface.QiskitBackend` now raises a ``TypeError``
+  pointing at :class:`~qrisp.interface.QiskitRuntimeBackend`; IBM *fake*
+  backends are unaffected
+  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/788>`_).
 
 Compatibility
 -------------

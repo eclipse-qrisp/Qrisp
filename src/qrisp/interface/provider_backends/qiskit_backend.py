@@ -67,6 +67,15 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
     return mapping.get(name, JobStatus.RUNNING)
 
 
+def _is_ibm_runtime_backend(backend) -> bool:
+    """Whether *backend* is a real IBM Quantum backend (fake backends run locally and are not)."""
+    try:
+        from qiskit_ibm_runtime import IBMBackend
+    except ImportError:
+        return False  # optional dependency: no IBM backend can be present
+    return isinstance(backend, IBMBackend)
+
+
 def _merge_counts(counts: Mapping) -> dict:
     """Strip register separators from bitstring keys, summing any keys that collide.
 
@@ -259,6 +268,13 @@ class QiskitBackend(Backend):
     options : dict or None, optional
         Runtime options.  Defaults to ``{"shots": 1000}``.
 
+    Raises
+    ------
+    TypeError
+        If *backend* is a real IBM Quantum backend, which cannot run through
+        ``Backend.run()``. Use :class:`QiskitRuntimeBackend` for those. IBM
+        *fake* backends run locally and are supported here.
+
     Examples
     --------
     **Simulation on the Aer simulator**
@@ -328,6 +344,10 @@ class QiskitBackend(Backend):
     #: that submit differently pair their own :class:`QiskitJob` subclass here.
     _job_class: type[QiskitJob] = QiskitJob
 
+    #: False because :meth:`_submit` uses ``Backend.run()``, which IBM removed.
+    #: :class:`QiskitRuntimeBackend` sets it True and submits via ``SamplerV2``.
+    _supports_ibm_runtime = False
+
     def __init__(
         self,
         backend: QiskitBackendBase | None = None,
@@ -335,6 +355,12 @@ class QiskitBackend(Backend):
         options: Mapping | None = None,
     ):
         """Initialise the QiskitBackend, defaulting to AerSimulator if no backend is provided."""
+        if not self._supports_ibm_runtime and _is_ibm_runtime_backend(backend):
+            raise TypeError(
+                "QiskitBackend cannot execute IBM Quantum backends, because IBM removed "
+                "support for Backend.run(). Use QiskitRuntimeBackend instead."
+            )
+
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator
@@ -537,6 +563,7 @@ class QiskitRuntimeBackend(QiskitBackend):
     """
 
     _job_class = QiskitRuntimeJob
+    _supports_ibm_runtime = True
 
     def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None):
         try:

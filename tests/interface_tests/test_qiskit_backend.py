@@ -562,6 +562,25 @@ class TestQiskitBackendConstruction:
         backend = QiskitBackend(backend=mock_device)
         assert backend.options["shots"] == 1024
 
+    @_skip_if_no_runtime
+    def test_real_ibm_backend_rejected_with_pointer_to_runtime_backend(self):
+        """Real IBM backends cannot run via Backend.run(), so they are refused early.
+
+        Without this, passing a service.least_busy() result here fails much later
+        with an opaque IBMBackendError from inside the job.
+        """
+        from qiskit_ibm_runtime import IBMBackend
+
+        with pytest.raises(TypeError, match="QiskitRuntimeBackend"):
+            QiskitBackend(backend=MagicMock(spec=IBMBackend))
+
+    @_skip_if_no_runtime
+    def test_fake_ibm_backend_is_accepted(self):
+        """Fake IBM backends execute locally and must not be caught by the guard."""
+        from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+
+        assert QiskitBackend(backend=FakeWashingtonV2()).run(_simple_circuit(), shots=20)
+
 
 class TestQiskitBackendIntegration:
     """End-to-end tests that use a real AerSimulator and real SamplerV2."""
