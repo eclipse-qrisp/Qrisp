@@ -439,6 +439,154 @@ class TestScheduleOrder:
         assert asap_schedule(qc).order == [0, 1]
 
 
+class TestScheduleDrainsByKind:
+    """A layer is emitted one kind at a time, so each kind gets its own column."""
+
+    @staticmethod
+    def _names(qc):
+        schedule = asap_schedule(qc)
+        return [qc.data[i].op.name for i in schedule.order]
+
+    def test_gates_come_before_the_channels_of_their_layer(self):
+        """An idle channel must not be drawn beside the gate it idles through."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[1]])  # q1 idles
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[0]])  # gate noise
+        qc.h(2)
+
+        # One layer, and the two gates are drained before either channel.
+        assert asap_layers(qc) == [0, 0, 0, 0]
+        assert self._names(qc) == ["h", "h", "stim.DEPOLARIZE1", "stim.DEPOLARIZE1"]
+
+    def test_measurements_come_after_the_channels_of_their_layer(self):
+        qc = QuantumCircuit(2, 1)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])  # readout noise
+        qc.measure(qc.qubits[0], qc.clbits[0])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[1]])  # q1 idles
+
+        assert asap_layers(qc) == [0, 0, 0]
+        assert self._names(qc) == ["stim.X_ERROR", "stim.DEPOLARIZE1", "measure"]
+
+    def test_a_reset_drains_with_the_gates_not_the_measurements(self):
+        """Its channel follows it, so draining it last would need a second round."""
+        qc = QuantumCircuit(2)
+        qc.reset(0)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[1]])
+
+        assert self._names(qc) == ["reset", "stim.X_ERROR", "stim.DEPOLARIZE1"]
+
+    def test_all_three_kinds_in_one_layer(self):
+        """A gate, a reset, channels and a measurement: three rounds, in order."""
+        qc = QuantumCircuit(4, 1)
+        qc.h(0)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[0]])
+        qc.reset(3)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[3]])
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[1]])
+        qc.measure(qc.qubits[1], qc.clbits[0])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[2]])
+
+        assert set(asap_layers(qc)) == {0}, "everything belongs to one time step"
+        assert self._names(qc) == [
+            "h",
+            "reset",
+            "stim.DEPOLARIZE1",
+            "stim.X_ERROR",
+            "stim.X_ERROR",
+            "stim.DEPOLARIZE1",
+            "measure",
+        ]
+
+    def test_bookkeeping_does_not_split_the_gate_column(self):
+        """Bookkeeping is taken as it turns up, not in a round of its own."""
+        qc = QuantumCircuit(2, 1)
+        qc.h(0)
+        qc.gphase(0.5, 0)
+        qc.h(1)
+
+        # Both gates stay adjacent: the gphase follows the gate round it was
+        # released in instead of landing between them and splitting the column.
+        assert self._names(qc) == ["h", "h", "gphase"]
+        assert asap_layers(qc) == [0, 0, 0]
+
+    def test_kind_order_never_overtakes_a_dependency(self):
+        """A channel written after a measurement stays after it."""
+        qc = QuantumCircuit(1, 1)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.measure(qc.qubits[0], qc.clbits[0])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[0]])
+
+        # The second channel cannot join the measurement's layer (the error slot
+        # is taken), and it must not be pulled into the earlier channel round.
+        assert asap_layers(qc) == [0, 0, 1]
+        assert self._names(qc) == ["stim.X_ERROR", "measure", "stim.DEPOLARIZE1"]
+
+    def test_barriers_drain_last(self):
+        """A barrier ends its layer, so it must not close it early.
+
+        The partial barrier names only ``q0``, so it becomes ready as soon as
+        ``h(0)`` is out -- while ``q1``'s channel is still pending.  Taking it on
+        sight would emit it in the middle of the layer it closes.
+        """
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.5), [qc.qubits[1]])
+        qc.barrier([qc.qubits[0]])
+
+        assert asap_layers(qc) == [0, 0, 0, 0]
+        assert self._names(qc) == ["h", "h", "stim.DEPOLARIZE1", "barrier"]
+
+    def test_a_round_leads_with_the_busiest_qubits(self):
+        """A round must open its column, not be drawn inside the previous one.
+
+        Stim starts a new column only where a target collides with the column it
+        is filling.  ``q0``'s channel has the lower index but collides with
+        nothing, so draining it first would leave it inside the ``cx`` column and
+        let ``q2``'s channel open the next one - splitting one round over two
+        columns.  The channel on the qubit the ``cx`` just used has to go first.
+        """
+        qc = QuantumCircuit(4)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])  # second error -> layer 1
+        qc.h(2)
+        qc.cx(2, 3)
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[2]])
+
+        assert asap_layers(qc) == [0, 1, 0, 1, 1]
+        # Layer 1 drains cx, then q2's channel (q2 was just used), then q0's.
+        assert asap_schedule(qc).order == [2, 0, 3, 4, 1]
+
+        assert str(layerize(insert_barriers=True)(qc).to_stim()).splitlines() == [
+            "H 2",
+            "X_ERROR(0.5) 0",
+            "TICK",
+            "CX 2 3",
+            "X_ERROR(0.5) 2 0",
+            "TICK",
+        ]
+
+    def test_stim_draws_the_kinds_in_separate_columns(self):
+        """The point of the drain order, measured on the Stim output."""
+        qc = QuantumCircuit(3, 1)
+        qc.cx(0, 1)
+        qc.append(StimNoiseGate("DEPOLARIZE2", 0.01), [qc.qubits[0], qc.qubits[1]])
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.01), [qc.qubits[2]])  # q2 idles
+        qc.append(StimNoiseGate("X_ERROR", 0.01), [qc.qubits[1]])
+        qc.measure(qc.qubits[1], qc.clbits[0])
+
+        text = str(layerize()(qc).to_stim())
+        assert text.splitlines() == [
+            "CX 0 1",
+            "DEPOLARIZE2(0.01) 0 1",
+            "DEPOLARIZE1(0.01) 2",
+            "X_ERROR(0.01) 1",
+            "M 1",
+        ]
+
+
 class TestIsTransparent:
     """is_transparent must agree with what asap_layers does."""
 
