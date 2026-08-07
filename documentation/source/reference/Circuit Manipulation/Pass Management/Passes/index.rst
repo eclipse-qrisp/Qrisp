@@ -25,8 +25,6 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Fuse consecutive single-qubit gates into one
    * - :doc:`commute_swaps <commute_swaps>`
      - Commute single-qubit ops past SWAP gates
-   * - :doc:`compress_layers <compress_layers>`
-     - Reorder instructions into as-soon-as-possible (ASAP) layers
    * - :doc:`convert_to_cx <convert_to_cx>`
      - Convert two-qubit gates (CZ, CY, SWAP) to CX-based form
    * - :doc:`convert_to_cz <convert_to_cz>`
@@ -39,8 +37,12 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Synthesize Toffoli gates using Gray-code decomposition
    * - :doc:`insert_stim_noise <insert_stim_noise>`
      - Insert a circuit-level Stim noise model (one channel per qubit per layer)
+   * - :doc:`layerize <layerize>`
+     - Reorder instructions into as-soon-as-possible (ASAP) layers
    * - :doc:`manual_layout <manual_layout>`
      - Re-index qubits according to a user-supplied mapping
+   * - :doc:`promote_barriers <promote_barriers>`
+     - Widen every barrier to the full circuit, turning local fences into global time boundaries
    * - :doc:`remove_barriers <remove_barriers>`
      - Remove barrier instructions from the circuit
    * - :doc:`resolve_swaps <resolve_swaps>`
@@ -59,14 +61,18 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    cancel_zero_controls
    combine_single_qubit_gates
    commute_swaps
-   compress_layers
    convert_to_cx
    convert_to_cz
    convert_to_prx
    decompose
    gray_synth_toffoli
+<<<<<<< HEAD
    insert_stim_noise
+=======
+   layerize
+>>>>>>> layerization_pass
    manual_layout
+   promote_barriers
    remove_barriers
    resolve_swaps
    reverse_parallelize
