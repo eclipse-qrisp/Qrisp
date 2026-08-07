@@ -368,6 +368,11 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
+* Replaced the ``ruff_checks`` workflow with a new ``lint`` workflow that
+  runs ``ruff format`` and ``codespell``, and added ``codespell`` to the
+  ``dev-code-style`` optional dependency group.
+  (`PR #789 <https://github.com/eclipse-qrisp/Qrisp/pull/789>`_).
+
 * Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
   ``Hamiltonian`` operator algebra. This exposed two latent bugs:
   ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,
