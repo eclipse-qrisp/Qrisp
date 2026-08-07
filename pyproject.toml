@@ -132,5 +132,10 @@ ignore = [
 [tool.coverage.run]
 omit = ["*/__init__.py"]
 
+[tool.codespell]
+# aer, anc, bra, ket are technical terms and should not be corrected.
+# anc is usually used as a short form for ancilla.
+ignore-words-list = "aer,anc,bra,ket"
+
 [tool.pylint. messages_control]
 disable = ["import-error"]
