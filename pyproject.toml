@@ -141,14 +141,16 @@ omit = ["*/__init__.py"]
 # mis -- short for Maximum Independent Set (general/tutorial/QIROtutorial.ipynb).
 # tage -- German for "days" (general/imprint.rst).
 # wille -- surname, e.g. R. Wille (general/papers/index.rst).
-ignore-words-list = "aer,anc,bra,ket,mis,tage,wille"
+# childs -- surname, e.g. A. Childs citation (reference/Block Encodings/applications.rst).
+ignore-words-list = "aer,anc,bra,childs,ket,mis,tage,wille"
 # thi appears in the domain thi.uni-hannover.de and should not be corrected in URIs.
 uri-ignore-words-list = "thi"
 # Skip embedded base64 images in Jupyter notebooks (they contain arbitrary data).
 ignore-regex = '"image/[^"]+": "[^"]*"'
 # Skipped because the tket converter test uses "theRes" as a variable name.
 # pyproject.toml is skipped because it contains codespell's own configuration.
-skip = "pyproject.toml,**/test_tket_converter.py"
+# Versioned changelogs 0.1 - 0.9 are already published and must not be edited.
+skip = "pyproject.toml,**/test_tket_converter.py,**/changelog/0.1.rst,**/changelog/0.2.rst,**/changelog/0.3.rst,**/changelog/0.4.rst,**/changelog/0.5.rst,**/changelog/0.6.rst,**/changelog/0.7.rst,**/changelog/0.8.rst,**/changelog/0.9.rst"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
