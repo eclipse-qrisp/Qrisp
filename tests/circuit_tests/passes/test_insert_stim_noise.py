@@ -21,9 +21,10 @@ from collections import defaultdict
 
 import pytest
 
-from qrisp import PassManager, compress_layers
+from qrisp import PassManager, layerize, promote_barriers
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.pass_management.passes.insert_stim_noise import insert_stim_noise
+from qrisp.circuit.pass_management.scheduling import asap_layers, is_error_channel, is_transparent
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
@@ -45,6 +46,58 @@ def _noise_count_per_qubit(noisy_qc: QuantumCircuit) -> dict[object, int]:
             for q in instr.qubits:
                 counts[q] += 1
     return counts
+
+
+def _time_steps(qc: QuantumCircuit) -> set[int]:
+    """The layers of *qc* that are physical time steps.
+
+    A layer holding nothing but barriers or bookkeeping is a scheduling
+    artefact; a layer holding an error channel is a time step, since an idle
+    error is something happening.  This is the same predicate
+    :func:`~qrisp.layerize` uses to decide where to put a ``TICK``.
+    """
+    return {
+        layer
+        for layer, instr in zip(asap_layers(qc), qc.data, strict=True)
+        if not is_transparent(instr) or is_error_channel(instr)
+    }
+
+
+def _assert_model_verifies(orig_qc: QuantumCircuit, p1=P1, p2=P2, px=PX):
+    """Assert the inserted model survives being re-layerized.
+
+    This is the automated form of the visual check: insert noise, then schedule
+    the result with the very scheduler the pass used, and require that
+
+    * the noise did not change the number of time steps, and
+    * every qubit carries exactly one error channel in every one of them.
+
+    Both would break if the pass counted layers differently from
+    :func:`~qrisp.layerize` — which is exactly what a private scheduler in the
+    pass used to cause for circuits containing partial barriers.
+    """
+    noisy = insert_stim_noise(p1, p2, px)(orig_qc)
+
+    steps_in = _time_steps(orig_qc)
+    steps_out = _time_steps(noisy)
+    assert len(steps_in) == len(steps_out), (
+        f"noise insertion changed the number of time steps: {len(steps_in)} -> {len(steps_out)}"
+    )
+
+    per_slot: dict[tuple[object, int], int] = defaultdict(int)
+    for layer, instr in zip(asap_layers(noisy), noisy.data, strict=True):
+        if is_error_channel(instr):
+            for q in instr.qubits:
+                per_slot[(q, layer)] += 1
+
+    for q in noisy.qubits:
+        for layer in sorted(steps_out):
+            count = per_slot[(q, layer)]
+            assert count == 1, (
+                f"qubit {noisy.qubits.index(q)} carries {count} channels in time step {layer}, expected 1"
+            )
+
+    return noisy
 
 
 def _assert_one_noise_per_layer(orig_qc: QuantumCircuit, noisy_qc: QuantumCircuit, num_layers: int):
@@ -333,6 +386,145 @@ def test_barrier_between_gates_same_qubit():
     assert _depolarize1_count(noisy) == 2
 
 
+def test_full_width_barrier_flushes_its_own_layer():
+    # A barrier sits *in* the layer it ends, so the idle noise for that layer
+    # has to be emitted before it -- otherwise a channel belonging to the time
+    # step ends up on the far side of the TICK that closes it.
+    qc = QuantumCircuit(2)
+    qc.h(0)
+    qc.barrier()
+
+    noisy = insert_stim_noise(P1, P2, PX)(qc)
+    names = [i.op.name for i in noisy.data]
+    assert names.index("barrier") == len(names) - 1, f"noise emitted after the barrier: {names}"
+
+
+def test_partial_barrier_does_not_synchronize_unnamed_qubits():
+    # A partial barrier constrains only the qubits it names, so q1's
+    # measurement stays in layer 0 and the circuit has three time steps, not
+    # four.  Flushing q1 at the barrier would emit its idle noise ahead of its
+    # own X_ERROR/measurement and invent an extra round of noise.
+    qc = QuantumCircuit(2, 1)
+    qc.h(0)
+    qc.h(0)
+    qc.h(0)
+    qc.barrier([qc.qubits[0]])
+    qc.measure(1, qc.clbits[0])
+
+    noisy = _assert_model_verifies(qc)
+
+    # q1 is measured in layer 0 and idles through layers 1 and 2: one X_ERROR
+    # plus two DEPOLARIZE1, and the X_ERROR comes first.
+    q1_noise = [i.op.stim_name for i in noisy.data if is_error_channel(i) and qc.qubits[1] in i.qubits]
+    assert q1_noise == ["X_ERROR", "DEPOLARIZE1", "DEPOLARIZE1"]
+
+
+def test_partial_barrier_still_fences_the_qubits_it_names():
+    # The named qubit's outstanding noise must not cross its own fence.  A
+    # partial barrier floats to the earliest layer its named qubits allow, so
+    # this one lands in layer 0 -- the very layer q1 idles through -- and has to
+    # take q1's idle channel with it rather than leave it for the h(1) after.
+    qc = QuantumCircuit(2)
+    qc.h(0)
+    qc.h(0)
+    qc.barrier([qc.qubits[1]])
+    qc.h(1)
+
+    noisy = insert_stim_noise(P1, P2, PX)(qc)
+    names = [i.op.name for i in noisy.data]
+    barrier_at = names.index("barrier")
+    q1_before = sum(1 for i in noisy.data[:barrier_at] if is_error_channel(i) and qc.qubits[1] in i.qubits)
+    assert q1_before == 1, f"idle noise crossed the fence: {names}"
+
+    # q0 is not named, so its layers are untouched by the fence and it keeps one
+    # channel per gate.  q1 idles in layer 0 and gates in layer 1.
+    counts = _noise_count_per_qubit(noisy)
+    assert counts[qc.qubits[0]] == 2
+    assert counts[qc.qubits[1]] == 2
+
+
+def test_promote_barriers_restores_global_synchronization():
+    # Widening the fences is the documented way to get the old, globally
+    # synchronizing behaviour back -- at the price of a wider schedule.
+    qc = QuantumCircuit(2, 1)
+    qc.h(0)
+    qc.h(0)
+    qc.h(0)
+    qc.barrier([qc.qubits[0]])
+    qc.measure(1, qc.clbits[0])
+
+    assert len(_time_steps(qc)) == 3
+    promoted = promote_barriers(qc)
+    assert len(_time_steps(promoted)) == 4
+
+    noisy = _assert_model_verifies(promoted)
+    # Now the measurement is pushed past the barrier, so q1 idles through all
+    # three h-layers before being measured.
+    q1_noise = [i.op.stim_name for i in noisy.data if is_error_channel(i) and qc.qubits[1] in i.qubits]
+    assert q1_noise == ["DEPOLARIZE1", "DEPOLARIZE1", "DEPOLARIZE1", "X_ERROR"]
+
+
+# ---------------------------------------------------------------------------
+# The model survives being re-layerized -- the automated form of the visual
+# check that the pipeline insert_stim_noise -> layerize is built for.
+# ---------------------------------------------------------------------------
+
+
+def test_model_verifies_independent_chains():
+    qc = QuantumCircuit(4)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.h(2)
+    qc.cx(2, 3)
+    _assert_model_verifies(qc)
+
+
+def test_model_verifies_repetition_code_round():
+    qc = QuantumCircuit(3)
+    for _ in range(2):
+        qc.cx(0, 1)
+        qc.cx(2, 1)
+        clbit = qc.add_clbit()
+        qc.measure(1, clbit)
+        qc.parity([clbit])
+        qc.reset(1)
+        qc.barrier(qc.qubits)
+
+    _assert_model_verifies(qc)
+
+
+def test_model_verifies_with_ancilla_only_barrier():
+    # The realistic partial-barrier case: the syndrome ancilla is fenced per
+    # round while the data qubits keep working.
+    qc = QuantumCircuit(3)
+    for _ in range(2):
+        qc.cx(0, 1)
+        qc.cx(2, 1)
+        clbit = qc.add_clbit()
+        qc.measure(1, clbit)
+        qc.reset(1)
+        qc.barrier([qc.qubits[1]])
+        qc.h(0)
+        qc.h(2)
+
+    _assert_model_verifies(qc)
+
+
+def test_layerize_renders_one_tick_per_time_step():
+    # The end of the pipeline: one TICK per time step of the input.
+    qc = QuantumCircuit(3)
+    qc.cx(0, 1)
+    qc.cx(2, 1)
+    qc.measure(1)
+    qc.reset(1)
+
+    pm = PassManager()
+    pm += insert_stim_noise(P1, P2, PX)
+    pm += layerize(insert_barriers=True)
+
+    assert pm.run(qc).to_stim().num_ticks == len(_time_steps(qc)) == 4
+
+
 def test_passmanager_composition():
     qc = QuantumCircuit(3)
     qc.h(0)
@@ -343,7 +535,7 @@ def test_passmanager_composition():
 
     pm = PassManager()
     pm += insert_stim_noise(P1, P2, PX)
-    pm += compress_layers
+    pm += layerize()
     noisy = pm.run(qc.copy())
 
     assert any(isinstance(i.op, StimNoiseGate) for i in noisy.data)

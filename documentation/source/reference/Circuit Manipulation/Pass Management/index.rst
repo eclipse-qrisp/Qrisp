@@ -235,8 +235,12 @@ Qrisp ships with the following circuit transformation passes:
      - Synthesize Toffoli gates using Gray-code decomposition
    * - :doc:`insert_stim_noise <Passes/insert_stim_noise>`
      - Insert a circuit-level Stim noise model (one channel per qubit per layer)
+   * - :doc:`layerize <Passes/layerize>`
+     - Reorder instructions into as-soon-as-possible (ASAP) layers
    * - :doc:`manual_layout <Passes/manual_layout>`
      - Re-index qubits according to a user-supplied mapping
+   * - :doc:`promote_barriers <Passes/promote_barriers>`
+     - Widen every barrier to the full circuit, turning local fences into global time boundaries
    * - :doc:`remove_barriers <Passes/remove_barriers>`
      - Remove barrier instructions from the circuit
    * - :doc:`resolve_swaps <Passes/resolve_swaps>`

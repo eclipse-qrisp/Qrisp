@@ -26,19 +26,33 @@ Architecture
 ------------
 The pass runs in three phases.
 
-**Phase 1 - schedule** (:func:`_asap_layers`).  Every instruction is assigned
-an as-soon-as-possible layer index.  Instructions on disjoint resources share
-a layer; instructions sharing a qubit or clbit land in successive layers.  Two
-rules carry most of the weight:
+**Phase 1 - schedule.**  The time steps come from
+:func:`~qrisp.circuit.pass_management.scheduling.asap_layers`, the same
+scheduler :func:`~qrisp.layerize` uses.  Sharing it is the whole point:  the
+layers this pass inserts noise *for* are then exactly the layers ``layerize``
+later draws, so the pipeline
 
-* *Transparent* instructions (see :data:`_TRANSPARENT_OP_NAMES` and
-  pre-existing ``StimNoiseGate`` operations) ride along at the current layer of
-  their resources without advancing the clock.  This is what keeps a
+.. code-block::
+
+    insert_stim_noise -> layerize(insert_barriers=True) -> to_stim
+
+renders one column and one ``TICK`` per time step with each qubit's single
+channel visible in it - which is how the inserted model is checked.  A private
+scheduler here would put the two passes into disagreement and the picture would
+stop verifying anything.
+
+Two properties of that scheduler carry most of the weight:
+
+* Error channels and annotations (``qb_alloc`` / ``qb_dealloc``, ``gphase``,
+  ``parity``, barriers) take no time step of their own.  This is what keeps a
   user-placed noise instruction attached to the layer of the gate it annotates,
   and what stops classical annotations such as ``parity`` from inventing time
   steps that would then collect a full round of idle noise.
-* A ``barrier`` raises a global ``floor``, forcing everything after it into a
-  strictly later layer than everything before it.
+* A ``barrier`` ends the layer of the qubits it *names* and leaves the rest
+  alone.  Only a full-width barrier is therefore a global time boundary - which
+  is also exactly when it becomes a Stim ``TICK``.  Use
+  :func:`~qrisp.promote_barriers` to widen local fences beforehand if global
+  boundaries are what is wanted.
 
 **Phase 2 - classify.**  Each instruction gets a role (``"barrier"``,
 ``"transparent"``, ``"noise"``, ``"measure"``, ``"reset"``, ``"gate"``), and
@@ -73,14 +87,26 @@ instruction in a layer ``< L`` and ``q``'s first instruction in a layer
 discharged at the latest still-correct moment:
 
 * immediately before any instruction that touches ``q``,
-* at every ``barrier``, which is a global time boundary (it becomes a Stim
-  ``TICK``) and therefore flushes the obligations of *all* qubits,
+* at a ``barrier`` naming ``q``, so that no idle noise crosses a fence declared
+  over that qubit.  A full-width barrier is a global time boundary (it becomes a
+  Stim ``TICK``) and hence flushes *every* qubit; a partial barrier flushes only
+  the qubits it names, since it says nothing about the others,
 * at the end of the circuit for whatever is left over.
 
-Soundness rests on a monotonicity property of phase 1: for a fixed qubit, the
-instructions touching it appear in ``qc.data`` with non-decreasing layer
-indices.  A single forward cursor per qubit (``idle_pos``) is hence enough, and
-no obligation is ever discharged into the past.  The cursor indexes the shared,
+Soundness rests on a monotonicity property of the schedule: consecutive
+instructions on a resource are linked in the scheduler's dependency graph, so
+for a fixed qubit the instructions touching it appear in ``qc.data`` with
+non-decreasing layer indices.  Emitting ``q``'s noise for layer ``L`` at some
+position is therefore correct as soon as ``q``'s next instruction lies in a
+layer ``> L``, which is what both flush sites establish - the second one because
+a barrier is itself part of the chain of every qubit it names, so nothing on
+those qubits can follow it in an earlier layer.  This is also why the barrier
+flush has to be width-aware: a partial barrier is *not* in the chain of the
+qubits it omits, and flushing those would emit their noise ahead of instructions
+that still belong to earlier layers.
+
+A single forward cursor per qubit (``idle_pos``) is hence enough, and no
+obligation is ever discharged into the past.  The cursor indexes the shared,
 sorted ``noise_layer_list`` rather than a per-qubit list of idle layers, which
 keeps the memory cost at one integer per qubit instead of one per
 (qubit, layer) pair.
@@ -93,7 +119,7 @@ Deliberate non-goals
   register of the intended use case.
 * **The timeline is not compacted.**  Producing a layer-monotone instruction
   order (and with it a meaningful global time axis) is the job of the separate
-  ``compress_layers`` pass, which can be run afterwards.
+  :func:`~qrisp.layerize` pass, which can be run afterwards.
 """
 
 from __future__ import annotations
@@ -102,116 +128,12 @@ from collections import defaultdict
 from collections.abc import Callable
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-
-# Instructions that do not represent a physical time step.  They neither
-# receive a noise instruction nor advance the layer clock:
-#
-# * ``qb_alloc`` / ``qb_dealloc`` are bookkeeping markers.
-# * ``gphase`` is a one-qubit Operation in Qrisp, but it only records a global
-#   phase and is therefore not a physical gate.  (It really does carry a qubit,
-#   so it cannot be recognised by its qubit count - hence this list.)
-# * ``parity`` carries no qubits at all - it becomes a Stim ``DETECTOR`` or
-#   ``OBSERVABLE_INCLUDE`` annotation, i.e. classical post-processing.  It does
-#   however carry clbits, so without this list it would look like an ordinary
-#   resource-consuming instruction and occupy a time step of its own.
-#
-# Instructions without any qubits are transparent as well, but are recognised
-# structurally in the classification phase rather than listed here.
-_TRANSPARENT_OP_NAMES = frozenset({"qb_alloc", "qb_dealloc", "gphase", "parity"})
-
-
-def _asap_layers(qc: QuantumCircuit) -> list[int]:
-    """Assign an as-soon-as-possible layer (time step) to every instruction.
-
-    Instructions that act on disjoint resources share a layer; instructions
-    that touch a common qubit/clbit are forced into successive layers.
-    Instructions that carry no physical time step (see
-    ``_TRANSPARENT_OP_NAMES`` and pre-existing ``StimNoiseGate`` operations)
-    ride along at the current layer of their resources without advancing the
-    clock, which keeps a user-placed noise instruction attached to the layer of
-    the gate it annotates.
-
-    Parameters
-    ----------
-    qc : QuantumCircuit
-        The circuit to schedule.
-
-    Returns
-    -------
-    list[int]
-        The layer index of every instruction in ``qc.data``.
-
-    Notes
-    -----
-    The returned indices are non-decreasing along the instructions of any
-    *single* resource, but not along ``qc.data`` as a whole: two independent
-    qubit chains written one after the other both start at layer 0.  The
-    emission phase relies on the former and must not assume the latter.
-
-    """
-    # Lazy import: ``stim`` is only required when noise is actually inserted.
-    from qrisp.misc.stim_tools.error_class import StimNoiseGate
-
-    # Latest layer occupied by each qubit / clbit.  -1 means "untouched", so the
-    # first real instruction on a resource lands in layer 0.
-    last_time: dict[object, int] = defaultdict(lambda: -1)
-    layers: list[int] = []
-
-    # Global lower bound for the layer of subsequent instructions.  Only
-    # barriers raise it; it is what makes them act as synchronisation points.
-    floor = 0
-
-    for instr in qc.data:
-        name = instr.op.name
-
-        # Clbits count as resources: a measurement and a later instruction
-        # reading the same clbit must not share a time step.
-        resources = [*instr.qubits, *instr.clbits]
-
-        if name == "barrier":
-            # A barrier is a synchronization point *between* layers.  It does
-            # not occupy a time step of its own (and therefore generates no
-            # noise), but it forces every subsequent instruction into a
-            # strictly later layer than every instruction before it.  This
-            # mirrors the ``TICK`` that barriers become in Stim.
-            #
-            # The bound is taken over *all* resources rather than only the
-            # barrier's own qubits, so a partially applied barrier still
-            # synchronises globally - consistent with TICK being global, at the
-            # price of over-synchronising the qubits it does not name.
-            floor = max(floor, max(last_time.values(), default=-1) + 1)
-            layers.append(floor)
-            continue
-
-        if not resources:
-            # Nothing to schedule against: place the instruction in the current
-            # global layer without advancing the clock.  Note the missing "+ 1"
-            # compared to the case below - such an instruction joins the layer
-            # in progress instead of opening a new one.
-            layers.append(max(floor, max(last_time.values(), default=-1)))
-            continue
-
-        # Transparent instructions ride along with the layer their resources are
-        # already in.  Concretely, a user-placed StimNoiseGate ends up in the
-        # same layer as the gate it follows, so it can consume that qubit's
-        # noise slot for the layer instead of creating a new one.
-        is_transparent = name in _TRANSPARENT_OP_NAMES or isinstance(instr.op, StimNoiseGate)
-
-        # ASAP: the earliest layer in which every resource is free.
-        t = max(last_time[r] for r in resources)
-        if not is_transparent:
-            t += 1
-        t = max(t, floor)
-        layers.append(t)
-
-        # Only real instructions occupy their resources; transparent ones leave
-        # the clock untouched so that several of them can share the layer.
-        if not is_transparent:
-            for r in resources:
-                last_time[r] = t
-
-    return layers
+from qrisp.circuit.pass_management.scheduling import (
+    asap_layers,
+    is_error_channel,
+    is_transparent,
+)
+from qrisp.circuit.quantum_circuit import QuantumCircuit, is_full_width_barrier
 
 
 def insert_stim_noise(
@@ -222,11 +144,11 @@ def insert_stim_noise(
 ) -> Callable[[QuantumCircuit], QuantumCircuit]:
     """Create a pass that inserts a circuit-level Stim noise model into a circuit.
 
-    The circuit is organized into layers (time steps) using an
-    as-soon-as-possible (ASAP) schedule: instructions that act on disjoint
-    qubits share a layer, instructions that touch a common qubit are placed
-    in successive layers.  Every qubit then receives **exactly one** noise
-    instruction per layer, according to the following rules:
+    The circuit is organized into layers (time steps) using the same
+    as-soon-as-possible (ASAP) schedule as :func:`~qrisp.layerize`: instructions
+    that act on disjoint qubits share a layer, instructions that touch a common
+    qubit are placed in successive layers.  Every qubit then receives **exactly
+    one** noise instruction per layer, according to the following rules:
 
     .. list-table::
        :widths: 40 60
@@ -250,10 +172,18 @@ def insert_stim_noise(
     pass walks the original circuit in order and inserts the noise
     instructions between them.  Idle noise for a layer is emitted as late as
     possible, namely right before the next instruction that touches the idle
-    qubit (or at the next barrier, or at the end of the circuit).  Since no
-    operation on that qubit intervenes, this is equivalent to emitting it at
-    the end of its layer.  Use the :ref:`compress_layers` pass afterwards to
-    additionally compact the timeline for visualisation.
+    qubit (or at the next barrier naming it, or at the end of the circuit).
+    Since no operation on that qubit intervenes, this is equivalent to emitting
+    it at the end of its layer.  Because this pass and :func:`~qrisp.layerize`
+    share their scheduler, running ``layerize`` afterwards puts every channel
+    back into the time step it was inserted for:
+
+    .. code-block::
+
+        insert_stim_noise -> layerize(insert_barriers=True) -> to_stim
+
+    gives one ``TICK`` per time step with each qubit's single channel in it,
+    which is the recommended way to look at the result.
 
     This is the standard circuit-level depolarizing noise model used for
     quantum error-correction benchmarks (e.g. surface / repetition codes):
@@ -324,12 +254,18 @@ def insert_stim_noise(
       A gate acting on more than two qubits raises a :class:`ValueError`
       before any noise is inserted (decompose such gates first, e.g. with the
       ``decompose`` pass).
-    * A ``barrier`` acts as a synchronization point *between* layers: it still
-      enforces that gates before and after it are scheduled into separate
-      layers (mirroring the ``TICK`` it becomes in Stim), but it is not a
-      noise layer itself — it neither receives a noise instruction nor is a
-      time step of its own.  It does act as a global time boundary, so all
-      outstanding idle noise is emitted before it.
+    * A ``barrier`` acts as a synchronization point *between* layers: it
+      enforces that instructions before and after it are scheduled into separate
+      layers, but it is not a noise layer itself — it neither receives a noise
+      instruction nor is a time step of its own.  It constrains exactly the
+      qubits it names, so all outstanding idle noise of *those* qubits is
+      emitted before it.  A full-width barrier names the whole register and is
+      therefore a global time boundary (this is also precisely when it becomes a
+      Stim ``TICK``); a partial barrier is a local fence and lets an instruction
+      on an unnamed qubit stay in an earlier layer.  Use
+      :func:`~qrisp.promote_barriers` to widen local fences into global
+      boundaries before inserting noise — note that this widens the schedule and
+      hence inflates the idle-noise budget.
     * Existing :class:`~qrisp.misc.stim_tools.StimNoiseGate` instructions are
       always left untouched.  With ``only_necessary=True`` (the default) they
       also consume the noise slot of their qubits: no additional idle noise
@@ -347,11 +283,12 @@ def insert_stim_noise(
     * *Reading the output — placement of idle noise.*  Because the instruction
       order of the input is preserved, a qubit's idle noise is emitted at the
       latest still-correct position rather than spread across the round: right
-      before the next instruction that touches the qubit, at the next barrier,
-      or at the end of the circuit.  Nothing acts on the qubit in between, so
-      the resulting channels compose identically — only the layout of the
-      printed circuit differs.  Run :ref:`compress_layers` afterwards to
-      distribute the instructions over the timeline for visualisation.
+      before the next instruction that touches the qubit, at the next barrier
+      naming it, or at the end of the circuit.  Nothing acts on the qubit in
+      between, so the resulting channels compose identically — only the layout
+      of the printed circuit differs.  Running ``layerize(insert_barriers=True)``
+      afterwards distributes the channels back over the timeline, one per time
+      step, which is easier to read and to check.
 
     Examples
     --------
@@ -415,15 +352,17 @@ def insert_stim_noise(
     Note that the ``DETECTOR`` does not produce a round of idle noise: it is a
     classical annotation, not a time step.
 
-    Repeating the round and rendering the Stim timeline diagram before and after
-    the pass shows the model in context — every qubit carries one channel per
-    time step, and the rounds are separated by the ``TICK`` of the barrier:
+    Repeating the round and rendering the Stim timeline diagram shows the model
+    in context.  The "after" diagram is the output of
+    ``layerize(insert_barriers=True)``, so it carries one ``TICK`` per time step
+    and the model can be read off column by column — every qubit holding exactly
+    one channel in each:
 
     .. image:: /_static/insert_stim_noise_before.svg
        :alt: Stim timeline diagram of two noiseless syndrome extraction rounds
 
     .. image:: /_static/insert_stim_noise_after.svg
-       :alt: Stim timeline diagram of the same rounds after insert_stim_noise
+       :alt: Stim timeline diagram of the same rounds after insert_stim_noise and layerize
 
     **Respecting hand-placed noise.**  By default the pass only adds noise where
     it is missing.  A channel the user already placed is kept as-is::
@@ -446,18 +385,50 @@ def insert_stim_noise(
     pair of qubits, the model's own ``DEPOLARIZE2`` would still be inserted.
     Pass ``only_necessary=False`` to apply the full model unconditionally.
 
-    **Composition.**  The pass can be used inside a
-    :class:`~qrisp.PassManager`.  Running :ref:`compress_layers` afterwards
-    reorders the result into layer order, which compacts the Stim timeline
-    diagram::
+    **Composition — reading the model off the output.**  The pass belongs in a
+    :class:`~qrisp.PassManager` together with :func:`~qrisp.layerize`, which
+    reorders the result into layer order and marks each time step with a
+    ``TICK``::
 
-        >>> from qrisp import PassManager, compress_layers
+        >>> from qrisp import PassManager, layerize
         >>> pm = PassManager()
         >>> pm += insert_stim_noise(depolarize_1_strength=1e-3,
         ...                         depolarize_2_strength=1e-3,
         ...                         X_error_strength=1e-3)
-        >>> pm += compress_layers
-        >>> qc = pm.run(qc)
+        >>> pm += layerize(insert_barriers=True)
+
+    Because both passes share their scheduler, the layers ``layerize`` draws are
+    the layers the noise was inserted for.  The output therefore shows the model
+    one time step at a time, and every qubit appearing exactly once per step is
+    the statement of the contract::
+
+        >>> qc = QuantumCircuit(3)
+        >>> qc.cx(0, 1)
+        >>> qc.cx(2, 1)
+        >>> qc.measure(1)
+        >>> qc.reset(1)
+        >>> print(pm.run(qc).to_stim())
+        CX 0 1
+        DEPOLARIZE1(0.001) 2
+        DEPOLARIZE2(0.001) 0 1
+        TICK
+        CX 2 1
+        DEPOLARIZE1(0.001) 0
+        DEPOLARIZE2(0.001) 2 1
+        TICK
+        X_ERROR(0.001) 1
+        DEPOLARIZE1(0.001) 0 2
+        M 1
+        TICK
+        R 1
+        DEPOLARIZE1(0.001) 0 2
+        X_ERROR(0.001) 1
+        TICK
+
+    Four time steps, four ``TICK``\\ s, and in each of them qubits ``0``, ``1``
+    and ``2`` carry one channel each — the ancilla's gate or readout error, the
+    data qubits' idle noise.  A miscounted layer would show up here as a qubit
+    missing from a step or appearing twice in one.
 
     """
     # Type guards on the strengths (match Stim's requirement p in [0, 1]).
@@ -478,7 +449,7 @@ def insert_stim_noise(
         from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
         data = qc.data
-        layers = _asap_layers(qc)
+        layers = asap_layers(qc)
 
         # ------------------------------------------------------------------
         # 1. Classify every instruction.  Doing this up front means an
@@ -492,17 +463,18 @@ def insert_stim_noise(
         for instr in data:
             name = instr.op.name
 
-            # The order of these tests matters.  A barrier may well carry
-            # qubits, and a transparent instruction may well carry none, so the
-            # structural checks have to come after the name-based ones.
+            # The order of these tests matters.  ``is_transparent`` is true for
+            # barriers and for error channels as well - both take no time step -
+            # so the two roles that need telling apart from "rides along at no
+            # cost" have to be recognised first.
             if name == "barrier":
                 roles.append("barrier")
-            elif name in _TRANSPARENT_OP_NAMES or not instr.qubits:
-                roles.append("transparent")
-            elif isinstance(instr.op, StimNoiseGate):
+            elif is_error_channel(instr):
                 # Noise the circuit already contains.  Never touched, and with
                 # ``only_necessary`` it also occupies its qubits' noise slot.
                 roles.append("noise")
+            elif is_transparent(instr):
+                roles.append("transparent")
             elif name in ("measure", "measurement"):
                 # Both spellings occur: ``QuantumCircuit.measure`` emits
                 # "measure", while circuits converted from other frameworks may
@@ -598,9 +570,7 @@ def insert_stim_noise(
             if not 0 <= j < len(data):
                 return False
             adj = data[j]
-            return (
-                isinstance(adj.op, StimNoiseGate) and adj.op.stim_name == stim_name and set(adj.qubits) == set(qubits)
-            )
+            return is_error_channel(adj) and adj.op.stim_name == stim_name and set(adj.qubits) == set(qubits)
 
         for idx, instr in enumerate(data):
             role = roles[idx]
@@ -608,13 +578,28 @@ def insert_stim_noise(
             qubits = instr.qubits
 
             if role == "barrier":
-                # A barrier becomes a Stim TICK, i.e. a global time boundary, so
-                # it flushes *every* qubit rather than just its own: no idle
-                # noise belonging to an earlier time step may cross a TICK.
-                # Barriers are also the reason the flush never falls arbitrarily
-                # far behind in a QEC circuit with one barrier per round.
-                for q in qc.qubits:
-                    _flush_idle(q, layer)
+                # A barrier flushes the qubits it names: it ends their layer, so
+                # this is the last position at which their outstanding noise can
+                # still be emitted on the correct side of the fence.  A
+                # full-width barrier names the whole register and is a global
+                # time boundary (it becomes a Stim TICK), so it flushes
+                # everything - which is also what keeps the flush from falling
+                # arbitrarily far behind in a QEC circuit with one barrier per
+                # round.
+                #
+                # The width matters for correctness, not just for tidiness.  A
+                # partial barrier is no constraint on the qubits it omits, and
+                # those may well carry later instructions belonging to *earlier*
+                # layers; flushing them here would emit their noise ahead of
+                # those instructions.
+                # Note the ``+ 1``: a barrier sits *in* the layer it ends, unlike
+                # every other instruction here, which is flushed up to the layer
+                # it is about to occupy.  The obligations for the barrier's own
+                # layer therefore have to go out too, or they would be emitted on
+                # the far side of a fence that was meant to close them in.
+                flush_qubits = qc.qubits if is_full_width_barrier(instr, qc) else qubits
+                for q in flush_qubits:
+                    _flush_idle(q, layer + 1)
                 new_qc.append(instr)
                 continue
 

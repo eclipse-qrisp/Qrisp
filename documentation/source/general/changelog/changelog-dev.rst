@@ -103,6 +103,21 @@ New Features
   its error probability may differ.  Gates on more than two qubits are
   rejected with a ``ValueError`` before any output is produced.
 
+  The pass shares its scheduler with :func:`~qrisp.layerize`, so the layers it
+  inserts noise for are the layers ``layerize`` later draws.  Running
+
+  .. code-block::
+
+      insert_stim_noise -> layerize(insert_barriers=True) -> to_stim
+
+  therefore renders one column and one ``TICK`` per time step with each qubit's
+  single channel in it, which is how an inserted model is checked.  Barriers are
+  honoured at their declared width: a full-width barrier is a global time
+  boundary and flushes the outstanding idle noise of the whole register, while a
+  partial barrier only fences the qubits it names — use
+  :func:`~qrisp.promote_barriers` first if global boundaries are wanted, at the
+  price of a wider schedule and a larger idle-noise budget.
+
 Improvements
 ------------
 
