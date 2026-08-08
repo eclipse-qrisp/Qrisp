@@ -61,6 +61,9 @@ def convert_to_qiskit(qc, transpile=False):
 
         qiskit_params = []
 
+        # Keep track of phase offset from SX and SXdg gates
+        phase = 0.0
+
         for p in params:
             if isinstance(p, Expr):
                 free_symbols = list(p.free_symbols)
@@ -110,12 +113,12 @@ def convert_to_qiskit(qc, transpile=False):
                 if op.base_op.definition:
                     body_qc = body_qc.compose(op.base_op.definition.to_qiskit())
                 else:
-                    base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
+                    base_qiskit_ins, phase = create_qiskit_instruction(op.base_op, params)
                     body_qc.append(base_qiskit_ins, qubit_list)
                 qiskit_ins = IfElseOp((clbit_list[0], 1), true_body=body_qc)
                 clbit_list = []
             except ImportError:
-                base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
+                base_qiskit_ins, phase = create_qiskit_instruction(op.base_op, params)
                 cl_reg = ClassicalRegister(op.num_clbits)
                 temp_qc = QuantumCircuit(q_reg, cl_reg)
                 qiskit_ins = base_qiskit_ins.c_if(cl_reg, int(op.ctrl_state[::-1], 2))
@@ -136,17 +139,25 @@ def convert_to_qiskit(qc, transpile=False):
                 qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
 
             elif op.base_operation.name == "gphase":
-                qiskit_ins = create_qiskit_instruction(op, params)
+                qiskit_ins, phase = create_qiskit_instruction(op, params)
             elif op.num_qubits == op.base_operation.num_qubits:
-                qiskit_ins = create_qiskit_instruction(op.base_operation, params)
+                qiskit_ins, phase = create_qiskit_instruction(op.base_operation, params)
             else:
-                base_gate = create_qiskit_instruction(op.base_operation, params)
+                base_gate, phase = create_qiskit_instruction(op.base_operation, params)
                 qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
         else:
-            qiskit_ins = create_qiskit_instruction(op, params)
+            qiskit_ins, phase = create_qiskit_instruction(op, params)
 
         # Append to qiskit circuit
         qiskit_qc.append(qiskit_ins, qubit_list, clbit_list)
+
+        # Perform phase compensation
+        if not np.isclose(phase, 0.0):
+            temp_qc = QuantumCircuit(1)
+            temp_qc.global_phase += float(phase)
+            qiskit_phase_compensate = temp_qc.to_gate()
+            qiskit_phase_compensate.name = "gphase"
+            qiskit_qc.append(qiskit_phase_compensate, qubit_list, clbit_list)
     # Return result
     return qiskit_qc
 
@@ -157,6 +168,9 @@ def create_qiskit_instruction(op, params=[]):
     from qiskit.circuit import Barrier, Measure, Reset
 
     from qrisp.circuit import ControlledOperation
+
+    # Adjust phase if it doesn't match Qiskit's phase
+    phase = 0.0
 
     if op.name == "cx":
         if hasattr(op, "ctrl_state"):
@@ -215,8 +229,6 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.RYGate(params[0])
     elif op.name == "rz":
         qiskit_ins = qsk_gates.RZGate(params[0])
-    elif op.name == "sx":
-        qiskit_ins = qsk_gates.SXGate()
     elif op.name == "h":
         qiskit_ins = qsk_gates.HGate()
 
@@ -229,11 +241,13 @@ def create_qiskit_instruction(op, params=[]):
     elif op.name == "s_dg":
         qiskit_ins = qsk_gates.SGate().inverse()
     elif op.name == "sx":
+        # Qiskit SXGate has a pi/4 global phase over Qrisp, compensate
+        phase -= np.pi / 4
         qiskit_ins = qsk_gates.SXGate()
     elif op.name == "sx_dg":
+        # Qiskit SXGate has a -pi/4 global phase over Qrisp, compensate
+        phase += np.pi / 4
         qiskit_ins = qsk_gates.SXdgGate()
-    elif op.name == "rzz":
-        qiskit_ins = qsk_gates.RZZGate(params[0])
     elif op.name == "xxyy":
         qiskit_ins = qsk_gates.XXPlusYYGate(*params, label="(XX+YY)")
     elif op.name == "t":
@@ -261,7 +275,7 @@ def create_qiskit_instruction(op, params=[]):
     else:
         raise Exception("Could not convert operation " + str(op.name) + " to Qiskit")
 
-    return qiskit_ins
+    return qiskit_ins, phase
 
 
 op_dic = {op().name: op for op in op_list}
