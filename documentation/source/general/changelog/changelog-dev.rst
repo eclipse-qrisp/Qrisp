@@ -112,7 +112,7 @@ Development
 * Added pytest coverage reporting to the CI test workflow and selective
   coverage reporting for the ``qrisp`` package.
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
-   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
+  `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
 Dependency Upgrades
 -------------------
