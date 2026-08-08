@@ -61,7 +61,7 @@ def convert_to_qiskit(qc, transpile=False):
 
         qiskit_params = []
 
-        # Keep track of phase offset from SX and SXdg gates
+        # Keep track of global phase offset from SX and SXdg gates
         phase = 0.0
 
         for p in params:
@@ -169,7 +169,7 @@ def create_qiskit_instruction(op, params=[]):
 
     from qrisp.circuit import ControlledOperation
 
-    # Adjust phase if it doesn't match Qiskit's phase
+    # Adjust global phase if it doesn't match Qiskit's global phase
     phase = 0.0
 
     if op.name == "cx":
@@ -245,7 +245,7 @@ def create_qiskit_instruction(op, params=[]):
         phase -= np.pi / 4
         qiskit_ins = qsk_gates.SXGate()
     elif op.name == "sx_dg":
-        # Qiskit SXGate has a -pi/4 global phase over Qrisp, compensate
+        # Qiskit SXdgGate has a -pi/4 global phase over Qrisp, compensate
         phase += np.pi / 4
         qiskit_ins = qsk_gates.SXdgGate()
     elif op.name == "xxyy":
