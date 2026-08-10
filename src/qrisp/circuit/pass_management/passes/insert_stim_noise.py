@@ -167,6 +167,13 @@ def insert_stim_noise(
        * - Qubit is reset
          - ``X_ERROR(px)`` appended **after** the reset.
 
+    Only instructions that represent a physical time step take part in this.  The
+    bookkeeping markers ``qb_alloc`` / ``qb_dealloc``, the global phase ``gphase``
+    (a one-qubit ``Operation`` in Qrisp, but not a physical gate), the ``parity``
+    annotation (which becomes a Stim ``DETECTOR`` / ``OBSERVABLE_INCLUDE``) and
+    any instruction without qubits are passed through untouched: they receive no
+    noise and never open a layer of their own.
+
     The layers are only used to decide *what* noise a qubit needs and *how
     often*.  The instructions of the input circuit are **not** reordered: the
     pass walks the original circuit in order and inserts the noise
@@ -174,9 +181,12 @@ def insert_stim_noise(
     possible, namely right before the next instruction that touches the idle
     qubit (or at the next barrier naming it, or at the end of the circuit).
     Since no operation on that qubit intervenes, this is equivalent to emitting
-    it at the end of its layer.  Because this pass and :func:`~qrisp.layerize`
-    share their scheduler, running ``layerize`` afterwards puts every channel
-    back into the time step it was inserted for:
+    it at the end of its layer.  Qubit liveness is not tracked, so idle noise
+    covers every qubit of the register in every time step whether or not it is
+    currently allocated — the physical picture of a fixed qubit register, which is
+    the intended use case.  Because this pass and :func:`~qrisp.layerize` share
+    their scheduler, running ``layerize`` afterwards puts every channel back into
+    the time step it was inserted for:
 
     .. code-block::
 
@@ -189,10 +199,11 @@ def insert_stim_noise(
     quantum error-correction benchmarks (e.g. surface / repetition codes):
     every gate is followed by a depolarizing channel, idle qubits accumulate
     single-qubit depolarizing noise each layer, and measurements / resets
-    are flanked by a bit-flip error.  The resulting :class:`~qrisp.QuantumCircuit`
-    can be exported to a Stim circuit via :meth:`~qrisp.QuantumCircuit.to_stim`,
-    where the noise instructions behave as genuine noisy channels (see
-    :class:`~qrisp.misc.stim_tools.StimNoiseGate`).
+    are flanked by a bit-flip error.  The inserted channels are
+    :class:`~qrisp.misc.stim_tools.StimNoiseGate` operations, which the Qrisp
+    simulator treats as identities; exporting the resulting
+    :class:`~qrisp.QuantumCircuit` with :meth:`~qrisp.QuantumCircuit.to_stim`
+    turns them into genuine noisy channels.
 
     Parameters
     ----------
@@ -219,8 +230,13 @@ def insert_stim_noise(
         model is applied regardless — a ``DEPOLARIZE1`` after an entangling gate
         earns no special treatment and the ``DEPOLARIZE2`` goes in anyway.  Each
         channel annotates at most one instruction; see the note below on
-        ``reset`` / ``X_ERROR`` / ``measure``.  When ``False``, the full noise
-        model is inserted unconditionally.
+        ``reset`` / ``X_ERROR`` / ``measure``.
+
+        A matched channel also consumes the noise slot of its qubits, so no idle
+        noise is stacked on top of it, and a fully hand-annotated circuit comes
+        out unchanged.  Existing channels are never rewritten either way.  When
+        ``False``, the full noise model is inserted unconditionally, on top of
+        whatever the circuit already carries.
 
     Returns
     -------
@@ -234,75 +250,30 @@ def insert_stim_noise(
         If any of the error probabilities does not lie in ``[0, 1]`` (raised
         immediately by this factory, since Stim requires probabilities to lie
         in this range), or if the circuit contains a gate acting on more than
-        two qubits (the noise model only defines channels for one- and
-        two-qubit gates).
+        two qubits — the model defines no channel for those, so decompose them
+        first, e.g. with the ``decompose`` pass.  Nothing is inserted before the
+        check, so the pass either succeeds or leaves the circuit alone.
 
     Notes
     -----
-    * Noise instructions are :class:`~qrisp.misc.stim_tools.StimNoiseGate`
-      operations.  They behave as identity gates for the Qrisp simulator but
-      become genuine noisy channels when the circuit is converted to Stim.
-    * Instructions that carry no physical time step are passed through
-      unchanged and generate no noise: the bookkeeping operations
-      ``qb_alloc`` / ``qb_dealloc``, the global phase ``gphase`` (which is a
-      one-qubit ``Operation`` in Qrisp but not a physical gate), the
-      ``parity`` annotation (which becomes a Stim ``DETECTOR`` /
-      ``OBSERVABLE_INCLUDE``) and any instruction without qubits.  They also
-      do not advance the layer clock, so they never create a noise layer of
-      their own.
-    * Qubit liveness is not tracked.  ``qb_alloc`` / ``qb_dealloc`` are passed
-      through, but idle noise is applied to every qubit of the circuit in
-      every layer, irrespective of whether that qubit is currently allocated.
-      This matches the physical picture of a fixed qubit register, which is
-      the intended use case.
-    * The noise model only defines channels for one- and two-qubit gates.
-      A gate acting on more than two qubits raises a :class:`ValueError`
-      before any noise is inserted (decompose such gates first, e.g. with the
-      ``decompose`` pass).
-    * A ``barrier`` acts as a synchronization point *between* layers: it
-      enforces that instructions before and after it are scheduled into separate
-      layers, but it is not a noise layer itself — it neither receives a noise
-      instruction nor is a time step of its own.  It constrains exactly the
-      qubits it names, so all outstanding idle noise of *those* qubits is
-      emitted before it.  A full-width barrier names the whole register and is
-      therefore a global time boundary (this is also precisely when it becomes a
-      Stim ``TICK``); a partial barrier is a local fence and lets an instruction
-      on an unnamed qubit stay in an earlier layer.  Use
-      :func:`~qrisp.promote_barriers` to widen local fences into global
-      boundaries before inserting noise — note that this widens the schedule and
-      hence inflates the idle-noise budget.
-    * Existing :class:`~qrisp.misc.stim_tools.StimNoiseGate` instructions are
-      always left untouched.  With ``only_necessary=True`` (the default) they
-      also consume the noise slot of their qubits: no additional idle noise
-      is stacked on top of them, and no duplicate channel is inserted
-      directly after the gate / before the measurement / after the reset they
-      already annotate.  A fully hand-annotated circuit therefore comes out
-      unchanged.  With ``only_necessary=False`` the full noise model is applied
-      on top of any user-placed noise.
+    * *Barriers.*  A ``barrier`` is a synchronization point *between* layers, not
+      a time step of its own: it forces the instructions on either side into
+      separate layers but receives no noise.  It constrains exactly the qubits it
+      names, so the outstanding idle noise of *those* qubits is emitted before it.
+      A full-width barrier names the whole circuit and is therefore a global time
+      boundary — precisely when it also becomes a Stim ``TICK`` — while a partial
+      barrier is a local fence that lets an instruction on an unnamed qubit stay
+      in an earlier layer.  :func:`~qrisp.promote_barriers` widens local fences
+      into global boundaries, at the price of a wider schedule and a
+      correspondingly larger idle-noise budget.
     * *A channel annotates at most one instruction.*  The rules of the model
       overlap in position — the channel after a reset is also the channel before
       whatever reads the qubit next — so ``reset``, ``X_ERROR``, ``measure``
       written in that order has both instructions expecting exactly that
       ``X_ERROR``.  Letting them share it would leave one of their two time steps
-      with no noise at all, so it is attributed to the instruction whose time step
-      it was scheduled into (the ``reset``) and the other one is amended with a
-      channel of its own.
-    * *Reading the output — repeated targets.*  Stim merges consecutive
-      identical channels into a single instruction, so a qubit that idles
-      through several time steps appears more than once in the target list:
-      ``DEPOLARIZE1(0.001) 0 0 0 2 2`` applies the channel three times to qubit
-      ``0`` and twice to qubit ``2``.  Each target is an independent
-      application, so this is exactly equivalent to five separate instructions,
-      one per idle time step.
-    * *Reading the output — placement of idle noise.*  Because the instruction
-      order of the input is preserved, a qubit's idle noise is emitted at the
-      latest still-correct position rather than spread across the round: right
-      before the next instruction that touches the qubit, at the next barrier
-      naming it, or at the end of the circuit.  Nothing acts on the qubit in
-      between, so the resulting channels compose identically — only the layout
-      of the printed circuit differs.  Running ``layerize(insert_barriers=True)``
-      afterwards distributes the channels back over the timeline, one per time
-      step, which is easier to read and to check.
+      with no noise at all, so it goes to the instruction whose time step it was
+      scheduled into (the ``reset``) and the other one is amended with a channel
+      of its own.
 
     Examples
     --------
@@ -361,10 +332,16 @@ def insert_stim_noise(
     the reset.  The ancilla ``1`` is busy in all four and collects exactly four
     channels.  The data qubits ``0`` and ``2`` are busy in one each and idle
     through the other three, which is what the two ``DEPOLARIZE1`` instructions
-    account for - three applications on qubit ``0`` and, together with the early
-    one, three on qubit ``2`` (see the notes on reading the output above).
-    Note that the ``DETECTOR`` does not produce a round of idle noise: it is a
-    classical annotation, not a time step.
+    account for.  Note that the ``DETECTOR`` does not produce a round of idle
+    noise: it is a classical annotation, not a time step.
+
+    ``DEPOLARIZE1(0.001) 0 0 0 2 2`` reads as five independent applications of the
+    channel, three on qubit ``0`` and two on qubit ``2``, one per idle time step —
+    Stim merges consecutive identical channels into one instruction and repeats
+    the target rather than the instruction.  Together with the early
+    ``DEPOLARIZE1(0.001) 2`` that gives each data qubit its three idle channels.
+    Running ``layerize(insert_barriers=True)`` afterwards spreads them back over
+    the timeline, one per time step, which is easier to read.
 
     Repeating the round and rendering the Stim timeline diagram shows the model
     in context.  The "after" diagram is the output of
