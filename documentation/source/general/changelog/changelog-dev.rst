@@ -114,6 +114,10 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+  * Added parallel test execution to the CI test workflow using 
+    the pytest-xdist plugin
+  (`PR #689 <https://github.com/eclipse-qrisp/Qrisp/pull/689>`_).
+
 Dependency Upgrades
 -------------------
 
