@@ -613,7 +613,9 @@ For more details, see the :ref:`BatchedBackend` documentation.
 :class:`~qrisp.interface.QiskitBackend` is a :ref:`Backend` that wraps any
 Qiskit-compatible backend (simulators or real hardware). Circuits are converted
 directly to Qiskit ``QuantumCircuit`` objects, transpiled for the target device,
-and submitted through Qiskit's ``SamplerV2`` primitive.
+and submitted through the backend's own ``run()`` method. Real IBM Quantum
+hardware is the exception, since IBM removed support for ``run()``: use
+:class:`~qrisp.interface.QiskitRuntimeBackend` for those.
 
 .. code-block:: python
 
@@ -637,8 +639,8 @@ Qiskit Runtime service and supports both single-job and session execution modes:
    )
 
 
-:ref:`IQMBackend`
----------------------
+:doc:`IQMBackend <Hardware Backends/IQMBackend>`
+------------------------------------------------
 
 .. note::
 
