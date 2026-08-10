@@ -34,7 +34,6 @@ DickeStateMethod: TypeAlias = Literal["deterministic", "divide-and-conquer"]
 _METHODS: tuple[DickeStateMethod, ...] = get_args(DickeStateMethod)
 
 
-
 def dicke_state(
     qv: QuantumVariable | Sequence[Qubit],
     k: int | Array,
@@ -190,17 +189,21 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
         iteration of the quantum loop depends only on ``i`` and the loop stays invertible. This costs
         :math:`\mathcal{O}(k)` per step, but it is classical arithmetic with no quantum operations in it.
         """
-        return lax.fori_loop(
-            i,
-            k + 1,
-            lambda j, acc: jnp.logaddexp(acc, log_x(j)),
+        m = lax.fori_loop(
+            i, k + 1,
+            lambda j, acc: jnp.maximum(acc, log_x(j)),
             jnp.asarray(-jnp.inf, dtype=jnp.float64),
         )
+        total = lax.fori_loop(
+            i, k + 1,
+            lambda j, acc: acc + jnp.exp(log_x(j) - m),
+            jnp.asarray(0.0, dtype=jnp.float64),
+        )
+        return m + jnp.log(total)
 
     def angle(i: int | Array) -> Array:
         r"""Compute the rotation angle :math:`2 \arccos \sqrt{x_i / s_i}` for the (controlled) RY gate at step ``i``."""
-        ratio = jnp.exp(log_x(i) - log_s(i))
-        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(ratio, 0.0, 1.0)))
+        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(jnp.exp(log_x(i) - log_s(i)), 0.0, 1.0)))
 
     # i = 0 is the only iteration without a control qubit.
     for _ in jrange(jnp.where(k > 0, 1, 0)):
