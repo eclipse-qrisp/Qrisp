@@ -16,10 +16,10 @@
 """
 
 from collections.abc import Sequence
-from typing import Literal, get_args, TypeAlias, assert_never
+from typing import Literal, TypeAlias, assert_never, get_args
 
 import jax.numpy as jnp
-from jax import lax, Array
+from jax import Array, lax
 from jax.scipy.special import gammaln
 
 from qrisp.circuit import Qubit
@@ -47,14 +47,14 @@ def dicke_state(
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in the state |00...011...1> where the number of 1's is equal
         to ``k``.
     k : int
         The Hamming weight (i.e. number of "ones") for the desired Dicke state.
     method : Literal["deterministic", "divide-and-conquer"]
         The method to be used for preparing the Dicke state. "deterministic" implements the preparation from
-        https://arxiv.org/pdf/1904.07358. "divide-and-conquer" implements the preparation from
+        https://arxiv.org/pdf/1904.07358 while "divide-and-conquer" implements the preparation from
         https://arxiv.org/pdf/2112.12435. The code largely uses the notation from these two papers.
 
 
@@ -85,9 +85,9 @@ def dicke_state(
 
     # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
     large_k = k > n // 2
-    # Partially undo the initial state, reducing its Hamming weight from k to n-k.
-    q_cond(large_k, x, lambda qv: qv, qv[n - k: jnp.maximum(k, n - k)])  # Equivalent to: `if large_k: x(qv[n-k:k])`
-    k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`
+    # Partially undo the initial state, reducing its Hamming weight from k to n-k (if k > n/2 and therefore k > n-k).
+    x(qv[n - k: jnp.maximum(k, n - k)])
+    k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`.
 
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
@@ -109,28 +109,28 @@ def dicke_state(
 
 def _log_binom(n: int | Array, k: int | Array) -> Array:
     r"""Compute :math:`\log \binom{n}{k}` in a Jasp/Jax-traceable way.
- 
+
     Staying in log space keeps the intermediate values finite: :math:`\binom{n}{k}` itself overflows a 64 bit float
     at around :math:`n = 1030`, while its logarithm does not.
- 
+
     Parameters
     ----------
     n : int
         The size of the set to choose from. May be a traced value.
     k : int
         The number of elements to choose. May be a traced value.
- 
+
     Returns
     -------
     Array
         A float64 scalar holding :math:`\log \binom{n}{k}`, or ``-jnp.inf`` outside of ``0 <= k <= n``, i.e. wherever
         the binomial coefficient vanishes.
- 
+
     """
     n_f = jnp.asarray(n, dtype=jnp.float64)
     k_f = jnp.asarray(k, dtype=jnp.float64)
     valid = (k_f >= 0) & (k_f <= n_f)
-    k_safe = jnp.clip(k_f, 0.0, jnp.maximum(n_f, 0.0))
+    k_safe = jnp.clip(k_f, 0.0, jnp.maximum(n_f, 0.0)) # Clip the value to avoid floating-point errors.
     return jnp.where(
         valid,
         gammaln(n_f + 1.0) - gammaln(k_safe + 1.0) - gammaln(n_f - k_safe + 1.0),
@@ -158,7 +158,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : QuantumVariable or Sequence[Qubit]
         The quantum variable to be divided. Has to be in the state |00...011...1> where the number of 1's is equal
         to ``k``.
     n1 : int
@@ -173,37 +173,38 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
     def log_x(i: int | Array) -> Array:
         r"""Compute :math:`\log x_i`, following :math:`x_i` from page 8 of https://arxiv.org/pdf/2112.12435.
 
-        That is, :math:`x_i = \binom{n_1}{i} \binom{n_2}{k-i}`, which is ``-jnp.inf`` in log space whenever one of
+        That is, :math:`x_i = \binom{n_1}{i} \binom{n_2}{k-i}`, equal to ``-jnp.inf`` in log space whenever one of
         the two binomial coefficients vanishes.
         """
         return _log_binom(n1, i) + _log_binom(n2, k - i)
 
-    def log_s(i: int | Array) -> Array:
-        r"""Compute :math:`\log s_i`, following :math:`s_i = \sum_{j \geq i} x_j` from the same page of the paper.
+    def ratio_x_s(i: int | Array) -> Array:
+        r"""Compute :math:`x_i / s_i`, where :math:`s_i = \sum_{j \geq i} x_j`, without forming either quantity.
 
-        Accumulating with ``jnp.logaddexp`` keeps the sum in log space throughout, so neither :math:`x_i` nor
-        :math:`s_i` ever has to be represented as a float. Only their ratio leaves log space, and that ratio lies in
-        :math:`[0, 1]` by construction.
+        Both :math:`x_i` and :math:`s_i` may easily overflow. Rather than computing the two and dividing, we rearrange
+        into a form in which only the ratio ever appears:
+
+        .. math::
+
+            \frac{x_i}{s_i} = \frac{x_i}{\sum_{j \geq i} x_j}
+                            = \left( \sum_{j \geq i} \frac{x_j}{x_i} \right)^{-1}
+                            = \left( \sum_{j \geq i} e^{\log x_j - \log x_i} \right)^{-1}
 
         The sum is recomputed from scratch for every ``i`` rather than carried between iterations, so that each
         iteration of the quantum loop depends only on ``i`` and the loop stays invertible. This costs
         :math:`\mathcal{O}(k)` per step, but it is classical arithmetic with no quantum operations in it.
         """
-        m = lax.fori_loop(
-            i, k + 1,
-            lambda j, acc: jnp.maximum(acc, log_x(j)),
-            jnp.asarray(-jnp.inf, dtype=jnp.float64),
-        )
+        log_x_i = log_x(i)
         total = lax.fori_loop(
             i, k + 1,
-            lambda j, acc: acc + jnp.exp(log_x(j) - m),
+            lambda j, acc: acc + jnp.exp(log_x(j) - log_x_i),
             jnp.asarray(0.0, dtype=jnp.float64),
         )
-        return m + jnp.log(total)
+        return 1.0 / total
 
     def angle(i: int | Array) -> Array:
         r"""Compute the rotation angle :math:`2 \arccos \sqrt{x_i / s_i}` for the (controlled) RY gate at step ``i``."""
-        return 2 * jnp.arccos(jnp.sqrt(jnp.clip(jnp.exp(log_x(i) - log_s(i)), 0.0, 1.0)))
+        return 2 * jnp.arccos(jnp.sqrt(ratio_x_s(i)))
 
     # i = 0 is the only iteration without a control qubit.
     for _ in jrange(jnp.where(k > 0, 1, 0)):
@@ -222,7 +223,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in target subspace.
     n : int
         The size of the quantum variable.
@@ -246,7 +247,7 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int | Ar
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in target subspace.
     highIndex : int
         Index for indication of preparation steps, as seen in original algorithm.
