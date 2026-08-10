@@ -114,6 +114,10 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+* Added StepSecurity Harden-Runner to the CI test workflow and pinned 
+  GitHub Actions version to a full-length commit SHA.
+  (`PR #531 <https://github.com/eclipse-qrisp/Qrisp/pull/531>`_).
+
 Dependency Upgrades
 -------------------
 
