@@ -37,7 +37,7 @@ _METHODS: tuple[DickeStateMethod, ...] = get_args(DickeStateMethod)
 def dicke_state(
     qv: QuantumVariable | Sequence[Qubit],
     k: int | Array,
-    method: DickeStateMethod = "divide-and-conquer",
+    method: DickeStateMethod = "deterministic",
 ) -> None:
     """Dicke State initialization of a QuantumVariable.
 
