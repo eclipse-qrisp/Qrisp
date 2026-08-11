@@ -56,9 +56,12 @@ def _build_single_qubit_pyzx_circuit():
     c.add_gate("ZPhase", 2, Fraction(1, 6))
     c.add_gate("U2", 3, Fraction(2, 7), Fraction(9, 8))
     c.add_gate("U3", 0, Fraction(6, 7), Fraction(3, 2), Fraction(5, 4))
-    c.add_gate("SX", 1)
-    c.add_gate("S", 2)
-    c.add_gate("T", 3)
+    c.add_gate("SX", 1, True)  # adjoint versions
+    c.add_gate("S", 2, True)
+    c.add_gate("T", 3, True)
+    c.add_gate("SX", 3, False)  # non-adjoint versions
+    c.add_gate("S", 0, False)
+    c.add_gate("T", 1, False)
     return c
 
 

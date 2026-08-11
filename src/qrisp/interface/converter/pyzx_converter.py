@@ -165,7 +165,13 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     return pyzx_circuit
 
 
-def convert_from_pyzx(pyzx_circuit):
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyzx import Circuit
+
+
+def convert_from_pyzx(pyzx_circuit: "Circuit"):
     """Convert a PyZX QuantumCircuit to a Qrisp Circuit.
 
     Parameters
@@ -202,9 +208,9 @@ def convert_from_pyzx(pyzx_circuit):
         "ZPhase": qc.rz,
         "U2": partial(qc.u3, np.pi / 2),
         "U3": qc.u3,
-        "SX": qc.sx,
-        "S": qc.s,
-        "T": qc.t,
+        "SX": lambda adj, x: qc.sx_dg(x) if adj else qc.sx(x),
+        "S": lambda adj, x: qc.s_dg(x) if adj else qc.s(x),
+        "T": lambda adj, x: qc.t_dg(x) if adj else qc.t(x),
         # multi-qubits gates
         "CNOT": qc.cx,
         "CY": qc.cy,
@@ -237,9 +243,12 @@ def convert_from_pyzx(pyzx_circuit):
     }
 
     def add_gate(gate):
-        # single-qubit, parameter-free gates and non-unitary operations
-        if gate.name in ["NOT", "Y", "Z", "HAD", "SX", "S", "T", "Measurement", "Reset"]:
+        # single-qubit, parameter-free gates without adjoint version and non-unitary operations
+        if gate.name in ["NOT", "Y", "Z", "HAD", "Measurement", "Reset"]:
             gate_map[gate.name](gate.target)
+        # single-qubit gates with adjoint version
+        elif gate.name in ["SX", "S", "T"]:
+            gate_map[gate.name](gate.adjoint, gate.target)
         # single-qubit, one-parameter gates
         elif gate.name in ["XPhase", "YPhase", "ZPhase"]:
             gate_map[gate.name](float(gate.phase) * np.pi, gate.target)
