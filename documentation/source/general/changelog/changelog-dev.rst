@@ -32,6 +32,10 @@ Improvements
 Other New Features
 ------------------
 
+- Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
+  and ``RZZGate``. 
+  (`PR #797 <https://github.com/eclipse-qrisp/Qrisp/pull/797>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -141,3 +145,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `micpap25 <https://github.com/micpap25>`
