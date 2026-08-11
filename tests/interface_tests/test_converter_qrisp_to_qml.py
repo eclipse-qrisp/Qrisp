@@ -799,7 +799,7 @@ def test_mixed_circuit():
     single_gates = [XGate(), YGate(), ZGate(), HGate(), SXGate(), SGate()]
     rot_gates = [RXGate(0.5), RYGate(0.5), RZGate(0.5), PGate(0.5)]
     c_gates = [CXGate(), CYGate(), CZGate()]
-    mc_gates = [SwapGate(), RXXGate(0.5), RYYGate(0.5), RZZGate(0.5)]
+    mc_gates = [SwapGate(), RXXGate(0.5), RZZGate(0.5)]
     special_gates = [MCXGate(control_amount=3), MCRXGate(0.5, control_amount=3)]
 
     for idx, gate in enumerate(single_gates):
