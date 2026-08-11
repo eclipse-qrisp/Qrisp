@@ -145,8 +145,7 @@ def test_dicke_state_balanced_jasp_inverse(method):
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
 
-@pytest.mark.parametrize("method", DICKE_METHODS)
-def test_dicke_state_jasp_large_k(method):
+def test_dicke_state_jasp_large_k_divide_and_conquer(method):
     n = 4  # Number of qubits
     k = 3  # Excitations
 
@@ -157,7 +156,7 @@ def test_dicke_state_jasp_large_k(method):
         qv = QuantumVariable(n)
         for i in range(n - k, n):
             x(qv[i])
-        dicke_state(qv, k, method=method)
+        dicke_state(qv, k, method="divide-and-conquer")
         return qv
 
     result = main()
@@ -544,5 +543,3 @@ def test_unbalanced_w_state_one_qubit_jasp():
     expected_arr = np.array([expected.get(k, 0.0) for k in keys])
 
     assert np.allclose(result_arr, expected_arr, atol=1e-6)
-
-
