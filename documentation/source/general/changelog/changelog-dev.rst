@@ -32,6 +32,19 @@ Improvements
 Other New Features
 ------------------
 
+- **Dicke state preparation via divide-and-conquer**
+  :func:`~qrisp.dicke_state` now accepts a ``method`` keyword argument.  In
+  addition to the existing ``"deterministic"`` method
+  (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_), the new
+  ``"divide-and-conquer"`` method
+  (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_) prepares the two
+  halves of the variable on disjoint qubits, roughly halving the circuit
+  depth.  It requires the input to have Hamming weight exactly ``k``, whereas
+  ``"deterministic"`` implements the full Dicke state unitary and therefore
+  also accepts any input weight ``l <= k``, preparing ``D(n, l)``.  The
+  default is ``"deterministic"``, so existing code is unaffected
+  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -88,9 +101,20 @@ Bug Fixes
 * Updated broken link in TSP tutorial to point to the
   correct archived Qiskit textbook.
   (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
+  
+* Fixed :func:`dicke_state <qrisp.dicke_state>` for ``k = 0``, which emitted a
+  ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
+  negative-length loop range under Jasp
+  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 Compatibility
 -------------
+
+* :func:`~qrisp.dicke_state` now raises a ``ValueError`` for an unrecognized
+  ``method``, and for a ``k`` outside ``0 <= k <= len(qv)`` when both are
+  plain Python integers (i.e. outside of Jasp tracing).  The latter previously
+  produced an incorrect state silently
+  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add compatibility notes above this line
 
@@ -169,3 +193,4 @@ First Time Contributors 🎉
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
+* `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
