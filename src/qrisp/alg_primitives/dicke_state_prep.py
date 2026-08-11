@@ -49,7 +49,8 @@ def dicke_state(
     ----------
     qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in the state |00...011...1> where the number of 1's is equal
-        to ``k``.
+        to ``l``. If `method` is `"divide-and-conquer"`, it is required to have ``l == k``. When `method` is
+        `"deterministic"`, ``l`` may be less or equal to ``k``. In that case, the resulting state is :math:`D(n, l)`.
     k : int
         The Hamming weight (i.e. number of "ones") for the desired Dicke state.
     method : Literal["deterministic", "divide-and-conquer"]
@@ -62,6 +63,9 @@ def dicke_state(
     ------
     ValueError
         If ``method`` is neither "deterministic" nor "divide-and-conquer".
+    ValueError
+        If not in tracing mode (i.e., when ``k`` and ``n = len(qv)`` are integers) and when ``k`` and ``n`` don't
+        satisfy the basic inequality ``0 <= k <= n``.
 
     Examples
     --------
@@ -82,29 +86,37 @@ def dicke_state(
         raise ValueError(f"Unknown `method`: {method!r}. Possible methods are: {', '.join(map(repr, _METHODS))}.")
 
     n = jlen(qv)
+    if isinstance(k, int) and isinstance(n, int) and not 0 <= k <= n:
+        raise ValueError(f"`k` must satisfy 0 <= k <= n, got k={k} for n={n}.")
 
-    # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
-    large_k = k > n // 2
-    # Partially undo the initial state, reducing its Hamming weight from k to n-k (if k > n/2 and therefore k > n-k).
-    x(qv[n - k: jnp.maximum(k, n - k)])
-    k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`.
+
 
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
-        n1 = (n + 1) // 2  # ceil(n/2)
-        n2 = n // 2  # floor(n/2)
+
+        # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
+        large_k = k > n // 2
+        # Partially undo the initial state, reducing its Hamming weight from k to n-k (if k > n/2).
+        for i in jrange(n - k, jnp.maximum(k, n - k)):
+            x(qv[i])
+        k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`.
+
+        n1 = n // 2  # floor(n/2)
+        n2 = (n + 1) // 2  # ceil(n/2)
 
         _divide(qv, n1, n2, k)
 
         _apply_dicke_unitary(qv[:n1], n1, k)
         _apply_dicke_unitary(qv[n1:], n2, k)
 
+        # If we were preparing D(n, n-k), now we apply the X gates to transform it into D(n, k).
+        q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
+
     else:
         assert_never(method)
 
-    # If we were preparing D(n, n-k), now we apply the X gates to transform it into D(n, k).
-    q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
+
 
 
 def _log_binom(n: int | Array, k: int | Array) -> Array:
@@ -235,7 +247,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
         index2 = n - offset
         split_cycle_shift(qv, index2, k)
 
-    for offset in jrange(k - 1):
+    for offset in jrange(jnp.maximum(k - 1, 0)):
         index = k - offset
         split_cycle_shift(qv, index, index - 1)
 
