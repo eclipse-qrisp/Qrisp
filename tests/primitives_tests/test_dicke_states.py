@@ -145,7 +145,7 @@ def test_dicke_state_balanced_jasp_inverse(method):
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
 
-def test_dicke_state_jasp_large_k_divide_and_conquer(method):
+def test_dicke_state_jasp_large_k_divide_and_conquer():
     n = 4  # Number of qubits
     k = 3  # Excitations
 
@@ -230,6 +230,7 @@ def test_dicke_state_k(n, k, method):
 
         assert bitstring.count("1") == k
         assert np.isclose(prob, expected_prob, atol=1e-6)
+
 
 @pytest.mark.parametrize(
     "n, k, l",
@@ -351,7 +352,7 @@ def test_dicke_state_divide_and_conquer_depth(n, k):
         dicke_state(qv, k, method=method)
         depths[method] = qv.qs.compile().depth()
 
-    assert depths["divide-and-conquer"] < 0.8 * depths["deterministic"]
+    assert depths["divide-and-conquer"] < 0.8 * depths["deterministic"]  # 0.8 is a conservative upper bound.
 
 
 ##############################################################

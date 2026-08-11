@@ -37,27 +37,39 @@ _METHODS: tuple[DickeStateMethod, ...] = get_args(DickeStateMethod)
 def dicke_state(
     qv: QuantumVariable | Sequence[Qubit],
     k: int | Array,
+    *,
     method: DickeStateMethod = "deterministic",
 ) -> None:
-    """Dicke State initialization of a QuantumVariable.
+    r"""Dicke State initialization of a QuantumVariable.
 
-    A Dicke state is an equal positive superposition of all basis states with a given Hamming weight. We label the Dicke
-    state of Hamming weight :math:`k` on :math:`n` qubits as :math:`D(n, k)`.
-
+    A Dicke state is an equal positive superposition of all basis states with a given Hamming weight. We label the
+    Dicke state of Hamming weight :math:`k` on :math:`n` qubits as :math:`D(n, k)`, where :math:`n` is the size of
+    ``qv``. The input is a computational basis state :math:`|0\rangle^{\otimes n-l} |1\rangle^{\otimes l}` of some
+    Hamming weight :math:`l`.
 
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
-        Initial quantum variable to be prepared. Has to be in the state |00...011...1> where the number of 1's is equal
-        to ``l``. If `method` is `"divide-and-conquer"`, it is required to have ``l == k``. When `method` is
+        Initial quantum variable to be prepared. Has to be in the state |00...011...1> where we label the number of 1's
+        ``l``. If ``method`` is ``"divide-and-conquer"``, it is required to have ``l == k``. When ``method`` is
         `"deterministic"`, ``l`` may be less or equal to ``k``. In that case, the resulting state is :math:`D(n, l)`.
     k : int
         The Hamming weight (i.e. number of "ones") for the desired Dicke state.
-    method : Literal["deterministic", "divide-and-conquer"]
-        The method to be used for preparing the Dicke state. "deterministic" implements the preparation from
-        https://arxiv.org/pdf/1904.07358 while "divide-and-conquer" implements the preparation from
-        https://arxiv.org/pdf/2112.12435. The code largely uses the notation from these two papers.
+    method : str, optional
+        The method used to prepare the state, either ``"deterministic"`` or ``"divide-and-conquer"``. The default is
+        ``"deterministic"``. The code largely follows the notation of the respective papers.
 
+        ``"deterministic"`` applies the Dicke state unitary :math:`U_{n,k}` of
+        `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_. Because this is a unitary rather than a state
+        preparation circuit, it maps *any* input with :math:`l \leq k` to :math:`D(n, l)`, and therefore acts
+        linearly on superpositions of such inputs. Use this when the Hamming weight of the input is itself in
+        superposition, for instance when assembling more general symmetric states.
+
+        ``"divide-and-conquer"`` implements the preparation of
+        `arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_. It splits ``qv`` in half and prepares both halves on
+        disjoint qubits, so :math:`U_{n_1,k}` and :math:`U_{n_2,k}` are applied in parallel and the circuit depth is
+        roughly halved. In exchange it is a state preparation circuit only: the input must have Hamming weight
+        exactly :math:`k`.
 
     Raises
     ------
@@ -90,7 +102,6 @@ def dicke_state(
         raise ValueError(f"`k` must satisfy 0 <= k <= n, got k={k} for n={n}.")
 
 
-
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
@@ -117,8 +128,6 @@ def dicke_state(
         assert_never(method)
 
 
-
-
 def _log_binom(n: int | Array, k: int | Array) -> Array:
     r"""Compute :math:`\log \binom{n}{k}` in a Jasp/Jax-traceable way.
 
@@ -141,13 +150,7 @@ def _log_binom(n: int | Array, k: int | Array) -> Array:
     """
     n_f = jnp.asarray(n, dtype=jnp.float64)
     k_f = jnp.asarray(k, dtype=jnp.float64)
-    valid = (k_f >= 0) & (k_f <= n_f)
-    k_safe = jnp.clip(k_f, 0.0, jnp.maximum(n_f, 0.0)) # Clip the value to avoid floating-point errors.
-    return jnp.where(
-        valid,
-        gammaln(n_f + 1.0) - gammaln(k_safe + 1.0) - gammaln(n_f - k_safe + 1.0),
-        -jnp.inf,
-    )
+    return gammaln(n_f + 1.0) - gammaln(k_f + 1.0) - gammaln(n_f - k_f + 1.0)
 
 
 def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Array, k: int | Array) -> None:
@@ -158,7 +161,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
 
     .. math::
 
-        \frac{1}{\sqrt{\binom{n}{k}}}
+        \frac{1}{\sqrt{\binom{n_1+n_2}{k}}}
         \sum_{k_1 = 0}^k
         \sqrt{\binom{n_1}{k_1} \binom{n_2}{k-k_1}}
         |0\rangle^{\otimes n_1-k_1}
@@ -183,7 +186,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
     """
 
     def log_x(i: int | Array) -> Array:
-        r"""Compute :math:`\log x_i`, following :math:`x_i` from page 8 of https://arxiv.org/pdf/2112.12435.
+        r"""Compute :math:`\log x_i`, following :math:`x_i` from page 8 of https://arxiv.org/abs/2112.12435.
 
         That is, :math:`x_i = \binom{n_1}{i} \binom{n_2}{k-i}`, equal to ``-jnp.inf`` in log space whenever one of
         the two binomial coefficients vanishes.
@@ -222,7 +225,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
     for _ in jrange(jnp.where(k > 0, 1, 0)):
         ry(angle(0), qv[n1 - 1])
 
-    for i in jrange(1, k):
+    for i in jrange(1, jnp.maximum(k, 1)):
         with control(qv[n1 - i]):
             ry(angle(i), qv[n1 - 1 - i])
 
@@ -231,7 +234,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
 
 
 def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k: int | Array) -> None:
-    """Apply the Dicke unitary constructed according to Lemma 2 in https://arxiv.org/pdf/1904.07358.
+    """Apply the Dicke unitary constructed according to Lemma 2 in https://arxiv.org/abs/1904.07358.
 
     Parameters
     ----------
@@ -243,7 +246,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
         The Hamming weight (i.e. number of "ones") of the Dicke state to be constructed.
 
     """
-    for offset in jrange(jnp.where(k > 0, n - k, 0)): # If `k == 0`, we don't execute anything. D(n, 0) = |00 ... 0>
+    for offset in jrange(jnp.where(k > 0, n - k, 0)):  # If `k == 0`, we don't execute anything. D(n, 0) = |00 ... 0>
         index2 = n - offset
         split_cycle_shift(qv, index2, k)
 
