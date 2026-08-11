@@ -390,6 +390,7 @@ def RXXGate(phi: FloatLike = 0):
 
     return res
 
+
 def RYYGate(phi: FloatLike = 0):
     """Return an Ising YY-coupling gate.
 
@@ -422,6 +423,7 @@ def RYYGate(phi: FloatLike = 0):
     res.is_qfree = False
 
     return res
+
 
 def RZZGate(phi: FloatLike = 0):
     """Return an Ising ZZ-coupling gate.
