@@ -27,7 +27,7 @@ from qrisp.core import QuantumVariable, cx, ry, x
 from qrisp.environments import control
 from qrisp.jasp import jlen, jrange, q_cond
 
-# The state preparation methods that :func:`dicke_state` knows about.
+#: The state preparation methods that ``dicke_state`` knows about.
 DickeStateMethod: TypeAlias = Literal["deterministic", "divide-and-conquer"]
 
 # The same methods as a runtime tuple, derived from ``DickeStateMethod`` so that the two cannot drift apart.
@@ -45,8 +45,9 @@ def dicke_state(
     A Dicke state is the equal superposition of all basis states of Hamming weight :math:`k` on :math:`n` qubits, where
     :math:`n` is the number of qubits of ``qv``.
 
-    ``qv`` has to be initialized to the basis state :math:`|0\rangle^{\otimes n-k}|1\rangle^{\otimes k}` beforehand, as
-    in the example below.
+    ``qv`` has to be initialized to the basis state :math:`|0\rangle^{\otimes n-l}|1\rangle^{\otimes l}` beforehand, as
+    in the example below. ``"divide-and-conquer"`` requires :math:`l = k`; ``"deterministic"`` accepts any
+    :math:`l \leq k` (see ``method``).
 
     Parameters
     ----------
@@ -54,7 +55,7 @@ def dicke_state(
         The qubits to prepare, initialized as described above.
     k : int
         The Hamming weight (i.e. the number of "ones") of the desired Dicke state.
-    method : str, optional
+    method : {"deterministic", "divide-and-conquer"}, optional
         Either ``"deterministic"`` (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_, the default) or
         ``"divide-and-conquer"`` (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_). The latter prepares the two
         halves of ``qv`` on disjoint qubits and therefore has roughly half the circuit depth. The former is the full
@@ -64,11 +65,13 @@ def dicke_state(
     Raises
     ------
     ValueError
-        If ``method`` is unknown, or if ``k`` and :math:`n` are known at trace time and violate :math:`0 \leq k \leq n`.
+        If ``method`` is unknown, or if ``k`` and :math:`n` are plain Python integers (i.e. outside of tracing) and
+        violate :math:`0 \leq k \leq n`.
 
     Examples
     --------
-    We initialize a QuantumVariable in the "0011" state and from this create the Dicke state with Hamming weight 2.
+    We initialize a QuantumVariable in the "0011" state and from this create the Dicke state with
+    Hamming weight 2.
 
     ::
 
@@ -80,19 +83,28 @@ def dicke_state(
 
         dicke_state(qv, 2)
 
-    The same state with the shallower divide-and-conquer circuit.
+        print(qv)
+
+    Under Jasp, the Hamming weight may be a traced value. Here we prepare the same state with the
+    shallower divide-and-conquer circuit.
 
     ::
 
         from qrisp import QuantumVariable, x, dicke_state
+        from qrisp.jasp import jrange, terminal_sampling
 
-        qv = QuantumVariable(4)
-        x(qv[2])
-        x(qv[3])
+        @terminal_sampling
+        def main(k):
+            qv = QuantumVariable(4)
+            for i in jrange(4 - k, 4):
+                x(qv[i])
+            dicke_state(qv, k, method="divide-and-conquer")
+            return qv
 
-        dicke_state(qv, 2, method="divide-and-conquer")
+        print(main(2))
 
     """
+
     if method not in _METHODS:
         raise ValueError(f"Unknown `method`: {method!r}. Possible methods are: {', '.join(map(repr, _METHODS))}.")
 
@@ -180,8 +192,7 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
-        The quantum variable to be divided. Has to be in the state |00...011...1> where the number of 1's is equal
-        to ``k``.
+        The quantum variable to be divided. Has to be in the state :math:`|0\rangle^{\otimes n-k}|1\rangle^{\otimes k}`.
     n1 : int
         The size of the first half of the quantum variable.
     n2 : int
@@ -252,6 +263,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
     circuit: it is only valid for an input of Hamming weight exactly :math:`k` and would silently
     destroy the :math:`l < k` branches. ``_divide`` does assume weight exactly :math:`k`, so the
     reduction lives in ``dicke_state`` on the divide-and-conquer path only.
+
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
@@ -276,7 +288,7 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
 def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int | Array, lowIndex: int | Array) -> None:
     """Apply the *Split & Cyclic Shift* unitary :math:`SCS_{n, k}` defined in https://arxiv.org/abs/1904.07358.
 
-    Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to `qv` in place.
+    Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to ``qv`` in place.
 
     Parameters
     ----------
