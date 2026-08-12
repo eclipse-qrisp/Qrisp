@@ -31,7 +31,7 @@ threshold = 1e-9
 
 
 class BosonicOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of ladder term operators, i.e.,
+    r"""This class provides an efficient implementation of bosonic ladder term operators, i.e.,
     operators of the form
 
     .. math::
@@ -49,13 +49,13 @@ class BosonicOperator(Hamiltonian):
 
     Examples
     --------
-    A ladder term operator can be specified conveniently in terms of ``a`` (lowering, i.e., annihilation), ``c`` (raising, i.e., creation) operators:
+    A ladder term operator can be specified conveniently in terms of ``a_b`` (lowering, i.e., annihilation), ``c_b`` (raising, i.e., creation) operators:
 
     ::
         
-        from qrisp.operators.bosonic import a, c
+        from qrisp.operators.bosonic import a_b, c_b
 
-        O = a(2)*c(1)+a(3)*c(2)
+        O = a_b(2)*c_b(1)+a_b(3)*c_b(2)
         O
 
     Yields $a_2c_1+a_3c_2$.
@@ -95,7 +95,7 @@ class BosonicOperator(Hamiltonian):
 
             from qrisp.operators.bosonic import *
 
-            O = a(0)*a(1) - a(1)*a(0)
+            O = a_b(0)*a_b(1) - a_b(1)*a_b(0)
             print(O.reduce())
             # Yields: 2*a0*a1
 
@@ -103,7 +103,7 @@ class BosonicOperator(Hamiltonian):
         that has redundant terms, if hermitized.
 
 
-        >>> O = a(0)*a(1) + c(1)*c(0)
+        >>> O = a_b(0)*a_b(1) + c_b(1)*c_b(0)
         >>> reduced_O = O.reduce(assume_hermitian = True)
         >>> print(reduced_O)
         2*a0*a1
@@ -114,35 +114,12 @@ class BosonicOperator(Hamiltonian):
         1.0*a0*a1 + 1.0*c1*c0
 
         """
-        # This function performs some non trivial logic.
-
-        # The problem here is that each bosonic term can
-        # be reshaped into several different forms and still express
-        # the same operator.
-        # For instance, the operator can be arbitrarily reordered
-        # if the permutation sign is take care of and no creators/annihilators
-        # with the same index are swapped.
-        # Furthermore the Hamiltonian must be Hermitian, so each
-        # term must be equivalent to is Hermitian conjugate.
-
-        # This function implements a storage system, that combines
-        # the coefficients of differing terms representing the same operator
-        # into a single term.
-
-        # This dictionary will contain the new terms, where redundancies
-        # are taken care of.
+        # code is adapted from the FermionicOperator class
         new_terms_dict = {}
 
         for term, coeff in self.terms_dict.items():
-            # We only store the sorted version of each term.
-            # Sorting here means permuting the creators/annihilators
-            # while considering the sign of the permutation applied by the sort.
-            # The sort is performed in a stable manner, so terms like a(0)*c(0)
-            # don't get permuted (this would be a non-trivial anti-commutator).
             sorted_term = term.sort()
             if sorted_term not in new_terms_dict and assume_hermitian:
-                # If the sorted term is not in the terms dict, the sorted version
-                # of the daggering might be.
                 daggered_sorted_term = term.dagger().sort()
                 if daggered_sorted_term in new_terms_dict:
                     sorted_term = daggered_sorted_term
@@ -170,8 +147,8 @@ class BosonicOperator(Hamiltonian):
 
         Examples
         --------
-        >>> from qrisp.operators import a, c
-        >>> O = a(0)*c(1)+a(1)*c(0)+0.5*a(1)+0.5*c(1)
+        >>> from qrisp.operators import a_b, c_b
+        >>> O = a_b(0)*c_b(1)+a_b(1)*c_b(0)+0.5*a_b(1)+0.5*c_b(1)
         >>> O.coeffs()
         array([1. , 1. , 0.5, 0.5])
 
@@ -226,7 +203,7 @@ class BosonicOperator(Hamiltonian):
 
             from qrisp.operators import *
 
-            O = a(0)*c(1)*a(2) + a(3)
+            O = a_b(0)*c_b(1)*a_b(2) + a_b(3)
             print(O.dagger())
             # Yields: c2*a1*c0 + c3
 
@@ -252,7 +229,7 @@ class BosonicOperator(Hamiltonian):
 
             from qrisp.operators import *
 
-            O = a(0)*c(1)*a(2) + a(3)
+            O = a_b(0)*c_b(1)*a_b(2) + a_b(3)
             print(O.hermitize())
             # Yields: 0.5*a0*c1*a2 + 0.5*a3 + 0.5*c2*a1*c0 + 0.5*c3
 
@@ -516,7 +493,7 @@ class BosonicOperator(Hamiltonian):
             A sparse matrix representing the operator.
         truncation: How many bosonic occupation numbers to take into account.
         binary_encoding : string, optional
-            How to embed the bosonic terms into a QubitOperator.
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
 
         """
         return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).to_sparse_matrix()
@@ -540,7 +517,7 @@ class BosonicOperator(Hamiltonian):
         truncation : int, optional
             How many bosonic occupation numbers to take into account
         binary_encoding : str, optional
-            The way of embedding the bosonic operator into qubits
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
 
         Returns
         -------
@@ -575,7 +552,7 @@ class BosonicOperator(Hamiltonian):
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
         truncation: How many bosonic occupation numbers to take into account.
         binary_encoding : string, optional
-            How to embed the bosonic terms into a QubitOperator.
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
         measurement_kwargs : dict, optional
             The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
 
@@ -593,9 +570,7 @@ class BosonicOperator(Hamiltonian):
     #
 
     def trotterization(self, truncation=8, binary_encoding="gray_code", forward_evolution=True):
-        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
-
-        """
+        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization."""
         qubit_operator = self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding)
         return qubit_operator.trotterization(forward_evolution=forward_evolution)
 

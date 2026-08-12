@@ -21,7 +21,7 @@
 import numpy as np
 import warnings
 
-from qrisp.operators.fermionic.visualization import a_, c_
+from qrisp.operators.bosonic.visualization import a_, c_
 from qrisp.operators.qubit import A, C, Z, P0, P1
 
 
@@ -98,7 +98,7 @@ class BosonicTerm:
         return BosonicTerm(result_ladder_list)
 
     def order(self):
-        """Not that important, since relevant Hamiltonians (e.g., electronic structure) consist of ordered terms.
+        """Not that important, since relevant Hamiltonians consist of ordered terms.
         What is needed for trotterization?
 
         Bosonic commutation relations:
@@ -109,7 +109,7 @@ class BosonicTerm:
 
         Order ladder terms such that
             1) Raising operators preceed lowering operators
-            2) Operators are ordered in descending order of fermionic modes
+            2) Operators are ordered in descending order of bosonic modes
 
         Example: a_5^dagger a_2^dagger a_3 a_1
 
@@ -164,13 +164,23 @@ class BosonicTerm:
             return list(self.unipolars)
 
     def to_qubit_term(self, truncation=8, binary_encoding="gray_code"):
-        """Maps a bosonic term to a qubit term. 
+        """Maps a bosonic term to a qubit term.
         Since bosonic operators act on an infinite-dimensional space, a truncation to a finite
         number of bosonic occupation numbers is necessary (provided by the "truncation" argument).
         For their embedding into qubits, an arbitrary binary encoding can be chosen,
         but the Gray encoding appears tailor-made for the structure of ladder operators.
+        Apart from the Gray encoding, a standard binary and a one-hot encoding are provided.
+        https://www.nature.com/articles/s41534-020-0278-0 contains more details on their respective advantages and disadvantages.
+
+        Parameters
+        ----------
+        truncation: int, optional
+            The number of bosonic occupation numbers one wants to describe.
+            Note that 0 also counts as an occupation number, so occupation numbers from 0 to truncation-1 are represented.
+        binary_encoding: str, optional
+            How to embed the bosonic matrix into qubits. Possible values are "gray_code", "standard_binary" and "one_hot".
         """
-        if not np.isclose(np.log2(truncation)%1, 0) and binary_encoding != "one_hot":
+        if not np.isclose(np.log2(truncation) % 1, 0) and binary_encoding != "one_hot":
             warnings.warn("truncation is not a power of 2, could be chosen larger with same amount of qubits.")
         if binary_encoding == "gray_code":
             encoder = gray_code
@@ -180,28 +190,23 @@ class BosonicTerm:
             encoder = one_hot
         else:
             raise Exception(f"Don't know binary encoding type {binary_encoding}")
-            
-        gate_mapping = {
-                (0, 0): P0,
-                (1, 1): P1,
-                (0, 1): A,
-                (1, 0): C
-            }
-        
+
+        gate_mapping = {(0, 0): P0, (1, 1): P1, (0, 1): A, (1, 0): C}
+
         indices_present = set([x[0] for x in self.ladder_list])
-        
+
         if binary_encoding != "one_hot":
             n_qubits = int(np.ceil(np.log2(truncation)))
         else:
             n_qubits = truncation
-        
+
         binary_rep = encoder(n_qubits)
-        
+
         res = 1
-        
+
         for ind in indices_present:
             ladder_ops = [x[1] for x in self.ladder_list if x[0] == ind]
-            #bring term into matrix form
+            # bring term into matrix form
             M = np.identity(truncation)
             for l in ladder_ops:
                 if l:
@@ -212,58 +217,57 @@ class BosonicTerm:
             temp = 0
             for i in range(truncation):
                 for j in range(truncation):
-                    if not np.isclose(M[i][j], 0.):
+                    if not np.isclose(M[i][j], 0.0):
                         temp2 = 1
                         for k in range(n_qubits):
                             c1, c2 = binary_rep[i][k], binary_rep[j][k]
-                            qb_ind = ind*n_qubits + k
+                            qb_ind = ind * n_qubits + k
                             temp2 *= gate_mapping[(c1, c2)](qb_ind)
                         temp += M[i][j] * temp2
-            
+
             res *= temp
-      
+
         return res
-  
-#Bosonic annihilation operator in matrix representation    
+
+
+# Bosonic annihilation operator in matrix representation
 def a_matrix(N):
-    return np.diag(
-            np.sqrt(np.arange(1, N)), 
-            k=1
-        ).astype(complex)
+    return np.diag(np.sqrt(np.arange(1, N)), k=1).astype(complex)
 
-#Bosonic creation operator in matrix representation            
+
+# Bosonic creation operator in matrix representation
 def c_matrix(N):
-    return np.diag(
-            np.sqrt(np.arange(1, N)),
-            k=-1
-        ).astype(complex)
+    return np.diag(np.sqrt(np.arange(1, N)), k=-1).astype(complex)
 
-#Return the Gray code
+
+# Return the Gray code
 def gray_code(n):
     code = []
     for i in range(n):
         temp = []
-        block1 = (2**i)*[0]+(2**i)*[1]
-        block2 = (2**i)*[1]+(2**i)*[0]
-        for j in range(2**(n-i-1)):
-            if j%2==0:
+        block1 = (2**i) * [0] + (2**i) * [1]
+        block2 = (2**i) * [1] + (2**i) * [0]
+        for j in range(2 ** (n - i - 1)):
+            if j % 2 == 0:
                 temp += block1
             else:
                 temp += block2
         code.append(temp)
 
     return np.transpose(np.asarray(code)).tolist()
-    
-#Return standard binary
+
+
+# Return standard binary
 def standard_binary(n):
     code = []
     for i in range(2**n):
-        code.append([int(x) for x in bin(i)[:1:-1].ljust(n,'0')])
+        code.append([int(x) for x in bin(i)[:1:-1].ljust(n, "0")])
     return code
 
-#Return one-hot encoding
+
+# Return one-hot encoding
 def one_hot(n):
     code = []
     for i in range(n):
-        code.append(i*[0] + [1] + (n-i-1)*[0]) 
+        code.append(i * [0] + [1] + (n - i - 1) * [0])
     return code

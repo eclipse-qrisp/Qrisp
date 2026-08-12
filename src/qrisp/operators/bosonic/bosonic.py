@@ -19,14 +19,14 @@ from qrisp.operators.bosonic.bosonic_operator import BosonicOperator
 from qrisp.operators.bosonic.bosonic_term import BosonicTerm
 
 
-def a(arg):
+def a_b(arg):
     if isinstance(arg, int):
         return BosonicOperator({BosonicTerm([(arg, False)]): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def c(arg):
+def c_b(arg):
     if isinstance(arg, int):
         return BosonicOperator({BosonicTerm([(arg, True)]): 1})
     else:
