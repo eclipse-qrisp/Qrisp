@@ -104,7 +104,6 @@ def dicke_state(
         print(main(2))
 
     """
-
     if method not in _METHODS:
         raise ValueError(f"Unknown `method`: {method!r}. Possible methods are: {', '.join(map(repr, _METHODS))}.")
 
