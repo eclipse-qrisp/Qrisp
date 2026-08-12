@@ -40,48 +40,35 @@ def dicke_state(
     *,
     method: DickeStateMethod = "deterministic",
 ) -> None:
-    r"""Dicke State initialization of a QuantumVariable.
+    r"""Prepare a Dicke state :math:`|D^n_k\rangle` on a QuantumVariable.
 
-    A Dicke state is an equal positive superposition of all basis states with a given Hamming weight. We label the
-    Dicke state of Hamming weight :math:`k` on :math:`n` qubits as :math:`D(n, k)`, where :math:`n` is the size of
-    ``qv``. The input is a computational basis state :math:`|0\rangle^{\otimes n-l} |1\rangle^{\otimes l}` of some
-    Hamming weight :math:`l`.
+    A Dicke state is the equal superposition of all basis states of Hamming weight :math:`k` on :math:`n` qubits, where
+    :math:`n` is the number of qubits of ``qv``.
+
+    ``qv`` has to be initialized to the basis state :math:`|0\rangle^{\otimes n-k}|1\rangle^{\otimes k}` beforehand, as
+    in the example below.
 
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
-        Initial quantum variable to be prepared. Has to be in the state |00...011...1> where we label the number of 1's
-        ``l``. If ``method`` is ``"divide-and-conquer"``, it is required to have ``l == k``. When ``method`` is
-        `"deterministic"`, ``l`` may be less or equal to ``k``. In that case, the resulting state is :math:`D(n, l)`.
+        The qubits to prepare, initialized as described above.
     k : int
-        The Hamming weight (i.e. number of "ones") for the desired Dicke state.
+        The Hamming weight (i.e. the number of "ones") of the desired Dicke state.
     method : str, optional
-        The method used to prepare the state, either ``"deterministic"`` or ``"divide-and-conquer"``. The default is
-        ``"deterministic"``. The code largely follows the notation of the respective papers.
-
-        ``"deterministic"`` applies the Dicke state unitary :math:`U_{n,k}` of
-        `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_. Because this is a unitary rather than a state
-        preparation circuit, it maps *any* input with :math:`l \leq k` to :math:`D(n, l)`, and therefore acts
-        linearly on superpositions of such inputs. Use this when the Hamming weight of the input is itself in
-        superposition, for instance when assembling more general symmetric states.
-
-        ``"divide-and-conquer"`` implements the preparation of
-        `arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_. It splits ``qv`` in half and prepares both halves on
-        disjoint qubits, so :math:`U_{n_1,k}` and :math:`U_{n_2,k}` are applied in parallel and the circuit depth is
-        roughly halved. In exchange it is a state preparation circuit only: the input must have Hamming weight
-        exactly :math:`k`.
+        Either ``"deterministic"`` (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_, the default) or
+        ``"divide-and-conquer"`` (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_). The latter prepares the two
+        halves of ``qv`` on disjoint qubits and therefore has roughly half the circuit depth. The former is the full
+        Dicke state unitary :math:`U_{n,k}`: it also maps an input of Hamming weight :math:`l \leq k` to
+        :math:`|D^n_l\rangle`, and superpositions of such inputs to the corresponding superposition of Dicke states.
 
     Raises
     ------
     ValueError
-        If ``method`` is neither "deterministic" nor "divide-and-conquer".
-    ValueError
-        If not in tracing mode (i.e., when ``k`` and ``n = len(qv)`` are integers) and when ``k`` and ``n`` don't
-        satisfy the basic inequality ``0 <= k <= n``.
+        If ``method`` is unknown, or if ``k`` and :math:`n` are known at trace time and violate :math:`0 \leq k \leq n`.
 
     Examples
     --------
-    We initiate a QuantumVariable in the "0011" state and from this create the Dicke state with Hamming weight 2.
+    We initialize a QuantumVariable in the "0011" state and from this create the Dicke state with Hamming weight 2.
 
     ::
 
@@ -92,6 +79,18 @@ def dicke_state(
         x(qv[3])
 
         dicke_state(qv, 2)
+
+    The same state with the shallower divide-and-conquer circuit.
+
+    ::
+
+        from qrisp import QuantumVariable, x, dicke_state
+
+        qv = QuantumVariable(4)
+        x(qv[2])
+        x(qv[3])
+
+        dicke_state(qv, 2, method="divide-and-conquer")
 
     """
     if method not in _METHODS:
@@ -106,9 +105,10 @@ def dicke_state(
         _apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
 
-        # If k > n/2, it is easier to create D(n, n-k) instead of D(n, k), and then apply the X gate to all qubits.
+        # The divide-and-conquer method cannot handle k > n/2.
+        # Instead we prepare D(n, n-k) and at the end apply the X gate to all qubits, which changes it to D(n, k).
         large_k = k > n // 2
-        # Partially undo the initial state, reducing its Hamming weight from k to n-k (if k > n/2).
+        # Reduce the input |0^(n-k) 1^k> to |0^k 1^(n-k)>. Empty range unless k > n/2.
         for i in jrange(n - k, jnp.maximum(k, n - k)):
             x(qv[i])
         k = jnp.minimum(k, n - k)  # Equivalent to: `k = n - k if large_k else k`.
@@ -116,12 +116,12 @@ def dicke_state(
         n1 = n // 2  # floor(n/2)
         n2 = (n + 1) // 2  # ceil(n/2)
 
-        _divide(qv, n1, n2, k)
+        _divide(qv, n1, n2, k)  # k <= n1 now, which `_divide` needs.
 
+        # Disjoint qubits, so the compiler runs these in parallel — this is the depth advantage.
         _apply_dicke_unitary(qv[:n1], n1, k)
         _apply_dicke_unitary(qv[n1:], n2, k)
 
-        # If we were preparing D(n, n-k), now we apply the X gates to transform it into D(n, k).
         q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
 
     else:
@@ -154,7 +154,7 @@ def _log_binom(n: int | Array, k: int | Array) -> Array:
 
 
 def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Array, k: int | Array) -> None:
-    r"""Execute the "divide" step of the "divide-and-conquer" method of creating Dicke states.
+    r"""Execute the "divide" step of the divide-and-conquer method of https://arxiv.org/abs/2112.12435.
 
     This takes a computational basis state consisting of ``n1 + n2 - k`` zeros followed by
     ``k`` ones and changes it into a superposition
@@ -169,7 +169,13 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
         |0\rangle^{\otimes n_2-k+k_1}
         |1\rangle^{\otimes k-k_1}
 
-    ready for the "conquer" step.
+    that splits the target Hamming weight ``k`` over the two halves of the register with the correct
+    binomial weights. Each half is then completed independently by ``_apply_dicke_unitary``, which is
+    the "conquer" step. Note that each half is left in exactly the form that ``_apply_dicke_unitary``
+    expects: zeros followed by ones.
+
+    The notation follows the paper: :math:`n_1, n_2` are the sizes of the two halves and :math:`x_i`,
+    :math:`s_i` are the quantities on page 8, defined in the nested helpers below.
 
     Parameters
     ----------
@@ -229,17 +235,29 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
         with control(qv[n1 - i]):
             ry(angle(i), qv[n1 - 1 - i])
 
+    # Reduce the Hamming weight of the 2nd half controlled by the state (Hamming weight) of the 1st half.
     for i in jrange(k):
         cx(qv[n1 - 1 - i], qv[n1 + n2 - k + i])
 
 
 def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k: int | Array) -> None:
-    """Apply the Dicke unitary constructed according to Lemma 2 in https://arxiv.org/abs/1904.07358.
+    r"""Apply the Dicke state unitary :math:`U_{n,k}` from Lemma 2 of https://arxiv.org/abs/1904.07358.
 
+    :math:`U_{n,k}` is built as a ladder of *Split & Cyclic Shift* blocks :math:`SCS_{n,k}`. It is
+    defined by :math:`U_{n,k} |0\rangle^{\otimes n-l} |1\rangle^{\otimes l} = |D^n_l\rangle` for *every*
+    :math:`l \leq k`, not just for :math:`l = k` (arXiv:2112.12435, Eq. 2), and extends linearly to
+    superpositions of such inputs.
+
+    That is why no :math:`k \to n-k` reduction may be applied here, even though it would shorten the
+    circuit: it is only valid for an input of Hamming weight exactly :math:`k` and would silently
+    destroy the :math:`l < k` branches. ``_divide`` does assume weight exactly :math:`k`, so the
+    reduction lives in ``dicke_state`` on the divide-and-conquer path only.
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
-        Initial quantum variable to be prepared. Has to be in target subspace.
+        Initial quantum variable to be prepared. Has to be in the basis state
+        :math:`|0\rangle^{\otimes n-l} |1\rangle^{\otimes l}` for some :math:`l \leq k`, or in a superposition of such
+        states.
     n : int
         The size of the quantum variable.
     k : int
