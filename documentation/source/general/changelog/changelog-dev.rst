@@ -45,6 +45,8 @@ API Changes
 Development
 -----------
 
+* Added a BosonicOperator class analogous to the FermionicOperator one
+
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
 
@@ -65,6 +67,7 @@ Development
 First Time Contributors 🎉
 --------------------------
 
+* `philipp-heinen <https://github.com/philipp-heinen>`_
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
