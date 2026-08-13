@@ -73,6 +73,9 @@ Bug Fixes
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
+* Removed reduant imports in the top-level ``qrisp`` package.
+  (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
+
 Compatibility
 -------------
 
@@ -145,4 +148,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
-* `micpap25 <https://github.com/micpap25>`
+* `micpap25 <https://github.com/micpap25>`_
