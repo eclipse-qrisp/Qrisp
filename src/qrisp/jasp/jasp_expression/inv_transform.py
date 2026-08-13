@@ -17,7 +17,7 @@
 
 import numpy as np
 from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, Var
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
 from jax.lax import add_p, sub_p
 from sympy import lambdify
 
