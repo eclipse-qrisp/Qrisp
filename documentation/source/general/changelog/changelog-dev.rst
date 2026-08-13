@@ -74,6 +74,9 @@ Bug Fixes
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
+* Removed reduant imports in the top-level ``qrisp`` package.
+  (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
+
 Compatibility
 -------------
 
@@ -117,7 +120,7 @@ Development
 * Added pytest coverage reporting to the CI test workflow and selective
   coverage reporting for the ``qrisp`` package.
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
-   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
+  `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
 * Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
   subsystem, consolidating control-flow, equation-copying, and caching logic
@@ -153,3 +156,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `micpap25 <https://github.com/micpap25>`_
