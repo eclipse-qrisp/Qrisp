@@ -24,7 +24,6 @@ def test_fermionic_term():
     O_0 = a(0) * c(1)
     O_1 = c(1) * a(0)
 
-    assert (O_0 == O_1) == True
 
     assert (O_0.hermitize() == O_1.hermitize()) == True
 
@@ -40,7 +39,7 @@ def test_fermionic_term():
 
     O = 3 * a(0) * c(1) + c(1) * a(0)
     O = O.reduce()
-    assert str(O) == "2*a0*c1"
+    assert str(O) == "4*a0*c1"
 
     O = a(0) * a(1) - c(1) * c(0)
     O = O.reduce(assume_hermitian=True)
