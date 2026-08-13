@@ -245,9 +245,9 @@ def gray_code(n):
     code = []
     for i in range(n):
         temp = []
-        block1 = (2**i) * [0] + (2**i) * [1]
-        block2 = (2**i) * [1] + (2**i) * [0]
-        for j in range(2 ** (n - i - 1)):
+        block1 = (2 ** (n - i - 1)) * [0] + (2 ** (n - i - 1)) * [1]
+        block2 = (2 ** (n - i - 1)) * [1] + (2 ** (n - i - 1)) * [0]
+        for j in range(2**i):
             if j % 2 == 0:
                 temp += block1
             else:
@@ -261,7 +261,7 @@ def gray_code(n):
 def standard_binary(n):
     code = []
     for i in range(2**n):
-        code.append([int(x) for x in bin(i)[:1:-1].ljust(n, "0")])
+        code.append([int(x) for x in bin(i)[2:].rjust(n, "0")])
     return code
 
 
