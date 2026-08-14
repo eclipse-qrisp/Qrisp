@@ -70,8 +70,8 @@ dev-code-style = [
     "ruff",
 ]
 dev-testing = [
-    "pytest==9.1.1",
-    "pytest-cov>=6.0",
+    "pytest==9.1.0",
+    "pytest-xdist<=3.8.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
