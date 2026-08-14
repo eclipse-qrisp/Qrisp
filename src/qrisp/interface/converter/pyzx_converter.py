@@ -151,14 +151,11 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
             elif instr.op.definition:
                 pyzx_circuit.append(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
             else:
-                raise ValueError(f"{name} gate has no PyXZ equivalent and no definition to decompose.")
+                raise ValueError(f"{name} gate has no PyZX equivalent and no definition to decompose.")
             continue
 
         if params:
-            if name in ["rx", "ry", "rz", "u3", "rxx", "rzz"]:
-                pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[p / np.pi for p in params])
-            else:
-                raise ValueError(f"{name} gate has a parameter but is not in rx, ry, rz, u3, rxx, rzz.")
+            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[p / np.pi for p in params])
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 
@@ -244,30 +241,49 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
 
     def add_gate(gate):
         # single-qubit, parameter-free gates without adjoint version and non-unitary operations
-        if gate.name in ["NOT", "Y", "Z", "HAD", "Measurement", "Reset"]:
+        def _single_qubit_parameter_free(gate):
             gate_map[gate.name](gate.target)
+
         # single-qubit gates with adjoint version
-        elif gate.name in ["SX", "S", "T"]:
+        def _single_qubit_with_adjoint_version(gate):
             gate_map[gate.name](gate.adjoint, gate.target)
+
         # single-qubit, one-parameter gates
-        elif gate.name in ["XPhase", "YPhase", "ZPhase"]:
+        def _single_qubit_one_parameter(gate):
             gate_map[gate.name](float(gate.phase) * np.pi, gate.target)
+
         # single-qubit, multi-parameter gates
-        elif gate.name in ["U2", "U3"]:
+        def _single_qubit_multi_parameter(gate):
             gate_map[gate.name](*[float(p) * np.pi for p in gate.phases], gate.target)
 
         # two-qubit, paratemeter-free gates
-        elif gate.name in ["CNOT", "CY", "CZ", "CSX", "SWAP", "CHAD"]:
+        def _two_qubit_parameter_free(gate):
             gate_map[gate.name](gate.control, gate.target)
+
         # two-qubit, one-paratemeter gates
-        elif gate.name in ["CRX", "CRY", "CRZ", "CPhase", "RZZ", "RXX"]:
+        def _two_qubit_one_parameter(gate):
             gate_map[gate.name](float(gate.phase) * np.pi, gate.control, gate.target)
+
         # two-qubit, multi-paratemeter gates
-        elif gate.name in ["CU3"]:
+        def _two_qubit_multi_parameter(gate):
             gate_map[gate.name](*[float(p) * np.pi for p in gate.phases], gate.control, gate.target)
+
         # multi-qubit, paratemeter-free gates
-        elif gate.name in ["CSWAP", "Tof", "CCZ"]:
+        def _multi_qubit_parameter_free(gate):
             gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
+
+        function_map = {
+            **dict.fromkeys(["NOT", "Y", "Z", "HAD", "Measurement", "Reset"], _single_qubit_parameter_free),
+            **dict.fromkeys(["SX", "S", "T"], _single_qubit_with_adjoint_version),
+            **dict.fromkeys(["XPhase", "YPhase", "ZPhase"], _single_qubit_one_parameter),
+            **dict.fromkeys(["U2", "U3"], _single_qubit_multi_parameter),
+            **dict.fromkeys(["CNOT", "CY", "CZ", "CSX", "SWAP", "CHAD"], _two_qubit_parameter_free),
+            **dict.fromkeys(["CRX", "CRY", "CRZ", "CPhase", "RZZ", "RXX"], _two_qubit_one_parameter),
+            **dict.fromkeys(["CU3"], _two_qubit_multi_parameter),
+            **dict.fromkeys(["CSWAP", "Tof", "CCZ"], _multi_qubit_parameter_free),
+        }
+
+        function_map[gate.name](gate)
 
     for gate in pyzx_circuit.gates:
         if gate.name in gate_map:

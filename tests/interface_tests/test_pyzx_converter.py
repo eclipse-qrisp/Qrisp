@@ -3,8 +3,16 @@ from pyzx import Circuit
 
 from fractions import Fraction
 import numpy as np
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
+import sys
+
+
+def test_import_error():
+    with pytest.raises(ImportError):
+        with patch.dict(sys.modules, {"pyzx": None}):
+            qc = QuantumCircuit(1)
+            c = qc.to_pyzx()
 
 
 def _build_single_qubit_qrisp_circuit():
@@ -90,20 +98,6 @@ def _build_multi_qubit_pyzx_circuit():
     c.add_gate("RZZ", 0, 2, Fraction(2, 9))
     c.add_gate("RXX", 0, 2, Fraction(7, 10))
 
-    return c
-
-
-def _build_mock_qrisp_circuit():
-    """Qrisp circuit with a MagicMock operation (triggers Exception during conversion)."""
-    qc = QuantumCircuit(1)
-    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
-    return qc
-
-
-def _build_mock_pyzx_circuit():
-    """Qrisp circuit with a MagicMock operation (triggers Exception during conversion)."""
-    c = Circuit(1)
-    c.add_gate(MagicMock(name="some_gate"), 0)
     return c
 
 
@@ -229,13 +223,79 @@ def test_non_unitaries():
     assert [g.op.name for g in qc.data] == ["measure", "reset"]
 
 
-def test_error_qrisp_to_pyzx():
-    qc = _build_mock_qrisp_circuit()
-    with pytest.raises(ValueError):
+def _mock_unknown_circuit():
+    """Qrisp circuit with a MagicMock operation (triggers Exception during transpile)."""
+    qc = QuantumCircuit(1)
+    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
+    return qc
+
+
+def _mock_none_gate_circuit():
+    """Qrisp circuit with a gate mapping to None and no definition (rxx)."""
+    qc = QuantumCircuit(2)
+    mock_op = MagicMock()
+    mock_op.name = "xxyy"
+    mock_op.params = []
+    mock_op.definition = None
+    qc.data = [MagicMock(op=mock_op, qubits=list(qc.qubits))]
+    return qc
+
+
+def _real_unknown_circuit():
+    """Circuit with a real operation not in gate_map and no definition."""
+    from qrisp.circuit import Instruction, Operation
+
+    qc = QuantumCircuit(1)
+    op = Operation(name="foo", num_qubits=1)
+    qc.data = [Instruction(op, qc.qubits, [])]
+    return qc
+
+
+@pytest.mark.parametrize(
+    "circuit_builder, match",
+    [
+        (_mock_unknown_circuit, "could not be transpiled and are not supported"),
+        (_mock_none_gate_circuit, "has no PyZX equivalent"),
+        (_real_unknown_circuit, "could not be decomposed into elementary"),
+    ],
+    ids=["unknown_gate", "none_gate_no_definition", "real_unknown_no_progress"],
+)
+def test_convert_to_pyzx_raises(circuit_builder, match):
+    """Verify convert_to_cirq raises ValueError for unsupported gates."""
+    with pytest.raises(ValueError, match=match):
+        qc = circuit_builder()
         c = qc.to_pyzx()
 
 
-def test_error_pyzx_to_qrisp():
-    c = _build_mock_pyzx_circuit()
-    with pytest.raises(ValueError):
+def _build_pyzx_circuit_with_mock_gate():
+    """Qrisp circuit with a MagicMock operation (triggers immediate exception during conversion)."""
+    c = Circuit(1)
+    c.add_gate(MagicMock(name="some_gate"), 0)
+    return c
+
+
+def _build_pyzx_circuit_with_undecomposable_gate():
+    """Qrisp circuit with a gate with mock decomposition (triggers exception upon attempt to decompose gate)."""
+    c = Circuit(2)
+    from pyzx.circuit import ParityPhase
+
+    g = ParityPhase(0, 0, 1)
+
+    def _f():
+        return [ParityPhase(0, 0, 1)]
+
+    g.to_basic_gates = _f
+    c.add_gate(g, 0)
+    return c
+
+
+def test_error_pyzx_to_qrisp_mock_gate():
+    c = _build_pyzx_circuit_with_mock_gate()
+    with pytest.raises(ValueError, match="of PyZX is unknown"):
+        qc = QuantumCircuit.from_pyzx(c)
+
+
+def test_error_pyzx_to_qrisp_undecomposable_gat():
+    c = _build_pyzx_circuit_with_undecomposable_gate()
+    with pytest.raises(ValueError, match="cannot be decomposed either"):
         qc = QuantumCircuit.from_pyzx(c)
