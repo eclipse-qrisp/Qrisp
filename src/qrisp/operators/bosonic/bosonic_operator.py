@@ -14,6 +14,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+from typing import Self
 
 import numpy as np
 import sympy as sp
@@ -62,11 +63,11 @@ class BosonicOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
+    def __init__(self, terms_dict: dict = {}):
 
         self.terms_dict = dict(terms_dict)
 
-    def reduce(self, assume_hermitian=False):
+    def reduce(self, assume_hermitian: bool = False):
         """Applies the bosonic commutation laws to bring the operator into
         a standard form. This can reduce the amount of terms because several
         terms might be the permuted version of each other and therefore their
@@ -236,7 +237,7 @@ class BosonicOperator(Hamiltonian):
         """
         return 0.5 * (self + self.dagger())
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self):
         reduced_self = self.reduce()
         reduced_other = other.reduce()
 
@@ -260,7 +261,7 @@ class BosonicOperator(Hamiltonian):
     def __neg__(self):
         return -1 * self
 
-    def __add__(self, other):
+    def __add__(self, other: Self):
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -294,7 +295,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __sub__(self, other):
+    def __sub__(self, other: Self):
         """Returns the difference of the operator self and other.
 
         Parameters
@@ -328,7 +329,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: Self):
         """Returns the difference of the operator other and self.
 
         Parameters
@@ -362,7 +363,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __mul__(self, other):
+    def __mul__(self, other: Self):
         """Returns the product of the operator self and other.
 
         Parameters
@@ -398,7 +399,7 @@ class BosonicOperator(Hamiltonian):
     # Inplace arithmetic
     #
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Self):
         """Adds other to the operator self.
 
         Parameters
@@ -420,7 +421,7 @@ class BosonicOperator(Hamiltonian):
         self.terms_dict = BosonicOperator(self.terms_dict).terms_dict
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: Self):
         """Substracts other from the operator self.
 
         Parameters
@@ -441,7 +442,7 @@ class BosonicOperator(Hamiltonian):
                 del self.terms_dict[ladder_term]
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other: Self):
         """Multiplys other to the operator self.
 
         Parameters
@@ -468,7 +469,7 @@ class BosonicOperator(Hamiltonian):
     # Miscellaneous
     #
 
-    def apply_threshold(self, threshold):
+    def apply_threshold(self, threshold: float):
         """Removes all ladder_term terms with coefficient absolute value below the specified threshold.
 
         Parameters
@@ -484,7 +485,7 @@ class BosonicOperator(Hamiltonian):
         for ladder_term in delete_list:
             del self.terms_dict[ladder_term]
 
-    def to_sparse_matrix(self, truncation=8, binary_encoding="gray_code"):
+    def to_sparse_matrix(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Returns a matrix representing the operator.
 
         Returns
@@ -498,7 +499,7 @@ class BosonicOperator(Hamiltonian):
         """
         return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).to_sparse_matrix()
 
-    def ground_state_energy(self, truncation=8):
+    def ground_state_energy(self, truncation: int = 8):
         """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
@@ -509,7 +510,7 @@ class BosonicOperator(Hamiltonian):
         """
         return self.to_qubit_operator(truncation=truncation).ground_state_energy()
 
-    def to_qubit_operator(self, truncation=8, binary_encoding="gray_code"):
+    def to_qubit_operator(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Transforms the BosonicOperator to a :ref:`QubitOperator`.
 
         Parameters
@@ -532,7 +533,7 @@ class BosonicOperator(Hamiltonian):
         else:
             raise Exception(f"Don't know bosonic mapping {binary_encoding}.")
 
-    def expectation_value(self, state_prep, truncation=8, binary_encoding="gray_code", **measurement_kwargs):
+    def expectation_value(self, state_prep: callable, truncation: int = 8, binary_encoding: str = "gray_code", **measurement_kwargs):
         r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
@@ -569,12 +570,12 @@ class BosonicOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, truncation=8, binary_encoding="gray_code", forward_evolution=True):
+    def trotterization(self, truncation: int = 8, binary_encoding: str = "gray_code", forward_evolution: bool = True):
         r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization."""
         qubit_operator = self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding)
         return qubit_operator.trotterization(forward_evolution=forward_evolution)
 
-    def group_up(self, denominator):
+    def group_up(self, denominator: callable):
         term_groups = group_up_iterable(list(self.terms_dict.keys()), denominator)
         if len(term_groups) == 0:
             return [self]

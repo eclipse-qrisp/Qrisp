@@ -20,6 +20,7 @@
 #
 import numpy as np
 import warnings
+from typing import Self
 
 from qrisp.operators.bosonic.visualization import a_, c_
 from qrisp.operators.qubit import A, C, Z, P0, P1
@@ -46,7 +47,7 @@ class BosonicTerm:
     def __hash__(self):
         return self.hash_value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self):
         return self.hash_value == other.hash_value
 
     def copy(self):
@@ -93,7 +94,7 @@ class BosonicTerm:
     # Arithmetic
     #
 
-    def __mul__(self, other):
+    def __mul__(self, other: Self):
         result_ladder_list = other.ladder_list + self.ladder_list
         return BosonicTerm(result_ladder_list)
 
@@ -124,21 +125,21 @@ class BosonicTerm:
 
         return BosonicTerm(ladder_list)
 
-    def bosonic_swap(self, permutation):
+    def bosonic_swap(self, permutation: list):
 
         permutation = [permutation.index(i) for i in range(len(permutation))]
         new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
 
         return BosonicTerm(new_ladder_list)
 
-    def unipolars_intersect(self, other):
+    def unipolars_intersect(self, other: Self):
         """Checks if two terms have intersecting unipolar factos.
         Unipolar factors are factors that are not of the form a(i)*c(i),
         i.e. the index i appears only once.
         """
         return len(set(self.get_unipolars()).intersection(other.get_unipolars())) != 0
 
-    def unipolars_agree(self, other):
+    def unipolars_agree(self, other: Self):
         """Checks if two terms have intersecting unipolar factos.
         Unipolar factors are factors that are not of the form a(i)*c(i),
         i.e. the index i appears only once.
@@ -163,7 +164,7 @@ class BosonicTerm:
             self.unipolars = index_list[::-1]
             return list(self.unipolars)
 
-    def to_qubit_term(self, truncation=8, binary_encoding="gray_code"):
+    def to_qubit_term(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Maps a bosonic term to a qubit term.
         Since bosonic operators act on an infinite-dimensional space, a truncation to a finite
         number of bosonic occupation numbers is necessary (provided by the "truncation" argument).
@@ -231,17 +232,17 @@ class BosonicTerm:
 
 
 # Bosonic annihilation operator in matrix representation
-def a_matrix(N):
+def a_matrix(N: int):
     return np.diag(np.sqrt(np.arange(1, N)), k=1).astype(complex)
 
 
 # Bosonic creation operator in matrix representation
-def c_matrix(N):
+def c_matrix(N: int):
     return np.diag(np.sqrt(np.arange(1, N)), k=-1).astype(complex)
 
 
 # Return the Gray code
-def gray_code(n):
+def gray_code(n: int):
     code = []
     for i in range(n):
         temp = []
@@ -257,16 +258,15 @@ def gray_code(n):
     return np.transpose(np.asarray(code)).tolist()
 
 
-# Return standard binary
-def standard_binary(n):
-    code = []
-    for i in range(2**n):
-        code.append([int(x) for x in bin(i)[2:].rjust(n, "0")])
-    return code
+from itertools import product
+
+def standard_binary(n: int):
+    # product returns tuples like (0, 1, 0), so we convert them to lists
+    return [list(bits) for bits in product((0, 1), repeat=n)]
 
 
 # Return one-hot encoding
-def one_hot(n):
+def one_hot(n: int):
     code = []
     for i in range(n):
         code.append(i * [0] + [1] + (n - i - 1) * [0])

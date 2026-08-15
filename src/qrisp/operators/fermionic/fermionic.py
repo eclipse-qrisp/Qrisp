@@ -20,21 +20,21 @@ from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 
 
-def a_f(arg):
+def a_f(arg: int):
     if isinstance(arg, int):
         return FermionicOperator({FermionicTerm([(arg, False)]): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def c_f(arg):
+def c_f(arg: int):
     if isinstance(arg, int):
         return FermionicOperator({FermionicTerm([(arg, True)]): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def a(arg):
+def a(arg: int):
     warnings.warn(
         "Using 'a' for the fermionic annihilation operator is deprecated; use 'a_f' instead.",
         DeprecationWarning,
@@ -43,7 +43,7 @@ def a(arg):
     return a_f(arg)
 
 
-def c(arg):
+def c(arg: int):
     warnings.warn(
         "Using 'c' for the fermionic annihilation operator is deprecated; use 'c_f' instead.",
         DeprecationWarning,
