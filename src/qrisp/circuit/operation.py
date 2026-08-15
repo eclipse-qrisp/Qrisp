@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -45,8 +44,7 @@ def adaptive_substitution(expr, subs_dic, precision=10):
 # Class that describes an operation which can be performed on a quantum computer
 # Example would be an X gate or a measurement
 class Operation:
-    """
-    This class describes operations like quantum gates, measurements or classical logic
+    """This class describes operations like quantum gates, measurements or classical logic
     gates. Operation objects do not carry information about which Qubit/Clbits they are
     applied to. This can be found in the Instruction class, which is a combination of an
     Operation object together with its operands.
@@ -69,7 +67,6 @@ class Operation:
 
     Examples
     --------
-
     We create a QuantumCircuit and append a couple of operations
 
     >>> from qrisp import QuantumCircuit, XGate, CXGate, PGate
@@ -101,9 +98,7 @@ class Operation:
             definition = init_op.definition
 
         elif not isinstance(name, str):
-            raise Exception(
-                f"Tried to create a Operation with name of type({type(name)} (required is str)"
-            )
+            raise Exception(f"Tried to create a Operation with name of type({type(name)} (required is str)")
 
         # Name of the operation - this is how the backend behind the interface will
         # identify the operation
@@ -142,9 +137,7 @@ class Operation:
                 else:
                     par = float(par)
             elif not isinstance(par, (float, int, complex, Tracer)):
-                raise Exception(
-                    f"Tried to create operation with parameters of type {type(par)}"
-                )
+                raise Exception(f"Tried to create operation with parameters of type {type(par)}")
 
             self.params.append(par)
 
@@ -156,8 +149,7 @@ class Operation:
         self.permeability: dict[int, bool | None] = {i: None for i in range(self.num_qubits)}
 
     def copy(self):
-        """
-        Returns a copy of the Operation object.
+        """Returns a copy of the Operation object.
 
         Returns
         -------
@@ -165,7 +157,6 @@ class Operation:
             The copied operation.
 
         """
-
         res = copy.copy(self)
         if self.definition:
             copied_definition = self.definition.copy()
@@ -188,8 +179,7 @@ class Operation:
     # Rounding is usefull here because the floating point errors
     # sometimes make it hard to read the unitary
     def get_unitary(self, decimals=-1):
-        """
-        Returns the unitary matrix (if applicable) of the Operation as a numpy array.
+        """Returns the unitary matrix (if applicable) of the Operation as a numpy array.
 
         Parameters
         ----------
@@ -209,7 +199,6 @@ class Operation:
 
         Examples
         --------
-
         >>> from qrisp import CPGate
         >>> import numpy as np
         >>> CPGate(np.pi/2).get_unitary(decimals = 3)
@@ -217,8 +206,8 @@ class Operation:
                [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 0.+0.j, 0.+1.j]], dtype=complex64)
-        """
 
+        """
         if self.name == "barrier":
             from qrisp.simulator.unitary_management import np_dtype
 
@@ -233,22 +222,20 @@ class Operation:
 
         # If we are dealing with a non-elementary gate, calculate the unitary from
         # the definition circuit
-        else:
-            if not isinstance(self.definition, type(None)):
-                self.unitary = self.definition.get_unitary()
-                return self.get_unitary()
+        elif not isinstance(self.definition, type(None)):
+            self.unitary = self.definition.get_unitary()
+            return self.get_unitary()
 
-            # If no definition circuit is known, raise an error.
-            # Note that the get_unitary methods of more specific gate families specified
-            # by the inheritors of this class
-            else:
-                raise Exception("Unitary of operation " + self.name + " not defined.")
+        # If no definition circuit is known, raise an error.
+        # Note that the get_unitary methods of more specific gate families specified
+        # by the inheritors of this class
+        else:
+            raise Exception("Unitary of operation " + self.name + " not defined.")
 
     # Method to return the inverse of the given operation. Again, the methods of more
     # specific gate families are specified by the inheritors of this class
     def inverse(self):
-        """
-        Returns the inverse of this Operation (if applicable).
+        """Returns the inverse of this Operation (if applicable).
 
         Raises
         ------
@@ -262,7 +249,6 @@ class Operation:
 
         Examples
         --------
-
         We invert a phase gate and inspect it's parameters
 
         >>> from qrisp import PGate
@@ -271,7 +257,6 @@ class Operation:
         [-0.8]
 
         """
-
         # Check if the instruction contains classical bits => operation is not
         # invertible
         if self.num_clbits:
@@ -298,7 +283,6 @@ class Operation:
 
             res = QubitAlloc()
         elif self.name == "barrier":
-
             res = self.copy()
         # Otherwise raise an error
         else:
@@ -310,8 +294,7 @@ class Operation:
         return res
 
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
-        """
-        Returns the controlled version of this Operation (if applicable).
+        """Returns the controlled version of this Operation (if applicable).
 
         Parameters
         ----------
@@ -339,7 +322,6 @@ class Operation:
 
         Examples
         --------
-
         We control a parametrized X Rotation.
 
         >>> from qrisp import QuantumCircuit, RXGate
@@ -361,7 +343,6 @@ class Operation:
 
 
         """
-
         if method is None:
             method = "auto"
 
@@ -374,17 +355,10 @@ class Operation:
             res_num_ctrl_qubits += len(self.controls)
 
         # Check if the method is phase tolerant
-        if (
-            method.find("pt") != -1 or method.find("gidney") != -1
-        ) and res_num_ctrl_qubits != 1:
-
-            return PTControlledOperation(
-                self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-            )
+        if (method.find("pt") != -1 or method.find("gidney") != -1) and res_num_ctrl_qubits != 1:
+            return PTControlledOperation(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
         else:
-            return ControlledOperation(
-                self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-            )
+            return ControlledOperation(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
 
     # TO-DO implement more robust hashing method
     def __hash__(self):
@@ -396,8 +370,7 @@ class Operation:
         return is_permeable(self, indices)
 
     def bind_parameters(self, subs_dic):
-        """
-        Binds abstract parameters to specified values.
+        """Binds abstract parameters to specified values.
 
         Parameters
         ----------
@@ -411,7 +384,6 @@ class Operation:
 
         Examples
         --------
-
         We create a phase gate with an abstract parameter and bind it to a specified
         value.
 
@@ -424,8 +396,8 @@ class Operation:
         >>> bound_p_gate = abstract_p_gate.bind_parameters({phi : 1.5})
         >>> bound_p_gate.params
         [1.5]
-        """
 
+        """
         new_params = []
         repl_args = [subs_dic[symb] for symb in self.abstract_params]
 
@@ -436,7 +408,6 @@ class Operation:
                 self.lambdified_params.append(lambdify(args, par, modules="numpy"))
 
         for l_par in self.lambdified_params:
-
             new_params.append(l_par(*repl_args))
 
         res = self.copy()
@@ -479,9 +450,7 @@ class U3Gate(Operation):
 
         if isinstance(global_phase, Expr):
             if len(global_phase.free_symbols):
-                self.abstract_params = self.abstract_params.union(
-                    global_phase.free_symbols
-                )
+                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
             else:
                 global_phase = float(global_phase)
         self.global_phase = global_phase
@@ -523,11 +492,10 @@ class U3Gate(Operation):
 
         if self.name in ["p", "rz", "rx", "ry", "gphase", "h"]:
             new_name = str(self.name)
+        elif self.name[-3:] == "_dg":
+            new_name = self.name[:-3]
         else:
-            if self.name[-3:] == "_dg":
-                new_name = self.name[:-3]
-            else:
-                new_name = self.name + "_dg"
+            new_name = self.name + "_dg"
 
         # For exponentials of hermitian matrices, the inverse is the hermitean
         # conjugate, which implies that we simply have to negate the parameters
@@ -587,9 +555,7 @@ class U3Gate(Operation):
         for l_par in self.lambdified_params:
             new_params.append(l_par(*repl_args))
 
-        return U3Gate(
-            new_params[0], new_params[1], new_params[2], self.name, new_params[3]
-        )
+        return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
 
         # return U3Gate(
         #     adaptive_substitution(self.theta, subs_dic),
@@ -685,9 +651,7 @@ class PTControlledOperation(Operation):
 
         # Check if control state specification matches control qubit amount
         if len(self.ctrl_state) != num_ctrl_qubits:
-            raise Exception(
-                "Specified control state incompatible with given control qubit amount"
-            )
+            raise Exception("Specified control state incompatible with given control qubit amount")
 
         # Now we generate the definition circuit. Note that most of the generation
         # process also applies to the ControlledOperation class, however this class has
@@ -746,11 +710,7 @@ class PTControlledOperation(Operation):
         # For the case of a pauli gate with a single control, we insert an extra case
         # since here is no need for any advanced algorithm here and we do not need
         # to apply the phase tolerant naming convention
-        elif (
-            isinstance(base_operation, PauliGate)
-            and num_ctrl_qubits == 1
-            and self.ctrl_state == "1"
-        ):
+        elif isinstance(base_operation, PauliGate) and num_ctrl_qubits == 1 and self.ctrl_state == "1":
             if base_operation.name == "x":
                 super().__init__(name="cx", num_qubits=2, num_clbits=0, params=[])
                 self.permeability = {0: True, 1: False}
@@ -796,9 +756,7 @@ class PTControlledOperation(Operation):
 
         # Raise exception if no possility of synthesizing a controlled game is known
         else:
-            raise Exception(
-                "Control method for gate " + base_operation.name + " not implemented"
-            )
+            raise Exception("Control method for gate " + base_operation.name + " not implemented")
 
         # Generate gate name
         if num_ctrl_qubits == 1:
@@ -909,7 +867,6 @@ class ControlledOperation(PTControlledOperation):
 
 
 class ClControlledOperation(Operation):
-
     def __init__(self, base_op, num_control=1, ctrl_state=-1):
 
         if ctrl_state == -1:
@@ -925,8 +882,7 @@ class ClControlledOperation(Operation):
         self.ctrl_state = ctrl_state
 
         if base_op.definition:
-
-            from qrisp import Clbit, QuantumCircuit
+            from qrisp import QuantumCircuit
 
             definition = QuantumCircuit()
             definition.qubits = list(base_op.definition.qubits)

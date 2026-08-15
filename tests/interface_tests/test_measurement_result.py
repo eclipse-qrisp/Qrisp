@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,8 +25,8 @@ from qrisp.interface.measurement_result import (
     DecodedMeasurementResult,
     LazyDict,
     MeasurementResult,
-    _IntKeyedResult,
     MultiMeasurementResult,
+    _IntKeyedResult,
 )
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -29,17 +28,16 @@ Three key steps happen here:
 from xdsl.dialects import builtin
 
 from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import decompose_composite_gates
-from qrisp.jasp.mlir.jaxpr_lowering import jaxpr_to_xdsl
-from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
-from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
-from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
-from qrisp.jasp.mlir.mlir_rewrites.scalar_linalg_folding import scalar_linalg_folding
-from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding
-
 from qrisp.jasp.jasp_expression import Jaspr
+from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
+from qrisp.jasp.mlir.jaxpr_lowering import jaxpr_to_xdsl
+from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding
+from qrisp.jasp.mlir.mlir_rewrites.scalar_linalg_folding import scalar_linalg_folding
+from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
+from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
 
 
-def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO = False) -> builtin.ModuleOp:
+def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO=False) -> builtin.ModuleOp:
     """Convert a Jaspr to an xDSL MLIR module using the JASP dialect.
 
     This function lowers a Jaspr (JAX-traced quantum program) to MLIR with
@@ -61,6 +59,7 @@ def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO = False) -> builtin.ModuleOp:
     builtin.ModuleOp
         The xDSL module representing the quantum computation with the JASP
         dialect and optionally lowered StableHLO operations.
+
     """
     jaspr_no_composite_gates = decompose_composite_gates(jaspr)
     xdsl_ctx, xdsl_module = jaxpr_to_xdsl(jaspr_no_composite_gates, lower_stableHLO, lowering_rules=jasp_lowering_rules)

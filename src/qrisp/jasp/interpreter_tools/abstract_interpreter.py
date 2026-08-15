@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,8 +25,7 @@ from qrisp.jasp import check_for_tracing_mode
 
 
 class ContextDict(dict):
-    """
-    Execution environment for the Jaxpr abstract interpreter.
+    """Execution environment for the Jaxpr abstract interpreter.
 
     ``ContextDict`` is the central data structure used while evaluating a Jaxpr
     in the profiling/metric interpreters. It acts as a mutable environment that
@@ -94,7 +92,6 @@ class ContextDict(dict):
 
     def __getitem__(self, key):
         """Override to handle Jaxpr literals and automatic JAX scalar conversion."""
-
         if isinstance(key, Literal):
             res = key.val
         else:
@@ -108,8 +105,7 @@ class ContextDict(dict):
 
 
 def exec_eqn(eqn: JaxprEqn, context_dic: ContextDict) -> None:
-    """
-    Evaluate a single equation within the given context dictionary.
+    """Evaluate a single equation within the given context dictionary.
 
     Parameters
     ----------
@@ -120,17 +116,13 @@ def exec_eqn(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         The context dictionary mapping Jaxpr variables to their current values.
 
     """
-
     invalues = extract_invalues(eqn, context_dic)
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
 
 
-def eval_jaxpr(
-    jaxpr, return_context_dic: bool = False, eqn_evaluator: Callable = exec_eqn
-) -> Callable:
-    """
-    Evaluates a Jaxpr using the provided equation evaluator.
+def eval_jaxpr(jaxpr, return_context_dic: bool = False, eqn_evaluator: Callable = exec_eqn) -> Callable:
+    """Evaluates a Jaxpr using the provided equation evaluator.
 
     Parameters
     ----------
@@ -151,7 +143,6 @@ def eval_jaxpr(
         A function that evaluates the jaxpr.
 
     """
-
     # Import here to avoid circular imports
     from qrisp.jasp.jasp_expression import Jaspr
 
@@ -194,7 +185,6 @@ def eval_jaxpr(
 
 def reinterpret(jaxpr: Jaxpr | ClosedJaxpr, eqn_evaluator: Callable = exec_eqn):
     """Reinterpret a Jaxpr using the provided equation evaluator."""
-
     if isinstance(jaxpr, ClosedJaxpr):
         inter_jaxpr = jaxpr.jaxpr
     else:
@@ -215,23 +205,15 @@ def reinterpret(jaxpr: Jaxpr | ClosedJaxpr, eqn_evaluator: Callable = exec_eqn):
     return res
 
 
-def eval_jaxpr_with_context_dic(
-    jaxpr, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn
-) -> None:
+def eval_jaxpr_with_context_dic(jaxpr, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn) -> None:
     """Evaluate a Jaxpr using the provided context dictionary and equation evaluator."""
-
     for eqn in jaxpr.eqns:
-
         # TODO: We should probably find a more elegant way to handle
         # control flow primitives without hardcoding them here.
         default_eval = eqn_evaluator(eqn, context_dic)
 
         if default_eval:
-            if (
-                eqn.primitive.name in ["while", "cond", "scan"]
-                and not check_for_tracing_mode()
-            ):
-
+            if eqn.primitive.name in ["while", "cond", "scan"] and not check_for_tracing_mode():
                 from qrisp.jasp import (
                     evaluate_cond_eqn,
                     evaluate_scan,
@@ -255,11 +237,8 @@ def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
     return [context_dic[invar] for invar in eqn.invars]
 
 
-def insert_outvalues(
-    eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence
-) -> None:
-    """
-    Insert the output values of an equation into the context dictionary.
+def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence) -> None:
+    """Insert the output values of an equation into the context dictionary.
 
     Parameters
     ----------
@@ -271,13 +250,11 @@ def insert_outvalues(
 
     outvalues : Sequence
         The output values to be inserted into the context dictionary.
-    """
 
+    """
     if eqn.primitive.multiple_results:
         if len(outvalues) != len(eqn.outvars):
-            raise ValueError(
-                f"Expected {len(eqn.outvars)} output values, got {len(outvalues)}"
-            )
+            raise ValueError(f"Expected {len(eqn.outvars)} output values, got {len(outvalues)}")
         for outvar, value in zip(eqn.outvars, outvalues):
             context_dic[outvar] = value
     else:

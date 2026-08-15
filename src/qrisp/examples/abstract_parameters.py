@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
 import random
 import time
-from sympy import Symbol, Matrix, simplify
+
+import numpy as np
+from sympy import Matrix, Symbol, simplify
 
 from qrisp.circuit import (
     PGate,
@@ -56,6 +56,7 @@ if use_qiskit:
     from qiskit.circuit import Parameter, QuantumCircuit
 else:
     from sympy import Symbol as Parameter
+
     from qrisp.circuit import QuantumCircuit
 
 
@@ -75,12 +76,8 @@ m = 100
 
 start_time = time.time()
 for i in range(int(m)):
-    param_values = [
-        random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))
-    ]
-    qc.bind_parameters(
-        {parameter_list[j]: param_values[j] for j in range(len(parameter_list))}
-    )
+    param_values = [random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
+    qc.bind_parameters({parameter_list[j]: param_values[j] for j in range(len(parameter_list))})
 
 duration = time.time() - start_time
 

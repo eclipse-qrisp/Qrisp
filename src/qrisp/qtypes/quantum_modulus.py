@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,15 @@
 ********************************************************************************
 """
 
-import numpy as np
+import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
-from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.misc import gate_wrap
 from qrisp.core import cx
-import jax
-from jax.core import Tracer
+from qrisp.misc import gate_wrap
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def _moduli_neq(a, b):
@@ -51,7 +49,6 @@ def _moduli_neq(a, b):
         the same modulus.
 
     """
-
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
@@ -96,8 +93,8 @@ def _coerce_bigint_operand(value, modulus):
     -------
     BigInteger
         Value with exactly ``modulus.digits.shape[0]`` limbs.
-    """
 
+    """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
@@ -120,20 +117,14 @@ def comparison_wrapper(func):
             # Two QuantumModuli can be compared as long as they share the
             # same Montgomery shift (they're in the same representation).
             if self.m != other.m:
-                raise ValueError(
-                    "Tried to evaluate QuantumModulus comparison with differing Montgomery shifts"
-                )
+                raise ValueError("Tried to evaluate QuantumModulus comparison with differing Montgomery shifts")
 
             if _moduli_neq(self.modulus, other.modulus):
-                raise ValueError(
-                    "Tried to compare QuantumModulus instances of differing modulus"
-                )
+                raise ValueError("Tried to compare QuantumModulus instances of differing modulus")
         elif not check_for_tracing_mode() and self.m != 0:
             # Comparing against a non-QuantumModulus (e.g. QuantumFloat)
             # requires standard representation (m == 0).
-            raise ValueError(
-                "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
-            )
+            raise ValueError("Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift")
 
             # other.__class__ = QuantumFloat
             # conversion_flag = True
@@ -149,8 +140,7 @@ def comparison_wrapper(func):
 
 
 class QuantumModulus(QuantumFloat):
-    r"""
-    This class is a subtype of :ref:`QuantumFloat`, which can be used to model and
+    r"""This class is a subtype of :ref:`QuantumFloat`, which can be used to model and
     process `modular arithmetic <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
     Modular arithmetic plays an important role in many cryptographical applications,
     especially in Shor's algorithm.
@@ -278,11 +268,10 @@ class QuantumModulus(QuantumFloat):
 
                 inpl_adder = gidney_adder
 
-        else:
-            if inpl_adder is None:
-                from qrisp.alg_primitives.arithmetic import fourier_adder
+        elif inpl_adder is None:
+            from qrisp.alg_primitives.arithmetic import fourier_adder
 
-                inpl_adder = fourier_adder
+            inpl_adder = fourier_adder
 
         self.inpl_adder = inpl_adder
         self.m = 0
@@ -294,22 +283,18 @@ class QuantumModulus(QuantumFloat):
         Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)
         where R = 2^m is the Montgomery radix.
         """
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-            new_montgomery_decoder,
-        )
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
+        )
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+            new_montgomery_decoder,
         )
 
         if check_for_tracing_mode():
             return new_montgomery_decoder(i, self.m, self.modulus)
 
         i_value = i() if isinstance(i, BigInteger) else int(i)
-        modulus_value = (
-            self.modulus()
-            if isinstance(self.modulus, BigInteger)
-            else int(self.modulus)
-        )
+        modulus_value = self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
 
         if i_value >= modulus_value:
             return np.nan
@@ -329,7 +314,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(self.modulus, BigInteger):
-            from qrisp import q_fori_loop, measure, jlen
+            from qrisp import measure, q_fori_loop
 
             if check_for_tracing_mode():
                 for_loop = q_fori_loop
@@ -342,13 +327,9 @@ class QuantumModulus(QuantumFloat):
                     return val
 
             def body_fun(i, val):
-                return val.at[i].set(
-                    measure(self[32 * i : 32 * (i + 1)]).astype(jnp.uint32)
-                )
+                return val.at[i].set(measure(self[32 * i : 32 * (i + 1)]).astype(jnp.uint32))
 
-            digits = for_loop(
-                0, (self.size - 1) // 32, body_fun, jnp.zeros_like(self.modulus.digits)
-            )
+            digits = for_loop(0, (self.size - 1) // 32, body_fun, jnp.zeros_like(self.modulus.digits))
             digits = digits.at[(self.size - 1) // 32].set(
                 measure(self[32 * ((self.size - 1) // 32) :]).astype(jnp.uint32)
             )
@@ -358,7 +339,6 @@ class QuantumModulus(QuantumFloat):
 
     def encoder(self, i):
         if check_for_tracing_mode():
-
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
                 BigInteger,
             )
@@ -367,9 +347,7 @@ class QuantumModulus(QuantumFloat):
             )
 
             if isinstance(i, BigInteger):
-                return montgomery_encoder(
-                    i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus
-                )
+                return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
             else:
                 return montgomery_encoder(i, 1 << self.m, self.modulus)
 
@@ -382,20 +360,14 @@ class QuantumModulus(QuantumFloat):
             )
 
             i_value = i() if isinstance(i, BigInteger) else int(i)
-            modulus_value = (
-                self.modulus()
-                if isinstance(self.modulus, BigInteger)
-                else int(self.modulus)
-            )
+            modulus_value = self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
 
             if i_value >= modulus_value:
                 raise ValueError(
                     "Tried to encode a number into QuantumModulus, which is greator or equal to the modulus"
                 )
             if i_value < 0:
-                raise ValueError(
-                    "Tried to encode a negative number into QuantumModulus"
-                )
+                raise ValueError("Tried to encode a negative number into QuantumModulus")
 
         # if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
         #     return np.nan
@@ -412,9 +384,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, QuantumModulus):
-            if not check_for_tracing_mode() and _moduli_neq(
-                self.modulus, other.modulus
-            ):
+            if not check_for_tracing_mode() and _moduli_neq(self.modulus, other.modulus):
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
@@ -430,25 +400,21 @@ class QuantumModulus(QuantumFloat):
                 return montgomery_mod_mul(self, other)
 
         elif isinstance(other, (int, np.integer, jnp.integer, BigInteger, Tracer)):
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply,
-            )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift,
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply,
             )
 
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 if not isinstance(other, BigInteger):
                     other = _coerce_bigint_operand(other, self.modulus)
-                return cq_montgomery_multiply(
-                    other.get_larger(), self, self.modulus.get_larger(), shift
-                )
+                return cq_montgomery_multiply(other.get_larger(), self, self.modulus.get_larger(), shift)
             return cq_montgomery_multiply(other, self, self.modulus, shift)
         else:
-            raise TypeError(
-                f"Quantum modular multiplication with type {type(other)} not implemented"
-            )
+            raise TypeError(f"Quantum modular multiplication with type {type(other)} not implemented")
 
     __rmul__ = __mul__
 
@@ -459,11 +425,11 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, (int, np.integer, jnp.integer, jax.Array, BigInteger)):
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply_inplace,
-            )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift,
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply_inplace,
             )
 
             # If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift
@@ -482,9 +448,7 @@ class QuantumModulus(QuantumFloat):
                     self.inpl_adder,
                 )
             else:
-                cq_montgomery_multiply_inplace(
-                    other, self, self.modulus, shift, self.inpl_adder
-                )
+                cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
 
             if isinstance(other, BigInteger):
                 pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
@@ -492,23 +456,17 @@ class QuantumModulus(QuantumFloat):
 
             return self
         else:
-            raise TypeError(
-                f"Quantum modular in-place multiplication with type {type(other)} not implemented"
-            )
+            raise TypeError(f"Quantum modular in-place multiplication with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise ValueError(
-                    "Tried to add two QuantumModulus with differing Montgomery shift"
-                )
+                raise ValueError("Tried to add two QuantumModulus with differing Montgomery shift")
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise ValueError(
-                    "Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
-                )
+                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
@@ -534,9 +492,7 @@ class QuantumModulus(QuantumFloat):
                 return self
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise ValueError(
-                    "Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
-                )
+                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
@@ -548,14 +504,10 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise ValueError(
-                    "Tried to add subtract QuantumModulus with differing Montgomery shift"
-                )
+                raise ValueError("Tried to add subtract QuantumModulus with differing Montgomery shift")
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise ValueError(
-                    "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
-                )
+                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         from qrisp.environments import invert
@@ -573,14 +525,10 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise ValueError(
-                    "Tried to subtract QuantumModulus with differing Montgomery shift"
-                )
+                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise ValueError(
-                    "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
-                )
+                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
@@ -597,14 +545,10 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise ValueError(
-                    "Tried to subtract QuantumModulus with differing Montgomery shift"
-                )
+                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise ValueError(
-                    "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
-                )
+                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         from qrisp.environments import invert

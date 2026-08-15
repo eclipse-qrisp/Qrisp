@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,10 +16,10 @@
 """
 
 # imports
-from qrisp.algorithms.qiro import *
-from qrisp import QuantumVariable
 import networkx as nx
 
+from qrisp import QuantumVariable
+from qrisp.algorithms.qiro import *
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
 num_nodes = 18
@@ -49,7 +48,6 @@ maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 costFunc = create_max_indep_set_cl_cost_function(G)
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(costFunc({key: 1}))
 

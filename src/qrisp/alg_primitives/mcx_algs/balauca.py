@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,39 +15,35 @@
 ********************************************************************************
 """
 
-import numpy as np
-
-from jax.core import Tracer
 import jax.numpy as jnp
-from jax.lax import cond
+import numpy as np
 from jax import jit
+from jax.core import Tracer
+from jax.lax import cond
 
-from qrisp.circuit import XGate, PGate, convert_to_qb_list, Qubit
-from qrisp.qtypes import QuantumBool, QuantumVariable
-from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
-    reduced_maslov_qc,
     margolus_qc,
     reduced_margolus_qc,
+    reduced_maslov_qc,
 )
 from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
-from qrisp.environments import invert, control, conjugate
+from qrisp.circuit import PGate, Qubit, XGate, convert_to_qb_list
+from qrisp.core.gate_application_functions import cx, mcx, x
+from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
-    check_for_tracing_mode,
     AbstractQubit,
-    qache,
-    jrange,
-    make_tracer,
+    check_for_tracing_mode,
     jlen,
+    jrange,
+    qache,
 )
+from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
 # Ancilla supported multi controlled X with logarithmic depth based on
 # https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
 def balauca_mcx(input_qubits, target, ctrl_state=None, phase=None):
-    hybrid_mcx(
-        input_qubits, target, ctrl_state=ctrl_state, phase=phase, num_ancilla=np.inf
-    )
+    hybrid_mcx(input_qubits, target, ctrl_state=ctrl_state, phase=phase, num_ancilla=np.inf)
 
 
 # Hybrid algorithm of yong and balauca with customizable ancilla qubit count.
@@ -62,8 +57,7 @@ def hybrid_mcx(
     num_dirty_ancilla=0,
     use_mcm=False,
 ):
-    """
-    Function to dynamically generate mcx gates for a given amount of ancilla qubits.
+    """Function to dynamically generate mcx gates for a given amount of ancilla qubits.
 
     Parameters
     ----------
@@ -86,7 +80,6 @@ def hybrid_mcx(
     None.
 
     """
-
     input_qubits = list(input_qubits)
     for i in range(len(input_qubits)):
         if isinstance(input_qubits[i], QuantumBool):
@@ -103,22 +96,16 @@ def hybrid_mcx(
 
     if len(input_qubits) <= 2 + int(not use_mcm) or num_ancilla == 0:
         if len(input_qubits) == 2 + int(not use_mcm):
-
             if phase is None:
                 qs.append(
-                    XGate().control(
-                        len(input_qubits), ctrl_state=ctrl_state, method="gray"
-                    ),
+                    XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
                     input_qubits + target,
                 )
             else:
-
                 if use_mcm:
                     gate = GidneyLogicalAND(ctrl_state=ctrl_state)
                 else:
-                    gate = XGate().control(
-                        len(input_qubits), method="gray_pt", ctrl_state=ctrl_state
-                    )
+                    gate = XGate().control(len(input_qubits), method="gray_pt", ctrl_state=ctrl_state)
 
                 qs.append(
                     gate,
@@ -136,23 +123,18 @@ def hybrid_mcx(
                 )
 
         elif num_dirty_ancilla and phase is None:
-            balauca_dirty(
-                input_qubits, target, k=num_dirty_ancilla, ctrl_state=ctrl_state
-            )
+            balauca_dirty(input_qubits, target, k=num_dirty_ancilla, ctrl_state=ctrl_state)
 
+        elif phase is None:
+            qs.append(
+                XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
+                input_qubits + target,
+            )
         else:
-            if phase is None:
-                qs.append(
-                    XGate().control(
-                        len(input_qubits), ctrl_state=ctrl_state, method="gray"
-                    ),
-                    input_qubits + target,
-                )
-            else:
-                qs.append(
-                    PGate(phase).control(len(input_qubits), ctrl_state=ctrl_state),
-                    input_qubits + target,
-                )
+            qs.append(
+                PGate(phase).control(len(input_qubits), ctrl_state=ctrl_state),
+                input_qubits + target,
+            )
         return
 
     structure = structure_decider(len(input_qubits), num_ancilla)  # [::-1]
@@ -208,9 +190,7 @@ def hybrid_mcx(
     return
 
 
-def balauca_layer(
-    input_qubits, output_qubits, structure, invert=False, use_mcm=False, ctrl_list=None
-):
+def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm=False, ctrl_list=None):
     if not output_qubits:
         return
 
@@ -232,9 +212,7 @@ def balauca_layer(
                 input_qubits[counter + 2],
             ]
 
-            ctrl_state = "".join(
-                [ctrl_list[counter], ctrl_list[counter + 1], ctrl_list[counter + 2]]
-            )
+            ctrl_state = "".join([ctrl_list[counter], ctrl_list[counter + 1], ctrl_list[counter + 2]])
 
             counter += 3
 
@@ -267,9 +245,7 @@ def balauca_layer(
 
             if isinstance(output_qubits[i], Qubit):
                 target = output_qubits[i]
-            elif isinstance(output_qubits[i], Tracer) and isinstance(
-                output_qubits[i].aval, AbstractQubit
-            ):
+            elif isinstance(output_qubits[i], Tracer) and isinstance(output_qubits[i].aval, AbstractQubit):
                 target = output_qubits[i]
             else:
                 target = output_qubits[i][0]
@@ -337,9 +313,7 @@ def balauca_dirty(control, target, k, dirty_ancillae=None, ctrl_state=None):
 
     dirty_ancilla_qbls = []
     if dirty_ancillae is None:
-        dirty_ancilla_qbls = [
-            QuantumBool(name="balauca_dirty*", qs=qs) for i in range(k)
-        ]
+        dirty_ancilla_qbls = [QuantumBool(name="balauca_dirty*", qs=qs) for i in range(k)]
         dirty_ancillae = [qbl[0] for qbl in dirty_ancilla_qbls]
 
     upper_block_qubits = control[:m_1] + [dirty_ancillae[0]]
@@ -514,7 +488,6 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
         ctrl_state = cond(ctrl_state == -1, lambda x: x + 2**N, lambda x: x, ctrl_state)
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
-
         with control(N == 1):
             cx(ctrls[0], target[0])
 
@@ -537,7 +510,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
 @qache
 def jasp_balauca_mcp(phi, ctrls, ctrl_state):
 
-    from qrisp import mcx, QuantumBool, cp, p
+    from qrisp import QuantumBool, mcx, p
 
     N = jlen(ctrls)
 
@@ -546,7 +519,6 @@ def jasp_balauca_mcp(phi, ctrls, ctrl_state):
     target = QuantumBool()
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
-
         with control(N == 1):
             p(phi, ctrls[0])
 
@@ -576,10 +548,8 @@ def jasp_balauca_helper(ctrls, balauca_anc):
 
     if isinstance(ctrls, list):
         xrange = range
-        import numpy as jnp
     else:
         xrange = jrange
-        import jax.numpy as jnp
 
     N = jlen(ctrls)
 

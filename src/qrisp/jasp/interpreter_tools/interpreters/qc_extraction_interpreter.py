@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,14 +17,14 @@
 QuantumCircuit Extraction Interpreter
 =====================================
 
-This module implements the interpreter for converting Jaspr (JAX-based quantum 
+This module implements the interpreter for converting Jaspr (JAX-based quantum
 intermediate representation) into static QuantumCircuit objects.
 
 Overview
 --------
-Jaspr represents hybrid quantum-classical algorithms using JAX's tracing 
-infrastructure. While this representation is powerful for optimization and 
-compilation, it needs to be "lowered" to a QuantumCircuit for execution on 
+Jaspr represents hybrid quantum-classical algorithms using JAX's tracing
+infrastructure. While this representation is powerful for optimization and
+compilation, it needs to be "lowered" to a QuantumCircuit for execution on
 current quantum hardware or simulators that expect circuit-based input.
 
 The Challenge
@@ -39,7 +38,7 @@ The main challenge in this conversion is handling **measurement results**:
 2. **In QuantumCircuit**: Measurement results are represented as `Clbit` objects.
    These are non-JAX types that cannot be processed by JAX primitives.
 
-When we encounter classical post-processing of measurement results (e.g., 
+When we encounter classical post-processing of measurement results (e.g.,
 `meas_res * 2` or `parity(m1, m2)`), we cannot represent this computation
 in the QuantumCircuit itself. Instead, we use placeholder objects.
 
@@ -67,15 +66,13 @@ This module provides three key classes/concepts:
 
 import numpy as np
 
-
 # =============================================================================
 # SECTION 1: Placeholder Classes for Classical Post-Processing
 # =============================================================================
 
 
 class ProcessedMeasurement:
-    """
-    Placeholder for measurement results that have undergone classical post-processing.
+    """Placeholder for measurement results that have undergone classical post-processing.
 
     Problem Being Solved
     --------------------
@@ -104,19 +101,19 @@ class ProcessedMeasurement:
     It creates a ProcessedMeasurement as the output, signaling that the actual
     value cannot be determined until runtime execution with real measurement data.
 
-    Example
+    Example:
     -------
     >>> result, qc = jaspr.to_qc()
     >>> isinstance(result, ProcessedMeasurement)
     True  # The result involves classical post-processing
+
     """
 
     pass
 
 
 class ParityHandle:
-    """
-    A lightweight handle representing the result of a parity computation in quantum circuits.
+    """A lightweight handle representing the result of a parity computation in quantum circuits.
 
     ParityHandle objects are returned by :meth:`qrisp.QuantumCircuit.parity` and serve as
     keys in the detector and observable maps produced by :meth:`~qrisp.QuantumCircuit.to_stim`.
@@ -144,7 +141,6 @@ class ParityHandle:
 
     Examples
     --------
-
     ParityHandles are typically created via :meth:`qrisp.QuantumCircuit.parity`:
 
     >>> from qrisp import QuantumCircuit
@@ -166,6 +162,7 @@ class ParityHandle:
     ... )
     >>> det_map[handle]  # Get the Stim detector index
     0
+
     """
 
     # Design Rationale
@@ -257,8 +254,7 @@ class ParityHandle:
 
 
 class MeasurementArray(np.ndarray):
-    """
-    A numpy ndarray subclass for measurement-related values during QuantumCircuit extraction.
+    """A numpy ndarray subclass for measurement-related values during QuantumCircuit extraction.
 
     Problem Being Solved
     --------------------
@@ -290,17 +286,15 @@ class MeasurementArray(np.ndarray):
         pass
 
     def mark_as_processed(self):
-        """
-        Return a new MeasurementArray with all entries marked as processed.
+        """Return a new MeasurementArray with all entries marked as processed.
 
         Returns
         -------
         MeasurementArray
             New array with all entries set to ProcessedMeasurement().
+
         """
-        processed_data = np.array(
-            [ProcessedMeasurement() for _ in self.flat], dtype=object
-        )
+        processed_data = np.array([ProcessedMeasurement() for _ in self.flat], dtype=object)
         return MeasurementArray(processed_data.reshape(self.shape))
 
 
@@ -310,8 +304,7 @@ class MeasurementArray(np.ndarray):
 
 
 def contains_measurement_data(val):
-    """
-    Check if a value contains measurement-related data.
+    """Check if a value contains measurement-related data.
 
     Parameters
     ----------
@@ -323,6 +316,7 @@ def contains_measurement_data(val):
     bool
         True if the value is or contains Clbit, MeasurementArray,
         ParityHandle, or ProcessedMeasurement data.
+
     """
     from qrisp import Clbit
 
@@ -334,8 +328,7 @@ def contains_measurement_data(val):
 
 
 def to_object_array(val):
-    """
-    Convert a measurement-related value to an object numpy array.
+    """Convert a measurement-related value to an object numpy array.
 
     Parameters
     ----------
@@ -350,6 +343,7 @@ def to_object_array(val):
     -------
     numpy.ndarray or original value
         Object array with the value(s).
+
     """
     from qrisp import Clbit
 
@@ -367,8 +361,7 @@ def to_object_array(val):
 
 
 def apply_array_primitive(prim_name, params, invalues):
-    """
-    Apply a JAX array primitive to measurement data using numpy equivalents.
+    """Apply a JAX array primitive to measurement data using numpy equivalents.
 
     Parameters
     ----------
@@ -385,6 +378,7 @@ def apply_array_primitive(prim_name, params, invalues):
         - MeasurementArray for array results
         - Scalar (Clbit, bool, ProcessedMeasurement, ParityHandle) for 0-d results
         - None if this primitive is not handled
+
     """
     # Convert all inputs to object arrays
     encoded = [to_object_array(v) for v in invalues]
@@ -411,8 +405,7 @@ def apply_array_primitive(prim_name, params, invalues):
     elif prim_name == "dynamic_slice":
         # Start indices come from invalues[1:]
         start_indices = [
-            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0])
-            for i in range(1, len(encoded))
+            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) for i in range(1, len(encoded))
         ]
         slice_sizes = params["slice_sizes"]
         slices = tuple(slice(s, s + sz) for s, sz in zip(start_indices, slice_sizes))
@@ -426,11 +419,7 @@ def apply_array_primitive(prim_name, params, invalues):
             if isinstance(idx, (int, np.integer)):
                 idx = int(idx)
         elif np.ndim(indices) == 0:
-            idx = (
-                int(indices)
-                if isinstance(indices, (int, np.integer, np.ndarray))
-                else indices
-            )
+            idx = int(indices) if isinstance(indices, (int, np.integer, np.ndarray)) else indices
         else:
             idx = int(indices[0]) if len(indices) == 1 else indices
 
@@ -464,8 +453,7 @@ def apply_array_primitive(prim_name, params, invalues):
         update = encoded[1]
         # Start indices come from remaining invalues (already encoded)
         start_indices = tuple(
-            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0])
-            for i in range(2, len(encoded))
+            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) for i in range(2, len(encoded))
         )
 
         # Create a copy and update the slice
@@ -505,8 +493,7 @@ def apply_array_primitive(prim_name, params, invalues):
 
 
 def resolve_measurement_arrays(value):
-    """
-    Recursively resolve MeasurementArrays to numpy arrays with dtype=object.
+    """Recursively resolve MeasurementArrays to numpy arrays with dtype=object.
 
     This function is called at the end of jaspr_to_qc to convert the internal
     MeasurementArray representation to a standard numpy array that users can
@@ -524,6 +511,7 @@ def resolve_measurement_arrays(value):
     -------
     any
         The resolved value with MeasurementArrays converted to numpy arrays.
+
     """
     if isinstance(value, MeasurementArray):
         # View as plain numpy array (MeasurementArray is already an ndarray subclass)
@@ -537,8 +525,7 @@ def resolve_measurement_arrays(value):
 
 
 def handle_classical_processing(invalues):
-    """
-    Handle operations that represent classical post-processing on measurement data.
+    """Handle operations that represent classical post-processing on measurement data.
 
     Many operations (arithmetic, comparisons, reductions, bitwise ops) represent
     classical computation that cannot be performed during circuit construction.
@@ -563,6 +550,7 @@ def handle_classical_processing(invalues):
         - MeasurementArray with processed entries if input was an array
         - ProcessedMeasurement for scalar measurement inputs
         - None if no measurement data (use default JAX evaluation)
+
     """
     from qrisp import Clbit
 
@@ -634,8 +622,7 @@ CLASSICAL_PROCESSING_PRIMITIVES = {
 
 
 def make_qc_extraction_eqn_evaluator(qc):
-    """
-    Create an equation evaluator for extracting a QuantumCircuit from a Jaspr.
+    """Create an equation evaluator for extracting a QuantumCircuit from a Jaspr.
 
     This factory function creates a closure over the QuantumCircuit being built,
     returning an evaluator function that can be passed to eval_jaxpr.
@@ -649,11 +636,11 @@ def make_qc_extraction_eqn_evaluator(qc):
     -------
     callable
         An equation evaluator function with signature (eqn, context_dic) -> bool|None
+
     """
 
     def qc_extraction_eqn_evaluator(eqn, context_dic):
-        """
-        Evaluate a single Jaxpr equation during QuantumCircuit extraction.
+        """Evaluate a single Jaxpr equation during QuantumCircuit extraction.
 
         This function is called for each equation in the Jaspr. It determines
         how to handle the equation based on its primitive type:
@@ -682,15 +669,16 @@ def make_qc_extraction_eqn_evaluator(qc):
         bool or None
             - True: Use default JAX evaluation for this equation
             - None/False: Equation was fully handled, skip default evaluation
+
         """
         # Import here to avoid circular imports
         from qrisp import Clbit
         from qrisp.jasp import (
             Jaspr,
+            ParityOperation,
+            QuantumPrimitive,
             extract_invalues,
             insert_outvalues,
-            QuantumPrimitive,
-            ParityOperation,
         )
         from qrisp.jasp.interpreter_tools.interpreters import cond_to_cl_control
 
@@ -702,16 +690,15 @@ def make_qc_extraction_eqn_evaluator(qc):
         # -----------------------------------------------------------------
 
         if prim_name == "jit" and (
-            isinstance(eqn.params["jaxpr"], Jaspr)
-            or any(contains_measurement_data(v) for v in invalues)
+            isinstance(eqn.params["jaxpr"], Jaspr) or any(contains_measurement_data(v) for v in invalues)
         ):
             # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
             from qrisp.jasp import eval_jaxpr
 
             definition_jaxpr = eqn.params["jaxpr"]
-            res = eval_jaxpr(
-                definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator
-            )(*(definition_jaxpr.consts + invalues))
+            res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
+                *(definition_jaxpr.consts + invalues)
+            )
 
             if len(definition_jaxpr.jaxpr.outvars) == 1:
                 res = [res]
@@ -795,8 +782,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             if isinstance(inval, MeasurementArray):
                 # Check if converting to a non-boolean/non-integer type
                 if new_dtype is not None and not (
-                    np.issubdtype(new_dtype, np.bool_)
-                    or np.issubdtype(new_dtype, np.integer)
+                    np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)
                 ):
                     # Converting to float type - mark as processed
                     context_dic[eqn.outvars[0]] = inval.mark_as_processed()
@@ -808,8 +794,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # Clbit should pass through for bool->int conversions (used by cond)
                 # Only mark as processed for float conversions
                 if new_dtype is not None and not (
-                    np.issubdtype(new_dtype, np.bool_)
-                    or np.issubdtype(new_dtype, np.integer)
+                    np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)
                 ):
                     context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 else:
@@ -819,11 +804,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # ProcessedMeasurement stays processed
                 context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 return
-            elif (
-                isinstance(inval, list)
-                and len(inval)
-                and isinstance(inval[0], (ProcessedMeasurement, Clbit))
-            ):
+            elif isinstance(inval, list) and len(inval) and isinstance(inval[0], (ProcessedMeasurement, Clbit)):
                 # List of measurement data
                 if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
                     context_dic[eqn.outvars[0]] = ProcessedMeasurement()
@@ -1022,8 +1003,7 @@ def make_qc_extraction_eqn_evaluator(qc):
 
 
 def jaspr_to_qc(jaspr, *args):
-    """
-    Convert a Jaspr into a QuantumCircuit.
+    """Convert a Jaspr into a QuantumCircuit.
 
     This is the main entry point for converting Jaspr intermediate representation
     into a static QuantumCircuit that can be executed on quantum hardware or
@@ -1124,11 +1104,13 @@ def jaspr_to_qc(jaspr, *args):
 
         # result is the Clbit corresponding to m0's measurement
         print(type(result))  # <class 'qrisp.circuit.clbit.Clbit'>
+
     """
-    from qrisp import QuantumCircuit
-    from qrisp.jasp import eval_jaxpr
-    from qrisp.circuit import Qubit
     from jax._src.core import eval_context
+
+    from qrisp import QuantumCircuit
+    from qrisp.circuit import Qubit
+    from qrisp.jasp import eval_jaxpr
 
     qc = QuantumCircuit()
 
@@ -1156,9 +1138,7 @@ def jaspr_to_qc(jaspr, *args):
     # allowing jaspr_to_qc to be called from within a make_jaspr or
     # jit tracing context without TracerIntegerConversionError.
     with eval_context():
-        res = eval_jaxpr(jaspr, eqn_evaluator=make_qc_extraction_eqn_evaluator(qc))(
-            *ammended_args
-        )
+        res = eval_jaxpr(jaspr, eqn_evaluator=make_qc_extraction_eqn_evaluator(qc))(*ammended_args)
 
     # Resolve MeasurementArrays to numpy arrays with dtype=object
     res = resolve_measurement_arrays(res)

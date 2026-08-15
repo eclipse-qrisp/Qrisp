@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,14 +18,13 @@
 import numpy as np
 
 from qrisp.alg_primitives import QFT
-from qrisp.core.gate_application_functions import p, cz
-from qrisp.environments import QuantumEnvironment, conjugate
 from qrisp.circuit import Operation, PGate, QuantumCircuit
+from qrisp.core.gate_application_functions import cz, p
+from qrisp.environments import QuantumEnvironment, conjugate
 
 
 def fourier_adder(a, b, perform_QFT=True):
-    """
-    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
+    """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
     Performs the addition:
 
     ::
@@ -45,7 +43,6 @@ def fourier_adder(a, b, perform_QFT=True):
 
     Examples
     --------
-
     We add two integers:
 
     >>> from qrisp import QuantumFloat, fourier_adder
@@ -58,14 +55,12 @@ def fourier_adder(a, b, perform_QFT=True):
     {9: 1.0}
 
     """
-
     if perform_QFT:
         env = conjugate(QFT)(b, exec_swap=False)
     else:
         env = QuantumEnvironment()
 
     with env:
-
         b = list(b)
         b = b[::-1]
 
@@ -74,17 +69,13 @@ def fourier_adder(a, b, perform_QFT=True):
                 p(a * np.pi * 2 ** (1 + i - len(b)), b[i])
 
         else:
-
             if len(a) > len(b):
-                raise Exception(
-                    "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-                )
+                raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
             phase_correction_a = np.zeros(len(a))
             phase_correction_b = np.zeros(len(b))
             for j in range(len(a)):
                 for i in range(len(b)):
-
                     if 1 + j + i - len(b) >= 1:
                         continue
                     if 1 + j + i - len(b) == 0:
@@ -107,16 +98,13 @@ def fourier_adder(a, b, perform_QFT=True):
 
 
 class QuasiRZZ(Operation):
-
     def __init__(self, angle):
         qc = QuantumCircuit(2)
         qc.cx(qc.qubits[1], qc.qubits[0])
         qc.p(angle, qc.qubits[0])
         qc.cx(qc.qubits[1], qc.qubits[0])
 
-        Operation.__init__(
-            self, "quasi_rzz", num_qubits=2, definition=qc, params=[angle]
-        )
+        Operation.__init__(self, "quasi_rzz", num_qubits=2, definition=qc, params=[angle])
 
         self.permeability = {0: True, 1: True}
         self.is_qfree = True
@@ -129,16 +117,12 @@ class QuasiRZZ(Operation):
         qc = QuantumCircuit(2 + num_ctrl_qubits)
         qc.cx(qc.qubits[-1], qc.qubits[-2])
         qc.append(
-            PGate(self.params[0]).control(
-                num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-            ),
+            PGate(self.params[0]).control(num_ctrl_qubits, ctrl_state=ctrl_state, method=method),
             qc.qubits[:-1],
         )
         qc.cx(qc.qubits[-1], qc.qubits[-2])
 
-        res = Operation.control(
-            self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-        )
+        res = Operation.control(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
 
         res.definition = qc
         return res

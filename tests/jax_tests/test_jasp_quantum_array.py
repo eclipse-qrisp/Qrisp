@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,7 +16,9 @@
 """
 
 import operator
+
 import pytest
+
 from qrisp import *
 from qrisp.jasp import *
 
@@ -123,10 +124,9 @@ def test_error_invalid_slice_step():
         qf = QuantumFloat(4)
         qf[::-1]
 
-    with pytest.raises(
-        NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"
-    ):
+    with pytest.raises(NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"):
         main()
+
 
 def test_error_matmul_invalid_qtype():
     """Test that an error is raised when trying to apply matrix multiplication to a QuantumArray of unsupported qtype"""
@@ -136,54 +136,61 @@ def test_error_matmul_invalid_qtype():
         qa_float = QuantumArray(QuantumFloat(2), shape=(2, 2))
         qa_float @ qa_float
 
-    with pytest.raises(NotImplementedError, match="Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode is not supported"):
+    with pytest.raises(
+        NotImplementedError,
+        match="Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode is not supported",
+    ):
         main()
+
 
 def test_injection():
     @jaspify
     def test():
-        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        a_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         x(a_array)
-        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        b_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         h(b_array)
-        r_array = QuantumArray(QuantumBool(), shape=(4,4))
+        r_array = QuantumArray(QuantumBool(), shape=(4, 4))
 
-        (r_array << (lambda a,b: a==b))(a_array, b_array)
+        (r_array << (lambda a, b: a == b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == (a == b)).all())
+    assert (r == (a == b)).all()
+
 
 def test_element_wise_addition_injection_qm():
     @jaspify
     def test():
         I = np.eye(4, dtype=int)
-        a_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        a_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
         a_array[:] = I
-        b_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        b_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
         b_array[:] = I
-        r_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        r_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
 
-        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        (r_array << (lambda a, b: a + b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == (a+b)%7).all())
+    assert (r == (a + b) % 7).all()
+
 
 def test_element_wise_addition_injection():
     @jaspify
     def test():
-        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        a_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         x(a_array)
-        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        b_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         h(b_array)
-        r_array = QuantumArray(QuantumFloat(6), shape=(4,4))
+        r_array = QuantumArray(QuantumFloat(6), shape=(4, 4))
 
-        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        (r_array << (lambda a, b: a + b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == a+b).all())
+    assert (r == a + b).all()
+
 
 #
 # Element-wise arithmetic
@@ -191,30 +198,29 @@ def test_element_wise_addition_injection():
 
 # Define the set of operators to test
 ops = [
-    operator.add, operator.sub, operator.mul,  # +, -, *
-    operator.eq,  operator.ne,                 # ==, !=
-    operator.gt,  operator.ge,                 # >, >=
-    operator.lt,  operator.le                  # <, <=
+    operator.add,
+    operator.sub,
+    operator.mul,  # +, -, *
+    operator.eq,
+    operator.ne,  # ==, !=
+    operator.gt,
+    operator.ge,  # >, >=
+    operator.lt,
+    operator.le,  # <, <=
 ]
 rhs_type = ["quantum", "classical"]
 instances = [
     # Instances without overflow because of different overflow behavior of quantum and classical addition/subtraction for QuantumFloat
-    pytest.param(
-        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
-        id="QuantumFloat; array RHS"
-    ),
-    pytest.param(
-        (np.array([[1, 2], [2, 1]]), 1, 3),
-        id="QuantumFloat; scalar RHS"
-    ),
+    pytest.param((np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4), id="QuantumFloat; array RHS"),
+    pytest.param((np.array([[1, 2], [2, 1]]), 1, 3), id="QuantumFloat; scalar RHS"),
 ]
+
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_type)
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
-
     a_c, b_c, size = instance
 
     @jaspify
@@ -222,12 +228,12 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
 
         # Initialize QuantumArrays
         qtype = QuantumFloat(size)
-        a_array = QuantumArray(qtype, shape=(2,2))
+        a_array = QuantumArray(qtype, shape=(2, 2))
         a_array[:] = a_c
 
         if rhs_type == "quantum":
             if isinstance(b_c, (np.ndarray, jnp.ndarray)):
-                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array = QuantumArray(qtype, shape=(2, 2))
                 b_array[:] = b_c
                 rhs_operand = b_array
             else:
@@ -236,14 +242,16 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
                 rhs_operand = b_qv
         else:
             rhs_operand = b_c
-    
+
         # Execute quantum operation
         r_array = op(a_array, rhs_operand)
         return measure(r_array)
-    
+
     # Validate measurements
     if op == operator.mul and rhs_type == "classical":
-        with pytest.raises(NotImplementedError, match="Quantum-classical multiplication is not supported for non-QuantumModulus types"):
+        with pytest.raises(
+            NotImplementedError, match="Quantum-classical multiplication is not supported for non-QuantumModulus types"
+        ):
             main()
     else:
         measured = main()
@@ -252,22 +260,16 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
 
 
 instances = [
-    pytest.param(
-        (np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]]), 7),
-        id="QuantumModulus; array RHS"
-    ),
-    pytest.param(
-        (np.array([[0, 1], [2, 1]]), 2, 3),
-        id="QuantumModulus; scalar RHS"
-    )
+    pytest.param((np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]]), 7), id="QuantumModulus; array RHS"),
+    pytest.param((np.array([[0, 1], [2, 1]]), 2, 3), id="QuantumModulus; scalar RHS"),
 ]
+
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_type)
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumModulus against their classical counterparts."""
-
     if op == operator.mul and rhs_type == "quantum":
         # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
         pytest.skip("Quantum-quantum multiplication for QuantumModulus is currently unsupported in Jasp.")
@@ -279,12 +281,12 @@ def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
 
         # Initialize QuantumArrays
         qtype = QuantumModulus(modulus)
-        a_array = QuantumArray(qtype, shape=(2,2))
+        a_array = QuantumArray(qtype, shape=(2, 2))
         a_array[:] = a_c
 
         if rhs_type == "quantum":
             if isinstance(b_c, (np.ndarray, jnp.ndarray)):
-                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array = QuantumArray(qtype, shape=(2, 2))
                 b_array[:] = b_c
                 rhs_operand = b_array
             else:
@@ -293,14 +295,14 @@ def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
                 rhs_operand = b_qv
         else:
             rhs_operand = b_c
-    
+
         # Execute quantum operation
         r_array = op(a_array, rhs_operand)
         return measure(r_array)
-    
+
     # Calculate classical reference
     expected_c = op(a_c, b_c) % modulus
-    
+
     # Validate measurements
     r_array = main()
 
@@ -308,13 +310,15 @@ def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
 
 
 bool_ops = [
-    operator.and_, operator.or_, operator.xor  # &, |, ^
+    operator.and_,
+    operator.or_,
+    operator.xor,  # &, |, ^
 ]
+
 
 @pytest.mark.parametrize("op", bool_ops)
 def test_quantum_array_element_wise_bool_ops(op):
     """Test element-wise boolean operations on QuantumArrays against their classical counterparts."""
-
     a_c = np.array([[True, False], [False, True]])
     b_c = np.array([[True, True], [False, False]])
 
@@ -323,19 +327,19 @@ def test_quantum_array_element_wise_bool_ops(op):
 
         # Initialize QuantumArrays
         qtype = QuantumBool()
-        a_array = QuantumArray(qtype, shape=(2,2))
-        b_array = QuantumArray(qtype, shape=(2,2))
-    
+        a_array = QuantumArray(qtype, shape=(2, 2))
+        b_array = QuantumArray(qtype, shape=(2, 2))
+
         a_array[:] = a_c
         b_array[:] = b_c
-    
+
         # Execute quantum operation
         r_array = op(a_array, b_array)
         return measure(r_array)
-    
+
     # Calculate classical reference
     expected_c = op(a_c, b_c)
-    
+
     # Validate measurements
     r_array = main()
 
@@ -343,26 +347,22 @@ def test_quantum_array_element_wise_bool_ops(op):
 
 
 ops = [
-    operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
+    operator.iadd,
+    operator.isub,
+    operator.imul,  # +=, -=, *=
 ]
 rhs_types = ["quantum", "classical"]
 instances = [
-    pytest.param(
-        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
-        id="QuantumFloat; array RHS"
-    ),
-    pytest.param(
-        (np.array([[1, 2], [2, 1]]), 1, 3),
-        id="QuantumFloat; scalar RHS"
-    ),
+    pytest.param((np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4), id="QuantumFloat; array RHS"),
+    pytest.param((np.array([[1, 2], [2, 1]]), 1, 3), id="QuantumFloat; scalar RHS"),
 ]
+
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_types)
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat against classical counterparts."""
-
     a_c_ref, b_c_ref, size = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
@@ -378,10 +378,10 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
         qtype = QuantumFloat(size)
         a_array = QuantumArray(qtype, shape=(2, 2))
         a_array[:] = a_c
-        
+
         if rhs_type == "quantum":
             if isinstance(b_c, (np.ndarray, jnp.ndarray)):
-                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array = QuantumArray(qtype, shape=(2, 2))
                 b_array[:] = b_c
                 rhs_operand = b_array
             else:
@@ -394,13 +394,16 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
         # Execute quantum operation
         op(a_array, rhs_operand)
         return measure(a_array)
-    
+
     # Validate measurements
     if op == operator.imul and rhs_type == "quantum":
         with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
             main_quantum()
     elif op == operator.imul and rhs_type == "classical":
-        with pytest.raises(NotImplementedError, match="Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types",
+        ):
             main_quantum()
     else:
         measured = main_quantum()
@@ -409,22 +412,16 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
 
 
 instances = [
-    pytest.param(
-        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 7),
-        id="QuantumModulus; array RHS"
-    ),
-    pytest.param(
-        (np.array([[1, 2], [2, 1]]), 1, 3),
-        id="QuantumModulus; scalar RHS"
-    )
+    pytest.param((np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 7), id="QuantumModulus; array RHS"),
+    pytest.param((np.array([[1, 2], [2, 1]]), 1, 3), id="QuantumModulus; scalar RHS"),
 ]
+
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_types)
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumModulus against classical counterparts."""
-
     a_c_ref, b_c_ref, modulus = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
@@ -441,10 +438,10 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
         qtype = QuantumModulus(modulus)
         a_array = QuantumArray(qtype, shape=(2, 2))
         a_array[:] = a_c
-        
+
         if rhs_type == "quantum":
             if isinstance(b_c, (np.ndarray, jnp.ndarray)):
-                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array = QuantumArray(qtype, shape=(2, 2))
                 b_array[:] = b_c
                 rhs_operand = b_array
             else:
@@ -457,7 +454,7 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
         # Execute quantum operation
         op(a_array, rhs_operand)
         return measure(a_array)
-    
+
     # Validate measurements
     if op == operator.imul and rhs_type == "quantum":
         with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
@@ -468,18 +465,21 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
         assert np.array_equal(measured, expected)
 
 
-@pytest.mark.parametrize(" a_c, axis" , [
-    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
-    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
-    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
-    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
-])  
+@pytest.mark.parametrize(
+    " a_c, axis",
+    [
+        pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+        pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+        pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+        pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+    ],
+)
 def test_quantum_array_all(a_c, axis):
     """Test the all() method on QuantumArrays of QuantumBool against their classical counterparts."""
 
     @jaspify
     def main():
-        q_array = QuantumArray(QuantumBool(), shape=(2,2))
+        q_array = QuantumArray(QuantumBool(), shape=(2, 2))
         q_array[:] = a_c
         qbl = q_array.all(axis=axis)
         return measure(qbl)
@@ -488,18 +488,21 @@ def test_quantum_array_all(a_c, axis):
     assert np.array_equal(measured, a_c.all(axis=axis))
 
 
-@pytest.mark.parametrize(" a_c, axis" , [
-    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
-    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
-    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
-    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
-])
+@pytest.mark.parametrize(
+    " a_c, axis",
+    [
+        pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+        pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+        pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+        pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+    ],
+)
 def test_quantum_array_any(a_c, axis):
     """Test the any() method on QuantumArrays of QuantumBool against their classical counterparts."""
 
     @jaspify
     def main():
-        q_array = QuantumArray(QuantumBool(), shape=(2,2))
+        q_array = QuantumArray(QuantumBool(), shape=(2, 2))
         q_array[:] = a_c
         qbl = q_array.any(axis=axis)
         return measure(qbl)

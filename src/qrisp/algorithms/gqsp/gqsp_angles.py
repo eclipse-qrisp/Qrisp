@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,13 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
 from functools import partial
-import numpy as np
+from typing import TYPE_CHECKING, Literal
+
 import jax
-from jax import Array
 import jax.numpy as jnp
+import numpy as np
+from jax import Array
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -30,8 +30,7 @@ if TYPE_CHECKING:
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 @jax.jit
 def _complementary_objective(a: "ArrayLike", b: "ArrayLike") -> Array:
-    """
-    Computes the complementary objective function for two given polynomials.
+    """Computes the complementary objective function for two given polynomials.
 
     Parameters
     ----------
@@ -59,8 +58,7 @@ def _complementary_objective(a: "ArrayLike", b: "ArrayLike") -> Array:
 
 @partial(jax.jit, static_argnames=["N"])
 def _maximum(b: "ArrayLike", N: int = 1024) -> Array:
-    r"""
-    Finds the maximum absolute value that a given polynomial assumes on the unit circle.
+    r"""Finds the maximum absolute value that a given polynomial assumes on the unit circle.
 
     Parameters
     ----------
@@ -83,8 +81,7 @@ def _maximum(b: "ArrayLike", N: int = 1024) -> Array:
 
 @jax.jit
 def _complementary_polynomial(b: "ArrayLike") -> Array:
-    r"""
-    Finds a complementary polynomial $a$ such that $|a|^2 + |b|^2 = 1$ on the unit circle.
+    r"""Finds a complementary polynomial $a$ such that $|a|^2 + |b|^2 = 1$ on the unit circle.
 
     This function implements spectral factorization via the Cepstral method.
     It constructs the unique outer polynomial (analytic and non-zero inside
@@ -139,9 +136,7 @@ def _complementary_polynomial(b: "ArrayLike") -> Array:
     a_cep_analytic = jnp.zeros(N, dtype=jnp.complex128)
 
     a_cep_analytic = a_cep_analytic.at[0].set(cepstrum[0])  # DC
-    a_cep_analytic = a_cep_analytic.at[1:mid].set(
-        2 * cepstrum[1:mid]
-    )  # Positive frequencies
+    a_cep_analytic = a_cep_analytic.at[1:mid].set(2 * cepstrum[1:mid])  # Positive frequencies
     a_cep_analytic = a_cep_analytic.at[mid].set(cepstrum[mid])  # Nyquist
 
     # 5. Recovery of coefficients
@@ -153,8 +148,7 @@ def _complementary_polynomial(b: "ArrayLike") -> Array:
 
 @jax.jit
 def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
-    r"""
-    Computes the inverse non-linear Fourier transform using the layer stripping algorithm.
+    r"""Computes the inverse non-linear Fourier transform using the layer stripping algorithm.
 
     .. math ::
 
@@ -206,8 +200,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 
 @jax.jit
 def _gqsp_angles_from_nlft_sequence(F: Array) -> tuple[Array, Array, Array]:
-    r"""
-    Computes the GQSP angles form the non-linear Fourier sequence.
+    r"""Computes the GQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
@@ -256,8 +249,7 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> tuple[Array, Array, Array]:
 
 @jax.jit
 def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
-    r"""
-    Computes the XQSP angles form the non-linear Fourier sequence.
+    r"""Computes the XQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
@@ -273,18 +265,18 @@ def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
     ------
     NotImplementedError
         Always raised until the XQSP convention is mathematically verified.
+
     """
     raise NotImplementedError(
-            "The XQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #return jnp.arctan(-jnp.imag(F))
+        "The XQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # return jnp.arctan(-jnp.imag(F))
 
 
 @jax.jit
 def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
-    r"""
-    Computes the YQSP angles form the non-linear Fourier sequence.
+    r"""Computes the YQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
@@ -300,17 +292,17 @@ def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
     ------
     NotImplementedError
         Always raised until the YQSP convention is mathematically verified.
+
     """
     raise NotImplementedError(
-            "The YQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #return jnp.arctan(jnp.real(F))
+        "The YQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # return jnp.arctan(jnp.real(F))
 
 
 def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
-    r"""
-    Computes the non-linear Fourier sequence for a given polynomial.
+    r"""Computes the non-linear Fourier sequence for a given polynomial.
 
     Parameters
     ----------
@@ -345,8 +337,7 @@ def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
 
 # https://arxiv.org/pdf/2503.03026
 def gqsp_angles(p: "ArrayLike") -> tuple[tuple[Array, Array, Array], Array]:
-    r"""
-    Computes the GQSP angles for a given polynomial.
+    r"""Computes the GQSP angles for a given polynomial.
 
     Parameters
     ----------
@@ -378,11 +369,10 @@ def gqsp_angles(p: "ArrayLike") -> tuple[tuple[Array, Array, Array], Array]:
     return (theta, phi, lambda_), alpha
 
 
-# https://arxiv.org/pdf/2503.03026 
+# https://arxiv.org/pdf/2503.03026
 # Not verified to be correct.
 def xqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
-    r"""
-    Computes the XQSP angles for a given polynomial.
+    r"""Computes the XQSP angles for a given polynomial.
 
     Parameters
     ----------
@@ -407,19 +397,18 @@ def xqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
 
     """
     raise NotImplementedError(
-            "The XQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #F, alpha = poly_to_nlft_sequence(p)
-    #phi = _xqsp_angles_from_nlft_sequence(F)
-    #return phi, alpha
+        "The XQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # F, alpha = poly_to_nlft_sequence(p)
+    # phi = _xqsp_angles_from_nlft_sequence(F)
+    # return phi, alpha
 
 
-# https://arxiv.org/pdf/2503.03026 
+# https://arxiv.org/pdf/2503.03026
 # Not verified to be correct.
 def yqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
-    r"""
-    Computes the YQSP angles for a given polynomial.
+    r"""Computes the YQSP angles for a given polynomial.
 
     Parameters
     ----------
@@ -444,19 +433,16 @@ def yqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
 
     """
     raise NotImplementedError(
-            "The YQSP angle calculation is currently unverified and disabled. "
-            "Please use QSP, GQSP, or QSVT conventions instead."
-        )
-    #F, alpha = poly_to_nlft_sequence(p)
-    #phi = _yqsp_angles_from_nlft_sequence(F)
-    #return phi, alpha
+        "The YQSP angle calculation is currently unverified and disabled. "
+        "Please use QSP, GQSP, or QSVT conventions instead."
+    )
+    # F, alpha = poly_to_nlft_sequence(p)
+    # phi = _yqsp_angles_from_nlft_sequence(F)
+    # return phi, alpha
 
 
-def laurent_to_analytic_coeffs(
-    target_coeffs: "ArrayLike", parity: Literal["even", "odd"] = "odd"
-) -> Array:
-    """
-    Converts a target polynomial from the Laurent QSP framework to the Analytic QSP framework.
+def laurent_to_analytic_coeffs(target_coeffs: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Array:
+    """Converts a target polynomial from the Laurent QSP framework to the Analytic QSP framework.
 
     In standard QSP, signal operators enforce strict parity (even or odd). Analytic QSP
     (like GQSP) natively builds polynomials in strictly positive powers of a variable
@@ -498,6 +484,7 @@ def laurent_to_analytic_coeffs(
         The mapped Analytic QSP coefficient array A(y). The first half consists
         of zeros (representing the skipped lower-degree y terms), and the second
         half consists of the extracted parity coefficients.
+
     """
     if parity == "odd":
         # Extract odd coefficients: indices 1, 3, 5...
@@ -524,8 +511,7 @@ def qsp_angles(
     parity: Literal["even", "odd"] = "odd",
     signal_basis: Literal["X", "Z"] = "Z",
 ) -> tuple[Array, Array]:
-    r"""
-    Computes the QSP angles for a given polynomial.
+    r"""Computes the QSP angles for a given polynomial.
 
     Parameters
     ----------
@@ -560,8 +546,7 @@ def qsp_angles(
 
 
 def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> tuple[Array, Array]:
-    r"""
-    Computes the QSVT angles for a given polynomial.
+    r"""Computes the QSVT angles for a given polynomial.
 
     Parameters
     ----------

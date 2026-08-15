@@ -1,5 +1,4 @@
 """Tests for qrisp.circuit.passes.reverse_parallelize."""
-import pytest
 
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes import reverse_parallelize
@@ -71,9 +70,7 @@ class TestReverseParallelizeParallelism:
         qc.h(2)
         once = reverse_parallelize(qc)
         twice = reverse_parallelize(once)
-        assert sorted(i.op.name for i in once.data) == sorted(
-            i.op.name for i in twice.data
-        )
+        assert sorted(i.op.name for i in once.data) == sorted(i.op.name for i in twice.data)
 
 
 # ---------------------------------------------------------------------------

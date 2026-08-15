@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,14 +16,14 @@
 """
 
 import time
-from math import factorial
 from itertools import permutations
-from numpy import binary_repr
-from qrisp import *
-from qrisp import auto_uncompute
-from qrisp.grover import grovers_alg
-from qrisp import QuantumFloat
+from math import factorial
 
+from numpy import binary_repr
+from qrisp.grover import grovers_alg
+
+from qrisp import *
+from qrisp import QuantumFloat, auto_uncompute
 
 city_amount = 4
 
@@ -77,7 +76,7 @@ def create_perm_specifiers(city_amount, init_seq=None):
 
         perm_specifier = QuantumFloat(qf_size)
 
-        if not init_seq is None:
+        if init_seq is not None:
             perm_specifier[:] = init_seq[i]
 
         perm_specifiers.append(perm_specifier)
@@ -102,9 +101,7 @@ def phase_apply_summed_distance(itinerary, iter=1):
 
 @gate_wrap(permeability="args", is_qfree=True)
 def qpe_calc_perm_travel_distance(itinerary, precision):
-    return QPE(
-        itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True
-    )
+    return QPE(itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True)
 
 
 def qdict_calc_perm_travel_distance(itinerary, precision):
@@ -146,10 +143,7 @@ def eval_distance_threshold(perm_specifiers, precision, threshold, method="qpe")
 perm_specifiers = create_perm_specifiers(city_amount)
 
 winner_state_amount = (
-    2 ** sum([qv.size for qv in perm_specifiers])
-    / factorial(city_amount)
-    * city_amount
-    * 2
+    2 ** sum([qv.size for qv in perm_specifiers]) / factorial(city_amount) * city_amount * 2
 )  # average number of state per permutation * (4 cyclic shifts)*(2 directions)
 
 # Evaluate Grovers algorithm
@@ -246,7 +240,7 @@ def create_perm_specifiers(city_amount, init_seq=None):
 
         temp_qf = QuantumFloat(qf_size)
 
-        if not init_seq is None:
+        if init_seq is not None:
             temp_qf[:] = init_seq[i - 1]
 
         perm_specifiers.append(temp_qf)
@@ -285,9 +279,7 @@ def qpe_calc_perm_travel_distance(itinerary, precision):
     if precision is None:
         raise Exception("Tried to evaluate oracle without specifying a precision")
 
-    return QPE(
-        itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True
-    )
+    return QPE(itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True)
 
 
 def qdict_calc_perm_travel_distance(itinerary, precision):

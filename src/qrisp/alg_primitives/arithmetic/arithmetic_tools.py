@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,17 @@
 ********************************************************************************
 """
 
-from qrisp.core import Qubit
-from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.environments import control, invert, conjugate
-from qrisp.core.gate_application_functions import x, cx, mcx
-from qrisp.jasp import jrange, jnp
 from typing import Tuple
+
+from qrisp.core import Qubit
+from qrisp.core.gate_application_functions import cx, mcx, x
+from qrisp.environments import conjugate, control, invert
+from qrisp.jasp import jnp, jrange
+from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
-    """
-    Computes the maximum of two QuantumFloats ``a`` and ``b``.
+    """Computes the maximum of two QuantumFloats ``a`` and ``b``.
 
     Parameters
     ----------
@@ -49,8 +48,8 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     >>> res_max = q_max(a,b)
     >>> multi_measurement([a,b,res_max])
     {(2, 1, 2): 0.5, (3, 1, 3): 0.5}
-    """
 
+    """
     res_mshape = [
         jnp.minimum(a.mshape[0], b.mshape[0]),
         jnp.maximum(a.mshape[1], b.mshape[1]),
@@ -71,9 +70,7 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     with conjugate(injecteted_comp_func)(a, b):
         cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
 
-        with conjugate(cx)(
-            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
-        ):
+        with conjugate(cx)(a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]):
             with control(c, 0):
                 cx(
                     b[l - b.exponent : r - b.exponent],
@@ -108,8 +105,7 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 
 def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
-    """
-    Computes the minimum of two QuantumFloats ``a`` and ``b``.
+    """Computes the minimum of two QuantumFloats ``a`` and ``b``.
 
     Parameters
     ----------
@@ -132,6 +128,7 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     >>> res_min = q_min(a,b)
     >>> multi_measurement([a,b,res_min])
     {(2, 1, 1): 0.5, (3, 1, 1): 0.5}
+
     """
     res_mshape = [
         jnp.minimum(a.mshape[0], b.mshape[0]),
@@ -153,9 +150,7 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     with conjugate(injecteted_comp_func)(a, b):
         cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
 
-        with conjugate(cx)(
-            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
-        ):
+        with conjugate(cx)(a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]):
             with control(c, 0):
                 cx(
                     b[l - b.exponent : r - b.exponent],
@@ -190,8 +185,7 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 
 def q_floor(a: QuantumFloat) -> QuantumFloat:
-    """
-    Computes out-of-place the floor of a QuantumFloat.
+    """Computes out-of-place the floor of a QuantumFloat.
 
     Parameters
     ----------
@@ -210,8 +204,8 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
     >>> b = q_floor(a)
     >>> b.get_measurement()
     {1.0: 0.75, 0.0: 0.25}
-    """
 
+    """
     b = a.duplicate()
     for i in jrange(-a.exponent, a.size):
         cx(a[i], b[i])
@@ -220,8 +214,7 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_ceil(a: QuantumFloat) -> QuantumFloat:
-    """
-    Computes out-of-place the ceiling of a QuantumFloat.
+    """Computes out-of-place the ceiling of a QuantumFloat.
 
     Parameters
     ----------
@@ -244,6 +237,7 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
     .. warning::
         Ceiling operations that would result in overflow, raise no errors. Instead, the operations
         are performed `modular <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
+
     """
     b = q_floor(a)
 
@@ -271,8 +265,7 @@ def logical_OR(operands: list[Qubit], flag: Qubit):
 
 
 def q_round(a: QuantumFloat) -> QuantumFloat:
-    """
-    Computes out-of-place the rounding of a QuantumFloat to the first significant digit.
+    """Computes out-of-place the rounding of a QuantumFloat to the first significant digit.
 
     Parameters
     ----------
@@ -285,7 +278,6 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
 
     Examples
     --------
-
     >>> from qrisp import *
     >>> a = QuantumFloat(4,-2)
     >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
@@ -296,6 +288,7 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
     .. warning::
         Rounding operations that would result in overflow, raise no errors. Instead, the operations
         are performed `modular <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
+
     """
     b = q_floor(a)
 
@@ -309,8 +302,7 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_fractional(a: QuantumFloat) -> QuantumFloat:
-    """
-    Computes out-of-place the fractional part of a QuantumFloat.
+    """Computes out-of-place the fractional part of a QuantumFloat.
 
     Parameters
     ----------
@@ -323,7 +315,6 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
 
     Examples
     --------
-
     >>> from qrisp import *
     >>> a = QuantumFloat(4,-2)
     >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
@@ -371,8 +362,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
-    """
-    Computes out-of-place the integer and fractional parts of a QuantumFloat.
+    """Computes out-of-place the integer and fractional parts of a QuantumFloat.
 
     Parameters
     ----------
@@ -398,5 +388,6 @@ def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
     {1.0: 0.75, 0.0: 0.25}
     >>> f.get_measurement()
     {0.75: 0.75, 0.25: 0.25}
+
     """
     return (q_floor(a), q_fractional(a))

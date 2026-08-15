@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,12 +16,12 @@
 """
 
 from collections.abc import Callable
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
+from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import rx, rz
 from qrisp.environments import control, invert
-from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.jasp import jrange
 from qrisp.qtypes import QuantumBool
 
@@ -40,8 +39,7 @@ def GQSP(
     k: int = 0,
     kwargs: dict[str, Any] = {},
 ) -> None:
-    r"""
-    Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
+    r"""Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
     Generalized Quantum Signal Processing was introduced by `Motlagh and Wiebe <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_. Its equivalence to
     the non-linear Fourier transform (NLFT) was subsequently established by `Laneve <https://arxiv.org/pdf/2503.03026>`_. 
@@ -101,7 +99,6 @@ def GQSP(
         
     Examples
     --------
-
     **Applying a transformation in Fourier basis**
 
     We apply the operator
@@ -210,7 +207,6 @@ def GQSP(
         the GQSP :ref:`tutorial`.
 
     """
-
     if angles is not None:
         theta, phi, lambda_ = angles
         d = len(theta) - 1

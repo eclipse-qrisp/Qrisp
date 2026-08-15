@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,7 @@
 
 from __future__ import annotations
 
-import pytest
-from qrisp import QuantumCircuit, Clbit
+from qrisp import Clbit, QuantumCircuit
 from qrisp.circuit.pass_management.passes.commute_swaps import commute_swaps
 
 

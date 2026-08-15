@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,14 +18,13 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-from qrisp.circuit.quantum_circuit import QuantumCircuit
+
 from qrisp.circuit.operation import ControlledOperation
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
-    combine_single_qubit_gates,
     _apply_combined_gates,
+    combine_single_qubit_gates,
 )
-
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -51,7 +49,8 @@ def _gate_names(qc: QuantumCircuit) -> list[str]:
 
 class TestIdentityCancellation:
     """Adjacent single-qubit gates whose product equals the identity
-    should be removed entirely."""
+    should be removed entirely.
+    """
 
     def test_x_then_x_cancels(self):
         """X followed by X on the same qubit → identity."""
@@ -66,7 +65,8 @@ class TestIdentityCancellation:
 
         Qrisp's H gate has tiny (~1e-16) imaginary components that push
         the norm of H² − I just above the 1e-10 cancellation threshold,
-        so the two H gates are combined rather than cancelled."""
+        so the two H gates are combined rather than cancelled.
+        """
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.h(0)
@@ -110,7 +110,8 @@ class TestIdentityCancellation:
 
 class TestGateCombination:
     """Non-identity products of adjacent single-qubit gates should be
-    merged into a single unitary operation."""
+    merged into a single unitary operation.
+    """
 
     def test_x_then_z_combined(self):
         """X then Z is -i·Y — should produce a single gate (u3)."""
@@ -143,7 +144,8 @@ class TestGateCombination:
         """Verify the combined gate's unitary equals the matrix product.
 
         Gates are multiplied in reverse order (last applied = rightmost),
-        so X then Z produces Z·X, not X·Z."""
+        so X then Z produces Z·X, not X·Z.
+        """
         qc = QuantumCircuit(1)
         qc.x(0)
         qc.z(0)
@@ -161,7 +163,8 @@ class TestGateCombination:
 
 class TestMultiQubitBarriers:
     """Multi-qubit gates should flush accumulated single-qubit gates
-    on all qubits they touch *before* they are appended."""
+    on all qubits they touch *before* they are appended.
+    """
 
     def test_cx_flushes_pending_gates(self):
         qc = QuantumCircuit(2)
@@ -192,7 +195,8 @@ class TestMultiQubitBarriers:
 
         X before and after CX on q0 stay separate (split by CX).
         Z before and after CX on q1 stay separate as well.
-        Result: x, z, cx, x, z (5 instructions)."""
+        Result: x, z, cx, x, z (5 instructions).
+        """
         qc = QuantumCircuit(2)
         qc.x(0)
         qc.z(1)
@@ -217,13 +221,15 @@ class TestMultiQubitBarriers:
 
 class TestSpecialInstructionBarriers:
     """Allocation, deallocation, measurement and reset instructions
-    act as barriers that flush pending single-qubit gates."""
+    act as barriers that flush pending single-qubit gates.
+    """
 
     def test_qb_alloc_flushes(self):
         """qb_alloc instructions act as barriers that flush pending gates.
 
         In Qrisp's compilation pipeline, qb_alloc / qb_dealloc are
-        explicit instructions in circuit data (unlike add_qubit())."""
+        explicit instructions in circuit data (unlike add_qubit()).
+        """
         from qrisp.circuit.operation import Operation
 
         qc = QuantumCircuit(1)
@@ -294,7 +300,8 @@ class TestEmptyAndNoOp:
 
 class TestRecursiveProcessing:
     """The pass should recursively combine single-qubit gates inside
-    compound gate definitions."""
+    compound gate definitions.
+    """
 
     def test_gate_with_definition_optimised(self):
         """A composite gate containing redundant rotations is optimised."""
@@ -314,7 +321,8 @@ class TestRecursiveProcessing:
 
     def test_controlled_op_base_definition_optimised(self):
         """A ControlledOperation whose base gate has a definition is
-        recursively optimised."""
+        recursively optimised.
+        """
         inner = QuantumCircuit(2)
         inner.x(0)
         inner.x(0)  # cancel
@@ -341,7 +349,6 @@ class TestApplyCombinedGatesHelper:
     """Unit tests for the private helper function."""
 
     def test_empty_list_nothing_appended(self):
-        from qrisp.circuit.standard_operations import XGate
 
         qc = QuantumCircuit(1)
         _apply_combined_gates(qc, [], qc.qubits[0])

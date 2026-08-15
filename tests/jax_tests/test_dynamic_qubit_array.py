@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-import numpy as np
 import pytest
+
 from qrisp import *
 from qrisp.jasp import *
-
 
 # ---------------------------------------------------------------------------
 # Construction & size
@@ -300,27 +298,28 @@ def test_dqa_radd_multi_element_list():
 def test_dqa_radd_preserves_qubit_identity():
     """After __radd__, accessing qubits via the new DQA should reference the
     original qubits (not copies). Flipping via the concatenated DQA must
-    affect the original QuantumVariable."""
-    
+    affect the original QuantumVariable.
+    """
+
     @boolean_simulation
     def main():
         a = QuantumFloat(3)
         c_in = QuantumBool()
-        a[:] = 4     # 100
-        x(c_in[0])   # c_in = True
-        
+        a[:] = 4  # 100
+        x(c_in[0])  # c_in = True
+
         # Pattern used by gidney_adder: prepend carry-in qubit
         combined = [c_in[0]] + a.reg
         # combined layout: [c_in, a[0], a[1], a[2]]
-        
+
         x(combined[0])  # flip c_in: True → False
         x(combined[3])  # flip a[2] (MSB): 100 → 000
-        
+
         return measure(a), measure(c_in)
-    
+
     a_res, c_res = main()
-    assert a_res == 0     # 100 → 000
-    assert not c_res       # True → False
+    assert a_res == 0  # 100 → 000
+    assert not c_res  # True → False
 
 
 # ---------------------------------------------------------------------------
@@ -546,7 +545,8 @@ def test_dqa_gidney_adder_append_pattern():
 
 def test_dqa_measure_sliced():
     """Measuring a sliced DynamicQubitArray returns the integer value of the
-    qubits in the slice only."""
+    qubits in the slice only.
+    """
 
     @boolean_simulation
     def main():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -31,7 +30,7 @@ def test_quantum_divison():
     divisor.encode(d)
 
     prec = 4
-    quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder = "thapliyal")
+    quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder="thapliyal")
 
     q, r = list(multi_measurement([quotient, remainder]))[0]
 

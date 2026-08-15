@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,21 +21,20 @@ import numpy as np
 
 from qrisp.circuit import (
     Clbit,
+    Instruction,
+    Operation,
     QuantumCircuit,
     Qubit,
     QubitAlloc,
     QubitDealloc,
-    Instruction,
-    Operation,
 )
-from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
 
 class QuantumSession(QuantumCircuit):
-    """
-    The QuantumSession class manages the life cycle of QuantumVariables and enables
+    """The QuantumSession class manages the life cycle of QuantumVariables and enables
     features such as :ref:`QuantumEnvironments <QuantumEnvironment>` or
     :ref:`Uncomputation`. To create a QuantumSession, we call the constructor
 
@@ -130,8 +128,7 @@ class QuantumSession(QuantumCircuit):
     qs_tracker = []
 
     def __init__(self, backend=None):
-        """
-        Constructs a QuantumSession
+        """Constructs a QuantumSession
 
         Parameters
         ----------
@@ -147,7 +144,6 @@ class QuantumSession(QuantumCircuit):
 
         Examples
         --------
-
         We create a QuantumSession with the Aer simulator as default backend and
         register a QuantumFloat in it:
 
@@ -161,7 +157,6 @@ class QuantumSession(QuantumCircuit):
 
 
         """
-
         if isinstance(backend, int):
             raise Exception
 
@@ -194,8 +189,7 @@ class QuantumSession(QuantumCircuit):
         self.shadow_sessions = []
 
     def register_qv(self, qv, size):
-        """
-        Method to register QuantumVariables
+        """Method to register QuantumVariables
 
         Parameters
         ----------
@@ -213,9 +207,7 @@ class QuantumSession(QuantumCircuit):
 
         """
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-            raise RuntimeError(
-                "Variable name " + str(qv.name) + " already exists in quantum session"
-            )
+            raise RuntimeError("Variable name " + str(qv.name) + " already exists in quantum session")
 
         # Hand qubits to quantum variable
         qv.reg = self.request_qubits(size, name=qv.name)
@@ -265,9 +257,7 @@ class QuantumSession(QuantumCircuit):
             res += "QuantumEnvironment Stack:\n-------------------------\n"
             for i in range(len(self.env_stack)):
                 env = self.env_stack[i]
-                res += (
-                    "Level " + str(i) + ": " + str(type(env)).split(".")[-1][:-2] + "\n"
-                )
+                res += "Level " + str(i) + ": " + str(type(env)).split(".")[-1][:-2] + "\n"
             res += "\n"
 
         res += "Live QuantumVariables:\n----------------------"
@@ -326,16 +316,12 @@ class QuantumSession(QuantumCircuit):
             # self.reset(qubits)
 
         if not set(qubits).issubset(set(self.qubits)):
-            raise Exception(
-                "Tried to free up qubits not registered in this quantum session"
-            )
+            raise Exception("Tried to free up qubits not registered in this quantum session")
 
         if verify:
-
             if len(self.env_stack):
                 verification_qc = self.copy()
             else:
-
                 # In the case the qubits have been uncomputed automatically,
                 # the uncomputation algorithm already appended the deallocation
                 # instructions. In order to compile the QuantumSession without
@@ -378,9 +364,7 @@ class QuantumSession(QuantumCircuit):
     def delete_qv(self, qv, verify=False):
         # Check if quantum variable appears in this session
         if qv.name not in [qv.name for qv in self.qv_list]:
-            raise Exception(
-                "Tried to remove a non existent quantum variable from quantum session"
-            )
+            raise Exception("Tried to remove a non existent quantum variable from quantum session")
 
         self.clear_qubits(qv.reg, verify)
 
@@ -395,8 +379,7 @@ class QuantumSession(QuantumCircuit):
         self.deleted_qv_list.append(qv)
 
     def cnot_count(self):
-        """
-        Method to determine the amount of CNOT gates used in this QuantumSession.
+        """Method to determine the amount of CNOT gates used in this QuantumSession.
 
         Raises
         ------
@@ -409,7 +392,6 @@ class QuantumSession(QuantumCircuit):
             The amount of CNOT gates.
 
         """
-
         if len(self.env_stack) != 0:
             raise Exception("Tried to count CNOT gates with open if environments")
         from qrisp.misc import cnot_count
@@ -435,9 +417,7 @@ class QuantumSession(QuantumCircuit):
         if len(output_qubits) != tt.shape[1]:
             raise Exception("Given truth table has unfitting amount of output columns")
 
-        self.append(
-            tt.gate_synth(method=method, inv=False), input_qubits + output_qubits
-        )
+        self.append(tt.gate_synth(method=method, inv=False), input_qubits + output_qubits)
 
     def __eq__(self, other):
         return id(self.data) == id(other.data)
@@ -464,7 +444,6 @@ class QuantumSession(QuantumCircuit):
             qubits[0].allocated = True
 
         if self.xla_mode >= 3:
-
             self.data.append(Instruction(operation, qubits, clbits))
 
             if operation.name == "qb_dealloc":
@@ -487,12 +466,8 @@ class QuantumSession(QuantumCircuit):
             if isinstance(input, list):
                 for item in input:
                     check_alloc(item)
-            else:
-                if not input.allocated:
-                    raise Exception(
-                        f"Tried to perform operation {operation.name} on "
-                        f"unallocated qubit {input}"
-                    )
+            elif not input.allocated:
+                raise Exception(f"Tried to perform operation {operation.name} on unallocated qubit {input}")
 
         if operation.name not in ["qb_alloc", "barrier"]:
             check_alloc(qubits)
@@ -518,11 +493,7 @@ class QuantumSession(QuantumCircuit):
                 flattened_qubits.extend(item)
 
         # Find the list of all quantum sessions that need to be treated
-        qs_list = (
-            [qb.qs() for qb in flattened_qubits]
-            + [cb.qs() for cb in flattened_clbits]
-            + [self]
-        )
+        qs_list = [qb.qs() for qb in flattened_qubits] + [cb.qs() for cb in flattened_clbits] + [self]
 
         # We now iterate through every quantum session and insert its data into the
         # correct original_data attribute
@@ -565,8 +536,7 @@ class QuantumSession(QuantumCircuit):
         self.data.clear()
 
     def statevector(self, return_type="sympy", plot=False, decimals=None):
-        r"""
-        Returns a representation of the statevector. Three options are available:
+        r"""Returns a representation of the statevector. Three options are available:
 
         * ``sympy`` returns a `Sympy quantum state
           <https://docs.sympy.org/latest/modules/physics/quantum/state.html>`_,
@@ -603,7 +573,6 @@ class QuantumSession(QuantumCircuit):
 
         Examples
         --------
-
         We create some QuantumFloats and encode values in them:
 
         >>> from qrisp import QuantumFloat
@@ -716,11 +685,8 @@ class QuantumSession(QuantumCircuit):
 
 
         """
-
         if len(self.env_stack):
-            raise Exception(
-                "Tried to evaluate statevector within open QuantumEnvironments"
-            )
+            raise Exception("Tried to evaluate statevector within open QuantumEnvironments")
 
         from qrisp import get_statevector_function, get_sympy_state
 
@@ -773,8 +739,7 @@ class QuantumSession(QuantumCircuit):
         compile_mcm=False,
         gate_speed=None,
     ):
-        r"""
-        Method to compile the QuantumSession into a :ref:`QuantumCircuit`. The compiler
+        r"""Method to compile the QuantumSession into a :ref:`QuantumCircuit`. The compiler
         dynamically allocates the qubits of the QuantumSession on qubits that might have
         been used by priorly deleted :ref:`QuantumVariables <QuantumVariable>`.
 
@@ -1260,9 +1225,7 @@ class QuantumSession(QuantumCircuit):
     @classmethod
     def get_active_quantum_sessions(self):
         # Remove potential duplicates
-        qs_list = list(
-            set([qs() for qs in QuantumSession.qs_tracker if not qs() is None])
-        )
+        qs_list = list(set([qs() for qs in QuantumSession.qs_tracker if qs() is not None]))
 
         self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -102,9 +101,7 @@ True
 True
 """
 
-FloatLike: TypeAlias = (
-    float | int | np.floating | np.integer | Expr | jax.Array | jax.core.Tracer
-)
+FloatLike: TypeAlias = float | int | np.floating | np.integer | Expr | jax.Array | jax.core.Tracer
 """A gate parameter value.
 
 Covers all types accepted as gate parameters throughout Qrisp: Python numeric

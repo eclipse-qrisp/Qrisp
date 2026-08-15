@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,13 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
-from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
+from qrisp.algorithms.gqsp.helper_functions import _rescale_poly, poly2cheb
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
@@ -35,8 +34,7 @@ def GQET(
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
     rescale: bool = True,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+    r"""Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
     For a block-encoded **Hermitian** operator $H$ and a (complex) polynomial $p(z)$, this method returns
     a BlockEncoding of the operator $p(H)$.
@@ -78,7 +76,6 @@ def GQET(
 
     Examples
     --------
-
     Define a Heisenberg Hamiltonian and apply a polynomial $p(H)$ to an initial system state.
 
     ::
@@ -158,13 +155,9 @@ def GQET(
         print("E", E)
 
     """
-
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
 
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)

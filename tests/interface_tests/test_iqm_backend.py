@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,61 +15,54 @@
 ********************************************************************************
 """
 
-# Created by manzanillo
+"""Tests for the IQMBackend import shim.
+
+The actual ``IQMBackend`` implementation lives in the ``iqm.qrisp_iqm``
+package and is tested there.  The Qrisp-side module
+:mod:`qrisp.interface.provider_backends.iqm_backend` is a thin delegation
+shim that:
+
+1. Re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` when the package is
+   installed.
+2. Provides a ``_MissingIQMBackend`` placeholder with a helpful
+   ``ImportError`` when it is not.
+
+These tests verify **only** the shim layer — not the backend itself.
+"""
+
 import pytest
 
-from qrisp.interface import IQMBackend, VirtualBackend
+from qrisp.interface import IQMBackend
+from qrisp.interface.backend import Backend
 
 
-# Mock the IQMProvider and transpile_to_IQM functions from qiskit_iqm
-def test_IQMBackend():
-    # TO DO: set up proper mock backend
-    return
-    # Mock the server_url and token
-    api_token = "mock_api_token"
+class TestShimImport:
+    """Verify the re-export and placeholder behave correctly."""
 
-    # Create a mock device instance
-    device_instance = "garnet:fake"
+    def test_import_from_interface(self):
+        """``IQMBackend`` is importable from ``qrisp.interface``."""
+        assert IQMBackend is not None
 
-    from iqm.iqm_client import CircuitCompilationOptions
+    def test_iqm_available_flag(self):
+        """``_IQM_AVAILABLE`` is ``True`` when the IQM package is installed."""
+        from qrisp.interface.provider_backends.iqm_backend import _IQM_AVAILABLE
 
-    compilation_options = CircuitCompilationOptions()
-    # Create an instance of IQMBackend
-    backend = IQMBackend(
-        api_token, device_instance, compilation_options=compilation_options
-    )
+        assert _IQM_AVAILABLE is True
 
-    # Check that the backend is an instance of VirtualBackend
-    assert isinstance(backend, VirtualBackend)
+    def test_is_backend_subclass(self):
+        """The re-exported ``IQMBackend`` is a subclass of :class:`~qrisp.interface.Backend`."""
+        assert issubclass(IQMBackend, Backend)
 
-    # Create a mock QASM string
-    from qrisp import QuantumCircuit
+    def test_placeholder_import_error(self):
+        """The ``_MissingIQMBackend`` placeholder raises ``ImportError`` with install instructions."""
+        from qrisp.interface.provider_backends.iqm_backend import _MissingIQMBackend
 
-    qc = QuantumCircuit(4, name="test")
+        with pytest.raises(ImportError, match="pip install qrisp\\[iqm\\]"):
+            _MissingIQMBackend()
 
-    # Call the run method
-    result = backend.run(qc, shots=1000, token=api_token)
+    def test_placeholder_import_error_with_args(self):
+        """The placeholder raises ``ImportError`` even when called with constructor args."""
+        from qrisp.interface.provider_backends.iqm_backend import _MissingIQMBackend
 
-
-# Test that the API token is a string
-def test_IQMBackend_api_token_string_is_missing():
-    with pytest.raises(TypeError):
-        IQMBackend(123, "garnet")
-
-
-# Test that the device instance is a string
-def test_IQMBackend_device_instance_string_is_missing():
-    with pytest.raises(TypeError):
-        IQMBackend("mock_api_token", 123)
-
-
-# Test that error is raised when server URL and device instance are passed at the same time
-def test_IQMBackend_server_url_and_device_instance_conflict():
-    with pytest.raises(ValueError):
-        IQMBackend("mock_api_token", "garnet", server_url="www.qrisp.eu")
-
-
-# Test that error is raised when server URL and device instance or not provided
-def test_IQMBackend_server_url_and_device_instance_not_provided():
-    with pytest.raises(ValueError):
-        IQMBackend("mock_api_token")
+        with pytest.raises(ImportError, match="pip install qrisp\\[iqm\\]"):
+            _MissingIQMBackend(server_url="http://example.com", device_instance="garnet")

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 import jax
 import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 # The following function implements the sample feature.
 
@@ -47,11 +46,12 @@ from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def sample(state_prep=None, shots=0, post_processor=None):
-    r"""
-    The ``sample`` function allows to take samples from a state that is specified
-    by a preparation procedure. This preparation procedure can be supplied via
-    a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
+def sample(sampling_kernel=None, shots=0, post_processor=None):
+    r"""The ``sample`` function allows to take samples from a quantum computation
+    specified by a *sampling kernel* — a Python function that receives only
+    classical arguments and returns arbitrary values.  Any
+    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    measured and decoded.
 
     The samples are returned in the form of a
     `Jax Array <https://jax.readthedocs.io/en/latest/_autosummary/jax.Array.html>`_
@@ -59,26 +59,50 @@ def sample(state_prep=None, shots=0, post_processor=None):
     can only be a **static integer** (no dynamic values!). If you want to sample
     with a dynamic shot amount, look into :ref:`expectation_value`.
 
+    Sample calls can be efficiently simulated via terminal sampling by setting the
+    corresponding keyword within :func:`~qrisp.jasp.jaspify` to ``True``.
+
+    .. note::
+
+        **Terminal sampling** (``terminal_sampling=True`` inside
+        :func:`~qrisp.jasp.jaspify`) does **not** support sampling kernels
+        that return classical values alongside quantum variables, or kernels
+        that return *only* classical values.  Use ``terminal_sampling=False``
+        for those cases.
+
+        Even when the kernel returns only
+        :ref:`QuantumVariables <QuantumVariable>`, terminal sampling relies on
+        the quantum state being **independent** of mid-circuit measurement
+        outcomes.  If a classical measurement result influences the quantum
+        circuit (e.g. via :func:`control <qrisp.control>`), terminal sampling
+        may produce an invalid distribution because it simulates the quantum
+        part only once.  See :func:`~qrisp.jasp.terminal_sampling` for details
+        and an example.
 
     Parameters
     ----------
-    state_prep : callable
-        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`.
-        The state from this QuantumVariables will be sampled.
-        The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sampling
-        iteration, which is prohibited by the no-cloning theorem.
+    sampling_kernel : callable
+        A sampling kernel — a function receiving only classical arguments and
+        returning one or more :ref:`QuantumVariables <QuantumVariable>`,
+        classical measurement results, or a mixture of both.
+        The function must **not** receive quantum arguments because a quantum
+        value would need to be copied for each sampling iteration, which is
+        prohibited by the no-cloning theorem.
     shots : int
         The amounts of samples to take.
     post_processor : callable, optional
-        A function to apply to the samples directly after measuring. By default no post processing is applied.
+        A function to apply to the samples directly after measuring. By default
+        no post processing is applied.
 
     Raises
     ------
     Exception
         Tried to sample with dynamic shots value (static integer required)
     Exception
-        Tried to sample from state preparation function taking a quantum value
+        Tried to sample from sampling kernel taking a quantum value
+    Exception
+        Tried to use terminal sampling with a kernel that returns classical
+        values (use ``terminal_sampling=False`` instead)
 
     Returns
     -------
@@ -88,7 +112,6 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -101,7 +124,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         from qrisp.jasp import *
 
 
-        def state_prep(k):
+        def sampling_kernel(k):
             a = QuantumFloat(4)
             b = QuantumFloat(4)
 
@@ -122,7 +145,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         @jaspify
         def main(k):
 
-            sampling_function = sample(state_prep,
+            sampling_function = sample(sampling_kernel,
                                        shots = 10)
 
             return sampling_function(k)
@@ -152,7 +175,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         @jaspify
         def main(k):
 
-            sampling_function = sample(state_prep,
+            sampling_function = sample(sampling_kernel,
                                        shots = 10,
                                        post_processor = post_processor)
 
@@ -162,16 +185,46 @@ def sample(state_prep=None, shots=0, post_processor=None):
         # Yields
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
 
+    **Sampling kernels returning classical values**
+
+    A sampling kernel may also return classical values from mid-circuit
+    measurements alongside (or instead of) quantum variables:
+
+    ::
+
+        def mixed_kernel():
+            qf = QuantumFloat(4)
+            h(qf[0])
+            h(qf[1])
+            mes = measure(qf[1])      # classical measurement result
+            return qf, mes            # mixed: quantum + classical
+
+        @jaspify
+        def main():
+            return sample(mixed_kernel, shots=20)()
+
+        print(main())
+        # Yields e.g.:
+        # [[0. 0.]
+        #  [0. 0.]
+        #  [1. 0.]
+        #  ...]
+
+    .. note::
+
+        The above example uses ``@jaspify`` (which defaults to
+        ``terminal_sampling=False``).  Using ``@jaspify(terminal_sampling=True)``
+        with a mixed-returns kernel will raise an error.
+
     """
-
-    from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import qache
 
-    if isinstance(state_prep, int):
-        shots = state_prep
-        state_prep = None
+    if isinstance(sampling_kernel, int):
+        shots = sampling_kernel
+        sampling_kernel = None
 
-    if state_prep is None:
+    if sampling_kernel is None:
         return lambda x: sample(x, shots, post_processor=post_processor)
 
     if post_processor is None:
@@ -184,18 +237,14 @@ def sample(state_prep=None, shots=0, post_processor=None):
         post_processor = identity
 
     if isinstance(shots, jax.core.Tracer):
-        raise Exception(
-            "Tried to sample with dynamic shots value (static integer required)"
-        )
+        raise Exception("Tried to sample with dynamic shots value (static integer required)")
     elif not isinstance(shots, int):
-        raise Exception(
-            f"Tried to sample with shots value of non-integer type {type(shots)}"
-        )
+        raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
 
     # Qache the user function
     @qache
     def user_func(*args):
-        return state_prep(*args)
+        return sampling_kernel(*args)
 
     # This function evaluates the sampling process
     @jax.jit
@@ -203,9 +252,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception(
-                    "Tried to sample from state preparation function taking a quantum value"
-                )
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
 
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
@@ -216,51 +263,88 @@ def sample(state_prep=None, shots=0, post_processor=None):
             acc = args[0]
 
             # Evaluate the user function
-            qv_tuple = user_func(*args[1:])
+            result_tuple = user_func(*args[1:])
 
-            if not isinstance(qv_tuple, tuple):
-                qv_tuple = (qv_tuple,)
+            if not isinstance(result_tuple, tuple):
+                result_tuple = (result_tuple,)
 
-            for qv in qv_tuple:
-                if not isinstance(qv, QuantumVariable):
-                    raise Exception(
-                        "Tried to sample from function not returning a QuantumVariable"
-                    )
+            # Build a per-position mask: QuantumVariable -> True, classical -> False.
+            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
 
-            # Trace the DynamicQubitArray measurements
-            # Since we execute the measurements on the .reg attribute, no decoding
-            # is applied. The decoding happens in sampling_helper_2
-            @qache
-            def sampling_helper_1(*args):
-                res_list = []
-                for reg in args:
-                    res_list.append(measure(reg))
-                return tuple(res_list)
+            # Separate quantum and classical returns.
+            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
+            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
 
-            measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
+            if qv_tuple:
+                # ----------------------------------------------------------
+                # Stage 2: measure quantum registers only.
+                # ----------------------------------------------------------
+                @qache
+                def sampling_helper_1(*args):
+                    res_list = [measure(reg) for reg in args]
+                    return tuple(res_list)
 
-            # Trace the decoding
-            @jax.jit
-            def sampling_helper_2(*meas_ints):
-                decoded_values = []
-                for j in range(len(qv_tuple)):
-                    decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
 
-                if len(qv_tuple) > 1:
-                    decoded_values = post_processor(*decoded_values)
+                # ----------------------------------------------------------
+                # Stage 3: decode quantum, interleave with classical values,
+                # apply post-processing.  Classical values are passed as
+                # explicit arguments (before measurement ints).  When present
+                # the helper is named sampling_helper_2_mixed so that the
+                # terminal-sampling guard in jaspification.py can detect it.
+                # ----------------------------------------------------------
+                if classical_tuple:
+
+                    def sampling_helper_2_mixed(*args):
+                        n_classical = len(classical_tuple)
+                        classical_vals = args[:n_classical]
+                        meas_ints = args[n_classical:]
+
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
+
+                        q_iter = iter(decoded_q)
+                        c_iter = iter(classical_vals)
+
+                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
+
+                        result = post_processor(*full)
+
+                        if isinstance(result, tuple):
+                            return_amount.append(len(result))
+                            if len(acc.shape) == 1:
+                                raise _MultiReturnDetected()
+                        return result
+
+                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
-                    decoded_values = post_processor(*decoded_values)
 
-                if isinstance(decoded_values, tuple):
-                    # Save the return amount (for more details check the comment of the)
-                    # initialization command of return_amount
-                    return_amount.append(len(decoded_values))
+                    def sampling_helper_2(*meas_ints):
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
+
+                        result = post_processor(*decoded_q)
+
+                        if isinstance(result, tuple):
+                            return_amount.append(len(result))
+                            if len(acc.shape) == 1:
+                                raise _MultiReturnDetected()
+                        return result
+
+                    sampling_helper_2 = jax.jit(sampling_helper_2)
+
+                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
+
+            else:
+                # ----------------------------------------------------------
+                # No quantum returns — pure classical.  No measurement or
+                # decoding needed; just apply post-processing directly.
+                # ----------------------------------------------------------
+                result = post_processor(*classical_tuple)
+
+                if isinstance(result, tuple):
+                    return_amount.append(len(result))
                     if len(acc.shape) == 1:
-                        raise AuxException()
-
-                return decoded_values
-
-            decoded_values = sampling_helper_2(*measurement_ints)
+                        raise _MultiReturnDetected()
+                decoded_values = result
 
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
@@ -277,11 +361,9 @@ def sample(state_prep=None, shots=0, post_processor=None):
         return_amount = []
 
         try:
-            loop_res = jax.lax.fori_loop(
-                0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
-        except AuxException:
+        except _MultiReturnDetected:
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
@@ -297,10 +379,12 @@ def sample(state_prep=None, shots=0, post_processor=None):
         if check_for_tracing_mode():
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
-            return terminal_sampling(state_prep, shots)(*args)
+            return terminal_sampling(sampling_kernel, shots)(*args)
 
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values
+    (a tuple) instead of a single scalar.  This triggers a retry of the
+    sampling loop with a multi-dimensional accumulator of the correct shape."""

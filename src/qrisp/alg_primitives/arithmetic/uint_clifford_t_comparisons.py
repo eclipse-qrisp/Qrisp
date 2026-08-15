@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,8 +18,8 @@
 import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx
+from qrisp.environments import conjugate, control, invert
 from qrisp.qtypes import QuantumBool
-from qrisp.environments import invert, adaptive_condition, conjugate, control
 
 
 def uint_qq_less_than(a, b, inv_adder):
@@ -50,9 +49,7 @@ def uint_cq_less_than(a, b, inv_adder):
     with control((a >= 0) & (a < 2**b.size - 1)):
         comparison_anc = QuantumBool()
 
-        with conjugate(inv_adder, allocation_management=False)(
-            a + 1, b.reg + comparison_anc.reg
-        ):
+        with conjugate(inv_adder, allocation_management=False)(a + 1, b.reg + comparison_anc.reg):
             cx(comparison_anc, comparison_res)
 
         comparison_res.flip()
@@ -70,9 +67,7 @@ def uint_qc_less_than(a, b, inv_adder):
     with control((b >= 0) & (b <= 2**a.size)):
         comparison_anc = QuantumBool()
 
-        with conjugate(inv_adder, allocation_management=False)(
-            b, a.reg + comparison_anc.reg
-        ):
+        with conjugate(inv_adder, allocation_management=False)(b, a.reg + comparison_anc.reg):
             cx(comparison_anc, comparison_res)
 
         comparison_anc.delete()

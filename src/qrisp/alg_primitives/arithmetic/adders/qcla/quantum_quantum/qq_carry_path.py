@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -24,12 +23,12 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import cx, mcx
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.circuit import QuantumCircuit
-from qrisp.permeability import auto_uncompute
-from qrisp.misc import check_if_fresh
 from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+from qrisp.circuit import QuantumCircuit
+from qrisp.core.gate_application_functions import cx, mcx
+from qrisp.misc import check_if_fresh
+from qrisp.permeability import auto_uncompute
+from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
 # Returns the PROPAGATE status of a group of entries
@@ -63,7 +62,6 @@ def calc_P_group(P):
 def calc_G_group(P, G):
 
     for i in range(len(G) - 1):
-
         controls = [G[i]] + P[i + 1 :]
         for p in controls:
             if isinstance(p, QuantumBool):
@@ -71,7 +69,6 @@ def calc_G_group(P, G):
             if check_if_fresh([p], p.qs()):
                 break
         else:
-
             if len(P[i + 1 :]) == 1:
                 mcx(controls, G[-1], method="jones")
             else:
@@ -100,7 +97,6 @@ def propagate_carry(P, G):
     # information because none of the CARRY status has been calculated yet)
 
     for i in range(1, len(G))[::-1]:
-
         for j in range(i):
             if len(P[j + 1 : i + 1]) == 1:
                 method = "jones"
@@ -254,9 +250,7 @@ def qq_calc_carry(a, b, radix_base=2, radix_exponent=0):
     # to be uncomputed. The uncomputation is performed using the auto_uncompute
     # decorator. This decorator uncomputes all local variables.
     if R > 1:
-        brent_kung_ancilla = QuantumVariable(
-            c.size * (R - 1), name="bk_ancilla*"
-        )
+        brent_kung_ancilla = QuantumVariable(c.size * (R - 1), name="bk_ancilla*")
         anc_list = list(brent_kung_ancilla)
     else:
         anc_list = []

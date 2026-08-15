@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -15,7 +14,6 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-
 
 """
 Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
@@ -41,23 +39,23 @@ Solution:
 
 
 from enum import Enum
+
 from xdsl.context import Context
-from xdsl.dialects import builtin, arith
+from xdsl.dialects import arith, builtin
 from xdsl.dialects.builtin import IntegerAttr, i1
 from xdsl.pattern_rewriter import (
-    PatternRewriter,
-    RewritePattern,
-    PatternRewriteWalker,
-    op_type_rewrite_pattern,
     GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    op_type_rewrite_pattern,
 )
 from xdsl.transforms.canonicalize import CanonicalizePass
 from xdsl.transforms.dead_code_elimination import DeadCodeElimination
 
 
 def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
-    """
-    Applies custom rewrite patterns to fold redundant cmpi(extui(i1), 0) chains into the original i1 condition.
+    """Applies custom rewrite patterns to fold redundant cmpi(extui(i1), 0) chains into the original i1 condition.
 
     Parameters
     ----------
@@ -66,6 +64,7 @@ def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None
     xdsl_module: builtin.ModuleOp
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
+
     """
     patterns = [FoldCmpiExtui()]
 
@@ -85,8 +84,7 @@ def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None
 
 
 class FoldCmpiExtui(RewritePattern):
-    """
-    Folds all comparisons of zero-extended booleans against 0 or 1.
+    """Folds all comparisons of zero-extended booleans against 0 or 1.
     Since extui(i1) ∈ {0, 1}, every predicate is statically resolvable.
     """
 
@@ -129,9 +127,7 @@ class FoldCmpiExtui(RewritePattern):
     def match_and_rewrite(self, op: arith.CmpiOp, rewriter: PatternRewriter):
         # 1. RHS must be constant 0 or 1
         rhs_op = op.rhs.owner
-        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(
-            rhs_op.value, IntegerAttr
-        ):
+        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(rhs_op.value, IntegerAttr):
             return
         rhs_val = rhs_op.value.value.data
         if rhs_val not in (0, 1):

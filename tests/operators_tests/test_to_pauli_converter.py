@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,22 +15,25 @@
 ********************************************************************************
 """
 
-from qrisp.operators import X, Y, Z, A, C, P0, P1
-from numpy.linalg import norm
 from numpy import isclose
+from numpy.linalg import norm
+
+from qrisp.operators import P0, P1, A, C, X, Y, Z
+
 
 def test_to_pauli_converter():
 
-    operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
+    operator_list = [lambda x: 1, X, Y, Z, A, C, P0, P1]
 
-    for O0 in operator_list: 
+    for O0 in operator_list:
         for O1 in operator_list:
             for O2 in operator_list:
-                H = O0(0)*O1(1)*O2(2)
+                H = O0(0) * O1(1) * O2(2)
                 if isinstance(H, int):
                     continue
-                
-                assert norm(H.to_array() - H.to_pauli().to_array()) < 1E-5
+
+                assert norm(H.to_array() - H.to_pauli().to_array()) < 1e-5
+
 
 def test_pauli_coeff_dict_extraction():
     H0 = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
@@ -72,9 +74,7 @@ def test_pauli_coeff_dict_extraction():
         assert set(res.keys()) == set(expected.keys())
 
         for key in expected:
-            assert isclose(res[key], expected[key]), (
-                f"For key {key}: got {res[key]}, expected {expected[key]}"
-            )
+            assert isclose(res[key], expected[key]), f"For key {key}: got {res[key]}, expected {expected[key]}"
 
     assert_dict_allclose(res0, expected0)
     assert_dict_allclose(res1, expected1)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,11 @@
 ********************************************************************************
 """
 
-from numpy.linalg import norm
 import time
-from qiskit import Aer, execute
+
+from numpy.linalg import norm
+from qiskit_aer import AerSimulator
+
 from qrisp import QuantumFloat, transpile
 from qrisp.interface import convert_to_qiskit
 
@@ -43,10 +44,11 @@ qc.qubits = qc.qubits[::-1]
 qiskit_qc = convert_to_qiskit(qc)
 
 
-backend = Aer.get_backend("unitary_simulator")
+backend = AerSimulator(method="unitary")
 
 start = time.time()
-job = execute(qiskit_qc, backend)
+qiskit_qc.save_unitary()
+job = backend.run(qiskit_qc)
 result = job.result()
 test_unitary_2 = result.get_unitary(qiskit_qc).data
 end = time.time()

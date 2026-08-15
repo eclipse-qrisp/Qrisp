@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,15 +19,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 def convert_to_cx(
     strict: bool = False,
 ) -> Callable[[QuantumCircuit], QuantumCircuit]:
-    """
-    Create a pass that converts two-qubit gates to CX-based decompositions.
+    """Create a pass that converts two-qubit gates to CX-based decompositions.
 
     This pass converts CZ, CY, and SWAP gates to their CX-based equivalents
     using single-qubit gate decompositions. CX gates are native to many
@@ -73,9 +71,9 @@ def convert_to_cx(
         >>> qc = QuantumCircuit(2)
         >>> qc.cz(0, 1)
         >>> print(qc)
-        <BLANKLINE>                            
+        <BLANKLINE>
         qb_69: ──■──
-                 │  
+                 │
         qb_70: ──■──
         >>> pm = PassManager()
         >>> pm += convert_to_cx()
@@ -109,9 +107,7 @@ def convert_to_cx(
                     qc_new.cx(instr.qubits[1], instr.qubits[0])
                     qc_new.cx(instr.qubits[0], instr.qubits[1])
                 elif strict:
-                    raise ValueError(
-                        f"Don't know how to convert two-qubit gate {op.name!r} to CX"
-                    )
+                    raise ValueError(f"Don't know how to convert two-qubit gate {op.name!r} to CX")
                 else:
                     qc_new.append(instr)
             else:

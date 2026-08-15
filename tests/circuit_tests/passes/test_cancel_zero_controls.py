@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
+
 from qrisp import QuantumCircuit, Qubit, U3Gate
 from qrisp.circuit import ControlledOperation, Operation, PTControlledOperation
 from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
@@ -109,10 +108,7 @@ class TestControlledOperations:
         ctrl_op = ControlledOperation(base, num_ctrl_qubits=1, ctrl_state=1)
         qc.append(ctrl_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        controlled = [
-            i for i in result.data
-            if isinstance(i.op, ControlledOperation) or i.op.name.endswith("my_h")
-        ]
+        controlled = [i for i in result.data if isinstance(i.op, ControlledOperation) or i.op.name.endswith("my_h")]
         assert len(controlled) == 0
 
     def test_controlled_op_ctrl_on_0_fresh_qubit_kept(self):
@@ -131,10 +127,7 @@ class TestControlledOperations:
         pt_op = PTControlledOperation(base, num_ctrl_qubits=1)
         qc.append(pt_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        meaningful = [
-            i for i in result.data
-            if i.op.name not in ("qb_alloc", "qb_dealloc", "barrier")
-        ]
+        meaningful = [i for i in result.data if i.op.name not in ("qb_alloc", "qb_dealloc", "barrier")]
         assert len(meaningful) == 0
 
 

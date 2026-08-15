@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,36 +17,28 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import (
     ControlledOperation,
     Operation,
     PTControlledOperation,
 )
-from qrisp.circuit.qubit import Qubit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
-
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.qubit import Qubit
 
 # Single-qubit diagonal gates that map \|0⟩ → e^{iφ}\|0⟩
 _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphase"})
 
 
-def _is_cancelled_by_zero(
-    op: Operation, qubits: list[Qubit], fresh: set[Qubit]
-) -> bool:
+def _is_cancelled_by_zero(op: Operation, qubits: list[Qubit], fresh: set[Qubit]) -> bool:
     r"""Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
-
     # Symmetric controlled-phase gates: diag(1,1,1,e^{iφ}).
     # Identity whenever *either* qubit is \|0⟩.
     if op.name in ("cp", "cz"):
         return any(qb in fresh for qb in qubits)
 
     # PTControlledOperation wrapping a phase gate on 2 qubits (≡ CP)
-    if (
-        isinstance(op, PTControlledOperation)
-        and op.base_operation.name == "p"
-        and op.num_qubits == 2
-    ):
+    if isinstance(op, PTControlledOperation) and op.base_operation.name == "p" and op.num_qubits == 2:
         return any(qb in fresh for qb in qubits)
 
     # General controlled operations: cancel when a control-on-\|1⟩ is still \|0⟩.
@@ -103,7 +94,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm += cancel_zero_controls
         >>> optimized_qc = pm.run(qc)
         >>> print(optimized_qc)
-        <BLANKLINE>             
+        <BLANKLINE>
         qb_58: ─────
                ┌───┐
         qb_59: ┤ H ├
@@ -118,11 +109,12 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm += cancel_zero_controls
         >>> optimized = pm.run(qc)
         >>> print(optimized)
-        <BLANKLINE>                    
+        <BLANKLINE>
         qb_60:
         <BLANKLINE>
-        qb_61: 
-        <BLANKLINE>    
+        qb_61:
+        <BLANKLINE>
+
     """
     fresh = set(qc.qubits)  # all qubits start in \|0⟩
     qc_new = qc.clearcopy()

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,8 @@
 
 from qrisp import QuantumString
 
-q_str = QuantumString(size = len("hello"))
-q_str_2 = QuantumString(size = len("world"))
+q_str = QuantumString(size=len("hello"))
+q_str_2 = QuantumString(size=len("world"))
 
 q_str[:] = "hello"
 q_str_2[:] = "world"

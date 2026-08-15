@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,20 +15,19 @@
 ********************************************************************************
 """
 
-import numpy as np
-import jax.numpy as jnp
-from qrisp.core import QuantumVariable, x, xxyy, p
-from qrisp.circuit import Qubit
-from qrisp.typing import NDArrayLike
-from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
 
-def unbalanced_w_state(
-    qv: QuantumVariable | Sequence[Qubit],
-    amplitudes: NDArrayLike
-) -> None:
-    r"""
-    Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
+import jax.numpy as jnp
+import numpy as np
+
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, p, x, xxyy
+from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.typing import NDArrayLike
+
+
+def unbalanced_w_state(qv: QuantumVariable | Sequence[Qubit], amplitudes: NDArrayLike) -> None:
+    r"""Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
     weight 1, on the given :ref:`QuantumVariable`.
 
     The resulting quantum state is
@@ -93,16 +91,15 @@ def unbalanced_w_state(
     >>> qv = QuantumVariable(4)
     >>> unbalanced_w_state(qv, a)
     >>> print(qv.qs.statevector())
+
     """
     a = jnp.asarray(amplitudes, dtype=complex)
 
-    n = a.shape[0] # Use the static shape of amplitudes
+    n = a.shape[0]  # Use the static shape of amplitudes
 
     if not check_for_tracing_mode():
         if len(qv) != n:
-            raise ValueError(
-                f"Length of amplitudes ({n}) must match qv.size ({len(qv)})."
-            )
+            raise ValueError(f"Length of amplitudes ({n}) must match qv.size ({len(qv)}).")
         if np.linalg.norm(np.asarray(amplitudes, dtype=complex)) < 1e-15:
             raise ValueError("Amplitude vector must be non-zero.")
 
@@ -125,11 +122,11 @@ def unbalanced_w_state(
     # flip          : [a3^2, a2^2, a1^2, a0^2]
     # cumsum        : [a3^2, a3^2 + a2^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 + a1^2 + a0^2]
     # flip          : [a3^2 + a2^2 + a1^2 + a0^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 , a3^2]
-    abs_a_squared = abs_a ** 2
+    abs_a_squared = abs_a**2
     remaining_arr = jnp.sqrt(jnp.flip(jnp.cumsum(jnp.flip(abs_a_squared))))
     # Calculate rations for arccos. Replace 0/0 division by 1
     # for `arccos(1) = 0` to do nothing.
-    numerators = abs_a[:-1] # Strip one last fraction, as num_{n-1} / rem_{n-1} is not needed.
+    numerators = abs_a[:-1]  # Strip one last fraction, as num_{n-1} / rem_{n-1} is not needed.
     denominators = remaining_arr[:-1]
     denominators_no_zeroes = jnp.where(denominators > 1e-15, denominators, 1.0)
     # remaining_arr = 0 only when abs_a = 0, so it is safe.

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,23 +15,20 @@
 ********************************************************************************
 """
 
-from jax.lax import cond
-from jax.extend.core import ClosedJaxpr
 import jax
-
+from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
 from qrisp.jasp import (
-    extract_invalues,
-    insert_outvalues,
     check_for_tracing_mode,
+    extract_invalues,
     get_last_equation,
+    insert_outvalues,
 )
 
 
 class ClControlEnvironment(QuantumEnvironment):
-    r"""
-    The ``ClControlEnvironment`` enables execution of quantum code conditioned on
+    r"""The ``ClControlEnvironment`` enables execution of quantum code conditioned on
     classical values. The environment works with similar semantics as the
     :ref:`ControlEnvironment`, implying this environment can also be entered
     using the ``control`` keyword.
@@ -44,8 +40,7 @@ class ClControlEnvironment(QuantumEnvironment):
         environment may be used outside of the environment.
 
     Examples
-    ========
-
+    --------
     We condition a quantum computation on the outcome of a previous measurement.
 
     ::
@@ -238,7 +233,6 @@ class ClControlEnvironment(QuantumEnvironment):
 
         # If there is more than one control variable, loop through
         if len(ctrl_vars) > 1:
-
             for i in range(1, len(ctrl_vars)):
                 tmp = ctrl_vars[i]
                 if self.ctrl_state != -1 and ((self.ctrl_state & 1 << i) == 0):

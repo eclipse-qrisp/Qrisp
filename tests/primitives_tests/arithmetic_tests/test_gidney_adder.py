@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,6 +17,7 @@
 
 import numpy as np
 import pytest
+
 from qrisp import (
     BigInteger,
     QuantumBool,
@@ -31,6 +31,31 @@ from qrisp import (
     measure,
     x,
 )
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
+
+EXTRACT_BIT_CASES = [
+    (0, 0, 0),
+    (10, 1, 1),
+    (15, 0, 1),
+    (15, 3, 1),
+]
+
+
+@pytest.mark.parametrize("val, bit, expected", EXTRACT_BIT_CASES)
+def test_extract_bit_int(val, bit, expected):
+    assert bool(_extract_bit(val, bit)) == bool(expected)
+
+
+EXTRACT_BIT_BIGINT_CASES = [
+    (0, True),
+    (2, True),
+]
+
+
+@pytest.mark.parametrize("idx, expected", EXTRACT_BIT_BIGINT_CASES)
+def test_extract_bit_bigint(idx, expected):
+    b = BigInteger.create(13, 4)
+    assert bool(_extract_bit(b, idx)) == expected
 
 
 @pytest.mark.parametrize(
@@ -215,9 +240,7 @@ def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b
         ),  # small numbers where carry remains zero
     ],
 )
-def test_gidney_adder_with_carry_options(
-    a_spec, a_val, b_bits, b_val, c_in_val, use_c_out, expected_b, expected_cout
-):
+def test_gidney_adder_with_carry_options(a_spec, a_val, b_bits, b_val, c_in_val, use_c_out, expected_b, expected_cout):
     """Verify carry-in and carry-out combinations for b += a (+ c_in)."""
     kind, n = a_spec
     if kind == "qf":
@@ -294,7 +317,7 @@ def test_gidney_adder_with_carry_options(
     ],
 )
 def test_gidney_adder_with_control(a_spec, a_val, b_bits, b_val, ctrl_on, expected_b):
-    """Verify controlled addition only fires when :math:`ctrl=\ket{1}`."""
+    r"""Verify controlled addition only fires when :math:`ctrl=\ket{1}`."""
     kind, n = a_spec
     if kind == "qf":
         a = QuantumFloat(n)
@@ -356,9 +379,7 @@ def test_gidney_adder_carry_in_carry_out_ctrl_quantum_a():
         ),  # matched ctrl-off case proves full gating
     ],
 )
-def test_gidney_adder_classical_a_cin_cout_ctrl(
-    a_val, b_val, ctrl_on, expected_b, expected_cout
-):
+def test_gidney_adder_classical_a_cin_cout_ctrl(a_val, b_val, ctrl_on, expected_b, expected_cout):
     """All optional params (c_in, c_out, ctrl) active with classical a."""
     b = QuantumFloat(8)
     b[:] = b_val
@@ -479,10 +500,8 @@ def test_gidney_adder_inputs_unmodified_size():
         ("quantum", 1, 1, True, True, 1, 1),
     ],
 )
-def test_gidney_adder_single_qubit(
-    kind, a_val, b_val, use_cin, use_cout, expected_b, expected_cout
-):
-    """n == 1 edge case: carry chain is skipped via control(n > 1)."""
+def test_gidney_adder_single_qubit(kind, a_val, b_val, use_cin, use_cout, expected_b, expected_cout):
+    """N == 1 edge case: carry chain is skipped via control(n > 1)."""
     if kind == "classical":
         a = a_val
     else:
@@ -537,7 +556,7 @@ def test_gidney_adder_classical_a_dynamic(n_bits, a_val, b_val, spec, expected):
 
 
 def test_gidney_adder_single_qubit_no_ancilla_leak():
-    """n == 1: QuantumVariable(0) should not leak."""
+    """N == 1: QuantumVariable(0) should not leak."""
     b = QuantumFloat(1)
     b[:] = 0
     initial_ids = {id(b)}
@@ -594,9 +613,7 @@ def test_gidney_adder_single_qubit_no_ancilla_leak():
         ),
     ],
 )
-def test_gidney_adder_additional_edge_cases(
-    desc, a_spec, a_val, b_bits, b_val, carry_args, expected
-):
+def test_gidney_adder_additional_edge_cases(desc, a_spec, a_val, b_bits, b_val, carry_args, expected):
     """Cover remaining static-mode gaps identified during code review."""
     kind, n = a_spec
     if kind == "qf":
@@ -648,9 +665,7 @@ def test_gidney_adder_additional_edge_cases(
         ("dynamic", "valid_list_b", False),
     ],
 )
-def test_gidney_adder_invalid_inputs_raise_value_error(
-    mode, validation_case, should_raise
-):
+def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, should_raise):
     """Validation should reject invalid pairs and accept list-based quantum b targets."""
     expected_msg = "gidney_adder expects inputs"
     if mode == "static":
@@ -762,9 +777,7 @@ def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
         cuccaro_adder(a_cuccaro, b_cuccaro)
         cuccaro_compiled = b_cuccaro.qs.compile()
         cuccaro_t_depth = cuccaro_compiled.t_depth()
-        cuccaro_measurement_depth = cuccaro_compiled.depth(
-            depth_indicator=measurement_depth_indicator
-        )
+        cuccaro_measurement_depth = cuccaro_compiled.depth(depth_indicator=measurement_depth_indicator)
         cuccaro_transpiled = b_cuccaro.qs.compile(compile_mcm=True).transpile()
         cuccaro_ops = cuccaro_transpiled.count_ops()
         cuccaro_raw_t = cuccaro_ops.get("t", 0) + cuccaro_ops.get("t_dg", 0)
@@ -776,9 +789,7 @@ def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
         gidney_adder(a_gidney, b_gidney)
         gidney_compiled = b_gidney.qs.compile()
         gidney_t_depth = gidney_compiled.t_depth()
-        gidney_measurement_depth = gidney_compiled.depth(
-            depth_indicator=measurement_depth_indicator
-        )
+        gidney_measurement_depth = gidney_compiled.depth(depth_indicator=measurement_depth_indicator)
         gidney_transpiled = b_gidney.qs.compile(compile_mcm=True).transpile()
         gidney_ops = gidney_transpiled.count_ops()
         gidney_raw_t = gidney_ops.get("t", 0) + gidney_ops.get("t_dg", 0)
@@ -816,9 +827,7 @@ def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
         (5, True, True, True),  # all options enabled together
     ],
 )
-def test_gidney_adder_t_count_formula_with_optional_inputs(
-    n, use_c_in, use_c_out, use_ctrl
-):
+def test_gidney_adder_t_count_formula_with_optional_inputs(n, use_c_in, use_c_out, use_ctrl):
     """Verify explicit T-count formula from 4*(n-1) plus optional-input terms.
 
     Base (no optional inputs):
@@ -1012,7 +1021,6 @@ def test_gidney_adder_invalid_binary_string_dynamic():
         main()
 
 
-
 @pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 5, 10)])
 def test_gidney_adder_classical_a_cin_dynamic(n_bits, a_val, b_val):
     """Classical a + c_in in dynamic mode."""
@@ -1170,7 +1178,8 @@ def test_gidney_adder_jaspr_mode():
 
 def test_gidney_adder_dynamic_mode_with_control():
     """Verify gidney_adder is triggered when the control qubit is in the |1> state
-    in dynamic mode."""
+    in dynamic mode.
+    """
 
     @boolean_simulation
     def main(N, L, j, k):

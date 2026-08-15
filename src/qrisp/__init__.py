@@ -24,12 +24,12 @@ import jax
 
 jax.config.update("jax_enable_x64", True)
 
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+
 from qrisp.circuit import *
 from qrisp.core import *
 from qrisp.misc import *
-from qrisp.circuit import *
 from qrisp.permeability import *
-from qrisp.core import *
 from qrisp.qtypes import *
 from qrisp.environments import *
 from qrisp.alg_primitives import *

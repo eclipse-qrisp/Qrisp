@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,6 @@
 ********************************************************************************
 """
 
-import pytest
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps
 

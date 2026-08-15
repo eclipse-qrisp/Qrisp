@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-import numpy as xp
 import os
+
+import numpy as xp
 
 try:
     float_thresh = os.environ["QRISP_SIMULATOR_FLOAT_THRESH"]

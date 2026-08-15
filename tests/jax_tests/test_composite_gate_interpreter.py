@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,28 +15,28 @@
 ********************************************************************************
 """
 
-import numpy as np
 import jax.numpy as jnp
-import jax.lax as lax
-from jax.extend.core import ClosedJaxpr
+import numpy as np
 import pytest
 import sympy
+from jax import lax
+from jax.extend.core import ClosedJaxpr
 
-from qrisp import QuantumVariable, prepare, measure, x, h, cx, mcx, rxx, rzz, xxyy
+from qrisp import QuantumVariable, cx, h, mcx, measure, prepare, rxx, rzz, x, xxyy
 from qrisp.jasp import make_jaspr, qache, quantum_kernel
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
 from qrisp.jasp.primitives import quantum_gate_p
-
 
 # ---------------------------------------------------------------------------
 # Helper: walk all equations in a jaspr (top-level only; sub-jaxprs in jit/
 # while/cond are inspected recursively) and collect gate objects.
 # ---------------------------------------------------------------------------
 
+
 def _collect_gates_from_jaxpr(jaxpr):
     """Yield every gate object found in quantum_gate_p equations, recursing
-    into jit/while/cond sub-jaxprs."""
-
+    into jit/while/cond sub-jaxprs.
+    """
     for eqn in jaxpr.eqns:
         if eqn.primitive == quantum_gate_p:
             yield eqn.params["gate"]
@@ -76,14 +75,13 @@ def assert_composite_gates(jaspr):
 def assert_no_composite_gates(jaspr):
     """Assert that all gates in the jaspr are primitive (definition is None)."""
     for gate in _collect_gates_from_jaxpr(jaspr):
-        assert gate.definition is None, (
-            f"Gate '{gate.name}' still has a composite definition after decomposition."
-        )
+        assert gate.definition is None, f"Gate '{gate.name}' still has a composite definition after decomposition."
 
 
 def assert_primitive_gates_invars_match_abstract_params(jaspr):
     """Assert that every primitive gate with abstract_params has the correct number
-    of invars corresponding to those abstract_params."""
+    of invars corresponding to those abstract_params.
+    """
     for eqn in jaspr.eqns:
         if eqn.primitive == quantum_gate_p:
             gate = eqn.params["gate"]
@@ -94,7 +92,8 @@ def assert_primitive_gates_invars_match_abstract_params(jaspr):
 
 def assert_same_distribution(jaspr_a, jaspr_b):
     """Assert that two jasprs produce identical exact probability distributions
-    via to_qc().run() (no shots), compared with np.allclose."""
+    via to_qc().run() (no shots), compared with np.allclose.
+    """
     _, qc_a = jaspr_a.to_qc()
     _, qc_b = jaspr_b.to_qc()
     probs_a = qc_a.run()
@@ -122,10 +121,12 @@ def assert_same_unitary(jaspr_a, jaspr_b):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 def test_decompose_state_preparation():
     """prepare() inserts a state_init composite gate.  After decomposition,
     no composite gates should remain and the output distribution should be
-    unchanged."""
+    unchanged.
+    """
 
     def main():
         qv = QuantumVariable(2)
@@ -144,9 +145,10 @@ def test_decompose_state_preparation():
 
 
 def test_decompose_mcx():
-    """mcx with control_amount > 1 produces a composite gate.  After
+    """Mcx with control_amount > 1 produces a composite gate.  After
     decomposition the circuit must contain only primitive gates and give
-    the correct deterministic measurement outcome."""
+    the correct deterministic measurement outcome.
+    """
 
     def main():
         qv = QuantumVariable(4)
@@ -168,8 +170,9 @@ def test_decompose_mcx():
 
 
 def test_decompose_cx_is_noop():
-    """cx is already a primitive gate (definition is None).  The decomposition
-    pass must leave it untouched and the circuit must still be correct."""
+    """Cx is already a primitive gate (definition is None).  The decomposition
+    pass must leave it untouched and the circuit must still be correct.
+    """
 
     def main():
         qv = QuantumVariable(2)
@@ -187,10 +190,10 @@ def test_decompose_cx_is_noop():
 
 def test_decompose_nested_jaspr():
     """BlockEncoding introduces deeply nested sub-jasprs containing composite
-    gates.  The decomposition must recurse into jit/while/cond sub-jaxprs."""
-
-    from qrisp.operators import X, Y, Z
+    gates.  The decomposition must recurse into jit/while/cond sub-jaxprs.
+    """
     from qrisp.block_encodings import BlockEncoding
+    from qrisp.operators import X, Y, Z
 
     H_op = X(0) * X(1) + Y(0) * Y(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H_op)
@@ -214,7 +217,8 @@ def test_call_graph_compression_preserved():
     """When the same @qache function is called twice, both jit equations in the
     original jaspr share the exact same ClosedJaxpr object (call-graph compression).
     After decompose_composite_gates, the two jit equations in the decomposed jaspr
-    must still reference the same ClosedJaxpr object — not two distinct copies."""
+    must still reference the same ClosedJaxpr object — not two distinct copies.
+    """
 
     @qache
     def test(qv):
@@ -230,11 +234,7 @@ def test_call_graph_compression_preserved():
 
     # Collect the ClosedJaxpr objects from all top-level jit equations
     def _jit_jaxprs(jaxpr):
-        return [
-            eqn.params["jaxpr"]
-            for eqn in jaxpr.eqns
-            if eqn.primitive.name == "jit"
-        ]
+        return [eqn.params["jaxpr"] for eqn in jaxpr.eqns if eqn.primitive.name == "jit"]
 
     orig_jaxprs = _jit_jaxprs(jaspr)
     assert len(orig_jaxprs) >= 2
@@ -254,7 +254,8 @@ def test_call_graph_compression_preserved():
 def test_decompose_scan_body():
     """Qrisp code called inside a jax.lax.scan body must also be decomposed.
     A @quantum_kernel using prepare() introduces a composite gate inside the
-    scan body jaxpr.  decompose_composite_gates must recurse into it."""
+    scan body jaxpr.  decompose_composite_gates must recurse into it.
+    """
 
     @quantum_kernel
     def random_number():
@@ -362,7 +363,7 @@ def test_decompose_constant_param_subgates():
 
 @pytest.mark.parametrize("gate", [rxx, rzz])
 def test_decompose_parametrized_rxx_rzz(gate):
-    """rxx and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
+    """Rxx and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
     expressions (-phi/2 and phi respectively).  Before the fix, the param
     tracers were silently dropped during decomposition, leaving those sub-gates
     with no dynamic parameter invars.
@@ -398,7 +399,7 @@ def test_decompose_parametrized_rxx_rzz(gate):
 
 
 def test_decompose_parametrized_xxyy():
-    """xxyy is a composite gate parameterized by two angles (phi and beta) whose
+    """Xxyy is a composite gate parameterized by two angles (phi and beta) whose
     sub-gates carry expressions derived from both parameters.  This test verifies
     the same two invariants as test_decompose_parametrized_rxx for the two-parameter
     case:
@@ -427,7 +428,7 @@ def test_decompose_parametrized_xxyy():
         h(qv)
         xxyy(1.1, 0.4, qv[0], qv[1])
         h(qv)
-        return qv  
+        return qv
 
     jaspr_fixed = make_jaspr(circuit_fixed)()
     decomposed_fixed = decompose_composite_gates(jaspr_fixed)

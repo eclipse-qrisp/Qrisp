@@ -20,3 +20,5 @@
 # format in CI, import sorting, line-length changes), add those
 # commit hashes here too.
 4ce1bcf7553aba8b90a6301094a22aaf75da9f9d
+
+798b3ce0d336cb127b78d96b25530c935753899a  # ruff format + quick lint fixes — full-repo formatting and import cleanup

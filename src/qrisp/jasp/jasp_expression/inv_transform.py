@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,15 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
-
 import numpy as np
+from jax import make_jaxpr
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+from jax.lax import add_p, sub_p
 from sympy import lambdify
 
-from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
-from jax.lax import add_p, sub_p, while_loop
-
-from qrisp.jasp.primitives import AbstractQuantumState, quantum_gate_p, greek_letters
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
 
 
 def copy_jaxpr_eqn(eqn):
@@ -44,9 +41,70 @@ def copy_jaxpr_eqn(eqn):
 qc_var_count = np.zeros(1, dtype=np.int64)
 
 
-def invert_eqn(eqn):
+def fold_extra_constvars_into_invars(closed_jaxpr, n_expected_const, insert_at=0):
+    """Fold unexpected leading constvars of a (re)traced ClosedJaxpr back into
+    genuine invars.
+
+    Retracing a Jaspr (e.g. during inversion) evaluates nested jit/cond/while
+    sub-equations through Jax's native primitive binding. As a side effect,
+    values that are only used inside such nested sub-equations (e.g. arrays
+    closed over by q_switch case functions, see prepare_qswitch) can get
+    reclassified from regular invars into self-contained constvars/consts of
+    the retraced jaxpr - Jax "closure converts" them relative to the retrace,
+    even though they were explicitly passed in as invars. If left as consts,
+    the resulting Jaspr would carry live tracers baked into ``consts``, which
+    breaks as soon as the Jaspr is reused in a different tracing context
+    (e.g. via LRU/custom-inversion caching or a subsequent re-trace such as
+    terminal_sampling's own sampling pass), producing either an arity
+    mismatch or a "leaked tracer" error.
+
+    This function folds any such newly introduced constvars back into being
+    genuine invars (in the same order in which they were introduced, which
+    corresponds to a prefix of the original invars).
+
+    Parameters
+    ----------
+    closed_jaxpr : jax.extend.core.ClosedJaxpr
+        The (re)traced ClosedJaxpr to normalize.
+    n_expected_const : int
+        The number of constvars that were already present/expected before
+        the retrace (usually 0).
+    insert_at : int, optional
+        The position (within the resulting invars list) at which to
+        re-insert the folded constvars. Use this when the retrace prepends
+        its own leading invars (e.g. a control qubit) that must stay in
+        front of the folded ones so the wrapping equation's argument order
+        matches. Default is 0 (folded invars go first).
+
+    Returns
+    -------
+    jax.extend.core.ClosedJaxpr
+        A ClosedJaxpr with at most ``n_expected_const`` constvars.
+
     """
-    Receives and equation that describes either an operation or a pjit primitive
+    core = closed_jaxpr.jaxpr
+    n_extra = len(core.constvars) - n_expected_const
+    if n_extra <= 0:
+        return closed_jaxpr
+
+    folded_invars = list(core.constvars[:n_extra])
+    new_constvars = list(core.constvars[n_extra:])
+    new_consts = list(closed_jaxpr.consts[n_extra:])
+    new_invars = list(core.invars)
+    new_invars[insert_at:insert_at] = folded_invars
+    new_core = Jaxpr(
+        constvars=new_constvars,
+        invars=new_invars,
+        outvars=list(core.outvars),
+        eqns=list(core.eqns),
+        effects=core.effects,
+        debug_info=core.debug_info,
+    )
+    return ClosedJaxpr(new_core, new_consts)
+
+
+def invert_eqn(eqn):
+    """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
 
     Parameters
@@ -60,20 +118,33 @@ def invert_eqn(eqn):
         The equation with inverted operation.
 
     """
-
     if eqn.primitive.name == "jit":
         params = dict(eqn.params)
-        params["jaxpr"] = eqn.params["jaxpr"].inverse()
+        orig_jaxpr = eqn.params["jaxpr"]
+        inv_jaxpr = orig_jaxpr.inverse()
+
+        # The inverted Jaspr may have been produced by a generic retrace or
+        # returned from a custom_inversion cache (inv_jaspr); either way, it
+        # must expose exactly the same number of (non-const) invars as
+        # `eqn.invars` supplies. Normalize away any unexpectedly introduced
+        # constvars, see fold_extra_constvars_into_invars.
+        from qrisp.jasp import Jaspr
+
+        normalized = fold_extra_constvars_into_invars(inv_jaxpr, len(orig_jaxpr.constvars))
+        if normalized is not inv_jaxpr:
+            inv_jaxpr = Jaspr(normalized)
+
+        params["jaxpr"] = inv_jaxpr
 
         name = params["name"]
         if name[-3:] == "_dg":
             params["name"] = params["name"][:-3]
-        elif name not in ["gidney_mcx", "gidney_mcx_inv"]:
+        elif name not in ["gidney_mcx_inv_impl", "gidney_mcx_impl"]:
             params["name"] += "_dg"
-        elif name == "gidney_mcx":
-            params["name"] = "gidney_mcx_inv"
-        elif name == "gidney_mcx_inv":
-            params["name"] = "gidney_mcx"
+        elif name == "gidney_mcx_impl":
+            params["name"] = "gidney_mcx_inv_impl"
+        elif name == "gidney_mcx_inv_impl":
+            params["name"] = "gidney_mcx_impl"
 
         primitive = eqn.primitive
     elif eqn.primitive.name == "while":
@@ -108,10 +179,10 @@ def invert_eqn(eqn):
     )
 
 
-@lru_cache(int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def invert_jaspr(jaspr):
-    """
-    Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation
+    """Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation
 
     Parameters
     ----------
@@ -124,7 +195,6 @@ def invert_jaspr(jaspr):
         The inverted/daggered Jaspr.
 
     """
-
     # Flatten all environments in the jaspr
     jaspr = jaspr.flatten_environments()
     # We separate the equations into classes where one executes Operations and
@@ -188,17 +258,11 @@ def invert_jaspr(jaspr):
             processed_tracers = []
 
             for expr in params:
-                processed_tracers.append(
-                    lambdify(symbols, expr, modules="jax")(*tracers)
-                )
+                processed_tracers.append(lambdify(symbols, expr, modules="jax")(*tracers))
 
-            new_gate = eqn.params["gate"].bind_parameters(
-                {symbols[i]: params[i] for i in range(len(params))}
-            )
+            new_gate = eqn.params["gate"].bind_parameters({symbols[i]: params[i] for i in range(len(params))})
 
-            outvalues = quantum_gate_p.bind(
-                *(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate
-            )
+            outvalues = quantum_gate_p.bind(*(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate)
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -219,6 +283,8 @@ def invert_jaspr(jaspr):
     processed_jaxpr = make_jaxpr(eval_jaxpr(temp_jaxpr, eqn_evaluator=eqn_evaluator))(
         *[invar.aval for invar in jaspr.invars]
     )
+
+    processed_jaxpr = fold_extra_constvars_into_invars(processed_jaxpr, len(jaspr.constvars))
 
     from qrisp.jasp import Jaspr
 
@@ -254,14 +320,42 @@ def invert_loop_body(jaxpr):
     # This list will contain the equations with the loop index decrementation
     new_eqn_list = list(jaxpr.eqns)
 
-    # Find the incrementation equation. For this we identify the equation,
-    # which updates the loop index
+    # Find the incrementation equation via the named marker jit equation
+    # inserted by jrange right before __exit__.  Only jrange-based loops
+    # carry this marker, so loops created by other means cannot be
+    # automatically inverted.
+    from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME
 
-    loop_index = jaxpr.jaxpr.outvars[-2]
+    marker_eqn = None
+    # The marker is the last equation in the body, so scan backward.
+    for eqn in reversed(new_eqn_list):
+        if eqn.primitive.name == "jit":
+            if eqn.params.get("name") == JRANGE_MARKER_NAME:
+                marker_eqn = eqn
+                break
+
+    if marker_eqn is None:
+        raise Exception(
+            "Automatic loop inversion is only supported for jrange-based "
+            "loops. The current loop body does not contain a jrange marker "
+            f"('{JRANGE_MARKER_NAME}')."
+        )
+
+    # marker(updated_loop_index, threshold)
+    # Find the add/sub whose outvar is the marker's invars[0].
+    updated_var = marker_eqn.invars[0]
+    increment_eqn_index = None
     for i in range(len(new_eqn_list))[::-1]:
-        if loop_index == new_eqn_list[i].outvars[0]:
-            break
-    increment_eqn_index = int(i)
+        if new_eqn_list[i].outvars[0] is updated_var:
+            if new_eqn_list[i].primitive in (add_p, sub_p):
+                increment_eqn_index = i
+                break
+
+    if increment_eqn_index is None:
+        raise Exception(
+            "Could not find the increment equation feeding the jrange marker. The loop body may be malformed."
+        )
+
     increment_eqn = new_eqn_list[increment_eqn_index]
 
     # Change the primitive
@@ -269,14 +363,6 @@ def invert_loop_body(jaxpr):
         new_primitive = sub_p
     else:
         new_primitive = add_p
-
-    try:
-        if increment_eqn.invars[1].val != 1:
-            raise
-    except:
-        raise Exception(
-            "Dynamic loop inversion is only supported for loops the have step size 1."
-        )
 
     # Create the decrement equation
     decrement_eqn = JaxprEqn(
@@ -301,56 +387,82 @@ def invert_loop_body(jaxpr):
     return res_jaspr
 
 
-# This function performs the above mentioned step 2 to treat the loop primitive
+# This function performs the above mentioned step 2 to treat the loop primitive.
 def invert_loop_eqn(eqn):
-
-    overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
 
-    def body_fun(val):
-
-        constants = val[eqn.params["cond_nconsts"] : overall_constant_amount]
-        carries = val[overall_constant_amount:]
-
-        body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))
-
-        return val[:overall_constant_amount] + tuple(body_res)
-
-    # Process the loop cancelation
+    # Extract the compared carry positions from the original cond.
+    # Access everything via .jaxpr to ensure consistent Var objects.
     cond_jaxpr = eqn.params["cond_jaxpr"]
+    cond_core = cond_jaxpr.jaxpr
+    for eq in cond_core.eqns:
+        if id(eq.outvars[0]) == id(cond_jaxpr.jaxpr.outvars[0]):
+            cond_eq = eq
+            break
 
-    def cond_fun(val):
+    cond_ins = cond_core.invars
 
-        if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[-2] <= val[-3]
-        else:
-            return val[-2] >= val[-3]
+    # Helper: backtrace a Var through convert_element_type chains
+    # to find the original invar it ultimately derives from.
+    def backtrace(var):
+        for _ in range(10):  # safety limit
+            found = False
+            for eq in cond_core.eqns:
+                if eq.primitive.name == "convert_element_type" and eq.outvars[0] is var:
+                    var = eq.invars[0]
+                    found = True
+                    break
+            if not found:
+                break
+        return var
 
-    # Create the new equation by tracing the while loop
-    def tracing_function(*args):
-        return while_loop(cond_fun, body_fun, tuple(args))
+    # Find positions, backtracing through any type conversions
+    pos_a = next(i for i, v in enumerate(cond_ins) if v is backtrace(cond_eq.invars[0]))
+    pos_b = next(i for i, v in enumerate(cond_ins) if v is backtrace(cond_eq.invars[1]))
 
-    jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
-    new_eqn = jaxpr.eqns[0]
+    # Trace a cond with swapped operands. Swapping the operands of
+    # le/ge inverts the comparison. Combined with the invar swap
+    # below, this gives the correct inverted loop condition.
+    carries_count = len(eqn.outvars)
+    carry_avals = [v.aval for v in eqn.invars[-carries_count:]]
 
-    # The new invars should have initial loop index at loop threshold switched.
-    # The loop initialization is located at invars[-3] and the threshold at invars[-2]
+    if cond_eq.primitive.name == "ge":
+
+        def swapped_cond(*carries):
+            return carries[pos_b] >= carries[pos_a]
+    else:
+
+        def swapped_cond(*carries):
+            return carries[pos_b] <= carries[pos_a]
+
+    inv_cond_jaxpr = make_jaxpr(swapped_cond)(*carry_avals)
+
+    # Swap the equation invars at positions corresponding to the
+    # compared carries (init ↔ threshold).
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[-2], new_invars[-3] = new_invars[-3], new_invars[-2]
+    eqn_pos_a = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_a
+    eqn_pos_b = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_b
+    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = new_invars[eqn_pos_b], new_invars[eqn_pos_a]
 
-    # Create the Equation
+    # Assemble the inverted while equation directly — no while_loop
+    # re-trace, avoiding JAX's non-deterministic body_nconsts.
     res = JaxprEqn(
-        primitive=new_eqn.primitive,
+        primitive=eqn.primitive,
         invars=new_invars,
         outvars=list(eqn.outvars),
-        params=new_eqn.params,
+        params={
+            "body_jaxpr": inv_loop_body,
+            "cond_jaxpr": inv_cond_jaxpr,
+            "body_nconsts": eqn.params["body_nconsts"],
+            "cond_nconsts": eqn.params["cond_nconsts"],
+        },
         source_info=eqn.source_info,
         effects=eqn.effects,
-        ctx=new_eqn.ctx,
+        ctx=eqn.ctx,
     )
 
     return res

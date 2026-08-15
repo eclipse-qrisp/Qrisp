@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,12 +18,15 @@
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from qrisp import *
 from qrisp.gqsp import fourier_series_loader
 
-# Gaussian 
+from qrisp import *
+
+
+# Gaussian
 def f(x, alpha):
-    return jnp.exp(-alpha * x ** 2)
+    return jnp.exp(-alpha * x**2)
+
 
 # Converts the function to be executed within a repeat-until-success (RUS) procedure.
 @RUS(static_argnames=["k"])
@@ -42,28 +44,31 @@ def prepare_gaussian(n, alpha, k):
     qbl.delete()
     return success_bool, qv
 
+
 # The terminal_sampling decorator performs a hybrid simulation,
 # and afterwards samples from the resulting quantum state.
 @terminal_sampling
 def main(n, alpha):
-    qv =  prepare_gaussian(n, alpha, 4)
-    return qv   
+    qv = prepare_gaussian(n, alpha, 4)
+    return qv
 
 
-@pytest.mark.parametrize("n, alpha", [
-    (6, 4),
-    (6, 10),
-])
+@pytest.mark.parametrize(
+    "n, alpha",
+    [
+        (6, 4),
+        (6, 10),
+    ],
+)
 def test_gqsp_gaussian(n, alpha):
     """Test GQSP Fourier series loader on a Gaussian function with different widths."""
-
     # Run the simulation for n-qubit state
     res_dict = main(n, alpha)
 
     # Convert the resulting measurement probabilities to amplitudes by appling the square root.
-    for k,v in res_dict.items():
-        res_dict[k] = v ** 0.5 
-    y_val_sim = np.array([res_dict.get(key, 0) for key in range(2 ** n)])
+    for k, v in res_dict.items():
+        res_dict[k] = v**0.5
+    y_val_sim = np.array([res_dict.get(key, 0) for key in range(2**n)])
     y_val_sim = y_val_sim / np.linalg.norm(y_val_sim)
 
     # Compare to target values

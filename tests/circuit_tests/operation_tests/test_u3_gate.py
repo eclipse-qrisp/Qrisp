@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -37,14 +36,14 @@ from qrisp.circuit.standard_operations import (
     RYGate,
     RZGate,
     SGate,
-    TGate,
     SXGate,
+    TGate,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helper: analytical U3 unitary
 # ---------------------------------------------------------------------------
+
 
 def _u3_unitary(theta, phi, lam, global_phase=0.0):
     """Compute the analytical 2x2 unitary of a U3 gate.
@@ -83,15 +82,16 @@ def _controlled_unitary(u, ctrl_state="1"):
     ndarray
         The controlled unitary matrix of shape (2**(k+1), 2**(k+1))
         where k = len(ctrl_state).
+
     """
     num_ctrl = len(ctrl_state)
     n = u.shape[0]
-    full_dim = (2 ** num_ctrl) * n
+    full_dim = (2**num_ctrl) * n
     result = np.eye(full_dim, dtype=complex)
 
     ctrl_val = int(ctrl_state, 2)
     start = ctrl_val * n
-    result[start:start + n, start:start + n] = u
+    result[start : start + n, start : start + n] = u
 
     return result
 
@@ -99,6 +99,7 @@ def _controlled_unitary(u, ctrl_state="1"):
 # =============================================================================
 # U3Gate – initialization & basic properties
 # =============================================================================
+
 
 class TestU3GateInitialization:
     """Tests for U3Gate construction and basic attributes."""
@@ -149,6 +150,7 @@ class TestU3GateInitialization:
 # U3Gate – unitary matrix correctness
 # =============================================================================
 
+
 class TestU3GateUnitary:
     """Tests for U3Gate.get_unitary()."""
 
@@ -193,6 +195,7 @@ class TestU3GateUnitary:
 # =============================================================================
 # U3Gate – inverse
 # =============================================================================
+
 
 class TestU3GateInverse:
     """Tests for U3Gate.inverse()."""
@@ -253,6 +256,7 @@ class TestU3GateInverse:
 # U3Gate – controlled gate (1 ctrl qubit)
 # =============================================================================
 
+
 class TestU3GateControl:
     """Tests for U3Gate.control()."""
 
@@ -312,29 +316,44 @@ class TestU3GateControl:
 
     def test_controlled_unitary_matches_analytical(self):
         """Controlled U3 unitary matches analytical controlled-unitary formula."""
-        
-        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
+        for gate in [
+            TGate(),
+            SGate(),
+            TGate().inverse(),
+            SGate().inverse(),
+            SXGate(),
+            SXGate().inverse(),
+            U3Gate(1, 2, 3),
+        ]:
             for i in range(1, 3):
-                ctrl_state = "1"*i
+                ctrl_state = "1" * i
                 expected_unitary = _controlled_unitary(gate.get_unitary(), ctrl_state)
-                compiled_unitary = gate.control(i, ctrl_state = ctrl_state).definition.get_unitary()
-                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1E-4
+                compiled_unitary = gate.control(i, ctrl_state=ctrl_state).definition.get_unitary()
+                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1e-4
 
     def test_non_trivial_control_state(self):
-        
-        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
 
+        for gate in [
+            TGate(),
+            SGate(),
+            TGate().inverse(),
+            SGate().inverse(),
+            SXGate(),
+            SXGate().inverse(),
+            U3Gate(1, 2, 3),
+        ]:
             for i in range(1, 3):
-                ctrl_state = "0"*i
+                ctrl_state = "0" * i
                 expected_unitary = _controlled_unitary(gate.get_unitary(), ctrl_state)
-                compiled_unitary = gate.control(i, ctrl_state = ctrl_state).definition.get_unitary()
+                compiled_unitary = gate.control(i, ctrl_state=ctrl_state).definition.get_unitary()
 
-                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1E-4
+                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1e-4
 
 
 # =============================================================================
 # U3Gate – multi-controlled gates (2+ ctrl qubits)
 # =============================================================================
+
 
 class TestU3GateMultiControl:
     """Tests for U3Gate with multiple control qubits."""
@@ -361,6 +380,7 @@ class TestU3GateMultiControl:
 # =============================================================================
 # U3Gate – named variants (p, rx, ry, rz, h, s, t, …)
 # =============================================================================
+
 
 class TestU3GateNamedVariants:
     """Tests for U3Gate when constructed with special names."""
@@ -492,6 +512,7 @@ class TestU3GateNamedVariants:
 # U3Gate – controlled named variants
 # =============================================================================
 
+
 class TestU3GateNamedVariantControl:
     """Tests for controlled versions of named U3 variant gates."""
 
@@ -504,9 +525,7 @@ class TestU3GateNamedVariantControl:
             ("ry", RYGate, (0.8,)),
         ],
     )
-    def test_named_variant_controlled_unitary_vs_transpiled(
-        self, name, gate_factory, args
-    ):
+    def test_named_variant_controlled_unitary_vs_transpiled(self, name, gate_factory, args):
         """Controlled named-gate unitary must match its transpiled definition."""
         gate = gate_factory(*args)
         cgate = gate.control(1)
@@ -518,6 +537,7 @@ class TestU3GateNamedVariantControl:
 # =============================================================================
 # U3Gate – bind_parameters / abstract params
 # =============================================================================
+
 
 class TestU3GateAbstractParams:
     """Tests for U3Gate with sympy abstract parameters."""
@@ -564,6 +584,7 @@ class TestU3GateAbstractParams:
 # =============================================================================
 # U3Gate – PauliGate subclass
 # =============================================================================
+
 
 class TestPauliGate:
     """Tests for the PauliGate subclass of U3Gate."""
@@ -630,6 +651,7 @@ class TestPauliGate:
 # U3Gate – transpile roundtrip
 # =============================================================================
 
+
 class TestU3GateTranspile:
     """Tests for transpiling circuits containing U3 gates."""
 
@@ -653,6 +675,7 @@ class TestU3GateTranspile:
 # =============================================================================
 # U3Gate – edge cases
 # =============================================================================
+
 
 class TestU3GateEdgeCases:
     """Edge cases for U3Gate."""

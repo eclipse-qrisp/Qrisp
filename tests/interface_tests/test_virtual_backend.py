@@ -81,7 +81,8 @@ def _simple_qc_list(*sizes):
 @pytest.fixture
 def vb():
     """Return a fresh VirtualBackend with the trivial run_func, suppressing the
-    deprecation warning during construction."""
+    deprecation warning during construction.
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", QrispDeprecationWarning)
         yield VirtualBackend(run_func=_trivial_run_func)

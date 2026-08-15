@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -37,7 +36,7 @@ for convenience.
 
 from qrisp.interface.simulators.qrisp_simulator_backend import (
     QrispSimulatorBackend,
-    QrispSimulatorJob,
+    QrispSimulatorJob,  # noqa: F401 — re-exported for convenience
 )
 
 def_backend = QrispSimulatorBackend()

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,14 @@
 ********************************************************************************
 """
 
-from sympy import symbols
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
+from sympy import symbols
 
 from qrisp.jasp.primitives import (
-    QuantumPrimitive,
     AbstractQuantumState,
     AbstractQubit,
+    QuantumPrimitive,
 )
 
 greek_letters = symbols(
@@ -41,7 +40,6 @@ def append_impl(*args, **kwargs):
     This function does not need to be JAX traceable. It will be invoked with
     actual instances.
     """
-
     gate = kwargs["gate"]
 
     qc = args[-1]
@@ -50,9 +48,7 @@ def append_impl(*args, **kwargs):
     qubit_args = args[: gate.num_qubits]
     parameter_args = args[gate.num_qubits :]
 
-    temp_op = gate.bind_parameters(
-        {greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))}
-    )
+    temp_op = gate.bind_parameters({greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))})
     qc.append(temp_op, list(qubit_args))
     return qc
 
@@ -64,7 +60,6 @@ def abstract_eval(*args, **kwargs):
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
     """
-
     # `gate` is treated like a static param to the primitive
     gate = kwargs["gate"]
     qc = args[-1]
@@ -83,8 +78,7 @@ def abstract_eval(*args, **kwargs):
 
     if not all(
         [
-            isinstance(param, jnp.number)
-            or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
+            isinstance(param, jnp.number) or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
             for param in parameter_args
         ]
     ):

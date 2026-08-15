@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -70,17 +69,17 @@ import networkx as nx
 import numpy as np
 
 from qrisp.circuit import (
-    QuantumCircuit,
-    Operation,
+    ClControlledOperation,
+    ControlledOperation,
+    GPhaseGate,
     Instruction,
-    fast_append,
+    Operation,
+    PGate,
+    QuantumCircuit,
     RXGate,
     RYGate,
     RZGate,
-    PGate,
-    GPhaseGate,
-    ClControlledOperation,
-    ControlledOperation,
+    fast_append,
 )
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
@@ -117,6 +116,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
     Operation or None
         The fused operation, or ``None`` if neither op is a SWAP or
         the neighbour is not a recognised symmetric two-qubit gate.
+
     """
     with fast_append(0):
         # --- swap-a then something ---
@@ -213,6 +213,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
         * ``Operation`` — the fused result.
         * ``_FUSION_CANCEL`` — the two operations cancel completely.
         * ``None`` — no parameterised fusion possible.
+
     """
     if not op_a.params:
         return None
@@ -279,14 +280,12 @@ def _fuse_gidney_and(op_a, op_b):
     _FUSION_CANCEL or None
         ``_FUSION_CANCEL`` if the compute/uncompute pair cancels,
         ``None`` otherwise (including "definitive no match").
+
     """
     # Lazy import to avoid circular dependencies at module load time.
     from qrisp.alg_primitives import GidneyLogicalAND
 
-    if not (
-        isinstance(op_a, GidneyLogicalAND)
-        and isinstance(op_b, GidneyLogicalAND)
-    ):
+    if not (isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND)):
         return None
 
     if op_a.ctrl_state == op_b.ctrl_state:
@@ -300,7 +299,7 @@ def _fuse_gidney_and(op_a, op_b):
 
 
 def _fuse_controlled_ops(op_a, op_b):
-    """Try to fuse two controlled operations by recursing into their 
+    """Try to fuse two controlled operations by recursing into their
     base operations.
 
     IMPORTANT: when this function returns ``None`` it means "no
@@ -323,13 +322,11 @@ def _fuse_controlled_ops(op_a, op_b):
           appropriate controlled wrapper).
         * ``_FUSION_CANCEL`` — the two operations cancel completely.
         * ``None`` — not handled here; fall through to generic inverse check.
-    """
 
+    """
     if op_a.ctrl_state == op_b.ctrl_state:
         # Recurse into the base (target) operations.
-        temp = _fuse_via_transpile(
-            op_a.base_operation, op_b.base_operation
-        )
+        temp = _fuse_via_transpile(op_a.base_operation, op_b.base_operation)
         if temp is _FUSION_CANCEL:
             return _FUSION_CANCEL
         if temp is not None:
@@ -356,7 +353,7 @@ def _fuse_via_transpile(op_a, op_b):
     2. Transpiles it (decomposes the definitions).
     3. Runs ``fuse_adjacents`` on the decomposition.
     4. If anything cancelled (gate count changed), returns the fused
-       result as a new gate. 
+       result as a new gate.
 
     Parameters
     ----------
@@ -369,6 +366,7 @@ def _fuse_via_transpile(op_a, op_b):
     -------
     Operation or None
         The fused operation, or ``None`` if nothing cancelled.
+
     """
     qc = QuantumCircuit(op_a.num_qubits)
     qc.append(op_a, qc.qubits)
@@ -408,8 +406,8 @@ def _check_inverse_cancel(op_a, op_b):
     -------
     _FUSION_CANCEL or None
         ``_FUSION_CANCEL`` if the pair cancels, ``None`` otherwise.
-    """
 
+    """
     # If the name of the inverse of gate a is the same
     # as gate b, chances are they are indeed inverse to each other
     # We confirm this by comparing their unitaries
@@ -419,7 +417,6 @@ def _check_inverse_cancel(op_a, op_b):
         return None
 
     if inv_op.name == op_b.name and op_a.name[-5:] != "alloc":
-
         # Avoid calculating very large unitaries
         if inv_op.num_qubits > 4 or op_b.num_qubits > 4:
             return None
@@ -430,9 +427,9 @@ def _check_inverse_cancel(op_a, op_b):
             unitary_b = op_b.get_unitary()
         except:
             return None
-        
+
         # Compare
-        if np.linalg.norm(unitary_a - unitary_b) > 1E-4:
+        if np.linalg.norm(unitary_a - unitary_b) > 1e-4:
             return None
 
         # Mark as cancelled
@@ -472,6 +469,7 @@ def _fuse_operations(op_a, op_b, gphase_array):
         * ``Operation`` — the fused result.
         * ``_FUSION_CANCEL`` — the two operations cancel completely.
         * ``None`` — no fusion possible.
+
     """
     # 1. SWAP fusion with neighbouring two-qubit gates.
     result = _fuse_swap_with_neighbour(op_a, op_b)
@@ -546,6 +544,7 @@ def _resolve_qubit_order(instr_a, instr_b):
     list of Qubit or None
         The qubit list to use for the fused instruction, or ``None``
         if the qubits cannot be matched.
+
     """
     a_sym = instr_a.op.name in _SYMMETRIC_GATES
     b_sym = instr_b.op.name in _SYMMETRIC_GATES
@@ -579,15 +578,14 @@ def _fuse_instructions(instr_a, instr_b, gphase_array):
         * ``Instruction`` — the fused result.
         * ``_FUSION_CANCEL`` — the two instructions cancel.
         * ``None`` — no fusion possible.
+
     """
     # Must operate on the same number of qubits.
     if len(instr_a.qubits) != len(instr_b.qubits):
         return None
 
     # Skip classically-controlled operations (not yet handled).
-    if isinstance(instr_a.op, ClControlledOperation) or isinstance(
-        instr_b.op, ClControlledOperation
-    ):
+    if isinstance(instr_a.op, ClControlledOperation) or isinstance(instr_b.op, ClControlledOperation):
         return None
 
     # Resolve the correct qubit order (handles symmetric gates).
@@ -636,6 +634,7 @@ def _init_dag(qc):
     -------
     tuple
         (G, qubit_dic, clbit_dic, edge_dic, data_list)
+
     """
     G = nx.DiGraph()
     qubit_dic = {}
@@ -675,6 +674,7 @@ def _rewire_past_node(G, node_id, qubit_dic, edge_dic):
         Maps each qubit → last node that touched it.
     edge_dic : dict
         Maps DAG edges → list of qubits travelling on that edge.
+
     """
     for edge in G.in_edges(node_id):
         for qb in edge_dic[edge]:
@@ -705,6 +705,7 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
     -------
     QuantumCircuit
         A new circuit containing only the surviving instructions.
+
     """
     qc_new = qc.clearcopy()
     topo_sort = list(nx.topological_sort(G))
@@ -717,9 +718,7 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
             # Emit the instruction (unless it's a gphase whose value
             # was already absorbed into the accumulated counter).
             if data_list[i].op.name != "gphase":
-                qc_new.append(
-                    data_list[i].op, data_list[i].qubits, qc.data[i].clbits
-                )
+                qc_new.append(data_list[i].op, data_list[i].qubits, qc.data[i].clbits)
             else:
                 gphase_array[0] += data_list[i].op.params[0]
 
@@ -813,9 +812,9 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
         >>> optimized_qc = pm.run(qc)
         >>> print(optimized_qc)
         <BLANKLINE>
-        qb_96: 
+        qb_96:
         <BLANKLINE>
-        qb_97: 
+        qb_97:
         <BLANKLINE>
 
     Fuse a SWAP with a neighbouring CX into fewer gates::
@@ -834,7 +833,8 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
         qb_110: ──■──┤ X ├
                 ┌─┴─┐└─┬─┘
         qb_111: ┤ X ├──■──
-                └───┘     
+                └───┘
+
     """
     gphase_array = [0]  # mutable accumulator for global phase
 
@@ -850,7 +850,6 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
     #      is "locally adjacent" to its predecessor and we can attempt
     #      to fuse/cancel them.
     for i, instr in enumerate(data_list):
-
         G.add_node(i)
 
         # Collect the immediate predecessors for every qubit.
@@ -890,9 +889,7 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
             if pred < 0:
                 continue  # predecessor is the initial |0⟩ — nothing to fuse
 
-            result = _fuse_instructions(
-                data_list[pred], data_list[i], gphase_array
-            )
+            result = _fuse_instructions(data_list[pred], instr, gphase_array)
 
             if result is not None:
                 if result is _FUSION_CANCEL:
@@ -917,4 +914,3 @@ def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
 
     # Step 3: emit the surviving instructions in topological order.
     return _emit_surviving_circuit(G, data_list, qc, gphase_array)
-

@@ -10,8 +10,7 @@
 # ANY KIND, either express or implied. See the Licence for the specific language
 # governing permissions and limitations under the Licence.
 
-"""
-Reverse-order parallelization pass.
+"""Reverse-order parallelization pass.
 
 This pass reverses the instruction order, runs Qrisp's parallelization,
 and restores the original order.  It is useful to group commuting gates
@@ -21,14 +20,13 @@ two-qubit gates.
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 @CircuitPass
 def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
-    """
-    This pass leverages permeability commutations to move two qubit gates
+    """This pass leverages permeability commutations to move two qubit gates
     to a later point in the circuit. This is especially helpful when
     trying to cancel out SWAP gates with other two qubit interactions.
 
@@ -44,7 +42,6 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-
     We demonstrate how to move a CX gate towards a SWAP.
 
     >>> from qrisp import QuantumCircuit, PassManager
@@ -54,24 +51,24 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     >>> qc.z(0)
     >>> qc.swap(0, 1)
     >>> print(qc)
-                 ┌───┐   
+                 ┌───┐
     qb_130: ──■──┤ Z ├─X─
-            ┌─┴─┐├───┤ │ 
+            ┌─┴─┐├───┤ │
     qb_131: ┤ X ├┤ X ├─X─
-            └───┘└───┘   
+            └───┘└───┘
 
     >>> pm = PassManager()
     >>> pm += reverse_parallelize
     >>> optimized_qc = pm.run(qc)
     >>> print(optimized_qc)
-           ┌───┐        
+           ┌───┐
     qb_66: ┤ Z ├──■───X─
-           ├───┤┌─┴─┐ │ 
+           ├───┤┌─┴─┐ │
     qb_67: ┤ X ├┤ X ├─X─
-           └───┘└───┘   
+           └───┘└───┘
 
     The CX gate can now be fused through the ``fuse_adjacents`` pass.
-                 
+
     """
     # Defer import: qrisp.permeability loads *after* qrisp.circuit, so
     # importing at module level would create a circular import.

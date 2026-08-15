@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import *
 import numpy as np
+from qrisp.qaoa import *
 
 # Pulser tutorial example from QAOA and QAA to solve a QUBO problem
 #        available here: https://pulser.readthedocs.io/en/stable/tutorials/qubo.html

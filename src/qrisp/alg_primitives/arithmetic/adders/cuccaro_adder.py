@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -15,15 +14,25 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-from qrisp.core import QuantumVariable, x, cx, mcx
-from qrisp.qtypes import QuantumFloat
-from qrisp.environments import conjugate, custom_control
-from qrisp.misc import int_encoder
-from qrisp.jasp import jrange, jlen
+
 import jax.numpy as jnp
 
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, cx, mcx, x
+from qrisp.environments import conjugate, custom_control
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.misc import int_encoder
+from qrisp.qtypes import QuantumBool, QuantumFloat
+
+
 @custom_control
-def cuccaro_adder(a, b, c_out=None, ctrl = None):
+def cuccaro_adder(
+    a: int | QuantumVariable,
+    b: QuantumVariable,
+    c_in: QuantumBool | Qubit | None = None,
+    c_out: QuantumBool | Qubit | None = None,
+    ctrl: QuantumBool | None = None,
+) -> None:
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
@@ -34,30 +43,34 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
     .. note::
-    
-        If the first input is quantum and the second classical, the function cannot work as addition is 
-        performed "in-place" on the second input. 
 
-    
+        If the first input is quantum and the second classical, the function cannot work as addition is
+        performed "in-place" on the second input.
+
+
     Parameters
     ----------
     a : int or QuantumVariable
         The value that should be added.
     b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
-    c_out : QuantumVariable, optional
+    c_in : QuantumBool or Qubit, optional
+        An optional carry in value. The default is None.
+    c_out : QuantumBool or Qubit, optional
         An optional carry out value. The default is None.
 
     Raises
     ------
+    TypeError
+        If carry in or carry out is not of type QuantumBool or Qubit in static mode.
     ValueError
         If the inputs are not valid quantum or classical types.
-    
+
     Returns
     -------
     None
         The function modifies the second input in place.
-    
+
     Examples
     --------
     Static mode with both quantum inputs:
@@ -70,32 +83,23 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     >>> cuccaro_adder(a,b)
     >>> print(b)
     {9: 1.0}
-    """
 
+    """
     # convert the classical input to a quantum input
     if not isinstance(a, QuantumVariable):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = b.duplicate()
 
         with conjugate(int_encoder)(q_a, a):
-            # begin with q_a in the state |a>
-            if c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out)
-            elif ctrl is not None:
-                cuccaro_adder(q_a, b, ctrl = ctrl)
-            elif ctrl is not None and c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out, ctrl = ctrl)
-            else:
-                cuccaro_adder(q_a, b)
-        
+            cuccaro_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
+
         # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
         # delete the temporary quantum variable created for the classical input
         q_a.delete()
         return
-    
+
     if not isinstance(b, QuantumVariable):
         raise ValueError("The second argument must be of type QuantumVariable.")
-    
 
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
@@ -119,8 +123,20 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
 
     ancilla = QuantumFloat(max_size)
 
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
+            raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
+        cx(c_in, ancilla[0])
+
     if c_out is not None:
-        ancilla2 = c_out
+        if isinstance(c_out, QuantumBool):
+            ancilla2 = c_out[0]
+        elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
+            raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
+        else:
+            ancilla2 = c_out
 
     # first maj gate application
     cx(a[0], b[0])
@@ -128,8 +144,7 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     mcx([ancilla[0], b[0]], a[0])
 
     # iterator maj gate application
-    from qrisp.jasp import jrange
-    
+
     for i in jrange(1, dim_a):
         cx(a[i], b[i])
         cx(a[i], a[i - 1])
@@ -137,10 +152,9 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
 
     # cnot
     if c_out is not None:
-        cx(a[-1], ancilla2[0])
+        cx(a[-1], ancilla2)
 
     if ctrl is None:
-
         # iterator uma gate application
         for j in jrange(dim_a - 1):
             # reverse the iteration
@@ -160,25 +174,26 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         x(b[0])
         cx(a[0], ancilla[0])
         cx(a[0], b[0])
-    
-    else:
 
+    else:
         # iterator uma gate application
         for j in jrange(dim_a - 1):
             # reverse the iteration
             i = dim_a - j - 1
 
             mcx([a[i - 1], b[i]], a[i])
-            mcx([ctrl, a[i-1]], b[i])
+            mcx([ctrl, a[i - 1]], b[i])
             cx(a[i], a[i - 1])
             cx(a[i], b[i])
-        
+
         # last uma gate application
         mcx([ancilla[0], b[0]], a[0])
         mcx([ctrl, ancilla[0]], b[0])
         cx(a[0], ancilla[0])
         cx(a[0], b[0])
-    
+
+    if c_in is not None:
+        cx(c_in, ancilla[0])
 
     # delete the ancilla used for carry bits
     ancilla.delete()

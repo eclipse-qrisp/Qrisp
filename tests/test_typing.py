@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -88,9 +87,7 @@ class TestScalarLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of ScalarLike"
 
     def test_numpy_array_is_rejected(self):
@@ -127,9 +124,7 @@ class TestNDArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of NDArrayLike"
 
     def test_python_scalar_is_rejected(self):
@@ -177,9 +172,7 @@ class TestArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of ArrayLike"
 
     @pytest.mark.parametrize("value", ["string", [1, 2, 3], {"key": 1}, None, (1, 2)])
@@ -228,14 +221,10 @@ class TestFloatLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of FloatLike"
 
-    @pytest.mark.parametrize(
-        "value", ["phi", [1.0], None, np.array([1.0]), 1 + 2j, np.complex128(1 + 2j)]
-    )
+    @pytest.mark.parametrize("value", ["phi", [1.0], None, np.array([1.0]), 1 + 2j, np.complex128(1 + 2j)])
     def test_non_floatlike_types_are_rejected(self, value):
         """Strings, lists, None, NumPy arrays, and complex numbers are not valid gate parameters."""
         assert not isinstance(value, FloatLike)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import *
-import numpy as np
 from operator import itemgetter
+
+import numpy as np
+
+from qrisp import *
 
 
 def QUBO_obj(bitstring, Q):
@@ -28,8 +29,7 @@ def QUBO_obj(bitstring, Q):
 
 
 def create_QUBO_cl_cost_function(Q):
-    """
-    Creates the classical cost function for a QUBO instance with matrix ``Q`` that we are attempting to solve.
+    """Creates the classical cost function for a QUBO instance with matrix ``Q`` that we are attempting to solve.
 
     Parameters
     ----------
@@ -65,8 +65,7 @@ def create_QUBO_cl_cost_function(Q):
 
 
 def create_QUBO_cost_operator(Q):
-    """
-    Creates the cost operator for a QUBO instance with matrix ``Q``.
+    r"""Creates the cost operator for a QUBO instance with matrix ``Q``.
     In the QAOA overview section this is also called the phase separator $U_P$.
 
     Parameters
@@ -99,8 +98,7 @@ def create_QUBO_cost_operator(Q):
 
 
 def QUBO_problem(Q):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters
@@ -116,14 +114,11 @@ def QUBO_problem(Q):
     """
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(
-        create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q)
-    )
+    return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 
 def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
-    """
-    Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA).
+    """Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA).
 
     This function creates the QAOA problem for a given QUBO.
     It defines a quantum argument as a :ref:`QuantumArray` of ``len(Q)`` :ref:`QuantumVariables <QuantumVariable>` with size 1.
@@ -160,7 +155,6 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
 
     Examples
     --------
-
     ::
 
         from qrisp.qaoa import solve_QUBO
@@ -180,7 +174,6 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
         solve_QUBO(Q, depth = 1, shots = 5000)[:5]
 
     """
-
     # Define quantum argument as a QuantumArray of len(G) QuantumVariables with size 1 or as a QuantumVariable with size len(G)
     qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(Q))
 
@@ -203,9 +196,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
     )  # runs the simulation
 
     # Calculate the cost for each solution
-    costs_and_solutions = [
-        (QUBO_obj(bitstring, Q), bitstring, res[bitstring]) for bitstring in res.keys()
-    ]
+    costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring, res[bitstring]) for bitstring in res.keys()]
 
     # Sort the solutions by their cost in ascending order
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))

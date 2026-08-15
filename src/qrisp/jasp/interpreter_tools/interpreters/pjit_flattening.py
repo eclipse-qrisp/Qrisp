@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from jax.extend.core import ClosedJaxpr
 from jax import jit
+
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     extract_invalues,

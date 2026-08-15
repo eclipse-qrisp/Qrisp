@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,8 @@
 import numpy as np
 from numpy.linalg import solve
 from scipy.linalg import expm
-from qrisp import QuantumVariable, HHL, control, multi_measurement, ry, x
+
+from qrisp import HHL, QuantumVariable, control, multi_measurement, ry, x
 
 # , QuantumCircuit
 # from qiskit.extensions import UnitaryGate

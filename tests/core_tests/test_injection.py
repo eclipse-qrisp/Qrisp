@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,6 +20,7 @@ from qrisp import *
 
 def test_injection_and():
     """Inject AND gate onto a pre-flipped target."""
+
     def AND(a, b):
         res = QuantumBool()
         mcx([a, b], res)
@@ -60,6 +60,7 @@ def test_injection_uncomputation():
 
 def test_injection_state_prep():
     """Inject a state-prep function onto an existing variable."""
+
     def init_state():
         qv = QuantumFloat(4)
         x(qv[0])
@@ -94,6 +95,7 @@ def test_injection_superposition_uncompute():
 
 def test_injection_chained():
     """Two sequential injections onto the same target."""
+
     def set_bit0():
         qv = QuantumFloat(3)
         x(qv[0])

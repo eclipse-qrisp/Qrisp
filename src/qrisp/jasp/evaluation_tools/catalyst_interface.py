@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,26 +15,23 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
-
+import catalyst
+import jax.numpy as jnp
+import pennylane as qml
+from catalyst.jax_extras.patches import patched_make_eqn
+from catalyst.jax_primitives import AbstractQreg, device_init_p, qalloc_p
+from catalyst.utils.patching import Patcher
 from jax import make_jaxpr
 from jax.extend.core import Literal
-import jax.numpy as jnp
-
-import pennylane as qml
-import catalyst
-from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
-from catalyst.jax_extras.patches import patched_make_eqn
-from catalyst.utils.patching import Patcher
 from jax.interpreters.partial_eval import DynamicJaxprTrace
 
-
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import (
-    AbstractQubitArray,
-    AbstractQubit,
     AbstractQuantumState,
-    eval_jaxpr,
+    AbstractQubit,
+    AbstractQubitArray,
     Jlist,
+    eval_jaxpr,
 )
 from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (
     catalyst_eqn_evaluator,
@@ -43,8 +39,7 @@ from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (
 
 
 def jaspr_to_catalyst_jaxpr(jaspr):
-    """
-    Converts a jaspr into a Catalyst Jaxpr.
+    """Converts a jaspr into a Catalyst Jaxpr.
 
     Since the jasp modelling aproach of quantum computation differs a bit from
     the Catalyst Jaxpr model, we have to translate between the models.
@@ -79,7 +74,6 @@ def jaspr_to_catalyst_jaxpr(jaspr):
         The output Jaxpr using catalyst primitives.
 
     """
-
     # Translate the input args according to the above rules.
     args = []
     for invar in jaspr.jaxpr.invars:
@@ -103,9 +97,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
 
     # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
     with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
-        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(
-            *args
-        )
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
 
 
 def jaspr_to_catalyst_function(jaspr, device=None):
@@ -151,16 +143,15 @@ def jaspr_to_catalyst_function(jaspr, device=None):
     return catalyst_function
 
 
-@lru_cache(int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     # Perform the code specified by the Catalyst developers
     catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
-    jit_object.jaxpr = make_jaxpr(catalyst_function)(
-        *[invar.aval for invar in jaspr.invars[:-1]]
-    )
+    jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[:-1]])
     jit_object.workspace = jit_object._get_workspace()
     temp = jit_object.generate_ir()
     if isinstance(temp, tuple):

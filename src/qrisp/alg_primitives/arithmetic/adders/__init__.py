@@ -24,3 +24,4 @@ from qrisp.alg_primitives.arithmetic.adders.incrementation import *
 from qrisp.alg_primitives.arithmetic.adders.remaud import *
 from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import *
 from qrisp.alg_primitives.arithmetic.adders.ripple_carry_adder import *
+from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import *

@@ -8,7 +8,8 @@ Version history
 
 .. toctree::
    :maxdepth: 2
-   
+
+   0.9
    0.8
    0.7
    0.6
@@ -17,5 +18,5 @@ Version history
    0.3
    0.2
    0.1
-   
+   changelog-dev
    

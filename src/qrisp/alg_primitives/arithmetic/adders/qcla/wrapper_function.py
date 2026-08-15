@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,16 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import *
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import *
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import *
-
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import *
-from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import *
 
 
 def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None):
-    r"""
-    Implementation of the higher radix quantum carry lookahead adder (QCLA) as described
+    r"""Implementation of the higher radix quantum carry lookahead adder (QCLA) as described
     `here <https://arxiv.org/abs/2304.02921>`__. This adder stands out for having logarithmic
     T-depth like `Drapers QCLA <https://arxiv.org/abs/quant-ph/0406142>`_. Compared to Drapers
     QCLA, the higher radix QCLA allows a more dynamic structure and the use of customizable
@@ -86,7 +83,6 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
 
     Examples
     --------
-
     We try out several constellations of parameters:
 
     >>> from qrisp import QuantumFloat, qcla
@@ -145,8 +141,8 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
     >>> qcla(22, b)
     >>> print(b)
     {42: 1.0}
-    """
 
+    """
     if isinstance(a, (int, str)):
         return cq_qcla(
             a,

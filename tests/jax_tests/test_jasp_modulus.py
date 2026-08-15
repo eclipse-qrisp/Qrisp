@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,14 @@
 ********************************************************************************
 """
 
-import random
-import pytest
 import math
+import random
+
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
+
 from qrisp import *
 
 CREATE_MEASURE_SEEDS = [0, 1, 2]
@@ -33,14 +34,13 @@ QC_INPLACE_SIZE = [1, 2]
 
 # ----------------- Helpers -----------------
 
+
 def mask_for_size(size: int) -> int:
     return (1 << (32 * size)) - 1
 
 
 def _digits_array(maybe_bi):
-    """
-    Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
-    """
+    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array."""
     if isinstance(maybe_bi, (jnp.ndarray, np.ndarray)):
         return maybe_bi
     if hasattr(maybe_bi, "digits"):
@@ -49,9 +49,7 @@ def _digits_array(maybe_bi):
 
 
 def to_int(maybe_bi) -> int:
-    """
-    Convert a BigInteger (or its digits array) to a Python int exactly.
-    """
+    """Convert a BigInteger (or its digits array) to a Python int exactly."""
     ds = np.asarray(_digits_array(maybe_bi), dtype=np.uint64).tolist()
     acc = 0
     for i, d in enumerate(ds):
@@ -60,9 +58,7 @@ def to_int(maybe_bi) -> int:
 
 
 def limbs_to_int(limbs) -> int:
-    """
-    Convert a list of uint32 limbs (little-endian) to a Python int.
-    """
+    """Convert a list of uint32 limbs (little-endian) to a Python int."""
     acc = 0
     for i, d in enumerate(limbs):
         acc |= (int(d) & 0xFFFFFFFF) << (32 * i)
@@ -74,6 +70,7 @@ def random_limbs(size):
 
 
 # ----------------- Tests -----------------
+
 
 @pytest.mark.parametrize("size", CREATE_MEASURE_SIZE)
 @pytest.mark.parametrize("seed", CREATE_MEASURE_SEEDS)
@@ -91,6 +88,7 @@ def test_modulus_biginteger_create_measure(seed, size):
         qm = QuantumModulus(N)
         qm[:] = V
         return measure(qm)
+
     assert to_int(main()) == V_int
 
 
@@ -125,14 +123,14 @@ def test_modulus_biginteger_qc_inplace(seed, size):
 
     @boolean_simulation
     def main():
-        N = BigInteger.create_static(N_int, size+2)
-        A = BigInteger.create_static(A_int, size+2)
-        B = BigInteger.create_static(B_int, size+2)
+        N = BigInteger.create_static(N_int, size + 2)
+        A = BigInteger.create_static(A_int, size + 2)
+        B = BigInteger.create_static(B_int, size + 2)
         qm = QuantumModulus(N)
         qm[:] = A
         qm *= B
         return measure(qm)
-    
+
     assert to_int(main()) == (A_int * B_int) % N_int
 
 
@@ -167,7 +165,7 @@ def test_modulus_qc_inplace_multiply():
         a *= 11
         return measure(a)
 
-    assert test() == (7*11) % 13
+    assert test() == (7 * 11) % 13
 
 
 def test_modulus_qc_multiply():
@@ -180,7 +178,7 @@ def test_modulus_qc_multiply():
         b = a * 3
         return measure(a), measure(b)
 
-    assert test_l() == (7, (7*3) % 13)
+    assert test_l() == (7, (7 * 3) % 13)
 
     @jaspify
     def test_r():
@@ -189,7 +187,7 @@ def test_modulus_qc_multiply():
         b = 3 * a
         return measure(a), measure(b)
 
-    assert test_r() == (7, (7*3) % 13)
+    assert test_r() == (7, (7 * 3) % 13)
 
 
 def test_modulus_numpy_scalar_add_with_nonzero_shift():
@@ -234,14 +232,15 @@ def test_modulus_qq_multiply():
         c = a * b
         return measure(a), measure(b), measure(c)
 
-    assert test() == (7, 12, (7*12) % 13)
+    assert test() == (7, 12, (7 * 12) % 13)
 
 
 def test_modulus_qq_multiply_standard_form():
     """Regression test: qq_montgomery_multiply_modulus must work when both
     inputs are in standard form (m=0).  Before the fix, the function used x.m
     directly as the reduction shift, which was 0 for standard-form inputs and
-    produced wrong results."""
+    produced wrong results.
+    """
     from qrisp import QuantumModulus, jaspify, measure
 
     @jaspify
@@ -277,7 +276,7 @@ _TRACED_BI_PRIMES = [7, 13, 31, 97]
 
 @pytest.mark.parametrize("p", _TRACED_BI_PRIMES)
 def test_qq_multiply_traced_biginteger_zeros(p):
-    """qq multiply with traced BigInteger modulus — both inputs default (0)."""
+    """Qq multiply with traced BigInteger modulus — both inputs default (0)."""
 
     @jaspify
     def run(N):
@@ -301,7 +300,7 @@ def test_qq_multiply_traced_biginteger_zeros(p):
     ],
 )
 def test_qq_multiply_traced_biginteger(p, a_val, b_val):
-    """qq multiply with traced BigInteger modulus — non-trivial values."""
+    """Qq multiply with traced BigInteger modulus — non-trivial values."""
 
     @jaspify
     def run(N):
@@ -418,9 +417,11 @@ def test_measure_traced_scalar_modulus_traced_shift():
 
 # ----- _moduli_neq tests -----
 
+
 def test_moduli_neq_static_equal():
     """Static BigInteger moduli with equal values should return False."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, b) is False
@@ -429,6 +430,7 @@ def test_moduli_neq_static_equal():
 def test_moduli_neq_static_different_value():
     """Static BigInteger moduli with different values should return True."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(17, 1)
     assert _moduli_neq(a, b) is True
@@ -437,6 +439,7 @@ def test_moduli_neq_static_different_value():
 def test_moduli_neq_static_different_shape():
     """Static BigInteger moduli with different limb counts should return True."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(13, 2)
     assert _moduli_neq(a, b) is True
@@ -445,6 +448,7 @@ def test_moduli_neq_static_different_shape():
 def test_moduli_neq_mixed_types():
     """Comparing BigInteger(13) with int 13 should return False (they are equal)."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     a = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, 13) is False
     assert _moduli_neq(13, a) is False
@@ -453,6 +457,7 @@ def test_moduli_neq_mixed_types():
 def test_moduli_neq_mixed_types_different():
     """Comparing BigInteger(13) with int 17 should return True."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     a = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, 17) is True
     assert _moduli_neq(17, a) is True
@@ -461,6 +466,7 @@ def test_moduli_neq_mixed_types_different():
 def test_moduli_neq_plain_ints():
     """Plain int moduli should compare normally."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     assert _moduli_neq(13, 13) is False
     assert _moduli_neq(13, 17) is True
 
@@ -486,6 +492,7 @@ def test_moduli_neq_raises_on_traced():
 
 def test_moduli_neq_not_called_during_tracing():
     """qq_multiply with traced BigInteger should not trigger _moduli_neq."""
+
     # If the guard is correct, this runs without RuntimeError
     @jaspify
     def run(N):
@@ -499,6 +506,7 @@ def test_moduli_neq_not_called_during_tracing():
 
 
 # ----- BigInteger.coerce tests -----
+
 
 def test_coerce_from_int():
     """coerce(int, size) should produce correct BigInteger."""
@@ -531,9 +539,11 @@ def test_coerce_from_biginteger_larger_raises():
 
 # ----- _coerce_bigint_operand tests -----
 
+
 def test_coerce_bigint_operand_from_int():
     """_coerce_bigint_operand should convert int to BigInteger with correct limbs."""
     from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
+
     modulus = BigInteger.create_static(13, 2)
     result = _coerce_bigint_operand(5, modulus)
     assert isinstance(result, BigInteger)
@@ -544,6 +554,7 @@ def test_coerce_bigint_operand_from_int():
 def test_coerce_bigint_operand_pads_smaller():
     """_coerce_bigint_operand should zero-pad a smaller BigInteger."""
     from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
+
     modulus = BigInteger.create_static(13, 3)
     value = BigInteger.create_static(7, 1)
     result = _coerce_bigint_operand(value, modulus)
@@ -554,6 +565,7 @@ def test_coerce_bigint_operand_pads_smaller():
 def test_coerce_bigint_operand_same_size():
     """_coerce_bigint_operand with matching limbs returns same object."""
     from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
+
     modulus = BigInteger.create_static(13, 2)
     value = BigInteger.create_static(7, 2)
     result = _coerce_bigint_operand(value, modulus)
@@ -563,6 +575,7 @@ def test_coerce_bigint_operand_same_size():
 def test_coerce_bigint_operand_larger_raises():
     """_coerce_bigint_operand should raise if BigInteger has too many limbs."""
     from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
+
     modulus = BigInteger.create_static(13, 1)
     value = BigInteger.create_static(7, 3)
     with pytest.raises(ValueError, match="truncation"):
@@ -570,6 +583,7 @@ def test_coerce_bigint_operand_larger_raises():
 
 
 # ----- comparison_wrapper tests (Montgomery shift handling) -----
+
 
 def test_comparison_same_nonzero_shift():
     """Two QuantumModuli with the same non-zero Montgomery shift can be compared."""
@@ -611,6 +625,7 @@ def test_comparison_different_shifts_raises():
 def test_comparison_nonzero_shift_vs_non_modulus_raises():
     """Comparing QuantumModulus(m!=0) with a QuantumFloat must raise."""
     from qrisp import QuantumFloat
+
     a = QuantumModulus(13)
     a[:] = 5
     a.m = 2

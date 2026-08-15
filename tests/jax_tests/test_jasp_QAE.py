@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,17 +16,18 @@
 """
 
 import numpy as np
+
 from qrisp import (
+    QAE,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
-    QuantumArray,
     control,
-    z,
     h,
     ry,
-    QAE,
+    z,
 )
-from qrisp.jasp import terminal_sampling, jrange
+from qrisp.jasp import jrange, terminal_sampling
 
 
 def test_jasp_QAE_single_variable():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,16 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
-from jax.extend.core import JaxprEqn
 import jax.numpy as jnp
+from jax.extend.core import JaxprEqn
 from sympy import lambdify as _lambdify
 
-from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
+import qrisp.circuit.standard_operations as _std_ops
+from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.circuit.operation import U3Gate as _U3Gate
+from qrisp.jasp.interpreter_tools import exec_eqn, extract_invalues, insert_outvalues, reinterpret
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
-from qrisp.circuit.operation import U3Gate as _U3Gate
-import qrisp.circuit.standard_operations as _std_ops
 
 _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 
@@ -34,12 +33,12 @@ _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 # bind_parameters({alpha: val}) and get back a fully concrete gate with params=[val].
 _U3_IDENTITY_FACTORIES = {
     "gphase": lambda: _std_ops.GPhaseGate(_greek_letters[0]),
-    "rx":     lambda: _std_ops.RXGate(_greek_letters[0]),
-    "ry":     lambda: _std_ops.RYGate(_greek_letters[0]),
-    "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
-    "p":      lambda: _std_ops.PGate(_greek_letters[0]),
-    "u1":     lambda: _std_ops.U1Gate(_greek_letters[0]),
-    "u3":     lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
+    "rx": lambda: _std_ops.RXGate(_greek_letters[0]),
+    "ry": lambda: _std_ops.RYGate(_greek_letters[0]),
+    "rz": lambda: _std_ops.RZGate(_greek_letters[0]),
+    "p": lambda: _std_ops.PGate(_greek_letters[0]),
+    "u1": lambda: _std_ops.U1Gate(_greek_letters[0]),
+    "u3": lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
 }
 
 
@@ -194,9 +193,7 @@ def decompose_eqn_evaluator(eqn, context_dic):
 
     elif eqn.primitive.name == "cond":
         new_eqn = _copy_eqn(eqn)
-        new_eqn.params["branches"] = tuple(
-            _decompose_sub_jaxpr(branch) for branch in eqn.params["branches"]
-        )
+        new_eqn.params["branches"] = tuple(_decompose_sub_jaxpr(branch) for branch in eqn.params["branches"])
         exec_eqn(new_eqn, context_dic)
         return False
 
@@ -209,11 +206,13 @@ def decompose_eqn_evaluator(eqn, context_dic):
     return True  # fall back to default execution
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def _decompose_sub_jaxpr(jaxpr):
     """Apply decompose_composite_gates to a sub-jaxpr (ClosedJaxpr or Jaspr)."""
-    from qrisp.jasp import Jaspr
     from jax.extend.core import ClosedJaxpr
+
+    from qrisp.jasp import Jaspr
 
     if isinstance(jaxpr, Jaspr):
         return decompose_composite_gates(jaxpr)
@@ -224,8 +223,10 @@ def _decompose_sub_jaxpr(jaxpr):
         return jaxpr
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def decompose_composite_gates(jaspr):
     """Return a new Jaspr with all composite (non-primitive) gates recursively inlined."""
     from qrisp.jasp import Jaspr
+
     return Jaspr(reinterpret(jaspr, decompose_eqn_evaluator))

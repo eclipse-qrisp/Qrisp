@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,19 @@
 ********************************************************************************
 """
 
+import itertools
+
+import networkx as nx
+
 from qrisp.algorithms.qaoa.problems.maxIndepSet import (
     create_max_indep_set_cl_cost_function,
     create_max_indep_set_mixer,
     max_indep_set_init_function,
 )
-import networkx as nx
-import itertools
 
 
 def create_max_clique_cl_cost_function(G):
-    """
-    Creates the classical cost function for an instance of the maximum clique problem for a given graph ``G``.
+    """Creates the classical cost function for an instance of the maximum clique problem for a given graph ``G``.
 
     Parameters
     ----------
@@ -60,8 +60,7 @@ def create_max_clique_cl_cost_function(G):
 
 
 def max_clique_problem(G):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

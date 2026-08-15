@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,10 @@
 
 def qulacs_converter(qc):
 
-    from qrisp.simulator import extract_measurements
-
-    from qulacs import QuantumCircuit
     import qulacs.gate as gt
+    from qulacs import QuantumCircuit
+
+    from qrisp.simulator import extract_measurements
 
     temp_qc, measurements = extract_measurements(qc.copy())
 
@@ -69,19 +68,13 @@ def qulacs_converter(qc):
             )
 
         elif instr.op.name == "rz":
-            qulacs_qc.add_gate(
-                gt.RZ(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RZ(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "ry":
-            qulacs_qc.add_gate(
-                gt.RY(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RY(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "rx":
-            qulacs_qc.add_gate(
-                gt.RX(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RX(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "swap":
             qulacs_qc.add_gate(gt.SWAP(transpiled_qc.qubits.index(instr.qubits[0])))

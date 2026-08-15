@@ -10,8 +10,7 @@
 # ANY KIND, either express or implied. See the Licence for the specific language
 # governing permissions and limitations under the Licence.
 
-"""
-Manual qubit layout pass.
+"""Manual qubit layout pass.
 
 Creates a pass function that re-indexes qubits according to a caller-supplied
 physical qubit mapping.  Logical qubit *i* is placed on physical qubit
@@ -23,9 +22,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.qubit import Qubit
-from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 def manual_layout(
@@ -71,18 +70,19 @@ def manual_layout(
           ┌─┴─┐
     qb_2: ┤ X ├
           └───┘
-    
+
     >>> pm = PassManager()
     >>> pm += manual_layout([2, 0, 1])  # Logical 0→2, 1→0, 2→1
     >>> new_layout_qc = pm.run(qc)
     >>> print(new_layout_qc)
-    <BLANKLINE>                    
+    <BLANKLINE>
     qb_1: ──■──
           ┌─┴─┐
     qb_2: ┤ X ├
           ├───┤
     qb_0: ┤ H ├
           └───┘
+
     """
 
     @CircuitPass
@@ -91,15 +91,12 @@ def manual_layout(
 
         if len(qubit_mapping) != num_circuit_qubits:
             raise ValueError(
-                f"qubit_mapping specifies {len(qubit_mapping)} qubits, "
-                f"but the circuit has {num_circuit_qubits} qubits."
+                f"qubit_mapping specifies {len(qubit_mapping)} qubits, but the circuit has {num_circuit_qubits} qubits."
             )
 
         for idx in qubit_mapping:
             if idx < 0:
-                raise ValueError(
-                    f"Qubit index {idx} is invalid. Indices must be non-negative."
-                )
+                raise ValueError(f"Qubit index {idx} is invalid. Indices must be non-negative.")
 
         if len(qubit_mapping) != len(set(qubit_mapping)):
             raise ValueError(
@@ -116,7 +113,7 @@ def manual_layout(
             amended_qubits.append(Qubit("amended_qb_" + str(len(amended_qubits))))
             new_qc.add_qubit(amended_qubits[-1])
 
-        reverse_mapping = {phys: log for log, phys in enumerate(qubit_mapping)} 
+        reverse_mapping = {phys: log for log, phys in enumerate(qubit_mapping)}
         new_qubit_list: list[Qubit] = []
         for i in range(num_physical_qubits):
             if i in qubit_mapping:

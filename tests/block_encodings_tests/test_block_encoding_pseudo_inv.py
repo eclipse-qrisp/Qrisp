@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -32,31 +31,35 @@ def threshold_pseudoinverse(A, threshold):
 
 def test_block_encoding_pseudo_inv():
     """Test the pseudo-inversion transformation on a non-Hermitian matrix A with small singular values,
-    and compare the results to a classical thresholded pseudoinverse."""
-
+    and compare the results to a classical thresholded pseudoinverse.
+    """
     # Define non-Hermitian matrix A
-    #[[0.  1.4 0.  1.1]
+    # [[0.  1.4 0.  1.1]
     # [1.1 0.  1.4 0. ]
     # [0.  1.1 0.  1.4]
     # [1.4 0.  1.1 0. ]]
     N = 4
     A = 1.4 * np.eye(N, k=1) + 1.1 * np.eye(N, k=-1)
-    A[0, N-1] = 1.1
-    A[N-1, 0] = 1.4
+    A[0, N - 1] = 1.1
+    A[N - 1, 0] = 1.4
 
-    #_, S, _ = np.linalg.svd(A)
-    #print("Singular values of A: ", S)
+    # _, S, _ = np.linalg.svd(A)
+    # print("Singular values of A: ", S)
     # Singular values of A:  [2.5 2.5 0.3 0.3]
 
     b = np.array([0, 1, 1, 1])
 
     # Define efficient block-encoding.
-    def f0(x): x+=1
-    def f1(x): x-=1
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        x -= 1
+
     BE = BlockEncoding.from_lcu(np.array([1.4, 1.1]), [f0, f1])
     # alpha = 1.4 + 1.1 = 2.5
 
-    # Choose threshold theta > 0.3 / 2.5 = 0.12 
+    # Choose threshold theta > 0.3 / 2.5 = 0.12
     # to cut off smallest singular values.
     BE_inv = BE.pseudo_inv(eps=0.01, theta=0.4, delta=0.1)
 
@@ -75,14 +78,13 @@ def test_block_encoding_pseudo_inv():
     res_dict = main()
 
     # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
 
     amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])
 
     # Compare to target values
-    c = (threshold_pseudoinverse(A, 0.4 * 2.5) @ b) 
+    c = threshold_pseudoinverse(A, 0.4 * 2.5) @ b
     c = c / np.linalg.norm(c)
     assert np.allclose(amps, c, atol=1e-2)

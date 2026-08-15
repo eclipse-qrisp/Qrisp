@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -40,6 +39,7 @@ def Measurement():
     -------
     :class:`.Operation`
         A measurement operation with 1 qubit and 1 classical bit.
+
     """
     res = Operation(name="measure", num_qubits=1, num_clbits=1)
     res.permeability = {0: True}
@@ -53,6 +53,7 @@ def XGate():
     -------
     :class:`.Operation`
         The Pauli-X gate operation.
+
     """
     return PauliGate(name="x")
 
@@ -64,6 +65,7 @@ def YGate():
     -------
     :class:`.Operation`
         The Pauli-Y gate operation.
+
     """
     return PauliGate(name="y")
 
@@ -75,6 +77,7 @@ def ZGate():
     -------
     :class:`.Operation`
         The Pauli-Z gate operation.
+
     """
     return PauliGate(name="z")
 
@@ -86,6 +89,7 @@ def CXGate():
     -------
     :class:`.Operation`
         The controlled-X gate operation.
+
     """
     return XGate().control()
 
@@ -97,6 +101,7 @@ def CYGate():
     -------
     :class:`.Operation`
         The controlled-Y gate operation.
+
     """
     return YGate().control()
 
@@ -108,6 +113,7 @@ def CZGate():
     -------
     :class:`.Operation`
         The controlled-Z gate operation.
+
     """
     return ZGate().control()
 
@@ -129,6 +135,7 @@ def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     -------
     :class:`.Operation`
         The multi-controlled X gate operation.
+
     """
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
@@ -145,6 +152,7 @@ def PGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The phase gate operation.
+
     """
     res = U3Gate(0, 0, phi, name="p")
     return res
@@ -162,13 +170,13 @@ def CPGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The controlled phase gate operation.
+
     """
     if isinstance(phi, (int, float)):
         phi = phi % (2 * np.pi)
         if np.abs(phi - np.pi) < 1e-8:
             return CZGate()
         if np.abs(phi) < 1e-8:
-
             from qrisp.circuit.quantum_circuit import QuantumCircuit
 
             temp_circ = QuantumCircuit(2)
@@ -186,6 +194,7 @@ def HGate():
     -------
     :class:`.Operation`
         The Hadamard gate operation.
+
     """
     res = U3Gate(np.pi / 2, 0, np.pi, name="h")
     return res
@@ -203,6 +212,7 @@ def RXGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The :math:`R_X` gate operation.
+
     """
     res = U3Gate(phi, -np.pi / 2, np.pi / 2, name="rx")
     return res
@@ -220,6 +230,7 @@ def RYGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The :math:`R_Y` gate operation.
+
     """
     res = U3Gate(phi, 0, 0, name="ry")
     return res
@@ -237,6 +248,7 @@ def RZGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The :math:`R_Z` gate operation.
+
     """
     res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)  # type: ignore[operator]
     return res
@@ -256,6 +268,7 @@ def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The R gate operation.
+
     """
     res = U3Gate(-theta, phi, -phi, name="r", global_phase=0)
     res.params = [theta, phi]
@@ -274,6 +287,7 @@ def GPhaseGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The global phase gate operation.
+
     """
     res = U3Gate(0, 0, 0, name="gphase", global_phase=phi)
     return res
@@ -293,6 +307,7 @@ def MCRXGate(phi: FloatLike = 0, control_amount: int = 0):
     -------
     :class:`.Operation`
         The multi-controlled :math:`R_X` gate operation.
+
     """
     res = RXGate(phi).control(control_amount)
     res.name = "mcrx"
@@ -306,6 +321,7 @@ def SGate():
     -------
     :class:`.Operation`
         The S gate operation.
+
     """
     res = PGate(np.pi / 2)
     res.params = []
@@ -320,6 +336,7 @@ def TGate():
     -------
     :class:`.Operation`
         The T gate operation.
+
     """
     res = PGate(np.pi / 4)
     res.params = []
@@ -334,6 +351,7 @@ def IDGate():
     -------
     :class:`.Operation`
         The identity gate operation.
+
     """
     res = U3Gate(0, 0, 0, name="id")
     return res
@@ -351,6 +369,7 @@ def RXXGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The :math:`R_{XX}` gate operation.
+
     """
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
@@ -384,6 +403,7 @@ def RZZGate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The :math:`R_{ZZ}` gate operation.
+
     """
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
@@ -415,6 +435,7 @@ def XXYYGate(phi: FloatLike = 0, beta: FloatLike = 0):
     -------
     :class:`.Operation`
         The XX+YY gate operation.
+
     """
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
@@ -435,9 +456,7 @@ def XXYYGate(phi: FloatLike = 0, beta: FloatLike = 0):
     qc.rz(np.pi / 2, qc.qubits[1])
     qc.rz(-beta, qc.qubits[0])
 
-    return Operation(
-        name="xxyy", num_qubits=2, num_clbits=0, params=[phi, beta], definition=qc
-    )
+    return Operation(name="xxyy", num_qubits=2, num_clbits=0, params=[phi, beta], definition=qc)
 
 
 def Barrier(num_qubits=1):
@@ -452,6 +471,7 @@ def Barrier(num_qubits=1):
     -------
     :class:`.Operation`
         The barrier operation spanning ``num_qubits`` qubits.
+
     """
     res = Operation(num_qubits=num_qubits, name="barrier")
 
@@ -479,6 +499,7 @@ def u3Gate(theta: FloatLike = 0, phi: FloatLike = 0, lam: FloatLike = 0):
     -------
     :class:`.Operation`
         The U3 gate operation.
+
     """
     return U3Gate(theta, phi, lam)
 
@@ -495,6 +516,7 @@ def U1Gate(phi: FloatLike = 0):
     -------
     :class:`.Operation`
         The U1 gate operation.
+
     """
     res = RZGate(phi)
     res.name = "u1"
@@ -513,6 +535,7 @@ def Reset():
     -------
     :class:`.Operation`
         The reset operation.
+
     """
     res = Operation("reset", 1)
     res.permeability = {0: False}
@@ -526,6 +549,7 @@ def SXGate():
     -------
     :class:`.Operation`
         The :math:`\\sqrt{X}` gate operation.
+
     """
     res = RXGate(np.pi / 2)
     res.name = "sx"
@@ -544,6 +568,7 @@ def SXDGGate():
     -------
     :class:`.Operation`
         The adjoint of the square-root-of-X gate operation.
+
     """
     res = RXGate(-np.pi / 2)
     res.name = "sx_dg"
@@ -562,6 +587,7 @@ def SwapGate():
     -------
     :class:`.Operation`
         The SWAP gate operation.
+
     """
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
@@ -587,6 +613,7 @@ def QubitAlloc():
     -------
     :class:`.Operation`
         The qubit-allocation marker operation.
+
     """
     res = Operation("qb_alloc", 1)
     res.unitary = np.eye(2, dtype=np.complex64)
@@ -602,6 +629,7 @@ def QubitDealloc():
     -------
     :class:`.Operation`
         The qubit-deallocation marker operation.
+
     """
     res = Operation("qb_dealloc", 1)
     res.unitary = np.eye(2, dtype=np.complex64)

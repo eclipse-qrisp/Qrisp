@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,9 +19,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation, U3Gate
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 def _apply_combined_gates(qc_new: QuantumCircuit, gate_list: list, qb) -> None:
@@ -43,6 +42,7 @@ def _apply_combined_gates(qc_new: QuantumCircuit, gate_list: list, qb) -> None:
         Stack of single-qubit gate operations (last appended = last to act).
     qb : Qubit
         The qubit the gates act on.
+
     """
     if not gate_list:
         return
@@ -108,7 +108,6 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-
     >>> from qrisp import PassManager, combine_single_qubit_gates
     >>> from qrisp import QuantumCircuit
     >>> qc = QuantumCircuit(1)
@@ -123,6 +122,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
            ┌──────────────┐
     qb_64: ┤ U3(π/2,3π,0) ├
            └──────────────┘
+
     """
     # Per-qubit stacks of single-qubit gates waiting to be flushed.
     qb_dic = {qb: [] for qb in qc.qubits}
@@ -148,9 +148,9 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
                 # that definition, then re-wrap in a ControlledOperation.
                 if op.base_operation.definition:
                     instr = instr.copy()
-                    optimized_base = combine_single_qubit_gates(
-                        op.base_operation.definition
-                    ).to_gate(name=op.base_operation.name)
+                    optimized_base = combine_single_qubit_gates(op.base_operation.definition).to_gate(
+                        name=op.base_operation.name
+                    )
                     instr.op = ControlledOperation(
                         optimized_base,
                         num_ctrl_qubits=len(op.ctrl_state),

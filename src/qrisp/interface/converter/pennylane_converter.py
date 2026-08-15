@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -29,7 +28,7 @@ has_pennylane = True
 
 try:
     import pennylane as qml
-except (ModuleNotFoundError, ImportError) as import_error:
+except (ModuleNotFoundError, ImportError):
     has_pennylane = False
 
 """
@@ -70,9 +69,7 @@ if has_pennylane:
         "s": QMLGateDescriptor(qml.S),
         "t": QMLGateDescriptor(qml.T),
         "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
-        "sx": QMLGateDescriptor(
-            qml.RX, param_fn=lambda _: [np.pi / 2]
-        ),  # SXGate() -> qml.RX(pi/2)
+        "sx": QMLGateDescriptor(qml.RX, param_fn=lambda _: [np.pi / 2]),  # SXGate() -> qml.RX(pi/2)
         "gphase": QMLGateDescriptor(
             qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
         ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
@@ -91,8 +88,7 @@ def _extract_name(name: str) -> tuple[str, bool]:
 
 
 def _create_qml_instruction(op: Operation) -> tuple[QMLGateDescriptor, bool, bool]:
-    """
-    Create a PennyLane instruction from a Qrisp operation.
+    """Create a PennyLane instruction from a Qrisp operation.
 
     Parameters
     ----------
@@ -108,7 +104,6 @@ def _create_qml_instruction(op: Operation) -> tuple[QMLGateDescriptor, bool, boo
         returns the base QMLGateDescriptor.
 
     """
-
     name, is_inverse = _extract_name(op.name)
 
     if name in QRISP_PL_BASE_MAP:
@@ -119,18 +114,12 @@ def _create_qml_instruction(op: Operation) -> tuple[QMLGateDescriptor, bool, boo
         if base_name in QRISP_PL_BASE_MAP:
             return QRISP_PL_BASE_MAP[base_name], is_inverse, True
 
-    raise NotImplementedError(
-        f"Operation '{op.name}' is not supported in the PennyLane converter."
-    )
+    raise NotImplementedError(f"Operation '{op.name}' is not supported in the PennyLane converter.")
 
 
 def _is_nested_circuit(op: Operation) -> bool:
     """Return True if this Qrisp operation is a subcircuit."""
-    return (
-        op.definition is not None
-        and not isinstance(op, ControlledOperation)
-        and op.name not in QRISP_PL_BASE_MAP
-    )
+    return op.definition is not None and not isinstance(op, ControlledOperation) and op.name not in QRISP_PL_BASE_MAP
 
 
 def _evaluate_abstract_params(params: list, subs_dic: dict) -> list:
@@ -143,11 +132,8 @@ def _evaluate_abstract_params(params: list, subs_dic: dict) -> list:
     return out
 
 
-def _process_qrisp_circuit(
-    qc: QuantumCircuit | QuantumSession, wire_map: dict, subs_dic: dict | None
-) -> None:
+def _process_qrisp_circuit(qc: QuantumCircuit | QuantumSession, wire_map: dict, subs_dic: dict | None) -> None:
     """Recursively process a Qrisp circuit into PennyLane operations."""
-
     for data in qc.data:
         op = data.op
 
@@ -158,8 +144,7 @@ def _process_qrisp_circuit(
             sub_qc = op.definition
             sub_qubits = data.qubits
             sub_wire_map = {
-                inner.identifier: wire_map[outer.identifier]
-                for inner, outer in zip(sub_qc.qubits, sub_qubits)
+                inner.identifier: wire_map[outer.identifier] for inner, outer in zip(sub_qc.qubits, sub_qubits)
             }
             _process_qrisp_circuit(sub_qc, sub_wire_map, subs_dic)
             continue
@@ -180,7 +165,6 @@ def _process_qrisp_circuit(
             continue
 
         with qml.QueuingManager.stop_recording():
-
             qml_op = qml_gate_desc.gate_class(*qml_params, wires=targets)
 
             if is_inverse:
@@ -197,8 +181,7 @@ def _process_qrisp_circuit(
 
 
 def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
-    """
-    Convert a Qrisp quantum circuit to a PennyLane quantum function.
+    """Convert a Qrisp quantum circuit to a PennyLane quantum function.
 
     Parameters
     ----------
@@ -211,18 +194,14 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         A PennyLane quantum function reproducing the Qrisp circuit.
 
     """
-
     if not has_pennylane:
         raise ImportError(
             "This feature requires pennylane, a library for quantum computing and "
             "quantum machine learning. It can be installed with:\n\npip install pennylane"
         )  # pragma: no cover
 
-    def circuit(
-        wires: Optional[qml.wires.WiresLike] = None, subs_dic: Optional[dict] = None
-    ) -> None:
-        """
-        PennyLane quantum function representing the Qrisp circuit.
+    def circuit(wires: Optional[qml.wires.WiresLike] = None, subs_dic: Optional[dict] = None) -> None:
+        """PennyLane quantum function representing the Qrisp circuit.
 
         This function should be used within a PennyLane QNode context.
 
@@ -236,7 +215,6 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
             A dictionary for substituting abstract parameters with concrete values.
 
         """
-
         if wires is None:
             wire_map = {qb.identifier: qb.identifier for qb in qc.qubits}
         else:

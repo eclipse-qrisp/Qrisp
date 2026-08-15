@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import numpy as np
+
 from qrisp.circuit import Operation
 
 
@@ -67,9 +67,7 @@ class GXX_wrapper(Operation):
 #           │P(π/2)  │P(π/2)  │P(π/2)  │P(π/2)  │P(π/2)  │P(π/2)  │P(π/2)
 # q2874_7: ─■────────■────────■────────■────────■────────■────────■───────
 # Using only one GMS gate or two uniform GMS gates
-def gms_multi_cp_gate_mono_phase(
-    n, theta, use_uniform=True, phase_tolerant=False, basis="GXX"
-):
+def gms_multi_cp_gate_mono_phase(n, theta, use_uniform=True, phase_tolerant=False, basis="GXX"):
     from qrisp import QuantumSession, QuantumVariable, cp, h, p
 
     qs = QuantumSession()
@@ -218,12 +216,11 @@ def gms_multi_cx_fan_out(n, use_uniform=True, phase_tolerant=False, basis="GXX")
 
 
 def GXX_converter(qs):
-    from qrisp import QuantumSession, QuantumVariable
 
     # Check if the given Circuit is valid
     global_phase = np.array([0.0])
     for i in range(len(qs.data)):
-        if not qs.data[i].op.name in [
+        if qs.data[i].op.name not in [
             "p",
             "cp",
             "id",
@@ -234,7 +231,7 @@ def GXX_converter(qs):
         ]:
             raise Exception(qs.data[i].op.name + " is neither Phase nor CPhase gate")
 
-        if not qs.data[i].op.name in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
+        if qs.data[i].op.name not in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
             global_phase += qs.data[i].op.global_phase
 
         # Subtract a 1/4 of the phase in case we are dealing with a cp gate (for more
@@ -297,9 +294,7 @@ def GXX_converter(qs):
     # This is because every entry with the same row / column represents a phase gate
     # where the qubit in question participated
     for i in range(n):
-        qc_res.p(
-            (sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, qc_res.qubits[i]
-        )
+        qc_res.p((sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, qc_res.qubits[i])
         phase_matrix[i, i] = 0
 
     # Prepary Chi list for GXX gate
@@ -343,9 +338,7 @@ def gms_multi_cp_gate(n, phases, use_uniform=True, basis="GXX"):
     # qs.p(sum(phases)/2, n)
 
     qs.append(
-        gms_multi_cx_fan_out(
-            n, use_uniform=use_uniform, phase_tolerant=False, basis=basis
-        ),
+        gms_multi_cx_fan_out(n, use_uniform=use_uniform, phase_tolerant=False, basis=basis),
         qv.reg,
     )
 
@@ -353,9 +346,7 @@ def gms_multi_cp_gate(n, phases, use_uniform=True, basis="GXX"):
         qs.p(-phases[i] / 2, i)
 
     qs.append(
-        gms_multi_cx_fan_out(
-            n, use_uniform=use_uniform, phase_tolerant=False, basis=basis
-        ).inverse(),
+        gms_multi_cx_fan_out(n, use_uniform=use_uniform, phase_tolerant=False, basis=basis).inverse(),
         qv.reg,
     )
 
@@ -400,12 +391,11 @@ class GZZ_wrapper(Operation):
 # The terms (-1)^a and (-1)^b are executed by single qubit phase gates
 # The remaining -1 is an irrelevant global phase
 def GZZ_converter(qs):
-    from qrisp import QuantumSession, QuantumVariable
 
     # Check if the given Circuit is valid
     global_phase = np.array([0.0])
     for i in range(len(qs.data)):
-        if not qs.data[i].op.name in [
+        if qs.data[i].op.name not in [
             "p",
             "cp",
             "id",
@@ -416,7 +406,7 @@ def GZZ_converter(qs):
         ]:
             raise Exception(qs.data[i].op.name + " is neither Phase nor CPhase gate")
 
-        if not qs.data[i].op.name in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
+        if qs.data[i].op.name not in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
             global_phase += qs.data[i].op.global_phase
 
         # Subtract a 1/4 of the phase in case we are dealing with a cp gate (for more

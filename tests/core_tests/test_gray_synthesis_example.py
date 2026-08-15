@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,8 @@
 import pytest
 
 from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth
+from qrisp.core import QuantumSession, QuantumVariable
 from qrisp.misc import int_encoder
-from qrisp.core import QuantumVariable, QuantumSession
 
 
 @pytest.mark.parametrize("num", ["001", "011", "000", "100"])

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,8 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+
 import numpy as np
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
@@ -25,11 +25,8 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def apply_poly(
-    self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial"
-) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding representing a polynomial transformation of the operator.
+def apply_poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
+    r"""Returns a BlockEncoding representing a polynomial transformation of the operator.
 
     For a block-encoded **Hermitian** matrix $A$ and a (complex) polynomial $p(z)$, this method returns
     a BlockEncoding of the operator $p(A)$. This is achieved using
@@ -55,7 +52,6 @@ def apply_poly(
 
     Examples
     --------
-
     Define a Hermitian matrix $A$ and a vector $\vec{b}$.
 
     ::
@@ -109,7 +105,7 @@ def apply_poly(
 
     """
     from qrisp.algorithms.gqsp import GQET
-    
+
     if isinstance(p, list):
         p = np.array(p)
     return GQET(self, p, kind=kind)

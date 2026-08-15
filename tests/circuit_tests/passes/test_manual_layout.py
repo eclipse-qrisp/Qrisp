@@ -1,4 +1,5 @@
 """Tests for qrisp.circuit.passes.manual_layout."""
+
 import pytest
 
 from qrisp.circuit import QuantumCircuit
@@ -38,7 +39,7 @@ class TestManualLayoutRemapping:
     def test_swap_two_qubits(self):
         """[1, 0] swaps logical 0 and 1 — the gate operands should be reversed."""
         qc = QuantumCircuit(2)
-        qc.h(0)           # H on logical qubit 0
+        qc.h(0)  # H on logical qubit 0
         result = manual_layout([1, 0])(qc)
         # After remapping, physical qubit 1 holds logical qubit 0.
         # The resulting qubit list should start with what was originally qubit 1.

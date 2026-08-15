@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,8 @@
 """
 
 from qrisp.circuit import Qubit
+from qrisp.core.gate_application_functions import cx, mcx, swap, x
 from qrisp.qtypes import QuantumFloat
-from qrisp.core.gate_application_functions import x, cx, mcx, swap
 
 
 def peres(a: Qubit, b: Qubit, c: Qubit):
@@ -117,14 +116,10 @@ def initial_subtraction(R: QuantumFloat, F: QuantumFloat, z: QuantumFloat):
     mcx([R[n - 1]], F[2], ctrl_state=0)
 
     # Step 6
-    control_add_sub(
-        z, [R[n - 4], R[n - 3], R[n - 2], R[n - 1]], [F[0], F[1], F[2], F[3]]
-    )
+    control_add_sub(z, [R[n - 4], R[n - 3], R[n - 2], R[n - 1]], [F[0], F[1], F[2], F[3]])
 
 
-def conditional_addition_or_subtraction(
-    R: QuantumFloat, F: QuantumFloat, z: QuantumFloat
-):
+def conditional_addition_or_subtraction(R: QuantumFloat, F: QuantumFloat, z: QuantumFloat):
     n = R.size
 
     for i in range(2, n // 2):
@@ -186,8 +181,7 @@ def remainder_restoration(R: QuantumFloat, F: QuantumFloat, z: QuantumFloat):
 
 
 def q_isqrt(R: QuantumFloat) -> QuantumFloat:
-    """
-    Computes the integer square root of a QuantumFloat, as well as the remainder using the `non-Restoring square root algorithm <https://arxiv.org/abs/1712.08254>`_.
+    """Computes the integer square root of a QuantumFloat, as well as the remainder using the `non-Restoring square root algorithm <https://arxiv.org/abs/1712.08254>`_.
     Does not yield plausible output when applied to negative integers.
 
     Parameters
@@ -213,14 +207,13 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     >>> print(R.get_measurement())
     {11: 1.0}
     {10: 1.0}
+
     """
     n = R.size
     e = R.exponent
 
     if e != 0:
-        raise Exception(
-            "Tried to compute integer square root for QuantumFloat with non-zero exponent"
-        )
+        raise Exception("Tried to compute integer square root for QuantumFloat with non-zero exponent")
 
     if n == 1:
         F = QuantumFloat(1, 0)

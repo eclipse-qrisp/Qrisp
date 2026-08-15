@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,11 +25,14 @@ from qrisp.block_encodings import BlockEncoding
 @pytest.mark.parametrize("method", ["QET", "QSVT", "GQSVT"])
 def test_block_encoding_inv(method):
     """Test the inversion transformation of a BlockEncoding by comparing the results to a classical solution."""
-
-    A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+    A = np.array(
+        [
+            [0.73255474, 0.14516978, -0.14510851, -0.0391581],
+            [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+            [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+            [-0.0391581, -0.00999921, -0.03420339, 0.58862043],
+        ]
+    )
 
     b = np.array([0, 1, 0, 1])
 
