@@ -22,7 +22,13 @@ This module registers the JASP dialect with xDSL so that:
 - JASP types (QuantumState, Qubit, QubitArray) parse and print without quotes
 - JASP ops are recognised as typed IRDLOperation subclasses instead of
   UnregisteredOp, enabling typed pattern matching in xDSL passes
-- Non-variadic ops print in their custom assembly format (no quoted op names)
+- Ops print in their custom assembly format (no quoted op names), and that
+  format parses back, so printed modules round-trip
+
+The ``assembly_format`` of every op mirrors the ``assemblyFormat`` of the
+corresponding TableGen definition in ``dialect_definition/JaspOps.td``.  The
+two are the printer and the parser of the same textual syntax, so a change to
+one is a change to the other -- see ``tests/jax_tests/test_mlir_roundtrip.py``.
 """
 
 from xdsl.dialects.builtin import (
@@ -49,7 +55,6 @@ from xdsl.irdl import (
     result_def,
     var_operand_def,
 )
-from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
 
 
@@ -315,37 +320,26 @@ class QuantumGateOp(IRDLOperation):
     name = "jasp.quantum_gate"
 
     gate_type = attr_def(StringAttr)
-    gate_params = var_operand_def()
+    gate_operands = var_operand_def()
     in_qst = operand_def(QuantumStateType)
     out_qst = result_def(QuantumStateType)
 
-    def print(self, printer: Printer) -> None:
-        # Mirrors TableGen assemblyFormat:
-        # $gate_type `(` $gate_params `)` `,` $in_qst attr-dict
-        #     `:` `(` type($gate_params) `)` `,` type($in_qst) `->` type($out_qst)
-        printer.print_string(" ")
-        printer.print_attribute(self.gate_type)
-        printer.print_string(" (")
-        printer.print_list(self.gate_params, printer.print_ssa_value)
-        printer.print_string(") , ")
-        printer.print_ssa_value(self.in_qst)
-        printer.print_string(" : (")
-        printer.print_list(self.gate_params, lambda v: printer.print_attribute(v.type))
-        printer.print_string(") , ")
-        printer.print_attribute(self.in_qst.type)
-        printer.print_string(" -> ")
-        printer.print_attribute(self.out_qst.type)
+    assembly_format = (
+        "$gate_type `(` $gate_operands `)` `,` $in_qst attr-dict "
+        "`:` `(` type($gate_operands) `)` `,` type($in_qst) `->` type($out_qst)"
+    )
 
     def verify_(self) -> None:
-        _valid_param_types = (QubitType, TensorType)
-        for i, param in enumerate(self.gate_params):
-            if not isinstance(param.type, _valid_param_types):
+        _valid_operand_types = (QubitType, TensorType)
+        for i, gate_operand in enumerate(self.gate_operands):
+            if not isinstance(gate_operand.type, _valid_operand_types):
                 raise VerifyException(
-                    f"jasp.quantum_gate: gate_params[{i}] must be '!jasp.Qubit' or 'tensor<f64>', got '{param.type}'"
+                    f"jasp.quantum_gate: gate_operands[{i}] must be '!jasp.Qubit' or 'tensor<f64>', "
+                    f"got '{gate_operand.type}'"
                 )
-            if isinstance(param.type, TensorType) and param.type != TensorType(f64, []):
+            if isinstance(gate_operand.type, TensorType) and gate_operand.type != TensorType(f64, []):
                 raise VerifyException(
-                    f"jasp.quantum_gate: tensor gate_params[{i}] must be 'tensor<f64>', got '{param.type}'"
+                    f"jasp.quantum_gate: tensor gate_operands[{i}] must be 'tensor<f64>', got '{gate_operand.type}'"
                 )
 
 
@@ -364,19 +358,7 @@ class ParityOp(IRDLOperation):
     measurements = var_operand_def(_TensorI1)
     result = result_def(_TensorI1)
 
-    def print(self, printer: Printer) -> None:
-        # Mirrors TableGen assemblyFormat:
-        # $measurements attr-dict `:` type($measurements) `->` type($result)
-        printer.print_string(" ")
-        printer.print_list(self.measurements, printer.print_ssa_value)
-        printer.print_string(" {expectation = ")
-        printer.print_attribute(self.expectation)
-        printer.print_string(", observable = ")
-        printer.print_attribute(self.observable)
-        printer.print_string("} : ")
-        printer.print_list(self.measurements, lambda v: printer.print_attribute(v.type))
-        printer.print_string(" -> ")
-        printer.print_attribute(self.result.type)
+    assembly_format = "$measurements attr-dict `:` type($measurements) `->` type($result)"
 
 
 # ---------------------------------------------------------------------------

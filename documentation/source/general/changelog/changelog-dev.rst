@@ -69,6 +69,22 @@ Bug Fixes
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
+* Fixed the custom assembly format of ``jasp.create_qubits`` in the TableGen
+  definition of the Jasp dialect, which still listed the operand types in the
+  order ``!jasp.QuantumState, tensor<i64>`` while Qrisp prints them in operand
+  order, ``tensor<i64>, !jasp.QuantumState``.  MLIR-based consumers that build
+  a parser from ``dialect_definition/JaspOps.td`` could not parse the MLIR
+  emitted by :meth:`to_mlir <qrisp.jasp.Jaspr.to_mlir>`
+  (`Issue #783 <https://github.com/eclipse-qrisp/Qrisp/issues/783>`_).
+
+* Fixed ``jasp.quantum_gate`` and ``jasp.parity`` being printed in a syntax
+  that could not be parsed back: both had a hand-written printer and no
+  matching parser, so re-reading a printed module failed with
+  ``Operation jasp.quantum_gate does not have a custom format``.  Both now use
+  the same declarative assembly format as the remaining operations, which also
+  removes the stray whitespace around ``(`` and ``,`` those printers emitted
+  and stops attributes from being dropped.
+
 Compatibility
 -------------
 
