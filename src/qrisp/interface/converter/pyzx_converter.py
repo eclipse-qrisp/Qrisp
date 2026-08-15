@@ -149,7 +149,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
                 pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2))
             # decompose via its .definition circuit (e.g. xxyy)
             elif instr.op.definition:
-                pyzx_circuit.append(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
+                pyzx_circuit.add_circuit(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
             else:
                 raise ValueError(f"{name} gate has no PyZX equivalent and no definition to decompose.")
             continue

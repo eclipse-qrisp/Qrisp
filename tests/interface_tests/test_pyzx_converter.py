@@ -46,7 +46,7 @@ def _build_multi_qubit_qrisp_circuit():
     qc.cy(2, 3)
     qc.cz(0, 2)
     qc.swap(2, 3)
-    qc.xxyy(0, 1, 2, 3)
+    qc.xxyy(0.1, 0.3, 2, 3)
     qc.rxx(0.1, 0, 3)
     qc.rzz(0.2, 1, 2)
     return qc
