@@ -22,6 +22,7 @@ from qrisp import (
     QuantumModulus,
     QuantumArray,
     conjugate,
+    custom_inversion,
     modinv,
     mcz,
     mcx,
@@ -45,6 +46,7 @@ from .classical import bitrev7, bitrevm, modpow_jax
 
 
 # Efficient O(n log n) implementation
+@custom_inversion
 def q_ntt(x: QuantumArray, n: int, q: int, root: int, inv=False):
     """
     Number theoretic transform. (in-place)
