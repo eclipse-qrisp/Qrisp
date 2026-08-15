@@ -20,28 +20,29 @@ import numpy as np
 import pytest
 from qrisp.algorithms.rlwe import compute_ntt, compute_inv_ntt
 
-@pytest.mark.parametrize("a, n, q, root", [
-    # 1. Small test case (n=4, q=13)
-    (np.array([3, 1, 4, 9]), 4, 13, 5),
-    
-    # 2. Small test case with the other primitive 4th root of unity mod 13
-    (np.array([12, 0, 7, 2]), 4, 13, 8),
-    
-    # 3. Medium test case (n=8, q=17)
-    (np.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
-    
-    # 4. Realistic ML-KEM/Kyber parameter case
-    # n=256, q=3329. 17 is a primitive 256th root of unity mod 3329.
-    (np.random.default_rng(42).integers(0, 3329, size=256), 256, 3329, 17),
-])
+
+@pytest.mark.parametrize(
+    "a, n, q, root",
+    [
+        # 1. Small test case (n=4, q=13)
+        (np.array([3, 1, 4, 9]), 4, 13, 5),
+        # 2. Small test case with the other primitive 4th root of unity mod 13
+        (np.array([12, 0, 7, 2]), 4, 13, 8),
+        # 3. Medium test case (n=8, q=17)
+        (np.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
+        # 4. Realistic ML-KEM/Kyber parameter case
+        # n=256, q=3329. 17 is a primitive 256th root of unity mod 3329.
+        (np.random.default_rng(42).integers(0, 3329, size=256), 256, 3329, 17),
+    ],
+)
 def test_ntt(a, n, q, root):
     """
-    Tests that taking the incomplete NTT and then the INTT 
+    Tests that taking the incomplete NTT and then the INTT
     returns the original polynomial modulo q.
     """
     # 1. Forward Transform
     a_hat = compute_ntt(a, n, q, root)
-    
+
     # 2. Inverse Transform
     a_new = compute_inv_ntt(a_hat, n, q, root)
 

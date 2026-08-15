@@ -23,19 +23,20 @@ from qrisp import boolean_simulation, measure, QuantumArray, QuantumModulus
 from qrisp.algorithms.rlwe import q_ntt, q_ntt_inv, q_multiply_ntts, multiply_ntts
 
 
-@pytest.mark.parametrize("a, n, q, root", [
-    # 1. Small test case (n=4, q=13)
-    (jnp.array([3, 1, 4, 9]), 4, 13, 5),
-    
-    # 2. Small test case with the other primitive 4th root of unity mod 13
-    (jnp.array([12, 0, 7, 2]), 4, 13, 8),
-    
-    # 3. Medium test case (n=8, q=17)
-    (jnp.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
-])
+@pytest.mark.parametrize(
+    "a, n, q, root",
+    [
+        # 1. Small test case (n=4, q=13)
+        (jnp.array([3, 1, 4, 9]), 4, 13, 5),
+        # 2. Small test case with the other primitive 4th root of unity mod 13
+        (jnp.array([12, 0, 7, 2]), 4, 13, 8),
+        # 3. Medium test case (n=8, q=17)
+        (jnp.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
+    ],
+)
 def test_ntt(a, n, q, root):
     """
-    Tests that taking the incomplete NTT and then the INTT 
+    Tests that taking the incomplete NTT and then the INTT
     returns the original polynomial modulo q.
     """
 
@@ -47,7 +48,7 @@ def test_ntt(a, n, q, root):
 
         # 1. Forward Transform
         q_ntt(qa, n, q, root)
-        
+
         # 2. Inverse Transform
         q_ntt_inv(qa, n, q, root)
 
@@ -59,16 +60,17 @@ def test_ntt(a, n, q, root):
     assert np.array_equal(a % q, a_new % q), f"Mismatch!\nExpected: {a % q}\nGot: {a_new % q}"
 
 
-@pytest.mark.parametrize("a, b, n, q, root", [
-    # 1. Small test case (n=4, q=13)
-    (jnp.array([3, 1, 4, 9]), jnp.array([1, 1, 5, 3]), 4, 13, 5),
-    
-    # 2. Small test case with the other primitive 4th root of unity mod 13
-    (jnp.array([12, 0, 7, 2]), jnp.array([3, 1, 4, 9]), 4, 13, 8),
-    
-    # 3. Medium test case (n=8, q=17)
-    (jnp.array([1, 15, 8, 4, 12, 3, 9, 0]), jnp.array([1, 1, 5, 15, 13, 3, 4, 1]), 8, 17, 9),
-])
+@pytest.mark.parametrize(
+    "a, b, n, q, root",
+    [
+        # 1. Small test case (n=4, q=13)
+        (jnp.array([3, 1, 4, 9]), jnp.array([1, 1, 5, 3]), 4, 13, 5),
+        # 2. Small test case with the other primitive 4th root of unity mod 13
+        (jnp.array([12, 0, 7, 2]), jnp.array([3, 1, 4, 9]), 4, 13, 8),
+        # 3. Medium test case (n=8, q=17)
+        (jnp.array([1, 15, 8, 4, 12, 3, 9, 0]), jnp.array([1, 1, 5, 15, 13, 3, 4, 1]), 8, 17, 9),
+    ],
+)
 def test_qc_multiply_ntts(a, b, n, q, root):
     """
     Tests that quantum-classical multiplication of NTTs matches classical multiplication of NTTs.

@@ -86,7 +86,7 @@ def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     """
     Computes the forward Number Theoretic Transform (NTT) for ML-KEM (FIPS 203).
 
-    Note: This is an incomplete NTT that stops at length=2, leaving the 
+    Note: This is an incomplete NTT that stops at length=2, leaving the
     polynomials as degree 1 polynomials in the NTT domain.
 
     Parameters
@@ -110,10 +110,10 @@ def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     f = f.copy() % q
     i = 1
     length = n // 2
-    
+
     while length >= 2:
         for start in range(0, n, 2 * length):
-            zeta = modpow_jax(root, bitrevm(i, m-1), q)
+            zeta = modpow_jax(root, bitrevm(i, m - 1), q)
             i += 1
             for j in range(start, start + length):
                 t = (zeta * f[j + length]) % q
@@ -150,22 +150,22 @@ def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     f = f.copy() % q
     i = n // 2 - 1
     length = 2
-    
+
     while length <= n // 2:
         for start in range(0, n, 2 * length):
-            zeta = modpow_jax(root, bitrevm(i, m-1), q)
+            zeta = modpow_jax(root, bitrevm(i, m - 1), q)
             i -= 1
             for j in range(start, start + length):
                 t = f[j] % q
-                f[j] = (t + f[j + length]) % q 
-                f[j + length] = (zeta * (f[j + length] - t)) % q 
+                f[j] = (t + f[j + length]) % q
+                f[j + length] = (zeta * (f[j + length] - t)) % q
         length *= 2
 
-    n_half_inv = modinv(n // 2, q) 
-    
+    n_half_inv = modinv(n // 2, q)
+
     for idx in range(n):
-        f[idx] = (f[idx] * n_half_inv) % q 
-        
+        f[idx] = (f[idx] * n_half_inv) % q
+
     return f
 
 
@@ -184,10 +184,9 @@ def multiply_ntts(f_hat, g_hat, n: int, q: int, root: int):
     m = int(np.ceil(np.log2(n)))
 
     for i in range(n // 2):
-    
-        gamma = modpow_jax(root, int(2 * bitrevm(i, m-1)) + 1, q)        
-        h = base_case_multiply(f_hat[2*i], f_hat[2*i+1], g_hat[2*i], g_hat[2*i+1], gamma, q)
-        h_hat[2*i] = h[0]
-        h_hat[2*i+1] = h[1]
-        
+        gamma = modpow_jax(root, int(2 * bitrevm(i, m - 1)) + 1, q)
+        h = base_case_multiply(f_hat[2 * i], f_hat[2 * i + 1], g_hat[2 * i], g_hat[2 * i + 1], gamma, q)
+        h_hat[2 * i] = h[0]
+        h_hat[2 * i + 1] = h[1]
+
     return h_hat
