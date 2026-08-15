@@ -14,6 +14,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
 from typing import Self
 
 import numpy as np
@@ -533,7 +534,9 @@ class BosonicOperator(Hamiltonian):
         else:
             raise Exception(f"Don't know bosonic mapping {binary_encoding}.")
 
-    def expectation_value(self, state_prep: callable, truncation: int = 8, binary_encoding: str = "gray_code", **measurement_kwargs):
+    def expectation_value(
+        self, state_prep: callable, truncation: int = 8, binary_encoding: str = "gray_code", **measurement_kwargs
+    ):
         r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 

@@ -260,6 +260,7 @@ def gray_code(n: int):
 
 from itertools import product
 
+
 def standard_binary(n: int):
     # product returns tuples like (0, 1, 0), so we convert them to lists
     return [list(bits) for bits in product((0, 1), repeat=n)]
