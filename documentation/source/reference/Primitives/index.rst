@@ -39,6 +39,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - implements the prepare-select-unprepare structure (block encoding) for linear combinations of unitaries; used in Hamiltonian simulation (QSP, QSVT, LCHS)  
    * - :ref:`Grover tools <grover_tools>`
      - unstructured search
+   * - :ref:`NTT tools <ntt_tools>`
+     - number theoretic transform
    * - :ref:`phase_polynomials` 
      - provides functions for applying diagonal Hamiltonians given by polynomials
    * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
@@ -68,6 +70,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    qswitch
    LCU
    Grover tools
+   NTT tools
    Phase polynomial tools
    demux
    cyclic_shift

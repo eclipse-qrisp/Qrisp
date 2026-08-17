@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,7 +19,7 @@ import numpy as np
 import jax.numpy as jnp
 import pytest
 from qrisp import boolean_simulation, measure, QuantumArray, QuantumModulus
-from qrisp.algorithms.rlwe import q_ntt, q_ntt_inv, q_multiply_ntts, multiply_ntts
+from qrisp.alg_primitives.ntt import qntt, qntt_inv, multiply_qntts, multiply_ntts
 
 
 @pytest.mark.parametrize(
@@ -47,17 +46,17 @@ def test_ntt(a, n, q, root):
         qa[:] = a
 
         # 1. Forward Transform
-        q_ntt(qa, n, q, root)
+        qntt(qa, root)
 
         # 2. Inverse Transform
-        q_ntt_inv(qa, n, q, root)
+        qntt_inv(qa, root)
 
         return measure(qa)
 
     a_new = np.array(main())
 
     # 3. Check for exact equality modulo q
-    assert np.array_equal(a % q, a_new % q), f"Mismatch!\nExpected: {a % q}\nGot: {a_new % q}"
+    assert np.array_equal(a_new % q, a % q)
 
 
 @pytest.mark.parametrize(
@@ -82,14 +81,12 @@ def test_qc_multiply_ntts(a, b, n, q, root):
         qa = QuantumArray(QuantumModulus(q), shape=(n,))
         qa[:] = a
 
-        res = QuantumArray(QuantumModulus(q), shape=(n,))
-
-        q_multiply_ntts(qa, b, res, n, q, root)
+        res = multiply_qntts(qa, b, root)
 
         return measure(res)
 
-    q_res = np.array(main())
-    res = multiply_ntts(a, b, n, q, root)
+    res = np.array(main())
+    expected = multiply_ntts(a, b, n, q, root)
 
     # 3. Check for exact equality modulo q
-    assert np.array_equal(q_res % q, res % q), f"Mismatch!\nExpected: {q_res % q}\nGot: {res % q}"
+    assert np.array_equal(res % q, expected % q)

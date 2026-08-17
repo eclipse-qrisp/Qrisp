@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 import numpy as np
 import pytest
-from qrisp.algorithms.rlwe import compute_ntt, compute_inv_ntt
+from qrisp.alg_primitives.ntt import compute_ntt, compute_inv_ntt
 
 
 @pytest.mark.parametrize(
@@ -30,7 +29,7 @@ from qrisp.algorithms.rlwe import compute_ntt, compute_inv_ntt
         (np.array([12, 0, 7, 2]), 4, 13, 8),
         # 3. Medium test case (n=8, q=17)
         (np.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
-        # 4. Realistic ML-KEM/Kyber parameter case
+        # 4. Realistic ML-KEM parameter case
         # n=256, q=3329. 17 is a primitive 256th root of unity mod 3329.
         (np.random.default_rng(42).integers(0, 3329, size=256), 256, 3329, 17),
     ],
@@ -47,4 +46,4 @@ def test_ntt(a, n, q, root):
     a_new = compute_inv_ntt(a_hat, n, q, root)
 
     # 3. Check for exact equality modulo q
-    assert np.array_equal(a % q, a_new % q), f"Mismatch!\nExpected: {a % q}\nGot: {a_new % q}"
+    assert np.array_equal(a % q, a_new % q)

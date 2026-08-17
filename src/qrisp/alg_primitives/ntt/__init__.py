@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,5 +15,5 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.rlwe.classical import *
-from qrisp.algorithms.rlwe.tools import *
+from qrisp.alg_primitives.ntt.classical import *
+from qrisp.alg_primitives.ntt.ntt_tools import *
