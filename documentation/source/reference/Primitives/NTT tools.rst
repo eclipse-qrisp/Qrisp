@@ -3,7 +3,7 @@
 NTT Tools
 =========
 
-These functions facilitate number theoretic transform (NTT) computations.
+These functions facilitate quantum number theoretic transform (NTT) computations.
 
 .. currentmodule:: qrisp.alg_primitives.ntt
 
@@ -12,3 +12,14 @@ These functions facilitate number theoretic transform (NTT) computations.
    
    qntt
    multiply_qntts
+
+Helper functions
+----------------
+
+These functions facilitate classical number theoretic transform (NTT) computations.
+
+.. autosummary::
+   :toctree: generated/
+   
+   ntt
+   ntt_inv

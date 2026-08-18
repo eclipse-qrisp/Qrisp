@@ -17,13 +17,29 @@
 
 import jax
 import jax.numpy as jnp
-from jax import lax
+from jax import Array, lax
 import numpy as np
-from qrisp import modinv
+
+from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
+from qrisp.typing import NDArrayLike, ScalarLike
 
 
 @jax.jit
-def bitrev7(r):
+def bitrev7(r: ScalarLike) -> Array:
+    """
+    Compute the bit-reversal of r with respect to 7 bits.
+
+    Parameters
+    ----------
+    r : ScalarLike
+        The integer to be bit-reversed.
+
+    Returns
+    -------
+    jax.Array
+        The bit-reversed integer.
+    """
     x = jnp.asarray(r, dtype=jnp.uint8)
 
     def body(i, val):
@@ -37,8 +53,23 @@ def bitrev7(r):
 
 
 @jax.jit
-def bitrevm(r, m):
-    x = jnp.asarray(r, dtype=jnp.uint32)
+def bitrevm(r: ScalarLike, m: ScalarLike) -> Array:
+    """
+    Compute the bit-reversal of r with respect to m bits.
+
+    Parameters
+    ----------
+    r : ScalarLike
+        The integer to be bit-reversed.
+    m : ScalarLike
+        The number of bits to consider.
+
+    Returns
+    -------
+    jax.Array
+        The bit-reversed integer.
+    """
+    x = jnp.asarray(r)
 
     def body(i, val):
         rev, x = val
@@ -47,23 +78,46 @@ def bitrevm(r, m):
         return (rev, x)
 
     rev, _ = lax.fori_loop(0, m, body, (jnp.uint32(0), x))
-    return rev.astype(jnp.int32)
+    return rev
 
 
 @jax.jit
-def modpow_jax(a, x, q, dtype=jnp.int64):
+def modpow_jax(a: ScalarLike, x: ScalarLike, q: ScalarLike) -> Array:
     """
-    Compute a**x % q in a JAX-traceable way (supports JIT).
-    - a, x, q can be scalars or arrays (broadcastable).
-    - x must be nonnegative integer(s).
-    - dtype: integer dtype to use (choose wide enough for q).
+    Computes (a ** x) % q efficiently in a JAX-traceable manner.
+
+    This function utilizes the square-and-multiply algorithm (binary exponentiation)
+    implemented with `jax.lax.while_loop`, making it fully compatible with `@jax.jit`,
+    `@jax.vmap`, and other JAX transformations.
+
+    Parameters
+    ----------
+    a : ScalarLike
+        The base value(s). Can be a scalar or an array.
+    x : ScalarLike
+        The exponent value(s). Must be non-negative integer(s).
+    q : ScalarLike
+        The modulus value(s).
+
+    Returns
+    -------
+    jax.Array
+        The result of (a ** x) % q. The output shape matches the broadcasted
+        shape of the inputs.
+
+    Notes
+    -----
+    - Inputs are automatically broadcasted against each other.
+    - The intermediate multiplications scale up to `(q-1)**2`. Ensure that the
+      inferred JAX data type (usually `int32` by default) is large enough to
+      hold this value to prevent integer overflow.
     """
-    a = jnp.asarray(a, dtype=dtype) % jnp.asarray(q, dtype=dtype)
-    exp = jnp.asarray(x, dtype=dtype)
-    mod = jnp.asarray(q, dtype=dtype)
+    a = jnp.asarray(a) % jnp.asarray(q)
+    exp = jnp.asarray(x)
+    mod = jnp.asarray(q)
 
     # loop state: (base, exp, result)
-    init = (a, exp, jnp.ones_like(a, dtype=dtype))
+    init = (a, exp, jnp.ones_like(a))
 
     def cond_fn(state):
         _, e, _ = state
@@ -71,14 +125,172 @@ def modpow_jax(a, x, q, dtype=jnp.int64):
 
     def body_fn(state):
         base, e, res = state
-        # if (e & 1): res = (res * base) % mod
+
+        # If the lowest bit is 1, multiply the result by the base modulo q
         res = jnp.where((e & 1) != 0, (res * base) % mod, res)
+
+        # Square the base modulo q
         base = (base * base) % mod
+
+        # Shift exponent right by 1
         e = e >> 1
+
         return (base, e, res)
 
     _, _, result = lax.while_loop(cond_fn, body_fn, init)
     return result
+
+
+# NIST FIPS 203, Algorithm 9
+@jax.jit
+def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
+    r"""
+    Computes the forward Number Theoretic Transform (NTT) for ML-KEM (FIPS 203).
+
+    Note: This is an incomplete NTT that stops at length=2, leaving the
+    polynomials as degree 1 polynomials in the NTT domain.
+
+    Parameters
+    ----------
+    f : NDArrayLike, shape (n,)
+        1-D array of polynomial coefficients.
+        The size $n$ must be a power of 2, e.g., 256.
+    q : ScalarLike
+        The modulus.
+    root : ScalarLike
+        The $n$-th primitive root of unity modulo $q$.
+
+    Returns
+    -------
+    Array, shape (n,)
+        The transformed array of coefficients in the NTT domain.
+
+    """
+
+    # Cast to JAX array (handles np.ndarray, list, or jnp.ndarray seamlessly)
+    f = jnp.asarray(f)
+    n = f.shape[0]
+    m = smallest_power_of_two(n)
+
+    def outer_cond(val):
+        len_, i, current_f = val
+        return len_ >= 2
+
+    def outer_body(val):
+        len_, i, current_f = val
+
+        def inner_cond(inner_val):
+            start, len_inner, i_inner, f_inner = inner_val
+            return start < n
+
+        def inner_body(inner_val):
+            start, len_inner, i_inner, f_inner = inner_val
+
+            # Replaces bitrev7 by a general procedure for arbitrary n
+            zeta = modpow_jax(root, bitrevm(i_inner, m - 1), q)
+
+            def innermost_body(j, f_innermost):
+                t = (zeta * f_innermost[j + len_inner]) % q
+
+                new_val_high = (f_innermost[j] - t) % q
+                new_val_low = (f_innermost[j] + t) % q
+
+                f_innermost = f_innermost.at[j + len_inner].set(new_val_high)
+                f_innermost = f_innermost.at[j].set(new_val_low)
+                return f_innermost
+
+            # lax.fori_loop handles the innermost loop, replacing jrange
+            f_inner = lax.fori_loop(start, start + len_inner, innermost_body, f_inner)
+
+            return start + 2 * len_inner, len_inner, i_inner + 1, f_inner
+
+        # lax.while_loop handles dynamic state, replacing q_while_loop
+        _, _, i_new, f_new = lax.while_loop(inner_cond, inner_body, (0, len_, i, current_f))
+
+        return len_ // 2, i_new, f_new
+
+    _, _, f_final = lax.while_loop(outer_cond, outer_body, (n // 2, 1, f))
+    return f_final
+
+
+# NIST FIPS 203, Algorithm 10
+@jax.jit
+def ntt_inv(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
+    r"""
+    Computes the inverse Number Theoretic Transform (INTT) for ML-KEM (FIPS 203).
+
+    Reconstructs the polynomial from its incomplete NTT domain representation.
+
+    Parameters
+    ----------
+    f : NDArrayLike, shape (n,)
+        1-D array of transformed polynomial coefficients.
+        The size $n$ must be a power of 2, e.g., 256.
+    q : int
+        The modulus.
+    root : int
+        The $n$-th primitive root of unity modulo $q$.
+
+    Returns
+    -------
+    Array, shape (n,)
+        The inverse-transformed array of coefficients.
+
+    """
+    # Cast to JAX array (handles np.ndarray, list, or jnp.ndarray seamlessly)
+    f = jnp.asarray(f)
+
+    n = f.shape[0]
+    m = smallest_power_of_two(n)
+    i = n // 2 - 1
+
+    def outer_cond(val):
+        len_, i_val, current_f = val
+        return len_ <= n // 2
+
+    def outer_body(val):
+        len_, i_val, current_f = val
+
+        def inner_cond(inner_val):
+            start, len_inner, i_inner, f_inner = inner_val
+            return start < n
+
+        def inner_body(inner_val):
+            start, len_inner, i_inner, f_inner = inner_val
+
+            zeta = modpow_jax(root, bitrevm(i_inner, m - 1), q)
+
+            def innermost_body(j, f_innermost):
+
+                # Classical equivalent of reversible steps 9-10
+                new_j = (f_innermost[j] + f_innermost[j + len_inner]) % q
+
+                # f[j + len_] *= 2, f[j + len_] -= f[j], f[j + len_] *= zeta
+                temp = (f_innermost[j + len_inner] * 2) % q
+                temp = (temp - new_j) % q
+                new_j_len = (temp * zeta) % q
+
+                f_innermost = f_innermost.at[j].set(new_j)
+                f_innermost = f_innermost.at[j + len_inner].set(new_j_len)
+                return f_innermost
+
+            f_inner = lax.fori_loop(start, start + len_inner, innermost_body, f_inner)
+
+            return start + 2 * len_inner, len_inner, i_inner - 1, f_inner
+
+        _, _, i_new, f_new = lax.while_loop(inner_cond, inner_body, (0, len_, i_val, current_f))
+
+        return 2 * len_, i_new, f_new
+
+    _, _, f_intermediate = lax.while_loop(outer_cond, outer_body, (2, i, f))
+
+    # Multiply by the modular inverse of n/2
+    n_half_inv = modinv(n // 2, q)
+
+    # Vectorized final multiplication for JAX efficiency
+    f_final = (f_intermediate * n_half_inv) % q
+
+    return f_final
 
 
 def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:

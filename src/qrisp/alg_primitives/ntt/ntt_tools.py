@@ -17,13 +17,14 @@
 
 import jax.numpy as jnp
 
-from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
+# from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
 from qrisp.core import QuantumArray
 from qrisp.environments import conjugate, custom_inversion
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
 from qrisp.jasp import jrange, q_while_loop
 from qrisp.qtypes import QuantumModulus
-from qrisp.typing import NDArrayLike
+from qrisp.typing import NDArrayLike, ScalarLike
 
 from .classical import bitrev7, bitrevm, modpow_jax
 
@@ -32,6 +33,7 @@ from .classical import bitrev7, bitrevm, modpow_jax
 ############################################################
 
 
+# NIST FIPS 203, Algorithm 9, quantum version
 # Efficient O(n log n) implementation
 def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
     r"""
@@ -110,6 +112,7 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
     q_while_loop(cond_fun_outer, body_fun_outer, (n // 2, 1, f))
 
 
+# NIST FIPS 203, Algorithm 10, quantum version
 # Efficient O(n log n) implementation
 def qntt_inv(f: QuantumArray, root: int) -> None:
     r"""
@@ -169,11 +172,12 @@ def qntt_inv(f: QuantumArray, root: int) -> None:
         f[i] *= n_half_inv
 
 
+# NIST FIPS 203, Algorithm 12, quantum-classical version
 def _base_case_multipy(
     a0: QuantumModulus,
     a1: QuantumModulus,
-    b0: QuantumModulus,
-    b1: QuantumModulus,
+    b0: ScalarLike,
+    b1: ScalarLike,
     c0: QuantumModulus,
     c1: QuantumModulus,
     gamma: int,
@@ -188,17 +192,22 @@ def _base_case_multipy(
 
     Parameters
     ----------
-    a0, a1 : QuantumModulus or int
+    a0 : QuantumModulus
         The coefficients of $a_0+a_1X$.
-    b0, b1 : QuantumModulus or int
+    a1 : QuantumModulus
+        The coefficients of $a_0+a_1X$.
+    b0 : ScalarLike
         The coefficients of $b_0+b_1X$.
-    c0, c1 : QuantumModulus or int
+    b1 : ScalarLike
+        The coefficients of $b_0+b_1X$.
+    c0 : QuantumModulus
         The coefficients of $c_0+c_1X$.
-    gamma : int
+    c1 : QuantumModulus
+        The coefficients of $c_0+c_1X$.
+    gamma : ScalarLike
         The modulus is $X^2-\gamma$.
 
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
 
     q = a0.modulus
     aux = QuantumModulus(q)
@@ -232,6 +241,7 @@ def _base_case_multipy(
     aux.delete()
 
 
+# NIST FIPS 203, Algorithm 11, quantum-classical version
 def multiply_qntts(f: QuantumArray, g: NDArrayLike, root: int, inv: bool = False) -> QuantumArray:
     r"""
     Computes the product of two NTT representations.
