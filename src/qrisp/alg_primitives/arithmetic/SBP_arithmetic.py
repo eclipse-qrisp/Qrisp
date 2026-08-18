@@ -1353,17 +1353,6 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     app_sb_phase_polynomial(qf_list, sb_polynomial, symbol_list=new_symbol_list, t=t)
 
 
-# Workaround to keep the docstring but still gatewrap
-
-temp = app_sb_phase_polynomial.__doc__
-
 app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_sb_phase_polynomial)
 
-app_sb_phase_polynomial.__doc__ = temp
-
-
-temp = app_phase_polynomial.__doc__
-
 app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_phase_polynomial)
-
-app_phase_polynomial.__doc__ = temp

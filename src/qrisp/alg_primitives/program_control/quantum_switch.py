@@ -485,6 +485,4 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         raise Exception(f"Don't know compile method {method} for switch-case structure.")
 
 
-temp = _q_switch_q.__doc__
 _q_switch_q = custom_control(custom_inversion(_q_switch_q))
-_q_switch_q.__doc__ = temp

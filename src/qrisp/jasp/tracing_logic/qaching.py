@@ -15,6 +15,8 @@
 ********************************************************************************
 """
 
+import functools
+
 import jax
 
 from qrisp.core import recursive_qa_search, recursive_qv_search
@@ -268,6 +270,7 @@ def qache_helper(func, jax_kwargs):
     from qrisp.jasp.tracing_logic import flatten_qv
 
     # We now prepare the return function
+    @functools.wraps(func)
     def return_function(*args, **kwargs):
 
         # If we are not in tracing mode, simply execute the function

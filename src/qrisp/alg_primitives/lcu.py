@@ -393,10 +393,8 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     return success_bool, qv
 
 
-# Apply the RUS decorator with the workaround in order to show in documentation
-temp_docstring = LCU.__doc__
+# Apply the RUS decorator
 LCU = RUS(static_argnums=[3, 4])(LCU)
-LCU.__doc__ = temp_docstring
 
 
 def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
