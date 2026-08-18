@@ -77,7 +77,8 @@ Bug Fixes
   ``jaspify``/``make_jaspr`` calls, raising
   ``jax.errors.UnexpectedTracerError`` on the second and later calls. The
   modulus is now threaded through the ``QuantumVariable`` pytree as a proper
-  traced attribute instead of being passed into static auxiliary data.
+  traced attribute instead of being passed into static auxiliary data
+  (`PR #802 <https://github.com/eclipse-qrisp/Qrisp/pull/802>`_).
 
 Compatibility
 -------------
