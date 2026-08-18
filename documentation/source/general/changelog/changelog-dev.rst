@@ -29,6 +29,12 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- Decorators ``qache``, ``custom_inversion``, ``custom_control``,
+  ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
+  docstring, name, and signature via ``functools.wraps``, removing the need
+  for manual docstring-copy workarounds at call sites.
+  (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
+
 Other New Features
 ------------------
 
