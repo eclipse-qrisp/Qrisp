@@ -17,7 +17,7 @@
 
 import numpy as np
 import pytest
-from qrisp.alg_primitives.ntt import compute_ntt, compute_inv_ntt
+from qrisp.alg_primitives.ntt import ntt, ntt_inv
 
 
 @pytest.mark.parametrize(
@@ -40,10 +40,10 @@ def test_ntt(a, n, q, root):
     returns the original polynomial modulo q.
     """
     # 1. Forward Transform
-    a_hat = compute_ntt(a, n, q, root)
+    a_hat = ntt(a, q, root)
 
     # 2. Inverse Transform
-    a_new = compute_inv_ntt(a_hat, n, q, root)
+    a_new = ntt_inv(a_hat, q, root)
 
     # 3. Check for exact equality modulo q
     assert np.array_equal(a % q, a_new % q)

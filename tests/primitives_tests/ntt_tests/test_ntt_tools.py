@@ -86,7 +86,7 @@ def test_qc_multiply_ntts(a, b, n, q, root):
         return measure(res)
 
     res = np.array(main())
-    expected = multiply_ntts(a, b, n, q, root)
+    expected = multiply_ntts(a, b, q, root)
 
     # 3. Check for exact equality modulo q
     assert np.array_equal(res % q, expected % q)

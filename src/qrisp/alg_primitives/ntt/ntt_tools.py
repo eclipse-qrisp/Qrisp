@@ -124,7 +124,7 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
 # Efficient O(n log n) implementation
 def qntt_inv(f: QuantumArray, root: int) -> None:
     r"""
-    Computes the inverse quantum Number Theoretic Transform (qNTT) in-place.
+    Computes the inverse quantum Number Theoretic Transform in-place.
 
     Parameters
     ----------
