@@ -77,7 +77,7 @@ def bitrevm(r: ScalarLike, m: ScalarLike) -> Array:
         x = x >> 1
         return (rev, x)
 
-    rev, _ = lax.fori_loop(0, m, body, (jnp.uint32(0), x))
+    rev, _ = lax.fori_loop(0, m, body, (0, x))
     return rev
 
 
