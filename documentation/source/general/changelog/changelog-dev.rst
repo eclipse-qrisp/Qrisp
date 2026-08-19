@@ -32,6 +32,10 @@ Improvements
 Other New Features
 ------------------
 
+* Introduced ``qrisp.alg_primitives.ntt``, providing specialized classical and 
+  quantum tools (e.g. ``ntt``, ``qntt``) for computing Number Theoretic Transforms 
+  efficiently (`PR #470 <https://github.com/eclipse-qrisp/Qrisp/pull/470>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -79,6 +83,11 @@ Compatibility
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* Added a comprehensive tutorial on solving the Ring Learning With Errors (RLWE) 
+  problem via Grover's algorithm, demonstrating the use of the quantum Number 
+  Theoretic Transform (``qntt``) primitive to construct the evaluation oracle 
+  (`PR #470 <https://github.com/eclipse-qrisp/Qrisp/pull/470>`_).
 
 .. Add new tutorials above this line
 
