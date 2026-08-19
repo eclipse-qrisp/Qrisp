@@ -82,7 +82,7 @@ def bitrevm(r: ScalarLike, m: ScalarLike) -> Array:
 
 
 @jax.jit
-def modpow_jax(a: ScalarLike, x: ScalarLike, q: ScalarLike) -> Array:
+def modpow(a: ScalarLike, x: ScalarLike, q: ScalarLike) -> Array:
     """
     Computes (a ** x) % q efficiently in a JAX-traceable manner.
 
@@ -145,24 +145,26 @@ def modpow_jax(a: ScalarLike, x: ScalarLike, q: ScalarLike) -> Array:
 @jax.jit
 def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
     r"""
-    Computes the forward Number Theoretic Transform (NTT) for ML-KEM (FIPS 203).
+    Computes the forward Number Theoretic Transform (NTT).
 
-    Note: This is an incomplete NTT that stops at length=2, leaving the
-    polynomials as degree 1 polynomials in the NTT domain.
+    This evaluates the transform over the polynomial ring $\mathcal{R}_q = \mathbb{Z}_q[X] / (X^n + 1)$,
+    generalizing the operation used in schemes like ML-KEM to arbitrary,
+    power-of-two length polynomial arrays. Note that this computes an incomplete NTT
+    that stops at length=2, mapping elements to degree-1 polynomials in the NTT domain.
 
     Parameters
     ----------
     f : NDArrayLike, shape (n,)
         1-D array of polynomial coefficients.
-        The size $n$ must be a power of 2, e.g., 256.
+        The size $n$ must be a power of 2 (e.g., 256 for ML-KEM).
     q : ScalarLike
-        The modulus.
+        The modulus. Must satisfy $n | (q-1)$ for a valid root to exist.
     root : ScalarLike
         The $n$-th primitive root of unity modulo $q$.
 
     Returns
     -------
-    Array, shape (n,)
+    jax.Array, shape (n,)
         The transformed array of coefficients in the NTT domain.
 
     """
@@ -187,7 +189,7 @@ def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
             start, len_inner, i_inner, f_inner = inner_val
 
             # Replaces bitrev7 by a general procedure for arbitrary n
-            zeta = modpow_jax(root, bitrevm(i_inner, m - 1), q)
+            zeta = modpow(root, bitrevm(i_inner, m - 1), q)
 
             def innermost_body(j, f_innermost):
                 t = (zeta * f_innermost[j + len_inner]) % q
@@ -217,24 +219,26 @@ def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
 @jax.jit
 def ntt_inv(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
     r"""
-    Computes the inverse Number Theoretic Transform (INTT) for ML-KEM (FIPS 203).
+    Computes the inverse Number Theoretic Transform (INTT).
 
-    Reconstructs the polynomial from its incomplete NTT domain representation.
+    Reconstructs the original polynomial from its incomplete NTT domain representation
+    (originating from power-of-two length polynomial arrays). This generalizes the
+    inverse operation specified in ML-KEM to accommodate generic parameter sets.
 
     Parameters
     ----------
     f : NDArrayLike, shape (n,)
         1-D array of transformed polynomial coefficients.
-        The size $n$ must be a power of 2, e.g., 256.
+        The size $n$ must be a power of 2.
     q : int
-        The modulus.
+        The modulus. Must satisfy $n | (q-1)$.
     root : int
         The $n$-th primitive root of unity modulo $q$.
 
     Returns
     -------
-    Array, shape (n,)
-        The inverse-transformed array of coefficients.
+    jax.Array, shape (n,)
+        The inverse-transformed array of polynomial coefficients.
 
     """
     # Cast to JAX array (handles np.ndarray, list, or jnp.ndarray seamlessly)
@@ -258,7 +262,7 @@ def ntt_inv(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
         def inner_body(inner_val):
             start, len_inner, i_inner, f_inner = inner_val
 
-            zeta = modpow_jax(root, bitrevm(i_inner, m - 1), q)
+            zeta = modpow(root, bitrevm(i_inner, m - 1), q)
 
             def innermost_body(j, f_innermost):
 
@@ -293,111 +297,78 @@ def ntt_inv(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
     return f_final
 
 
-def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
+# NIST FIPS 203, Algorithm 12
+@jax.jit
+def _base_case_multiply(
+    a_0: ScalarLike, a_1: ScalarLike, b_0: ScalarLike, b_1: ScalarLike, gamma: ScalarLike, q: ScalarLike
+) -> Array:
     """
-    Computes the forward Number Theoretic Transform (NTT) for ML-KEM (FIPS 203).
+    Evaluates the base-case multiplication of two degree-1 polynomials.
 
-    Note: This is an incomplete NTT that stops at length=2, leaving the
-    polynomials as degree 1 polynomials in the NTT domain.
+    Computes (a_0 + a_1 X) * (b_0 + b_1 X) modulo (X^2 - gamma) and modulo q.
 
     Parameters
     ----------
-    f : np.ndarray
-        1-D array of polynomial coefficients.
-    n : int
-        The size of the transform (must be a power of 2, e.g., 256).
-    q : int
+    a_0 : ScalarLike
+        Constant coefficient of the first polynomial.
+    a_1 : ScalarLike
+        Linear coefficient of the first polynomial.
+    b_0 : ScalarLike
+        Constant coefficient of the second polynomial.
+    b_1 : ScalarLike
+        Linear coefficient of the second polynomial.
+    gamma : ScalarLike
+        The root defining the degree-2 polynomial reduction modulo X^2 - gamma.
+    q : ScalarLike
         The modulus.
-    root : int
+
+    Returns
+    -------
+    jax.Array
+        A 2-element array containing the constant and linear coefficients of the result.
+    """
+    c0 = (a_0 * b_0 + ((a_1 * b_1) % q) * gamma) % q
+    c1 = (a_0 * b_1 + a_1 * b_0) % q
+    return jnp.stack([c0, c1])
+
+
+# NIST FIPS 203, Algorithm 11
+@jax.jit
+def multiply_ntts(f_hat: NDArrayLike, g_hat: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
+    """
+    Computes the component-wise classical polynomial multiplication in the incomplete NTT domain.
+
+    This executes independent base-case multiplications combining components
+    of f_hat and g_hat.
+
+    Parameters
+    ----------
+    f_hat : NDArrayLike, shape (n,)
+        1-D array of the first polynomial in NTT representation.
+    g_hat : NDArrayLike, shape (n,)
+        1-D array of the second polynomial in NTT representation.
+    q : ScalarLike
+        The modulus.
+    root : ScalarLike
         The n-th primitive root of unity modulo q.
 
     Returns
     -------
-    np.ndarray
-        The transformed array of coefficients in the NTT domain.
-
+    jax.Array
+        A 1-D array representing the product in the NTT domain.
     """
-    m = int(np.ceil(np.log2(n)))
-    f = f.copy() % q
-    i = 1
-    length = n // 2
+    f_hat = jnp.asarray(f_hat)
+    g_hat = jnp.asarray(g_hat)
+    h_hat = jnp.zeros_like(f_hat)
+    n = f_hat.shape[0]
+    m = smallest_power_of_two(n)
 
-    while length >= 2:
-        for start in range(0, n, 2 * length):
-            zeta = modpow_jax(root, bitrevm(i, m - 1), q)
-            i += 1
-            for j in range(start, start + length):
-                t = (zeta * f[j + length]) % q
-                f[j + length] = (f[j] - t) % q
-                f[j] = (f[j] + t) % q
-        length //= 2
-    return f
+    def body_fn(i, h):
+        gamma = modpow(root, 2 * bitrevm(i, m - 1) + 1, q)
+        c = _base_case_multiply(f_hat[2 * i], f_hat[2 * i + 1], g_hat[2 * i], g_hat[2 * i + 1], gamma, q)
+        h = h.at[2 * i].set(c[0])
+        h = h.at[2 * i + 1].set(c[1])
+        return h
 
-
-def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
-    """
-    Computes the inverse Number Theoretic Transform (INTT) for ML-KEM (FIPS 203).
-
-    Reconstructs the polynomial from its incomplete NTT domain representation.
-
-    Parameters
-    ----------
-    f : np.ndarray
-        1-D array of transformed polynomial coefficients.
-    n : int
-        The size of the transform (must be a power of 2, e.g., 256).
-    q : int
-        The modulus.
-    root : int
-        The n-th primitive root of unity modulo q.
-
-    Returns
-    -------
-    np.ndarray
-        The inverse-transformed array of coefficients.
-
-    """
-    m = int(np.ceil(np.log2(n)))
-    f = f.copy() % q
-    i = n // 2 - 1
-    length = 2
-
-    while length <= n // 2:
-        for start in range(0, n, 2 * length):
-            zeta = modpow_jax(root, bitrevm(i, m - 1), q)
-            i -= 1
-            for j in range(start, start + length):
-                t = f[j] % q
-                f[j] = (t + f[j + length]) % q
-                f[j + length] = (zeta * (f[j + length] - t)) % q
-        length *= 2
-
-    n_half_inv = modinv(n // 2, q)
-
-    for idx in range(n):
-        f[idx] = (f[idx] * n_half_inv) % q
-
-    return f
-
-
-def base_case_multiply(a_0: int, a_1: int, b_0: int, b_1: int, gamma: int, q: int):
-
-    c = np.zeros(2, dtype=np.int64)
-
-    c[0] = (a_0 * b_0 + ((a_1 * b_1) % q) * gamma) % q
-    c[1] = (a_0 * b_1 + a_1 * b_0) % q
-    return c
-
-
-def multiply_ntts(f_hat, g_hat, n: int, q: int, root: int):
-
-    h_hat = np.zeros(n, dtype=np.int64)
-    m = int(np.ceil(np.log2(n)))
-
-    for i in range(n // 2):
-        gamma = modpow_jax(root, int(2 * bitrevm(i, m - 1)) + 1, q)
-        h = base_case_multiply(f_hat[2 * i], f_hat[2 * i + 1], g_hat[2 * i], g_hat[2 * i + 1], gamma, q)
-        h_hat[2 * i] = h[0]
-        h_hat[2 * i + 1] = h[1]
-
+    h_hat = lax.fori_loop(0, n // 2, body_fn, h_hat)
     return h_hat

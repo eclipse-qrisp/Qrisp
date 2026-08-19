@@ -23,3 +23,4 @@ These functions facilitate classical number theoretic transform (NTT) computatio
    
    ntt
    ntt_inv
+   multiply_ntts

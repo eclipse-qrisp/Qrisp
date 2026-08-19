@@ -26,7 +26,7 @@ from qrisp.jasp import jrange, q_while_loop
 from qrisp.qtypes import QuantumModulus
 from qrisp.typing import NDArrayLike, ScalarLike
 
-from .classical import bitrev7, bitrevm, modpow_jax
+from .classical import bitrevm, modpow
 
 ############################################################
 ############### Number-theoretic transform #################
@@ -37,15 +37,23 @@ from .classical import bitrev7, bitrevm, modpow_jax
 # Efficient O(n log n) implementation
 def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
     r"""
-    Computes the number theoretic transform (NTT) in-place.
+    Computes the quantum Number Theoretic Transform (qNTT) in-place.
+
+    This function generalizes the NTT evaluated over the polynomial ring
+    $\mathcal{R}_q = \mathbb{Z}_q[X] / (X^n + 1)$ to operate on arrays of quantum
+    integer types. It evaluates an incomplete transform stopping at length=2, mapping
+    polynomial elements into components representing degree-1 polynomials in the NTT domain.
 
     Parameters
     ----------
     f : QuantumArray, shape (n,)
-        An array of QuantumModulus representing a vector in $\mathbb Z_q^n$.
-        The modulus $q$ must be prime, and $n | (q-1)$ must be satisfied.
+        1-D array of QuantumModulus representing a vector in $\mathbb Z_q^n$.
+        The size $n$ must be a power of 2, the modulus $q$ must be prime, and the
+        existence of a primitive root of unity must satisfy $n | (q-1)$.
     root : int
         An $n$-th root of unity modulo $q$.
+    inv : bool, optional
+        If True, applies the inverse qNTT. Default is False.
 
     Examples
     --------
@@ -87,7 +95,7 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
         start, len_, i, f = val
 
         # Repleace bitrev7 by general procedure for arbitrary n
-        zeta = modpow_jax(root, bitrevm(i, m - 1), q)
+        zeta = modpow(root, bitrevm(i, m - 1), q)
 
         for j in jrange(start, start + len_):
             # Reversible implementation of steps 8-10
@@ -116,12 +124,12 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
 # Efficient O(n log n) implementation
 def qntt_inv(f: QuantumArray, root: int) -> None:
     r"""
-    Computes the inverse number theoretic transform (NTT) in-place.
+    Computes the inverse quantum Number Theoretic Transform (qNTT) in-place.
 
     Parameters
     ----------
     f : QuantumArray[QuantumModulus]
-        An array of size ``(n,)`` of type QuantumModulus(q) representing a vector in $\mathbb Z_q^n$.
+        1-D array of size ``(n,)`` of type QuantumModulus(q) representing a vector in $\mathbb Z_q^n$.
         The modulus $q$ must be prime, and $n | (q-1)$ must be satisfied.
     root : int
         An $n$-th root of unity modulo $q$.
@@ -142,7 +150,7 @@ def qntt_inv(f: QuantumArray, root: int) -> None:
         start, len_, i, f = val
 
         # Repleace bitrev7 by general procedure for arbitrary n
-        zeta = modpow_jax(root, bitrevm(i, m - 1), q)
+        zeta = modpow(root, bitrevm(i, m - 1), q)
 
         for j in jrange(start, start + len_):
             # Reversible implementation of steps 9-10
@@ -242,21 +250,24 @@ def _base_case_multipy(
 
 
 # NIST FIPS 203, Algorithm 11, quantum-classical version
-def multiply_qntts(f: QuantumArray, g: NDArrayLike, root: int, inv: bool = False) -> QuantumArray:
+def multiply_qntts(f_hat: QuantumArray, g_hat: NDArrayLike, root: int, inv: bool = False) -> QuantumArray:
     r"""
-    Computes the product of two NTT representations.
+    Computes the component-wise quantum-classical polynomial multiplication in the incomplete NTT domain.
+
+    This function executes independent base-case multiplications combining components
+    of the quantum array `f_hat` and the classical array `g_hat`.
 
     Parameters
     ----------
-    f : QuantumArray, shape (n,)
-        An array of QuantumModulus representing a vector in $\mathbb Z_q^n$ in NTT representation.
-    g : NDArrayLike, shape (n,)
-        An array representing a vector in $\mathbb Z_q^n$ in NTT representation.
+    f_hat : QuantumArray, shape (n,)
+        1-D array of QuantumModulus representing a vector in $\mathbb Z_q^n$ in NTT representation.
+    g_hat : NDArrayLike, shape (n,)
+        1-D array representing a vector in $\mathbb Z_q^n$ in NTT representation.
 
     Returns
     -------
     QuantumArray, shape (n,)
-        An array of QuantumModulus representing a vector in $\mathbb Z_q^n$ in NTT representation.
+        1-D array of QuantumModulus representing a vector in $\mathbb Z_q^n$ in NTT representation.
         The result of the multiplication in the NTT domain.
 
     Examples
@@ -285,15 +296,22 @@ def multiply_qntts(f: QuantumArray, g: NDArrayLike, root: int, inv: bool = False
 
     """
 
-    result = f.duplicate()
-    n = f.shape[0]
+    result = f_hat.duplicate()
+    n = f_hat.shape[0]
     m = smallest_power_of_two(n)
-    q = f.qtype.modulus
+    q = f_hat.qtype.modulus
 
     for i in jrange(n // 2):
-        gamma = modpow_jax(root, 2 * bitrevm(i, m - 1) + 1, q)  # Does this work for general n?
+        gamma = modpow(root, 2 * bitrevm(i, m - 1) + 1, q)
         _base_case_multipy(
-            f[2 * i], f[2 * i + 1], g[2 * i], g[2 * i + 1], result[2 * i], result[2 * i + 1], gamma, inv=inv
+            f_hat[2 * i],
+            f_hat[2 * i + 1],
+            g_hat[2 * i],
+            g_hat[2 * i + 1],
+            result[2 * i],
+            result[2 * i + 1],
+            gamma,
+            inv=inv,
         )
 
     return result
