@@ -26,48 +26,17 @@ significantly reduce computational overhead.
 
 The preprocessor acts as a compiler pass, modifying the circuit's structure
 without altering its mathematical outcome. It is split into the following
-submodules:
+submodules, see each for details:
 
-1. Gate Grouping (:mod:`~qrisp.simulator.preprocessing.gate_grouping`)
-   Applying many small unitary matrices (e.g., 1-qubit or 2-qubit gates) to a
-   massive 2^n statevector is inefficient due to high memory bandwidth usage.
-   - The `GroupedInstruction` class and `group_qc` function recursively search
-     the circuit for sets of small, adjacent, or commuting gates.
-   - These gates are grouped together so their combined "medium-sized" unitary
-     can be pre-calculated. Applying one medium unitary saves millions of
-     floating-point operations (FLOPs) compared to applying many small ones.
-   - To make this search fast, `IntegerCircuit` translates the circuit into a
-     bitwise representation, allowing the Numba-jitted search functions
-     (`binary_get_circuit_block_jitted`, `binary_get_circuit_block_jitted_chunked`)
-     to evaluate gate commutativity using ultra-fast bitwise logic.
-     It features a dual-path that vectorizes qubit bitmasks into chunks to bypass
-     64-bit memory limitations on massive statevector simulations.
-
-2. State Disentangling (:mod:`~qrisp.simulator.preprocessing.disentangling`)
-   Simulating a 50+ qubit statevector is practically impossible if fully entangled.
-   However, many algorithms naturally "disentangle" certain qubits during execution
-   (e.g., via measurements, resets, or specific uncomputations).
-   - `insert_disentangling` identifies points in the circuit where wave-function
-     branches no longer interact.
-   - It inserts a custom `disentangle` instruction. The simulator catches this and
-     splits the massive simulation into smaller, separate, parallelizable wave-functions,
-     effectively turning an intractable problem into a solvable one.
-
-3. Measurement and Allocation Management
-   (:mod:`~qrisp.simulator.preprocessing.measurement_handling`)
-   - `extract_measurements` and `count_measurements_and_treat_alloc` optimize
-     how classical measurements and temporary qubit allocations are handled.
-   - `insert_multiverse_measurements` handles deferred measurement patterns by
-     introducing ancilla qubits and CNOT gates, ensuring probability distributions
-     are correctly captured without breaking coherence prematurely.
-
-4. The Main Wrapper: `circuit_preprocessor(qc)`
-   (:mod:`~qrisp.simulator.preprocessing.circuit_preprocessing`)
-   The main entry point for this package. It evaluates the incoming circuit,
-   applies disentangling (if the circuit is dangerously wide, e.g., >45 qubits),
-   groups the gates for performance, and finally reorders the circuit
-   (:mod:`~qrisp.simulator.preprocessing.circuit_reordering`) to safely push
-   measurements, resets, and disentanglers to the end of execution blocks.
+1. :mod:`~qrisp.simulator.preprocessing.gate_grouping` -- Gate Grouping
+2. :mod:`~qrisp.simulator.preprocessing.disentangling` -- State Disentangling
+3. :mod:`~qrisp.simulator.preprocessing.measurement_handling` -- Measurement
+   and Allocation Management
+4. :mod:`~qrisp.simulator.preprocessing.circuit_reordering` -- Circuit
+   Reordering
+5. :mod:`~qrisp.simulator.preprocessing.circuit_preprocessing` -- The main
+   wrapper `circuit_preprocessor(qc)`, which combines all of the above into
+   a single preprocessing pipeline.
 ================================================================================
 """
 
