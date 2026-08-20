@@ -56,9 +56,14 @@ Bug Fixes
 
 * Fixed and refactored the ``to_pytket`` converter: ``u1`` angles are no longer
   divided by ``pi`` twice, ``cp`` now maps to controlled-phase (``CU1``) instead
-  of ``CRz``, and global-phase (``gphase``) gates are now supported. The gate
-  mapping was consolidated into a lookup table, dead code removed, and converter
-  unit-test coverage substantially increased
+  of ``CRz``, ``p``/``u1`` map to the relative-phase ``U1`` (phase-exact, no
+  longer leaking a global phase into controlled boxes), a flipped ``ctrl_state``
+  on the elementary controlled gates (``cx``/``cy``/``cz``/``cp``) is now
+  respected, global-phase (``gphase``) gates are supported, and ``barrier``,
+  ``reset`` and classically-controlled (``c_if``) gates now convert instead of
+  raising. The gate mapping was consolidated into a lookup table, the CircBox
+  construction de-duplicated, dead code removed, and converter unit-test coverage
+  substantially increased
   (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
 
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
