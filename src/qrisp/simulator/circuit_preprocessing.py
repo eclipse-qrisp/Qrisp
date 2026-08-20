@@ -89,6 +89,7 @@ from qrisp.circuit import (
 from qrisp.permeability.type_checker import is_permeable
 
 _WINDOW_SIZE = 100  # The number of instructions to consider in a single window for grouping.
+_CHUNK_SIZE = 62  # Bits per int64 chunk in the chunked qubit-bitmask path (62 to keep the sign bit free).
 
 
 # This class is supposed to describe a group of instructions
@@ -107,14 +108,9 @@ class GroupedInstruction:
         self.gate_signature_list = []
 
         if qubits is None:
-            if int_qc.use_chunks:
-                qubit_set = np.zeros(int_qc.num_chunks, dtype=np.int64)
-                for i in indices:
-                    qubit_set |= int_qc.data[i]
-            else:
-                qubit_set = 0
-                for i in indices:
-                    qubit_set |= int_qc.data[i]
+            qubit_set = np.zeros(int_qc.num_chunks, dtype=np.int64) if int_qc.use_chunks else 0
+            for i in indices:
+                qubit_set |= int_qc.data[i]
 
             self.qubits = int_to_qb_set_generic(qubit_set, int_qc.source)
         else:
@@ -219,7 +215,7 @@ def find_group(
     int_qc: IntegerCircuit, max_recursion_depth: int, current_idx: int, processed: np.ndarray
 ) -> GroupedInstruction:
     """Finds the best grouping of instructions starting from the current index."""
-    traversed_qb_sets = []
+    traversed_qb_sets = set()
     # For the chunked path int_qc.data[i] is a row-view of the 2D array; copy
     # it so that any in-place modifications inside the jitted helper do not
     # corrupt int_qc.data for subsequent instructions.
@@ -249,7 +245,7 @@ def find_group(
 # instructions can be executed on these qubits without "leaving" this set of qubits.
 def find_grouping_options(
     int_qc: IntegerCircuit,
-    traversed_qb_sets: list,
+    traversed_qb_sets: set,
     max_recursion_depth: int,
     qubits: int | np.ndarray,
     established_indices: list[int],
@@ -259,19 +255,16 @@ def find_grouping_options(
     """Recursively finds all possible groupings of instructions starting from the current index."""
 
     hashable_qubits = tuple(qubits) if isinstance(qubits, np.ndarray) else qubits
-    traversed_qb_sets.append(hashable_qubits)
+    traversed_qb_sets.add(hashable_qubits)
 
     instruction_indices, expansion_options = get_circuit_block_(
         int_qc, qubits, established_indices, processed, current_idx
     )
 
-    options = [GroupedInstruction(int_qc, instruction_indices, int_to_qb_set_generic(qubits, int_qc.source))]
+    qb_list = int_to_qb_set_generic(qubits, int_qc.source)
+    options = [GroupedInstruction(int_qc, instruction_indices, qb_list)]
 
-    if (
-        len(expansion_options) == 0
-        or max_recursion_depth == 0
-        or len(int_to_qb_set_generic(qubits, int_qc.source)) >= 7
-    ):
+    if len(expansion_options) == 0 or max_recursion_depth == 0 or len(qb_list) >= 7:
         return options
 
     for i in range(len(expansion_options)):
@@ -483,13 +476,12 @@ def int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[An
     """Converts an integer or array of integers representing qubit indices into a list of qubit objects."""
     res = []
     if isinstance(data, np.ndarray):
-        chunk_size = 62
         for c, chunk in enumerate(data):
             temp = int(chunk)
             bit_idx = 0
             while temp > 0:
                 if temp & 1:
-                    qb_idx = c * chunk_size + bit_idx
+                    qb_idx = c * _CHUNK_SIZE + bit_idx
                     if qb_idx < len(qc.qubits):
                         res.append(qc.qubits[qb_idx])
                 temp = temp >> 1
@@ -530,7 +522,7 @@ class IntegerCircuit:
         self.source = qc
         self.qb_to_index = {qc.qubits[i]: i for i in range(len(qc.qubits))}
         self.n = len(qc.qubits)
-        self.chunk_size = 62
+        self.chunk_size = _CHUNK_SIZE
 
         is_unitary_list = []
         for instr in qc.data:

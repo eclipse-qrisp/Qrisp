@@ -489,7 +489,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         #     qubit_to_index_dic[qc.qubits[i]] = i
 
         for instr in qc.data:
-
             progress_bar.update(1)
 
             # Gather the indices of the qubits from the circuits (i.e. integers instead

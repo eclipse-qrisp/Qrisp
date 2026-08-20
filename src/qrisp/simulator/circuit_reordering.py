@@ -13,50 +13,55 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
+================================================================================
+Qrisp Simulator Circuit Reordering
+================================================================================
+
+The functions in this module reorder circuits so that measurements, resets,
+and disentanglers are performed as early as possible. This is beneficial
+because the simulation of two decoherent states can be parallelized better.
+Furthermore, if a measurement implies that one of the states has vanishing
+probability, that state no longer requires further simulation.
+
+Causal Graph
+------------
+
+The ordering is achieved by converting the circuit into a directed acyclic
+graph (the causal graph), where two successive operations with overlapping
+qubits are represented by two nodes connected by a directed edge. The edge
+points in the *opposite* direction of the sequential order of the operations.
+This way, to evaluate which gates are necessary to perform a measurement,
+disentangling, or reset, we simply look at the set of gates reachable from
+that node in the causal graph.
+
+Consider the following circuit::
+
+              ┌───┐
+     qubit_9: ┤ X ├──■─────
+              ├───┤┌─┴─┐┌─┐
+    qubit_10: ┤ Y ├┤ x ├┤M├
+              ├───┤└───┘└╥┘
+    qubit_11: ┤ H ├──────╫─
+              └───┘      ║
+     clbit_0: ═══════════╩═
+
+In order to perform the measurement, we have to execute the X and CX gates.
+The corresponding causal graph is::
+
+    (measure) -> (CX) -> (X)
+                   L---> (Y)
+    (H)
+
+We see that CX, X, and Y are reachable from the measurement. We now perform a
+depth-first traversal on the subgraph of nodes reachable from the measurement.
+
+Unlike a regular depth-first traversal, we are not free to choose which child
+of a node to traverse next: doing so could disturb the topological order and
+lead to an illegitimate reordering. Therefore, this depth-first traversal
+always visits the child with the highest topological index first.
+================================================================================
 """
-
-# -*- coding: utf-8 -*-
-
-# The functions in this file are supposed to reorder circuits in such a way,
-# that measurements, resets and disentanglers are performed as early as possible.
-# This is beneficial because the simulation of two decoherent states can be parallelized
-# better. Furthermore, might the measurement of these imply that one of the states has
-# vanishing probability, which means that this state does not require further
-# simulation.
-
-# The idea to achieve the ordering is to convert the circuit into a directed acyclic
-# graph (now called causal graph), where two successive operations with overlapping
-# qubits are represented with two nodes, connected by a directed edge. The directed
-# edge, however points into the opposite direction of the sequential order of the
-# operations. This way, if we want to evaluate what gates are necessary in order to
-# perform a measurement, disentangling or reset, we simply have to look at the set of
-# gates that is reachable from that specific node in the causal graph.
-
-# Consider the following circuit
-#           ┌───┐
-#  qubit_9: ┤ X ├──■─────
-#           ├───┤┌─┴─┐┌─┐
-# qubit_10: ┤ Y ├┤ x ├┤M├
-#           ├───┤└───┘└╥┘
-# qubit_11: ┤ H ├──────╫─
-#           └───┘      ║
-#  clbit_0: ═══════════╩═
-
-# In order to perform the measurement, we have to execute the x and the cx gate
-# The corresponding causal graph
-# (measure)-> (CX)->(X)
-#               L->(Y)
-# (H)
-# We see that CX, X and Y are reachable from the measurement
-# We now perform a depth first traversal on the subgraph of the nodes which are
-# reachable from the measurement.
-
-# It is important to node that for a regular depth first traversal,
-# we are free to choose which child of a node to traverse next.
-# This is not the casehere, because this might disturb the topological
-# order, which would imply that we performed an illegitimat reordering
-# Therefore, in this depth first traversal, we always traverse the child
-# with the highest index in a topological order first.
 
 from __future__ import annotations
 
