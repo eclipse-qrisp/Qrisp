@@ -319,6 +319,10 @@ def test_smoke_p_phase_exact():
 # Qrisp's SXGate and pytket's OpType.SX differ by a global phase (the same
 # SX-convention discrepancy flagged for the qiskit converter in Qrisp PR #672).
 # Global-phase-insensitive comparisons are unaffected; strict ones fail.
+@pytest.mark.xfail(
+    reason="Qrisp SXGate and pytket OpType.SX differ by a global phase; tracked by #672",
+    strict=True,
+)
 def test_smoke_sx_phase_exact():
     qc = QuantumCircuit(1)
     qc.sx(0)
@@ -335,6 +339,11 @@ def test_smoke_sx_phase_exact():
 # to the converter's gate map or give the Qrisp ops a definition). The RGate
 # case is partially tracked by #629 (wrong-axis unitary; a fix there would give
 # RGate a definition and let the converter emit it).
+@pytest.mark.xfail(
+    reason="RGate has no pytket mapping/definition; tracked by #629",
+    raises=ValueError,
+    strict=True,
+)
 def test_smoke_rgate_converts():
     qc = QuantumCircuit(1)
     qc.append(RGate(0.7, 0.5), [0])
@@ -367,6 +376,10 @@ def test_smoke_c_if_converts():
 # Finding 2a (qrisp): RGate.get_unitary() deviates from the standard
 # exp(-i theta/2 (cos phi X + sin phi Y)) by a factor of i on the off-diagonals.
 # Tracked upstream as https://github.com/eclipse-qrisp/Qrisp/issues/629.
+@pytest.mark.xfail(
+    reason="RGate.get_unitary() uses a non-standard axis convention; tracked by #629",
+    strict=True,
+)
 def test_smoke_rgate_qrisp_unitary_standard_axis():
     theta, phi = 0.7, 0.5
     u_expected = np.array(
@@ -385,6 +398,10 @@ def test_smoke_rgate_qrisp_unitary_standard_axis():
 # issue: https://github.com/eclipse-qrisp/Qrisp/issues/632 (the "context-
 # dependent" MCRXGate flakiness there stems from this noise, not from the
 # converter's qubit ordering, which is correct on this HEAD).
+@pytest.mark.xfail(
+    reason="get_unitary() returns float32 with ~1e-7 numerical noise; tracked by #786",
+    strict=False,
+)
 def test_smoke_qrisp_get_unitary_noise():
     qc = QuantumCircuit(4)
     qc.append(RXGate(0.7).control(3, method="gray_pt"), [0, 1, 2, 3])
