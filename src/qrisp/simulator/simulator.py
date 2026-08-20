@@ -25,9 +25,10 @@ import random
 from tqdm import tqdm
 
 from qrisp.circuit import QuantumCircuit, fast_append
-from qrisp.simulator.circuit_preprocessing import (
+from qrisp.simulator.preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
+    extract_measurements,
     group_qc,
     insert_multiverse_measurements,
 )
@@ -407,11 +408,11 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
     to incrementally advance a quantum state as gates are appended during
     the interpretation of a jaxpr. Unlike :func:`run` or
     :func:`single_shot_sim`, it does not run the full
-    :func:`~qrisp.simulator.circuit_preprocessing.circuit_preprocessor`
+    :func:`~qrisp.simulator.preprocessing.circuit_preprocessing.circuit_preprocessor`
     pipeline: it only removes allocation gates
-    (:func:`~qrisp.simulator.circuit_preprocessing.count_measurements_and_treat_alloc`)
+    (:func:`~qrisp.simulator.preprocessing.measurement_handling.count_measurements_and_treat_alloc`)
     and applies gate grouping
-    (:func:`~qrisp.simulator.circuit_preprocessing.group_qc`), since the
+    (:func:`~qrisp.simulator.preprocessing.gate_grouping.group_qc`), since the
     incoming circuit is already a short, measurement-terminated chunk rather
     than a full, statically-known circuit.
 
