@@ -55,7 +55,7 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
-from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
     evaluate_cond_under_trace,
     evaluate_scan_under_trace,
     evaluate_while_loop_under_trace,

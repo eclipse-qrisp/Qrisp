@@ -47,7 +47,7 @@ from qrisp.jasp import (
     insert_outvalues,
     quantum_gate_p,
 )
-from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
     evaluate_scan_under_trace,
     flatten_signature,
     unflatten_signature,

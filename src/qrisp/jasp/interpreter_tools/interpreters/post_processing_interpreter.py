@@ -26,7 +26,7 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     insert_call_outvalues,
 )
-from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
     evaluate_cond_under_trace,
     evaluate_scan_under_trace,
     evaluate_while_loop_under_trace,
