@@ -78,13 +78,22 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         that return *only* classical values.  Use ``terminal_sampling=False``
         for those cases.
 
+        Even when the kernel returns only
+        :ref:`QuantumVariables <QuantumVariable>`, terminal sampling relies on
+        the quantum state being **independent** of mid-circuit measurement
+        outcomes.  If a classical measurement result influences the quantum
+        circuit (e.g. via :func:`control <qrisp.control>`), terminal sampling
+        may produce an invalid distribution because it simulates the quantum
+        part only once.  See :func:`~qrisp.jasp.terminal_sampling` for details
+        and an example.
+
     Parameters
     ----------
     sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
-        The function may **not** receive quantum arguments because a quantum
+        The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
     shots : int
@@ -284,9 +293,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # ----------------------------------------------------------
                 @qache
                 def sampling_helper_1(*args):
-                    res_list = []
-                    for reg in args:
-                        res_list.append(measure(reg))
+                    res_list = [measure(reg) for reg in args]
                     return tuple(res_list)
 
                 measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
@@ -305,60 +312,33 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         classical_vals = args[:n_classical]
                         meas_ints = args[n_classical:]
 
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_vals[c_idx])
-                                c_idx += 1
+                        q_iter = iter(decoded_q)
+                        c_iter = iter(classical_vals)
 
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
+                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
+
+                        result = post_processor(*full)
 
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
                             if len(acc.shape) == 1:
-                                raise AuxException()
+                                raise _MultiReturnDetected()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
 
                     def sampling_helper_2(*meas_ints):
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_tuple[c_idx])
-                                c_idx += 1
-
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
+                        result = post_processor(*decoded_q)
 
                         if isinstance(result, tuple):
                             return_amount.append(len(result))
                             if len(acc.shape) == 1:
-                                raise AuxException()
+                                raise _MultiReturnDetected()
                         return result
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
@@ -370,15 +350,12 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                if len(classical_tuple) > 1:
-                    result = post_processor(*classical_tuple)
-                else:
-                    result = post_processor(*classical_tuple)
+                result = post_processor(*classical_tuple)
 
                 if isinstance(result, tuple):
                     return_amount.append(len(result))
                     if len(acc.shape) == 1:
-                        raise AuxException()
+                        raise _MultiReturnDetected()
                 decoded_values = result
 
             # Insert into the accumulating array
@@ -398,7 +375,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         try:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
-        except AuxException:
+        except _MultiReturnDetected:
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
@@ -419,5 +396,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values
+    (a tuple) instead of a single scalar.  This triggers a retry of the
+    sampling loop with a multi-dimensional accumulator of the correct shape."""

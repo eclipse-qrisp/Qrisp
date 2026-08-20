@@ -71,6 +71,33 @@ Bug Fixes
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
 
+* Fixed :class:`~qrisp.interface.QiskitBackend` failing with
+  ``OverflowError: int too big to convert`` — or, for small classical
+  registers, silently returning wrong counts — on providers that report
+  measurement results as binary rather than hexadecimal strings, such as
+  ``qiskit-iqm``.  Circuits are now submitted through the wrapped backend's
+  own ``run()`` method and counts are read via ``Result.get_counts()``,
+  instead of going through Qiskit's ``BackendSamplerV2`` primitive, which
+  rebuilds counts from the hex-encoded ``memory`` field.
+  :class:`~qrisp.interface.QiskitRuntimeBackend` continues to use
+  ``SamplerV2``, which IBM Runtime requires.  Passing a real IBM Quantum
+  backend to :class:`~qrisp.interface.QiskitBackend` now raises a ``TypeError``
+  pointing at :class:`~qrisp.interface.QiskitRuntimeBackend`; IBM *fake*
+  backends are unaffected
+  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/788>`_).
+
+* Fixed a bug where :func:`prepare <qrisp.prepare>` with ``method="qswitch"``
+  raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
+  :func:`control <qrisp.control>` environment in Jasp mode
+  (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
+
+* Removed reduant imports in the top-level ``qrisp`` package.
+  (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
+
+* Updated broken link in TSP tutorial to point to the
+  correct archived Qiskit textbook.
+  (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
+
 Compatibility
 -------------
 
@@ -114,7 +141,7 @@ Development
 * Added pytest coverage reporting to the CI test workflow and selective
   coverage reporting for the ``qrisp`` package.
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
-   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
+  `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
 Dependency Upgrades
 -------------------
@@ -143,3 +170,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `micpap25 <https://github.com/micpap25>`_

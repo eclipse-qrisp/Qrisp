@@ -342,7 +342,7 @@ def terminal_sampling_evaluator(sampling_res_type):
         # taken (sampling_helper_2 was never called).  Terminal sampling
         # cannot handle this — raise instead of silently tiling.
         if not decoded_meas_res:
-            raise Exception(
+            raise ValueError(
                 "Terminal sampling does not support classical "
                 "return values. Use terminal_sampling=False "
                 "to sample with classical returns."

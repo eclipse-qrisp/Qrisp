@@ -19,8 +19,9 @@
 
 # All tests are fully mocked, so no real IBM Quantum credentials or hardware
 # are required. The qiskit-aer package is used as the real backend device
-# (so transpile works correctly), while SamplerV2 is replaced by a mock so
-# no actual job submission takes place.
+# (so transpile works correctly), while its run() method — or, for
+# QiskitRuntimeBackend, SamplerV2 — is replaced by a mock so no actual job
+# submission takes place.
 
 import sys
 from collections.abc import Mapping
@@ -57,6 +58,7 @@ from qrisp.interface.measurement_result import LazyDict
 from qrisp.interface.provider_backends.qiskit_backend import (
     QiskitJob,
     QiskitRuntimeBackend,
+    QiskitRuntimeJob,
     _map_qiskit_status,
 )
 
@@ -64,7 +66,7 @@ from qrisp.interface.provider_backends.qiskit_backend import (
 class _MockCircuitData:
     """Minimal stand-in for a qiskit PrimitiveResult circuit-data object.
 
-    The result-parsing loop in QiskitJob.result() does:
+    The sampler branch of QiskitJob.result() does:
 
         for reg_name in qiskit_result[i].data:
             reg_data = getattr(qiskit_result[i].data, reg_name)
@@ -86,7 +88,7 @@ class _MockCircuitData:
 
 
 def _make_primitive_result(counts_per_circuit: list[dict]) -> MagicMock:
-    """Return a mock primitive-job result carrying the given per-circuit counts."""
+    """Return a mock SamplerV2 PrimitiveResult carrying the given per-circuit counts."""
     circuit_results = []
     for counts in counts_per_circuit:
         mock_cr = MagicMock()
@@ -98,12 +100,26 @@ def _make_primitive_result(counts_per_circuit: list[dict]) -> MagicMock:
     return mock_result
 
 
+def _make_backend_result(counts_per_circuit: list[dict]) -> MagicMock:
+    """Return a mock qiskit Result carrying the given per-circuit counts.
+
+    Mirrors ``Result.get_counts()``, which returns a single ``Counts`` mapping
+    for one experiment and a list of them for several.
+    """
+    mock_result = MagicMock()
+    mock_result.get_counts.return_value = (
+        counts_per_circuit[0] if len(counts_per_circuit) == 1 else list(counts_per_circuit)
+    )
+    return mock_result
+
+
 def _make_qiskit_job(
     counts_per_circuit: list[dict] | None = None,
     fail: Exception | None = None,
     job_id: str = "mock-job-id",
+    from_sampler: bool = False,
 ) -> MagicMock:
-    """Return a mock Qiskit primitive job.
+    """Return a mock Qiskit job.
 
     Parameters
     ----------
@@ -113,6 +129,10 @@ def _make_qiskit_job(
         If provided, ``result()`` raises this exception instead.
     job_id
         The value returned by ``mock_job.job_id()``.
+    from_sampler
+        If ``True``, ``result()`` returns a ``PrimitiveResult``-shaped mock
+        (as ``SamplerV2.run()`` produces); otherwise a ``Result``-shaped one
+        (as ``Backend.run()`` produces).
 
     """
     mock_job = MagicMock()
@@ -120,9 +140,9 @@ def _make_qiskit_job(
     if fail is not None:
         mock_job.result.side_effect = fail
     else:
-        mock_job.result.return_value = _make_primitive_result(
-            counts_per_circuit if counts_per_circuit is not None else [{"0": 512, "1": 512}]
-        )
+        counts = counts_per_circuit if counts_per_circuit is not None else [{"0": 512, "1": 512}]
+        make_result = _make_primitive_result if from_sampler else _make_backend_result
+        mock_job.result.return_value = make_result(counts)
     return mock_job
 
 
@@ -135,25 +155,18 @@ def _simple_circuit() -> QrispQuantumCircuit:
 
 
 @pytest.fixture()
-def sampler_mock(monkeypatch):
-    """Replace BackendSamplerV2 in the qiskit_backend module with a mock for the duration of a test."""
-    mock_sampler_cls = MagicMock(name="BackendSamplerV2")
-    monkeypatch.setattr(
-        "qrisp.interface.provider_backends.qiskit_backend.BackendSamplerV2",
-        mock_sampler_cls,
-    )
-    return mock_sampler_cls
-
-
-@pytest.fixture()
-def qiskit_backend(sampler_mock):
-    """A QiskitBackend backed by a real AerSimulator device and a mock SamplerV2.
+def qiskit_backend(monkeypatch):
+    """A QiskitBackend backed by a real AerSimulator whose run() is mocked.
 
     Using a real AerSimulator ensures that transpile() inside run_async()
-    works correctly without hitting real hardware.
+    works correctly; mocking only run() means no simulation actually takes
+    place. Yields the ``(qrisp_backend, run_mock)`` pair.
     """
-    backend = QiskitBackend(backend=AerSimulator(), options={"shots": 100})
-    return backend, sampler_mock
+    device = AerSimulator()
+    run_mock = MagicMock(return_value=_make_qiskit_job())
+    monkeypatch.setattr(device, "run", run_mock)
+    backend = QiskitBackend(backend=device, options={"shots": 100})
+    return backend, run_mock
 
 
 class TestQiskitJob:
@@ -164,9 +177,15 @@ class TestQiskitJob:
         counts_per_circuit: list[dict] | None = None,
         fail: Exception | None = None,
         num_circuits: int = 1,
+        from_sampler: bool = False,
     ) -> QiskitJob:
-        qiskit_job = _make_qiskit_job(counts_per_circuit=counts_per_circuit, fail=fail)
-        return QiskitJob(
+        qiskit_job = _make_qiskit_job(
+            counts_per_circuit=counts_per_circuit,
+            fail=fail,
+            from_sampler=from_sampler,
+        )
+        job_class = QiskitRuntimeJob if from_sampler else QiskitJob
+        return job_class(
             backend=MagicMock(),
             qiskit_job=qiskit_job,
             num_circuits=num_circuits,
@@ -200,6 +219,43 @@ class TestQiskitJob:
         assert "00" in counts
         assert "11" in counts
         assert "0 0" not in counts
+
+    def test_result_parses_batch_from_backend_result(self):
+        """A multi-circuit Result yields one counts dict per circuit, in order."""
+        job = self._make_job(
+            counts_per_circuit=[{"0": 60, "1": 40}, {"0": 20, "1": 80}],
+            num_circuits=2,
+        )
+        jr = job.result()
+        assert jr.get_counts(0) == {"0": 60, "1": 40}
+        assert jr.get_counts(1) == {"0": 20, "1": 80}
+
+    def test_result_rejects_result_without_get_counts(self):
+        """A backend whose run() returns something other than a Result fails loudly."""
+        qiskit_job = MagicMock()
+        qiskit_job.job_id.return_value = "id"
+        qiskit_job.result.return_value = object()  # no get_counts()
+        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
+        with pytest.raises(TypeError, match="get_counts"):
+            job.result()
+
+    # --- result (SamplerV2 path, used by QiskitRuntimeBackend) ---
+
+    def test_result_parses_counts_from_sampler_result(self):
+        """QiskitRuntimeJob reads counts from the PrimitiveResult DataBin."""
+        job = self._make_job(counts_per_circuit=[{"0": 600, "1": 400}], from_sampler=True)
+        assert job.result().get_counts() == {"0": 600, "1": 400}
+
+    def test_result_parses_batch_from_sampler_result(self):
+        """The sampler path also yields one counts dict per circuit, in order."""
+        job = self._make_job(
+            counts_per_circuit=[{"0": 60, "1": 40}, {"0": 20, "1": 80}],
+            num_circuits=2,
+            from_sampler=True,
+        )
+        jr = job.result()
+        assert jr.get_counts(0) == {"0": 60, "1": 40}
+        assert jr.get_counts(1) == {"0": 20, "1": 80}
 
     # --- result (failure path) ---
 
@@ -379,42 +435,54 @@ class TestMapQiskitStatus:
 
 
 class TestQiskitBackendRunAsync:
-    """Tests for QiskitBackend.run_async() using a mocked SamplerV2."""
+    """Tests for QiskitBackend.run_async() using a mocked Backend.run()."""
 
     def test_run_async_returns_qiskit_job(self, qiskit_backend):
         """run_async() returns a QiskitJob instance."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+        backend, _ = qiskit_backend
 
         job = backend.run_async(_simple_circuit(), shots=100)
         assert isinstance(job, QiskitJob)
 
+    def test_run_async_submits_via_backend_run_not_a_sampler(self, qiskit_backend):
+        """Circuits go to the device's own run(), not through a primitive.
+
+        BackendSamplerV2 reconstructs counts from the result's ``memory``
+        field, which it parses as hexadecimal. Providers that write binary
+        bitstrings there (e.g. qiskit-iqm) then raise OverflowError or return
+        silently wrong counts, so submission must not go through a sampler.
+        """
+        backend, run_mock = qiskit_backend
+
+        job = backend.run_async(_simple_circuit(), shots=100)
+
+        run_mock.assert_called_once()
+        assert type(job) is QiskitJob  # not the SamplerV2-parsing subclass
+        assert not hasattr(backend, "sampler")
+
     def test_run_async_job_starts_queued(self, qiskit_backend):
         """The returned job's last_known_status is QUEUED after run_async()."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+        backend, _ = qiskit_backend
 
         job = backend.run_async(_simple_circuit(), shots=100)
         assert job.last_known_status == JobStatus.QUEUED
 
-    def test_shots_forwarded_to_sampler(self, qiskit_backend):
-        """The shot count passed to run_async() is forwarded to sampler.run()."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+    def test_shots_forwarded_to_backend(self, qiskit_backend):
+        """The shot count passed to run_async() is forwarded to backend.run()."""
+        backend, run_mock = qiskit_backend
 
         backend.run_async(_simple_circuit(), shots=42)
 
-        _, run_kwargs = sampler_mock.return_value.run.call_args
+        _, run_kwargs = run_mock.call_args
         assert run_kwargs["shots"] == 42
 
     def test_default_shots_used_when_none(self, qiskit_backend):
         """When shots=None, the backend's default shot count is used."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+        backend, run_mock = qiskit_backend
 
         backend.run_async(_simple_circuit())
 
-        _, run_kwargs = sampler_mock.return_value.run.call_args
+        _, run_kwargs = run_mock.call_args
         assert run_kwargs["shots"] == 100  # from options={"shots": 100} in fixture
 
     def test_invalid_shots_type_raises_type_error(self, qiskit_backend):
@@ -437,48 +505,48 @@ class TestQiskitBackendRunAsync:
 
     def test_batch_of_circuits_returns_single_job(self, qiskit_backend):
         """Multiple circuits are batched into a single QiskitJob."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job(
-            counts_per_circuit=[{"0": 60, "1": 40}, {"0": 50, "1": 50}]
-        )
+        backend, run_mock = qiskit_backend
+        run_mock.return_value = _make_qiskit_job(counts_per_circuit=[{"0": 60, "1": 40}, {"0": 50, "1": 50}])
 
         job = backend.run_async([_simple_circuit(), _simple_circuit()], shots=100)
         assert isinstance(job, QiskitJob)
-        sampler_mock.return_value.run.assert_called_once()
+        run_mock.assert_called_once()
 
     def test_run_async_shots_list_warns_and_uses_max(self, qiskit_backend):
         """run_async with a list of shots must warn and run all circuits at max(shots)."""
-        backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job([{"0": 300}, {"0": 300}])
+        backend, run_mock = qiskit_backend
+        run_mock.return_value = _make_qiskit_job([{"0": 300}, {"0": 300}])
 
         with pytest.warns(UserWarning, match="per-circuit shot counts"):
             backend.run_async([_simple_circuit(), _simple_circuit()], shots=[100, 300])
 
-        _, run_kwargs = sampler_mock.return_value.run.call_args
+        _, run_kwargs = run_mock.call_args
         assert run_kwargs["shots"] == 300  # max([100, 300])
 
-    def test_run_async_default_shots_fallback_is_1024(self, sampler_mock):
+    def test_run_async_default_shots_fallback_is_1024(self, monkeypatch):
         """When 'shots' is absent from _options, run_async() falls back to 1024 not 1000."""
         # Use a real AerSimulator device so transpile() works, but pass options
         # without a 'shots' key to exercise the fallback path in run_async().
-        backend = QiskitBackend(backend=AerSimulator(), options={"custom_key": "val"})
-        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+        device = AerSimulator()
+        run_mock = MagicMock(return_value=_make_qiskit_job())
+        monkeypatch.setattr(device, "run", run_mock)
+        backend = QiskitBackend(backend=device, options={"custom_key": "val"})
 
         backend.run_async(_simple_circuit())
 
-        _, run_kwargs = sampler_mock.return_value.run.call_args
+        _, run_kwargs = run_mock.call_args
         assert run_kwargs["shots"] == 1024
 
 
 class TestQiskitBackendConstruction:
     """Tests for QiskitBackend constructor branches not covered by the run_async fixture."""
 
-    def test_default_backend_is_aer_simulator(self, sampler_mock):
+    def test_default_backend_is_aer_simulator(self):
         """When no backend is provided, AerSimulator is used as the default."""
         backend = QiskitBackend(options={"shots": 100})
         assert "aer" in backend.name.lower()
 
-    def test_options_read_from_backend_when_not_provided(self, sampler_mock):
+    def test_options_read_from_backend_when_not_provided(self):
         """When options is omitted and backend exposes a dict, those options are used."""
         mock_device = MagicMock()
         mock_device.name = "mock_device"
@@ -486,13 +554,32 @@ class TestQiskitBackendConstruction:
         backend = QiskitBackend(backend=mock_device)
         assert backend.options["shots"] == 200
 
-    def test_default_options_used_when_backend_has_no_options(self, sampler_mock):
+    def test_default_options_used_when_backend_has_no_options(self):
         """When options is omitted and backend.options is None, _default_options() is used."""
         mock_device = MagicMock()
         mock_device.name = "mock_device"
         mock_device.options = None
         backend = QiskitBackend(backend=mock_device)
         assert backend.options["shots"] == 1024
+
+    @_skip_if_no_runtime
+    def test_real_ibm_backend_rejected_with_pointer_to_runtime_backend(self):
+        """Real IBM backends cannot run via Backend.run(), so they are refused early.
+
+        Without this, passing a service.least_busy() result here fails much later
+        with an opaque IBMBackendError from inside the job.
+        """
+        from qiskit_ibm_runtime import IBMBackend
+
+        with pytest.raises(TypeError, match="QiskitRuntimeBackend"):
+            QiskitBackend(backend=MagicMock(spec=IBMBackend))
+
+    @_skip_if_no_runtime
+    def test_fake_ibm_backend_is_accepted(self):
+        """Fake IBM backends execute locally and must not be caught by the guard."""
+        from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+
+        assert QiskitBackend(backend=FakeWashingtonV2()).run(_simple_circuit(), shots=20)
 
 
 class TestQiskitBackendIntegration:
@@ -614,6 +701,101 @@ class TestQiskitBackendIntegration:
         assert not res._populated
         bb.dispatch()
         assert res == {3: 1.0}
+
+
+class TestQiskitBackendNonHexMemory:
+    """Regression tests for providers that do not write hexadecimal ``memory``.
+
+    Qiskit documents the level-2 ``memory`` field as a list of hex strings, and
+    ``BackendSamplerV2`` relies on that when it rebuilds counts (``int(entry, 16)``).
+    ``qiskit-iqm`` instead writes plain binary bitstrings, so routing Qrisp
+    submissions through a sampler raised ``OverflowError: int too big to convert``
+    for most outcomes, and silently produced wrong counts for the rest.
+    Reading ``Result.get_counts()`` directly is immune to this.
+    """
+
+    @staticmethod
+    def _iqm_style_backend(memory: list[str]):
+        """A Qiskit backend that reports results the way qiskit-iqm's IQMJob does."""
+        from collections import Counter
+        from datetime import date
+
+        from qiskit.providers import JobStatus as QiskitJobStatus
+        from qiskit.providers import JobV1
+        from qiskit.providers.fake_provider import GenericBackendV2
+        from qiskit.result import Counts, Result
+
+        class _IQMStyleJob(JobV1):
+            def submit(self):
+                pass
+
+            def status(self):
+                return QiskitJobStatus.DONE
+
+            def result(self, **kwargs):
+                # Mirrors iqm/qiskit_iqm/iqm_job.py::IQMJob.result(): binary
+                # bitstrings in `memory`, binary keys in `counts`, and a header
+                # that carries no creg_sizes/memory_slots.
+                return Result.from_dict(
+                    {
+                        "backend_name": self.backend().name,
+                        "backend_version": "",
+                        "qobj_id": "",
+                        "job_id": self.job_id(),
+                        "success": True,
+                        "date": date.today().isoformat(),
+                        "results": [
+                            {
+                                "shots": len(memory),
+                                "success": True,
+                                "data": {
+                                    "memory": memory,
+                                    "counts": Counts(Counter(memory)),
+                                    "metadata": {},
+                                },
+                                "header": {"name": "circuit_0"},
+                            }
+                        ],
+                    }
+                )
+
+        class _IQMStyleBackend(GenericBackendV2):
+            def __init__(self):
+                super().__init__(num_qubits=5, basis_gates=["cz", "r", "id"], seed=42)
+
+            def run(self, run_input, **options):
+                return _IQMStyleJob(self, job_id="iqm-style-job")
+
+        return _IQMStyleBackend()
+
+    @staticmethod
+    def _ghz(n: int) -> QrispQuantumCircuit:
+        qc = QrispQuantumCircuit(n)
+        qc.h(0)
+        for target in range(1, n):
+            qc.cx(0, target)
+        qc.measure(qc.qubits)
+        return qc
+
+    def test_binary_memory_does_not_overflow(self):
+        """A 4-bit all-ones outcome no longer raises OverflowError.
+
+        int("1111", 16) == 4369, which does not fit the single byte Qiskit
+        allocates for a 4-bit classical register.
+        """
+        memory = ["0000"] * 50 + ["1111"] * 50
+        backend = QiskitBackend(backend=self._iqm_style_backend(memory))
+        assert backend.run(self._ghz(4), shots=100) == {"0000": 50, "1111": 50}
+
+    def test_binary_memory_is_not_silently_misread(self):
+        """Outcomes small enough to avoid the overflow are still decoded correctly.
+
+        int("11", 16) == 17 fits in one byte, so the old sampler path returned
+        counts of {"00": 50, "01": 50} for a Bell state without raising at all.
+        """
+        memory = ["00"] * 50 + ["11"] * 50
+        backend = QiskitBackend(backend=self._iqm_style_backend(memory))
+        assert backend.run(self._ghz(2), shots=100) == {"00": 50, "11": 50}
 
 
 # ---------------------------------------------------------------------------
