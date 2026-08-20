@@ -47,6 +47,7 @@ from qrisp.circuit import ClControlledOperation, Instruction, QuantumCircuit
 
 _WINDOW_SIZE = 100  # The number of instructions to consider in a single window for grouping.
 _CHUNK_SIZE = 62  # Bits per int64 chunk in the chunked qubit-bitmask path (62 to keep the sign bit free).
+_MAX_GROUP_QUBITS = 7  # A group's precalculated unitary is capped at this many qubits.
 
 
 # This class is supposed to describe a group of instructions
@@ -221,7 +222,7 @@ def find_grouping_options(
     qb_list = int_to_qb_set_generic(qubits, int_qc.source)
     options = [GroupedInstruction(int_qc, instruction_indices, qb_list)]
 
-    if len(expansion_options) == 0 or max_recursion_depth == 0 or len(qb_list) >= 7:
+    if len(expansion_options) == 0 or max_recursion_depth == 0 or len(qb_list) >= _MAX_GROUP_QUBITS:
         return options
 
     for i in range(len(expansion_options)):
