@@ -277,6 +277,12 @@ def simulate_jaspr(
                 from qrisp.jasp.interpreter_tools import terminal_sampling_evaluator
 
                 if function_name in translation_dic:
+                    if _jaspr_has_name(jaxpr, "sampling_helper_2_mixed"):
+                        raise ValueError(
+                            "Terminal sampling does not support classical "
+                            "return values. Use terminal_sampling=False "
+                            "to sample with classical returns."
+                        )
                     terminal_sampling_evaluator(translation_dic[function_name])(
                         eqn, context_dic, eqn_evaluator=eqn_evaluator
                     )
@@ -347,3 +353,19 @@ def simulate_jaspr(
 @qrisp_lru_compilation_cache
 def compile_cl_func(jaxpr, function_name):
     return jax.jit(eval_jaxpr(jaxpr)), [True]
+
+
+def _jaspr_has_name(jaxpr, target_name):
+    """Return True if *target_name* appears as a ``jit`` call name in *jaxpr*
+    or its nested sub-jaxprs, skipping ``user_func`` subtrees."""
+    for eqn in jaxpr.jaxpr.eqns:
+        if eqn.primitive.name == "jit":
+            if eqn.params.get("name") == target_name:
+                return True
+            if eqn.params.get("name") == "user_func":
+                continue  # don't descend into arbitrary user state-prep
+        for key in ("jaxpr", "body_jaxpr"):
+            sub = eqn.params.get(key)
+            if sub is not None and _jaspr_has_name(sub, target_name):
+                return True
+    return False
