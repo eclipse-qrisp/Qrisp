@@ -18,7 +18,8 @@
 from __future__ import annotations
 
 import weakref
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from typing import Any, TYPE_CHECKING
 
 import jax
@@ -331,3 +332,31 @@ def check_live(tracer: Tracer | None) -> bool:
     if tracer is None:
         return True
     return bool(tracer._trace.main.jaxpr_stack)
+
+
+@contextmanager
+def tracing_scope(qs: TracingQuantumSession, initial_abs_qst: AbstractQuantumState | None) -> Iterator[None]:
+    """Start a nested tracing scope on qs, calling conclude_tracing() if the
+    wrapped code raises.
+
+    Centralizes the exception-safe ``start_tracing``/``conclude_tracing`` idiom
+    shared by qache (qaching.py) and quantum_kernel (quantum_kernel.py). On
+    success, ``conclude_tracing()`` is *not* called here -- the caller calls it
+    itself afterward, since its return value (the resulting AbstractQuantumState)
+    feeds into follow-up logic that differs per call site.
+
+    Parameters
+    ----------
+    qs : TracingQuantumSession
+        The tracing session to start/conclude a nested scope on.
+
+    initial_abs_qst : AbstractQuantumState | None
+        The AbstractQuantumState value to start the nested scope with.
+
+    """
+    qs.start_tracing(initial_abs_qst)
+    try:
+        yield
+    except Exception:
+        qs.conclude_tracing()
+        raise

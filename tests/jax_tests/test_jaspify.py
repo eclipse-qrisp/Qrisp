@@ -15,6 +15,7 @@
 ********************************************************************************
 """
 
+import pytest
 from jax import jit
 
 from qrisp import *
@@ -353,3 +354,14 @@ def test_jaspify_pytree():
     assert isinstance(result, dict), "Should return a dict"
     assert "value" in result, "Should have 'value' key"
     assert result["value"] in [0, 1], "Should be 0 or 1"
+
+
+def test_jaspify_raises_when_returning_quantum_variable():
+    """jaspify must reject a function that returns a QuantumVariable, not silently accept it."""
+
+    @jaspify
+    def main():
+        return QuantumFloat(2)
+
+    with pytest.raises(Exception, match="Tried to jaspify function returning a QuantumVariable"):
+        main()
