@@ -216,12 +216,13 @@ class TracingQuantumSession:
             Number of qubits to allocate. If ``None``, no allocation is performed
             (the variable already has qubits assigned).
         """
-        self._check_in_scope()
 
         if self.abs_qst is None:
-            raise Exception(
+            raise RuntimeError(
                 "Tried to create QuantumVariable outside of a quantum tracing context (use jaspify, make_jaspr, sample or similar features to enter a quantum tracing context)"
             )
+
+        self._check_in_scope()
 
         if size is not None:
             qv.reg = self.request_qubits(size)
