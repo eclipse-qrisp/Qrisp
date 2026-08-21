@@ -32,6 +32,7 @@ from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
+
 class QuantumSession(QuantumCircuit):
     """The QuantumSession class manages the life cycle of QuantumVariables and enables
     features such as :ref:`QuantumEnvironments <QuantumEnvironment>` or
@@ -1229,6 +1230,7 @@ class QuantumSession(QuantumCircuit):
         self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 
         return list(self.qs_tracker)
+
 
 class QuantumVariableNamingError(Exception):
     """
