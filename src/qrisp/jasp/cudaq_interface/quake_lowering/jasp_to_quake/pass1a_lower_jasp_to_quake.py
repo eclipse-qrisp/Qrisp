@@ -115,7 +115,7 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
 
     After this pass, no ``jasp.*`` ops remain.  ``!jasp.QuantumState`` values
     are dead (all uses redirected) but may still appear structurally in SCF
-    ops and function signatures — those are cleaned up by PASS 2.
+    ops and function signatures — those are cleaned up by PASS 1b.
 
     Parameters
     ----------

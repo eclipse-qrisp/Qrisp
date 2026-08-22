@@ -19,13 +19,13 @@
 PASS 1b – QuantumState structural elimination.
 
 After PASS 1a has lowered all ``jasp.*`` ops and threaded QST backwards
-(making all QST values dead), excecpt for the quantum kernel creation/consumption ops, this pass
+(making all QST values dead), except for the quantum kernel creation/consumption ops, this pass
 removes all remaining structural traces of ``!jasp.QuantumState`` from the IR.
 
 Quantum kernels are handled specially: the ``jasp.create_quantum_kernel`` op is dropped, and the
 ``jasp.consume_quantum_kernel`` op is replaced with a constant True tensor. 
 A ``jasp.create_quantum_kernel`` op has a single result of type ``!jasp.QuantumState``. 
-A ``jasp.consume_quantum_kernel`` op has a single operand of type ``!jasp.QuantumState``and a single result of type ``tensor<i1>``.
+A ``jasp.consume_quantum_kernel`` op has a single operand of type ``!jasp.QuantumState`` and a single result of type ``tensor<i1>``.
 Both ops enclose a ``func.call`` marking the quantum kernel function:
 
     %0 = jasp.create_quantum_kernel -> !jasp.QuantumState
