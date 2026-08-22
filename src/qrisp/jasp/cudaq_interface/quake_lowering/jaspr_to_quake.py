@@ -61,7 +61,6 @@
 # The returned string contains only Quake + CC + arith, math, func ops;
 # no !jasp.* types or tensor ops remain.
 
-
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr

@@ -26,7 +26,6 @@
 # ----------
 # https://nvidia.github.io/cuda-quantum/latest/specification/quake-dialect.html
 
-
 from collections.abc import Sequence
 
 from xdsl.dialects.builtin import (
