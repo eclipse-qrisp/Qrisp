@@ -145,25 +145,7 @@ def prepare(
 
     .. note::
 
-        This primitive is not yet compatible with QuantumEnvironments
-        (e.g. ``invert`` or ``control``) in Jasp mode when using the ``qswitch`` method.
-        Trying to use it within such environments, for example by writing:
-
-        ::
-
-            from qrisp.jasp.evaluation_tools import terminal_sampling
-
-            @terminal_sampling
-            def circuit():
-
-                (...)
-
-                with invert():
-                    prepare(..., method="qswitch")
-
-        currently results in an error.
-
-        Furthermore, it is currently not possible to prepare
+        It is currently not possible to prepare
         a state with 64 or more qubits using the ``qswitch`` method.
 
     """

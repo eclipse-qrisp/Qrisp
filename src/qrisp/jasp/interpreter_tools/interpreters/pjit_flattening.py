@@ -20,7 +20,7 @@ from jax import jit
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     extract_invalues,
-    insert_outvalues,
+    insert_call_outvalues,
     reinterpret,
 )
 
@@ -34,11 +34,8 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
 
     res = jit(eval_jaxpr(definition_jaxpr), inline=True)(*invalues)
 
-    if len(definition_jaxpr.outvars) == 1:
-        res = [res]
-
     # Insert the values into the context_dic
-    insert_outvalues(pjit_eqn, context_dic, res)
+    insert_call_outvalues(pjit_eqn, context_dic, res, len(definition_jaxpr.outvars))
 
 
 # Flattens/Inlines a pjit calls in a jaxpr

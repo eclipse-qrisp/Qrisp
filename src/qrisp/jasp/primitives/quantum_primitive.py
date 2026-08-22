@@ -18,8 +18,12 @@
 from jax.extend.core import Primitive
 
 
-# Wrapper to identify Qrisp primitives
+# Wrapper to identify Qrisp primitives.
+# abstract_eval/impl are registered per-instance via def_abstract_eval/def_impl
+# instead of being overridden as class methods.
 class QuantumPrimitive(Primitive):
+    """Primitive subclass tagging Qrisp's own JAX primitives."""
+
     def __init__(self, name):
         Primitive.__init__(self, "jasp." + name)
         self.qrisp_name = name

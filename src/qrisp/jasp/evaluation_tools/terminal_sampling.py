@@ -35,13 +35,21 @@ def terminal_sampling(func=None, shots=0):
     will not return a valid distribution. A demonstration for this is given in the
     examples section.
 
-    To use the terminal sampling decorator, a Jasp-compatible function returning
-    some QuantumVariables has to be given as a parameter.
+    .. note::
+
+        ``terminal_sampling`` only supports sampling kernels that return
+        :ref:`QuantumVariables <QuantumVariable>`.  Kernels that return
+        classical values (from :func:`mid-circuit measurements <measure>`)
+        are **not** supported — use :func:`~qrisp.jasp.sample` with
+        ``@jaspify(terminal_sampling=False)`` (the default) for those.
+
+    To use the terminal sampling decorator, a Jasp-compatible sampling kernel
+    returning some QuantumVariables has to be given as a parameter.
 
     Parameters
     ----------
     func : callable
-        A Jasp compatible function returning QuantumVariables.
+        A Jasp-compatible sampling kernel returning QuantumVariables.
     shots : int, optional
         An integer specifying the amount of shots. The default is None, which
         will result in probabilities being returned.

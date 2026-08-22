@@ -15,36 +15,34 @@
 ********************************************************************************
 """
 
-"""
-Boolean Simulation Decorator
-============================
-
-This module provides the ``boolean_simulation`` decorator, which enables efficient
-classical simulation of quantum programs that contain only boolean/classical logic.
-
-The decorator transforms Jasp functions into pure JAX expressions, allowing them to
-be JIT-compiled and executed without any quantum simulation overhead. This is 
-particularly useful for:
-
-1. **Verifying uncomputation correctness**: The simulation checks that all deleted
-   qubits are properly uncomputed (in the |0⟩ state) and warns otherwise.
-
-2. **Testing classical quantum algorithms at scale**: Algorithms like adders,
-   multipliers, and other arithmetic circuits can be tested with large inputs.
-
-3. **Performance benchmarking**: Since the simulation compiles to efficient JAX
-   code, it can be used to benchmark the classical logic portion of algorithms.
-
-Supported Operations:
-- X, SWAP gates (unconditional bit operations)
-- Controlled variants: CX, CCX, CSWAP, multi-controlled X, etc.
-- Phase gates (Z, S, T, RZ, P): These are no-ops in classical simulation
-- Measurement: Returns the current classical bit values
-
-Unsupported Operations:
-- Any gate creating superposition: H, RX, RY, SX, etc.
-- These will raise an exception during simulation
-"""
+# Boolean Simulation Decorator
+# ============================
+#
+# This module provides the ``boolean_simulation`` decorator, which enables efficient
+# classical simulation of quantum programs that contain only boolean/classical logic.
+#
+# The decorator transforms Jasp functions into pure JAX expressions, allowing them to
+# be JIT-compiled and executed without any quantum simulation overhead. This is
+# particularly useful for:
+#
+# 1. Verifying uncomputation correctness: The simulation checks that all deleted
+#    qubits are properly uncomputed (in the |0> state) and warns otherwise.
+#
+# 2. Testing classical quantum algorithms at scale: Algorithms like adders,
+#    multipliers, and other arithmetic circuits can be tested with large inputs.
+#
+# 3. Performance benchmarking: Since the simulation compiles to efficient JAX
+#    code, it can be used to benchmark the classical logic portion of algorithms.
+#
+# Supported Operations:
+# - X, SWAP gates (unconditional bit operations)
+# - Controlled variants: CX, CCX, CSWAP, multi-controlled X, etc.
+# - Phase gates (Z, S, T, RZ, P): These are no-ops in classical simulation
+# - Measurement: Returns the current classical bit values
+#
+# Unsupported Operations:
+# - Any gate creating superposition: H, RX, RY, SX, etc.
+# - These will raise an exception during simulation
 
 from typing import Any, Callable
 
@@ -215,9 +213,12 @@ def boolean_simulation(
         return lambda x: boolean_simulation(
             x, bit_array_padding=bit_array_padding, callback_threshold=callback_threshold
         )
-    else:
-        # Called without arguments: @boolean_simulation
-        func = func[0]
+    # Called without arguments: @boolean_simulation
+    # Narrowed rebinding under a new name: pyright's declared type for the *func
+    # vararg is tuple[Callable, ...]; reassigning func itself to a single Callable
+    # would conflict with that declared type, and the nested return_function
+    # closure below (which captures this by reference) wouldn't see the narrowing.
+    target_func: Callable = func[0]
 
     if bit_array_padding < 64:
         raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
@@ -249,7 +250,7 @@ def boolean_simulation(
         # Create the Jaspr representation of the quantum program
         # Use return_shape=True to capture the output PyTree structure
         jaspr: Jaspr
-        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
+        jaspr, out_tree = make_jaspr(target_func, return_shape=True)(*args)
 
         # Validate that no quantum values are returned
         # (quantum values must be measured before returning from boolean simulation)
@@ -277,8 +278,10 @@ def boolean_simulation(
         free_qubit_list = Jlist(jnp.arange(bit_array_padding), max_size=bit_array_padding).flatten()[0]
 
         # The boolean quantum circuit is represented as a tuple:
-        # (bit_array, jlist_array, jlist_counter)
-        boolean_quantum_circuit: tuple[Array, ...] = (bit_array, *free_qubit_list)
+        # (bit_array, jlist_array, jlist_counter). Jlist itself has no type hints,
+        # so free_qubit_list's element types aren't known precisely enough to
+        # declare this as tuple[Array, ...] without conflicting with them.
+        boolean_quantum_circuit: tuple[Any, ...] = (bit_array, *free_qubit_list)
 
         # Combine user arguments with the quantum circuit state
         ammended_args: list[Any] = list(args) + list(boolean_quantum_circuit)
@@ -295,9 +298,9 @@ def boolean_simulation(
         if num_output_values == 0:
             # Function returns nothing (only quantum circuit state)
             return None
-        else:
-            # Extract user return values and reconstruct the PyTree structure
-            flat_results = res[:num_output_values]
-            return tree_unflatten(out_tree, flat_results)
+
+        # Extract user return values and reconstruct the PyTree structure
+        flat_results = res[:num_output_values]
+        return tree_unflatten(out_tree, flat_results)
 
     return return_function

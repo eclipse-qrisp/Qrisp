@@ -36,6 +36,28 @@ run as a native CUDA-Q kernel.
 See the new :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` for a hands-on
 introduction, from a first Bell-state kernel to hybrid variational workflows.
 
+New Features
+------------
+
+- **sample() and expectation_value() now accept arbitrary return values**
+  Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
+  :func:`~qrisp.jasp.expectation_value`) may now return classical values
+  from mid-circuit measurements, ``QuantumVariable``\ s, or a mixture of
+  both.  Previously only ``QuantumVariable`` returns were supported.
+  ``QuantumVariable``\ s in the return are automatically measured and
+  decoded; classical values are interleaved in-place.
+
+  Terminal sampling (decorator and Japify with ``terminal_sampling=True``) 
+  rejects kernels that return classical values with a descriptive 
+  error — use ``terminal_sampling=False`` (the default) for those cases.
+
+Improvements
+------------
+
+- Updated docstrings for ``sample()``, ``expectation_value()``, and
+  ``terminal_sampling()`` to use "sampling kernel" terminology and document
+  the new arbitrary-return-value capability.
+
 Other New Features
 ------------------
 
@@ -55,6 +77,38 @@ Bug Fixes
 * Fixed Cirq ``FutureWarning`` by explicitly setting ``use_repetition_ids=True``
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
+
+* Fixed jasp-mode crashes when tracing a ``while``/``scan`` loop with a
+  single carried value, uncovered while removing duplicated interpreter
+  code across four execution backends
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+  
+* Fixed :class:`~qrisp.interface.QiskitBackend` failing with
+  ``OverflowError: int too big to convert`` — or, for small classical
+  registers, silently returning wrong counts — on providers that report
+  measurement results as binary rather than hexadecimal strings, such as
+  ``qiskit-iqm``.  Circuits are now submitted through the wrapped backend's
+  own ``run()`` method and counts are read via ``Result.get_counts()``,
+  instead of going through Qiskit's ``BackendSamplerV2`` primitive, which
+  rebuilds counts from the hex-encoded ``memory`` field.
+  :class:`~qrisp.interface.QiskitRuntimeBackend` continues to use
+  ``SamplerV2``, which IBM Runtime requires.  Passing a real IBM Quantum
+  backend to :class:`~qrisp.interface.QiskitBackend` now raises a ``TypeError``
+  pointing at :class:`~qrisp.interface.QiskitRuntimeBackend`; IBM *fake*
+  backends are unaffected
+  (`PR #788 <https://github.com/eclipse-qrisp/Qrisp/pull/788>`_).
+
+* Fixed a bug where :func:`prepare <qrisp.prepare>` with ``method="qswitch"``
+  raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
+  :func:`control <qrisp.control>` environment in Jasp mode
+  (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
+
+* Removed reduant imports in the top-level ``qrisp`` package.
+  (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
+
+* Updated broken link in TSP tutorial to point to the
+  correct archived Qiskit textbook.
+  (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
 
 Compatibility
 -------------
@@ -106,6 +160,13 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+* Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
+  subsystem, consolidating control-flow, equation-copying, and caching logic
+  that had been independently duplicated across the Catalyst,
+  classical-simulation, profiling, and post-processing backends into shared
+  helper functions
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+
 Dependency Upgrades
 -------------------
 
@@ -133,3 +194,4 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `micpap25 <https://github.com/micpap25>`_
