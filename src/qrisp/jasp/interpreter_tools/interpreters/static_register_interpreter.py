@@ -78,7 +78,6 @@ import jax.numpy as jnp
 from jax import jit, make_jaxpr
 from jax.lax import fori_loop
 from jax.lax import while_loop as jax_while_loop
-from jax.lax import cond as jax_cond
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.primitives import (
@@ -98,8 +97,14 @@ from qrisp.jasp.primitives import (
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     extract_invalues,
+    insert_call_outvalues,
     insert_outvalues,
     reinterpret,
+)
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_cond_under_trace,
+    evaluate_scan_under_trace,
+    evaluate_while_loop_under_trace,
 )
 from qrisp.jasp.interpreter_tools.scalar_list import ScalarList
 
@@ -182,11 +187,11 @@ def make_static_register_interpreter(size):
         else:
             name = eqn.primitive.name
             if name == "while":
-                _process_while(eqn, context_dic, evaluator)
+                evaluate_while_loop_under_trace(eqn, context_dic, evaluator)
             elif name == "cond":
-                _process_cond(eqn, context_dic, evaluator)
+                evaluate_cond_under_trace(eqn, context_dic, evaluator)
             elif name == "scan":
-                _process_scan(eqn, context_dic, evaluator)
+                evaluate_scan_under_trace(eqn, context_dic, evaluator)
             elif name == "jit":
                 _process_pjit(eqn, context_dic, evaluator)
             else:
@@ -549,168 +554,8 @@ def _process_reset(eqn, context_dic, evaluator):
 # ---------------------------------------------------------------------------
 
 
-def _process_while(eqn, context_dic, evaluator):
-    """
-    Reinterpret a ``while`` loop with the static-register evaluator.
-
-    The loop carry (all non-const invalues) may contain quantum-state 3-tuples
-    and ScalarList qubit arrays.  ``jax.lax.while_loop`` handles these because
-    both AbstractQuantumState and ScalarList are registered JAX pytrees.
-    """
-    invalues = extract_invalues(eqn, context_dic)
-
-    num_cond_consts = eqn.params["cond_nconsts"]
-    num_body_consts = eqn.params["body_nconsts"]
-    total_consts = num_cond_consts + num_body_consts
-
-    cond_consts = invalues[:num_cond_consts]
-    body_consts = invalues[num_cond_consts:total_consts]
-    carry = tuple(invalues[total_consts:])
-
-    body_fn = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=evaluator)
-    cond_fn = eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=evaluator)
-
-    def cond_wrapped(carry):
-        args = list(cond_consts) + list(carry)
-        return cond_fn(*args)
-
-    def body_wrapped(carry):
-        args = list(body_consts) + list(carry)
-        result = body_fn(*args)
-        if not isinstance(result, tuple):
-            result = (result,)
-        return result
-
-    carry_out = jax_while_loop(cond_wrapped, body_wrapped, carry)
-
-    if not isinstance(carry_out, tuple):
-        carry_out = (carry_out,)
-
-    insert_outvalues(eqn, context_dic, list(carry_out))
-
-
-def _process_cond(eqn, context_dic, evaluator):
-    """
-    Reinterpret a ``cond`` with the static-register evaluator.
-
-    Uses jax.lax.cond (2 branches) or jax.lax.switch (N branches).
-    Branches are wrapped to accept a single tuple operand.
-    """
-    from jax.lax import switch as jax_switch
-
-    invalues = extract_invalues(eqn, context_dic)
-    pred = invalues[0]
-    operands = tuple(invalues[1:])
-
-    branch_jaxprs = eqn.params["branches"]
-    branch_fns = [eval_jaxpr(b, eqn_evaluator=evaluator) for b in branch_jaxprs]
-
-    # Wrap each branch so it accepts a single tuple argument.
-    def _make_wrapper(fn):
-        def wrapped(ops):
-            return fn(*ops)
-
-        return wrapped
-
-    wrapped_branches = [_make_wrapper(fn) for fn in branch_fns]
-
-    if len(wrapped_branches) == 2:
-        # branches[0] = false branch, branches[1] = true branch
-        result = jax_cond(
-            jnp.asarray(pred, dtype=bool),
-            wrapped_branches[1],  # true
-            wrapped_branches[0],  # false
-            operands,
-        )
-    else:
-        result = jax_switch(jnp.asarray(pred, dtype=jnp.int32), wrapped_branches, operands)
-
-    n_outvars = len(eqn.outvars)
-    if n_outvars == 0:
-        return
-    elif n_outvars == 1:
-        # jax_cond returns the single outvar value directly (not wrapped in an
-        # extra tuple).  That value may itself be a tuple (e.g. a QuantumState
-        # is represented as a 3-tuple).  Store it as-is.
-        outvalues = [result]
-    else:
-        if not isinstance(result, tuple):
-            result = (result,)
-        outvalues = list(result)
-
-    insert_outvalues(eqn, context_dic, outvalues)
-
-
-def _process_scan(eqn, context_dic, evaluator):
-    """
-    Reinterpret a ``scan`` with the static-register evaluator.
-    """
-    from jax.lax import scan as jax_scan
-
-    invalues = extract_invalues(eqn, context_dic)
-
-    num_consts = eqn.params["num_consts"]
-    num_carry = eqn.params["num_carry"]
-    length = eqn.params["length"]
-    reverse = eqn.params.get("reverse", False)
-    unroll = eqn.params.get("unroll", 1)
-
-    consts = invalues[:num_consts]
-    init = invalues[num_consts : num_consts + num_carry]
-    xs = invalues[num_consts + num_carry :]
-
-    scan_body_fn = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=evaluator)
-
-    if num_consts > 0:
-
-        def wrapped_body(carry, x):
-            args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
-            result = scan_body_fn(*args)
-            if not isinstance(result, tuple):
-                result = (result,)
-            return result[:num_carry], result[num_carry:]
-
-    else:
-
-        def wrapped_body(carry, x):
-            args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
-            result = scan_body_fn(*args)
-            if not isinstance(result, tuple):
-                result = (result,)
-            return result[:num_carry], result[num_carry:]
-
-    xs_arg = xs[0] if len(xs) == 1 else tuple(xs)
-    init_arg = init[0] if len(init) == 1 else tuple(init)
-
-    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
-
-    if not isinstance(final_carry, tuple):
-        final_carry = (final_carry,)
-    if not isinstance(ys, tuple):
-        ys = (ys,)
-
-    insert_outvalues(eqn, context_dic, final_carry + ys)
-
-
 def _process_pjit(eqn, context_dic, evaluator):
     """Inline a jit'd call by evaluating its jaxpr with the static-register evaluator."""
     invalues = extract_invalues(eqn, context_dic)
     result = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=evaluator)(*invalues)
-
-    n_outvars = len(eqn.outvars)
-    if n_outvars == 0:
-        return
-    elif n_outvars == 1:
-        # eval_jaxpr returns the single outvar value directly (not wrapped in a
-        # tuple).  That value may itself be a tuple (e.g. a QuantumState is
-        # represented as a 3-tuple in the static-register model).  Store it
-        # as-is so the 1:1 outvar → value mapping in insert_outvalues holds.
-        outvalues = [result]
-    else:
-        # Multiple outvars: eval_jaxpr returns a tuple with one entry per
-        # outvar.  QuantumState entries in that tuple are already 3-tuples.
-        if not isinstance(result, tuple):
-            result = (result,)
-        outvalues = list(result)
-
-    insert_outvalues(eqn, context_dic, outvalues)
+    insert_call_outvalues(eqn, context_dic, result, len(eqn.params["jaxpr"].jaxpr.outvars))
