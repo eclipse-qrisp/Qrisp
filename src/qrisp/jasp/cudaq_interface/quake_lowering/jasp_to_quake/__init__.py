@@ -15,18 +15,17 @@
 ********************************************************************************
 """
 
-"""
-PASS 1: Jasp → Quake lowering (QuantumState elimination + op rewriting).
-
-pass1_jasp_to_quake
-    Orchestrator, running 1a then 1b.
-pass1a_lower_jasp_to_quake
-    Rewrites Jasp quantum ops into their Quake dialect equivalents.
-pass1b_strip_qst
-    Eliminates the QuantumState-threading value, replacing it with direct
-    Quake qubit-reference semantics.
-gate_mapping
-    Mapping from Jasp gate names to Quake gate descriptors.
-helper_functions
-    Shared xDSL-construction helpers used by 1a/1b.
-"""
+# PASS 1: Jasp → Quake lowering (QuantumState elimination + op rewriting).
+# ==========================================================================
+#
+# pass1_jasp_to_quake
+#     Orchestrator, running 1a then 1b.
+# pass1a_lower_jasp_to_quake
+#     Rewrites Jasp quantum ops into their Quake dialect equivalents.
+# pass1b_strip_qst
+#     Eliminates the QuantumState-threading value, replacing it with direct
+#     Quake qubit-reference semantics.
+# gate_mapping
+#     Mapping from Jasp gate names to Quake gate descriptors.
+# helper_functions
+#     Shared xDSL-construction helpers used by 1a/1b.

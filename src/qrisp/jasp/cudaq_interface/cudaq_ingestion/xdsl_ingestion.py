@@ -15,9 +15,9 @@
 ********************************************************************************
 """
 
-# Extracted from cudaq_kernel.py: normalizing xDSL-printed MLIR and
-# compiling it into a native CUDA-Q kernel (pipeline stage 3 --
-# "Re-Compilation", see cudaq_kernel.py header).
+# Normalizing xDSL-printed MLIR and compiling it into a native CUDA-Q
+# kernel (pipeline stage 3 – "Re-Compilation").
+# =======================================================================
 
 import re
 from typing import Literal

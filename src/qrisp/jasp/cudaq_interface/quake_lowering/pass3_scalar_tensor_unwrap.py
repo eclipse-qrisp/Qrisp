@@ -15,24 +15,21 @@
 ********************************************************************************
 """
 
-"""
-PASS 3 – Tensor unwrapping and scalar return rewriting.
-=========================================================
-
-This pass applies a suite of greedy rewrite patterns to clean up rank-0 
-tensor round-trips and unwrap scalar return types.
-
-Architecture:
-1. UnwrapFuncAndReturn: Rewrites func signatures and inserts tensor.extract
-   at the return boundary to bridge the type gap.
-2. FoldExtractOfDenseConstant: extract(constant dense<V>) -> constant V
-3. FoldExtractOfFromElements: extract(from_elements V) -> V
-4. ForwardExtractOfScalar: extract(scalar V) -> V (cleans up stale extracts)
-5. EraseDeadTensorConstant: Cleans up orphaned dense constants.
-6. EraseDeadFromElements: Cleans up orphaned from_elements.
-
-Compatible with **xDSL ≥ 0.55**.
-"""
+# PASS 3 – Tensor unwrapping and scalar return rewriting.
+# ==========================================================
+#
+# This pass applies a suite of greedy rewrite patterns to clean up rank-0
+# tensor round-trips and unwrap scalar return types.
+#
+# Approach
+# --------
+# 1. UnwrapFuncAndReturn: Rewrites func signatures and inserts tensor.extract
+#    at the return boundary to bridge the type gap.
+# 2. FoldExtractOfDenseConstant: extract(constant dense<V>) -> constant V
+# 3. FoldExtractOfFromElements: extract(from_elements V) -> V
+# 4. ForwardExtractOfScalar: extract(scalar V) -> V (cleans up stale extracts)
+# 5. EraseDeadTensorConstant: Cleans up orphaned dense constants.
+# 6. EraseDeadFromElements: Cleans up orphaned from_elements.
 
 from xdsl.context import Context
 from xdsl.dialects import arith, func as func_dialect, tensor

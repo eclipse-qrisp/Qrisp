@@ -15,34 +15,36 @@
 ********************************************************************************
 """
 
-"""
-PASS 1b – QuantumState structural elimination.
-
-After PASS 1a has lowered all ``jasp.*`` ops and threaded QST backwards
-(making all QST values dead), except for the quantum kernel creation/consumption ops, this pass
-removes all remaining structural traces of ``!jasp.QuantumState`` from the IR.
-
-Quantum kernels are handled specially: the ``jasp.create_quantum_kernel`` op is dropped, and the
-``jasp.consume_quantum_kernel`` op is replaced with a constant True tensor. 
-A ``jasp.create_quantum_kernel`` op has a single result of type ``!jasp.QuantumState``. 
-A ``jasp.consume_quantum_kernel`` op has a single operand of type ``!jasp.QuantumState`` and a single result of type ``tensor<i1>``.
-Both ops enclose a ``func.call`` marking the quantum kernel function:
-
-    %0 = jasp.create_quantum_kernel -> !jasp.QuantumState
-    %1, %2 = func.call @quantum_kernel(%0) : (!jasp.QuantumState) -> (tensor<i1>, !jasp.QuantumState)
-    %3 = jasp.consume_quantum_kernel %2 : !jasp.QuantumState -> tensor<i1>
-
-This pass removes the remaining structural traces of ``!jasp.QuantumState`` from:
-
-- ``scf.while`` init operands, block arguments, yields, conditions, and results
-- ``scf.if`` yields and results
-- ``scf.for`` init args, block arguments, yields, and results
-- ``scf.index_switch`` yields and results
-- ``func.call`` operands and results
-- ``func.return`` operands
-- ``func.func`` argument lists, return types, and attributes
-
-"""
+# PASS 1b – QuantumState structural elimination.
+# ================================================
+#
+# After PASS 1a has lowered all jasp.* ops and threaded QST backwards
+# (making all QST values dead), except for the quantum kernel
+# creation/consumption ops, this pass removes all remaining structural
+# traces of !jasp.QuantumState from the IR.
+#
+# Quantum kernels are handled specially: the jasp.create_quantum_kernel op
+# is dropped, and the jasp.consume_quantum_kernel op is replaced with a
+# constant True tensor. A jasp.create_quantum_kernel op has a single
+# result of type !jasp.QuantumState. A jasp.consume_quantum_kernel op has
+# a single operand of type !jasp.QuantumState and a single result of type
+# tensor<i1>. Both ops enclose a func.call marking the quantum kernel
+# function:
+#
+#     %0 = jasp.create_quantum_kernel -> !jasp.QuantumState
+#     %1, %2 = func.call @quantum_kernel(%0) : (!jasp.QuantumState) -> (tensor<i1>, !jasp.QuantumState)
+#     %3 = jasp.consume_quantum_kernel %2 : !jasp.QuantumState -> tensor<i1>
+#
+# This pass removes the remaining structural traces of
+# !jasp.QuantumState from:
+#
+# - scf.while init operands, block arguments, yields, conditions, and results
+# - scf.if yields and results
+# - scf.for init args, block arguments, yields, and results
+# - scf.index_switch yields and results
+# - func.call operands and results
+# - func.return operands
+# - func.func argument lists, return types, and attributes
 
 from xdsl.dialects import arith, func
 from xdsl.dialects.builtin import (

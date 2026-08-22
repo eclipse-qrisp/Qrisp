@@ -83,18 +83,21 @@ def validate_quake_mlir(mlir_str: str) -> Module:
     Examples
     --------
 
-    >>> from qrisp import QuantumVariable, h, cx, measure
-    >>> from qrisp.jasp import make_jaspr
-    >>> from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
-    >>>
-    >>> def bell():
-    ...     qv = QuantumVariable(2)
-    ...     h(qv[0])
-    ...     cx(qv[0], qv[1])
-    ...     return measure(qv)
-    ...
-    >>> mlir_str = str(jaspr_to_quake(make_jaspr(bell)()))
-    >>> module = validate_quake_mlir(mlir_str)
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.jasp import make_jaspr
+        from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
+
+        def bell():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+
+        jaspr = make_jaspr(bell)()
+        xdsl_module = jaspr_to_quake(jaspr)
+        module = validate_quake_mlir(str(xdsl_module))
     """
 
     assert_no_jasp(mlir_str)

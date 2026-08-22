@@ -15,27 +15,26 @@
 ********************************************************************************
 """
 
-"""
-Gate-name mapping: Jasp ``gate_type`` attribute → Quake gate factory arguments.
-
-Each entry in :data:`GATE_MAP` describes how a Jasp quantum gate should be
-lowered to a Quake gate op:
-
-``(num_controls, quake_gate_name)``
-
-where *num_controls* is the number of qubit operands that are **control**
-qubits (the remaining qubit operands are targets).
-
-Gate-name conventions used by Qrisp / Jasp
--------------------------------------------
-The ``gate_type`` string stored in ``jasp.quantum_gate`` comes from
-``qrisp.Operation.name``.  Standard names include: ``h``, ``x``, ``y``, ``z``,
-``cx``, ``cy``, ``cz``, ``s``, ``s_dg``, ``t``, ``t_dg``, ``rx``, ``ry``,
-``rz``, ``p``, ``u3``,``sx``, ``sx_dg``, ``gphase``, ``cgphase``.  
-
-Composite gates like ``xxyy`` and ``xxzz`` are decomposed before lowering to MLIR at the Jaspr level
-via ``decompose_composite_gates`` and are not present in the map.
-"""
+# Gate-name mapping: Jasp gate_type attribute → Quake gate factory arguments.
+# =============================================================================
+#
+# Each entry in GATE_MAP describes how a Jasp quantum gate should be
+# lowered to a Quake gate op:
+#
+# (num_controls, quake_gate_name)
+#
+# where num_controls is the number of qubit operands that are control
+# qubits (the remaining qubit operands are targets).
+#
+# Gate-name conventions used by Qrisp / Jasp
+# -------------------------------------------
+# The gate_type string stored in jasp.quantum_gate comes from
+# qrisp.Operation.name. Standard names include: h, x, y, z, cx, cy, cz, s,
+# s_dg, t, t_dg, rx, ry, rz, p, u3, sx, sx_dg, gphase, cgphase.
+#
+# Composite gates like xxyy and xxzz are decomposed before lowering to MLIR
+# at the Jaspr level via decompose_composite_gates and are not present in
+# the map.
 
 import math
 from collections.abc import Callable, Sequence

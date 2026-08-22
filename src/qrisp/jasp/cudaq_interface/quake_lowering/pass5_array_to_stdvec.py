@@ -15,20 +15,20 @@
 ********************************************************************************
 """
 
-"""
-PASS 5 – CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
-=================================================================
-
-Rewrites ``!cc.ptr<!cc.array<T x N>>`` parameters in the CUDA-Q entrypoint
-to ``!cc.stdvec<T>`` for runtime compatibility.
-
-Strategy:
-  - Replace the array pointer parameter with a stdvec in the entrypoint signature.
-  - Immediately extract the data pointer and cast it back to the original
-    statically-sized array pointer type.
-  - All internal functions continue to use the original static array type
-    unchanged, requiring no call graph analysis or propagation.
-"""
+# PASS 5 – CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
+# ===================================================================
+#
+# Rewrites !cc.ptr<!cc.array<T x N>> parameters in the CUDA-Q entrypoint
+# to !cc.stdvec<T> for runtime compatibility.
+#
+# Approach
+# --------
+# - Replace the array pointer parameter with a stdvec in the entrypoint
+#   signature.
+# - Immediately extract the data pointer and cast it back to the original
+#   statically-sized array pointer type.
+# - All internal functions continue to use the original static array type
+#   unchanged, requiring no call graph analysis or propagation.
 
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import ModuleOp, FunctionType, Attribute

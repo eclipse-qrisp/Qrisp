@@ -15,25 +15,26 @@
 ********************************************************************************
 """
 
-"""
-PASS 6: CUDA-Q module preparation.
-
-Transforms a Quake+CC xDSL module (output of passes 1–5) into the structure
-that CUDA-Q's Module.parse expects:
-
-- Strips module sym_name (anonymous module)
-- Renames @main → @__nvqpp__mlirgen__<uuid>
-- Removes old-style attrs, strips visibility
-- Adds cudaq-entrypoint / cudaq-kernel unit attrs
-- Packs multiple return values into !cc.struct
-- Synthesizes .run variant (cc.log_output + void return)
-- Synthesizes .run.entry
-- Injects module-level attributes (llvm.data_layout, quake.mangled_name_map, etc.)
-
-xDSL stores inherent attributes (sym_name, function_type, sym_visibility)
-in op.properties (a dict). Discardable attributes (cudaq-kernel, no_this, etc.)
-live in op.attributes.
-"""
+# CUDA-Q module preparation.
+# =============================
+#
+# Transforms a Quake+CC xDSL module (output of jaspr_to_quake_mlir) into the structure
+# that CUDA-Q's Module.parse expects:
+#
+# - Strips module sym_name (anonymous module)
+# - Renames @main -> @__nvqpp__mlirgen__<uuid>
+# - Removes old-style attrs, strips visibility
+# - Adds cudaq-entrypoint / cudaq-kernel unit attrs
+# - Packs multiple return values into !cc.struct
+# - Synthesizes .run variant (cc.log_output + void return)
+# - Synthesizes .run.entry
+# - Injects module-level attributes (llvm.data_layout, quake.mangled_name_map, etc.)
+#
+# Implementation note
+# --------------------
+# xDSL stores inherent attributes (sym_name, function_type, sym_visibility)
+# in op.properties (a dict). Discardable attributes (cudaq-kernel, no_this, etc.)
+# live in op.attributes.
 
 from typing import Literal
 

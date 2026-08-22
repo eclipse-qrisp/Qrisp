@@ -15,12 +15,11 @@
 ********************************************************************************
 """
 
-"""
-xDSL dialect definitions for the CUDA-Q Quake and CC dialects.
-
-quake_dialect
-    Quake dialect: qubit references, quantum gates, measurements.
-cc_dialect
-    CC (classical control) dialect: structured control flow, std::vector-like
-    arrays, and scalar/loop constructs used by the lowered CUDA-Q kernels.
-"""
+# xDSL dialect definitions for the CUDA-Q Quake and CC dialects.
+# =================================================================
+#
+# quake_dialect
+#     Quake dialect: qubit references, quantum gates, measurements.
+# cc_dialect
+#     CC (classical control) dialect: structured control flow, std::vector-like
+#     arrays, and scalar/loop constructs used by the lowered CUDA-Q kernels.

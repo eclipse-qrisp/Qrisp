@@ -15,10 +15,11 @@
 ********************************************************************************
 """
 
-# ====================================================================== #
-# CUSTOM INGESTION PIPELINE: Bridging External MLIR to CUDA-Q
-# ====================================================================== #
-# Rationale:
+# Custom ingestion pipeline: bridging external MLIR to CUDA-Q.
+# ===============================================================
+#
+# Rationale
+# ---------
 # CUDA-Q's execution backend (C++) strictly requires an MLIR module to
 # specify the host machine's exact memory architecture (llvm.data_layout)
 # and hardware target (llvm.target_triple) to successfully compile and
@@ -27,7 +28,8 @@
 # these hardware attributes results in fatal "missing data layout"
 # runtime crashes.
 #
-# Workflow:
+# Approach
+# --------
 # 1. Target Extraction: We define an empty Python function decorated with
 #    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces
 #    the underlying LLVM compiler to generate the exact, natively-matched
@@ -50,7 +52,6 @@
 #    back into CUDA-Q's internal compiler via `Module.parse()`. This
 #    re-compiles the string within the active MLIR context, resulting in a
 #    valid kernel object that the C++ backend can safely execute.
-# ====================================================================== #
 
 from collections.abc import Callable
 from typing import Literal

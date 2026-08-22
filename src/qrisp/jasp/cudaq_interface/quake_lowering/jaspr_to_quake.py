@@ -16,58 +16,56 @@
 ********************************************************************************
 """
 
-"""
-Entry point for the Jasp → Quake (memory-semantics) lowering pipeline.
-
-Usage example::
-
-    from qrisp import QuantumVariable, h, cx, measure
-    from qrisp.jasp import make_jaspr
-    from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
-
-    def bell():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        return measure(qv)
-
-    jaspr = make_jaspr(bell)()
-    mlir_str = jaspr_to_quake_mlir(jaspr)
-    print(mlir_str)
-
-Pipeline
---------
-The lowering consists of the following passes:
-
-0. **Emission** (:mod:`.mlir_emission`) – Translate the :class:`~qrisp.jasp.Jaspr`
-   to an initial xDSL ``builtin.ModuleOp`` via ``jaspr_to_mlir``.
-0a. **Safeguard** (:mod:`.safeguard_no_ranked_tensor_linalg`) – Reject any module
-    that contains ``linalg.generic`` ops on ranked tensors before lowering begins.
-1. **PASS 1** (:mod:`.pass1_jasp_to_quake`) – Replace every ``jasp.*`` op by
-   its Quake equivalent, eliminate the ``!jasp.QuantumState`` threading, and
-   perform QuantumState elimination.
-2. **PASS 2** (:mod:`.pass2_scf_to_cc`) – Replace ``scf.if`` / ``scf.while``
-   (where they have no SSA results) with ``cc.if`` / ``cc.loop``.
-3. **PASS 3** (:mod:`.pass3_scalar_tensor_unwrap`) – Fold trivial rank-0 tensor
-   constants / extracts into scalars.
-3b. **PASS 3B** (:mod:`.pass3b_static_veq_alloca`) – Rewrite constant-sized
-    ``quake.alloca`` register allocations from ``!quake.veq<?>[%n]`` to
-    ``!quake.veq<N>``.
-4. **PASS 4** (:mod:`.pass4_ranked_tensor_to_array`) – Lower ranked tensor constants
-    and accesses to CC array operations.
-5. **PASS 5** (:mod:`.pass5_array_to_stdvec`) – Rewrite static array pointer
-   parameters to ``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
-
-The returned string contains only Quake + CC + arith, math, func ops;
-no ``!jasp.*`` types or tensor ops remain.
-"""
+# Entry point for the Jasp → Quake (memory-semantics) lowering pipeline.
+# =========================================================================
+#
+# Usage example:
+#
+#     from qrisp import QuantumVariable, h, cx, measure
+#     from qrisp.jasp import make_jaspr
+#     from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
+#
+#     def bell():
+#         qv = QuantumVariable(2)
+#         h(qv[0])
+#         cx(qv[0], qv[1])
+#         return measure(qv)
+#
+#     jaspr = make_jaspr(bell)()
+#     xdsl_module = jaspr_to_quake_mlir(jaspr)
+#     print(xdsl_module)
+#
+# Pipeline
+# --------
+# The lowering consists of the following passes:
+#
+# 0. Emission (mlir_emission) – Translate the Jaspr to an initial xDSL
+#    builtin.ModuleOp via jaspr_to_mlir.
+# 0a. Safeguard (safeguard_no_ranked_tensor_linalg) – Reject any module
+#     that contains linalg.generic ops on ranked tensors before lowering begins.
+# 1. PASS 1 (pass1_jasp_to_quake) – Replace every jasp.* op by its Quake
+#    equivalent, eliminate the !jasp.QuantumState threading, and perform
+#    QuantumState elimination.
+# 2. PASS 2 (pass2_scf_to_cc) – Replace scf.if / scf.while (where they have
+#    no SSA results) with cc.if / cc.loop.
+# 3. PASS 3 (pass3_scalar_tensor_unwrap) – Fold trivial rank-0 tensor
+#    constants / extracts into scalars.
+# 3b. PASS 3B (pass3b_static_veq_alloca) – Rewrite constant-sized
+#     quake.alloca register allocations from !quake.veq<?>[%n] to
+#     !quake.veq<N>.
+# 4. PASS 4 (pass4_ranked_tensor_to_array) – Lower ranked tensor constants
+#    and accesses to CC array operations.
+# 5. PASS 5 (pass5_array_to_stdvec) – Rewrite static array pointer
+#    parameters to !cc.stdvec<T> for CUDA-Q runtime compatibility.
+#
+# The returned string contains only Quake + CC + arith, math, func ops;
+# no !jasp.* types or tensor ops remain.
 
 
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.jasp_expression import Jaspr
-
-# from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import lower_jasp_to_quake
+from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
 from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
@@ -87,7 +85,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg
 )
 
 
-def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
+def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
     """Lower a :class:`~qrisp.jasp.Jaspr` to a Quake+CC ``builtin.ModuleOp``.
 
     Parameters
@@ -131,8 +129,6 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
         If the emitted module contains ``linalg.generic`` on ranked tensors.
     """
     # Step 0 – Produce the initial xDSL module with Jasp IR.
-    from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
-
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)
 
     # Step 0a – Safeguard: reject ranked-tensor linalg.generic early.

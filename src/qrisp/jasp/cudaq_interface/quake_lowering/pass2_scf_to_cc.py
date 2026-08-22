@@ -15,33 +15,26 @@
 ********************************************************************************
 """
 
-"""
-PASS 2 – SCF → CC dialect lowering (pure-SSA approach).
-
-Replaces structured control-flow ops (``scf.if``, ``scf.for``, ``scf.while``)
-with their CC-dialect equivalents (``cc.if``, ``cc.loop``) using pure SSA
-value threading via block arguments.
-
-Strategy
---------
-- ``cc.if`` carries result values via ``cc.continue %val : type`` in each
-  branch (matching native CUDA-Q output).
-- ``cc.loop`` uses block arguments + ``cc.condition %cond(%args...)`` in the
-  while-region, and ``cc.continue %args...`` in body/step regions to thread
-  loop-carried state.
-
-To comply with CUDA-Q's strict scalar requirements for classical control flow,
-any loop-carried ``tensor<T>`` values are automatically unwrapped to scalars
-(``T``) at region boundaries using ``tensor.extract``, and re-wrapped after
-the op using ``tensor.from_elements``.  These wrappers are cleaned up by
-Pass 3 (tensor unwrap).
-
-CUDA-Q Hotfix
--------------
-A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``, ``sle``) in
-``cc.loop`` while-conditions to terminate prematurely.  The hotfix rewrites
-``A sge B`` to ``A sgt (B-1)`` and ``A sle B`` to ``A slt (B+1)`` before emitting the condition.
-"""
+# PASS 2 – SCF → CC dialect lowering (pure-SSA approach).
+# ==========================================================
+#
+# Replaces structured control-flow ops (scf.if, scf.for, scf.while) with
+# their CC-dialect equivalents (cc.if, cc.loop) using pure SSA value
+# threading via block arguments.
+#
+# Approach
+# --------
+# - cc.if carries result values via cc.continue %val : type in each branch
+#   (matching native CUDA-Q output).
+# - cc.loop uses block arguments + cc.condition %cond(%args...) in the
+#   while-region, and cc.continue %args... in body/step regions to thread
+#   loop-carried state.
+#
+# To comply with CUDA-Q's strict scalar requirements for classical control
+# flow, any loop-carried tensor<T> values are automatically unwrapped to
+# scalars (T) at region boundaries using tensor.extract, and re-wrapped
+# after the op using tensor.from_elements. These wrappers are cleaned up
+# by Pass 3 (tensor unwrap).
 
 from typing import Optional, List
 

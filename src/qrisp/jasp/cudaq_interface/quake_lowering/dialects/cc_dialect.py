@@ -15,32 +15,31 @@
 ********************************************************************************
 """
 
-"""
-xDSL dialect definitions for the CUDA-Q Classical Control (CC) dialect.
-
-Covers:
-- Types (!cc.ptr<T>, !cc.array<T x N>, !cc.stdvec<T>, !cc.struct<"name" {T1, T2, ...}>)
-- Local memory ops (cc.alloca, cc.store, cc.load)
-- Structured control-flow ops (cc.if, cc.loop, cc.condition, cc.continue, cc.break)
-- Pointer arithmetic ops (cc.compute_ptr, cc.cast)
-- StdVec ops (cc.stdvec_data)
-- Struct ops (cc.undef, cc.insert_value, cc.log_output) — used by CUDA-Q
-  preparation for multi-return packing and .run variant synthesis.
-
-Control-flow semantics (matching native CUDA-Q output):
-
-- ``cc.if`` supports **returning values** via ``cc.continue %val : type``
-  terminators in each branch, analogous to ``scf.if`` with ``scf.yield``.
-- ``cc.loop`` carries loop-state via **block arguments** in its while-region,
-  forwarded by ``cc.condition`` and updated by ``cc.continue`` in body/step.
-- ``cc.continue`` is the universal branch terminator: it carries operands
-  both inside ``cc.if`` branches (as return values) and inside ``cc.loop``
-  body/step regions (as loop-carried values).
-
-References
-----------
-https://github.com/NVIDIA/cuda-quantum/tree/main/lib/Optimizer/Dialect/CC
-"""
+# xDSL dialect definitions for the CUDA-Q Classical Control (CC) dialect.
+# =========================================================================
+#
+# Covers:
+# - Types (!cc.ptr<T>, !cc.array<T x N>, !cc.stdvec<T>, !cc.struct<"name" {T1, T2, ...}>)
+# - Local memory ops (cc.alloca, cc.store, cc.load)
+# - Structured control-flow ops (cc.if, cc.loop, cc.condition, cc.continue, cc.break)
+# - Pointer arithmetic ops (cc.compute_ptr, cc.cast)
+# - StdVec ops (cc.stdvec_data)
+# - Struct ops (cc.undef, cc.insert_value, cc.log_output) – used by CUDA-Q
+#   preparation for multi-return packing and .run variant synthesis.
+#
+# Control-flow semantics
+# -----------------------
+# - cc.if supports returning values via cc.continue %val : type
+#   terminators in each branch, analogous to scf.if with scf.yield.
+# - cc.loop carries loop-state via block arguments in its while-region,
+#   forwarded by cc.condition and updated by cc.continue in body/step.
+# - cc.continue is the universal branch terminator: it carries operands
+#   both inside cc.if branches (as return values) and inside cc.loop
+#   body/step regions (as loop-carried values).
+#
+# References
+# ----------
+# https://github.com/NVIDIA/cuda-quantum/tree/main/lib/Optimizer/Dialect/CC
 
 from typing import Sequence
 

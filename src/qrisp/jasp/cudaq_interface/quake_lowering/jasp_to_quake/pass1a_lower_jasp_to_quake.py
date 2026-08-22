@@ -15,34 +15,29 @@
 ********************************************************************************
 """
 
-"""
-PASS 1a – Jasp→Quake op lowering.
-
-Replaces all ``jasp.*`` ops with their Quake equivalents using a
-``PatternRewriteWalker``.  QuantumState values are threaded backwards
-(``qst_out.replace_all_uses_with(qst_in)``) inside each pattern, making
-all QST values dead.  The actual *structural* removal of QST from SCF ops
-and function signatures is handled by the separate PASS 1b.
-
-Op mapping:
-
-========================  ==========================================
-Jasp op                   Quake op(s)
-========================  ==========================================
-``jasp.create_qubits``    ``quake.alloca !quake.veq<?>``
-``jasp.get_qubit``        ``quake.extract_ref``
-``jasp.get_size``         ``quake.veq_size``
-``jasp.slice``            ``quake.subveq``
-``jasp.fuse``             ``quake.concat``
-``jasp.delete_qubits``    ``quake.dealloc``
-``jasp.quantum_gate``     ``quake.<gate>``  (dispatched via gate_mapping)
-``jasp.measure``          ``quake.mz`` + ``quake.discriminate``
-``jasp.reset``            ``quake.reset``
-``jasp.parity``           not supported — raises ``NotImplementedError``
-``jasp.create_quantum_kernel``        dropped in PASS 1b
-``jasp.consume_quantum_kernel``       dropped in PASS 1b
-========================  ==========================================
-"""
+# PASS 1a – Jasp→Quake op lowering.
+# ===================================
+#
+# Replaces all jasp.* ops with their Quake equivalents using a
+# PatternRewriteWalker. QuantumState values are threaded backwards
+# (qst_out.replace_all_uses_with(qst_in)) inside each pattern, making
+# all QST values dead. The actual structural removal of QST from SCF ops
+# and function signatures is handled by the separate PASS 1b.
+#
+# Op mapping
+# ----------
+# jasp.create_qubits              quake.alloca !quake.veq<?>
+# jasp.get_qubit                  quake.extract_ref
+# jasp.get_size                   quake.veq_size
+# jasp.slice                      quake.subveq
+# jasp.fuse                       quake.concat
+# jasp.delete_qubits               quake.dealloc
+# jasp.quantum_gate                quake.<gate> (dispatched via gate_mapping)
+# jasp.measure                     quake.mz + quake.discriminate
+# jasp.reset                       quake.reset
+# jasp.parity                      not supported – raises NotImplementedError
+# jasp.create_quantum_kernel        dropped in PASS 1b
+# jasp.consume_quantum_kernel       dropped in PASS 1b
 
 from xdsl.dialects import arith, scf
 from xdsl.dialects.builtin import (

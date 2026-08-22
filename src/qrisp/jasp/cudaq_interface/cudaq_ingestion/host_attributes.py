@@ -15,8 +15,8 @@
 ********************************************************************************
 """
 
-# Extracted from cudaq_kernel.py: host/LLVM target attribute detection
-# (pipeline stage 1 -- "Target Extraction", see cudaq_kernel.py header).
+# Host/LLVM target attribute detection (pipeline stage 1 – "Target Extraction").
+# ================================================================================
 
 import platform
 import re

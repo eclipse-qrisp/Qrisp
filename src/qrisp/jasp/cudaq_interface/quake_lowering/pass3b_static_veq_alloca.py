@@ -15,31 +15,27 @@
 ********************************************************************************
 """
 
-"""
-PASS 3B – Static-size ``quake.alloca`` rewriting.
-==================================================
-
-Rewrites ``quake.alloca !quake.veq<?>[%n : i64]`` into ``quake.alloca
-!quake.veq<N>`` whenever ``%n`` is fed by an ``arith.constant``.
-
-Uses of the (now statically-typed) result that are not guaranteed to accept
-either veq flavor interchangeably — i.e. anything other than the Quake ops in
-:data:`_TYPE_TRANSPARENT_CONSUMERS`, such as control-flow block arguments
-(``cc.loop``/``cc.if``, or their pre-lowering ``scf`` counterparts) or
-function boundaries (``func.call``/``func.return``), whose types were already
-independently fixed to the dynamic ``!quake.veq<?>`` earlier in the
-pipeline — are routed through an inserted ``quake.relax_size`` cast back to
-``!quake.veq<?>``, so the alloca itself can always be staticized regardless of
-how its result is later used.
-
-This runs after PASS 3 (:mod:`.pass3_scalar_tensor_unwrap`), which is
-responsible for folding the ``tensor.extract``/``tensor.from_elements``
-round-trips that Jasp emits for register sizes down to a bare
-``arith.constant``. Only once that folding has happened can this pass
-reliably recognize a constant-sized allocation.
-
-Compatible with **xDSL ≥ 0.55**.
-"""
+# PASS 3B – Static-size quake.alloca rewriting.
+# ===============================================
+#
+# Rewrites quake.alloca !quake.veq<?>[%n : i64] into quake.alloca
+# !quake.veq<N> whenever %n is fed by an arith.constant.
+#
+# Uses of the (now statically-typed) result that are not guaranteed to
+# accept either veq flavor interchangeably – i.e. anything other than the
+# Quake ops in _TYPE_TRANSPARENT_CONSUMERS, such as control-flow block
+# arguments (cc.loop/cc.if, or their pre-lowering scf counterparts) or
+# function boundaries (func.call/func.return), whose types were already
+# independently fixed to the dynamic !quake.veq<?> earlier in the
+# pipeline – are routed through an inserted quake.relax_size cast back to
+# !quake.veq<?>, so the alloca itself can always be staticized regardless
+# of how its result is later used.
+#
+# This runs after PASS 3 (pass3_scalar_tensor_unwrap), which is
+# responsible for folding the tensor.extract/tensor.from_elements
+# round-trips that Jasp emits for register sizes down to a bare
+# arith.constant. Only once that folding has happened can this pass
+# reliably recognize a constant-sized allocation.
 
 from xdsl.context import Context
 from xdsl.dialects import arith

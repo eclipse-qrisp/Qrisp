@@ -15,12 +15,12 @@
 ********************************************************************************
 """
 
-"""Early safeguard for ranked-tensor ``linalg.generic`` patterns.
-
-This module provides a small verifier that can be run on freshly emitted MLIR
-to fail early with a clear error if unsupported ranked-tensor linalg patterns
-are present before Quake lowering starts.
-"""
+# Early safeguard for ranked-tensor linalg.generic patterns.
+# =============================================================
+#
+# This module provides a small verifier that can be run on freshly emitted
+# MLIR to fail early with a clear error if unsupported ranked-tensor
+# linalg patterns are present before Quake lowering starts.
 
 from xdsl.dialects import linalg
 from xdsl.dialects.builtin import ModuleOp, TensorType

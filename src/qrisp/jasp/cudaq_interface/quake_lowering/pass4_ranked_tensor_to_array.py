@@ -15,31 +15,29 @@
 ********************************************************************************
 """
 
-"""
-Ranked Tensor → CC Array Lowering
-=================================
-
-Lowers ranked tensor constants (``tensor<NxT>``) and their element accesses
-to CC memory operations (``cc.alloca``, ``cc.compute_ptr``, ``cc.load``),
-matching native CUDA-Q output.
-
-Additionally rewrites function signatures and call sites so that rank-1
-tensor arguments are passed as ``!cc.ptr<!cc.array<T x N>>`` pointers,
-enabling dynamic indexing across function boundaries without copying.
-
-Pipeline within this pass
--------------------------
-1. **Collect signature rewrites** — determine which functions have rank-1
-   tensor arguments that need conversion to CC array pointers.
-2. **Rewrite function definitions** — change ``tensor<NxT>`` block args to
-   ``!cc.ptr<!cc.array<T x N>>``.
-3. **Process each function body** — materialize local tensor constants into
-   CC arrays (populating an ``array_map``), rewrite tensor access patterns,
-   and rewrite outgoing calls using the populated ``array_map`` so that
-   already-materialized arrays are passed directly (no redundant copies).
-
-Handles both static and dynamic array indexing.
-"""
+# Ranked Tensor → CC Array Lowering
+# ===================================
+#
+# Lowers ranked tensor constants (tensor<NxT>) and their element accesses
+# to CC memory operations (cc.alloca, cc.compute_ptr, cc.load), matching
+# native CUDA-Q output.
+#
+# Additionally rewrites function signatures and call sites so that rank-1
+# tensor arguments are passed as !cc.ptr<!cc.array<T x N>> pointers,
+# enabling dynamic indexing across function boundaries without copying.
+#
+# Approach
+# --------
+# 1. Collect signature rewrites – determine which functions have rank-1
+#    tensor arguments that need conversion to CC array pointers.
+# 2. Rewrite function definitions – change tensor<NxT> block args to
+#    !cc.ptr<!cc.array<T x N>>.
+# 3. Process each function body – materialize local tensor constants into
+#    CC arrays (populating an array_map), rewrite tensor access patterns,
+#    and rewrite outgoing calls using the populated array_map so that
+#    already-materialized arrays are passed directly (no redundant copies).
+#
+# Handles both static and dynamic array indexing.
 
 from xdsl.dialects import arith, func as func_dialect, tensor
 from xdsl.dialects.builtin import ModuleOp
