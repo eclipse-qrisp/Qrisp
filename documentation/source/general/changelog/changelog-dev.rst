@@ -32,6 +32,10 @@ Improvements
 Other New Features
 ------------------
 
+* Added :func:`ISwapGate <qrisp.ISwapGate>` as a first-class gate in
+  :mod:`qrisp.circuit.standard_operations`, including the convenience method
+  :meth:`qc.iswap <qrisp.QuantumCircuit.iswap>`.
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -40,6 +44,9 @@ Bug Fixes
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
   (`PR #642 <https://github.com/eclipse-qrisp/Qrisp/pull/642>`_).
+
+* Fixed bugs in the Cirq converter and added support for additional gates
+  (`PR #768 <https://github.com/eclipse-qrisp/Qrisp/pull/768>`_).
 
 * Updated Qiskit example in documentation to use ``AerSimulator`` instead of the
   deprecated ``Aer.get_backend()`` API

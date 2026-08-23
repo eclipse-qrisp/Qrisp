@@ -2614,6 +2614,19 @@ class QuantumCircuit:
         """
         self.append(ops.SwapGate(), [qubits_0, qubits_1])
 
+    def iswap(self, qubits_0: QubitLike, qubits_1: QubitLike):
+        """Instruct an iSWAP-gate.
+
+        Parameters
+        ----------
+        qubits_0 : QubitLike
+            The qubit to iSWAP.
+        qubits_1 : QubitLike
+            The other qubit to iSWAP.
+
+        """
+        self.append(ops.ISwapGate(), [qubits_0, qubits_1])
+
     def mcx(
         self,
         control_qubits: list[QubitLike],
