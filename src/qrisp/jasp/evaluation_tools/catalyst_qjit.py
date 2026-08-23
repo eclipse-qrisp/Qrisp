@@ -85,11 +85,11 @@ def qjit(function=None, device=None):
     We execute the function a couple of times to demonstrate the randomness
 
     >>> test_fun(4)
-    [array(5.25, dtype=float64)]
+    Array(5.25, dtype=float64)
     >>> test_fun(5)
-    [array(3., dtype=float64)]
+    Array(3., dtype=float64)
     >>> test_fun(5)
-    [array(7.25, dtype=float64)]
+    Array(7.25, dtype=float64)
 
 
     For executing on "lightning.gpu" we specify the device:
