@@ -206,8 +206,8 @@ class Jaspr(ClosedJaxpr):
         return self.jaxpr.outvars
 
     @property
-    def debug_info(self) -> DebugInfo | None:
-        """Debug info attached to the underlying Jaxpr, or None."""
+    def debug_info(self) -> DebugInfo:
+        """Debug info attached to the underlying Jaxpr."""
         return self.jaxpr.debug_info
 
     def __hash__(self) -> int:
@@ -609,27 +609,12 @@ class Jaspr(ClosedJaxpr):
 
     def inline(self, *args) -> Any:
         """Inline this Jaspr into the current tracing context without JIT-wrapping."""
-        from qrisp.jasp import TracingQuantumSession
-
-        qs = TracingQuantumSession.get_instance()
-        abs_qst = qs.abs_qst
-
-        amended_args = list(args) + [abs_qst]
-        res = eval_jaxpr(self)(*amended_args)
-
-        if isinstance(res, tuple):
-            new_abs_qst = res[-1]
-            res = res[:-1]
-        else:
-            new_abs_qst = res
-            res = None
-        qs.abs_qst = new_abs_qst
-        return res
+        return self.embedd(*args, inline=True)
 
     def count_ops(
         self,
         *args,
-        meas_behavior: str,
+        meas_behavior: str | Callable,
         callback_threshold: int | None = None,
     ) -> Any:
         """Return an operation count dict for this Jaspr evaluated on *args*."""
@@ -640,7 +625,7 @@ class Jaspr(ClosedJaxpr):
     def depth(
         self,
         *args,
-        meas_behavior: str,
+        meas_behavior: str | Callable,
         max_qubits: int = 1024,
         callback_threshold: int | None = None,
     ) -> Any:
@@ -658,7 +643,7 @@ class Jaspr(ClosedJaxpr):
     def num_qubits(
         self,
         *args,
-        meas_behavior: str,
+        meas_behavior: str | Callable,
         max_allocations: int = 1000,
         callback_threshold: int | None = None,
     ) -> Any:
