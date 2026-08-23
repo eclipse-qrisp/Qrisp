@@ -1147,8 +1147,8 @@ class QuantumArray:
                 )
             if self.shape != other.shape:
                 raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}.")
-        # If other is a numpy/jax array, check shape
-        elif isinstance(other, (np.ndarray, jnp.ndarray)):
+        # If other is a numpy/jax array of dimension > 0, check shape
+        elif isinstance(other, (np.ndarray, jnp.ndarray)) and other.ndim > 0:
             if self.shape != other.shape:
                 raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}.")
         # For scalar/QuantumVariable cases, no additional validation needed
