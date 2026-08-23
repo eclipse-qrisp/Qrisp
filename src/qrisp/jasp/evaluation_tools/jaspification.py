@@ -15,15 +15,26 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
+from typing import Any, Literal
+
 import jax
-from jax._src.lib.mlir import ir
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn
 from jax.tree_util import tree_flatten, tree_unflatten
+from jaxlib.mlir import ir
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit import fast_append
 from qrisp.core import recursive_qv_search
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
-from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jasp.interpreter_tools import (
+    eval_jaxpr,
+    extract_invalues,
+    insert_outvalues,
+    terminal_sampling_evaluator,
+)
+from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
+from qrisp.jasp.jasp_expression.centerclass import Jaspr, make_jaspr
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
     AbstractQubit,
@@ -31,7 +42,7 @@ from qrisp.jasp.primitives import (
 )
 
 
-def jaspify(func=None, terminal_sampling=False):
+def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False) -> Callable:
     """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
@@ -128,12 +139,14 @@ def jaspify(func=None, terminal_sampling=False):
 
     if func is None:
         return lambda x: jaspify(x, terminal_sampling=terminal_sampling)
+    # Narrowed rebinding: pyright doesn't propagate the "func is not None" narrowing
+    # above into the return_function closure below, since it captures func by
+    # reference. Rebinding to a fresh, explicitly-typed name fixes that.
+    checked_func: Callable = func
 
-    from qrisp.jasp import make_jaspr
-
-    def return_function(*args):
+    def return_function(*args) -> Any:
         # Use return_shape=True to capture the output PyTree structure
-        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
+        jaspr, out_tree = make_jaspr(checked_func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
 
         # Reconstruct the PyTree structure from flat results
@@ -143,14 +156,14 @@ def jaspify(func=None, terminal_sampling=False):
             # Single value case - still unflatten to handle any wrapping
             jaspr_res = tree_unflatten(out_tree, [jaspr_res])
 
-        if len(recursive_qv_search(jaspr_res)):
+        if recursive_qv_search(jaspr_res):
             raise Exception("Tried to jaspify function returning a QuantumVariable")
         return jaspr_res
 
     return return_function
 
 
-def stimulate(func=None):
+def stimulate(func: Callable) -> Callable:
     """This function leverages the
     `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
     to evaluate a Jasp-traceable function containing only Clifford gates.
@@ -218,9 +231,8 @@ def stimulate(func=None):
         # Yields either 0 or 31
 
     """
-    from qrisp.jasp import make_jaspr
 
-    def return_function(*args):
+    def return_function(*args) -> Any:
         # Use return_shape=True to capture the output PyTree structure
         jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, simulator="stim")
@@ -232,107 +244,159 @@ def stimulate(func=None):
             # Single value case - still unflatten to handle any wrapping
             jaspr_res = tree_unflatten(out_tree, [jaspr_res])
 
-        if len(recursive_qv_search(jaspr_res)):
+        if recursive_qv_search(jaspr_res):
             raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
 
     return return_function
 
 
+def _try_terminal_sampling(
+    eqn: JaxprEqn,
+    context_dic: ContextDict,
+    eqn_evaluator: Callable,
+    function_name: str,
+    jaxpr: Jaxpr,
+) -> bool:
+    """Handle eqn via the terminal-sampling evaluator, if function_name names one.
+
+    Returns
+    -------
+    bool
+        True if eqn was fully handled by a terminal-sampling evaluator.
+
+    """
+    translation_dic = {
+        "expectation_value_eval_function": "ev",
+        "sampling_eval_function": "array",
+        "dict_sampling_eval_function": "dict",
+    }
+
+    if function_name not in translation_dic:
+        return False
+
+    if _jaspr_has_name(jaxpr, "sampling_helper_2_mixed"):
+        raise ValueError(
+            "Terminal sampling does not support classical "
+            "return values. Use terminal_sampling=False "
+            "to sample with classical returns."
+        )
+    terminal_sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator=eqn_evaluator)
+    return True
+
+
+def _process_jit_equation(
+    eqn: JaxprEqn,
+    context_dic: ContextDict,
+    eqn_evaluator: Callable,
+    terminal_sampling: bool,
+) -> bool:
+    """Process a "jit" equation within the simulate_jaspr interpreter.
+
+    Subgraphs whose signature is purely classical (no quantum state/qubits
+    crossing the boundary) are compiled and executed via jax.jit. Everything
+    else is replayed equation-by-equation using the same eqn_evaluator.
+
+    Returns
+    -------
+    bool
+        False once the equation has been fully handled (matching the
+        eqn_evaluator protocol used by eval_jaxpr).
+
+    """
+    function_name = eqn.params["name"]
+    jaxpr = eqn.params["jaxpr"]
+
+    if terminal_sampling and _try_terminal_sampling(eqn, context_dic, eqn_evaluator, function_name, jaxpr):
+        return False
+
+    invalues = extract_invalues(eqn, context_dic)
+
+    # If there are only classical values, we attempt to compile using the jax pipeline.
+    # This is required, not just an optimization: quantum primitives only have real
+    # side effects in their impl rule, which bind() invokes for concrete/eager values.
+    # While jax.jit is tracing (as it does here, via compile_cl_func), bind() instead
+    # invokes abstract_eval, which for every quantum primitive does nothing but a
+    # shape/type check and returns a fresh AbstractQuantumState() -- no interaction
+    # with a BufferedQuantumState at all. So jitting a subgraph that carries a quantum
+    # type across its boundary would silently drop every quantum operation inside it
+    # instead of raising an error, which is why we must rule this out first.
+    for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
+        if isinstance(
+            var.aval,
+            (AbstractQuantumState, AbstractQubitArray, AbstractQubit),
+        ):
+            break
+    else:
+        compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
+
+        # Functions with purely classical inputs/outputs can still contain
+        # kernelized quantum functions. This will raise an NotImplementedError
+        # when attempting to compile. Since the compile_cl_func is lru_cached
+        # we can store this information to avoid further attempts at compiling
+        # such a function.
+        if is_executable[0]:
+            try:
+                outvalues = compiled_function(*(jaxpr.consts + invalues))
+                if len(jaxpr.jaxpr.outvars) > 1:
+                    insert_outvalues(eqn, context_dic, outvalues)
+                else:
+                    insert_outvalues(eqn, context_dic, [outvalues])
+                return False
+            except (TypeError, ir.MLIRError):
+                is_executable[0] = False
+
+    # We simulate the inverse Gidney mcx via the non-hybrid version because
+    # the hybrid version prevents the simulator from fusing gates, which
+    # slows down the simulation
+    if eqn.params["name"] == "gidney_mcx_inv_impl":
+        # Deferred import: qrisp.alg_primitives can trigger a nested load of
+        # qrisp.jasp (via qrisp.core.quantum_array) before qrisp.core itself
+        # has finished initializing, so this can't be a top-level import.
+        from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
+
+        invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
+        outvalues = [invalues[-1]]
+    else:
+        outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
+    if not isinstance(outvalues, (list, tuple)):
+        outvalues = [outvalues]
+    insert_outvalues(eqn, context_dic, outvalues)
+    return False
+
+
 def simulate_jaspr(
-    jaxpr,
+    jaxpr: ClosedJaxpr | Jaspr,
     *args,
-    terminal_sampling=False,
-    simulator="qrisp",
-    return_gate_counts=False,
-):
+    terminal_sampling: bool = False,
+    simulator: Literal["qrisp", "stim"] = "qrisp",
+    return_gate_counts: bool = False,
+) -> Any:
+    """Simulate a jaspr by replaying it equation-by-equation.
 
-    from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
-    from qrisp.jasp import Jaspr
+    Purely classical "jit" subgraphs are compiled and executed via jax.jit;
+    quantum operations are interpreted directly against a BufferedQuantumState.
 
+    """
     if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
         return None
 
-    if simulator == "stim":
-        if terminal_sampling:
-            raise Exception("Terminal sampling with stim is currently not implemented")
-    elif not simulator == "qrisp":
-        raise Exception(f"Don't know simulator {simulator}")
+    if simulator == "stim" and terminal_sampling:
+        raise Exception("Terminal sampling with stim is currently not implemented")
 
+    # An invalid simulator value raises identically, one line below, from
+    # BufferedQuantumState.__init__ -- no need to duplicate that check here.
     args = list(tree_flatten(args)[0]) + [BufferedQuantumState(simulator)]
 
-    def eqn_evaluator(eqn, context_dic):
-
+    def eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool:
         if eqn.primitive.name == "jit":
-            function_name = eqn.params["name"]
-            jaxpr = eqn.params["jaxpr"]
-
-            if terminal_sampling:
-                translation_dic = {
-                    "expectation_value_eval_function": "ev",
-                    "sampling_eval_function": "array",
-                    "dict_sampling_eval_function": "dict",
-                }
-
-                from qrisp.jasp.interpreter_tools import terminal_sampling_evaluator
-
-                if function_name in translation_dic:
-                    if _jaspr_has_name(jaxpr, "sampling_helper_2_mixed"):
-                        raise ValueError(
-                            "Terminal sampling does not support classical "
-                            "return values. Use terminal_sampling=False "
-                            "to sample with classical returns."
-                        )
-                    terminal_sampling_evaluator(translation_dic[function_name])(
-                        eqn, context_dic, eqn_evaluator=eqn_evaluator
-                    )
-                    return
-
-            invalues = extract_invalues(eqn, context_dic)
-
-            # If there are only classical values, we attempt to compile using the jax pipeline
-            for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
-                if isinstance(
-                    var.aval,
-                    (AbstractQuantumState, AbstractQubitArray, AbstractQubit),
-                ):
-                    break
-            else:
-                compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
-
-                # Functions with purely classical inputs/outputs can still contain
-                # kernelized quantum functions. This will raise an NotImplementedError
-                # when attempting to compile. Since the compile_cl_func is lru_cached
-                # we can store this information to avoid further attempts at compiling
-                # such a function.
-                if is_executable[0]:
-                    try:
-                        outvalues = compiled_function(*(jaxpr.consts + invalues))
-                        if len(jaxpr.jaxpr.outvars) > 1:
-                            insert_outvalues(eqn, context_dic, outvalues)
-                        else:
-                            insert_outvalues(eqn, context_dic, [outvalues])
-                        return False
-                    except (TypeError, ir.MLIRError):
-                        is_executable[0] = False
-
-            # We simulate the inverse Gidney mcx via the non-hybrid version because
-            # the hybrid version prevents the simulator from fusing gates, which
-            # slows down the simulation
-            if eqn.params["name"] == "gidney_mcx_inv_impl":
-                invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
-                outvalues = [invalues[-1]]
-            else:
-                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
-            if not isinstance(outvalues, (list, tuple)):
-                outvalues = [outvalues]
-            insert_outvalues(eqn, context_dic, outvalues)
-        elif eqn.primitive.name == "jasp.create_quantum_kernel":
+            return _process_jit_equation(eqn, context_dic, eqn_evaluator, terminal_sampling)
+        if eqn.primitive.name == "jasp.create_quantum_kernel":
             insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
-        elif eqn.primitive.name == "jasp.consume_quantum_kernel":
-            pass
-        else:
-            return True
+            return False
+        if eqn.primitive.name == "jasp.consume_quantum_kernel":
+            return False
+        return True
 
     with fast_append(3):
         res = eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator)(*(args))
@@ -343,15 +407,26 @@ def simulate_jaspr(
     if isinstance(jaxpr, Jaspr):
         if len(jaxpr.jaxpr.outvars) == 2:
             return res[0]
-        else:
-            return res[:-1]
-    else:
-        return res
+        return res[:-1]
+    return res
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
-def compile_cl_func(jaxpr, function_name):
+def compile_cl_func(jaxpr: Jaxpr, function_name: str) -> tuple[Callable, list[bool]]:
+    """Compile a purely classical sub-jaxpr via jax.jit, caching the result.
+
+    function_name is not used in the body but is part of the lru_cache key,
+    keeping cache entries for distinctly-named functions separate.
+
+    Returns
+    -------
+    tuple
+        The jax.jit-compiled function, and a single-element mutable list
+        used to record (and share across cache hits) whether that function
+        turned out to be actually executable.
+
+    """
     return jax.jit(eval_jaxpr(jaxpr)), [True]
 
 

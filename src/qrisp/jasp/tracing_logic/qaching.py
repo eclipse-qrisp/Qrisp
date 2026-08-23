@@ -23,6 +23,7 @@ from qrisp.jasp.tracing_logic import (
     TracingQuantumSession,
     check_for_tracing_mode,
     get_last_equation,
+    tracing_scope,
 )
 
 
@@ -276,28 +277,24 @@ def qache_helper(func, jax_kwargs):
 
         # Get the AbstractQuantumState for tracing
         tr_qs = TracingQuantumSession.get_instance()
-        tr_qs.start_tracing(tr_qs.abs_qst)
 
-        # Make sure literals are 32 bit
-        args = list(args)
-        # for i in range(len(args)):
-        #     if isinstance(args[i], bool):
-        #         args[i] = jnp.array(args[i], dtype = jnp.bool)
-        #     elif isinstance(args[i], int):
-        #         args[i] = jnp.array(args[i], dtype = jnp.int64)
-        #     elif isinstance(args[i], float):
-        #         args[i] = jnp.array(args[i], dtype = jnp.float64)
-        #     elif isinstance(args[i], complex):
-        #         args[i] = jnp.array(args[i], dtype = jnp.complex)
+        with tracing_scope(tr_qs, tr_qs.abs_qst):
+            # Make sure literals are 32 bit
+            args = list(args)
+            # for i in range(len(args)):
+            #     if isinstance(args[i], bool):
+            #         args[i] = jnp.array(args[i], dtype = jnp.bool)
+            #     elif isinstance(args[i], int):
+            #         args[i] = jnp.array(args[i], dtype = jnp.int64)
+            #     elif isinstance(args[i], float):
+            #         args[i] = jnp.array(args[i], dtype = jnp.float64)
+            #     elif isinstance(args[i], complex):
+            #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
-        # Excecute the function
-        ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10 * "~"] = tr_qs.abs_qst
-        try:
+            # Excecute the function
+            ammended_kwargs = dict(kwargs)
+            ammended_kwargs[10 * "~"] = tr_qs.abs_qst
             res, abs_qst_new = ammended_function(*args, **ammended_kwargs)
-        except Exception as e:
-            tr_qs.conclude_tracing()
-            raise e
 
         tr_qs.conclude_tracing()
 

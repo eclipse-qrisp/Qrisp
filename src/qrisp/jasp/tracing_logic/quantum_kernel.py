@@ -21,7 +21,12 @@ from qrisp.jasp.primitives import (
     consume_quantum_kernel_p,
     create_quantum_kernel_p,
 )
-from qrisp.jasp.tracing_logic import TracingQuantumSession, get_last_equation, qache
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    get_last_equation,
+    qache,
+    tracing_scope,
+)
 
 
 def quantum_kernel(func):
@@ -126,13 +131,8 @@ def quantum_kernel(func):
 
         qs = TracingQuantumSession.get_instance()
 
-        qs.start_tracing(create_quantum_kernel_p.bind())
-
-        try:
+        with tracing_scope(qs, create_quantum_kernel_p.bind()):
             res = func(*args, **kwargs)
-        except Exception as e:
-            qs.conclude_tracing()
-            raise e
 
         eqn = get_last_equation()
 

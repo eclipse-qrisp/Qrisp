@@ -15,122 +15,97 @@
 ********************************************************************************
 """
 
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal
+
 import numpy as np
 
-from qrisp.circuit import QuantumCircuit, XGate
+from qrisp.circuit import Operation, QuantumCircuit, Qubit, XGate
 from qrisp.simulator import QuantumState, advance_quantum_state, gen_res_dict
+
+if TYPE_CHECKING:
+    import stim
+
+# Maps Qrisp gate names to the identically-behaving stim.TableauSimulator method name.
+# Only "s_dg" differs from its Qrisp name (stim calls it s_dag).
+_STIM_GATE_METHODS = {
+    "x": "x",
+    "y": "y",
+    "z": "z",
+    "h": "h",
+    "cx": "cx",
+    "cy": "cy",
+    "cz": "cz",
+    "s": "s",
+    "s_dg": "s_dag",
+}
 
 
 class BufferedQuantumState:
-    """Incremental quantum state used to simulate Jasp-traced programs.
+    """Duck-typed quantum state carrier consumed by simulate_jaspr's interpreter.
 
-    Jasp interprets a jaxpr equation by equation instead of building the full
-    quantum circuit ahead of time. Feeding the simulator backend one gate at
-    a time would be extremely slow, so this class instead buffers the gates
-    appended between two measurements/resets into a plain
-    :class:`~qrisp.circuit.QuantumCircuit` (``self.buffer_qc``). Once a
-    measurement, reset, or multi-measure is requested, the buffered circuit
-    is flushed onto the actual quantum state (see :meth:`apply_buffer`),
-    which is where the buffered circuit is grouped/preprocessed and executed.
-
-    Two backends are supported:
-
-    - ``"qrisp"``: Uses Qrisp's own statevector simulator
-      (:class:`~qrisp.simulator.QuantumState`) via
-      :func:`~qrisp.simulator.advance_quantum_state`.
-    - ``"stim"``: Uses the `stim <https://github.com/quantumlib/Stim>`_
-      Clifford simulator (``stim.TableauSimulator``) for circuits containing
-      only Clifford gates.
-
-    Parameters
-    ----------
-    simulator : str, optional
-        Which simulator backend to use, either ``"qrisp"`` or ``"stim"``.
-        The default is ``"qrisp"``.
-
-    Attributes
-    ----------
-    quantum_state : QuantumState or stim.TableauSimulator
-        The underlying (already-executed) quantum state.
-    buffer_qc : QuantumCircuit
-        Circuit collecting gates that have not yet been applied to
-        ``quantum_state``.
-    deallocated_qubits : list
-        Qubits that have been deallocated (via ``qb_dealloc``) and are
-        therefore no longer tracked.
-    qubit_to_index_dict : dict
-        Maps qubit objects to their integer index within the simulator
-        backend.
-    qubit_counter : int
-        Number of qubits that have been allocated so far. Used to assign
-        fresh indices in :meth:`add_qubit`.
-    gate_counts : dict
-        Running tally of how many times each gate/measurement has been
-        applied, used for resource estimation.
+    Quantum primitives' impl rules (e.g. append_impl, measure_implementation in
+    qrisp.jasp.primitives) are written generically against any object exposing
+    .append/.measure/.reset -- a real QuantumCircuit for the circuit-extraction
+    interpreters, or this class for simulate_jaspr. Appended gates are only
+    recorded into buffer_qc; they are not applied to the backend quantum_state
+    (a qrisp.simulator.QuantumState or a stim.TableauSimulator) until a
+    measurement, reset, or explicit apply_buffer() forces a flush -- letting
+    many gates fuse before the comparatively expensive state update runs.
     """
 
-    def __init__(self, simulator="qrisp"):
+    def __init__(self, simulator: Literal["qrisp", "stim"] = "qrisp") -> None:
 
+        self.quantum_state: "QuantumState | stim.TableauSimulator"
         if simulator == "qrisp":
             self.quantum_state = QuantumState(n=0)
         elif simulator == "stim":
+            # stim is an optional dependency (see the `stimulate` decorator's
+            # docstring), so it can only be imported lazily, on actual use.
             import stim
 
             self.quantum_state = stim.TableauSimulator()
         else:
-            raise Exception("Don't know simulator {simulator}")
+            raise Exception(f"Don't know simulator {simulator}")
         self.buffer_qc = QuantumCircuit(0)
-        self.deallocated_qubits = []
-        self.simulator = simulator
-        self.qubit_to_index_dict = {}
+        self.deallocated_qubits: list[Qubit] = []
+        self.simulator: Literal["qrisp", "stim"] = simulator
+        self.qubit_to_index_dict: dict[Qubit, int] = {}
         self.qubit_counter = 0
-        self.gate_counts = {}
+        self.gate_counts: dict[str, int] = {}
 
-    def add_qubit(self):
-        """Allocate a new qubit on both the backend state and the buffer circuit.
-
-        Returns
-        -------
-        Qubit
-            The newly allocated qubit, as tracked by ``buffer_qc``.
-        """
+    def add_qubit(self) -> Qubit:
+        """Allocate a fresh qubit on both the backend state and the buffer circuit."""
         if self.simulator == "qrisp":
+            assert isinstance(self.quantum_state, QuantumState)
             self.quantum_state.add_qubit()
         qb = self.buffer_qc.add_qubit()
         self.qubit_to_index_dict[qb] = self.qubit_counter
         self.qubit_counter += 1
         return qb
 
-    def append(self, op, qubits):
-        """Append an operation to the instruction buffer.
-
-        The operation is not immediately simulated; it is only added to
-        ``buffer_qc`` and executed later, once :meth:`apply_buffer` is
-        triggered (e.g. by a measurement or reset).
-
-        Parameters
-        ----------
-        op : Operation
-            The quantum gate/operation to append.
-        qubits : list[Qubit]
-            The qubits the operation acts on.
-        """
-        self.buffer_qc.append(op, qubits)
+    def _bump_gate_count(self, key: str, amount: int = 1) -> None:
+        """Increment gate_counts[key] by amount, initializing it to amount if absent."""
         try:
-            if op.name != "qb_alloc" and op.name != "qb_dealloc":
-                self.gate_counts[op.name] += 1
+            self.gate_counts[key] += amount
         except KeyError:
-            self.gate_counts[op.name] = 1
+            self.gate_counts[key] = amount
 
-    def apply_buffer(self):
-        """Flush the buffered circuit onto the underlying quantum state.
+    def append(self, op: Operation, qubits: Sequence[Qubit]) -> None:
+        """Buffer a gate application without touching the backend state yet."""
+        self.buffer_qc.append(op, qubits)
+        if op.name not in ("qb_alloc", "qb_dealloc"):
+            self._bump_gate_count(op.name)
 
-        For the ``"qrisp"`` backend, the buffered circuit is handed to
-        :func:`~qrisp.simulator.advance_quantum_state`, which preprocesses
+    def apply_buffer(self) -> None:
+        """Flush every buffered gate into the backend quantum state.
+    
+        For the "qrisp" backend, the buffered circuit is handed to
+        qrisp.simulator.advance_quantum_state, which preprocesses
         (e.g. gate-grouping via ``group_qc``) and executes it, advancing
-        ``self.quantum_state`` in place. For the ``"stim"`` backend, each
+        ``self.quantum_state`` in place. For the "stim" backend, each
         buffered instruction is dispatched to the corresponding
-        ``stim.TableauSimulator`` method.
+        stim.TableauSimulator method.
 
         Afterwards, qubits marked for deallocation (``qb_dealloc``) are
         removed from ``buffer_qc`` and ``qubit_to_index_dict``, and the
@@ -138,6 +113,7 @@ class BufferedQuantumState:
         """
 
         if self.simulator == "qrisp":
+            assert isinstance(self.quantum_state, QuantumState)
             self.quantum_state = advance_quantum_state(
                 self.buffer_qc.copy(),
                 self.quantum_state,
@@ -148,25 +124,10 @@ class BufferedQuantumState:
             for instr in self.buffer_qc.data:
                 qubit_indices = [self.qubit_to_index_dict[qb] for qb in instr.qubits]
 
-                if instr.op.name == "x":
-                    self.quantum_state.x(*qubit_indices)
-                elif instr.op.name == "y":
-                    self.quantum_state.y(*qubit_indices)
-                elif instr.op.name == "z":
-                    self.quantum_state.z(*qubit_indices)
-                elif instr.op.name == "h":
-                    self.quantum_state.h(*qubit_indices)
-                elif instr.op.name == "cx":
-                    self.quantum_state.cx(*qubit_indices)
-                elif instr.op.name == "cy":
-                    self.quantum_state.cy(*qubit_indices)
-                elif instr.op.name == "cz":
-                    self.quantum_state.cz(*qubit_indices)
-                elif instr.op.name == "s":
-                    self.quantum_state.s(*qubit_indices)
-                elif instr.op.name == "s_dg":
-                    self.quantum_state.s_dag(*qubit_indices)
-                elif instr.op.name not in ["qb_alloc", "qb_dealloc"]:
+                method_name = _STIM_GATE_METHODS.get(instr.op.name)
+                if method_name is not None:
+                    getattr(self.quantum_state, method_name)(*qubit_indices)
+                elif instr.op.name not in ("qb_alloc", "qb_dealloc"):
                     raise Exception(f"Don't know how to simulate quantum gate {instr.op.name} with stim")
 
         for instr in self.buffer_qc.data:
@@ -176,48 +137,26 @@ class BufferedQuantumState:
 
         self.buffer_qc = self.buffer_qc.clearcopy()
 
-    def measure(self, qubit, track_measurement=True):
-        """Measure a single qubit, flushing the buffer beforehand.
-
-        Parameters
-        ----------
-        qubit : list[Qubit]
-            A single-element list containing the qubit to measure.
-        track_measurement : bool, optional
-            Whether to include this measurement in ``gate_counts``. The
-            default is True.
-
-        Returns
-        -------
-        bool or int
-            The measurement outcome.
-        """
+    def measure(self, qubit: Sequence[Qubit], track_measurement: bool = True) -> bool:
+        """Measure a qubit, flushing the buffer first."""
         if track_measurement:
-            try:
-                self.gate_counts["measure"] += 1
-            except KeyError:
-                self.gate_counts["measure"] = 1
+            self._bump_gate_count("measure")
 
         self.apply_buffer()
         if self.simulator == "qrisp":
+            assert isinstance(self.quantum_state, QuantumState)
             meas_res, self.quantum_state = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res=True)
             return meas_res
-        elif self.simulator == "stim":
-            return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])
 
-    def reset(self, qubit):
-        """Reset a qubit to the |0> state.
+        # stim is only imported lazily (see __init__); already loaded by this
+        # point since self.simulator == "stim" is only reachable after it was.
+        import stim
 
-        Implemented by measuring the qubit and, if the outcome was 1,
-        appending an ``XGate`` to flip it back to |0>. If the qubit is
-        already deallocated (not in ``qubit_to_index_dict``), this is a
-        no-op.
+        assert isinstance(self.quantum_state, stim.TableauSimulator)
+        return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])
 
-        Parameters
-        ----------
-        qubit : list[Qubit]
-            A single-element list containing the qubit to reset.
-        """
+    def reset(self, qubit: Sequence[Qubit]) -> None:
+        """Reset a qubit to the |0> state via measurement and a conditional flip."""
 
         if qubit[0] not in self.qubit_to_index_dict:
             return
@@ -226,66 +165,41 @@ class BufferedQuantumState:
         if meas_res:
             self.buffer_qc.append(XGate(), qubit)
 
-    def copy(self):
-        """Create an independent copy of this buffered quantum state.
-
-        Returns
-        -------
-        BufferedQuantumState
-            A deep-enough copy where mutating the buffer circuit, quantum
-            state, or bookkeeping dictionaries of the copy does not affect
-            the original.
-        """
-        res = BufferedQuantumState()
+    def copy(self) -> "BufferedQuantumState":
+        """Return an independent copy of this buffered quantum state."""
+        res = BufferedQuantumState(self.simulator)
         res.buffer_qc = self.buffer_qc.copy()
         res.deallocated_qubits = list(self.deallocated_qubits)
         res.quantum_state = self.quantum_state.copy()
         res.qubit_to_index_dict = dict(self.qubit_to_index_dict)
         res.qubit_counter = self.qubit_counter
+        res.gate_counts = dict(self.gate_counts)
         return res
 
-    def multi_measure(self, qubits, shots):
-        """Measure several qubits at once and optionally sample shots from the result.
+    def multi_measure(self, qubits: Sequence[Qubit], shots: int | None) -> dict[int, int] | dict[int, float]:
+        """Measure several qubits at once and tabulate outcomes over the given shots.
 
-        This is more efficient than measuring qubits one at a time because
-        it samples directly from the terminal probability distribution
-        instead of re-simulating the state for each shot (used by the
-        ``terminal_sampling`` feature).
-
-        Parameters
-        ----------
-        qubits : list[Qubit]
-            The qubits to measure.
-        shots : int or None
-            Number of samples to draw. If ``None`` or ``0``, the full
-            probability distribution is returned instead of samples.
-
-        Returns
-        -------
-        dict
-            If ``shots`` is given, a mapping from measured integer outcomes
-            to observed counts. Otherwise, a mapping from measured integer
-            outcomes to probabilities.
+        Only supported against the "qrisp" backend. The only caller of this method
+        is the terminal-sampling evaluator, and simulate_jaspr already refuses to
+        combine terminal sampling with simulator="stim", so this restriction is
+        never actually hit in practice.
         """
-        try:
-            self.gate_counts["measure"] += len(qubits)
-        except KeyError:
-            self.gate_counts["measure"] = len(qubits)
+        self._bump_gate_count("measure", len(qubits))
 
         self.apply_buffer()
+        assert isinstance(self.quantum_state, QuantumState)
         qubit_indices = [self.qubit_to_index_dict[qb] for qb in qubits]
         mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)
 
         if shots is not None and shots != 0:
             samples = np.random.choice(len(mes_ints), int(shots), p=probs)
 
-            samples = gen_res_dict(samples)
-            res = {}
-            for k, v in samples.items():
-                res[mes_ints[k]] = v
+            res: dict[int, int] = {}
+            for k, v in gen_res_dict(samples).items():
+                res[int(mes_ints[k])] = v
             return res
-        else:
-            res = {}
-            for i in range(len(mes_ints)):
-                res[mes_ints[i]] = probs[i]
-            return res
+
+        res_probs: dict[int, float] = {}
+        for i, mes_int in enumerate(mes_ints):
+            res_probs[int(mes_int)] = probs[i]
+        return res_probs
