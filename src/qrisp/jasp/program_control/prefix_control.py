@@ -187,6 +187,9 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
     ::
 
+        from qrisp import *
+        from qrisp.jasp import *
+
         @jaspify
         def main(k):
 
