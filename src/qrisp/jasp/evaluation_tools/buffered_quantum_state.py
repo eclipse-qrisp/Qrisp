@@ -99,7 +99,7 @@ class BufferedQuantumState:
 
     def apply_buffer(self) -> None:
         """Flush every buffered gate into the backend quantum state.
-    
+
         For the "qrisp" backend, the buffered circuit is handed to
         qrisp.simulator.advance_quantum_state, which preprocesses
         (e.g. gate-grouping via ``group_qc``) and executes it, advancing
