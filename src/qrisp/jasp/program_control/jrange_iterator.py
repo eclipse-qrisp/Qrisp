@@ -141,7 +141,6 @@ def jrange(*args):
 
     ::
 
-        from qrisp import QuantumFloat, control, x
         from qrisp import QuantumFloat, control, measure, x
         from qrisp.jasp import jrange, make_jaspr, qache
 
@@ -194,9 +193,11 @@ def jrange(*args):
 
             return measure(qv)
 
-        jaspr = make_jaspr(test_f)(1,1)
+    Because the carry value is only detected while flattening the loop's
+    environment, the exception is already raised while tracing, i.e. during
+    the ``make_jaspr`` call:
 
-    >>> jaspr(5, 8)
+    >>> jaspr = make_jaspr(test_f)(1,1)
     Exception: Found jrange with external carry value
 
     To demonstrate the second kind of illegal behavior, we construct a loop
@@ -224,13 +225,12 @@ def jrange(*args):
 
             return measure(qv)
 
-        jaspr = make_jaspr(test_f)(1,1)
-
     In this script, ``int_encoder`` defines a boolean flag that changes the
     semantics of the iteration behavior. After the first iteration the flag
-    is set to ``False`` such that the alternate behavior is activated.
+    is set to ``False`` such that the alternate behavior is activated. As
+    with the carry-value violation above, this is detected while tracing:
 
-    >>> jaspr(5, 8)
+    >>> jaspr = make_jaspr(test_f)(1,1)
     Exception: Jax semantics changed during jrange iteration
 
     Since the ``step`` argument has been removed as of v0.9, multiply the loop
