@@ -152,7 +152,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields
+        # Yields e.g.
         # [[3. 3.]
         #  [0. 0.]
         #  [0. 0.]
@@ -163,6 +163,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         #  [3. 3.]
         #  [0. 0.]
         #  [0. 0.]]
+        #
+        # Each row is either [0, 0] or [3, 3] with 50% probability each.
+        # The exact order of rows is random and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -182,8 +185,11 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sampling_function(k)
 
         print(main(4))
-        # Yields
+        # Yields e.g.
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+        #
+        # Each entry is either 0 or 10 with 50% probability each. The exact
+        # order of entries is random and varies between runs.
 
     **Sampling kernels returning classical values**
 
