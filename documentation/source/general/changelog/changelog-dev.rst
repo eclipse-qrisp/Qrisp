@@ -77,6 +77,14 @@ Bug Fixes
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 
+* Fixed a bug where :class:`~qrisp.QuantumModulus` constructed with a traced
+  (Jasp-dynamic) modulus leaked a stale JAX tracer into subsequent, independent
+  ``jaspify``/``make_jaspr`` calls, raising
+  ``jax.errors.UnexpectedTracerError`` on the second and later calls. The
+  modulus is now threaded through the ``QuantumVariable`` pytree as a proper
+  traced attribute instead of being passed into static auxiliary data
+  (`PR #802 <https://github.com/eclipse-qrisp/Qrisp/pull/802>`_).
+
 * Updated broken link in TSP tutorial to point to the
   correct archived Qiskit textbook.
   (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
