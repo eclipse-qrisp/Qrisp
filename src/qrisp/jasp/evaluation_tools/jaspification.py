@@ -61,7 +61,7 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
     terminal_sampling : bool, optional
         Whether to leverage the terminal sampling strategy. Significantly fast
         for all sampling tasks but can yield incorrect results in some situations.
-        Check out :ref:`terminal_sampling` form more details. The default is False.
+        Check out :ref:`terminal_sampling` for more details. The default is False.
 
     Returns
     -------
@@ -228,7 +228,7 @@ def stimulate(func: Callable) -> Callable:
             return measure(qf)
 
         print(main())
-        # Yields either 0 or 31
+        # Yields either 0.0 or 31.0
 
     """
 
