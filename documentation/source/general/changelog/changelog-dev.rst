@@ -141,6 +141,11 @@ Development
   helper functions
   (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
 
+* Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
+  and surfaces lint findings as inline, non-blocking review comments on
+  newly added lines
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_).
+
 Dependency Upgrades
 -------------------
 
