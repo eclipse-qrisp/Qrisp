@@ -35,9 +35,9 @@
 #    code, it can be used to benchmark the classical logic portion of algorithms.
 #
 # Supported Operations:
-# - X, SWAP gates (unconditional bit operations)
-# - Controlled variants: CX, CCX, CSWAP, multi-controlled X, etc.
-# - Phase gates (Z, S, T, RZ, P): These are no-ops in classical simulation
+# - X, Y, SWAP gates (unconditional bit operations)
+# - Controlled variants: CX, CY, CCX, CSWAP, multi-controlled X/Y, etc.
+# - Phase gates (Z, S, T, S_dg, T_dg, RZ, P): These are no-ops in classical simulation
 # - Measurement: Returns the current classical bit values
 #
 # Unsupported Operations:
@@ -87,7 +87,7 @@ def boolean_simulation(
         sized arrays but Jasp supports dynamically sized QuantumVariables, the
         array has to be "padded". The padding therefore indicates an upper boundary
         for how many qubits are required to execute ``func``. A large padding
-        slows down the simulation but prevents overflow errors.The default is
+        slows down the simulation but prevents overflow errors. The default is
         ``2**16``. The minimum value is 64. This threshold describes the maximum
         OVERALL amount of qubits that can appear in the simulation. The maximum
         amount per QuantumVariable/per QuantumArray is tied to this number
@@ -141,7 +141,7 @@ def boolean_simulation(
             return measure(c)
 
     This script evaluates the multiplication of the two inputs 150 times and adds
-    them into the same QuantumFloat. The respected result is therefore ``i*j*150``.
+    them into the same QuantumFloat. The expected result is therefore ``i*j*150``.
 
     >>> main(1,2)
     Array(300., dtype=float64)
@@ -201,7 +201,8 @@ def boolean_simulation(
     >>> main(1,2)
     Array(8.92323439e+08, dtype=float64)
 
-    A faulty result because the script needs more than 64 qubits.
+    A faulty result (instead of the expected one) because the script
+    needs more than 64 qubits.
 
     Increasing the padding ensures that enough qubits are available at the cost
     of simulation speed.
@@ -221,7 +222,7 @@ def boolean_simulation(
     target_func: Callable = func[0]
 
     if bit_array_padding < 64:
-        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
+        raise Exception("Tried to initialize boolean_simulation with less than 64 bits")
 
     @jit
     def return_function(*args: Any) -> Any:
