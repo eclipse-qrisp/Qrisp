@@ -108,7 +108,7 @@ class TestParameterisedCancellation:
         result = fuse_adjacents(qc)
         assert _num_gates(result) == 0
 
-    def test_rz_cancelation_preserves_gphase(self):
+    def test_rz_cancellation_preserves_gphase(self):
         qc = QuantumCircuit(1)
         qc.rz(np.pi / 2, 0)
         qc.rz(-np.pi / 4, 0)

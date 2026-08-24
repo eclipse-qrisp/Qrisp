@@ -142,7 +142,9 @@ omit = ["*/__init__.py"]
 # tage -- German for "days" (general/imprint.rst).
 # wille -- surname, e.g. R. Wille (general/papers/index.rst).
 # childs -- surname, e.g. A. Childs citation (reference/Block Encodings/applications.rst).
-ignore-words-list = "aer,anc,bra,childs,ket,mis,tage,wille"
+# embedd -- deprecated Jaspr method, will be renamed to embed after Qrisp v0.11
+#          (jasp/jasp_expression/centerclass.py).
+ignore-words-list = "aer,anc,bra,childs,embedd,ket,mis,tage,wille"
 # thi appears in the domain thi.uni-hannover.de and should not be corrected in URIs.
 uri-ignore-words-list = "thi"
 # Skip embedded base64 images in Jupyter notebooks (they contain arbitrary data).
