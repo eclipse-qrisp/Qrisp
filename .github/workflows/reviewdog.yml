@@ -13,7 +13,7 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
+  checks: write
 
 jobs:
   ruff:
@@ -42,6 +42,6 @@ jobs:
         run: |
           ruff check src/ --output-format=rdjson --exit-zero | \
             reviewdog -f=rdjson \
-                      -reporter=github-pr-review \
+                      -reporter=github-pr-check \
                       -filter-mode=added \
                       -fail-level=none
