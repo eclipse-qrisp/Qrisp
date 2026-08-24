@@ -48,8 +48,8 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
         (g_k(x_k))_i = \frac{f(x_k+c_k\Delta_k)-f(x_k-c_k\Delta_k)}{2c_k(\Delta_k)_i}
 
-    where $c_k=\dfrac{c}{(k+1)^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random perturbation vector
-    with components independently drawn from $\{-1, +1\}$.
+    where $c_k=\dfrac{c}{(k+1)^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random
+    perturbation vector with components independently drawn from $\{-1, +1\}$.
 
     Parameters
     ----------

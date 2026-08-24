@@ -79,7 +79,8 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
         def objective(theta, state_prep):
             return expectation_value(state_prep, shots=100)(theta)
 
-    Finally, we use ``minimize`` to find the optimal choice of the parameter $\theta_0$ that minimizes the objective function
+    Finally, we use ``minimize`` to find the optimal choice of the parameter $\theta_0$
+    that minimizes the objective function
 
     ::
 

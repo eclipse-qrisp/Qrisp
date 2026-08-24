@@ -21,7 +21,7 @@ from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def qjit(function=None, device=None):
-    """Decorator to leverage the jasp + Catalyst infrastructure to compile the given function to QIR and run it on the Catalyst QIR runtime.
+    """Decorator that compiles the given function to QIR and runs it on the Catalyst QIR runtime via jasp + Catalyst.
 
     Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 

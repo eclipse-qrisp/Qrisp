@@ -115,7 +115,6 @@ select = ["I", "E", "W", "D", "PL", "F"]
 
 ignore = [
     "D203",  # inconsistent with D211 (no-blank-line-before-class)
-    "D205",  # blank-line-required-between-summary-and-description (false-positives on the standard license header docstring present in ~400 files)
     "D209",  # new-line-after-last-paragraph
     "D212",  # inconsistent with D213 (multi-line-summary-first-line)
     "D213",  # inconsistent with D212 (multi-line-summary-first-line)
@@ -127,7 +126,6 @@ ignore = [
     "D416",  # section-name-should-end-with-colon
     "PLC0415",  # import not at top of file (lazy/function-level imports to avoid circular imports)
     "E402",  # module-level import not at top of file (imports after a module docstring)
-    "E501",  # line too long
 ]
 
 [tool.coverage.run]

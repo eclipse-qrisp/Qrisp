@@ -182,7 +182,8 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
         print(main(5))
         # {'t': 100, 's': 50, 't_dg': 100, 'h': 139, 'x': 22, 'cx': 577, 'measure': 49}
         print(main(5000))
-        # {'t': 75025000, 's': 37512500, 't_dg': 75025000, 'h': 112527499, 'x': 20002, 'cx': 500089987, 'measure': 37512499}
+        # {'t': 75025000, 's': 37512500, 't_dg': 75025000, 'h': 112527499,
+        #  'x': 20002, 'cx': 500089987, 'measure': 37512499}
 
     Note that even though the second computation contains more than 800 million gates,
     determining the resources takes well under a second, highlighting the scalability

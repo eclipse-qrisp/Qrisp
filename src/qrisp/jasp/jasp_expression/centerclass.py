@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -437,7 +438,7 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_qc(self, *args)
 
     def extract_post_processing(self, *args) -> Callable:
-        """Extracts the post-processing logic from this Jaspr and returns a function that performs the post-processing on measurement results.
+        """Extracts the post-processing function that performs measurement post-processing for this Jaspr.
 
         This method is useful for separating the quantum circuit from the classical
         post-processing of measurement results. The quantum circuit can be executed
@@ -521,7 +522,7 @@ class Jaspr(ClosedJaxpr):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
 
     def flatten_environments(self) -> "Jaspr":
-        """Flattens all environments by applying the corresponding compilation routines such that no more ``q_env`` primitives are left.
+        """Flattens all environments so that no more ``q_env`` primitives are left.
 
         Returns
         -------
@@ -682,7 +683,7 @@ class Jaspr(ClosedJaxpr):
         return res
 
     def qjit(self, *args, function_name: str = "jaspr_function", device=None) -> Any:
-        """Leverages the Catalyst pipeline to compile a QIR representation of this function and executes that function using the Catalyst QIR runtime.
+        """Compiles this function to QIR via the Catalyst pipeline and executes it on the Catalyst QIR runtime.
 
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
@@ -721,7 +722,7 @@ class Jaspr(ClosedJaxpr):
     @classmethod
     @qrisp_lru_compilation_cache
     def from_cache(cls, closed_jaxpr: ClosedJaxpr) -> "Jaspr":
-        """Construct a :class:`Jaspr` from a :class:`~jax.extend.core.ClosedJaxpr`, caching the result so that repeated calls with the same argument are free.
+        """Construct a :class:`Jaspr` from a :class:`~jax.extend.core.ClosedJaxpr`, caching repeated calls.
 
         :func:`remove_redundant_allocations` is run on the newly created instance to
         clean up any trivially unused qubit allocations produced during tracing.
@@ -791,7 +792,7 @@ class Jaspr(ClosedJaxpr):
             ; ModuleID = 'LLVMDialectModule'
             source_filename = "LLVMDialectModule"
 
-            @"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}" = internal constant [54 x i8] c"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}\00"
+            @... = internal constant [54 x i8] c"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}\00"
             @LightningSimulator = internal constant [19 x i8] c"LightningSimulator\00"
             @... = internal constant [...] c"...\00"
             @__constant_30xi64 = private constant [30 x i64] [i64 30, i64 29, ..., i64 1], align 64
@@ -866,7 +867,7 @@ class Jaspr(ClosedJaxpr):
               ...
             }
 
-            declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+            declare void @llvm.memcpy.p0.p0.i64(...) #0
 
         """
         from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_qir
@@ -931,36 +932,46 @@ class Jaspr(ClosedJaxpr):
         .. code-block:: none
 
             builtin.module @jasp_module {
-              func.func public @main(%arg13: tensor<i64>, %arg14: !jasp.QuantumState) -> (tensor<i64>, !jasp.QuantumState) {
-                %0, %1 = jasp.create_qubits %arg13, %arg14 : tensor<i64>, !jasp.QuantumState -> !jasp.QubitArray, !jasp.QuantumState
+              func.func public @main(%arg13: tensor<i64>, %arg14: !jasp.QuantumState)
+                  -> (tensor<i64>, !jasp.QuantumState) {
+                %0, %1 = jasp.create_qubits %arg13, %arg14 : tensor<i64>, !jasp.QuantumState
+                    -> !jasp.QubitArray, !jasp.QuantumState
                 %2 = "stablehlo.constant"() <{value = dense<0> : tensor<i64>}> : () -> tensor<i64>
                 %3 = jasp.get_qubit %0, %2 : !jasp.QubitArray, tensor<i64> -> !jasp.Qubit
                 %4 = "stablehlo.constant"() <{value = dense<1> : tensor<i64>}> : () -> tensor<i64>
                 %5 = jasp.get_qubit %0, %4 : !jasp.QubitArray, tensor<i64> -> !jasp.Qubit
-                %6 = jasp.quantum_gate "cx" (%3, %5) , %1 : (!jasp.Qubit, !jasp.Qubit) , !jasp.QuantumState -> !jasp.QuantumState
+                %6 = jasp.quantum_gate "cx" (%3, %5) , %1 : (!jasp.Qubit, !jasp.Qubit) , !jasp.QuantumState
+                    -> !jasp.QuantumState
                 %7 = jasp.quantum_gate "t" (%5) , %6 : (!jasp.Qubit) , !jasp.QuantumState -> !jasp.QuantumState
                 %8, %9 = jasp.measure %0, %7 : !jasp.QubitArray, !jasp.QuantumState -> tensor<i64>, !jasp.QuantumState
                 %10 = "stablehlo.add"(%8, %4) : (tensor<i64>, tensor<i64>) -> tensor<i64>
                 func.return %10, %9 : tensor<i64>, !jasp.QuantumState
               }
-              func.func private @jasp.create_qubits(%arg11: tensor<i64>, %arg12: !jasp.QuantumState) -> (!jasp.QubitArray, !jasp.QuantumState) {
-                %0, %1 = jasp.create_qubits %arg11, %arg12 : tensor<i64>, !jasp.QuantumState -> !jasp.QubitArray, !jasp.QuantumState
+              func.func private @jasp.create_qubits(%arg11: tensor<i64>, %arg12: !jasp.QuantumState)
+                  -> (!jasp.QubitArray, !jasp.QuantumState) {
+                %0, %1 = jasp.create_qubits %arg11, %arg12 : tensor<i64>, !jasp.QuantumState
+                    -> !jasp.QubitArray, !jasp.QuantumState
                 func.return %0, %1 : !jasp.QubitArray, !jasp.QuantumState
               }
               func.func private @jasp.get_qubit(%arg9: !jasp.QubitArray, %arg10: tensor<i64>) -> !jasp.Qubit {
                 %0 = jasp.get_qubit %arg9, %arg10 : !jasp.QubitArray, tensor<i64> -> !jasp.Qubit
                 func.return %0 : !jasp.Qubit
               }
-              func.func private @jasp.quantum_gate(%arg6: !jasp.Qubit, %arg7: !jasp.Qubit, %arg8: !jasp.QuantumState) -> !jasp.QuantumState {
-                %0 = jasp.quantum_gate "cx" (%arg6, %arg7) , %arg8 : (!jasp.Qubit, !jasp.Qubit) , !jasp.QuantumState -> !jasp.QuantumState
+              func.func private @jasp.quantum_gate(%arg6: !jasp.Qubit, %arg7: !jasp.Qubit, %arg8: !jasp.QuantumState)
+                  -> !jasp.QuantumState {
+                %0 = jasp.quantum_gate "cx" (%arg6, %arg7) , %arg8 : (!jasp.Qubit, !jasp.Qubit) , !jasp.QuantumState
+                    -> !jasp.QuantumState
                 func.return %0 : !jasp.QuantumState
               }
-              func.func private @jasp.quantum_gate_0(%arg4: !jasp.Qubit, %arg5: !jasp.QuantumState) -> !jasp.QuantumState {
+              func.func private @jasp.quantum_gate_0(%arg4: !jasp.Qubit, %arg5: !jasp.QuantumState)
+                  -> !jasp.QuantumState {
                 %0 = jasp.quantum_gate "t" (%arg4) , %arg5 : (!jasp.Qubit) , !jasp.QuantumState -> !jasp.QuantumState
                 func.return %0 : !jasp.QuantumState
               }
-              func.func private @jasp.measure(%arg2: !jasp.QubitArray, %arg3: !jasp.QuantumState) -> (tensor<i64>, !jasp.QuantumState) {
-                %0, %1 = jasp.measure %arg2, %arg3 : !jasp.QubitArray, !jasp.QuantumState -> tensor<i64>, !jasp.QuantumState
+              func.func private @jasp.measure(%arg2: !jasp.QubitArray, %arg3: !jasp.QuantumState)
+                  -> (tensor<i64>, !jasp.QuantumState) {
+                %0, %1 = jasp.measure %arg2, %arg3 : !jasp.QubitArray, !jasp.QuantumState
+                    -> tensor<i64>, !jasp.QuantumState
                 func.return %0, %1 : tensor<i64>, !jasp.QuantumState
               }
               func.func private @add(%arg0: tensor<i64>, %arg1: tensor<i64>) -> tensor<i64> {
@@ -976,6 +987,7 @@ class Jaspr(ClosedJaxpr):
 
     def to_catalyst_mlir(self) -> str | None:
         """Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Returns
@@ -1007,11 +1019,13 @@ class Jaspr(ClosedJaxpr):
         .. code-block:: none
 
             module @jaspr_function {
-              func.func public @jit_jaspr_function(%arg0: tensor<i64>) -> tensor<f64> attributes {llvm.emit_c_interface} {
+              func.func public @jit_jaspr_function(%arg0: tensor<i64>)
+                  -> tensor<f64> attributes {llvm.emit_c_interface} {
                 %cst = stablehlo.constant dense<1.000000e+00> : tensor<f64>
                 %c_4 = stablehlo.constant dense<0> : tensor<i64>
                 %c0_i64 = arith.constant 0 : i64
-                quantum.device shots(%c0_i64) [..., "LightningSimulator", "{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}"] {auto_qubit_management}
+                quantum.device shots(%c0_i64) [..., "LightningSimulator",
+                    "{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}"] {auto_qubit_management}
                 %0 = quantum.alloc( 20) : !quantum.reg
                 ... (bookkeeping: a %c_3-seeded ``stablehlo.while`` populates a
                      30-entry index stack via calls to @_pop/@_append, resolving
@@ -1030,7 +1044,8 @@ class Jaspr(ClosedJaxpr):
                 %out_qubits_9 = quantum.custom "T"() %24 : !quantum.bit
                 %extracted_10 = tensor.extract %19[] : tensor<i64>
                 %25 = quantum.insert %23[%extracted_10], %out_qubits_9 : !quantum.reg, !quantum.bit
-                %26:3 = scf.while (%arg1 = %c_4, %arg2 = %c_4, %arg3 = %25) : (tensor<i64>, tensor<i64>, !quantum.reg) -> (tensor<i64>, tensor<i64>, !quantum.reg) {
+                %26:3 = scf.while (%arg1 = %c_4, %arg2 = %c_4, %arg3 = %25) : (tensor<i64>, tensor<i64>, !quantum.reg)
+                    -> (tensor<i64>, tensor<i64>, !quantum.reg) {
                   ...
                 } do {
                 ^bb0(%arg1: tensor<i64>, %arg2: tensor<i64>, %arg3: !quantum.reg):
@@ -1063,7 +1078,9 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_mlir(self.flatten_environments())
 
     def to_qasm(self, *args) -> str:
-        """Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
+        """Compiles the Jaspr into an OpenQASM 2 string.
+
+        Real-time control is possible
         as long as no computations on the measurement results are performed.
 
         Parameters
@@ -1160,6 +1177,7 @@ class Jaspr(ClosedJaxpr):
 
     def to_catalyst_jaxpr(self) -> Any:
         """Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Returns

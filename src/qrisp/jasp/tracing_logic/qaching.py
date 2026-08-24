@@ -138,8 +138,11 @@ def qache(*func, **kwargs):
     As expected, we see three different function definitions:
 
     * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
-    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` attribute is also passed to the function, because it is a *traced* attribute.
-    * The third block is the anonymous top-level function representing ``main``, which calls the previously defined functions.
+    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the
+      ``QubitArray``, the ``.exponent`` attribute is also passed to the function, because it is a *traced*
+      attribute.
+    * The third block is the anonymous top-level function representing ``main``, which calls the
+      previously defined functions.
 
     **Illegal functions**
 
