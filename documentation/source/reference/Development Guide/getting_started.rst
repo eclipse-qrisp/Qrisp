@@ -33,7 +33,7 @@ For development you will also want the test and documentation dependencies:
 
    * - Group
      - What it installs
-   * - ``test``
+   * - ``dev``
      - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
    * - ``docs``
      - Sphinx and related extensions for building the documentation
@@ -48,9 +48,9 @@ For development you will also want the test and documentation dependencies:
    * - ``xdsl``
      - xDSL compiler infrastructure
    * - ``all``
-     - Everything except ``aqt``: the base install plus the test, docs, and
+     - Everything except ``aqt``: the base install plus ``dev``, ``docs``, and
        every backend/client/compiler extra (``qiskit``, ``iqm``, ``catalyst``,
-       ``xdsl``, ``dev``) for a complete development environment
+       ``xdsl``) for a complete development environment
 
 Include the groups you need in brackets, either at install time or later:
 
