@@ -105,7 +105,7 @@ Bug Fixes
 * Fixed :func:`dicke_state <qrisp.dicke_state>` for ``k = 0``, which emitted a
   ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
   negative-length loop range under Jasp
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 Compatibility
 -------------
