@@ -22,6 +22,7 @@ from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
+    JOB_FINAL_STATES,
     Job,
     JobCancelledError,
     JobFailureError,
@@ -143,7 +144,13 @@ class AQTJob(Job):
         return False
 
     def status(self) -> JobStatus:
-        """Return the current :class:`~qrisp.interface.JobStatus` by querying the AQT job."""
+        """Return the current :class:`~qrisp.interface.JobStatus`.
+
+        Once the job has reached a terminal state, that cached status is
+        returned directly.
+        """
+        if self._last_known_status in JOB_FINAL_STATES:
+            return self._last_known_status
         self._last_known_status = _map_aqt_status(self._aqt_job)
         return self._last_known_status
 
