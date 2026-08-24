@@ -228,7 +228,7 @@ def stimulate(func: Callable) -> Callable:
             return measure(qf)
 
         print(main())
-        # Yields either 0.0 or 31.0
+        # Yields either 0 or 31
 
     """
 

@@ -50,7 +50,7 @@ def quantum_kernel(func):
         If you need to execute a 1000 shots of a certain quantum circuit, but
         you have 4 QPUs available, you can execute the task 4 times faster by
         assigning 250 shots to each QPU.
-        As such the :ref:`sample <sample>` and :ref:`expectation_value <expectation_value>` 
+        As such the :ref:`sample <sample>` and :ref:`expectation_value <expectation_value>`
         functions automatically wrap the state preparation and measurement into a
         dedicated quantum kernel.
 

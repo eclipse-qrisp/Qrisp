@@ -93,16 +93,9 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
         results = main()
         print(results.x)
         print(results.fun)
-
-        # Yields something like
+        # Yields e.g.
         # [0.098]
         # 0.0
-
-    The objective function is the probability of measuring the qubit in the $\ket{1}$ state,
-    which is minimized (down to $0$) at $\theta = 0 \mod 2\pi$. Because only ``shots = 100``
-    measurements are used to estimate this probability, the exact values of ``results.x`` and
-    ``results.fun`` fluctuate slightly from run to run due to shot noise, but ``results.x`` should
-    always end up close to $0$ and ``results.fun`` close to $0$.
 
     """
     if method == "SPSA":

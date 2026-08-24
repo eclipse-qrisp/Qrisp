@@ -402,9 +402,9 @@ class Jaspr(ClosedJaxpr):
             qb_list, qc = jaspr.to_qc(2)
             print(qc)
             # Yields
-            # qb_59: ──■───────
+            # qb_0: ──■───────
             #        ┌─┴─┐┌───┐
-            # qb_60: ┤ X ├┤ T ├
+            # qb_1: ┤ X ├┤ T ├
             #        └───┘└───┘
 
         To demonstrate the behavior under measurement post-processing, we build
@@ -797,12 +797,10 @@ class Jaspr(ClosedJaxpr):
 
             ; ModuleID = 'LLVMDialectModule'
             source_filename = "LLVMDialectModule"
-            target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-            target triple = "x86_64-unknown-linux-gnu"
 
             @"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}" = internal constant [54 x i8] c"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}\00"
             @LightningSimulator = internal constant [19 x i8] c"LightningSimulator\00"
-            @"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so" = internal constant [...] c"...\00"
+            @... = internal constant [...] c"...\00"
             @__constant_30xi64 = private constant [30 x i64] [i64 30, i64 29, ..., i64 1], align 64
             @__constant_xi64 = private constant i64 0, align 64
 
@@ -827,7 +825,7 @@ class Jaspr(ClosedJaxpr):
             declare ptr @_mlir_memref_to_llvm_alloc(i64)
 
             define { ptr, ptr, i64 } @jit_jaspr_function(ptr %0, ptr %1, i64 %2) {
-              call void @__catalyst__rt__device_init(ptr @"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so", ptr @LightningSimulator, ptr @"{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}", i64 0, i1 true)
+              call void @__catalyst__rt__device_init(...)
               %4 = call ptr @__catalyst__rt__qubit_allocate_array(i64 20)
               ... (bookkeeping: allocates and threads a 1024-entry dynamic
                    qubit-index stack through a couple of loops, using the
@@ -1023,7 +1021,7 @@ class Jaspr(ClosedJaxpr):
                 %cst = stablehlo.constant dense<1.000000e+00> : tensor<f64>
                 %c_4 = stablehlo.constant dense<0> : tensor<i64>
                 %c0_i64 = arith.constant 0 : i64
-                quantum.device shots(%c0_i64) ["/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/pennylane_lightning/liblightning_qubit_catalyst.so", "LightningSimulator", "{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}"] {auto_qubit_management}
+                quantum.device shots(%c0_i64) [..., "LightningSimulator", "{'mcmc': False, 'num_burnin': 0, 'kernel_name': None}"] {auto_qubit_management}
                 %0 = quantum.alloc( 20) : !quantum.reg
                 ... (bookkeeping: a %c_3-seeded ``stablehlo.while`` populates a
                      30-entry index stack via calls to @_pop/@_append, resolving
