@@ -43,7 +43,7 @@ Other New Features
   ``"deterministic"`` implements the full Dicke state unitary and therefore
   also accepts any input weight ``l <= k``, preparing ``D(n, l)``.  The
   default is ``"deterministic"``, so existing code is unaffected
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add other new features above this line
 
