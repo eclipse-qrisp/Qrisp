@@ -46,7 +46,9 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 
 def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
-    r"""The ``expectation_value`` function allows to estimate the expectation value
+    r"""Estimates the expectation value from a sampling kernel.
+
+    The ``expectation_value`` function allows to estimate the expectation value
     from a *sampling kernel* — a Python function that receives only classical
     arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically

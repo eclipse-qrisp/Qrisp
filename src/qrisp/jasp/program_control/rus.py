@@ -24,7 +24,9 @@ from qrisp.jasp import (
 
 
 def RUS(*trial_function, **jit_kwargs):
-    r"""Decorator to deploy repeat-until-success (RUS) components. At the core,
+    r"""Decorator to deploy repeat-until-success (RUS) components.
+
+    At the core,
     RUS repeats a given quantum subroutine followed by a qubit measurement until
     the measurement returns the value ``1``. This step is prevalent
     in many important algorithms, among them the

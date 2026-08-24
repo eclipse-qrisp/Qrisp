@@ -28,7 +28,9 @@ from qrisp.jasp.tracing_logic import (
 
 
 def qache(*func, **kwargs):
-    """This decorator allows you to mark a function as "reusable". Reusable here means
+    """This decorator allows you to mark a function as "reusable".
+
+    Reusable here means
     that the jasp expression of this function will be cached and reused in the next
     calls (if the function is called with the same signature, i.e. arguments of the
     same abstract type/shape, and, if any arguments are marked static via ``kwargs``,
@@ -137,7 +139,8 @@ def qache(*func, **kwargs):
 
     As expected, we see three different function definitions:
 
-    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
+    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind
+      of signature only the ``QubitArray`` is required.
     * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the
       ``QubitArray``, the ``.exponent`` attribute is also passed to the function, because it is a *traced*
       attribute.

@@ -47,7 +47,9 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
-    r"""The ``sample`` function allows to take samples from a quantum computation
+    r"""Takes samples from a quantum computation specified by a sampling kernel.
+
+    The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically

@@ -81,6 +81,7 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
 
 def test_gqsp_hamiltonian_simulation_long_time():
     """Test the GQSP Hamiltonian simulation via qubitization with long time evolution.
+
     Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable.
     """
     L = 4

@@ -150,8 +150,8 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
 
 def q_fori_loop(lower, upper, body_fun, init_val):
-    """Jasp compatible version of
-    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
+    """Jasp compatible version of `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
+
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed

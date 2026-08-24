@@ -31,6 +31,7 @@ from qrisp.jasp.tracing_logic import (
 
 def quantum_kernel(func):
     """This decorator allows you to annotate a subroutine as a "quantum kernel".
+
     Quantum kernels are functions that are restricted in the sense that they
     can not have quantum inputs or outputs, yet their inner working can be quantum.
     What is the benefit in that? The underlying idea why this

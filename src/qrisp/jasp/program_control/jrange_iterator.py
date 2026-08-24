@@ -110,7 +110,9 @@ class JRangeIterator:
 
 
 def jrange(*args):
-    """Performs a loop with a dynamic bound. Similar to the Python native ``range``,
+    """Performs a loop with a dynamic bound.
+
+    Similar to the Python native ``range``,
     this iterator can receive one argument (stop) or two arguments (start, stop).
     Step size is always 1.
 
