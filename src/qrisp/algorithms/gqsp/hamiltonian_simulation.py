@@ -236,8 +236,7 @@ def hamiltonian_simulation(
 
 @jax.jit
 def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
-    r"""Pure JAX implementation of the Bessel function of the first kind, J_m(x),
-    for integer orders m.
+    r"""Pure JAX implementation of the Bessel function of the first kind, J_m(x), for integer orders m.
 
     This function evaluates the integral representation of the Bessel function
     using the numerical Midpoint rule, which is highly stable and avoids

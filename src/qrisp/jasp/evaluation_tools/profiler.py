@@ -112,6 +112,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 
 def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
     """Decorator to determine resources of large scale quantum computations.
+
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.

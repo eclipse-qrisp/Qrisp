@@ -163,6 +163,15 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
+* Added ``E501`` (line too long) and ``D205`` (missing blank line after
+  docstring summary) to the ``ruff`` ignore list in ``pyproject.toml``. The
+  120-character limit was generating excessive ``reviewdog`` noise on PRs
+  without providing much value, and the standard license header docstring
+  present at the top of nearly every source file in the repository always
+  triggers ``D205``, so any PR touching code near the top of a file risked
+  unrelated ``reviewdog`` complaints about the header
+  (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
 Dependency Upgrades
 -------------------
 

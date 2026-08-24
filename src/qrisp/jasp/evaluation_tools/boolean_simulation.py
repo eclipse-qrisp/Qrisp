@@ -63,7 +63,7 @@ def boolean_simulation(
     bit_array_padding: int = 2**16,
     callback_threshold: int | None = None,
 ) -> Callable:
-    """Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
+    r"""Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
 
     This decorator transforms the function into a JAX expression without any
     quantum primitives and leverages the JAX compilation pipeline to compile

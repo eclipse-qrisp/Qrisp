@@ -44,6 +44,7 @@ from qrisp.jasp.primitives import (
 
 def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False) -> Callable:
     """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
 
@@ -431,9 +432,7 @@ def compile_cl_func(jaxpr: Jaxpr, function_name: str) -> tuple[Callable, list[bo
 
 
 def _jaspr_has_name(jaxpr, target_name):
-    """Return True if *target_name* appears as a ``jit`` call name in *jaxpr*
-    or its nested sub-jaxprs, skipping ``user_func`` subtrees.
-    """
+    """Return True if *target_name* appears as a ``jit`` call name in *jaxpr* or its nested sub-jaxprs, skipping ``user_func`` subtrees."""
     for eqn in jaxpr.jaxpr.eqns:
         if eqn.primitive.name == "jit":
             if eqn.params.get("name") == target_name:
