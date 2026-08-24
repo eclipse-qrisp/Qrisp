@@ -363,13 +363,11 @@ class Job(ABC):
 
         Once a job has reached a terminal state (:attr:`~JobStatus.DONE`,
         :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`), that
-        state cannot change again. Implementations *may* take advantage
+        state cannot change again. Implementations may take advantage
         of this as an optimization and return the already-known terminal
-        status without repeating the query — but this is not guaranteed:
-        a given implementation may still re-query the backend even after
-        the job is terminal.
+        status without repeating the query.
 
-        Callers that want to avoid the cost of a live query should read
+        Callers that want to avoid the cost of a live query can also read
         :attr:`last_known_status` directly. Call :meth:`refresh` (or
         :meth:`status`) when an explicit update is needed.
 
@@ -419,9 +417,8 @@ class Job(ABC):
 
         This method exists as a named alias that makes the intent
         explicit: the caller wants to refresh the cached status, not
-        merely read it. As with :meth:`status`, implementations *may*
-        skip the live query once the job is in a terminal state, but
-        are not required to.
+        merely read it. As with :meth:`status`, implementations may
+        skip the live query once the job is in a terminal state.
 
         Returns
         -------
