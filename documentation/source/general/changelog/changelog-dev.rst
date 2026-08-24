@@ -147,9 +147,10 @@ Development
   installation instructions to reference it
   (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
 * Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
-  and surfaces lint findings as inline, non-blocking review comments on
-  newly added lines
-  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_).
+  and surfaces lint findings as annotations on the GitHub Checks tab of
+  newly added lines instead of as inline review comments on the PR
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
+  `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
 
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
