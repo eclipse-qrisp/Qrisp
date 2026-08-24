@@ -112,6 +112,84 @@ def create_tket_instruction(op: Operation) -> OpType | CircBox:
     raise ValueError("Could not convert operation " + str(op.name) + " to PyTket")
 
 
+def _instruction_params(op: Operation) -> list:
+    """Return the pytket params for an operation.
+
+    pytket expects rotation angles in half-turns (pi multiples), so angles of the
+    gates listed in ``_PI_UNIT_GATES`` are divided by pi. Some gates (``sx``,
+    ``sx_dg``, ``id``) carry spurious Qrisp params that pytket rejects.
+    """
+    if op.name in ["sx", "sx_dg", "id"]:
+        return []
+
+    params = list(op.params)
+    if op.name in _PI_UNIT_GATES:
+        params = [angle / np.pi for angle in params]
+
+    return params
+
+
+def _control_state_flip_qubits(op: Operation, qubit_list: list) -> list:
+    """Return qubits that need an X conjugation to realise ``op``'s control state.
+
+    The gate lookup table only encodes |1..1>-controlled optypes. For an
+    elementary controlled gate with |0> controls, the controlled qubits are
+    conjugated with X so the intended control state is realised.
+    """
+    if op.name in _GATE_OPTYPES and isinstance(op, ControlledOperation) and "0" in op.ctrl_state:
+        return [qubit_list[i] for i, bit in enumerate(op.ctrl_state) if bit == "0"]
+
+    return []
+
+
+def _add_tket_instruction(tket_qc: Circuit, op: Operation, qubit_list: list, clbit_list: list) -> None:
+    """Add a single Qrisp operation to an existing pytket circuit."""
+    from pytket import OpType
+    from pytket.circuit import CircBox
+
+    params = _instruction_params(op)
+
+    if op.name in ["qb_alloc", "qb_dealloc"]:
+        return
+
+    if op.name == "gphase":
+        # Global phase: pytket tracks it circuit-wide via add_phase (half-turns).
+        tket_qc.add_phase(params[0] / np.pi)
+        return
+
+    if op.name == "barrier":
+        tket_qc.add_barrier(qubit_list)
+        return
+
+    if isinstance(op, ClControlledOperation):
+        # Classically-controlled gate: emit the base op as a pytket conditional
+        # gated on the classical bits it reads.
+        tket_qc.add_gate(
+            create_tket_instruction(op.base_op),
+            _instruction_params(op.base_op),
+            qubit_list,
+            condition_bits=clbit_list,
+            condition_value=int(op.ctrl_state, 2),
+        )
+        return
+
+    tket_ins = create_tket_instruction(op)
+    ctrl_flip_qubits = _control_state_flip_qubits(op, qubit_list)
+
+    for flip_qubit in ctrl_flip_qubits:
+        tket_qc.add_gate(OpType.X, [], [flip_qubit])
+
+    if isinstance(tket_ins, CircBox):
+        tket_qc.add_circbox(tket_ins, qubit_list)
+    elif clbit_list:
+        tket_qc.add_gate(tket_ins, params, qubit_list + clbit_list)
+    else:
+        tket_qc.add_gate(tket_ins, params, qubit_list)
+
+    for flip_qubit in ctrl_flip_qubits:
+        tket_qc.add_gate(OpType.X, [], [flip_qubit])
+
+
 def pytket_converter(qc: QuantumCircuit, boxFlag: bool = False) -> Circuit:
     """Convert a Qrisp QuantumCircuit to a pytket Circuit.
 
@@ -139,8 +217,7 @@ def pytket_converter(qc: QuantumCircuit, boxFlag: bool = False) -> Circuit:
 
     """
     try:
-        from pytket import Circuit, OpType, Qubit
-        from pytket.circuit import CircBox
+        from pytket import Circuit, Qubit
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyTket must be installed to be able to use the Qrisp to PyTket converter.") from exc
 
@@ -177,71 +254,8 @@ def pytket_converter(qc: QuantumCircuit, boxFlag: bool = False) -> Circuit:
 
     for i in range(len(qc.data)):
         op = qc.data[i].op
-
-        params = list(op.params)
-        # Prepare qubits
         qubit_list = [qubit_dic[qubit.identifier] for qubit in qc.data[i].qubits]
         clbit_list = [clbit_dic[clbit.identifier] for clbit in qc.data[i].clbits]
-
-        # pytket expects rotation angles in half-turns (pi multiples).
-        if op.name in _PI_UNIT_GATES:
-            params = [index / np.pi for index in params]
-
-        if op.name in ["qb_alloc", "qb_dealloc"]:
-            continue
-
-        if op.name == "gphase":
-            # Global phase: pytket tracks it circuit-wide via add_phase (half-turns).
-            tket_qc.add_phase(params[0] / np.pi)
-            continue
-
-        if op.name == "barrier":
-            tket_qc.add_barrier(qubit_list)
-            continue
-
-        if isinstance(op, ClControlledOperation):
-            # Classically-controlled gate: emit the base op as a pytket conditional
-            # gated on the classical bits it reads.
-            base_op = op.base_op
-            base_params = list(base_op.params)
-            if base_op.name in _PI_UNIT_GATES:
-                base_params = [angle / np.pi for angle in base_params]
-
-            tket_qc.add_gate(
-                create_tket_instruction(base_op),
-                base_params,
-                qubit_list,
-                condition_bits=clbit_list,
-                condition_value=int(op.ctrl_state, 2),
-            )
-            continue
-
-        if op.name in ["sx", "sx_dg", "id"]:
-            # Qrisp attaches spurious params to these; pytket takes none.
-            params = []
-
-        # A non-trivial control state on an elementary controlled gate (cx/cy/cz/cp)
-        # would be dropped by the lookup table, which only encodes the
-        # |1..1>-controlled optype. Conjugate the |0>-controlled qubits with X to
-        # realise the intended control state. (Multi-controlled ops carry their
-        # control state inside the definition and take the CircBox path below.)
-        ctrl_flip_qubits = []
-        if op.name in _GATE_OPTYPES and isinstance(op, ControlledOperation) and "0" in op.ctrl_state:
-            ctrl_flip_qubits = [qubit_list[i] for i, bit in enumerate(op.ctrl_state) if bit == "0"]
-
-        tket_ins = create_tket_instruction(op)
-
-        for flip_qubit in ctrl_flip_qubits:
-            tket_qc.add_gate(OpType.X, [], [flip_qubit])
-
-        if isinstance(tket_ins, CircBox):
-            tket_qc.add_circbox(tket_ins, qubit_list)
-        elif clbit_list:
-            tket_qc.add_gate(tket_ins, params, qubit_list + clbit_list)
-        else:
-            tket_qc.add_gate(tket_ins, params, qubit_list)
-
-        for flip_qubit in ctrl_flip_qubits:
-            tket_qc.add_gate(OpType.X, [], [flip_qubit])
+        _add_tket_instruction(tket_qc, op, qubit_list, clbit_list)
 
     return tket_qc
