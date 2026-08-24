@@ -124,6 +124,7 @@ select = ["I", "E", "W", "D", "PL", "F"]
 
 ignore = [
     "D203",  # inconsistent with D211 (no-blank-line-before-class)
+    "D205",  # 1 blank line required between summary line and description
     "D209",  # new-line-after-last-paragraph
     "D212",  # inconsistent with D213 (multi-line-summary-first-line)
     "D213",  # inconsistent with D212 (multi-line-summary-first-line)
