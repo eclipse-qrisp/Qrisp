@@ -151,6 +151,13 @@ Development
   newly added lines
   (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_).
 
+* Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
+  style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
+  (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
+  used to avoid circular imports) and ``E402`` (module-level imports placed
+  after a module docstring)
+  (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
+
 Dependency Upgrades
 -------------------
 
