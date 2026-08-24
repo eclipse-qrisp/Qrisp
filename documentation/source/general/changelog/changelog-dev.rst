@@ -141,6 +141,11 @@ Development
   helper functions
   (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
 
+* Added an ``all`` optional dependency group that installs the base package
+  plus every other extra except ``aqt`` (``qiskit``, ``iqm``, ``catalyst``,
+  ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
+  installation instructions to reference it
+  (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
 * Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
   and surfaces lint findings as inline, non-blocking review comments on
   newly added lines
