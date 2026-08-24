@@ -354,7 +354,7 @@ class Job(ABC):
     def status(self) -> JobStatus:
         """Query and return the current :class:`JobStatus` of the job.
 
-        This is a *live query*: it fetches the most up-to-date status
+        Typically this is a *live query*: it fetches the most up-to-date status
         available, which for remote backends may involve a network call.
         As a side effect, concrete implementations should store the
         result in ``_last_known_status`` before returning, so that
