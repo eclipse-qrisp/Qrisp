@@ -72,20 +72,16 @@ def test_dicke_state_statevector(n, k, method):
     for i in range(n - k, n):
         x(qv[i])
     dicke_state(qv, k, method=method)
-    prepared_sv = qv.qs.compile().statevector_array()
 
-    # The compiler allocates ancillae for the doubly controlled rotations, so
-    # the statevector is not necessarily of size 2**n. The ancillae are
-    # uncomputed to |0>, so every populated basis state still has Hamming
-    # weight k, no matter where the ancillae ended up.
-    populated = np.flatnonzero(~np.isclose(prepared_sv, 0, atol=1e-6))
+    sv = qv.qs.statevector("function")
+    expected_amplitude = 1 / np.sqrt(math.comb(n, k))
 
-    # Manual expected state:
-    # |D^n_k> = equal superposition of all basis states of Hamming weight k,
-    # i.e. binom(n, k) states sharing one real, positive amplitude.
-    assert len(populated) == math.comb(n, k)
-    assert all(bin(i).count("1") == k for i in populated)
-    assert np.allclose(prepared_sv[populated], 1 / np.sqrt(math.comb(n, k)), atol=1e-6)
+    # Go over all bitstrings and check the amplitude for each of them.
+    for i in range(2**n):
+        actual_amplitude = sv({qv: qv.decoder(i)})
+        # The amplitude should be equal to `expected_amplitude` if the bitstring has Hamming weight `k` and 0 otherwise.
+        assert np.isclose(actual_amplitude, expected_amplitude*(bin(i).count("1") == k), atol=1e-6)
+
 
 
 @pytest.mark.parametrize("method", DICKE_METHODS)
