@@ -22,6 +22,7 @@ from jax.scipy.optimize import OptimizeResults
 # https://link.springer.com/chapter/10.1007/978-94-015-8330-5_4
 # Constraints not included in this implementation
 
+
 # TODO: Refactor this function
 def cobyla(fun, x0, args, maxiter=50, cons=[], rhobeg=1.0, rhoend=1e-6, seed=3):
     r"""Minimize a scalar function of one or more variables using the Constrained Optimization By Linear Approximation (COBYLA) algorithm.
