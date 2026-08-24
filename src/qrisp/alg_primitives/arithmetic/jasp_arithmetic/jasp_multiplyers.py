@@ -67,8 +67,7 @@ def jasp_squaring(a, inpl_adder=gidney_adder):
 def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
 
     warnings.warn(
-        "jasp_multiplyer is deprecated and will be renamed to "
-        "jasp_multiplier after Qrisp v0.11.",
+        "jasp_multiplyer is deprecated and will be renamed to jasp_multiplier after Qrisp v0.11.",
         QrispDeprecationWarning,
         stacklevel=2,
     )

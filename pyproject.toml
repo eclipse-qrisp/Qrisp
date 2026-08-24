@@ -99,6 +99,14 @@ Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 
 [tool.ruff]
 exclude = ["__init__.py", "*.ipynb"]
+
+# Please keep each entry on its own line, sorted alphabetically.
+extend-exclude = [
+    # Temporarily excluded to keep PRs focused: these files are flagged by
+    # reviewdog (e.g. when working on codespell) and will be revisited once
+    # the respective classes are added/refactored.
+    "src/qrisp/alg_primitives/arithmetic/adders/adder_tools.py",
+]
 line-length = 120
 target-version = "py312" # will be changed to consider other python versions as well
 force-exclude = true

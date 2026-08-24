@@ -665,8 +665,7 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp import TracingQuantumSession, get_last_equation
 
         warnings.warn(
-            "embedd is deprecated and will be renamed to "
-            "embed after Qrisp v0.11.",
+            "embedd is deprecated and will be renamed to embed after Qrisp v0.11.",
             QrispDeprecationWarning,
             stacklevel=2,
         )
