@@ -179,12 +179,12 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(c)
 
         print(main(5))
-        # {'s': 45, 'x': 22, 't_dg': 98, 'cx': 510, 't': 96, 'h': 139, 'measure': 55}
+        # {'t': 100, 's': 50, 't_dg': 100, 'h': 139, 'x': 22, 'cx': 577, 'measure': 49}
         print(main(5000))
-        # {'t': 751506, 'h': 1127254, 'x': 2002, 's': 375750, 't_dg': 751508, 'cx': 4629255, 'measure': 752500}
+        # {'t': 75025000, 's': 37512500, 't_dg': 75025000, 'h': 112527499, 'x': 20002, 'cx': 500089987, 'measure': 37512499}
 
     Note that even though the second computation contains more than 800 million gates,
-    determining the resources takes less than 200ms, highlighting the scalability
+    determining the resources takes well under a second, highlighting the scalability
     features of the Jasp infrastructure.
 
     **Modifying the measurement behavior via a random number generator**
@@ -238,7 +238,7 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
     measurements.
 
     For some algorithms (such as :ref:`RUS`) sampling the measurement result
-    from a simple distribution won't cut it because the required ressource can
+    from a simple distribution won't cut it because the required resources can
     be heavily influenced by measurement outcomes. For this matter it is also
     possible to perform a full simulation. Note that this simulation is no
     longer deterministic.
@@ -258,9 +258,9 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(qv)
 
         print(main(0))
-        {'measure': 4, 'x': 2}
+        # {'measure': 4, 'x': 2}
         print(main(1))
-        {'measure': 4}
+        # {'measure': 4}
 
     """
 
@@ -388,7 +388,7 @@ def depth(
 
     .. warning::
 
-        The depth metric an experimental feature and may not behave as expected in certain edge cases.
+        The depth metric is an experimental feature and may not behave as expected in certain edge cases.
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
