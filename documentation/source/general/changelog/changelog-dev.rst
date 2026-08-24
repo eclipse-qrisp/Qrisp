@@ -146,6 +146,10 @@ Development
   ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
   installation instructions to reference it
   (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+* Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
+  and surfaces lint findings as inline, non-blocking review comments on
+  newly added lines
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_).
 
 Dependency Upgrades
 -------------------
