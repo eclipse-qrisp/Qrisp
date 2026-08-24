@@ -81,6 +81,9 @@ dev-testing = [
 dev = [
     "qrisp[dev-code-style,dev-testing]",
 ]
+all = [
+    "qrisp[aqt,qiskit,iqm,catalyst,xdsl,docs,dev]",
+]
 
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
