@@ -127,11 +127,12 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             return ev_function(k)
 
         print(main(3))
-        # Yields
+        # Yields e.g.
         # [1.44 1.44]
 
-    The true value 1.5 is not reached because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_.
-    To improve the approximation, feel free to increase the shots!
+    The true value 1.5 is not reached exactly because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_ —
+    the printed value fluctuates around 1.5 from run to run. To improve the
+    approximation, feel free to increase the shots!
 
     To demonstrate the ``post_processor`` keyword we define a simple post processing
     function
@@ -144,21 +145,24 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50)
+            ev_function = expectation_value(state_prep, shots = 50,
+                                             post_processor = post_processor)
 
             return ev_function(k)
 
         print(main(3))
-        # Yields
-        # 4.338
+        # Yields e.g.
+        # 4.86
 
     This result is expected because the inputs of ``post_processor`` are
-    either (0,0) or (3,3) with 50% probability, so we get
+    either (0,0) or (3,3) with 50% probability, so the expectation value is
 
     .. math::
 
         4.5 = \frac{3\cdot 3 + 0\cdot 0}{2}
 
+    As with the previous example, the printed value fluctuates around this
+    expectation from run to run because of shot noise.
 
     """
     from qrisp.core import QuantumVariable, measure
