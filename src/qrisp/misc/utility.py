@@ -2091,9 +2091,8 @@ def inpl_adder_test(inpl_adder):
             c[:] = b
 
             with control(qbl):
-inpl_adder(a, c)
+                inpl_adder(a, c)
 
-            # test comment with trailing whitespace       
             statevector_arr = a.qs.compile().statevector_array()
             angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
             assert np.sum(np.abs(angles)) < 0.1, (
