@@ -96,7 +96,7 @@ def test_reflection_tuple_quantum_variable():
     assert res == {("000", "00"): 1.0}
 
 
-def test_reflection_list_quantum_varaible_quantum_array():
+def test_reflection_list_quantum_variable_quantum_array():
     """Tests that the reflection primitive correctly applies a reflection around a GHZ state with list of QuantumVariable and QuantumArray input."""
 
     def ghz(qv, qa):

@@ -117,7 +117,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             from qrisp.jasp.jasp_expression.inv_transform import fold_extra_constvars_into_invars
 
             # controlled_jaxpr.invars starts with the newly added control
-            # qubit (see custom_control_environment.ammended_func /
+            # qubit (see custom_control_environment.amended_func /
             # multi_control_jaspr), so any newly introduced constvars must be
             # folded back in right after it to line up with the wrapping
             # equation's [ctrl_qubit_var] + eqn.invars ordering.

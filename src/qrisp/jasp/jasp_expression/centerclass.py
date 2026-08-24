@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import Any, cast
@@ -34,6 +35,7 @@ from qrisp.jasp import (
 )
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
 from qrisp.jasp.primitives import AbstractQuantumState
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class Jaspr(ClosedJaxpr):
@@ -661,6 +663,13 @@ class Jaspr(ClosedJaxpr):
     def embedd(self, *args, name: str | None = None, inline: bool = False) -> Any:
         """Embed this Jaspr into the current tracing context, optionally JIT-wrapping it."""
         from qrisp.jasp import TracingQuantumSession, get_last_equation
+
+        warnings.warn(
+            "embedd is deprecated and will be renamed to "
+            "embed after Qrisp v0.11.",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
 
         qs = TracingQuantumSession.get_instance()
         abs_qst = qs.abs_qst

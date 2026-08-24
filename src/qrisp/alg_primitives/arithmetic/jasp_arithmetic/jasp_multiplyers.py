@@ -15,15 +15,25 @@
 ********************************************************************************
 """
 
+import warnings
+
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import cx, x
 from qrisp.environments import control
 from qrisp.jasp import jrange, qache
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 @qache(static_argnames="inpl_adder")
 def jasp_controlling_multiplyer(a, b, inpl_adder=gidney_adder):
+
+    warnings.warn(
+        "jasp_controlling_multiplyer is deprecated and will be renamed to "
+        "jasp_controlling_multiplier after Qrisp v0.11.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
     s = QuantumFloat(a.size + b.size)
 
@@ -55,6 +65,13 @@ def jasp_squaring(a, inpl_adder=gidney_adder):
 
 @qache(static_argnames="inpl_adder")
 def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
+
+    warnings.warn(
+        "jasp_multiplyer is deprecated and will be renamed to "
+        "jasp_multiplier after Qrisp v0.11.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
     # Executes the algorithm
 
