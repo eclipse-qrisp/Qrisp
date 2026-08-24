@@ -80,8 +80,7 @@ def test_dicke_state_statevector(n, k, method):
     for i in range(2**n):
         actual_amplitude = sv({qv: qv.decoder(i)})
         # The amplitude should be equal to `expected_amplitude` if the bitstring has Hamming weight `k` and 0 otherwise.
-        assert np.isclose(actual_amplitude, expected_amplitude*(bin(i).count("1") == k), atol=1e-6)
-
+        assert np.isclose(actual_amplitude, expected_amplitude * (bin(i).count("1") == k), atol=1e-6)
 
 
 @pytest.mark.parametrize("method", DICKE_METHODS)
@@ -316,9 +315,7 @@ def test_dicke_state_deterministic_superposition(n, k, l):
     for i in populated:
         weight = bin(i).count("1")
         assert weight in (l, l + 1)
-        assert np.isclose(
-            prepared_sv[i], 1 / np.sqrt(2 * math.comb(n, weight)), atol=1e-6
-        )
+        assert np.isclose(prepared_sv[i], 1 / np.sqrt(2 * math.comb(n, weight)), atol=1e-6)
 
 
 def test_dicke_state_fail_unknown_method():

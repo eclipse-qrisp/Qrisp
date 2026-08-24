@@ -111,11 +111,9 @@ def dicke_state(
     if isinstance(k, int) and isinstance(n, int) and not 0 <= k <= n:
         raise ValueError(f"`k` must satisfy 0 <= k <= n, got k={k} for n={n}.")
 
-
     if method == "deterministic":
         _apply_dicke_unitary(qv, n, k)
     elif method == "divide-and-conquer":
-
         # The divide-and-conquer method cannot handle k > n/2.
         # Instead we prepare D(n, n-k) and at the end apply the X gate to all qubits, which changes it to D(n, k).
         large_k = k > n // 2
@@ -227,7 +225,8 @@ def _divide(qv: QuantumVariable | Sequence[Qubit], n1: int | Array, n2: int | Ar
         """
         log_x_i = log_x(i)
         total = lax.fori_loop(
-            i, k + 1,
+            i,
+            k + 1,
             lambda j, acc: acc + jnp.exp(log_x(j) - log_x_i),
             jnp.asarray(0.0, dtype=jnp.float64),
         )
