@@ -48,8 +48,9 @@ For development you will also want the test and documentation dependencies:
    * - ``xdsl``
      - xDSL compiler infrastructure
    * - ``all``
-     - Everything: the base install plus all of the groups above (test, docs,
-       and every backend/client/compiler extra) for a complete development environment
+     - Everything except ``aqt``: the base install plus the test, docs, and
+       every backend/client/compiler extra (``qiskit``, ``iqm``, ``catalyst``,
+       ``xdsl``, ``dev``) for a complete development environment
 
 Include the groups you need in brackets, either at install time or later:
 

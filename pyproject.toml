@@ -81,8 +81,15 @@ dev-testing = [
 dev = [
     "qrisp[dev-code-style,dev-testing]",
 ]
+# aqt is intentionally excluded from `all` because qiskit-aqt-provider ships a
+# pytest plugin (qiskit_aqt_provider.test.fixtures) that fails to load when
+# pytest-httpx is not installed, breaking any pytest invocation. 
+# aqt also requires qiskit >=1,<2 (Qiskit 1.x), which reached end of life with
+# the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
+# security updates, or other patches
+# (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
 all = [
-    "qrisp[aqt,qiskit,iqm,catalyst,xdsl,docs,dev]",
+    "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
 
 [project.urls]
