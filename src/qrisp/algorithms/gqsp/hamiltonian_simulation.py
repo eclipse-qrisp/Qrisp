@@ -236,8 +236,7 @@ def hamiltonian_simulation(
 
 @jax.jit
 def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
-    r"""
-    Pure JAX implementation of the Bessel function of the first kind, J_m(x),
+    r"""Pure JAX implementation of the Bessel function of the first kind, J_m(x),
     for integer orders m.
 
     This function evaluates the integral representation of the Bessel function
@@ -256,6 +255,7 @@ def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
         Argument to evaluate.
     M : int, optional
         Number of integration steps. M=250 is perfectly accurate up to x ≈ 100.
+
     """
     m = jnp.asarray(m)
     x = jnp.asarray(x)

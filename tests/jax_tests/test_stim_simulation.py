@@ -199,7 +199,7 @@ def test_stim_dispatch_controlled_gates():
 
 
 def test_stimulate_raises_when_returning_quantum_variable():
-    """stimulate must reject a function that returns a QuantumVariable, not silently accept it."""
+    """Stimulate must reject a function that returns a QuantumVariable, not silently accept it."""
 
     @stimulate
     def main():

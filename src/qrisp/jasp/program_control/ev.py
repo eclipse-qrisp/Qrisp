@@ -297,4 +297,5 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 class _MultiReturnDetected(Exception):
     """Internal signal raised when the post-processor returns multiple values
     (a tuple) instead of a single scalar.  This triggers a retry of the
-    sampling loop with a multi-dimensional accumulator of the correct shape."""
+    sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

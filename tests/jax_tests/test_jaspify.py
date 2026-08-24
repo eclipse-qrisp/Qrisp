@@ -357,7 +357,7 @@ def test_jaspify_pytree():
 
 
 def test_jaspify_raises_when_returning_quantum_variable():
-    """jaspify must reject a function that returns a QuantumVariable, not silently accept it."""
+    """Jaspify must reject a function that returns a QuantumVariable, not silently accept it."""
 
     @jaspify
     def main():

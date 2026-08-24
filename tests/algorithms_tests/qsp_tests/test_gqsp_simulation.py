@@ -48,7 +48,6 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
     Ensures that the amplitudes are consistent and the success probability is high.
     """
-
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     H2 = 0.9 * H + 0.8 * H * H * H
@@ -82,8 +81,8 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
 
 def test_gqsp_hamiltonian_simulation_long_time():
     """Test the GQSP Hamiltonian simulation via qubitization with long time evolution.
-    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable."""
-
+    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable.
+    """
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     BE = BlockEncoding.from_operator(H)
@@ -118,7 +117,6 @@ def test_gqsp_hamiltonian_simulation_long_time():
 @pytest.mark.parametrize("t", [1.0, 5.0, 10.0])
 def test_jax_jv(N_terms, t):
     """Test the JAX implementation of the Bessel function of the first kind (jv) against SciPy's implementation."""
-
     m_array = jnp.arange(0, N_terms + 1)
 
     # Run the pure JAX version

@@ -20,7 +20,7 @@ from __future__ import annotations
 import weakref
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import jax
 from jax.core import Tracer
@@ -34,7 +34,7 @@ from qrisp.typing import ClbitLike, FloatLike
 
 if TYPE_CHECKING:
     from jax._src.core import JaxprEqn
-    from qrisp.core import QuantumArray
+
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa"
@@ -98,6 +98,7 @@ class TracingQuantumSession:
         ----------
         abs_qst : AbstractQuantumState
             The abstract quantum state to start recording into.
+
         """
         self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
@@ -115,6 +116,7 @@ class TracingQuantumSession:
         -------
         AbstractQuantumState or None
             The abstract quantum state that was active in the concluded scope.
+
         """
         temp = self.abs_qst
         self.abs_qst = self.abs_qst_stack.pop()
@@ -155,6 +157,7 @@ class TracingQuantumSession:
         Exception
             If the abstract quantum state has gone out of scope, or if classical
             bits are provided, or if mixed qubit types or incompatible shapes are used.
+
         """
         self._check_in_scope()
 
@@ -216,6 +219,7 @@ class TracingQuantumSession:
         size : int or jax.core.Tracer or None
             Number of qubits to allocate. If ``None``, no allocation is performed
             (the variable already has qubits assigned).
+
         """
         self._check_in_scope()
 
@@ -241,6 +245,7 @@ class TracingQuantumSession:
         -------
         DynamicQubitArray
             A dynamic array backed by the newly allocated qubits.
+
         """
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
@@ -261,6 +266,7 @@ class TracingQuantumSession:
         Exception
             If *verify* is ``True``, if the abstract quantum state is out of scope,
             or if *qv* is not registered in this session.
+
         """
         self._check_in_scope()
 
@@ -285,6 +291,7 @@ class TracingQuantumSession:
             The qubit array to deallocate.
         verify : bool, optional
             Unused in tracing mode; present for interface compatibility. Default is ``False``.
+
         """
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
@@ -317,6 +324,7 @@ def get_last_equation(i: int = -1) -> JaxprEqn:
     i : int, optional
         Index into the current frame's equation list. The default is ``-1``
         (the most recently recorded equation).
+
     """
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
 
@@ -328,6 +336,7 @@ def check_live(tracer: Tracer | None) -> bool:
     ----------
     tracer : JAX tracer or None
         The tracer to check. ``None`` is treated as always live.
+
     """
     if tracer is None:
         return True

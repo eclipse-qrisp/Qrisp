@@ -17,7 +17,7 @@
 
 from jax.core import ShapedArray
 
-from qrisp.circuit import Clbit, Qubit, QuantumCircuit
+from qrisp.circuit import Clbit, QuantumCircuit, Qubit
 from qrisp.jasp.primitives.abstract_quantum_register import AbstractQubitArray
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 from qrisp.jasp.primitives.abstract_qubit import AbstractQubit
