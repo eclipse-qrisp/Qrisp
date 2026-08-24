@@ -201,7 +201,6 @@ def increment_arbitrary_constant_qubit_list(qs, qubit_list, c):
 
     incr_ancilla.delete()
     incr_carry_ancilla.delete()
-    test_values=[1,2,3]
 
 
 # This function performs the linear depth incrementation described in
