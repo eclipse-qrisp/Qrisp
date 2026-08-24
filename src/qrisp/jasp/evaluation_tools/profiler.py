@@ -51,6 +51,9 @@ from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
     get_num_qubits_profiler,
     simulate_num_qubits,
 )
+from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
+    get_cached_jaspr,
+)
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -264,21 +267,8 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
     def count_ops_decorator(function):
 
         def ops_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
-            )
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.count_ops(*args, meas_behavior=meas_behavior, callback_threshold=callback_threshold)
 
         return ops_counter
 
@@ -412,19 +402,8 @@ def depth(
     def depth_decorator(function):
 
         def depth_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].depth(
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
             )
 
@@ -587,20 +566,8 @@ def num_qubits(
     def num_qubits_decorator(function):
 
         def qubits_counter(*args):
-
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].num_qubits(
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.num_qubits(
                 *args,
                 meas_behavior=meas_behavior,
                 max_allocations=max_allocations,

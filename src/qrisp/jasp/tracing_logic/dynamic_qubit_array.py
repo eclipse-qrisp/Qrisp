@@ -15,16 +15,12 @@
 ********************************************************************************
 """
 
-from builtins import id
-
 from jax import tree_util
 
-from qrisp.jasp.primitives import (
-    AbstractQubit,
-    fuse_qb_array,
-    get_qubit,
-    get_size,
-    slice_qb_array,
+from qrisp.jasp.primitives import AbstractQubit, fuse_qb_array, get_size, slice_qb_array
+from qrisp.jasp.primitives.abstract_quantum_register import (
+    _get_or_cache_qubit,
+    _normalize_slice_bounds,
 )
 
 
@@ -36,21 +32,10 @@ class DynamicQubitArray:
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            if key.step is not None and key.step != 1:
-                raise NotImplementedError("Slicing with DynamicQubitArray only supports step=1")
-            start = key.start if key.start is not None else 0
-            stop = key.stop if key.stop is not None else get_size(self.tracer)
+            start, stop = _normalize_slice_bounds(self.tracer, key)
             return DynamicQubitArray(slice_qb_array(self.tracer, start, stop))
 
-        from qrisp.jasp.tracing_logic.tracing_quantum_session import (
-            TracingQuantumSession,
-        )
-
-        qs = TracingQuantumSession.get_instance()
-        id_tuple = (id(self.tracer), id(key))
-        if id_tuple not in qs.qubit_cache:
-            qs.qubit_cache[id_tuple] = get_qubit(self.tracer, key)
-        return qs.qubit_cache[id_tuple]
+        return _get_or_cache_qubit(self.tracer, key)
 
     @property
     def size(self):

@@ -15,23 +15,9 @@
 ********************************************************************************
 """
 
-from jax.extend.core import JaxprEqn
-
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
+from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, exec_eqn, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumState
-
-
-def copy_jaxpr_eqn(eqn):
-    return JaxprEqn(
-        primitive=eqn.primitive,
-        invars=list(eqn.invars),
-        outvars=list(eqn.outvars),
-        params=dict(eqn.params),
-        source_info=eqn.source_info,
-        effects=eqn.effects,
-        ctx=eqn.ctx,
-    )
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
