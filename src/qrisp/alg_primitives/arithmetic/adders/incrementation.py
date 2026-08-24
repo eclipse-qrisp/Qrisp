@@ -234,3 +234,9 @@ def lin_incr(a, c_in=None, c_out=None):
         cx(c_in, a[0])
 
     incr_anc.delete()
+
+
+def test_adder_helpers():
+    test_values=[1,2,3]
+    unused = 42
+    return test_values
