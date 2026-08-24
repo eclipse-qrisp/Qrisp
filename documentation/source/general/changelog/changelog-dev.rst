@@ -114,7 +114,7 @@ Compatibility
   ``method``, and for a ``k`` outside ``0 <= k <= len(qv)`` when both are
   plain Python integers (i.e. outside of Jasp tracing).  The latter previously
   produced an incorrect state silently
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add compatibility notes above this line
 
