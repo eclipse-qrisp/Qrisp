@@ -99,7 +99,6 @@ class BufferedQuantumState:
 
     def apply_buffer(self) -> None:
         """Flush every buffered gate into the backend quantum state."""
-
         if self.simulator == "qrisp":
             assert isinstance(self.quantum_state, QuantumState)
             self.quantum_state = advance_quantum_state(
@@ -145,7 +144,6 @@ class BufferedQuantumState:
 
     def reset(self, qubit: Sequence[Qubit]) -> None:
         """Reset a qubit to the |0> state via measurement and a conditional flip."""
-
         if qubit[0] not in self.qubit_to_index_dict:
             return
 

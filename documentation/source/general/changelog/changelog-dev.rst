@@ -97,6 +97,11 @@ Compatibility
 New Tutorials/ Updated Documentation
 -------------------------------------
 
+- Fixed outdated or inaccurate docstrings and examples across the Jasp
+  module (control flow, sampling, simulators, optimization tools,
+  ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
+  (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
 .. Add new tutorials above this line
 
 API Changes
