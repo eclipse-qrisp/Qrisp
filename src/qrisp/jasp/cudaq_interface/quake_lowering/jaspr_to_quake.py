@@ -65,6 +65,10 @@ from qrisp.jasp.cudaq_interface.quake_lowering.pass4_ranked_tensor_to_array impo
 from qrisp.jasp.cudaq_interface.quake_lowering.pass5_array_to_stdvec import (
     _lower_array_to_stdvec,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.pass_manager import (
+    _LoweringPass,
+    _run_pass_pipeline,
+)
 from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     _verify_no_ranked_tensor_linalg,
 )
@@ -119,25 +123,20 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
     # Step 0 – Produce the initial xDSL module with Jasp IR.
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)
 
-    # Step 0a – Safeguard: reject ranked-tensor linalg.generic early.
-    _verify_no_ranked_tensor_linalg(module)
-
-    # Step 1 – PASS 1: QuantumState elimination + Jasp → Quake rewriting.
-    _jasp_to_quake(module, execution_mode=execution_mode)
-
-    # Step 2 – PASS 2: SCF → CC lowering.
-    _lower_scf_to_cc(module)
-
-    # Step 3 – PASS 3: scalar tensor unwrapping + scalar constant folding.
-    _unwrap_scalar_tensors(module)
-
-    # Step 3b – PASS 3B: constant-sized veq allocations become statically-sized.
-    _staticize_veq_alloca(module)
-
-    # Step 4 – PASS 4: ranked tensor → CC array lowering.
-    _lower_ranked_tensors(module)
-
-    # Step 5 – PASS 5: array ptr params → stdvec (CUDA-Q runtime compatibility).
-    _lower_array_to_stdvec(module)
+    _run_pass_pipeline(
+        module,
+        (
+            _LoweringPass("verify-no-ranked-tensor-linalg", _verify_no_ranked_tensor_linalg),
+            _LoweringPass(
+                "jasp-to-quake",
+                lambda current_module: _jasp_to_quake(current_module, execution_mode),
+            ),
+            _LoweringPass("scf-to-cc", _lower_scf_to_cc),
+            _LoweringPass("scalar-tensor-unwrap", _unwrap_scalar_tensors),
+            _LoweringPass("staticize-veq-alloca", _staticize_veq_alloca),
+            _LoweringPass("ranked-tensor-to-array", _lower_ranked_tensors),
+            _LoweringPass("array-to-stdvec", _lower_array_to_stdvec),
+        ),
+    )
 
     return module
