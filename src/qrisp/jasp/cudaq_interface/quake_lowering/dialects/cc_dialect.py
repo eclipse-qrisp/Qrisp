@@ -640,7 +640,8 @@ class CcInsertValueOp(IRDLOperation):
 
     ::
 
-        %new = cc.insert_value %struct[0], %val : (!cc.struct<"tuple" {i64, f64}>, i64) -> !cc.struct<"tuple" {i64, f64}>
+        %new = cc.insert_value %struct[0], %val :
+            (!cc.struct<"tuple" {i64, f64}>, i64) -> !cc.struct<"tuple" {i64, f64}>
 
     The result type is always the same as the struct type.
     """

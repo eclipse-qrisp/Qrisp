@@ -365,7 +365,6 @@ class TensorUnwrapPass(ModulePass):
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:
         """Apply scalar-tensor unwrapping to the module."""
-
         # Phase A: Call unwrapping (single pass, no recursion)
         PatternRewriteWalker(
             GreedyRewritePatternApplier([UnwrapCall()]),

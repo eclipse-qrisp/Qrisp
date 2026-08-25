@@ -98,4 +98,5 @@ class FixedShapeNDArray:
         return np.zeros(self.size, dtype=self._np_dtype)
 
     def __repr__(self):
+        """Return a concise representation of the fixed-shape annotation."""
         return f"FixedShapeNDArray({self.dtype.__name__}, {self.size})"

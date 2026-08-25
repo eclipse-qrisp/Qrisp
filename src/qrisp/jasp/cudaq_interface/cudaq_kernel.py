@@ -78,7 +78,7 @@ _ANNOTATION_TO_DUMMY = {
 
 
 def cudaq_kernel(
-    func_arg: Callable | None = None,
+    func: Callable | None = None,
     execution_mode: Literal["run", "sample"] = "run",
     register_size: int | None = None,
 ) -> PyKernelDecorator:
@@ -215,10 +215,10 @@ def cudaq_kernel(
         print(cudaq.sample(bell, shots_count=100))
 
     """
-    if func_arg is None:
+    if func is None:
         return lambda x: cudaq_kernel(x, execution_mode=execution_mode, register_size=register_size)
 
-    sig = inspect.signature(func_arg)
+    sig = inspect.signature(func)
     params = list(sig.parameters.values())
     _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray[dtype, size]"]
 
@@ -227,7 +227,7 @@ def cudaq_kernel(
         if p.annotation is inspect.Parameter.empty:
             raise RuntimeError(
                 f"@cudaq_kernel: parameter '{p.name}' of "
-                f"'{func_arg.__name__}' requires a type annotation. "
+                f"'{func.__name__}' requires a type annotation. "
                 f"Supported: {_supported}."
             )
         if isinstance(p.annotation, FixedShapeNDArray):
@@ -239,23 +239,28 @@ def cudaq_kernel(
             raise RuntimeError(
                 f"@cudaq_kernel: unsupported annotation "
                 f"'{ann_name}' for parameter '{p.name}' of "
-                f"'{func_arg.__name__}'. Supported: {_supported}."
+                f"'{func.__name__}'. Supported: {_supported}."
             )
 
-    jaspr = make_jaspr(func_arg)(*dummy_args)
+    jaspr = make_jaspr(func)(*dummy_args)
 
     # NOTE: THe flowing code is commented out because:
-    # 1. The conversion to static register will likely not be necessary with a future CUDA-Q version: https://github.com/NVIDIA/cuda-quantum/pull/4945
-    # This can currently only be tested when installing CUDA-Q from source, as the latest release (0.15) does not include this change.
-    # 2. Use of profiler for deciding whether to use static register allocation could break for certain edge cases.
+    # 1. The conversion to static register will likely not be necessary with a
+    # future CUDA-Q version:
+    # https://github.com/NVIDIA/cuda-quantum/pull/4945
+    # This can currently only be tested when installing CUDA-Q from source,
+    # as the latest release (0.15) does not include this change.
+    # 2. Use of profiler for deciding whether to use static register allocation
+    # could break for certain edge cases.
 
     # try:
     #    qubits_dict = profile_jaspr(jaspr, "num_qubits", meas_behavior="0", max_allocations=1000)(*dummy_args)
     #    peak_allocations = qubits_dict.get("peak_allocations", 0)
     #    total_allocated = qubits_dict.get("total_allocated", 0)
 
-    # Decide whether to use static register allocation based on peak vs total allocations.
-    # If total allocated qubits exceed 110% of peak allocations, we use static register allocation to optimize memory usage.
+    # Decide whether to use static register allocation based on peak vs total
+    # allocations. If total allocated qubits exceed 110% of peak allocations,
+    # we use static register allocation to optimize memory usage.
     # Otherwise, we proceed with the original jaspr without static register allocation,
     # since CUDA-Q runtime is faster without static register reinterpretation.
     #    use_static_register = total_allocated > peak_allocations * 1.1
@@ -276,6 +281,6 @@ def cudaq_kernel(
     try:
         mlir_module = _jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
     except Exception as e:
-        raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}") from e
+        raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}") from e
 
     return _cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)
