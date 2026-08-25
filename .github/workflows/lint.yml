@@ -1,0 +1,29 @@
+name: lint
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12.*"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev-code-style]"
+      - name: Codespell
+        run: |
+          codespell || {
+            echo "::warning title=Codespell::The Qrisp project uses American English. Found spelling issues (see above).%0ARun 'codespell' locally to see the full list, or 'codespell -w' to auto-fix.%0ATo suppress: add '# codespell:ignore' to the line, or add the keyword to 'ignore-words-list' in pyproject.toml."
+            exit 1
+          }

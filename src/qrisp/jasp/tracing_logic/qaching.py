@@ -219,7 +219,7 @@ def qache_helper(func, jax_kwargs):
 
     # This function performs the input function but also has the AbstractQuantumState
     # in the signature.
-    def ammended_function(*args, **kwargs):
+    def amended_function(*args, **kwargs):
 
         abs_qst = kwargs[10 * "~"]
         del kwargs[10 * "~"]
@@ -265,10 +265,10 @@ def qache_helper(func, jax_kwargs):
         # Return the result and the result AbstractQuantumState.
         return res, new_abs_qst
 
-    # Modify the name of the ammended function to reflect the input
-    ammended_function.__name__ = func.__name__
+    # Modify the name of the amended function to reflect the input
+    amended_function.__name__ = func.__name__
     # Wrap in jax.jit
-    ammended_function = jax.jit(ammended_function, **jax_kwargs)
+    amended_function = jax.jit(amended_function, **jax_kwargs)
 
     from qrisp.jasp.tracing_logic import flatten_qv
 
@@ -295,10 +295,10 @@ def qache_helper(func, jax_kwargs):
             #     elif isinstance(args[i], complex):
             #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
-            # Excecute the function
-            ammended_kwargs = dict(kwargs)
-            ammended_kwargs[10 * "~"] = tr_qs.abs_qst
-            res, abs_qst_new = ammended_function(*args, **ammended_kwargs)
+            # Execute the function
+            amended_kwargs = dict(kwargs)
+            amended_kwargs[10 * "~"] = tr_qs.abs_qst
+            res, abs_qst_new = amended_function(*args, **amended_kwargs)
 
         tr_qs.conclude_tracing()
 

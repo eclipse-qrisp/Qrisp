@@ -41,7 +41,7 @@ def custom_control(*func, **cusc_kwargs):
 
     Specific controlled versions of quantum functions are very common in many
     scientific publications. This is because the general control procedure can
-    signifcantly increase resource demands.
+    significantly increase resource demands.
 
     In order to use the ``custom_control`` decorator, you need to add the ``ctrl``
     keyword to your function signature. If called within a controlled context,
@@ -217,7 +217,7 @@ def custom_control(*func, **cusc_kwargs):
             if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
                 kwargs.update({"ctrl_method": env.ctrl_method})
 
-            # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
+            # In the case that a qubit was found, we use the CustomControlEnvironment (defined below)
             # This environments gatewraps the function and compiles it to a specific Operation subtype
             # called CustomControlledOperation.
             # The Condition/Control Environment compiler recognizes this Operation type
@@ -260,19 +260,19 @@ def custom_control(*func, **cusc_kwargs):
                 else:
                     custom_inversion = False
 
-                def ammended_func(*ammended_args, **kwargs):
+                def amended_func(*amended_args, **kwargs):
                     new_kwargs = dict(kwargs)
-                    new_kwargs["ctrl"] = ammended_args[0]
-                    args = ammended_args[1:]
+                    new_kwargs["ctrl"] = amended_args[0]
+                    args = amended_args[1:]
                     if custom_inversion:
                         return qashed_func(*args, inv=custom_inv_value, **new_kwargs)
                     else:
                         return qashed_func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
-                ammended_args = [ctrl_aval] + list(args)
+                amended_args = [ctrl_aval] + list(args)
 
-                controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(*ammended_args, **kwargs)
+                controlled_jaspr = make_jaspr(amended_func, **cusc_kwargs)(*amended_args, **kwargs)
 
                 # Store controlled version
                 jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr

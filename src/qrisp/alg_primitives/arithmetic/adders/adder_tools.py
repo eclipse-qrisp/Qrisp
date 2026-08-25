@@ -19,9 +19,9 @@ from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumFloat, QuantumVariable
 
 
-def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
+def amend_inpl_adder(raw_inpl_adder, amend_cl_int=True):
 
-    def ammended_adder(
+    def amended_adder(
         qf2,
         qf1,
         *args,
@@ -57,7 +57,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             significance_range_qf2 = list(range(qf2.mshape[0], qf2.mshape[1] + 1))
 
             # Determine the intersection of the significance ranges
-            signficance_range_intersetion = list(set(significance_range_qf1).intersection(significance_range_qf2))
+            significance_range_intersection = list(set(significance_range_qf1).intersection(significance_range_qf2))
 
             # Determine maximum and minimum significance of the addition
             # The maximum significance is the maximum significance of qf1
@@ -71,9 +71,9 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             # stay unchanged during addition
 
             max_sig = max(significance_range_qf1)
-            min_sig = min(signficance_range_intersetion)
+            min_sig = min(significance_range_intersection)
 
-            # If the maximum significance is higher than the maximum signficance of qf2, we need
+            # If the maximum significance is higher than the maximum significance of qf2, we need
             # to augment some ancilla qubits because the Cuccaro-procedure requires equal
             # amount of input qubits
 
@@ -168,7 +168,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
 
         elif isinstance(qf2, (list, QuantumVariable)):
             if len(qf2) < len(qf1):
-                ancilla_var = QuantumVariable(len(qf1) - len(qf2), name="add_ammend_anc*", qs=qf1[0].qs())
+                ancilla_var = QuantumVariable(len(qf1) - len(qf2), name="add_amend_anc*", qs=qf1[0].qs())
                 qf2 = list(qf2) + list(ancilla_var)
 
             if len(qf2) > len(qf1):
@@ -181,8 +181,8 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             except NameError:
                 pass
 
-        elif isinstance(qf2, int) and ammend_cl_int:
-            ancilla_var = QuantumFloat(len(qf1), name="add_ammend_anc*", qs=qf1[0].qs())
+        elif isinstance(qf2, int) and amend_cl_int:
+            ancilla_var = QuantumFloat(len(qf1), name="add_amend_anc*", qs=qf1[0].qs())
 
             ancilla_var.encode(qf2 % 2 ** len(qf1))
 
@@ -194,4 +194,4 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
         else:
             raw_inpl_adder(qf2, qf1, *args, **kwargs)
 
-    return ammended_adder
+    return amended_adder

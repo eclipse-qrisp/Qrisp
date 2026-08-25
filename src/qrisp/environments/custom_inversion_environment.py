@@ -165,11 +165,11 @@ def custom_inversion(*func, **cusi_kwargs):
             if not jit_eqn.params["jaxpr"].inv_jaspr:
                 # Trace the inverted version
 
-                def ammended_func(*args, **kwargs):
+                def amended_func(*args, **kwargs):
                     new_kwargs = dict(kwargs)
                     return func(*args, inv=True, **new_kwargs)
 
-                inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
+                inverted_jaspr = make_jaspr(amended_func)(*args, **kwargs)
 
                 # Store controlled version
                 jit_eqn.params["jaxpr"].inv_jaspr = inverted_jaspr
