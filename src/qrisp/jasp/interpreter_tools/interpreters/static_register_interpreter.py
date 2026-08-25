@@ -75,6 +75,7 @@
 
 import jax.numpy as jnp
 from jax import jit, make_jaxpr
+from jax.extend.core import Literal
 from jax.lax import fori_loop
 from jax.lax import while_loop as jax_while_loop
 
@@ -110,6 +111,51 @@ from qrisp.jasp.primitives import (
 # ---------------------------------------------------------------------------
 
 
+def _build_inner_args(jaspr, size):
+    """Build arguments for the expanded-signature inner jaxpr."""
+    inner_args = []
+    for invar in jaspr.jaxpr.invars:
+        if isinstance(invar, Literal):
+            if isinstance(invar.val, int):
+                inner_args.append(jnp.asarray(invar.val, dtype="int64"))
+            elif isinstance(invar.val, float):
+                inner_args.append(jnp.asarray(invar.val, dtype="float64"))
+            else:
+                inner_args.append(invar.val)
+        elif isinstance(invar.aval, AbstractQuantumState):
+            inner_args.append(
+                (
+                    AbstractQubitArray(),
+                    ScalarList(jnp.arange(size)[::-1], max_size=size),
+                    AbstractQuantumState(),
+                )
+            )
+        elif isinstance(invar.aval, AbstractQubitArray):
+            inner_args.append(ScalarList(max_size=size))
+        elif isinstance(invar.aval, AbstractQubit):
+            inner_args.append(jnp.asarray(0, dtype="int64"))
+        else:
+            inner_args.append(invar.aval)
+    return inner_args
+
+
+def _build_outer_args(jaspr):
+    """Build arguments for the wrapper with the original jaspr signature."""
+    outer_args = []
+    for invar in jaspr.jaxpr.invars:
+        if isinstance(invar, Literal):
+            pass
+        elif isinstance(invar.aval, AbstractQuantumState):
+            outer_args.append(AbstractQuantumState())
+        elif isinstance(invar.aval, AbstractQubitArray):
+            outer_args.append(AbstractQubitArray())
+        elif isinstance(invar.aval, AbstractQubit):
+            outer_args.append(jnp.asarray(0, dtype="int64"))
+        else:
+            outer_args.append(invar.aval)
+    return outer_args
+
+
 def make_static_register_interpreter(size):
     """
     Return an equation evaluator that implements the static-register strategy.
@@ -128,71 +174,21 @@ def make_static_register_interpreter(size):
 
     def evaluator(eqn, context_dic):
         if isinstance(eqn.primitive, QuantumPrimitive):
-            invars = eqn.invars
-            outvars = eqn.outvars
-            name = eqn.primitive.name
-
-            if name == "jasp.create_quantum_kernel":
-                # Pre-allocate all 'size' qubits at once and set up the free-
-                # index stack (highest index first, matching catalyst convention).
-                abs_qst = create_quantum_kernel_p.bind()
-                pre_alloc_array, abs_qst = create_qubits_p.bind(size, abs_qst)
-                free_indices = ScalarList(jnp.arange(size)[::-1], max_size=size)
-                insert_outvalues(eqn, context_dic, (pre_alloc_array, free_indices, abs_qst))
-
-            elif name == "jasp.consume_quantum_kernel":
-                pre_alloc_array, free_indices, abs_qst = extract_invalues(eqn, context_dic)[0]
-                abs_qst = delete_qubits_p.bind(pre_alloc_array, abs_qst)
-                result = consume_quantum_kernel_p.bind(abs_qst)
-                insert_outvalues(eqn, context_dic, result)
-
-            elif name == "jasp.create_qubits":
-                _process_create_qubits(invars, outvars, context_dic, size)
-
-            elif name == "jasp.delete_qubits":
-                _process_delete_qubits(eqn, context_dic)
-
-            elif name == "jasp.get_qubit":
-                _process_get_qubit(invars, outvars, context_dic)
-
-            elif name == "jasp.get_size":
-                _process_get_size(invars, outvars, context_dic)
-
-            elif name == "jasp.slice":
-                _process_slice(invars, outvars, context_dic)
-
-            elif name == "jasp.fuse":
-                _process_fuse(eqn, context_dic, size)
-
-            elif name == "jasp.quantum_gate":
-                _process_op(eqn.params["gate"], invars, outvars, context_dic)
-
-            elif name == "jasp.measure":
-                _process_measurement(invars, outvars, context_dic)
-
-            elif name == "jasp.parity":
-                _process_parity(eqn, context_dic)
-
-            elif name == "jasp.reset":
-                _process_reset(eqn, context_dic, evaluator)
-
-            else:
+            handler = _QUANTUM_HANDLERS.get(eqn.primitive.name)
+            if handler is None:
                 raise Exception(
                     f"static_register_interpreter: don't know how to process QuantumPrimitive '{eqn.primitive}'"
                 )
+            handler(eqn, context_dic, size, evaluator)
+            return
 
-        else:
-            name = eqn.primitive.name
-            if name == "while":
-                evaluate_while_loop_under_trace(eqn, context_dic, evaluator)
-            elif name == "cond":
-                evaluate_cond_under_trace(eqn, context_dic, evaluator)
-            elif name == "scan":
-                evaluate_scan_under_trace(eqn, context_dic, evaluator)
-            elif name == "jit":
-                _process_pjit(eqn, context_dic, evaluator)
-            else:
-                return True  # fall back to default binding
+        handler = _CONTROL_FLOW_HANDLERS.get(eqn.primitive.name)
+        if handler is None:
+            return True
+        if eqn.primitive.name == "jit":
+            handler(eqn, context_dic, size, evaluator)
+            return
+        handler(eqn, context_dic, evaluator)
 
     def transform(jaspr):
         """
@@ -204,36 +200,12 @@ def make_static_register_interpreter(size):
         the pre-allocated register is deleted again before the function
         returns, so callers see no signature change.
         """
-        from jax.extend.core import Literal
-
         from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr as _eval_jaxpr
 
         # ------------------------------------------------------------------ #
         # Step 1: build the inner (expanded-signature) jaxpr                 #
         # ------------------------------------------------------------------ #
-        inner_args = []
-        for invar in jaspr.jaxpr.invars:
-            if isinstance(invar, Literal):
-                if isinstance(invar.val, int):
-                    inner_args.append(jnp.asarray(invar.val, dtype="int64"))
-                elif isinstance(invar.val, float):
-                    inner_args.append(jnp.asarray(invar.val, dtype="float64"))
-                else:
-                    inner_args.append(invar.val)
-            elif isinstance(invar.aval, AbstractQuantumState):
-                inner_args.append(
-                    (
-                        AbstractQubitArray(),
-                        ScalarList(jnp.arange(size)[::-1], max_size=size),
-                        AbstractQuantumState(),
-                    )
-                )
-            elif isinstance(invar.aval, AbstractQubitArray):
-                inner_args.append(ScalarList(max_size=size))
-            elif isinstance(invar.aval, AbstractQubit):
-                inner_args.append(jnp.asarray(0, dtype="int64"))
-            else:
-                inner_args.append(invar.aval)
+        inner_args = _build_inner_args(jaspr, size)
 
         inner_closed_jaxpr = make_jaxpr(_eval_jaxpr(jaspr, eqn_evaluator=evaluator))(*inner_args)
 
@@ -250,18 +222,7 @@ def make_static_register_interpreter(size):
         # ------------------------------------------------------------------ #
         # Step 3: build an outer wrapper with the *original* signature       #
         # ------------------------------------------------------------------ #
-        outer_args = []
-        for invar in jaspr.jaxpr.invars:
-            if isinstance(invar, Literal):
-                pass
-            elif isinstance(invar.aval, AbstractQuantumState):
-                outer_args.append(AbstractQuantumState())
-            elif isinstance(invar.aval, AbstractQubitArray):
-                outer_args.append(AbstractQubitArray())
-            elif isinstance(invar.aval, AbstractQubit):
-                outer_args.append(jnp.asarray(0, dtype="int64"))
-            else:
-                outer_args.append(invar.aval)
+        outer_args = _build_outer_args(jaspr)
 
         # Pre-compute constant initial free-index state (captured in closure).
         # ScalarList has no backing tensor: each free-index slot is its own
@@ -346,12 +307,35 @@ def jaspr_to_static_register_jaspr(jaspr, size):
 
 
 # ---------------------------------------------------------------------------
+# Quantum kernel
+# ---------------------------------------------------------------------------
+
+
+def _process_create_quantum_kernel(eqn, context_dic, register_size, _evaluator):
+    """Pre-allocate the static register for a quantum kernel."""
+    abs_qst = create_quantum_kernel_p.bind()
+    pre_alloc_array, abs_qst = create_qubits_p.bind(register_size, abs_qst)
+    free_indices = ScalarList(jnp.arange(register_size)[::-1], max_size=register_size)
+    insert_outvalues(eqn, context_dic, (pre_alloc_array, free_indices, abs_qst))
+
+
+def _process_consume_quantum_kernel(eqn, context_dic, _register_size, _evaluator):
+    """Release the static register and consume the quantum kernel state."""
+    pre_alloc_array, _, abs_qst = extract_invalues(eqn, context_dic)[0]
+    abs_qst = delete_qubits_p.bind(pre_alloc_array, abs_qst)
+    result = consume_quantum_kernel_p.bind(abs_qst)
+    insert_outvalues(eqn, context_dic, result)
+
+
+# ---------------------------------------------------------------------------
 # Qubit allocation / deallocation
 # ---------------------------------------------------------------------------
 
 
-def _process_create_qubits(invars, outvars, context_dic, register_size):
+def _process_create_qubits(eqn, context_dic, register_size, _evaluator):
     """Pop ``n_qubits`` indices from the free pool into a new ScalarList (QubitArray)."""
+    invars = eqn.invars
+    outvars = eqn.outvars
     pre_alloc_array, free_qubits, abs_qst = context_dic[invars[1]]
     n_qubits = context_dic[invars[0]]
 
@@ -375,7 +359,7 @@ def _process_create_qubits(invars, outvars, context_dic, register_size):
     context_dic[outvars[1]] = (pre_alloc_array, free_qubits, abs_qst)
 
 
-def _process_delete_qubits(eqn, context_dic):
+def _process_delete_qubits(eqn, context_dic, _register_size, _evaluator):
     """Push all indices of a QubitArray back into the free pool."""
     pre_alloc_array, free_qubits, abs_qst = context_dic[eqn.invars[1]]
     reg_qubits = context_dic[eqn.invars[0]]
@@ -395,24 +379,30 @@ def _process_delete_qubits(eqn, context_dic):
 # ---------------------------------------------------------------------------
 
 
-def _process_get_qubit(invars, outvars, context_dic):
+def _process_get_qubit(eqn, context_dic, _register_size, _evaluator):
     """Index into the ScalarList to retrieve the integer position of a qubit."""
+    invars = eqn.invars
+    outvars = eqn.outvars
     qubit_list = context_dic[invars[0]]
     context_dic[outvars[0]] = qubit_list[context_dic[invars[1]]]
 
 
-def _process_get_size(invars, outvars, context_dic):
+def _process_get_size(eqn, context_dic, _register_size, _evaluator):
+    invars = eqn.invars
+    outvars = eqn.outvars
     context_dic[outvars[0]] = context_dic[invars[0]].counter
 
 
-def _process_slice(invars, outvars, context_dic):
+def _process_slice(eqn, context_dic, _register_size, _evaluator):
+    invars = eqn.invars
+    outvars = eqn.outvars
     qubit_reg = context_dic[invars[0]]
     start = context_dic[invars[1]]
     stop = context_dic[invars[2]]
     context_dic[outvars[0]] = qubit_reg[start:stop]
 
 
-def _process_fuse(eqn, context_dic, register_size):
+def _process_fuse(eqn, context_dic, register_size, _evaluator):
     """Merge two ScalarLists (or a ScalarList and a single qubit position) into one."""
     invalues = extract_invalues(eqn, context_dic)
 
@@ -436,11 +426,14 @@ def _process_fuse(eqn, context_dic, register_size):
 # ---------------------------------------------------------------------------
 
 
-def _process_op(op, invars, outvars, context_dic):
+def _process_op(eqn, context_dic, _register_size, _evaluator):
     """Resolve qubit positions to actual AbstractQubit tracers via get_qubit_p.
 
     Then bind quantum_gate_p with those tracers and the original parameters.
     """
+    op = eqn.params["gate"]
+    invars = eqn.invars
+    outvars = eqn.outvars
     pre_alloc_array, free_indices, abs_qst = context_dic[invars[-1]]
 
     # Resolve integer positions → AbstractQubit tracers
@@ -460,8 +453,10 @@ def _process_op(op, invars, outvars, context_dic):
 # ---------------------------------------------------------------------------
 
 
-def _process_measurement(invars, outvars, context_dic):
+def _process_measurement(eqn, context_dic, _register_size, _evaluator):
     """Measure a single qubit or a QubitArray (returns integer bit-string)."""
+    invars = eqn.invars
+    outvars = eqn.outvars
     pre_alloc_array, free_indices, abs_qst = context_dic[invars[-1]]
 
     if isinstance(invars[0].aval, AbstractQubitArray):
@@ -508,7 +503,7 @@ def _exec_multi_measurement(pre_alloc_array, qubit_list, abs_qst):
 # ---------------------------------------------------------------------------
 
 
-def _process_parity(eqn, context_dic):
+def _process_parity(eqn, context_dic, _register_size, _evaluator):
     """Compute XOR of measurement results (same logic as catalyst_interpreter)."""
     invalues = extract_invalues(eqn, context_dic)
     expectation = eqn.params.get("expectation", 0)
@@ -527,7 +522,7 @@ def _process_parity(eqn, context_dic):
 # ---------------------------------------------------------------------------
 
 
-def _process_reset(eqn, context_dic, evaluator):
+def _process_reset(eqn, context_dic, _register_size, evaluator):
     """Reset a QubitArray to |0> by measuring each qubit and conditionally applying X.
 
     Re-uses the reset_jaxpr from catalyst_interpreter but evaluates it with
@@ -549,8 +544,31 @@ def _process_reset(eqn, context_dic, evaluator):
 # ---------------------------------------------------------------------------
 
 
-def _process_pjit(eqn, context_dic, evaluator):
+def _process_pjit(eqn, context_dic, _register_size, evaluator):
     """Inline a jit'd call by evaluating its jaxpr with the static-register evaluator."""
     invalues = extract_invalues(eqn, context_dic)
     result = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=evaluator)(*invalues)
     insert_call_outvalues(eqn, context_dic, result, len(eqn.params["jaxpr"].jaxpr.outvars))
+
+
+_QUANTUM_HANDLERS = {
+    "jasp.create_quantum_kernel": _process_create_quantum_kernel,
+    "jasp.consume_quantum_kernel": _process_consume_quantum_kernel,
+    "jasp.create_qubits": _process_create_qubits,
+    "jasp.delete_qubits": _process_delete_qubits,
+    "jasp.get_qubit": _process_get_qubit,
+    "jasp.get_size": _process_get_size,
+    "jasp.slice": _process_slice,
+    "jasp.fuse": _process_fuse,
+    "jasp.quantum_gate": _process_op,
+    "jasp.measure": _process_measurement,
+    "jasp.parity": _process_parity,
+    "jasp.reset": _process_reset,
+}
+
+_CONTROL_FLOW_HANDLERS = {
+    "while": evaluate_while_loop_under_trace,
+    "cond": evaluate_cond_under_trace,
+    "scan": evaluate_scan_under_trace,
+    "jit": _process_pjit,
+}
