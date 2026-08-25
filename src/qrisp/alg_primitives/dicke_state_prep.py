@@ -308,10 +308,10 @@ def _split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k:
     cx(qv[n - 2], qv[n - 1])
 
     # 2 <= l <= k
-    for l in jrange(2, k+1):
-        param = 2 * jnp.arccos(jnp.sqrt( l / n))
+    for l in jrange(2, k + 1):
+        param = 2 * jnp.arccos(jnp.sqrt(l / n))
 
-        cx(qv[n-l-1], qv[n - 1])
-        with control([qv[n - 1], qv[n-l]]):
-            ry(param, qv[n-l-1])
-        cx(qv[n-l-1], qv[n - 1])
+        cx(qv[n - l - 1], qv[n - 1])
+        with control([qv[n - 1], qv[n - l]]):
+            ry(param, qv[n - l - 1])
+        cx(qv[n - l - 1], qv[n - 1])
