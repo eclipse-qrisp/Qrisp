@@ -106,6 +106,14 @@ Bug Fixes
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 
+* Fixed a bug where :class:`~qrisp.QuantumModulus` constructed with a traced
+  (Jasp-dynamic) modulus leaked a stale JAX tracer into subsequent, independent
+  ``jaspify``/``make_jaspr`` calls, raising
+  ``jax.errors.UnexpectedTracerError`` on the second and later calls. The
+  modulus is now threaded through the ``QuantumVariable`` pytree as a proper
+  traced attribute instead of being passed into static auxiliary data
+  (`PR #802 <https://github.com/eclipse-qrisp/Qrisp/pull/802>`_).
+
 * Updated broken link in TSP tutorial to point to the
   correct archived Qiskit textbook.
   (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
@@ -122,6 +130,11 @@ New Tutorials/ Updated Documentation
   Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
   hybrid quantum-classical workflows
   (`PR #549 <https://github.com/eclipse-qrisp/Qrisp/pull/549>`_).
+
+- Fixed outdated or inaccurate docstrings and examples across the Jasp
+  module (control flow, sampling, simulators, optimization tools,
+  ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
+  (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
 .. Add new tutorials above this line
 
@@ -166,6 +179,24 @@ Development
   classical-simulation, profiling, and post-processing backends into shared
   helper functions
   (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+
+* Added an ``all`` optional dependency group that installs the base package
+  plus every other extra except ``aqt`` (``qiskit``, ``iqm``, ``catalyst``,
+  ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
+  installation instructions to reference it
+  (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+* Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
+  and surfaces lint findings as annotations on the GitHub Checks tab of
+  newly added lines instead of as inline review comments on the PR
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
+  `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
+
+* Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
+  style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
+  (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
+  used to avoid circular imports) and ``E402`` (module-level imports placed
+  after a module docstring)
+  (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
 Dependency Upgrades
 -------------------

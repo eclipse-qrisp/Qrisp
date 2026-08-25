@@ -610,7 +610,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         # if 3 < n < 5:
         #     return mcx(qubits_0, qubits_1, method = "maslov", ctrl_state = ctrl_state)
         # else:
-        #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
+        #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa: E501
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
 
