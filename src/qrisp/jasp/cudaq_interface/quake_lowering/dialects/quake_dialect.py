@@ -30,8 +30,8 @@ from collections.abc import Sequence
 
 from xdsl.dialects.builtin import (
     IntegerAttr,
-    i64,
     i1,
+    i64,
 )
 from xdsl.ir import (
     Dialect,
@@ -51,7 +51,7 @@ from xdsl.irdl import (
 )
 from xdsl.printer import Printer
 
-from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcStdVecType, CcMeasureHandleType
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcMeasureHandleType, CcStdVecType
 
 # ---------------------------------------------------------------------------
 # Types
@@ -309,7 +309,6 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
     SSA operand types in order: parameters, controls, targets) as defined by
     the CUDA-Q Quake dialect's ``AttrSizedOperandSegments`` assemblyFormat.
     """
-
     # Float parameters
     param_list = list(self.params)
     if param_list:
@@ -353,6 +352,7 @@ def _mk_gate_cls(quake_name: str) -> type:
     -------
     type
         A new, irdl-registered subclass of :class:`IRDLOperation`.
+
     """
     safe_name = quake_name.replace(".", "_").replace("<", "_").replace(">", "")
 
@@ -429,6 +429,7 @@ def make_gate_op(
     -------
     IRDLOperation | None
         A new Quake gate op instance, or *None* if the gate is not supported.
+
     """
     from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import GATE_MAP
 

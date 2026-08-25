@@ -38,9 +38,8 @@
 
 import math
 from collections.abc import Callable, Sequence
-from typing import Optional
-
 from dataclasses import dataclass, field
+from typing import Optional
 
 from xdsl.dialects import arith
 from xdsl.dialects.builtin import FloatAttr, f64
@@ -48,6 +47,7 @@ from xdsl.ir import (
     Operation,
     SSAValue,
 )
+
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import make_gate_op
 
 
@@ -84,7 +84,6 @@ class GateInfo:
 
 def _emit_sx(controls: Sequence[SSAValue], _params: Sequence[SSAValue], targets: Sequence[SSAValue]) -> list[Operation]:
     """sx(q) = rx(π/2, q), matching Qrisp's ``sx`` (= RX(π/2)) definition exactly."""
-
     # Old H·S·H decomposition: only equal to Qrisp's sx up to a global phase
     # of e^{iπ/4} (Qrisp defines sx as RX(π/2), not H·S·H). Kept here in case
     # Qrisp's sx definition ever changes away from RX(π/2).
@@ -115,7 +114,6 @@ def _emit_sx_dg(
     controls: Sequence[SSAValue], _params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """sx†(q) = rx(-π/2, q), matching Qrisp's ``sx_dg`` (= RX(-π/2)) definition exactly."""
-
     # Old H·S†·H decomposition: only equal to Qrisp's sx_dg up to a global
     # phase of e^{-iπ/4} (Qrisp defines sx_dg as RX(-π/2), not H·S†·H). Kept
     # here in case Qrisp's sx_dg definition ever changes away from RX(-π/2).
@@ -146,7 +144,6 @@ def _emit_cgphase(
     _controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """cgphase(ϕ) between targets q0 and q1 = p(ϕ, q0)"""
-
     t0, _t1 = targets
     phi = params[0]
     return [
@@ -158,7 +155,6 @@ def _emit_gphase(
     _controls: Sequence[SSAValue], params: Sequence[SSAValue], targets: Sequence[SSAValue]
 ) -> list[Operation]:
     """gphase(ϕ) on target q0 = p(ϕ, q0)"""
-
     t0 = targets[0]
     phi = params[0]
     two = arith.ConstantOp(FloatAttr(2.0, f64))
@@ -221,5 +217,6 @@ def get_gate_info(gate_name: str) -> GateInfo | None:
     GateInfo | None
         The :class:`GateInfo` entry if the gate is supported, or *None* if it
         is not in the map.
+
     """
     return GATE_MAP.get(gate_name)

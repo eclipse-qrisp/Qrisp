@@ -39,18 +39,19 @@
 #
 # Handles both static and dynamic array indexing.
 
-from xdsl.dialects import arith, func as func_dialect, tensor
-from xdsl.dialects.builtin import ModuleOp
+from xdsl.dialects import arith, tensor
+from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
+    Float16Type,
+    Float32Type,
+    Float64Type,
     FloatAttr,
     FunctionType,
     IndexType,
     IntegerAttr,
+    ModuleOp,
     TensorType,
-    Float64Type,
-    Float32Type,
-    Float16Type,
     i64,
 )
 from xdsl.ir import Block, Region, SSAValue
@@ -62,9 +63,9 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcCastOp,
     CcComputePtrOp,
     CcLoadOp,
+    CcLoopOp,
     CcPtrType,
     CcStoreOp,
-    CcLoopOp,
 )
 
 # MLIR's sentinel for "dynamic dimension/offset"

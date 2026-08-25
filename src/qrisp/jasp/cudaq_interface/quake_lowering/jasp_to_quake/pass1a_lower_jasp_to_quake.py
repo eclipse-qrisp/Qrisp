@@ -75,30 +75,33 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     make_gate_op,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
+    _coerce_to_f64_for_rewriter,
+    _extract_scalar_for_rewriter,
+    _is_numeric_type,
+    _is_qst,
+    _is_qubit,
+    _is_qubit_array,
+    _is_qubit_type,
+    _normalize_index_for_veq_rewriter,
+    _wrap_scalar_for_rewriter,
+)
 from qrisp.jasp.mlir.xdsl_dialect import (
     CreateQubitsOp,
     DeleteQubitsOp,
     FuseOp,
     GetQubitOp,
     GetSizeOp,
-    MeasureOp as JaspMeasureOp,
     ParityOp,
     QuantumGateOp,
-    ResetOp as JaspResetOp,
     SliceOp,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
-    _is_qst,
-    _is_qubit_array,
-    _is_qubit,
-    _is_qubit_type,
-    _is_numeric_type,
-    _extract_scalar_for_rewriter,
-    _coerce_to_f64_for_rewriter,
-    _normalize_index_for_veq_rewriter,
-    _wrap_scalar_for_rewriter,
+from qrisp.jasp.mlir.xdsl_dialect import (
+    MeasureOp as JaspMeasureOp,
 )
-
+from qrisp.jasp.mlir.xdsl_dialect import (
+    ResetOp as JaspResetOp,
+)
 
 # ===========================================================================
 # Public entry point
@@ -120,8 +123,8 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
     execution_mode:
         ``"run"`` (default) packs array measurement results into an ``i64``.
         ``"sample"`` emits raw ``quake.mz`` and uses zero placeholders.
-    """
 
+    """
     patterns: list[RewritePattern] = [
         LowerCreateQubits(),
         LowerGetQubit(),

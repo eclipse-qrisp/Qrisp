@@ -15,9 +15,10 @@
 ********************************************************************************
 """
 
-from cudaq.mlir.ir import Context, Module
-from cudaq.mlir.dialects import quake, cc
 import re
+
+from cudaq.mlir.dialects import cc, quake
+from cudaq.mlir.ir import Context, Module
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -82,7 +83,6 @@ def validate_quake_mlir(mlir_str: str) -> Module:
 
     Examples
     --------
-
     ::
 
         from qrisp import QuantumVariable, h, cx, measure
@@ -98,8 +98,8 @@ def validate_quake_mlir(mlir_str: str) -> Module:
         jaspr = make_jaspr(bell)()
         xdsl_module = jaspr_to_quake(jaspr)
         module = validate_quake_mlir(str(xdsl_module))
-    """
 
+    """
     assert_no_jasp(mlir_str)
     assert_no_linalg(mlir_str)
     assert_no_scf(mlir_str)

@@ -61,8 +61,8 @@ from xdsl.ir import (
     SSAValue,
 )
 from xdsl.pattern_rewriter import (
-    InsertPoint,
     GreedyRewritePatternApplier,
+    InsertPoint,
     PatternRewriter,
     PatternRewriteWalker,
     RewritePattern,
@@ -76,15 +76,14 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
     _is_qst,
-    _is_qubit_array,
     _is_qubit,
+    _is_qubit_array,
     _quake_type_for,
 )
 from qrisp.jasp.mlir.xdsl_dialect import (
     ConsumeQuantumKernelOp,
     CreateQuantumKernelOp,
 )
-
 
 # ===========================================================================
 # Public entry point
@@ -101,6 +100,7 @@ def strip_qst(module: ModuleOp, execution_mode: str = "run") -> None:
         Modified in-place.
     execution_mode:
         ``"run"`` or ``"sample"`` — affects function return type handling.
+
     """
     patterns: list[RewritePattern] = [
         LowerCreateQuantumKernel(),

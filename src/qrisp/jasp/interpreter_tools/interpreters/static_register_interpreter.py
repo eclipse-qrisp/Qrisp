@@ -80,26 +80,11 @@ from jax.lax import fori_loop
 from jax.lax import while_loop as jax_while_loop
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from qrisp.jasp.primitives import (
-    QuantumPrimitive,
-    AbstractQuantumState,
-    AbstractQubitArray,
-    AbstractQubit,
-    quantum_gate_p,
-    Measurement_p,
-    get_qubit_p,
-    get_size_p,
-    create_qubits_p,
-    delete_qubits_p,
-    create_quantum_kernel_p,
-    consume_quantum_kernel_p,
-)
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     extract_invalues,
     insert_call_outvalues,
     insert_outvalues,
-    reinterpret,
 )
 from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
     evaluate_cond_under_trace,
@@ -107,7 +92,19 @@ from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretatio
     evaluate_while_loop_under_trace,
 )
 from qrisp.jasp.interpreter_tools.scalar_list import ScalarList
-
+from qrisp.jasp.primitives import (
+    AbstractQuantumState,
+    AbstractQubit,
+    AbstractQubitArray,
+    Measurement_p,
+    QuantumPrimitive,
+    consume_quantum_kernel_p,
+    create_quantum_kernel_p,
+    create_qubits_p,
+    delete_qubits_p,
+    get_qubit_p,
+    quantum_gate_p,
+)
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -127,6 +124,7 @@ def make_static_register_interpreter(size):
     -------
     callable
         An ``eqn_evaluator`` compatible with ``eval_jaxpr`` / ``reinterpret``.
+
     """
 
     def evaluator(eqn, context_dic):
@@ -207,8 +205,8 @@ def make_static_register_interpreter(size):
         the pre-allocated register is deleted again before the function
         returns, so callers see no signature change.
         """
-        from jax import make_jaxpr
         from jax.extend.core import Literal
+
         from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr as _eval_jaxpr
 
         # ------------------------------------------------------------------ #
@@ -341,6 +339,7 @@ def jaspr_to_static_register_jaspr(jaspr, size):
     -------
     Jaspr | ClosedJaxpr
         A new jaspr of the same type as the input.
+
     """
     transform = make_static_register_interpreter(size)
     result = transform(jaspr)
@@ -354,7 +353,6 @@ def jaspr_to_static_register_jaspr(jaspr, size):
 
 def _process_create_qubits(invars, outvars, context_dic, register_size):
     """Pop ``n_qubits`` indices from the free pool into a new ScalarList (QubitArray)."""
-
     pre_alloc_array, free_qubits, abs_qst = context_dic[invars[1]]
     n_qubits = context_dic[invars[0]]
 
@@ -380,7 +378,6 @@ def _process_create_qubits(invars, outvars, context_dic, register_size):
 
 def _process_delete_qubits(eqn, context_dic):
     """Push all indices of a QubitArray back into the free pool."""
-
     pre_alloc_array, free_qubits, abs_qst = context_dic[eqn.invars[1]]
     reg_qubits = context_dic[eqn.invars[0]]
 

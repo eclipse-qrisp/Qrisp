@@ -36,21 +36,20 @@
 # after the op using tensor.from_elements. These wrappers are cleaned up
 # by Pass 3 (tensor unwrap).
 
-from typing import Optional, List
+from typing import List, Optional
 
-from xdsl.dialects import scf, arith, tensor
-from xdsl.dialects.scf import IfOp, ForOp, WhileOp, IndexSwitchOp, YieldOp, ConditionOp
-from xdsl.dialects.builtin import ModuleOp, TensorType, IntegerType, IntegerAttr
-from xdsl.ir import Block, Region, SSAValue, Operation, Attribute
-
-from xdsl.rewriter import Rewriter, InsertPoint
+from xdsl.dialects import arith, scf, tensor
+from xdsl.dialects.builtin import IntegerAttr, IntegerType, ModuleOp, TensorType
+from xdsl.dialects.scf import ConditionOp, ForOp, IfOp, IndexSwitchOp, WhileOp, YieldOp
+from xdsl.ir import Attribute, Block, Operation, Region, SSAValue
 from xdsl.pattern_rewriter import (
-    RewritePattern,
-    PatternRewriter,
-    op_type_rewrite_pattern,
-    PatternRewriteWalker,
     GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    op_type_rewrite_pattern,
 )
+from xdsl.rewriter import InsertPoint, Rewriter
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcConditionOp,

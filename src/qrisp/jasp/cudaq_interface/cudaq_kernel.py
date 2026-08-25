@@ -53,19 +53,17 @@
 #    re-compiles the string within the active MLIR context, resulting in a
 #    valid kernel object that the C++ backend can safely execute.
 
+import inspect
 from collections.abc import Callable
 from typing import Literal
-import inspect
 
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
 
-from qrisp.jasp.evaluation_tools.profiler import profile_jaspr
-from qrisp.jasp.interpreter_tools import jaspr_to_static_register_jaspr
-from qrisp.jasp.jasp_expression import make_jaspr
-from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
 from qrisp.jasp.cudaq_interface.cudaq_ingestion import cudaq_kernel_from_xdsl_module
-
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
+from qrisp.jasp.interpreter_tools import jaspr_to_static_register_jaspr
+from qrisp.jasp.jasp_expression import make_jaspr
 
 # ------------------------------------------------------------------ #
 # @cudaq_kernel decorator

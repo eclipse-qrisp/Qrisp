@@ -79,6 +79,7 @@ def _get_llvm_attributes() -> tuple[str, str | None]:
     ------
     RuntimeError
         If neither extraction nor platform defaults succeed.
+
     """
     data_layout_str = None
     target_triple_str = None

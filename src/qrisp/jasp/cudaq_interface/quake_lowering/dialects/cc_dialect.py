@@ -43,22 +43,22 @@
 
 from typing import Sequence
 
-from xdsl.dialects.builtin import ArrayAttr, IntegerAttr, i1, i64, StringAttr
+from xdsl.dialects.builtin import ArrayAttr, IntegerAttr, StringAttr, i1, i64
 from xdsl.ir import (
     Attribute,
     Block,
     Dialect,
+    ParametrizedAttribute,
     Region,
     SSAValue,
     TypeAttribute,
-    ParametrizedAttribute,
 )
 from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
+    attr_def,
     irdl_attr_definition,
     irdl_op_definition,
-    attr_def,
     operand_def,
     region_def,
     result_def,
@@ -156,6 +156,7 @@ class CcStructType(ParametrizedAttribute, TypeAttribute):
 
         !cc.struct<"tuple" {i64, f64}>
         !cc.struct<"tuple" {i64, i64, i64}>
+
     """
 
     name = "cc.struct"
@@ -490,8 +491,8 @@ class CcComputePtrOp(IRDLOperation):
             Static integer index or dynamic SSAValue (i64).
         element_type : Attribute
             The element type (T) for the result pointer type.
-        """
 
+        """
         if isinstance(index, int):
             # Static index
             super().__init__(

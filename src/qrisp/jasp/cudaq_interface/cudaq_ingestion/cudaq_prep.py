@@ -50,12 +50,11 @@ from xdsl.dialects.builtin import (
 from xdsl.ir import Block, Region
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
-    CcLogOutputOp,
     CcInsertValueOp,
+    CcLogOutputOp,
     CcStructType,
     CcUndefOp,
 )
-
 
 # ===========================================================================
 # Internal helpers
@@ -332,6 +331,7 @@ def prepare_module_for_cudaq(
         LLVM target triple string.
     execution_mode : "run" | "sample"
         Whether to prepare for cudaq.run or cudaq.sample.
+
     """
     _pass_strip_module_name(module)
     main_func = _pass_rename_main(module, func_name)

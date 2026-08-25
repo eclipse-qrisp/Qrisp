@@ -24,14 +24,13 @@ from typing import Literal
 
 import cudaq
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
+from cudaq.mlir.dialects import cc as cudaq_cc_dialect
+from cudaq.mlir.dialects import quake as cudaq_quake_dialect
 from cudaq.mlir.ir import Module, NoneType
-from cudaq.mlir.dialects import quake as cudaq_quake_dialect, cc as cudaq_cc_dialect
-
 from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import prepare_module_for_cudaq
 from qrisp.jasp.cudaq_interface.cudaq_ingestion.host_attributes import _get_llvm_attributes
-
 
 # ------------------------------------------------------------------ #
 # xDSL → CUDA-Q serialization normalization
@@ -164,7 +163,6 @@ def cudaq_kernel_from_xdsl_module(
         print(cudaq.run(kernel, shots_count=100))
 
     """
-
     module = xdsl_module.clone()
 
     # Get CUDA-Q naming from a dummy kernel. This kernel object must never be

@@ -32,17 +32,18 @@
 # 6. EraseDeadFromElements: Cleans up orphaned from_elements.
 
 from xdsl.context import Context
-from xdsl.dialects import arith, func as func_dialect, tensor
-from xdsl.dialects.builtin import ModuleOp
+from xdsl.dialects import arith, tensor
+from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
+    Float16Type,
+    Float32Type,
+    Float64Type,
     FloatAttr,
     FunctionType,
     IntegerAttr,
     IntegerType,
-    Float16Type,
-    Float32Type,
-    Float64Type,
+    ModuleOp,
     TensorType,
 )
 from xdsl.passes import ModulePass
@@ -54,7 +55,6 @@ from xdsl.pattern_rewriter import (
     op_type_rewrite_pattern,
 )
 from xdsl.rewriter import InsertPoint
-
 
 # ===================================================================
 # Public entry point

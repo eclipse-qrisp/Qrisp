@@ -17,13 +17,13 @@
 
 from xdsl.dialects import arith, tensor
 from xdsl.dialects.builtin import (
+    BFloat16Type,
     DenseIntOrFPElementsAttr,
-    IntegerAttr,
-    IntegerType,
     Float16Type,
     Float32Type,
     Float64Type,
-    BFloat16Type,
+    IntegerAttr,
+    IntegerType,
     TensorType,
     f64,
 )
@@ -88,7 +88,6 @@ def _is_qubit_type(t: Attribute) -> bool:
 
 def _is_numeric_type(t: Attribute) -> bool:
     """Return True if *t* is a scalar or rank-0 tensor of int/float."""
-
     scalar = t
     if isinstance(t, TensorType):
         if t.get_shape():  # only rank-0
@@ -99,13 +98,11 @@ def _is_numeric_type(t: Attribute) -> bool:
 
 def _is_float_type(t: Attribute) -> bool:
     """Return True for any xDSL float type."""
-
     return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
 
 
 def _scalar_type_of(t: Attribute) -> Attribute:
     """Return the scalar element type (unwrap rank-0 tensor if needed)."""
-
     if isinstance(t, TensorType) and not t.get_shape():
         return t.element_type
     return t

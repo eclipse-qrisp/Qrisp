@@ -31,23 +31,22 @@
 #   unchanged, requiring no call graph analysis or propagation.
 
 from xdsl.dialects import func as func_dialect
-from xdsl.dialects.builtin import ModuleOp, FunctionType, Attribute
-
-from xdsl.rewriter import Rewriter, InsertPoint
+from xdsl.dialects.builtin import Attribute, FunctionType, ModuleOp
 from xdsl.pattern_rewriter import (
-    RewritePattern,
-    PatternRewriter,
-    op_type_rewrite_pattern,
-    PatternRewriteWalker,
     GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    op_type_rewrite_pattern,
 )
+from xdsl.rewriter import InsertPoint, Rewriter
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcArrayType,
+    CcCastOp,
     CcPtrType,
     CcStdVecDataOp,
     CcStdVecType,
-    CcCastOp,
 )
 
 _MLIR_DYNAMIC = -9223372036854775808

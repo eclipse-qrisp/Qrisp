@@ -63,8 +63,6 @@
 
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.jasp_expression import Jaspr
-from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
 from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
@@ -82,6 +80,8 @@ from qrisp.jasp.cudaq_interface.quake_lowering.pass5_array_to_stdvec import (
 from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
+from qrisp.jasp.jasp_expression import Jaspr
+from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
 
 
 def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
@@ -126,6 +126,7 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
         If the ``xdsl`` package is not installed.
     LinalgRankedTensorError
         If the emitted module contains ``linalg.generic`` on ranked tensors.
+
     """
     # Step 0 – Produce the initial xDSL module with Jasp IR.
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)
