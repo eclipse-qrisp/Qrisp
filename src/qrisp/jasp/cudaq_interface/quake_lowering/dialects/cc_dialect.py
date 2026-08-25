@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -85,9 +86,11 @@ class CcArrayType(ParametrizedAttribute, TypeAttribute):
     size: IntegerAttr
 
     def __init__(self, element_type: Attribute, size: int) -> None:
+        """Initialize an array type with its element type and size."""
         super().__init__(element_type, IntegerAttr(size, i64))
 
     def print_parameters(self, printer: Printer) -> None:
+        """Print the array element type and size parameters."""
         size_val = self.size.value.data
         printer.print_string("<")
         printer.print_attribute(self.element_type)
@@ -113,6 +116,7 @@ class CcPtrType(ParametrizedAttribute, TypeAttribute):
     element_type: Attribute
 
     def __init__(self, element_type: Attribute) -> None:
+        """Initialize a pointer type for the given element type."""
         super().__init__(element_type)
 
 
@@ -133,11 +137,13 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
     element_type: Attribute
 
     def __init__(self, element_type: Attribute | None = None) -> None:
+        """Initialize a standard-vector type, defaulting to measurement handles."""
         if element_type is None:
             element_type = CcMeasureHandleType()
         super().__init__(element_type)
 
     def print_parameters(self, printer: Printer) -> None:
+        """Print the standard-vector element type."""
         printer.print_string("<")
         printer.print_attribute(self.element_type)
         printer.print_string(">")
@@ -165,11 +171,11 @@ class CcStructType(ParametrizedAttribute, TypeAttribute):
     field_types: Attribute  # ArrayAttr
 
     def __init__(self, struct_name: str, field_types: Sequence[Attribute]) -> None:
-
+        """Initialize a struct type with its name and field types."""
         super().__init__(StringAttr(struct_name), ArrayAttr(list(field_types)))
 
     def print_parameters(self, printer: Printer) -> None:
-
+        """Print the struct name and field types."""
         printer.print_string('<"')
         printer.print_string(self.struct_name.data)
         printer.print_string('" {')
@@ -195,12 +201,14 @@ class CcAllocaOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, elem_type: Attribute) -> None:
+        """Initialize the object."""
         super().__init__(
             attributes={"elem_type": elem_type},
             result_types=[CcPtrType(elem_type)],
         )
 
     def print(self, printer: Printer) -> None:
+        """Print the CC allocation operation."""
         printer.print_string(" ")
         printer.print_attribute(self.elem_type)
 
@@ -214,9 +222,11 @@ class CcStoreOp(IRDLOperation):
     ptr = operand_def(AnyAttr())
 
     def __init__(self, value: SSAValue, ptr: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[value, ptr])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC store operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.value)
         printer.print_string(", ")
@@ -234,11 +244,13 @@ class CcLoadOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, ptr: SSAValue) -> None:
+        """Initialize the object."""
         if not hasattr(ptr.type, "element_type"):
             raise TypeError(f"CcLoadOp requires a CcPtrType operand, got {ptr.type}")
         super().__init__(operands=[ptr], result_types=[ptr.type.element_type])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC load operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.ptr)
         printer.print_string(" : ")
@@ -288,6 +300,7 @@ class CcIfOp(IRDLOperation):
         then_region: Region,
         else_region: Region | None = None,
     ) -> None:
+        """Initialize the object."""
         if else_region is None:
             else_region = Region([Block()])
         super().__init__(
@@ -297,6 +310,7 @@ class CcIfOp(IRDLOperation):
         )
 
     def print(self, printer: Printer) -> None:
+        """Print the CC conditional operation."""
         printer.print_string("(")
         printer.print_ssa_value(self.cond)
         printer.print_string(")")
@@ -352,6 +366,7 @@ class CcLoopOp(IRDLOperation):
         body_region: Region,
         step_region: Region | None = None,
     ) -> None:
+        """Initialize the object."""
         if step_region is None:
             step_region = Region([Block()])
         super().__init__(
@@ -361,6 +376,7 @@ class CcLoopOp(IRDLOperation):
         )
 
     def print(self, printer: Printer) -> None:
+        """Print the CC loop operation."""
         printer.print_string(" while ")
 
         if self.arguments:
@@ -400,9 +416,11 @@ class CcBreakOp(IRDLOperation):
     name = "cc.break"
 
     def __init__(self) -> None:
+        """Initialize the object."""
         super().__init__()
 
     def print(self, printer: Printer) -> None:
+        """Print the CC break operation."""
         pass
 
 
@@ -420,9 +438,11 @@ class CcContinueOp(IRDLOperation):
     operands_ = var_operand_def(AnyAttr())
 
     def __init__(self, *operands: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[list(operands)])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC continue operation."""
         ops = list(self.operands_)
         if ops:
             printer.print_string(" ")
@@ -443,9 +463,11 @@ class CcConditionOp(IRDLOperation):
     arguments = var_operand_def(AnyAttr())
 
     def __init__(self, cond: SSAValue, *args: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=(cond, list(args)))
 
     def print(self, printer: Printer) -> None:
+        """Print the CC loop condition."""
         printer.print_string(" ")
         printer.print_ssa_value(self.cond)
         args = list(self.arguments)
@@ -482,7 +504,8 @@ class CcComputePtrOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, base: SSAValue, index, element_type: Attribute) -> None:
-        """
+        """Initialize the compute pointer operation.
+
         Parameters
         ----------
         base : SSAValue
@@ -508,6 +531,7 @@ class CcComputePtrOp(IRDLOperation):
             )
 
     def print(self, printer: Printer) -> None:
+        """Print the CC pointer computation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.base)
         printer.print_string("[")
@@ -539,9 +563,11 @@ class CcCastOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, value: SSAValue, result_type: Attribute) -> None:
+        """Initialize the object."""
         super().__init__(operands=[value], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC cast operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.value)
         printer.print_string(" : (")
@@ -567,9 +593,11 @@ class CcStdVecDataOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, vec: SSAValue, result_type: Attribute) -> None:
+        """Initialize the object."""
         super().__init__(operands=[vec], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC vector-data operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.vec)
         printer.print_string(" : (")
@@ -597,9 +625,11 @@ class CcUndefOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, result_type: Attribute) -> None:
+        """Initialize the object."""
         super().__init__(result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC undefined-value operation."""
         printer.print_string(" ")
         printer.print_attribute(self.result.type)
 
@@ -622,6 +652,7 @@ class CcInsertValueOp(IRDLOperation):
     result = result_def(AnyAttr())
 
     def __init__(self, struct: SSAValue, index: int, value: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(
             operands=[struct, value],
             attributes={"index": IntegerAttr(index, i64)},
@@ -629,6 +660,7 @@ class CcInsertValueOp(IRDLOperation):
         )
 
     def print(self, printer: Printer) -> None:
+        """Print the CC value insertion operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.struct)
         idx_val = self.index.value.data
@@ -658,9 +690,11 @@ class CcLogOutputOp(IRDLOperation):
     value = operand_def(AnyAttr())
 
     def __init__(self, value: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[value])
 
     def print(self, printer: Printer) -> None:
+        """Print the CC log-output operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.value)
         printer.print_string(" : ")

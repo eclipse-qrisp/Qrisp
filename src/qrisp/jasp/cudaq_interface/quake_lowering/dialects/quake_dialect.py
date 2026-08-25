@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -68,6 +69,7 @@ class QuakeRefType(ParametrizedAttribute, TypeAttribute):
 @irdl_attr_definition
 class QuakeVeqType(ParametrizedAttribute, TypeAttribute):
     """Quake qubit-register reference type: ``!quake.veq<?>`` (dynamic size)
+
     or ``!quake.veq<N>`` (static size).
 
     Use size=-1 (the default) to represent a dynamic size.
@@ -78,13 +80,16 @@ class QuakeVeqType(ParametrizedAttribute, TypeAttribute):
     size: IntegerAttr
 
     def __init__(self, size: int = -1) -> None:
+        """Initialize a Quake register type with the given size."""
         super().__init__(IntegerAttr(size, i64))
 
     @property
     def is_static(self) -> bool:
+        """Return whether this register has a statically known size."""
         return self.size.value.data >= 0
 
     def print_parameters(self, printer: Printer) -> None:
+        """Print the register size parameter."""
         size_val = self.size.value.data
         if size_val < 0:
             printer.print_string("<?>")
@@ -130,6 +135,7 @@ class AllocaOp(IRDLOperation):
     result = result_def(AnyAttr())  # QuakeRefType or QuakeVeqType
 
     def __init__(self, size: SSAValue | int | None = None) -> None:
+        """Initialize the object."""
         if size is None:
             super().__init__(operands=[[]], result_types=[QuakeRefType()])
         elif isinstance(size, int):
@@ -138,6 +144,7 @@ class AllocaOp(IRDLOperation):
             super().__init__(operands=[[size]], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake allocation operation."""
         size_ops = list(self.size)
         if size_ops:
             printer.print_string(" ")
@@ -160,9 +167,11 @@ class DeallocOp(IRDLOperation):
     qubits = operand_def(AnyAttr())
 
     def __init__(self, qubits: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[qubits])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake deallocation operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.qubits)
         printer.print_string(" : ")
@@ -190,9 +199,11 @@ class ExtractRefOp(IRDLOperation):
     result = result_def(QuakeRefType)
 
     def __init__(self, veq: SSAValue, index: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[veq, index], result_types=[QuakeRefType()])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake reference-extraction operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
         printer.print_string("[")
@@ -213,9 +224,11 @@ class VeqSizeOp(IRDLOperation):
     result = result_def(i64)
 
     def __init__(self, veq: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[veq], result_types=[i64])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake register-size operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
         printer.print_string(" : (")
@@ -234,9 +247,11 @@ class SubVeqOp(IRDLOperation):
     result = result_def(QuakeVeqType)
 
     def __init__(self, veq: SSAValue, lo: SSAValue, hi: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[veq, lo, hi], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake sub-register operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
         printer.print_string(", ")
@@ -256,6 +271,7 @@ class SubVeqOp(IRDLOperation):
 @irdl_op_definition
 class RelaxSizeOp(IRDLOperation):
     """Cast a statically-sized veq to the dynamically-sized variant:
+
     ``quake.relax_size %veq : (!quake.veq<5>) -> !quake.veq<?>``.
     """
 
@@ -264,9 +280,11 @@ class RelaxSizeOp(IRDLOperation):
     result = result_def(QuakeVeqType)
 
     def __init__(self, veq: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[veq], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake register-size relaxation operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
         printer.print_string(" : (")
@@ -283,9 +301,11 @@ class ConcatOp(IRDLOperation):
     result = result_def(QuakeVeqType)
 
     def __init__(self, operands: Sequence[SSAValue]) -> None:
+        """Initialize the object."""
         super().__init__(operands=[operands], result_types=[QuakeVeqType()])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake register-concatenation operation."""
         printer.print_string(" ")
         printer.print_list(self.operands_, printer.print_ssa_value)
         printer.print_string(" : (")
@@ -468,6 +488,7 @@ class MzOp(IRDLOperation):
 
     def __init__(self, qubit: SSAValue) -> None:
         # Choose result type based on whether we're measuring a single qubit or a veq.
+        """Initialize the object."""
         if isinstance(qubit.type, QuakeVeqType):
             result_type = CcStdVecType()
         else:
@@ -475,6 +496,7 @@ class MzOp(IRDLOperation):
         super().__init__(operands=[qubit], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake measurement operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.qubit)
         printer.print_string(" : (")
@@ -506,9 +528,11 @@ class DiscriminateOp(IRDLOperation):
     result = result_def(i1)
 
     def __init__(self, meas: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[meas], result_types=[i1])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake measurement discrimination operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.meas)
         printer.print_string(" : (")
@@ -524,9 +548,11 @@ class ResetOp(IRDLOperation):
     qubit = operand_def(AnyAttr())
 
     def __init__(self, qubit: SSAValue) -> None:
+        """Initialize the object."""
         super().__init__(operands=[qubit])
 
     def print(self, printer: Printer) -> None:
+        """Print the Quake reset operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.qubit)
         printer.print_string(" : (")

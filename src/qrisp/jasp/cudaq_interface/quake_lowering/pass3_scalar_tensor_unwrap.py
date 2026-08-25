@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -97,11 +98,13 @@ def _dense_to_scalar_attr(dense_attr, scalar_type):
 # ------------------------------------------------------------------ #
 class UnwrapFuncAndReturn(RewritePattern):
     """Updates func.func signatures and func.return operands from
+
     rank-0 tensor to scalar by injecting a tensor.extract at the boundary.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.ReturnOp, rewriter: PatternRewriter) -> None:
+        """Unwrap scalar tensors at function return boundaries."""
         func_op = op.parent_op()
         if not isinstance(func_op, func_dialect.FuncOp):
             return
@@ -138,11 +141,13 @@ class UnwrapFuncAndReturn(RewritePattern):
 
 class UnwrapFuncArgs(RewritePattern):
     """Updates func.func signatures from tensor<T> to T for arguments,
+
     injecting a tensor.from_elements at the start of the block.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
+        """Unwrap scalar tensors in function arguments."""
         if not op.body.blocks:
             return
 
@@ -202,11 +207,13 @@ class UnwrapFuncArgs(RewritePattern):
 
 class UnwrapCall(RewritePattern):
     """Updates func.call operations to pass and expect scalar types
+
     instead of rank-0 tensors, injecting extracts/from_elements at boundaries.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.CallOp, rewriter: PatternRewriter) -> None:
+        """Unwrap scalar tensors at call boundaries."""
         changed = False
 
         new_operands = []
@@ -264,11 +271,13 @@ class UnwrapCall(RewritePattern):
 # ------------------------------------------------------------------ #
 class FoldExtractOfDenseConstant(RewritePattern):
     """Replace a rank-0 tensor.extract of an arith.constant dense<V>
+
     with a scalar arith.constant V.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Fold extraction from a dense scalar constant."""
         if len(op.indices) != 0:
             return
 
@@ -293,11 +302,13 @@ class FoldExtractOfDenseConstant(RewritePattern):
 # ------------------------------------------------------------------ #
 class FoldExtractOfFromElements(RewritePattern):
     """Eliminate a tensor.extract by forwarding the scalar input
+
     directly from the producing tensor.from_elements op.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Fold extraction from a scalar from-elements operation."""
         if len(op.indices) != 0:
             return
 
@@ -314,6 +325,7 @@ class FoldExtractOfScalar(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Forward extraction of an already scalar value."""
         if len(op.indices) != 0:
             return
         if not isinstance(op.tensor.type, TensorType):
@@ -328,6 +340,7 @@ class EraseDeadTensorConstant(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: arith.ConstantOp, rewriter: PatternRewriter) -> None:
+        """Erase an unused tensor constant."""
         if isinstance(op.result.type, TensorType) and not any(op.result.uses):
             rewriter.erase_op(op)
 
@@ -337,6 +350,7 @@ class EraseDeadFromElements(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
+        """Erase an unused from-elements operation."""
         if not any(op.result.uses):
             rewriter.erase_op(op)
 
@@ -350,6 +364,7 @@ class TensorUnwrapPass(ModulePass):
     name = "tensor-unwrap"
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:
+        """Apply scalar-tensor unwrapping to the module."""
 
         # Phase A: Call unwrapping (single pass, no recursion)
         PatternRewriteWalker(

@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -96,12 +97,14 @@ def _staticize_veq_alloca(module: ModuleOp) -> None:
 # ------------------------------------------------------------------ #
 class StaticizeAllocaSize(RewritePattern):
     """Replaces a dynamically-sized veq alloca fed by a constant with a
+
     statically-sized one, inserting a ``quake.relax_size`` cast for any uses
     that require the dynamic ``!quake.veq<?>`` type (see module docstring).
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: AllocaOp, rewriter: PatternRewriter) -> None:
+        """Replace constant-sized dynamic allocations with static allocations."""
         size_operands = list(op.size)
         if len(size_operands) != 1:
             return  # single-qubit alloca, nothing to staticize
@@ -145,6 +148,7 @@ class StaticVeqAllocaPass(ModulePass):
     name = "static-veq-alloca"
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:
+        """Apply static register allocation rewriting to the module."""
         PatternRewriteWalker(
             GreedyRewritePatternApplier([StaticizeAllocaSize()]),
             apply_recursively=False,

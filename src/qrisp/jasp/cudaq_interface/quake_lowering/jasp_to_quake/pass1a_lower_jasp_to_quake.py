@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -173,6 +174,7 @@ class LowerCreateQubits(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: CreateQubitsOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP qubit allocation to a Quake register allocation."""
         amount_tensor = op.operands[0]
         n = _extract_scalar_for_rewriter(amount_tensor, i64, rewriter)
 
@@ -192,6 +194,7 @@ class LowerGetQubit(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: GetQubitOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP qubit extraction to a Quake reference extraction."""
         arr = op.operands[0]
         idx_tensor = op.operands[1]
 
@@ -213,6 +216,7 @@ class LowerGetSize(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: GetSizeOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP register-size queries to Quake register-size operations."""
         arr = op.operands[0]
         veq_size = VeqSizeOp(arr)
         rewriter.insert_op(veq_size, InsertPoint.before(rewriter.current_operation))
@@ -250,6 +254,7 @@ class LowerSlice(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: SliceOp, rewriter: PatternRewriter) -> None:
+        """Lower a JASP register slice to a Quake sub-register operation."""
         arr = op.operands[0]
         start_t = op.operands[1]
         end_t = op.operands[2]
@@ -297,6 +302,7 @@ class LowerFuse(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: FuseOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP register fusion to Quake register concatenation."""
         operands = [v for v in op.operands if not _is_qst(v.type)]
         concat = ConcatOp(operands)
         rewriter.insert_op(concat, InsertPoint.before(rewriter.current_operation))
@@ -313,6 +319,7 @@ class LowerDeleteQubits(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: DeleteQubitsOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP qubit deletion to Quake deallocation."""
         arr = op.operands[0]
         dealloc = DeallocOp(arr)
         rewriter.insert_op(dealloc, InsertPoint.before(rewriter.current_operation))
@@ -326,6 +333,7 @@ class LowerQuantumGate(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: QuantumGateOp, rewriter: PatternRewriter) -> None:
+        """Lower a JASP quantum gate to its Quake gate operation."""
         qubit_operands: list[SSAValue] = []
         param_operands: list[SSAValue] = []
         for v in op.operands:
@@ -399,11 +407,13 @@ class LowerMeasure(RewritePattern):
     """
 
     def __init__(self, execution_mode: str = "run"):
+        """Initialize the object."""
         super().__init__()
         self.execution_mode = execution_mode
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: JaspMeasureOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP measurement to the corresponding Quake measurement operations."""
         qubit_val = op.operands[0]
         meas_result = op.results[0]
         is_array = _is_qubit_array(qubit_val.type) or isinstance(qubit_val.type, QuakeVeqType)
@@ -470,6 +480,7 @@ class LowerReset(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: JaspResetOp, rewriter: PatternRewriter) -> None:
+        """Lower JASP qubit reset to the Quake reset operation."""
         qubit_val = op.operands[0]
         reset_op = ResetOp(qubit_val)
         rewriter.insert_op(reset_op, InsertPoint.before(rewriter.current_operation))
@@ -483,4 +494,5 @@ class LowerParity(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: ParityOp, rewriter: PatternRewriter) -> None:
+        """Reject unsupported JASP parity operations."""
         raise NotImplementedError("Lowering failed: 'jasp.parity' is not supported by the Quake lowering backend.")

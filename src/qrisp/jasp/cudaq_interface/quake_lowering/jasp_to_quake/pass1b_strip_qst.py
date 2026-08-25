@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -177,6 +178,7 @@ class LowerCreateQuantumKernel(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: CreateQuantumKernelOp, rewriter: PatternRewriter) -> None:
+        """Remove a JASP quantum-kernel creation operation."""
         qst_outputs = [r for r in op.results if _is_qst(r.type)]
         if any(r.uses for r in qst_outputs):
             return  # Not ready yet — wait for StripQSTFromCall to fire
@@ -188,6 +190,7 @@ class LowerConsumeQuantumKernel(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: ConsumeQuantumKernelOp, rewriter: PatternRewriter) -> None:
+        """Replace a JASP quantum-kernel consumption operation."""
         if op.results:
             true_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1]))
             op.results[0].replace_all_uses_with(true_const.result)
@@ -205,6 +208,7 @@ class StripQSTFromWhile(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: WhileOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from an SCF while operation."""
         if not _op_has_qst(op):
             return
 
@@ -231,6 +235,7 @@ class StripQSTFromIf(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: IfOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from an SCF if operation."""
         if not _op_has_qst(op):
             return
 
@@ -254,6 +259,7 @@ class StripQSTFromFor(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: ForOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from an SCF for operation."""
         if not _op_has_qst(op):
             return
 
@@ -283,6 +289,7 @@ class StripQSTFromIndexSwitch(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: IndexSwitchOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from an SCF index switch."""
         if not _op_has_qst(op):
             return
 
@@ -312,11 +319,13 @@ class StripQSTFromReturn(RewritePattern):
     """Remove QST from ``func.return`` operands."""
 
     def __init__(self, execution_mode: str = "run"):
+        """Initialize the object."""
         super().__init__()
         self.execution_mode = execution_mode
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func.ReturnOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from a function return."""
         if not any(_is_qst(v.type) for v in op.operands):
             return
 
@@ -334,6 +343,7 @@ class StripQSTFromCall(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func.CallOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from a function call."""
         if not _op_has_qst(op):
             return
 
@@ -360,11 +370,13 @@ class StripQSTFromFunc(RewritePattern):
     """Fix ``func.func`` signature: remove QST args/returns, add cudaq attrs."""
 
     def __init__(self, execution_mode: str = "run"):
+        """Initialize the object."""
         super().__init__()
         self.execution_mode = execution_mode
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func.FuncOp, rewriter: PatternRewriter) -> None:
+        """Remove QuantumState values from a function signature."""
         old_ftype: FunctionType = op.function_type
 
         # Check if there's anything to do

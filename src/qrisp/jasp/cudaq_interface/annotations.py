@@ -1,5 +1,7 @@
 """
+
 ********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,6 +23,7 @@ import numpy as np
 
 class FixedShapeNDArray:
     """Type annotation for a fixed-size numpy array parameter in
+
     ``@cudaq_kernel``.
 
     Mirrors the role of ``list[float]`` / ``list[int]`` in ``@cudaq.kernel``
@@ -67,6 +70,7 @@ class FixedShapeNDArray:
     }
 
     def __init__(self, dtype: type, size: int):
+        """Initialize the object."""
         if dtype not in self._DTYPE_MAP:
             raise TypeError(
                 f"FixedShapeNDArray: unsupported dtype '{dtype}'. Supported: {list(self._DTYPE_MAP.keys())}."

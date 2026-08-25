@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -186,6 +187,7 @@ class ScfIfPattern(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, if_op: IfOp, rewriter: PatternRewriter) -> None:
+        """Lower an SCF if operation to a CC conditional."""
         cond = if_op.cond
 
         # Determine CC result types (unwrap tensors)
@@ -237,6 +239,7 @@ class ScfForPattern(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, for_op: ForOp, rewriter: PatternRewriter) -> None:
+        """Lower an SCF for operation to a CC loop."""
         lb = for_op.operands[0]
         ub = for_op.operands[1]
         step = for_op.operands[2]
@@ -325,6 +328,7 @@ class ScfWhilePattern(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, while_op: WhileOp, rewriter: PatternRewriter) -> None:
+        """Lower an SCF while operation to a CC loop."""
         init_args = list(while_op.operands)
 
         def _unwrap_outer(val: SSAValue) -> SSAValue:
@@ -411,6 +415,7 @@ class ScfIndexSwitchPattern(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, switch_op: IndexSwitchOp, rewriter: PatternRewriter) -> None:
+        """Lower an SCF index switch to nested CC conditionals."""
         result_types: List[Attribute] = []
         for t in switch_op.result_types:
             if _is_rank0_tensor(t):

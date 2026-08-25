@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -76,6 +77,7 @@ class EntrypointArrayToStdVecPattern(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
+        """Convert entrypoint array parameters to CUDA-Q standard vectors."""
         if not _is_entrypoint(op):
             return
 
