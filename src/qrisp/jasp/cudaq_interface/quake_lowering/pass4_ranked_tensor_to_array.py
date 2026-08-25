@@ -91,12 +91,12 @@ def _lower_ranked_tensors(module: ModuleOp) -> None:
 
     # Step 2: Rewrite function definitions (tensor args → ptr args).
     for op in list(module.body.blocks[0].ops):
-        if op.name == "func.func" and op.sym_name.data in func_rewrites:
+        if isinstance(op, func_dialect.FuncOp) and op.sym_name.data in func_rewrites:
             _rewrite_func_def(op, func_rewrites[op.sym_name.data])
 
     # Step 3: Process each function body (materialize + rewrite + calls).
     for op in list(module.body.blocks[0].ops):
-        if op.name == "func.func":
+        if isinstance(op, func_dialect.FuncOp):
             _process_func(op, func_rewrites)
 
 
@@ -109,7 +109,7 @@ def _collect_signature_rewrites(module) -> dict:
     """Determine which functions have rank-1 tensor args needing ptr conversion."""
     func_rewrites = {}
     for op in list(module.body.blocks[0].ops):
-        if op.name != "func.func":
+        if not isinstance(op, func_dialect.FuncOp):
             continue
         ftype = op.function_type
         rewrites = []
@@ -188,9 +188,9 @@ def _process_block(block: Block, array_map: dict) -> None:
 
     # Phase 2: Rewrite tensor access patterns.
     for op in list(block.ops):
-        if op.name == "tensor.extract":
+        if isinstance(op, tensor.ExtractOp):
             _rewrite_tensor_extract(op, block, array_map)
-        elif op.name == "tensor.extract_slice":
+        elif isinstance(op, tensor.ExtractSliceOp):
             _rewrite_extract_slice_chain(op, block, array_map)
 
 
@@ -447,12 +447,12 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
     arr_ptr, elem_type = array_map[source]
 
     offset = _get_static_offset(slice_op)
-    collapse_op = _find_single_user(slice_op.results[0], "tensor.collapse_shape")
+    collapse_op = _find_single_user(slice_op.results[0], tensor.CollapseShapeOp)
     if collapse_op is None:
         return
 
     # Find ALL tensor.extract users of the collapse_shape result
-    extract_ops = _find_all_users(collapse_op.results[0], "tensor.extract")
+    extract_ops = _find_all_users(collapse_op.results[0], tensor.ExtractOp)
     if not extract_ops:
         return
 
@@ -477,14 +477,14 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
         Rewriter.erase_op(slice_op, safe_erase=False)
 
 
-def _find_all_users(value: SSAValue, op_name: str) -> list:
-    """Find all users of a value with the given operation name.
+def _find_all_users(value: SSAValue, op_type: type) -> list:
+    """Find all users of a value with the given operation type.
 
     Returns a list of operations (may be empty).
     """
     results = []
     for use in value.uses:
-        if use.operation.name == op_name:
+        if isinstance(use.operation, op_type):
             if use.operation not in results:
                 results.append(use.operation)
     return results
@@ -501,12 +501,12 @@ def _get_static_offset(slice_op) -> int | None:
     return None
 
 
-def _find_single_user(value: SSAValue, op_name: str):
-    """Find a single user of a value with the given operation name.
+def _find_single_user(value: SSAValue, op_type: type):
+    """Find a single user of a value with the given operation type.
 
     Returns the operation if found, otherwise None.
     """
     for use in value.uses:
-        if use.operation.name == op_name:
+        if isinstance(use.operation, op_type):
             return use.operation
     return None
