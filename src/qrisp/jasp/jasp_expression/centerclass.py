@@ -18,7 +18,8 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, cast, Literal as TypingLiteral
+from typing import Any, cast
+from typing import Literal as TypingLiteral
 
 import jax
 from jax import make_jaxpr
@@ -1113,7 +1114,6 @@ class Jaspr(ClosedJaxpr):
 
         Examples
         --------
-
         We create a simple script and inspect the MLIR string:
 
         ::

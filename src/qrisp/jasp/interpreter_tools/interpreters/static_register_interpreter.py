@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -14,65 +13,65 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
-
-Static Register Interpreter
-============================
-
-Transforms a jaspr into another jaspr that pre-allocates a fixed-size qubit
-register and manages qubit create/delete through index bookkeeping, mirroring
-the strategy used in the Catalyst interpreter.
-
-State representation inside the context_dic
---------------------------------------------
-While the original jaspr uses:
-
-    AbstractQuantumState  -->  a single abstract quantum-state tracer
-
-this interpreter replaces every quantum-state value with a 3-tuple:
-
-    (pre_alloc_array, free_indices, abs_qst)
-
-where
-    pre_alloc_array  -- AbstractQubitArray tracer for the single up-front
-                        allocation of `size` qubits
-    free_indices     -- ScalarList whose elements are qubit *positions*
-                        (integers) inside pre_alloc_array that are currently
-                        unused
-    abs_qst          -- AbstractQuantumState tracer carrying the actual
-                        quantum state through jasp primitives
-
-Every AbstractQubitArray value in the context_dic is replaced by a
-ScalarList of integer positions into pre_alloc_array.
-
-ScalarList (as opposed to Jlist) never constructs a ranked ``jnp.array``:
-it represents its contents as ``max_size`` individual scalar leaves, so that
-this interpreter can also be used as input to lowering pipelines (e.g.
-CUDA-Q/Quake) whose target dialects have no tensor/linalg equivalent.
-
-Every AbstractQubit value in the context_dic is a plain integer (position
-in pre_alloc_array).
-
-Qubit allocation / deallocation
----------------------------------
-``jasp.create_qubits``  -- pops N indices from free_indices into a fresh
-                           ScalarList that represents the new QubitArray.
-``jasp.delete_qubits``  -- pushes the indices back onto free_indices.
-
-Quantum operations
--------------------
-Before passing qubits to ``quantum_gate_p`` or ``Measurement_p``, integer
-positions are resolved to actual AbstractQubit tracers via
-``get_qubit_p.bind(pre_alloc_array, pos)``.
-
-Control flow
--------------
-``while``, ``cond``, and ``scan`` primitives are handled by recursively
-reinterpreting their body/branch jaxprs with the same evaluator and then
-calling the corresponding ``jax.lax`` primitive.  Because ``jax.lax.while_loop``
-and ``jax.lax.cond`` support arbitrary JAX pytrees as carry (including
-AbstractQuantumState, AbstractQubitArray, and ScalarList), no manual
-flatten/unflatten step is required.
 """
+
+# Static Register Interpreter
+# ============================
+#
+# Transforms a jaspr into another jaspr that pre-allocates a fixed-size qubit
+# register and manages qubit create/delete through index bookkeeping, mirroring
+# the strategy used in the Catalyst interpreter.
+#
+# State representation inside the context_dic
+# --------------------------------------------
+# While the original jaspr uses:
+#
+#     AbstractQuantumState  -->  a single abstract quantum-state tracer
+#
+# this interpreter replaces every quantum-state value with a 3-tuple:
+#
+#     (pre_alloc_array, free_indices, abs_qst)
+#
+# where
+#     pre_alloc_array  -- AbstractQubitArray tracer for the single up-front
+#                         allocation of `size` qubits
+#     free_indices     -- ScalarList whose elements are qubit *positions*
+#                         (integers) inside pre_alloc_array that are currently
+#                         unused
+#     abs_qst          -- AbstractQuantumState tracer carrying the actual
+#                         quantum state through jasp primitives
+#
+# Every AbstractQubitArray value in the context_dic is replaced by a
+# ScalarList of integer positions into pre_alloc_array.
+#
+# ScalarList (as opposed to Jlist) never constructs a ranked ``jnp.array``:
+# it represents its contents as ``max_size`` individual scalar leaves, so that
+# this interpreter can also be used as input to lowering pipelines (e.g.
+# CUDA-Q/Quake) whose target dialects have no tensor/linalg equivalent.
+#
+# Every AbstractQubit value in the context_dic is a plain integer (position
+# in pre_alloc_array).
+#
+# Qubit allocation / deallocation
+# ---------------------------------
+# ``jasp.create_qubits``  -- pops N indices from free_indices into a fresh
+#                            ScalarList that represents the new QubitArray.
+# ``jasp.delete_qubits``  -- pushes the indices back onto free_indices.
+#
+# Quantum operations
+# -------------------
+# Before passing qubits to ``quantum_gate_p`` or ``Measurement_p``, integer
+# positions are resolved to actual AbstractQubit tracers via
+# ``get_qubit_p.bind(pre_alloc_array, pos)``.
+#
+# Control flow
+# -------------
+# ``while``, ``cond``, and ``scan`` primitives are handled by recursively
+# reinterpreting their body/branch jaxprs with the same evaluator and then
+# calling the corresponding ``jax.lax`` primitive.  Because ``jax.lax.while_loop``
+# and ``jax.lax.cond`` support arbitrary JAX pytrees as carry (including
+# AbstractQuantumState, AbstractQubitArray, and ScalarList), no manual
+# flatten/unflatten step is required.
 
 import jax.numpy as jnp
 from jax import jit, make_jaxpr
@@ -438,9 +437,9 @@ def _process_fuse(eqn, context_dic, register_size):
 
 
 def _process_op(op, invars, outvars, context_dic):
-    """
-    Resolve qubit positions to actual AbstractQubit tracers via get_qubit_p,
-    then bind quantum_gate_p with those tracers and the original parameters.
+    """Resolve qubit positions to actual AbstractQubit tracers via get_qubit_p.
+
+    Then bind quantum_gate_p with those tracers and the original parameters.
     """
     pre_alloc_array, free_indices, abs_qst = context_dic[invars[-1]]
 
@@ -478,11 +477,10 @@ def _process_measurement(invars, outvars, context_dic):
 
 
 def _exec_multi_measurement(pre_alloc_array, qubit_list, abs_qst):
-    """
-    Measure all qubits in ``qubit_list`` and return their results packed into
-    a single int64 (bit 0 = first qubit, etc.).
+    """Measure all qubits in ``qubit_list``, packing results into a single int64.
 
-    Uses jax.lax.while_loop so the loop is captured in the output jaspr.
+    Uses jax.lax.while_loop so the loop is captured in the output jaspr. Bit 0
+    corresponds to the first qubit in ``qubit_list``, etc.
     """
     list_size = qubit_list.counter
 
@@ -530,11 +528,11 @@ def _process_parity(eqn, context_dic):
 
 
 def _process_reset(eqn, context_dic, evaluator):
-    """
-    Reset a QubitArray to |0> by measuring each qubit and conditionally
-    applying X.  Re-uses the reset_jaxpr from catalyst_interpreter but
-    evaluates it with *our* evaluator so the static-register representation
-    is threaded through correctly.
+    """Reset a QubitArray to |0> by measuring each qubit and conditionally applying X.
+
+    Re-uses the reset_jaxpr from catalyst_interpreter but evaluates it with
+    *our* evaluator so the static-register representation is threaded through
+    correctly.
     """
     # Lazy import to avoid a hard dependency on Catalyst at module load time.
     from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (

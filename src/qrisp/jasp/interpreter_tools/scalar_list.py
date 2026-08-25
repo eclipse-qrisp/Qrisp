@@ -15,33 +15,31 @@
 ********************************************************************************
 """
 
-"""
-Scalar List
-===========
-
-A JAX-pytree-compatible, fixed-capacity list backed by ``max_size``
-*individual* scalar leaves (a Python tuple of 0-d JAX values) instead of a
-single ranked ``jnp.array``.
-
-This exists as an alternative to :class:`~qrisp.jasp.interpreter_tools.dynamic_list.Jlist`
-for use in lowering paths (such as the CUDA-Q / Quake backend) that cannot
-represent ranked tensors at all: the Quake/CC dialects have no ``tensor`` or
-``linalg`` equivalent, only scalar registers and pointer-addressed CC arrays.
-Any ``Jlist`` operation (``.at[i].set(...)``, ``jnp.roll``, dynamic
-``fori_loop``-based writes) lowers to ``linalg.generic``/``tensor.insert``
-patterns that have no CC-dialect representation.
-
-``ScalarList`` sidesteps this entirely by never constructing a ranked tensor:
-every "array access" becomes a chain of ``jax.lax.select`` over the
-statically-known ``max_size`` slots. This costs O(max_size) (or
-O(max_size**2) for slicing) scalar operations instead of O(1) tensor
-indexing, which is an acceptable trade-off for the small, fixed register
-sizes (tens of qubits) this class is intended for.
-
-API mirrors the subset of ``Jlist`` used by the static-register interpreter:
-``append``, ``pop``, ``prepend``, ``extend``, ``clear``, ``__getitem__``
-(both integer and slice keys), ``__len__``, ``copy``.
-"""
+# Scalar List
+# ===========
+#
+# A JAX-pytree-compatible, fixed-capacity list backed by ``max_size``
+# *individual* scalar leaves (a Python tuple of 0-d JAX values) instead of a
+# single ranked ``jnp.array``.
+#
+# This exists as an alternative to :class:`~qrisp.jasp.interpreter_tools.dynamic_list.Jlist`
+# for use in lowering paths (such as the CUDA-Q / Quake backend) that cannot
+# represent ranked tensors at all: the Quake/CC dialects have no ``tensor`` or
+# ``linalg`` equivalent, only scalar registers and pointer-addressed CC arrays.
+# Any ``Jlist`` operation (``.at[i].set(...)``, ``jnp.roll``, dynamic
+# ``fori_loop``-based writes) lowers to ``linalg.generic``/``tensor.insert``
+# patterns that have no CC-dialect representation.
+#
+# ``ScalarList`` sidesteps this entirely by never constructing a ranked tensor:
+# every "array access" becomes a chain of ``jax.lax.select`` over the
+# statically-known ``max_size`` slots. This costs O(max_size) (or
+# O(max_size**2) for slicing) scalar operations instead of O(1) tensor
+# indexing, which is an acceptable trade-off for the small, fixed register
+# sizes (tens of qubits) this class is intended for.
+#
+# API mirrors the subset of ``Jlist`` used by the static-register interpreter:
+# ``append``, ``pop``, ``prepend``, ``extend``, ``clear``, ``__getitem__``
+# (both integer and slice keys), ``__len__``, ``copy``.
 
 import copy
 
@@ -52,9 +50,12 @@ from jax import lax
 
 @jax.tree_util.register_pytree_node_class
 class ScalarList:
+    """Fixed-capacity, JAX-pytree-compatible list backed by scalar leaves instead of a tensor."""
+
     fill_value = 0
 
     def __init__(self, init_val=None, max_size=64):
+        """Build a ``ScalarList`` of ``max_size`` slots, optionally seeded from ``init_val``."""
         self.max_size = max_size
 
         if init_val is None:
@@ -90,24 +91,28 @@ class ScalarList:
     # -- Jlist-compatible API ------------------------------------------------
 
     def append(self, value):
+        """Append ``value`` as the last element, dropping it if the list is already full."""
         value = jnp.asarray(value, dtype=jnp.int64)
         self.slots = self._with_slot_set(self.counter, value)
         self.counter = jnp.minimum(self.counter + 1, self.max_size)
         return self
 
     def prepend(self, value):
+        """Insert ``value`` as the first element, shifting the rest right by one slot."""
         value = jnp.asarray(value, dtype=jnp.int64)
         self.slots = (value,) + self.slots[:-1]
         self.counter = jnp.minimum(self.counter + 1, self.max_size)
         return self
 
     def pop(self):
+        """Remove and return the last element."""
         new_counter = self.counter - 1
         value = self._select_at(new_counter)
         self.counter = new_counter
         return value
 
     def extend(self, values):
+        """Append every element of another ``ScalarList`` to this one, in order."""
         for j in range(values.max_size):
             active = j < values.counter
             candidate = values.slots[j]
@@ -119,10 +124,12 @@ class ScalarList:
         return self
 
     def clear(self):
+        """Reset the list to empty without touching the underlying slots."""
         self.counter = jnp.asarray(0, dtype=jnp.int64)
         return self
 
     def __getitem__(self, key):
+        """Return the element at an integer index, or a new ``ScalarList`` for a slice."""
         if isinstance(key, slice):
             if key.start is None:
                 start = jnp.asarray(0, dtype=jnp.int64)
@@ -153,18 +160,22 @@ class ScalarList:
             return self._select_at(norm_key)
 
     def __len__(self):
+        """Return the current number of elements (not ``max_size``)."""
         return int(self.counter)
 
     def copy(self):
+        """Return a shallow copy of this ``ScalarList``."""
         return copy.copy(self)
 
     # -- pytree registration --------------------------------------------------
 
     def tree_flatten(self):
+        """Flatten into the JAX-pytree ``(children, aux_data)`` representation."""
         return (self.slots + (self.counter,), self.max_size)
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Rebuild a ``ScalarList`` from the flattened pytree representation."""
         obj = cls.__new__(cls)
         obj.max_size = aux_data
         obj.slots = tuple(children[:-1])
