@@ -38,8 +38,14 @@ In this section, we provide a glimpse into the diverse range of applications tha
    * - :ref:`IsingModel` 
      - Hamiltonian simulation of a transverse field Ising model. 
    * - :ref:`MaxCutQITE` 
-     - Solving MaxCut with :ref:`QITE`
-     
+      - Solving MaxCut with :ref:`QITE`
+   * - :ref:`ConditionalEnvironments`
+      - Demonstrates quantum conditional execution using the ``adaptive_condition`` decorator.
+   * - :ref:`GMStools`
+      - Shows GMS gate tools: circuit conversion, environment-based compilation, and gate primitives.
+   * - :ref:`GraySynthesis`
+      - Logic synthesis from truth tables using Gray code synthesis.
+      
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -59,3 +65,6 @@ In this section, we provide a glimpse into the diverse range of applications tha
    GroundStateEnergyQPE
    IsingModel
    MaxCutQITE
+   ConditionalEnvironments
+   GMStools
+   GraySynthesis

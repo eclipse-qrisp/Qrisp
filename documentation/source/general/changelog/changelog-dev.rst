@@ -97,6 +97,12 @@ Compatibility
 New Tutorials/ Updated Documentation
 -------------------------------------
 
+* Cleaned up ``src/qrisp/examples/`` directory: removed 22 duplicate example files
+  already covered by Sphinx docs, migrated unique content to existing RST pages,
+  and created 3 new example pages (``ConditionalEnvironments``, ``GMStools``,
+  ``GraySynthesis``)
+  (`PR #738 <https://github.com/eclipse-qrisp/Qrisp/pull/738>`_).
+
 .. Add new tutorials above this line
 
 API Changes
