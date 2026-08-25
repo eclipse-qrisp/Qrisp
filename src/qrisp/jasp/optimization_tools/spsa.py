@@ -26,6 +26,8 @@ from jax.scipy.optimize import OptimizeResults
 def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
     r"""Minimize a scalar function of one or more variables using the `Simultaneous Perturbation Stochastic Approximation algorithm <https://en.wikipedia.org/wiki/Simultaneous_perturbation_stochastic_approximation>`_.
 
+    See :func:`~qrisp.jasp.minimize` for a description of ``fun``, ``x0``, and ``args``.
+
     This algorithm aims at finding the optimal control $x^*$ minimizing a given loss fuction $f$:
 
     .. math::
@@ -38,7 +40,7 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
         x_{k+1} = x_k - a_kg_k(x_k)
 
-    where $a_k=\dfrac{a}{n^{\alpha}}$ for scaling parameters $a, \alpha>0$.
+    where $a_k=\dfrac{a}{(k+1)^{\alpha}}$ for scaling parameters $a, \alpha>0$.
 
     For each step $x_k$ the gradient is approximated by
 
@@ -46,7 +48,8 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
         (g_k(x_k))_i = \frac{f(x_k+c_k\Delta_k)-f(x_k-c_k\Delta_k)}{2c_k(\Delta_k)_i}
 
-    where $c_k=\dfrac{c}{n^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random perturbation vector.
+    where $c_k=\dfrac{c}{(k+1)^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random
+    perturbation vector with components independently drawn from $\{-1, +1\}$.
 
     Parameters
     ----------
@@ -54,12 +57,15 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
             Maximum number of iterations to perform. Each iteration requires 2 function evaluations.
         a : float
             Scaling parameter for update rule.
-        alpha : float
-            Scaling exponent for update rule.
         c : float
             Scaling parameter for gradient estimation.
+        alpha : float
+            Scaling exponent for update rule.
         gamma : float
             Scaling exponent for gradient estimation.
+        seed : int, optional
+            The seed for the pseudo-random number generator used to draw the perturbation vectors
+            $\Delta_k$. The default is ``3``.
 
     Returns
     -------

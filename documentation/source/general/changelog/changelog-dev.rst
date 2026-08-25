@@ -35,6 +35,18 @@ Other New Features
 - Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
   and ``RZZGate``. 
   (`PR #797 <https://github.com/eclipse-qrisp/Qrisp/pull/797>`_).
+- **Dicke state preparation via divide-and-conquer**
+  :func:`~qrisp.dicke_state` now accepts a ``method`` keyword argument.  In
+  addition to the existing ``"deterministic"`` method
+  (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_), the new
+  ``"divide-and-conquer"`` method
+  (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_) prepares the two
+  halves of the variable on disjoint qubits, roughly halving the circuit
+  depth.  It requires the input to have Hamming weight exactly ``k``, whereas
+  ``"deterministic"`` implements the full Dicke state unitary and therefore
+  also accepts any input weight ``l <= k``, preparing ``D(n, l)``.  The
+  default is ``"deterministic"``, so existing code is unaffected
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add other new features above this line
 
@@ -53,6 +65,11 @@ Bug Fixes
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
 
+* Fixed jasp-mode crashes when tracing a ``while``/``scan`` loop with a
+  single carried value, uncovered while removing duplicated interpreter
+  code across four execution backends
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+  
 * Fixed :class:`~qrisp.interface.QiskitBackend` failing with
   ``OverflowError: int too big to convert`` — or, for small classical
   registers, silently returning wrong counts — on providers that report
@@ -76,13 +93,41 @@ Bug Fixes
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 
+* Fixed a bug where :class:`~qrisp.QuantumModulus` constructed with a traced
+  (Jasp-dynamic) modulus leaked a stale JAX tracer into subsequent, independent
+  ``jaspify``/``make_jaspr`` calls, raising
+  ``jax.errors.UnexpectedTracerError`` on the second and later calls. The
+  modulus is now threaded through the ``QuantumVariable`` pytree as a proper
+  traced attribute instead of being passed into static auxiliary data
+  (`PR #802 <https://github.com/eclipse-qrisp/Qrisp/pull/802>`_).
+
+* Updated broken link in TSP tutorial to point to the
+  correct archived Qiskit textbook.
+  (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
+  
+* Fixed :func:`dicke_state <qrisp.dicke_state>` for ``k = 0``, which emitted a
+  ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
+  negative-length loop range under Jasp
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
 Compatibility
 -------------
+
+* :func:`~qrisp.dicke_state` now raises a ``ValueError`` for an unrecognized
+  ``method``, and for a ``k`` outside ``0 <= k <= len(qv)`` when both are
+  plain Python integers (i.e. outside of Jasp tracing).  The latter previously
+  produced an incorrect state silently
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+- Fixed outdated or inaccurate docstrings and examples across the Jasp
+  module (control flow, sampling, simulators, optimization tools,
+  ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
+  (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
 .. Add new tutorials above this line
 
@@ -121,6 +166,31 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+* Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
+  subsystem, consolidating control-flow, equation-copying, and caching logic
+  that had been independently duplicated across the Catalyst,
+  classical-simulation, profiling, and post-processing backends into shared
+  helper functions
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+
+* Added an ``all`` optional dependency group that installs the base package
+  plus every other extra except ``aqt`` (``qiskit``, ``iqm``, ``catalyst``,
+  ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
+  installation instructions to reference it
+  (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+* Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
+  and surfaces lint findings as annotations on the GitHub Checks tab of
+  newly added lines instead of as inline review comments on the PR
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
+  `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
+
+* Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
+  style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
+  (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
+  used to avoid circular imports) and ``E402`` (module-level imports placed
+  after a module docstring)
+  (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
+
 Dependency Upgrades
 -------------------
 
@@ -149,3 +219,4 @@ First Time Contributors 🎉
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
+* `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_

@@ -19,8 +19,8 @@ from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def terminal_sampling(func=None, shots=0):
-    """The ``terminal_sampling`` decorator performs a hybrid simulation and afterwards
-    samples from the resulting quantum state.
+    """The ``terminal_sampling`` decorator runs a hybrid simulation and samples from the resulting quantum state.
+
     The idea behind this function is that it is very cheap for a classical simulator
     to sample from a given quantum state without simulating the whole state from
     scratch. For quantum simulators that simulate pure quantum computations
@@ -29,7 +29,7 @@ def terminal_sampling(func=None, shots=0):
     because mid-circuit measurements can alter the classical computation.
 
     In general, generating N samples from a hybrid program requires N executions
-    of said programm. If it is however known that the quantum state is the same
+    of said program. If it is however known that the quantum state is the same
     regardless of mid-circuit measurement outcomes, we can use the terminal sampling
     function. If this condition is not met, the ``terminal_sampling`` function
     will not return a valid distribution. A demonstration for this is given in the
@@ -43,6 +43,11 @@ def terminal_sampling(func=None, shots=0):
         are **not** supported — use :func:`~qrisp.jasp.sample` with
         ``@jaspify(terminal_sampling=False)`` (the default) for those.
 
+        Additionally, terminal sampling currently cannot be combined with the
+        ``stim`` simulator backend (i.e. calling the lower-level
+        ``simulate_jaspr`` with both ``simulator="stim"`` and
+        ``terminal_sampling=True`` raises an exception).
+
     To use the terminal sampling decorator, a Jasp-compatible sampling kernel
     returning some QuantumVariables has to be given as a parameter.
 
@@ -51,8 +56,9 @@ def terminal_sampling(func=None, shots=0):
     func : callable
         A Jasp-compatible sampling kernel returning QuantumVariables.
     shots : int, optional
-        An integer specifying the amount of shots. The default is None, which
-        will result in probabilities being returned.
+        An integer specifying the amount of shots. The default is ``0``,
+        which results in the exact probabilities being returned instead of
+        shot-sampled counts.
 
     Returns
     -------
@@ -90,12 +96,12 @@ def terminal_sampling(func=None, shots=0):
 
     **Example of invalid use**
 
-    In this example we demonstrate a hybrid program that can not be properly sample
+    In this example we demonstrate a hybrid program that can not be properly sampled
     via ``terminal_sampling``. The key ingredient here is a realtime component.
 
     ::
 
-        from qrisp import QuantumBool, measure, control
+        from qrisp import QuantumBool, QuantumFloat, h, measure, control
 
         @terminal_sampling
         def main():

@@ -15,7 +15,8 @@
 ********************************************************************************
 """
 
-from typing import Callable, Sequence
+from collections.abc import Callable
+from typing import Any
 
 import jax.numpy as jnp
 from jax import make_jaxpr
@@ -90,8 +91,13 @@ class ContextDict(dict):
         static Jaxpr structure  <-->  dynamic metric-specific semantics
     """
 
-    def __getitem__(self, key):
-        """Override to handle Jaxpr literals and automatic JAX scalar conversion."""
+    def __getitem__(self, key) -> Any:
+        """Override to handle Jaxpr literals and automatic JAX scalar conversion.
+
+        Return type is genuinely Any: values are whatever the active interpreter
+        chose to store for a variable (a Jlist, a tuple, a plain Array, ...), not
+        just the int/float/passthrough cases handled directly in this method.
+        """
         if isinstance(key, Literal):
             res = key.val
         else:
@@ -232,12 +238,12 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic: ContextDict, eqn_evaluator: 
             exec_eqn(eqn, context_dic)
 
 
-def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> list:
     """Extract input variable values from the context dictionary."""
     return [context_dic[invar] for invar in eqn.invars]
 
 
-def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence) -> None:
+def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Any) -> None:
     """Insert the output values of an equation into the context dictionary.
 
     Parameters
@@ -248,8 +254,9 @@ def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequenc
     context_dic : ContextDict
         The context dictionary where the output values will be stored.
 
-    outvalues : Sequence
-        The output values to be inserted into the context dictionary.
+    outvalues : Any
+        A Sequence of output values (one per eqn.outvars) if the primitive has
+        multiple results; otherwise the single output value itself, of any type.
 
     """
     if eqn.primitive.multiple_results:
@@ -259,3 +266,55 @@ def insert_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequenc
             context_dic[outvar] = value
     else:
         context_dic[eqn.outvars[0]] = outvalues
+
+
+def copy_jaxpr_eqn(eqn: JaxprEqn) -> JaxprEqn:
+    """Return a new JaxprEqn with the same content as eqn.
+
+    ``JaxprEqn`` is immutable, so IR-rewriting passes that need to swap out an
+    equation's invars/outvars/params in place (rather than mutate the original)
+    construct a fresh copy first. ``invars``/``outvars``/``params`` are copied
+    into new containers so that mutating them on the result (e.g. ``new_eqn =
+    copy_jaxpr_eqn(eqn); new_eqn.invars.pop(0)``) does not alias the original.
+    """
+    return JaxprEqn(
+        primitive=eqn.primitive,
+        invars=list(eqn.invars),
+        outvars=list(eqn.outvars),
+        params=dict(eqn.params),
+        source_info=eqn.source_info,
+        effects=eqn.effects,
+        ctx=eqn.ctx,
+    )
+
+
+def insert_call_outvalues(eqn: JaxprEqn, context_dic: ContextDict, outvalues: Any, n_outvars: int) -> None:
+    """Insert the result of evaluating a call-like (jit/pjit) equation's callee.
+
+    Wraps a bare (non-multi-value) result into a length-1 list first, since the
+    callee returns its single output unwrapped while ``insert_outvalues``
+    expects a proper sequence whenever the call primitive itself has multiple
+    results (which it always does for jit/pjit call equations, even when the
+    callee happens to return exactly one value).
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The call-like (jit/pjit) equation whose outputs are being inserted.
+
+    context_dic : ContextDict
+        The context dictionary where the output values will be stored.
+
+    outvalues : Any
+        The raw result of evaluating the callee -- a single value if it only
+        returns one output, otherwise a sequence of values.
+
+    n_outvars : int
+        The number of outputs the callee itself declares. Callers differ on
+        exactly which count they pass (the callee's own outvars vs. the call
+        equation's outvars), since the two always agree for a call primitive.
+
+    """
+    if n_outvars == 1:
+        outvalues = [outvalues]
+    insert_outvalues(eqn, context_dic, outvalues)

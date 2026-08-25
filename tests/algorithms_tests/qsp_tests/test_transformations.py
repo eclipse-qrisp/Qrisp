@@ -15,13 +15,13 @@
 ********************************************************************************
 """
 
-import pytest
 import numpy as np
+import pytest
+from qrisp.gqsp import GQET, GQSVT, QET, QSVT
 
-from qrisp import multi_measurement, prepare, terminal_sampling, QuantumFloat
+from qrisp import QuantumFloat, multi_measurement, prepare, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import GQET, QET, QSVT, GQSVT
-from qrisp.operators import X, Y, Z
+from qrisp.operators import X, Z
 
 
 def post_selection(res_dict, N):
@@ -42,7 +42,6 @@ def test_non_hermitian_block_encoding(alg, mode):
     Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary (Issue #681).
     The test verifies that GQET produces the same results as the other three algorithms when applied to a non-Hermitian block-encoding of a Hermitian matrix.
     """
-
     N = 8
     I = np.eye(N)
     A = 2 * I + np.eye(N, k=1) + np.eye(N, k=-1)
@@ -105,7 +104,6 @@ def test_nested_polynomial_application(alg, mode):
     Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
     Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary in the second application (Issue #681).
     """
-
     if alg == QET and mode == "static":
         pytest.skip("(Issue #680).")
 

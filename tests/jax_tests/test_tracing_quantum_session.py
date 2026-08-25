@@ -19,13 +19,11 @@ import types
 
 import pytest
 
-
 from qrisp import *
 from qrisp.jasp import *
 from qrisp.jasp.tracing_logic.tracing_quantum_session import (
     _instance,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers and fixtures

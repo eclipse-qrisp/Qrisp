@@ -678,6 +678,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             ParityOperation,
             QuantumPrimitive,
             extract_invalues,
+            insert_call_outvalues,
             insert_outvalues,
         )
         from qrisp.jasp.interpreter_tools.interpreters import cond_to_cl_control
@@ -700,10 +701,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                 *(definition_jaxpr.consts + invalues)
             )
 
-            if len(definition_jaxpr.jaxpr.outvars) == 1:
-                res = [res]
-
-            insert_outvalues(eqn, context_dic, res)
+            insert_call_outvalues(eqn, context_dic, res, len(definition_jaxpr.jaxpr.outvars))
             return
 
         elif prim_name == "jit":

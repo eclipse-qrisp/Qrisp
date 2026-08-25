@@ -21,8 +21,8 @@ from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def qjit(function=None, device=None):
-    """Decorator to leverage the jasp + Catalyst infrastructure to compile the given
-    function to QIR and run it on the Catalyst QIR runtime.
+    """Decorator that compiles the given function to QIR and runs it on the Catalyst QIR runtime via jasp + Catalyst.
+
     Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
     Parameters
@@ -85,11 +85,11 @@ def qjit(function=None, device=None):
     We execute the function a couple of times to demonstrate the randomness
 
     >>> test_fun(4)
-    [array(5.25, dtype=float64)]
+    Array(5.25, dtype=float64)
     >>> test_fun(5)
-    [array(3., dtype=float64)]
+    Array(3., dtype=float64)
     >>> test_fun(5)
-    [array(7.25, dtype=float64)]
+    Array(7.25, dtype=float64)
 
 
     For executing on "lightning.gpu" we specify the device:
