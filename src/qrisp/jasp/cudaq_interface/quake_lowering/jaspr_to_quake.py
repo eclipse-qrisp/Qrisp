@@ -21,22 +21,6 @@
 # Entry point for the Jasp → Quake (memory-semantics) lowering pipeline.
 # =========================================================================
 #
-# Usage example:
-#
-#     from qrisp import QuantumVariable, h, cx, measure
-#     from qrisp.jasp import make_jaspr
-#     from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake
-#
-#     def bell():
-#         qv = QuantumVariable(2)
-#         h(qv[0])
-#         cx(qv[0], qv[1])
-#         return measure(qv)
-#
-#     jaspr = make_jaspr(bell)()
-#     xdsl_module = jaspr_to_quake_mlir(jaspr)
-#     print(xdsl_module)
-#
 # Pipeline
 # --------
 # The lowering consists of the following passes:
