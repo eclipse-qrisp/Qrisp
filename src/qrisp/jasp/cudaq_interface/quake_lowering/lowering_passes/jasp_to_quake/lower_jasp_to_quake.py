@@ -51,7 +51,6 @@ from xdsl.ir import (
     Block,
     Operation,
     Region,
-    SSAValue,
 )
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
@@ -73,18 +72,17 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     ResetOp,
     SubVeqOp,
     VeqSizeOp,
-    _make_gate_op,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import _get_gate_info
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.helper_functions import (
-    _coerce_to_f64_for_rewriter,
+    _classify_gate_operands,
+    _emit_gate,
     _extract_scalar_for_rewriter,
-    _is_numeric_type,
     _is_qst,
     _is_qubit,
     _is_qubit_array,
-    _is_qubit_type,
     _normalize_index_for_veq_rewriter,
+    _split_gate_operands,
     _wrap_scalar_for_rewriter,
 )
 from qrisp.jasp.mlir.xdsl_dialect import (
@@ -334,46 +332,14 @@ class LowerQuantumGate(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: QuantumGateOp, rewriter: PatternRewriter) -> None:
         """Lower a JASP quantum gate to its Quake gate operation."""
-        qubit_operands: list[SSAValue] = []
-        param_operands: list[SSAValue] = []
-        for v in op.operands:
-            if _is_qst(v.type):
-                continue
-            if _is_qubit_type(v.type):
-                qubit_operands.append(v)
-            elif _is_numeric_type(v.type):
-                param_operands.append(_coerce_to_f64_for_rewriter(v, rewriter))
-            else:
-                qubit_operands.append(v)
-
         gate_name = op.gate_type.data
         gate_info = _get_gate_info(gate_name)
         if gate_info is None:
             raise NotImplementedError(f"Lowering failed: Unsupported Jasp gate '{gate_name}'.")
 
-        num_ctrl = gate_info.num_controls
-        if num_ctrl == -1:
-            controls = qubit_operands[:-1]
-            targets = qubit_operands[-1:]
-        elif num_ctrl == 0:
-            controls = []
-            targets = qubit_operands
-        else:
-            controls = qubit_operands[:num_ctrl]
-            targets = qubit_operands[num_ctrl:]
-
-        final_params = list(param_operands[: gate_info.num_params])
-
-        if gate_info.emit is not None:
-            ops = gate_info.emit(controls, final_params, targets)
-            if not ops:
-                raise RuntimeError(f"Gate '{gate_name}' emit() returned empty list.")
-            rewriter.insert_op(ops, InsertPoint.before(rewriter.current_operation))
-        else:
-            gate_op = _make_gate_op(gate_name, controls, final_params, targets)
-            if gate_op is None:
-                raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
-            rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))
+        qubit_operands, param_operands = _classify_gate_operands(op, rewriter)
+        controls, targets = _split_gate_operands(qubit_operands, gate_info)
+        _emit_gate(gate_name, gate_info, (controls, param_operands, targets), rewriter)
 
         _thread_qst(op)
         rewriter.erase_op(op)

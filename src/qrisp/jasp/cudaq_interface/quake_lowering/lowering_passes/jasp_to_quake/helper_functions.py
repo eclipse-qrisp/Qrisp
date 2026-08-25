@@ -41,8 +41,11 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
     VeqSizeOp,
+    _make_gate_op,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import GateInfo
 from qrisp.jasp.mlir.xdsl_dialect import (
+    QuantumGateOp,
     QuantumStateType,
     QubitArrayType,
     QubitType,
@@ -210,3 +213,55 @@ def _wrap_scalar_for_rewriter(val: SSAValue, tensor_type: Attribute, rewriter: P
     from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
     rewriter.insert_op(from_elem, InsertPoint.before(rewriter.current_operation))
     return from_elem.result
+
+
+# ---------------------------------------------------------------------------
+# Quantum-gate helpers
+# ---------------------------------------------------------------------------
+
+
+def _classify_gate_operands(op: QuantumGateOp, rewriter: PatternRewriter) -> tuple[list[SSAValue], list[SSAValue]]:
+    """Separate quantum-gate operands into qubits and converted parameters."""
+    qubit_operands: list[SSAValue] = []
+    param_operands: list[SSAValue] = []
+    for operand in op.operands:
+        if _is_qst(operand.type):
+            continue
+        if _is_qubit_type(operand.type):
+            qubit_operands.append(operand)
+        elif _is_numeric_type(operand.type):
+            param_operands.append(_coerce_to_f64_for_rewriter(operand, rewriter))
+        else:
+            qubit_operands.append(operand)
+    return qubit_operands, param_operands
+
+
+def _split_gate_operands(qubit_operands: list[SSAValue], gate_info: GateInfo) -> tuple[list[SSAValue], list[SSAValue]]:
+    """Split gate qubits into controls and targets according to gate metadata."""
+    if gate_info.num_controls == -1:
+        return qubit_operands[:-1], qubit_operands[-1:]
+    if gate_info.num_controls == 0:
+        return [], qubit_operands
+    return qubit_operands[: gate_info.num_controls], qubit_operands[gate_info.num_controls :]
+
+
+def _emit_gate(
+    gate_name: str,
+    gate_info: GateInfo,
+    gate_operands: tuple[list[SSAValue], list[SSAValue], list[SSAValue]],
+    rewriter: PatternRewriter,
+) -> None:
+    """Create and insert either a custom gate decomposition or a Quake gate."""
+    controls, param_operands, targets = gate_operands
+    final_params = param_operands[: gate_info.num_params]
+    if gate_info.emit is not None:
+        emitted_ops = gate_info.emit(controls, final_params, targets)
+        if not emitted_ops:
+            raise RuntimeError(f"Gate '{gate_name}' emit() returned empty list.")
+        rewriter.insert_op(emitted_ops, InsertPoint.before(rewriter.current_operation))
+        return
+
+    gate_op = _make_gate_op(gate_name, controls, final_params, targets)
+    if gate_op is None:
+        raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
+    rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))
