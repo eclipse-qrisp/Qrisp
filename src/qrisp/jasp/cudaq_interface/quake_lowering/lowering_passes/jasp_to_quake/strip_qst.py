@@ -16,10 +16,10 @@
 ********************************************************************************
 """
 
-# PASS 1b – QuantumState structural elimination.
-# ================================================
+# QuantumState structural elimination.
+# ====================================
 #
-# After PASS 1a has lowered all jasp.* ops and threaded QST backwards
+# After ``lower_jasp_to_quake`` has lowered all jasp.* ops and threaded QST backwards
 # (making all QST values dead), except for the quantum kernel
 # creation/consumption ops, this pass removes all remaining structural
 # traces of !jasp.QuantumState from the IR.
@@ -75,7 +75,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.helper_functions import (
     _is_qst,
     _is_qubit,
     _is_qubit_array,
@@ -92,12 +92,13 @@ from qrisp.jasp.mlir.xdsl_dialect import (
 
 
 def _strip_qst(module: ModuleOp, execution_mode: str = "run") -> None:
-    """In-place PASS 1b: remove all structural traces of ``!jasp.QuantumState``.
+    """Remove all structural traces of ``!jasp.QuantumState`` in place.
 
     Parameters
     ----------
     module:
-        An xDSL ``builtin.ModuleOp`` that has already been processed by PASS 1a.
+        An xDSL ``builtin.ModuleOp`` that has already been processed by
+        ``lower_jasp_to_quake``.
         Modified in-place.
     execution_mode:
         ``"run"`` or ``"sample"`` — affects function return type handling.

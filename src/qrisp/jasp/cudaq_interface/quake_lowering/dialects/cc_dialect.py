@@ -188,7 +188,7 @@ class CcStructType(ParametrizedAttribute, TypeAttribute):
 
 
 # ---------------------------------------------------------------------------
-# Memory ops (used by pass1 measurement lowering)
+# Memory ops (used by JASP-to-Quake measurement lowering)
 # ---------------------------------------------------------------------------
 
 
@@ -577,7 +577,7 @@ class CcCastOp(IRDLOperation):
 
 
 # ---------------------------------------------------------------------------
-# StdVec ops (used by pass4 array-to-stdvec lowering)
+# StdVec ops (used by array-to-stdvec lowering)
 # ---------------------------------------------------------------------------
 
 
@@ -607,7 +607,7 @@ class CcStdVecDataOp(IRDLOperation):
 
 
 # ===========================================================================
-# Struct / value ops (used by pass6 CUDA-Q preparation)
+# Struct / value ops (used by CUDA-Q preparation)
 # ===========================================================================
 
 

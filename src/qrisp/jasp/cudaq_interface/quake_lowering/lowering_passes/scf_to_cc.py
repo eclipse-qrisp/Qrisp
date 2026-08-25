@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-# PASS 2 – SCF → CC dialect lowering (pure-SSA approach).
-# ==========================================================
+# SCF → CC dialect lowering (pure-SSA approach).
+# ===============================================
 #
 # Replaces structured control-flow ops (scf.if, scf.for, scf.while) with
 # their CC-dialect equivalents (cc.if, cc.loop) using pure SSA value
@@ -35,7 +35,7 @@
 # flow, any loop-carried tensor<T> values are automatically unwrapped to
 # scalars (T) at region boundaries using tensor.extract, and re-wrapped
 # after the op using tensor.from_elements. These wrappers are cleaned up
-# by Pass 3 (tensor unwrap).
+# by the scalar-tensor unwrapping stage.
 
 from typing import List, Optional
 
@@ -65,7 +65,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
 
 
 def _lower_scf_to_cc(module: ModuleOp) -> None:
-    """In-place PASS 2: lower SCF structured control flow to the CC dialect using Pattern Rewriters."""
+    """Lower SCF structured control flow to the CC dialect in place."""
     walker = PatternRewriteWalker(
         GreedyRewritePatternApplier(
             [

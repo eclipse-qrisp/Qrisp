@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-# PASS 3B – Static-size quake.alloca rewriting.
+# Static-size quake.alloca rewriting.
 # ===============================================
 #
 # Rewrites quake.alloca !quake.veq<?>[%n : i64] into quake.alloca
@@ -32,7 +32,7 @@
 # !quake.veq<?>, so the alloca itself can always be staticized regardless
 # of how its result is later used.
 #
-# This runs after PASS 3 (pass3_scalar_tensor_unwrap), which is
+# This runs after scalar_tensor_unwrap, which is
 # responsible for folding the tensor.extract/tensor.from_elements
 # round-trips that Jasp emits for register sizes down to a bare
 # arith.constant. Only once that folding has happened can this pass

@@ -301,7 +301,7 @@ def test_dynamic_veq_size_functional_type():
     !quake.veq<?> type and uses functional-type: (!quake.veq<?>) -> i64."""
 
     # Size is a traced argument (not a constant), so the alloca stays dynamic
-    # (pass3b only staticizes constant-sized allocas).
+    # (static_veq_alloca only staticizes constant-sized allocas).
     def circuit(n):
         qv = QuantumVariable(n)
         h(qv[qv.size - 1])
@@ -321,7 +321,7 @@ def test_dynamic_alloca_veq_format():
     !quake.veq<?>[%n : i64] — type before size in brackets."""
 
     # Size is a traced argument (not a constant), so the alloca stays dynamic
-    # (pass3b only staticizes constant-sized allocas).
+    # (static_veq_alloca only staticizes constant-sized allocas).
     def circuit(n):
         qv = QuantumVariable(n)
         return qv
@@ -335,7 +335,7 @@ def test_dynamic_alloca_veq_format():
 
 
 # ---------------------------------------------------------------------------
-# Test static-sized veq (pass3b: constant-sized quake.alloca staticization)
+# Test static-sized veq (static_veq_alloca: constant-sized quake.alloca staticization)
 # ---------------------------------------------------------------------------
 
 
@@ -449,7 +449,10 @@ def test_bell_circuit_full_format():
 
 def test_gate_mapping_standard_gates():
     """Verify that all standard gates are in the gate map."""
-    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import _get_gate_info, GATE_MAP
+    from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import (
+        _get_gate_info,
+        GATE_MAP,
+    )
 
     expected_gates = {
         "h",
@@ -957,7 +960,7 @@ def test_unsupported_gate_raises_not_implemented_error():
         return qv
 
     with patch(
-        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake._get_gate_info",
+        "qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.lower_jasp_to_quake._get_gate_info",
         return_value=None,
     ):
         with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):

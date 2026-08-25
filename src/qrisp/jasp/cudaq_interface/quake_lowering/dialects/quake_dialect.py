@@ -451,7 +451,7 @@ def _make_gate_op(
         A new Quake gate op instance, or *None* if the gate is not supported.
 
     """
-    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import GATE_MAP
+    from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import GATE_MAP
 
     gate_info = GATE_MAP.get(gate_name)
     if gate_info is None:

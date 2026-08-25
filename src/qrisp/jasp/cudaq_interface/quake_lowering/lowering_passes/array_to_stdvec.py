@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-# PASS 5 – CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
-# ===================================================================
+# CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
+# =======================================================
 #
 # Rewrites !cc.ptr<!cc.array<T x N>> parameters in the CUDA-Q entrypoint
 # to !cc.stdvec<T> for runtime compatibility.

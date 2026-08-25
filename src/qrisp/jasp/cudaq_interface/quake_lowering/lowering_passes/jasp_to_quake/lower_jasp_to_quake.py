@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 
-# PASS 1a – Jasp→Quake op lowering.
-# ===================================
+# Jasp→Quake operation lowering.
+# ==============================
 #
 # Replaces all jasp.* ops with their Quake equivalents using a
 # PatternRewriteWalker. QuantumState values are threaded backwards
 # (qst_out.replace_all_uses_with(qst_in)) inside each pattern, making
 # all QST values dead. The actual structural removal of QST from SCF ops
-# and function signatures is handled by the separate PASS 1b.
+# and function signatures is handled by the separate strip_qst stage.
 #
 # Op mapping
 # ----------
@@ -37,8 +37,8 @@
 # jasp.measure                     quake.mz + quake.discriminate
 # jasp.reset                       quake.reset
 # jasp.parity                      not supported – raises NotImplementedError
-# jasp.create_quantum_kernel        dropped in PASS 1b
-# jasp.consume_quantum_kernel       dropped in PASS 1b
+# jasp.create_quantum_kernel        dropped in strip_qst
+# jasp.consume_quantum_kernel       dropped in strip_qst
 
 from xdsl.dialects import arith, scf
 from xdsl.dialects.builtin import (
@@ -75,8 +75,8 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     VeqSizeOp,
     _make_gate_op,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import _get_gate_info
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import _get_gate_info
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.helper_functions import (
     _coerce_to_f64_for_rewriter,
     _extract_scalar_for_rewriter,
     _is_numeric_type,
@@ -110,11 +110,11 @@ from qrisp.jasp.mlir.xdsl_dialect import (
 
 
 def _lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
-    """In-place PASS 1: lower all ``jasp.*`` ops to Quake equivalents.
+    """Lower all ``jasp.*`` ops to Quake equivalents in place.
 
     After this pass, no ``jasp.*`` ops remain.  ``!jasp.QuantumState`` values
     are dead (all uses redirected) but may still appear structurally in SCF
-    ops and function signatures — those are cleaned up by PASS 1b.
+    ops and function signatures; those are cleaned up by ``strip_qst``.
 
     Parameters
     ----------

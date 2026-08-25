@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-# PASS 3 – Tensor unwrapping and scalar return rewriting.
-# ==========================================================
+# Tensor unwrapping and scalar return rewriting.
+# ================================================
 #
 # This pass applies a suite of greedy rewrite patterns to clean up rank-0
 # tensor round-trips and unwrap scalar return types.
@@ -94,7 +94,7 @@ def _dense_to_scalar_attr(dense_attr, scalar_type):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 1: Unwrap func signatures and return boundaries
+# Unwrap func signatures and return boundaries
 # ------------------------------------------------------------------ #
 class UnwrapFuncAndReturn(RewritePattern):
     """Updates func.func signatures and func.return operands from
@@ -267,7 +267,7 @@ class UnwrapCall(RewritePattern):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 2: tensor.extract of a dense constant → scalar constant
+# Fold tensor.extract of a dense constant to a scalar constant
 # ------------------------------------------------------------------ #
 class FoldExtractOfDenseConstant(RewritePattern):
     """Replace a rank-0 tensor.extract of an arith.constant dense<V>
@@ -298,7 +298,7 @@ class FoldExtractOfDenseConstant(RewritePattern):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 3: tensor.extract of a from_elements → forward scalar
+# Fold tensor.extract of a from_elements to the scalar input
 # ------------------------------------------------------------------ #
 class FoldExtractOfFromElements(RewritePattern):
     """Eliminate a tensor.extract by forwarding the scalar input
@@ -318,7 +318,7 @@ class FoldExtractOfFromElements(RewritePattern):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 4: tensor.extract of an already-scalar value → forward
+# Forward tensor.extract of an already-scalar value
 # ------------------------------------------------------------------ #
 class FoldExtractOfScalar(RewritePattern):
     """Eliminate a tensor.extract whose source is already a scalar."""
@@ -333,7 +333,7 @@ class FoldExtractOfScalar(RewritePattern):
 
 
 # ------------------------------------------------------------------ #
-# Patterns 5 & 6: Erase dead ops
+# Erase dead tensor operations
 # ------------------------------------------------------------------ #
 class EraseDeadTensorConstant(RewritePattern):
     """Erase arith.constant dense<...> : tensor<T> ops with no uses."""

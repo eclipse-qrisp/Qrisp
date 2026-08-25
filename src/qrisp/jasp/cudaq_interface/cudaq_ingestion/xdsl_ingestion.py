@@ -99,7 +99,7 @@ def _cudaq_kernel_from_xdsl_module(
     value (e.g. an ``i64`` measurement result).
 
     The MLIR is expected to already have array parameters in
-    ``!cc.stdvec<T>`` form (as produced by pass4_array_to_stdvec).
+    ``!cc.stdvec<T>`` form (as produced by ``array_to_stdvec``).
 
     The returned kernel is a first-class CUDA-Q kernel object and supports
     all standard CUDA-Q execution patterns:

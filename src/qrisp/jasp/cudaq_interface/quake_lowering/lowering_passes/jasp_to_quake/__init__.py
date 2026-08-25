@@ -1,5 +1,4 @@
 """********************************************************************************
-
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,17 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake import _lower_jasp_to_quake
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1b_strip_qst import _strip_qst
-
-
-def _jasp_to_quake(module, execution_mode="run"):
-    """Full Jasp→Quake lowering pipeline."""
-    _lower_jasp_to_quake(module, execution_mode)  # PASS 1: op lowering
-    _strip_qst(module, execution_mode)  # PASS 2: QST elimination
+# Jasp → Quake lowering (QuantumState elimination + op rewriting).
+# ====================================================================
+#
+# jasp_to_quake
+#     Orchestrator, running 1a then 1b.
+# lower_jasp_to_quake
+#     Rewrites Jasp quantum ops into their Quake dialect equivalents.
+# strip_qst
+#     Eliminates the QuantumState-threading value, replacing it with direct
+#     Quake qubit-reference semantics.
+# gate_mapping
+#     Mapping from Jasp gate names to Quake gate descriptors.
+# helper_functions
+#     Shared xDSL-construction helpers used by 1a/1b.

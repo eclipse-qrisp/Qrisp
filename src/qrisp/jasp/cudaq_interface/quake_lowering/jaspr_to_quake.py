@@ -29,17 +29,17 @@
 #    builtin.ModuleOp via jaspr_to_mlir.
 # 0a. Safeguard (safeguard_no_ranked_tensor_linalg) – Reject any module
 #     that contains linalg.generic operations on ranked tensors before lowering begins.
-# 1. JASP → Quake (pass1_jasp_to_quake) – Replace jasp.* operations with
+# 1. JASP → Quake (jasp_to_quake) – Replace jasp.* operations with
 #    Quake equivalents and eliminate !jasp.QuantumState threading.
-# 2. SCF → CC (pass2_scf_to_cc) – Replace structured control flow with
+# 2. SCF → CC (scf_to_cc) – Replace structured control flow with
 #    cc.if and cc.loop operations.
-# 3. Scalar tensor unwrapping (pass3_scalar_tensor_unwrap) – Fold trivial
+# 3. Scalar tensor unwrapping (scalar_tensor_unwrap) – Fold trivial
 #    rank-0 tensor constants, extracts, and wrappers into scalars.
-# 4. Static register allocation (pass3b_static_veq_alloca) – Rewrite
+# 4. Static register allocation (static_veq_alloca) – Rewrite
 #    constant-sized !quake.veq<?> allocations as !quake.veq<N>.
-# 5. Ranked tensor → CC array (pass4_ranked_tensor_to_array) – Lower ranked
+# 5. Ranked tensor → CC array (ranked_tensor_to_array) – Lower ranked
 #    tensor constants, accesses, signatures, and calls to CC arrays.
-# 6. Array → stdvec (pass5_array_to_stdvec) – Rewrite entrypoint array
+# 6. Array → stdvec (array_to_stdvec) – Rewrite entrypoint array
 #    pointers to !cc.stdvec<T> for CUDA-Q runtime compatibility.
 #
 # The returned ModuleOp contains only the dialects and operations supported by
@@ -47,28 +47,28 @@
 
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import (
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.array_to_stdvec import (
+    _lower_array_to_stdvec,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.jasp_to_quake import (
     _jasp_to_quake,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import _lower_scf_to_cc
-from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
-    _unwrap_scalar_tensors,
-)
-from qrisp.jasp.cudaq_interface.quake_lowering.pass3b_static_veq_alloca import (
-    _staticize_veq_alloca,
-)
-from qrisp.jasp.cudaq_interface.quake_lowering.pass4_ranked_tensor_to_array import (
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ranked_tensor_to_array import (
     _lower_ranked_tensors,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.pass5_array_to_stdvec import (
-    _lower_array_to_stdvec,
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.safeguard_no_ranked_tensor_linalg import (
+    _verify_no_ranked_tensor_linalg,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.scalar_tensor_unwrap import (
+    _unwrap_scalar_tensors,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.scf_to_cc import _lower_scf_to_cc
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.static_veq_alloca import (
+    _staticize_veq_alloca,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.pass_manager import (
     _LoweringPass,
     _run_pass_pipeline,
-)
-from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg import (
-    _verify_no_ranked_tensor_linalg,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
