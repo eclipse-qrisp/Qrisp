@@ -40,6 +40,8 @@
 #
 # Handles both static and dynamic array indexing.
 
+from dataclasses import dataclass
+
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
@@ -55,7 +57,7 @@ from xdsl.dialects.builtin import (
     TensorType,
     i64,
 )
-from xdsl.ir import Block, Region, SSAValue
+from xdsl.ir import Attribute, Block, Region, SSAValue
 from xdsl.rewriter import Rewriter
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
@@ -199,6 +201,15 @@ def _process_block(block: Block, array_map: dict) -> None:
 # ===================================================================
 
 
+@dataclass(frozen=True)
+class _LoopArgRewrite:
+    """Describe the pointer replacement for one loop-carried tensor."""
+
+    pointer: SSAValue
+    pointer_type: CcPtrType
+    element_type: Attribute
+
+
 def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
     """Rewrite tensor<NxT> loop-carried values in a cc.loop to !cc.ptr<!cc.array<T x N>>.
 
@@ -213,71 +224,89 @@ def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
     - Block args in while, body, and step regions
     - The cc.loop's result types
     """
-    # Look at the while-region block args to find which are still tensor types
     if not loop_op.while_region.blocks:
         return
 
     while_block = loop_op.while_region.blocks[0]
-    tensor_arg_indices = []
-    for i, arg in enumerate(while_block.args):
-        if _is_ranked_1_tensor(arg.type):
-            tensor_arg_indices.append(i)
-
-    if not tensor_arg_indices:
-        return
-
-    # For each tensor arg, determine the ptr type and find the source in array_map
-    arguments = list(loop_op.arguments)
-    rewrites = {}  # index -> (ptr_value, ptr_type, elem_type, size)
-    for idx in tensor_arg_indices:
-        # Get the tensor type from the block arg
-        tensor_type = while_block.args[idx].type
-        size = tensor_type.get_shape()[0]
-        elem_type = tensor_type.element_type
-        arr_type = CcArrayType(elem_type, size)
-        ptr_type = CcPtrType(arr_type)
-
-        # The init operand may already be a ptr (if the function arg was rewritten)
-        init_val = arguments[idx]
-        if isinstance(init_val.type, CcPtrType) and isinstance(init_val.type.element_type, CcArrayType):
-            # Already a ptr — use it directly
-            ptr_val = init_val
-        elif init_val in array_map:
-            ptr_val = array_map[init_val][0]
-        else:
-            # Cannot find a ptr for this tensor - skip
-            continue
-
-        rewrites[idx] = (ptr_val, ptr_type, elem_type, size)
+    rewrites = _collect_loop_arg_rewrites(loop_op, while_block, array_map)
 
     if not rewrites:
         return
 
-    # 1. Update the init operands of the cc.loop
-    new_arguments = list(loop_op.arguments)
-    for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
-        new_arguments[idx] = ptr_val
-    loop_op.operands = new_arguments
+    _rewrite_loop_operands(loop_op, rewrites)
+    _rewrite_loop_region_args(loop_op, rewrites, array_map)
+    _rewrite_loop_results(loop_op, rewrites, array_map)
 
-    # 2. Update block args in all three regions (while, body, step)
+
+def _collect_loop_arg_rewrites(
+    loop_op: CcLoopOp,
+    while_block: Block,
+    array_map: dict,
+) -> dict[int, _LoopArgRewrite]:
+    """Collect resolvable tensor loop arguments and their pointer types."""
+    arguments = list(loop_op.arguments)
+    rewrites: dict[int, _LoopArgRewrite] = {}
+    for index, block_arg in enumerate(while_block.args):
+        if not _is_ranked_1_tensor(block_arg.type) or index >= len(arguments):
+            continue
+
+        tensor_type = block_arg.type
+        element_type = tensor_type.element_type
+        array_type = CcArrayType(element_type, tensor_type.get_shape()[0])
+        pointer_type = CcPtrType(array_type)
+        pointer = _resolve_array_pointer(arguments[index], array_map)
+        if pointer is not None:
+            rewrites[index] = _LoopArgRewrite(pointer, pointer_type, element_type)
+    return rewrites
+
+
+def _resolve_array_pointer(init_value: SSAValue, array_map: dict) -> SSAValue | None:
+    """Resolve a loop initializer to an existing CC array pointer."""
+    if isinstance(init_value.type, CcPtrType) and isinstance(init_value.type.element_type, CcArrayType):
+        return init_value
+
+    mapped_value = array_map.get(init_value)
+    return mapped_value[0] if mapped_value is not None else None
+
+
+def _rewrite_loop_operands(loop_op: CcLoopOp, rewrites: dict[int, _LoopArgRewrite]) -> None:
+    """Replace loop initializers with their resolved CC array pointers."""
+    arguments = list(loop_op.arguments)
+    for index, rewrite in rewrites.items():
+        arguments[index] = rewrite.pointer
+    loop_op.operands = arguments
+
+
+def _rewrite_loop_region_args(
+    loop_op: CcLoopOp,
+    rewrites: dict[int, _LoopArgRewrite],
+    array_map: dict,
+) -> None:
+    """Change loop-region tensor arguments to pointers and register them."""
     for region in loop_op.regions:
         if not region.blocks:
             continue
         block = region.blocks[0]
-        for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
-            if idx < len(block.args):
-                old_arg = block.args[idx]
-                Rewriter.replace_value_with_new_type(old_arg, ptr_type)
-                # Register in array_map so nested accesses can find it
-                array_map[old_arg] = (old_arg, elem_type)
+        for index, rewrite in rewrites.items():
+            if index >= len(block.args):
+                continue
+            old_arg = block.args[index]
+            Rewriter.replace_value_with_new_type(old_arg, rewrite.pointer_type)
+            array_map[old_arg] = (old_arg, rewrite.element_type)
 
-    # 3. Update the cc.loop's result types
-    for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
-        if idx < len(loop_op.res):
-            res = loop_op.res[idx]
-            Rewriter.replace_value_with_new_type(res, ptr_type)
-            # Register the loop result in array_map too
-            array_map[res] = (res, elem_type)
+
+def _rewrite_loop_results(
+    loop_op: CcLoopOp,
+    rewrites: dict[int, _LoopArgRewrite],
+    array_map: dict,
+) -> None:
+    """Change loop results to pointers and register them for later accesses."""
+    for index, rewrite in rewrites.items():
+        if index >= len(loop_op.res):
+            continue
+        result = loop_op.res[index]
+        Rewriter.replace_value_with_new_type(result, rewrite.pointer_type)
+        array_map[result] = (result, rewrite.element_type)
 
 
 # ===================================================================
