@@ -28,24 +28,22 @@
 # 0. Emission (mlir_emission) – Translate the Jaspr to an initial xDSL
 #    builtin.ModuleOp via jaspr_to_mlir.
 # 0a. Safeguard (safeguard_no_ranked_tensor_linalg) – Reject any module
-#     that contains linalg.generic ops on ranked tensors before lowering begins.
-# 1. PASS 1 (pass1_jasp_to_quake) – Replace every jasp.* op by its Quake
-#    equivalent, eliminate the !jasp.QuantumState threading, and perform
-#    QuantumState elimination.
-# 2. PASS 2 (pass2_scf_to_cc) – Replace scf.if / scf.while (where they have
-#    no SSA results) with cc.if / cc.loop.
-# 3. PASS 3 (pass3_scalar_tensor_unwrap) – Fold trivial rank-0 tensor
-#    constants / extracts into scalars.
-# 3b. PASS 3B (pass3b_static_veq_alloca) – Rewrite constant-sized
-#     quake.alloca register allocations from !quake.veq<?>[%n] to
-#     !quake.veq<N>.
-# 4. PASS 4 (pass4_ranked_tensor_to_array) – Lower ranked tensor constants
-#    and accesses to CC array operations.
-# 5. PASS 5 (pass5_array_to_stdvec) – Rewrite static array pointer
-#    parameters to !cc.stdvec<T> for CUDA-Q runtime compatibility.
+#     that contains linalg.generic operations on ranked tensors before lowering begins.
+# 1. JASP → Quake (pass1_jasp_to_quake) – Replace jasp.* operations with
+#    Quake equivalents and eliminate !jasp.QuantumState threading.
+# 2. SCF → CC (pass2_scf_to_cc) – Replace structured control flow with
+#    cc.if and cc.loop operations.
+# 3. Scalar tensor unwrapping (pass3_scalar_tensor_unwrap) – Fold trivial
+#    rank-0 tensor constants, extracts, and wrappers into scalars.
+# 4. Static register allocation (pass3b_static_veq_alloca) – Rewrite
+#    constant-sized !quake.veq<?> allocations as !quake.veq<N>.
+# 5. Ranked tensor → CC array (pass4_ranked_tensor_to_array) – Lower ranked
+#    tensor constants, accesses, signatures, and calls to CC arrays.
+# 6. Array → stdvec (pass5_array_to_stdvec) – Rewrite entrypoint array
+#    pointers to !cc.stdvec<T> for CUDA-Q runtime compatibility.
 #
-# The returned string contains only Quake + CC + arith, math, func ops;
-# no !jasp.* types or tensor ops remain.
+# The returned ModuleOp contains only the dialects and operations supported by
+# the CUDA-Q ingestion layer; no !jasp.* types or tensor operations remain.
 
 from xdsl.dialects.builtin import ModuleOp
 
