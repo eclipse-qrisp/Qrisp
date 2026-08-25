@@ -276,14 +276,14 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
     """
     for offset in jrange(jnp.where(k > 0, n - k, 0)):  # If `k == 0`, we don't execute anything. D(n, 0) = |00 ... 0>
         index2 = n - offset
-        split_cycle_shift(qv, index2, k)
+        _split_cycle_shift(qv, index2, k)
 
     for offset in jrange(jnp.maximum(k - 1, 0)):
         index = k - offset
-        split_cycle_shift(qv, index, index - 1)
+        _split_cycle_shift(qv, index, index - 1)
 
 
-def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int | Array, lowIndex: int | Array) -> None:
+def _split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k: int | Array) -> None:
     """Apply the *Split & Cyclic Shift* unitary :math:`SCS_{n, k}` defined in https://arxiv.org/abs/1904.07358.
 
     Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to ``qv`` in place.
@@ -292,25 +292,25 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int | Ar
     ----------
     qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in target subspace.
-    highIndex : int
+    n : int
         Index for indication of preparation steps, as seen in original algorithm.
-    lowIndex : int
+    k : int
         Index for indication of preparation steps, as seen in original algorithm.
 
     """
-    # index == highIndex
-    param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
-    cx(qv[highIndex - 2], qv[highIndex - 1])
-    with control(qv[highIndex - 1]):
-        ry(param, qv[highIndex - 2])
-    cx(qv[highIndex - 2], qv[highIndex - 1])
+    # l = 1
+    param = 2 * jnp.arccos(jnp.sqrt(1 / n))
+    cx(qv[n - 2], qv[n - 1])
+    with control(qv[n - 1]):
+        ry(param, qv[n - 2])
+    cx(qv[n - 2], qv[n - 1])
 
-    # index != highIndex
-    for i in jrange(1, lowIndex):
-        index = highIndex - i
-        param = 2 * jnp.arccos(jnp.sqrt((highIndex - index + 1) / (highIndex)))
+    # 2 <= l <= k
+    for i in jrange(1, k):
+        index = n - i
+        param = 2 * jnp.arccos(jnp.sqrt((n - index + 1) / (n)))
 
-        cx(qv[index - 2], qv[highIndex - 1])
-        with control([qv[highIndex - 1], qv[index - 1]]):
+        cx(qv[index - 2], qv[n - 1])
+        with control([qv[n - 1], qv[index - 1]]):
             ry(param, qv[index - 2])
-        cx(qv[index - 2], qv[highIndex - 1])
+        cx(qv[index - 2], qv[n - 1])
