@@ -286,18 +286,20 @@ def _apply_dicke_unitary(qv: QuantumVariable | Sequence[Qubit], n: int | Array, 
 def _split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k: int | Array) -> None:
     """Apply the *Split & Cyclic Shift* unitary :math:`SCS_{n, k}` defined in https://arxiv.org/abs/1904.07358.
 
-    Helper function for Dicke State initialization of a QuantumVariable. The unitary is applied to ``qv`` in place.
+    Helper function for Dicke State initialization of a QuantumVariable. The construction follows section 2.2. of the
+    above-linked paper. The unitary is applied to ``qv`` in place.
 
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
         Initial quantum variable to be prepared. Has to be in target subspace.
     n : int
-        Index for indication of preparation steps, as seen in original algorithm.
+        Index ``n`` for indication of preparation steps, as seen in original algorithm.
     k : int
-        Index for indication of preparation steps, as seen in original algorithm.
+        Index ``k`` for indication of preparation steps, as seen in original algorithm.
 
     """
+    # Qubit labels are off by one, since Qrisp labels qubits starting from 0 whereas the paper starts from 1.
     # l = 1
     param = 2 * jnp.arccos(jnp.sqrt(1 / n))
     cx(qv[n - 2], qv[n - 1])
@@ -306,11 +308,10 @@ def _split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], n: int | Array, k:
     cx(qv[n - 2], qv[n - 1])
 
     # 2 <= l <= k
-    for i in jrange(1, k):
-        index = n - i
-        param = 2 * jnp.arccos(jnp.sqrt((n - index + 1) / (n)))
+    for l in jrange(2, k+1):
+        param = 2 * jnp.arccos(jnp.sqrt( l / n))
 
-        cx(qv[index - 2], qv[n - 1])
-        with control([qv[n - 1], qv[index - 1]]):
-            ry(param, qv[index - 2])
-        cx(qv[index - 2], qv[n - 1])
+        cx(qv[n-l-1], qv[n - 1])
+        with control([qv[n - 1], qv[n-l]]):
+            ry(param, qv[n-l-1])
+        cx(qv[n-l-1], qv[n - 1])
