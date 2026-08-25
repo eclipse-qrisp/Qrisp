@@ -35,6 +35,7 @@ Other New Features
 - Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
   and ``RZZGate``. 
   (`PR #797 <https://github.com/eclipse-qrisp/Qrisp/pull/797>`_).
+  
 - **Dicke state preparation via divide-and-conquer**
   :func:`~qrisp.dicke_state` now accepts a ``method`` keyword argument.  In
   addition to the existing ``"deterministic"`` method
