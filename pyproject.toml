@@ -91,7 +91,7 @@ dev = [
 # security updates, or other patches
 # (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
 all = [
-    "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
+    "qrisp[qiskit,iqm,catalyst,cudaq,xdsl,docs,dev]",
 ]
 
 [project.urls]
