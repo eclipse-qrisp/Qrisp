@@ -90,7 +90,7 @@ from qrisp.jasp.mlir.xdsl_dialect import (
 # ===========================================================================
 
 
-def strip_qst(module: ModuleOp, execution_mode: str = "run") -> None:
+def _strip_qst(module: ModuleOp, execution_mode: str = "run") -> None:
     """In-place PASS 1b: remove all structural traces of ``!jasp.QuantumState``.
 
     Parameters

@@ -72,9 +72,9 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     ResetOp,
     SubVeqOp,
     VeqSizeOp,
-    make_gate_op,
+    _make_gate_op,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import _get_gate_info
 from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.helper_functions import (
     _coerce_to_f64_for_rewriter,
     _extract_scalar_for_rewriter,
@@ -108,7 +108,7 @@ from qrisp.jasp.mlir.xdsl_dialect import (
 # ===========================================================================
 
 
-def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
+def _lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
     """In-place PASS 1: lower all ``jasp.*`` ops to Quake equivalents.
 
     After this pass, no ``jasp.*`` ops remain.  ``!jasp.QuantumState`` values
@@ -339,7 +339,7 @@ class LowerQuantumGate(RewritePattern):
                 qubit_operands.append(v)
 
         gate_name = op.gate_type.data
-        gate_info = get_gate_info(gate_name)
+        gate_info = _get_gate_info(gate_name)
         if gate_info is None:
             raise NotImplementedError(f"Lowering failed: Unsupported Jasp gate '{gate_name}'.")
 
@@ -362,7 +362,7 @@ class LowerQuantumGate(RewritePattern):
                 raise RuntimeError(f"Gate '{gate_name}' emit() returned empty list.")
             rewriter.insert_op(ops, InsertPoint.before(rewriter.current_operation))
         else:
-            gate_op = make_gate_op(gate_name, controls, final_params, targets)
+            gate_op = _make_gate_op(gate_name, controls, final_params, targets)
             if gate_op is None:
                 raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
             rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))

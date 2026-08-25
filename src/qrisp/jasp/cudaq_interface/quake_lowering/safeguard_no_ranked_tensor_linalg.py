@@ -35,7 +35,7 @@ def _is_ranked_tensor_type(t) -> bool:
     return isinstance(t, TensorType) and len(t.get_shape()) > 0
 
 
-def verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
+def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
     """Fail early if any ``linalg.generic`` operates on ranked tensors."""
     for current_op in module.walk():
         if not isinstance(current_op, linalg.GenericOp):

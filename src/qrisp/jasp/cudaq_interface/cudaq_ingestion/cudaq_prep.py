@@ -303,7 +303,7 @@ def _pass_inject_module_attrs(
 # ===========================================================================
 
 
-def prepare_module_for_cudaq(
+def _prepare_module_for_cudaq(
     module: ModuleOp,
     *,
     func_name: str,

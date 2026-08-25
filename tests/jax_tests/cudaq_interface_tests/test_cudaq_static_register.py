@@ -21,8 +21,9 @@ import cudaq
 
 from qrisp import QuantumBool, QuantumFloat, QuantumVariable, control, cx, h, invert, measure, qache, x
 from qrisp.jasp import jaspr_to_static_register_jaspr, jrange, make_jaspr, q_while_loop
-from qrisp.jasp.cudaq_interface import cudaq_kernel, cudaq_kernel_from_xdsl_module
-from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface import cudaq_kernel
+from qrisp.jasp.cudaq_interface.cudaq_ingestion.xdsl_ingestion import _cudaq_kernel_from_xdsl_module
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
 
 
 def test_cudaq_static_register():
@@ -46,12 +47,12 @@ def test_cudaq_static_register():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 15)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 1023
     assert static_reg_jaspr() == 1023
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 1023
 
 
@@ -68,12 +69,12 @@ def test_cudaq_static_register_quantum_float_addition():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 15)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 100
     assert static_reg_jaspr() == 100
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 100
 
 
@@ -88,12 +89,12 @@ def test_cudaq_static_register_basic_quantum_float():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 5
     assert static_reg_jaspr() == 5
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 5
 
 
@@ -118,12 +119,12 @@ def test_cudaq_static_register_qubit_reuse():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 4)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 8
     assert static_reg_jaspr() == 8
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 8
 
 
@@ -140,12 +141,12 @@ def test_cudaq_static_register_classical_control():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 3
     assert static_reg_jaspr() == 3
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 3
 
 
@@ -161,12 +162,12 @@ def test_cudaq_static_register_size_independence(register_size):
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, register_size)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 5
     assert static_reg_jaspr() == 5
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 5
 
 
@@ -182,12 +183,12 @@ def test_cudaq_static_register_classical_control_not_triggered():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 0
     assert static_reg_jaspr() == 0
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 0
 
 
@@ -203,12 +204,12 @@ def test_cudaq_static_register_invert():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 6)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 0
     assert static_reg_jaspr() == 0
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 0
 
 
@@ -233,12 +234,12 @@ def test_cudaq_static_register_tight_qubit_reuse():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 4)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 8
     assert static_reg_jaspr() == 8
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 8
 
 
@@ -253,12 +254,12 @@ def test_cudaq_static_register_extend_append():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 7
     assert static_reg_jaspr() == 7
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 7
 
 
@@ -273,12 +274,12 @@ def test_cudaq_static_register_extend_prepend():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == 14
     assert static_reg_jaspr() == 14
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == 14
 
 
@@ -294,13 +295,13 @@ def test_cudaq_static_register_slicing():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 12)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     expected = (1 << 2) + (1 << 6)
     assert jaspr() == expected
     assert static_reg_jaspr() == expected
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == expected
 
 
@@ -324,12 +325,12 @@ def test_cudaq_static_register_while_loop():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == (5, 31)
     assert static_reg_jaspr() == (5, 31)
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == (5, 31)
 
 
@@ -348,12 +349,12 @@ def test_cudaq_static_register_qache():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == (1, 1)
     assert static_reg_jaspr() == (1, 1)
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == (1, 1)
 
 
@@ -369,12 +370,12 @@ def test_cudaq_static_register_quantum_bool():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 4)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     assert jaspr() == (True, False)
     assert static_reg_jaspr() == (True, False)
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     assert kernel() == (True, False)
 
 
@@ -389,12 +390,12 @@ def test_cudaq_static_register_bell_state_correlation():
 
     jaspr = make_jaspr(main)()
     static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 10)
-    xdsl_module = jaspr_to_quake_mlir(static_reg_jaspr)
+    xdsl_module = _jaspr_to_quake_mlir(static_reg_jaspr)
 
     for _ in range(20):
         assert jaspr() in (0, 3)
         assert static_reg_jaspr() in (0, 3)
 
-    kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
+    kernel = _cudaq_kernel_from_xdsl_module(xdsl_module)
     for _ in range(20):
         assert kernel() in (0, 3)

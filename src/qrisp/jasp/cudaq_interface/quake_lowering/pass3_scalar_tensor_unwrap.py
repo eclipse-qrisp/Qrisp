@@ -61,7 +61,7 @@ from xdsl.rewriter import InsertPoint
 # ===================================================================
 
 
-def unwrap_scalar_tensors(module: ModuleOp) -> None:
+def _unwrap_scalar_tensors(module: ModuleOp) -> None:
     """Applies the TensorUnwrapPass to the given module."""
     TensorUnwrapPass().apply(Context(), module)
 

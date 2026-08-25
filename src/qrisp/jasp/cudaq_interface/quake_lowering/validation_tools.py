@@ -25,25 +25,25 @@ from cudaq.mlir.ir import Context, Module
 # ---------------------------------------------------------------------------
 
 
-def assert_no_jasp(mlir_str: str) -> None:
+def _assert_no_jasp(mlir_str: str) -> None:
     """Assert that no ``!jasp.*`` types remain in *mlir_str*."""
     jasp_types = re.findall(r"!jasp\.\w+", mlir_str)
     assert not jasp_types, f"Expected no !jasp.* types in Quake output, but found: {set(jasp_types)}"
 
 
-def assert_no_linalg(mlir_str: str) -> None:
+def _assert_no_linalg(mlir_str: str) -> None:
     """Assert that no linalg operations remain in *mlir_str*."""
     linalg_usage = re.findall(r"\blinalg\.\S+", mlir_str)
     assert not linalg_usage, f"Expected no linalg operations in Quake output, but found: {set(linalg_usage)}"
 
 
-def assert_no_scf(mlir_str: str) -> None:
+def _assert_no_scf(mlir_str: str) -> None:
     """Assert that no scf operations remain in *mlir_str*."""
     scf_usage = re.findall(r"\bscf\.\S+", mlir_str)
     assert not scf_usage, f"Expected no scf operations in Quake output, but found: {set(scf_usage)}"
 
 
-def assert_no_tensor(mlir_str: str) -> None:
+def _assert_no_tensor(mlir_str: str) -> None:
     """Assert that no tensor types or operations remain in *mlir_str*."""
     # Matches both tensor<...> types and tensor.xyz operations
     tensor_usage = re.findall(r"\btensor[<.]\S+", mlir_str)
@@ -55,7 +55,7 @@ def assert_no_tensor(mlir_str: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def validate_quake_mlir(mlir_str: str) -> Module:
+def _validate_quake_mlir(mlir_str: str) -> Module:
     """Validate a Quake MLIR string using CUDA-Q's MLIR parser and verifier.
 
     Parses the provided MLIR string within a fresh MLIR context that has
@@ -97,13 +97,13 @@ def validate_quake_mlir(mlir_str: str) -> Module:
 
         jaspr = make_jaspr(bell)()
         xdsl_module = jaspr_to_quake(jaspr)
-        module = validate_quake_mlir(str(xdsl_module))
+        module = _validate_quake_mlir(str(xdsl_module))
 
     """
-    assert_no_jasp(mlir_str)
-    assert_no_linalg(mlir_str)
-    assert_no_scf(mlir_str)
-    assert_no_tensor(mlir_str)
+    _assert_no_jasp(mlir_str)
+    _assert_no_linalg(mlir_str)
+    _assert_no_scf(mlir_str)
+    _assert_no_tensor(mlir_str)
 
     with Context() as ctx:
         quake.register_dialect(context=ctx)

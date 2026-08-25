@@ -63,7 +63,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
 # ===================================================================
 
 
-def lower_scf_to_cc(module: ModuleOp) -> None:
+def _lower_scf_to_cc(module: ModuleOp) -> None:
     """In-place PASS 2: lower SCF structured control flow to the CC dialect using Pattern Rewriters."""
     walker = PatternRewriteWalker(
         GreedyRewritePatternApplier(

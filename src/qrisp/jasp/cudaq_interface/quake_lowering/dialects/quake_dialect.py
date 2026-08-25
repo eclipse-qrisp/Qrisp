@@ -406,7 +406,7 @@ for _gname in [
     _QUAKE_GATE_CLASSES[_gname] = _mk_gate_cls(f"quake.{_gname}")
 
 
-def make_gate_op(
+def _make_gate_op(
     gate_name: str,
     controls: Sequence[SSAValue],
     params: Sequence[SSAValue],

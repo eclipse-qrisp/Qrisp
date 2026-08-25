@@ -60,8 +60,8 @@ from typing import Literal
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
 
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
-from qrisp.jasp.cudaq_interface.cudaq_ingestion import cudaq_kernel_from_xdsl_module
-from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.cudaq_ingestion import _cudaq_kernel_from_xdsl_module
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
 from qrisp.jasp.interpreter_tools import jaspr_to_static_register_jaspr
 from qrisp.jasp.jasp_expression import make_jaspr
 
@@ -273,8 +273,8 @@ def cudaq_kernel(
         new_jaspr = jaspr
 
     try:
-        mlir_module = jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
+        mlir_module = _jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
     except Exception as e:
         raise RuntimeError(f"Failed to compile Qrisp function '{func_arg.__name__}' to MLIR: {e}") from e
 
-    return cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)
+    return _cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)

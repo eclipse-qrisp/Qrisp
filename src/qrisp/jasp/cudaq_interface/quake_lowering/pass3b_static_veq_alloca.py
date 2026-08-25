@@ -86,7 +86,7 @@ _TYPE_TRANSPARENT_CONSUMERS = (
 # ===================================================================
 
 
-def staticize_veq_alloca(module: ModuleOp) -> None:
+def _staticize_veq_alloca(module: ModuleOp) -> None:
     """Applies the StaticVeqAllocaPass to the given module."""
     StaticVeqAllocaPass().apply(Context(), module)
 

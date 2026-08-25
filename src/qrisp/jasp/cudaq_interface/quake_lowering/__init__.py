@@ -49,8 +49,8 @@
 # jaspr_to_quake
 #     Pipeline entry-point (jaspr_to_quake_mlir), orchestrating passes 1-5.
 
-from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
-from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeDialect,
     QuakeMeasureType,
@@ -60,8 +60,6 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcDialect, CcMeasureHandleType, CcStdVecType
 
 __all__ = [
-    "jaspr_to_quake_mlir",
-    "validate_quake_mlir",
     "QuakeDialect",
     "QuakeRefType",
     "QuakeVeqType",

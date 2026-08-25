@@ -29,7 +29,7 @@ from cudaq.mlir.dialects import quake as cudaq_quake_dialect
 from cudaq.mlir.ir import Module, NoneType
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import prepare_module_for_cudaq
+from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import _prepare_module_for_cudaq
 from qrisp.jasp.cudaq_interface.cudaq_ingestion.host_attributes import _get_llvm_attributes
 
 # ------------------------------------------------------------------ #
@@ -87,7 +87,7 @@ def _normalize_xdsl_to_cudaq(mlir_str: str) -> str:
 _KERNEL_NAME_KEEPALIVE: list = []
 
 
-def cudaq_kernel_from_xdsl_module(
+def _cudaq_kernel_from_xdsl_module(
     xdsl_module: ModuleOp,
     execution_mode: Literal["run", "sample"] = "run",
 ) -> PyKernelDecorator:
@@ -178,7 +178,7 @@ def cudaq_kernel_from_xdsl_module(
     data_layout_str, target_triple_str = _get_llvm_attributes()
 
     # Apply all structural passes (in-place on the xDSL module)
-    prepare_module_for_cudaq(
+    _prepare_module_for_cudaq(
         module,
         func_name=func_name,
         entry_point=entry_point,

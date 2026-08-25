@@ -48,7 +48,8 @@ from xdsl.ir import (
     SSAValue,
 )
 
-from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import make_gate_op
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import _make_gate_op
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import _make_gate_op
 
 
 @dataclass(frozen=True)
@@ -106,7 +107,7 @@ def _emit_sx(controls: Sequence[SSAValue], _params: Sequence[SSAValue], targets:
     angle = arith.ConstantOp(FloatAttr(math.pi / 2, f64))
     return [
         angle,
-        make_gate_op("rx", controls, [angle.result], [t]),
+        _make_gate_op("rx", controls, [angle.result], [t]),
     ]
 
 
@@ -136,7 +137,7 @@ def _emit_sx_dg(
     angle = arith.ConstantOp(FloatAttr(-math.pi / 2, f64))
     return [
         angle,
-        make_gate_op("rx", controls, [angle.result], [t]),
+        _make_gate_op("rx", controls, [angle.result], [t]),
     ]
 
 
@@ -147,7 +148,7 @@ def _emit_cgphase(
     t0, _t1 = targets
     phi = params[0]
     return [
-        make_gate_op("p", [], [phi], [t0]),
+        _make_gate_op("p", [], [phi], [t0]),
     ]
 
 
@@ -164,8 +165,8 @@ def _emit_gphase(
         two,
         two_phi,
         neg_two_phi,
-        make_gate_op("rz", [], [neg_two_phi], [t0]),
-        make_gate_op("p", [], [two_phi], [t0]),
+        _make_gate_op("rz", [], [neg_two_phi], [t0]),
+        _make_gate_op("p", [], [two_phi], [t0]),
     ]
 
 
@@ -204,7 +205,7 @@ GATE_MAP: dict[str, GateInfo] = {
 }
 
 
-def get_gate_info(gate_name: str) -> GateInfo | None:
+def _get_gate_info(gate_name: str) -> GateInfo | None:
     """Look up lowering info for a Jasp gate by name.
 
     Parameters

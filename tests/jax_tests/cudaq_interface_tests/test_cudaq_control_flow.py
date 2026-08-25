@@ -42,7 +42,8 @@ from qrisp.jasp import (
     q_switch,
 )
 from qrisp.jasp.cudaq_interface import cudaq_kernel
-from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ def _lower(circuit_fn, *trace_args):
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        xdsl_module = jaspr_to_quake_mlir(jaspr)
+        xdsl_module = _jaspr_to_quake_mlir(jaspr)
     return xdsl_module
 
 
@@ -105,7 +106,7 @@ def test_invert_quantum_variable():
         return measure(qv)
 
     xdsl_module = _lower(main)
-    validate_quake_mlir(str(xdsl_module))
+    _validate_quake_mlir(str(xdsl_module))
 
     kernel = cudaq_kernel(main)
     result = cudaq.run(kernel, shots_count=10)
@@ -292,7 +293,7 @@ def test_q_switch_three_branches_strips_qst():
 
     mlir = str(xdsl_module)
     assert "cc.if" in mlir, "Expected scf.index_switch to be lowered to a cc.if chain"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------

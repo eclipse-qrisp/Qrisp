@@ -73,7 +73,8 @@ from qrisp.jasp import (
     qache,
     quantum_kernel,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 
 
@@ -91,7 +92,7 @@ def _lower(circuit_fn, *trace_args):
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        xdsl_module = jaspr_to_quake_mlir(jaspr)
+        xdsl_module = _jaspr_to_quake_mlir(jaspr)
     return xdsl_module
 
 
@@ -117,7 +118,7 @@ def test_alloc_and_dealloc():
 
     mlir = str(xdsl_module)
     assert "quake.alloca" in mlir, "Expected quake.alloca in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_multi_qubit_alloc():
@@ -136,7 +137,7 @@ def test_multi_qubit_alloc():
     # At least two alloca ops
     alloca_count = mlir.count("quake.alloca")
     assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_extract_ref():
@@ -152,7 +153,7 @@ def test_extract_ref():
 
     mlir = str(xdsl_module)
     assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +174,7 @@ def test_quake_types_present():
     mlir = str(xdsl_module)
     assert "!quake.veq<?>" in mlir or "!quake.ref" in mlir, "Expected Quake qubit types in output"
     assert "quake." in mlir, "Expected Quake ops in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_no_jasp_types_in_output():
@@ -188,7 +189,7 @@ def test_no_jasp_types_in_output():
     xdsl_module = _lower(bell)
 
     mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_cudaq_kernel_attribute():
@@ -204,7 +205,7 @@ def test_cudaq_kernel_attribute():
     mlir = str(xdsl_module)
     assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
     assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -240,7 +241,7 @@ def test_extract_ref_functional_type_format():
         "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
     )
     assert "-> !quake.ref" in mlir
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_gate_type_signature_no_bracket_prefix():
@@ -270,7 +271,7 @@ def test_gate_type_signature_no_bracket_prefix():
     )
     # Should have flat format for CX: (!quake.ref, !quake.ref)
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_parameterized_gate_functional_type():
@@ -287,7 +288,7 @@ def test_parameterized_gate_functional_type():
     assert "quake.rz" in mlir
     # The type signature must include both the f64 param and the quake.ref target
     assert "(f64, !quake.ref) -> ()" in mlir, "rz gate should have '(f64, !quake.ref) -> ()' type sig"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +313,7 @@ def test_dynamic_veq_size_functional_type():
     # veq_size op should use functional-type with parens if present
     if "quake.veq_size" in mlir:
         assert "(!quake.veq<?>) -> i64" in mlir, "veq_size should use functional-type: (!quake.veq<?>) -> i64"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_dynamic_alloca_veq_format():
@@ -330,7 +331,7 @@ def test_dynamic_alloca_veq_format():
     mlir = str(xdsl_module)
     # The alloca must print the type first, then size in brackets
     assert "quake.alloca !quake.veq<?>[" in mlir, "alloca format should be '!quake.veq<?>[%n : i64]'"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -351,7 +352,7 @@ def test_alloca_staticized_for_constant_size():
     mlir = str(xdsl_module)
     assert "quake.alloca !quake.veq<5>" in mlir
     assert "veq<?>[" not in mlir, "no dynamic alloca expected for a constant size"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_static_veq_transparent_uses_stay_static():
@@ -369,7 +370,7 @@ def test_static_veq_transparent_uses_stay_static():
     assert "quake.alloca !quake.veq<4>" in mlir
     assert "quake.extract_ref %0[" in mlir or "!quake.veq<4>, i64) -> !quake.ref" in mlir
     assert "quake.relax_size" not in mlir, "transparent consumers should not need a relax_size cast"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_static_veq_control_flow_gets_relax_size():
@@ -396,7 +397,7 @@ def test_static_veq_control_flow_gets_relax_size():
     # ...and a relax_size cast bridges it into the loop's dynamic block argument.
     assert "quake.relax_size" in mlir
     assert "veq<?>[" not in mlir, "no dynamic alloca expected for a constant size"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=5)
@@ -437,7 +438,7 @@ def test_bell_circuit_full_format():
     # Measurement with correct i64 type
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -448,7 +449,7 @@ def test_bell_circuit_full_format():
 
 def test_gate_mapping_standard_gates():
     """Verify that all standard gates are in the gate map."""
-    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import get_gate_info, GATE_MAP
+    from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.gate_mapping import _get_gate_info, GATE_MAP
 
     expected_gates = {
         "h",
@@ -474,7 +475,7 @@ def test_gate_mapping_standard_gates():
         "cgphase",
     }
     for gate in expected_gates:
-        info = get_gate_info(gate)
+        info = _get_gate_info(gate)
         assert info is not None, f"Expected gate '{gate}' in GATE_MAP"
 
 
@@ -496,7 +497,7 @@ def test_single_qubit_gates():
     mlir = str(xdsl_module)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_decomposed_gates_sx():
@@ -515,7 +516,7 @@ def test_decomposed_gates_sx():
     assert "quake.rx" in mlir, "Expected quake.rx in output for sx/sx_dg"
     assert "1.5707963267948966" in mlir, "Expected a pi/2 constant angle in output"
     assert "-1.5707963267948966" in mlir, "Expected a -pi/2 constant angle in output for sx_dg"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_decomposed_gates():
@@ -541,7 +542,7 @@ def test_decomposed_gates():
     xdsl_module = _lower(circuit)
 
     mlir = str(xdsl_module)
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_parameterized_gate():
@@ -565,7 +566,7 @@ def test_parameterized_gate():
     assert "quake.r1" in mlir, "Expected quake.r1 in output for p gate"
     # Parameters should appear as f64 scalars
     assert "f64" in mlir, "Expected f64 parameter type in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_controlled_gates():
@@ -590,7 +591,7 @@ def test_controlled_gates():
     assert "quake.r1" in mlir
     # Control qubit should be present in square brackets
     assert "[%" in mlir, "Expected control qubit in bracket notation"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_swap_gate():
@@ -609,7 +610,7 @@ def test_swap_gate():
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
         "Expected quake.x to have '(!quake.ref, !quake.ref) -> ()' type sig"
     )
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_cgphase_gate():
@@ -628,7 +629,7 @@ def test_cgphase_gate():
 
     mlir = str(xdsl_module)
     assert "quake.r1" in mlir, "Expected quake.r1 in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -648,7 +649,7 @@ def test_negative_indexing():
 
     mlir = str(xdsl_module)
     assert "quake.x" in mlir, "Expected quake.x in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(main)
     result = cudaq.run(kernel, shots_count=10)
@@ -670,7 +671,7 @@ def test_constant_nonneg_index_skips_normalization_scaffold():
     assert "arith.cmpi" not in mlir
     assert "arith.select" not in mlir
     assert "quake.veq_size" not in mlir
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(main)
     result = cudaq.run(kernel, shots_count=10)
@@ -693,7 +694,7 @@ def test_constant_negative_index_skips_cmpi_select():
     assert "arith.cmpi" not in mlir
     assert "arith.select" not in mlir
     assert "arith.addi" in mlir, "Expected idx + size(veq) addi for a negative constant index"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(main)
     result = cudaq.run(kernel, shots_count=10)
@@ -721,7 +722,7 @@ def test_math():
     mlir = str(xdsl_module)
     assert "math.powf" in mlir, "Expected math.powf for exponentiation"
     assert "math.log" in mlir, "Expected math.log for logarithm"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -742,7 +743,7 @@ def test_measure_single_qubit():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -762,7 +763,7 @@ def test_measure_quantum_variable():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -781,7 +782,7 @@ def test_measure_single_qubit_quantum_variable():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -806,7 +807,7 @@ def test_single_gate_application_quantum_variable():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -826,7 +827,7 @@ def test_gate_application_quantum_variable_slice():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -844,7 +845,7 @@ def test_gate_application_quantum_variable_slice():
     mlir = str(xdsl_module)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -869,7 +870,7 @@ def test_gate_application_quantum_variable():
     mlir = str(xdsl_module)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
     kernel = cudaq_kernel(circuit)
     result = cudaq.run(kernel, shots_count=10)
@@ -902,7 +903,7 @@ def test_func_call_lowering():
     assert "quake.alloca" in mlir, "Expected quake.alloca in output for test function"
     assert "quake.veq" in mlir, "Expected quake.veq type in output for test function"
     # No jasp types should be present in the output
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 def test_quantum_kernel_lowering():
@@ -921,7 +922,7 @@ def test_quantum_kernel_lowering():
 
     mlir = str(xdsl_module)
     assert "cudaq.kernel" in mlir
-    validate_quake_mlir(mlir)
+    _validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -956,7 +957,7 @@ def test_unsupported_gate_raises_not_implemented_error():
         return qv
 
     with patch(
-        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake.get_gate_info",
+        "qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1a_lower_jasp_to_quake._get_gate_info",
         return_value=None,
     ):
         with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):

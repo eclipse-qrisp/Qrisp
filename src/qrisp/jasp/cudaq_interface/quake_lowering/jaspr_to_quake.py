@@ -63,28 +63,30 @@
 
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import jasp_to_quake
-from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
+from qrisp.jasp.cudaq_interface.quake_lowering.jasp_to_quake.pass1_jasp_to_quake import (
+    _jasp_to_quake,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.pass2_scf_to_cc import _lower_scf_to_cc
 from qrisp.jasp.cudaq_interface.quake_lowering.pass3_scalar_tensor_unwrap import (
-    unwrap_scalar_tensors,
+    _unwrap_scalar_tensors,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.pass3b_static_veq_alloca import (
-    staticize_veq_alloca,
+    _staticize_veq_alloca,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.pass4_ranked_tensor_to_array import (
-    lower_ranked_tensors,
+    _lower_ranked_tensors,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.pass5_array_to_stdvec import (
-    lower_array_to_stdvec,
+    _lower_array_to_stdvec,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.safeguard_no_ranked_tensor_linalg import (
-    verify_no_ranked_tensor_linalg,
+    _verify_no_ranked_tensor_linalg,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
 
 
-def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
+def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
     """Lower a :class:`~qrisp.jasp.Jaspr` to a Quake+CC ``builtin.ModuleOp``.
 
     Parameters
@@ -132,24 +134,24 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)
 
     # Step 0a – Safeguard: reject ranked-tensor linalg.generic early.
-    verify_no_ranked_tensor_linalg(module)
+    _verify_no_ranked_tensor_linalg(module)
 
     # Step 1 – PASS 1: QuantumState elimination + Jasp → Quake rewriting.
-    jasp_to_quake(module, execution_mode=execution_mode)
+    _jasp_to_quake(module, execution_mode=execution_mode)
 
     # Step 2 – PASS 2: SCF → CC lowering.
-    lower_scf_to_cc(module)
+    _lower_scf_to_cc(module)
 
     # Step 3 – PASS 3: scalar tensor unwrapping + scalar constant folding.
-    unwrap_scalar_tensors(module)
+    _unwrap_scalar_tensors(module)
 
     # Step 3b – PASS 3B: constant-sized veq allocations become statically-sized.
-    staticize_veq_alloca(module)
+    _staticize_veq_alloca(module)
 
     # Step 4 – PASS 4: ranked tensor → CC array lowering.
-    lower_ranked_tensors(module)
+    _lower_ranked_tensors(module)
 
     # Step 5 – PASS 5: array ptr params → stdvec (CUDA-Q runtime compatibility).
-    lower_array_to_stdvec(module)
+    _lower_array_to_stdvec(module)
 
     return module
