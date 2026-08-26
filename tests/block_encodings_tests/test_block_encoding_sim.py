@@ -68,4 +68,4 @@ def test_block_encoding_sim():
 
     # Deviation floors at ~9.5e-07 with a bit of wobble, so a comparison against 1e-06 may sometimes fail.
     err = np.linalg.norm(c - amps)
-    assert err < 1e-5, f"Deviation {err:.3e} exceeds tolerance."
+    assert err < 1e-5
