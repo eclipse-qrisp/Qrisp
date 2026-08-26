@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import jax
 import jax.numpy as jnp
@@ -48,6 +48,11 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
     from qrisp.interface.backend import BackendLike
+
+    # The pytree (children, aux_data) shapes produced/consumed by
+    # tree_flatten/tree_unflatten below.
+    PyTreeChildren = tuple[ArrayLike, list[QuantumVariableTemplate]]
+    PyTreeAuxData = tuple[Callable[..., None], int, bool]
 
 
 @register_pytree_node_class
@@ -272,7 +277,7 @@ class BlockEncoding:
         # More robust than inferring the number of operands for the unitary via inspect.
         self.num_ops = num_ops
 
-    def tree_flatten(self):
+    def tree_flatten(self) -> tuple[PyTreeChildren, PyTreeAuxData]:
         """PyTree flatten for JAX.
 
         Returns
@@ -294,7 +299,7 @@ class BlockEncoding:
         return (children, aux_data)
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
+    def tree_unflatten(cls: type[BlockEncoding], aux_data: PyTreeAuxData, children: PyTreeChildren) -> BlockEncoding:
         """PyTree unflatten for JAX.
 
         Parameters
@@ -650,7 +655,7 @@ class BlockEncoding:
         meas_behavior: str | Callable = "0",
         max_qubits: int = 1024,
         max_allocations: int = 1000,
-    ):
+    ) -> dict[str, Any]:
         r"""Estimate the quantum resources required for the BlockEncoding.
 
         This method uses the ``count_ops``, ``depth`` and ``num_qubits`` decorators to obtain gate counts, circuit depth,
@@ -1298,7 +1303,10 @@ class BlockEncoding:
 
             def new_unitary(*args):
                 self.unitary(*args)
-                with control(other < 0):
+                # `other` is documented (see above) as a real scalar; cast narrows away
+                # the `complex` branch of ArrayLike, which doesn't support "<", without
+                # changing what's actually accepted at runtime.
+                with control(cast("int | float", other) < 0):
                     gphase(np.pi, args[0][0])
 
             return BlockEncoding(
