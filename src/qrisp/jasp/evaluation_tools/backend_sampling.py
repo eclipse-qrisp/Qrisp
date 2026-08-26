@@ -68,7 +68,7 @@ Architecture
 """
 
 from jax import ShapeDtypeStruct, pure_callback, jit
-from jax.tree_util import tree_flatten
+from jax.tree_util import tree_flatten, tree_structure, tree_unflatten
 
 from qrisp.circuit import fast_append
 from qrisp.core import recursive_qv_search
@@ -439,7 +439,17 @@ def _make_backend_sampler_wrapper(func, backend):
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
             res = jit(eval_fn)(*flat_args)
 
-        return res
+        # Evaluating the Jaspr gives the flat outputs (a bare value if there is
+        # only one of them), so the structure of the decorated function's return
+        # value is restored from out_shape, which is a pytree of
+        # ShapeDtypeStructs mirroring that structure. Without this, a function
+        # returning a container of values - say one list of X detectors and one
+        # list of Z detectors - would give the flattened values, leaving no way
+        # to tell which value belonged to which container.
+        if not isinstance(res, (tuple, list)):
+            res = [res]
+
+        return tree_unflatten(tree_structure(out_shape), list(res))
 
     wrapper.__name__ = getattr(func, "__name__", "backend_sampler_wrapper")
     return wrapper
