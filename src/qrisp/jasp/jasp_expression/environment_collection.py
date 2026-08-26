@@ -15,12 +15,22 @@
 ********************************************************************************
 """
 
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
 import numpy as np
 from jax.api_util import debug_info
-from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
+from jax.extend.core import JaxprEqn, Literal, Var
 from numba import njit
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
+
+if TYPE_CHECKING:
+    from jax.extend.core import ClosedJaxpr
+
+    from qrisp.jasp.jasp_expression.centerclass import Jaspr
 
 # In newer versions, Jax enforces providing a debug info object
 # to the Jaxpr constructor. This object contains metadata information
@@ -38,35 +48,41 @@ dummy_debug_info = debug_info(
     kwargs={},
     static_argnums=[],
     static_argnames=[],
-    result_paths_thunk=lambda: [],
+    result_paths_thunk=lambda: (),
 )
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
-def collect_environments(closed_jaxpr):
-    """This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
-    form into the collected form. Collected means that the QuantumEnvironments content
-    is represented by a Jaspr.
+def collect_environments(closed_jaxpr: "ClosedJaxpr | Jaspr") -> "ClosedJaxpr | Jaspr":
+    """Turn a Jaxpr with QuantumEnvironments in enter/exit form into collected form.
+
+    Collected means that each QuantumEnvironment's content is represented by
+    a Jaspr.
 
     Parameters
     ----------
-    closed_jaxpr : jax.extend.core.ClosedJaxpr
+    closed_jaxpr : jax.extend.core.ClosedJaxpr | Jaspr
         The Jaxpr with QuantumEnvironment in enter/exit form.
 
     Returns
     -------
-    jax.extend.core.ClosedJaxpr
+    jax.extend.core.ClosedJaxpr | Jaspr
         A Jaxpr with QuantumEnvironments in collected form.
 
     """
+    from qrisp.jasp import Jaspr
+
+    if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
+        return closed_jaxpr
+
     # We iterate through the list of equations, appending the equations to
     # the new list containing the processed equations.
 
     # Once we hit an exit primitive, we collect the Equations between the enter
     # and exit primitive.
     eqn_list = list(closed_jaxpr.jaxpr.eqns)
-    new_eqn_list = []
+    new_eqn_list: list[JaxprEqn] = []
 
     # An important part of collecting the quantum environments is determining
     # the input output variables. Doing this analysis can be prohibitvely costly
@@ -76,133 +92,18 @@ def collect_environments(closed_jaxpr):
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
 
-    from qrisp.jasp import AbstractQuantumState, Jaspr
-
-    if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
-        return closed_jaxpr
-
-    for j in range(len(eqn_list)):
-        eqn = eqn_list[j]
-
-        if eqn.primitive.name == "jit":
-            new_params = dict(eqn.params)
-
-            collected_jaspr = collect_environments(eqn.params["jaxpr"])
-
-            new_params["jaxpr"] = collected_jaspr
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
-
-        if eqn.primitive.name == "cond":
-            new_params = dict(eqn.params)
-
-            branch_list = []
-
-            for i in range(len(eqn.params["branches"])):
-                collected_branch_jaxpr = collect_environments(eqn.params["branches"][i])
-                branch_list.append(collected_branch_jaxpr)
-
-            new_params["branches"] = tuple(branch_list)
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
-
-        if eqn.primitive.name == "while":
-            new_params = dict(eqn.params)
-
-            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
-
-            new_params["body_jaxpr"] = body_collected_jaspr
-
-            eqn = JaxprEqn(
-                params=new_params,
-                primitive=eqn.primitive,
-                invars=list(eqn.invars),
-                outvars=list(eqn.outvars),
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
+    for j, orig_eqn in enumerate(eqn_list):
+        eqn = _recurse_into_subjaxprs(orig_eqn)
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
-            # Find the position of the enter primitive.
-            for i in range(len(new_eqn_list))[::-1]:
-                enter_eq = new_eqn_list[i]
-                if enter_eq.primitive.name == "jasp.q_env" and "enter" in enter_eq.params.values():
-                    break
-            else:
-                raise
-
-            # Set an alias for the equations marked as the body
-            environment_body_eqn_list = new_eqn_list[i + 1 :]
-
-            # Compute the sliced version of the var tracker
-            environment_body_var_tracker = new_eqn_var_tracker.slice_start(i + 1)
-
-            # Compute the invars
-            invars = environment_body_var_tracker.find_invars()
-
-            # Remove the AbstractQuantumState variable and prepend it.
-            try:
-                invars.remove(enter_eq.outvars[0])
-            except ValueError:
-                pass
-
-            remaining_script_var_tracker = eqn_var_tracker.slice_start(j + 1)
-
-            # Same for the outvars
-            outvars = find_outvars(
-                environment_body_eqn_list,
-                remaining_script_var_tracker,
-                [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
+            eqn, new_eqn_list, new_eqn_var_tracker = _collect_environment_body(
+                eqn,
+                eqn_var_tracker.slice_start(j + 1),
+                new_eqn_list,
+                new_eqn_var_tracker,
+                closed_jaxpr,
             )
-
-            # Filter the AbstractQuantumState (we add it manually to make sure
-            # it is the last argument)
-            for k in range(len(outvars)):
-                if isinstance(outvars[k].aval, AbstractQuantumState):
-                    outvars.pop(k)
-                    break
-
-            # Create the Jaxpr
-            environment_body_jaspr = Jaspr(
-                constvars=[],
-                invars=invars + enter_eq.outvars,
-                outvars=outvars + eqn.invars[-1:],
-                eqns=environment_body_eqn_list,
-                debug_info=dummy_debug_info,
-            )
-
-            # Create the Equation
-            eqn = JaxprEqn(
-                params={"type": eqn.params["type"], "jaspr": environment_body_jaspr},
-                primitive=eqn.primitive,
-                invars=enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
-                outvars=outvars + eqn.outvars[-1:],
-                effects=eqn.effects,
-                source_info=eqn.source_info,
-                ctx=eqn.ctx,
-            )
-
-            # Remove the collected equations from the new_eqn_list
-            new_eqn_list = new_eqn_list[:i]
-            new_eqn_var_tracker = new_eqn_var_tracker.slice_end(i)
 
         # Append the equation
         new_eqn_list.append(eqn)
@@ -216,34 +117,166 @@ def collect_environments(closed_jaxpr):
         if closed_jaxpr.inv_jaspr is not None:
             res.inv_jaspr = closed_jaxpr.inv_jaspr
         return res
-    else:
-        # Return the transformed equation
 
-        res_jaxpr = Jaxpr(
-            constvars=closed_jaxpr.jaxpr.constvars,
-            invars=closed_jaxpr.jaxpr.invars,
-            outvars=closed_jaxpr.jaxpr.outvars,
-            eqns=new_eqn_list,
-            debug_info=closed_jaxpr.jaxpr.debug_info,
-        )
-
-        return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
+    # Return the transformed equation
+    return rebuild_closed_jaxpr(closed_jaxpr, eqns=new_eqn_list)
 
 
-def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
-    """This function takes the equations of a function and some "follow-up"
-    instructions and infers which variables need to be returned by the function.
+def _recurse_into_subjaxprs(eqn: JaxprEqn) -> JaxprEqn:
+    """Recursively collect environments inside a jit/cond/while sub-jaxpr.
+
+    Equations that don't carry a sub-jaxpr of interest are returned unchanged.
 
     Parameters
     ----------
-    body_eqn_list : list[JaxprEqn]
-        A list of equations describing a function.
-    script_remainder_eqn_list : list[JaxprEqn]
-        A list of equations describing the follow up requirements.
+    eqn : jax.extend.core.JaxprEqn
+        The equation to recurse into.
 
     Returns
     -------
-    list[jax.core.Var]
+    jax.extend.core.JaxprEqn
+        Either eqn unchanged, or a copy with its "jaxpr"/"branches"/
+        "body_jaxpr" param replaced by the collected equivalent.
+
+    """
+    if eqn.primitive.name == "jit":
+        new_eqn = copy_jaxpr_eqn(eqn)
+        new_eqn.params["jaxpr"] = collect_environments(eqn.params["jaxpr"])
+        return new_eqn
+
+    if eqn.primitive.name == "cond":
+        new_eqn = copy_jaxpr_eqn(eqn)
+        new_eqn.params["branches"] = tuple(collect_environments(branch) for branch in eqn.params["branches"])
+        return new_eqn
+
+    if eqn.primitive.name == "while":
+        new_eqn = copy_jaxpr_eqn(eqn)
+        new_eqn.params["body_jaxpr"] = collect_environments(eqn.params["body_jaxpr"])
+        return new_eqn
+
+    return eqn
+
+
+def _collect_environment_body(
+    exit_eqn: JaxprEqn,
+    remaining_script_var_tracker: "VarTracker",
+    new_eqn_list: list[JaxprEqn],
+    new_eqn_var_tracker: "VarTracker",
+    closed_jaxpr: "ClosedJaxpr | Jaspr",
+) -> tuple[JaxprEqn, list[JaxprEqn], "VarTracker"]:
+    """Collapse a QuantumEnvironment's enter/exit equation pair into one equation.
+
+    The matching "enter" equation is located by scanning new_eqn_list
+    backwards from its end; everything after it becomes the environment body.
+
+    Parameters
+    ----------
+    exit_eqn : jax.extend.core.JaxprEqn
+        The "jasp.q_env" exit equation that triggered the collection.
+    remaining_script_var_tracker : VarTracker
+        Tracks the I/O variables of the equations following exit_eqn in the
+        original (uncollected) equation list, i.e. the code that still needs
+        to run after the environment body.
+    new_eqn_list : list[jax.extend.core.JaxprEqn]
+        The equations collected so far, ending with the matching "enter"
+        equation somewhere in its tail.
+    new_eqn_var_tracker : VarTracker
+        Tracks the I/O variables of new_eqn_list.
+    closed_jaxpr : jax.extend.core.ClosedJaxpr | Jaspr
+        The enclosing Jaxpr, used to determine which of its outvars must
+        remain live after the environment body.
+
+    Returns
+    -------
+    tuple[jax.extend.core.JaxprEqn, list[jax.extend.core.JaxprEqn], VarTracker]
+        The collected "jasp.q_env" equation to append, together with
+        new_eqn_list and new_eqn_var_tracker truncated to just before the
+        matching "enter" equation.
+
+    """
+    from qrisp.jasp import AbstractQuantumState, Jaspr
+
+    # Find the position of the enter primitive.
+    for i in range(len(new_eqn_list))[::-1]:
+        enter_eq = new_eqn_list[i]
+        if enter_eq.primitive.name == "jasp.q_env" and "enter" in enter_eq.params.values():
+            break
+    else:
+        raise Exception("Found a QuantumEnvironment exit equation without a matching enter equation")
+
+    # The environment body is the slice of new_eqn_list after the enter equation.
+    invars = new_eqn_var_tracker.slice_start(i + 1).find_invars()
+
+    # Remove the AbstractQuantumState variable and prepend it.
+    try:
+        invars.remove(enter_eq.outvars[0])
+    except ValueError:
+        pass
+
+    # Same for the outvars
+    outvars = find_outvars(
+        new_eqn_list[i + 1 :],
+        remaining_script_var_tracker,
+        [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
+    )
+
+    # Filter the AbstractQuantumState (we add it manually to make sure
+    # it is the last argument)
+    for k, outvar in enumerate(outvars):
+        if isinstance(outvar.aval, AbstractQuantumState):
+            outvars.pop(k)
+            break
+
+    # Create the Jaxpr
+    environment_body_jaspr = Jaspr(
+        constvars=[],
+        invars=invars + enter_eq.outvars,
+        outvars=outvars + exit_eqn.invars[-1:],
+        eqns=new_eqn_list[i + 1 :],
+        debug_info=dummy_debug_info,
+    )
+
+    # Create the Equation
+    collected_eqn = JaxprEqn(
+        params={"type": exit_eqn.params["type"], "jaspr": environment_body_jaspr},
+        primitive=exit_eqn.primitive,
+        invars=enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
+        outvars=outvars + exit_eqn.outvars[-1:],
+        effects=exit_eqn.effects,
+        source_info=exit_eqn.source_info,
+        ctx=exit_eqn.ctx,
+    )
+
+    # Remove the collected equations from new_eqn_list
+    return collected_eqn, new_eqn_list[:i], new_eqn_var_tracker.slice_end(i)
+
+
+def find_outvars(
+    body_eqn_list: list[JaxprEqn],
+    script_remainder_var_tracker: "VarTracker",
+    return_vars: list[Var],
+) -> list[Var]:
+    """Infer which variables a function body must return.
+
+    The function takes the equations of a function body and some "follow-up"
+    instructions and infers which variables need to be returned by the
+    function.
+
+    Parameters
+    ----------
+    body_eqn_list : list[jax.extend.core.JaxprEqn]
+        A list of equations describing a function.
+    script_remainder_var_tracker : VarTracker
+        Tracks the I/O variables of the follow-up equations, i.e. the code
+        that runs after the function body and may still need some of its
+        variables.
+    return_vars : list[jax.extend.core.Var]
+        Variables that the enclosing Jaxpr returns and must therefore be kept
+        alive even if the follow-up equations don't reference them.
+
+    Returns
+    -------
+    list[jax.extend.core.Var]
         A list of variables that would have to be returned by the function.
 
     """
@@ -264,8 +297,58 @@ def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
     return list(set(outvars).intersection(required_remainder_vars + return_vars))
 
 
+def _register_vars(
+    variables: Sequence[Var | Literal],
+    var_to_int_dic: dict[Var, int],
+    int_to_var_dic: dict[int, Var],
+) -> list[int]:
+    """Translate a sequence of Jaxpr variables into their tracked integer ids.
+
+    Assign a fresh id to any variable seen for the first time. Literal values
+    (e.g. constants embedded directly in an equation) are silently skipped,
+    since they aren't SSA variables that need id-tracking.
+    """
+    integers = []
+    for var in variables:
+        if isinstance(var, Literal):
+            continue
+        try:
+            integers.append(var_to_int_dic[var])
+        # This represents the case that the variable has not been converted yet
+        except KeyError:
+            var_to_int_dic[var] = len(var_to_int_dic)
+            int_to_var_dic[var_to_int_dic[var]] = var
+            integers.append(var_to_int_dic[var])
+    return integers
+
+
+def _slice_field(
+    values: list[int],
+    index_tracker: list[int],
+    point: int,
+    from_start: bool,
+) -> tuple[list[int], list[int]]:
+    """Slice one of VarTracker's parallel (values, index_tracker) pairs.
+
+    If from_start, keep values/index positions from `point` onward (used by
+    slice_start), re-basing the index_tracker to start at 0. Otherwise, keep
+    values/index positions up to (and including) `point` (used by slice_end).
+    """
+    boundary = index_tracker[point]
+    if from_start:
+        return values[boundary:], [i - boundary for i in index_tracker[point:]]
+    return values[:boundary], index_tracker[: point + 1]
+
+
+# Equation-list sizes below this (in either invars or outvars) are cheaper to
+# process with plain Python than to dispatch into the numba-jitted kernel.
+_JIT_COMPILE_THRESHOLD = 20
+
+
 class VarTracker:
-    """This class is motivated by the task of identifying the inputs and outputs
+    """Track the input and output variables of a growing equation list efficiently.
+
+    This class is motivated by the task of identifying the inputs and outputs
     of the collected environments. For large Jaxpr, this can be prohibitively
     expensive, which is why this class tracks a specialized data structure, which
     allows an efficient solution of this problem.
@@ -316,177 +399,103 @@ class VarTracker:
     This list can be used to efficiently implement the slicing features.
     """
 
-    def __init__(self, eqn_list):
+    def __init__(self, eqn_list: list[JaxprEqn]) -> None:
+        """Build a VarTracker over the given (possibly empty) equation list."""
+        self.var_to_int_dic: dict[Var, int] = {}
+        self.int_to_var_dic: dict[int, Var] = {}
 
-        # Initialize the translation dics
-        var_to_int_dic = {}
-        int_to_var_dic = {}
+        self.eqn_invar_list: list[int] = []
+        self.eqn_outvar_list: list[int] = []
 
-        # Initialize the variable lists
-        eqn_invar_list = []
-        eqn_outvar_list = []
+        self.invar_eqn_index_tracker: list[int] = [0]
+        self.outvar_eqn_index_tracker: list[int] = [0]
 
-        # Initialize the index trackers
-        outvar_eqn_index_tracker = [0]
-        invar_eqn_index_tracker = [0]
-
-        # Fill the variable lists
         for eqn in eqn_list:
-            invar_integers = []
-            for var in eqn.invars:
-                try:
-                    invar_integers.append(var_to_int_dic[var])
-                # This represents the case that the variable has not been
-                # converted yet
-                except KeyError:
-                    var_to_int_dic[var] = len(var_to_int_dic)
-                    int_to_var_dic[var_to_int_dic[var]] = var
-                    invar_integers.append(var_to_int_dic[var])
-                # This represents the case that the variable is a Literal
-                except TypeError:
-                    continue
-            outvar_integers = []
-            for var in eqn.outvars:
-                try:
-                    outvar_integers.append(var_to_int_dic[var])
-                except KeyError:
-                    var_to_int_dic[var] = len(var_to_int_dic)
-                    int_to_var_dic[var_to_int_dic[var]] = var
-                    outvar_integers.append(var_to_int_dic[var])
-                except TypeError:
-                    continue
+            self.append(eqn)
 
-            eqn_invar_list.extend(invar_integers)
-            invar_eqn_index_tracker.append(len(eqn_invar_list))
-
-            eqn_outvar_list.extend(outvar_integers)
-            outvar_eqn_index_tracker.append(len(eqn_outvar_list))
-
-        # Store the attributes
-        self.var_to_int_dic = var_to_int_dic
-        self.int_to_var_dic = int_to_var_dic
-
-        self.eqn_invar_list = eqn_invar_list
-        self.eqn_outvar_list = eqn_outvar_list
-
-        self.invar_eqn_index_tracker = invar_eqn_index_tracker
-        self.outvar_eqn_index_tracker = outvar_eqn_index_tracker
-
-    def append(self, eqn):
-        """Adds the equation eqn to the list of tracked equations.
+    def append(self, eqn: JaxprEqn) -> None:
+        """Add the equation eqn to the list of tracked equations.
 
         Parameters
         ----------
-        eqn : jax.core.Equation
+        eqn : jax.extend.core.JaxprEqn
+            The equation whose invars/outvars should be registered and tracked.
 
         """
-        # Perform similar logic as in __init__
-        invar_integers = []
-        for var in eqn.invars:
-            try:
-                invar_integers.append(self.var_to_int_dic[var])
-            except KeyError:
-                self.var_to_int_dic[var] = len(self.var_to_int_dic)
-                self.int_to_var_dic[self.var_to_int_dic[var]] = var
-                invar_integers.append(self.var_to_int_dic[var])
-            except TypeError:
-                continue
-        outvar_integers = []
-        for var in eqn.outvars:
-            try:
-                outvar_integers.append(self.var_to_int_dic[var])
-            except KeyError:
-                self.var_to_int_dic[var] = len(self.var_to_int_dic)
-                self.int_to_var_dic[self.var_to_int_dic[var]] = var
-                outvar_integers.append(self.var_to_int_dic[var])
-            except TypeError:
-                continue
-
-        self.eqn_invar_list.extend(invar_integers)
+        self.eqn_invar_list.extend(_register_vars(eqn.invars, self.var_to_int_dic, self.int_to_var_dic))
         self.invar_eqn_index_tracker.append(len(self.eqn_invar_list))
 
-        self.eqn_outvar_list.extend(outvar_integers)
+        self.eqn_outvar_list.extend(_register_vars(eqn.outvars, self.var_to_int_dic, self.int_to_var_dic))
         self.outvar_eqn_index_tracker.append(len(self.eqn_outvar_list))
 
-    def slice_start(self, starting_point):
-        """If self is represented by VarTracker(eqn_list), the result of this
-        function is VarTracker(eqn_list[starting_point:])
+    def slice_start(self, starting_point: int) -> "VarTracker":
+        """Return the equivalent of VarTracker(eqn_list[starting_point:]).
 
         Parameters
         ----------
         starting_point : int
+            The equation index to start the slice from.
 
         """
         res = VarTracker([])
 
-        # Identify where the invar list has to be sliced from
-        invar_starting_point = self.invar_eqn_index_tracker[starting_point]
-        # Slice the invar list
-        res.eqn_invar_list = self.eqn_invar_list[invar_starting_point:]
-        # Slice the index tracker and ensure it starts from 0
-        res.invar_eqn_index_tracker = [i - invar_starting_point for i in self.invar_eqn_index_tracker[starting_point:]]
-
-        # Same for the outvars
-        outvar_starting_point = self.outvar_eqn_index_tracker[starting_point]
-        res.eqn_outvar_list = self.eqn_outvar_list[outvar_starting_point:]
-        res.outvar_eqn_index_tracker = [
-            i - outvar_starting_point for i in self.outvar_eqn_index_tracker[starting_point:]
-        ]
+        res.eqn_invar_list, res.invar_eqn_index_tracker = _slice_field(
+            self.eqn_invar_list, self.invar_eqn_index_tracker, starting_point, from_start=True
+        )
+        res.eqn_outvar_list, res.outvar_eqn_index_tracker = _slice_field(
+            self.eqn_outvar_list, self.outvar_eqn_index_tracker, starting_point, from_start=True
+        )
 
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic
 
         return res
 
-    def slice_end(self, end_point):
-        """If self is represented by VarTracker(eqn_list), the result of this
-        function is VarTracker(eqn_list[:end_point])
+    def slice_end(self, end_point: int) -> "VarTracker":
+        """Return the equivalent of VarTracker(eqn_list[:end_point]).
 
         Parameters
         ----------
         end_point : int
+            The equation index to end the slice at (exclusive).
 
         """
         res = VarTracker([])
 
-        # Perform similar slicing logic as in slice_start
-        invar_end_point = self.invar_eqn_index_tracker[end_point]
-        res.eqn_invar_list = self.eqn_invar_list[:invar_end_point]
-        res.invar_eqn_index_tracker = self.invar_eqn_index_tracker[: end_point + 1]
-
-        outvar_end_point = self.outvar_eqn_index_tracker[end_point]
-        res.eqn_outvar_list = self.eqn_outvar_list[:outvar_end_point]
-        res.outvar_eqn_index_tracker = self.outvar_eqn_index_tracker[: end_point + 1]
+        res.eqn_invar_list, res.invar_eqn_index_tracker = _slice_field(
+            self.eqn_invar_list, self.invar_eqn_index_tracker, end_point, from_start=False
+        )
+        res.eqn_outvar_list, res.outvar_eqn_index_tracker = _slice_field(
+            self.eqn_outvar_list, self.outvar_eqn_index_tracker, end_point, from_start=False
+        )
 
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic
 
         return res
 
-    def find_invars(self):
-        """Computes the undefined invars of the currently tracked equation list,
-        i.e. all the variables that are used as invars but not defined by one
+    def find_invars(self) -> list[Var]:
+        """Compute the undefined invars of the currently tracked equation list.
+
+        I.e. all the variables that are used as invars but not defined by one
         of the equations.
 
         Returns
         -------
-        res : list[Eqn]
+        list[jax.extend.core.Var]
 
         """
         # If viable, call the jitted version.
-        if len(self.eqn_invar_list) < 20 or len(self.eqn_outvar_list) < 20:
+        if len(self.eqn_invar_list) < _JIT_COMPILE_THRESHOLD or len(self.eqn_outvar_list) < _JIT_COMPILE_THRESHOLD:
             invar_index_list = find_invar_kernel([-1] + self.eqn_invar_list, [-1] + self.eqn_outvar_list)
         else:
-            invar_index_list = jitted_find_invar_kernel(
+            invar_index_list: np.ndarray = jitted_find_invar_kernel(
                 np.array([-1] + self.eqn_invar_list, dtype=np.int32),
-                np.array([-1] + self.eqn_outvar_list, dtype=np.int32),
+                np.array([-1] + self.eqn_outvar_list, dtype=np.int32),  # type: ignore[reportCallIssue]
             )
 
-        res = []
-
         # Convert from integers to variables
-        for i in range(len(invar_index_list)):
-            res.append(self.int_to_var_dic[invar_index_list[i]])
+        res = [self.int_to_var_dic[idx] for idx in invar_index_list]
 
         # For some jaxpr transformations, it is important that the order of invars
         # returned by this function is according to the order of appearance in the
@@ -501,9 +510,24 @@ class VarTracker:
         return res
 
 
-def find_invar_kernel(invar_indices, outvar_indices):
-    # executes the algorithm described in the docstring of VarTracker
+def find_invar_kernel(invar_indices: list[int], outvar_indices: list[int]) -> np.ndarray:
+    """Execute the algorithm described in the docstring of VarTracker.
 
+    Parameters
+    ----------
+    invar_indices : list[int]
+        Every invar occurrence across the tracked equations, as integer ids,
+        prefixed with a sentinel -1.
+    outvar_indices : list[int]
+        Every outvar occurrence across the tracked equations, as integer ids,
+        prefixed with a sentinel -1.
+
+    Returns
+    -------
+    numpy.ndarray
+        The integer ids of the variables that are invars but not outvars.
+
+    """
     max_invar = np.max(invar_indices)
     max_outvar = np.max(outvar_indices)
     max_var = max(max_invar, max_outvar)

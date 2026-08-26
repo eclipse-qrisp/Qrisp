@@ -263,12 +263,14 @@ class Job(ABC):
         This value is initialised to :attr:`~JobStatus.INITIALIZING` and is
         updated at the following points:
 
-        * :meth:`status`: every live query updates the cache as a side effect.
+        * :meth:`status`: performs a live query and updates the cache as
+          a side effect. Implementations may skip the query once the
+          job is in a terminal state.
         * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or
           ``ERROR`` when the job reaches a terminal state.
-        * :meth:`refresh`: explicitly fetches the live status and caches it
-          (semantically identical to calling :meth:`status`, but signals intent
-          clearly when the sole purpose is to refresh the cache).
+        * :meth:`refresh`: caches the current status (semantically identical
+          to calling :meth:`status`, but signals intent clearly when the
+          sole purpose is to refresh the cache).
         """
         return self._last_known_status
 
@@ -352,14 +354,20 @@ class Job(ABC):
     def status(self) -> JobStatus:
         """Query and return the current :class:`JobStatus` of the job.
 
-        This is a *live query*: every call fetches the most up-to-date
-        status available, which for remote backends may involve a network
-        call. As a side effect, concrete implementations should store the
+        Typically this is a *live query*: it fetches the most up-to-date status
+        available, which for remote backends may involve a network call.
+        As a side effect, concrete implementations should store the
         result in ``_last_known_status`` before returning, so that
         :attr:`last_known_status` always reflects the most recently
         observed state.
 
-        Callers that want to avoid the cost of a live query should read
+        Once a job has reached a terminal state (:attr:`~JobStatus.DONE`,
+        :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`), that
+        state cannot change again. Implementations may take advantage
+        of this as an optimization and return the already-known terminal
+        status without repeating the query.
+
+        Callers that want to avoid the cost of a live query can also read
         :attr:`last_known_status` directly. Call :meth:`refresh` (or
         :meth:`status`) when an explicit update is needed.
 
@@ -405,17 +413,17 @@ class Job(ABC):
         return self.status() in JOB_FINAL_STATES
 
     def refresh(self) -> JobStatus:
-        """Fetch the latest status from the backend and return it.
+        """Update and return the job's status via :meth:`status`.
 
-        Delegates to :meth:`status`, which already updates
-        :attr:`last_known_status` as a side effect.  This method exists as
-        a named alias that makes the intent explicit: the caller wants to
-        refresh the cached status, not merely query it.
+        This method exists as a named alias that makes the intent
+        explicit: the caller wants to refresh the cached status, not
+        merely read it. As with :meth:`status`, implementations may
+        skip the live query once the job is in a terminal state.
 
         Returns
         -------
         JobStatus
-            The freshly fetched status.
+            The current status, matching what :meth:`status` returns.
 
         """
         return self.status()

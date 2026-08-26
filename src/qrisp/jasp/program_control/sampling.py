@@ -55,7 +55,9 @@ def _backend_shots_marker(val):
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
-    r"""The ``sample`` function allows to take samples from a quantum computation
+    r"""Takes samples from a quantum computation specified by a sampling kernel.
+
+    The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
@@ -160,7 +162,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields
+        # Yields e.g.
         # [[3. 3.]
         #  [0. 0.]
         #  [0. 0.]
@@ -171,6 +173,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         #  [3. 3.]
         #  [0. 0.]
         #  [0. 0.]]
+        #
+        # Each row is either [0, 0] or [3, 3] with 50% probability each.
+        # The exact order of rows is random and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -190,8 +195,11 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sampling_function(k)
 
         print(main(4))
-        # Yields
+        # Yields e.g.
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+        #
+        # Each entry is either 0 or 10 with 50% probability each. The exact
+        # order of entries is random and varies between runs.
 
     **Sampling kernels returning classical values**
 
@@ -397,6 +405,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
 
 class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values
-    (a tuple) instead of a single scalar.  This triggers a retry of the
-    sampling loop with a multi-dimensional accumulator of the correct shape."""
+    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+
+    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

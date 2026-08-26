@@ -683,6 +683,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             ParityOperation,
             QuantumPrimitive,
             extract_invalues,
+            insert_call_outvalues,
             insert_outvalues,
         )
         from qrisp.jasp.interpreter_tools.interpreters import cond_to_cl_control

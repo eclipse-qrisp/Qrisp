@@ -45,7 +45,7 @@ from qrisp.typing import FloatLike
 
 # Applies the grover diffuser onto the (sequence of) quantum variable input_object
 def diffuser(
-    input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
+    input_object: (QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]),
     phase: FloatLike = np.pi,
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,

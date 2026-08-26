@@ -1965,6 +1965,7 @@ class TestQuantumCircuitGateMethods:
         [
             lambda qc: qc.cp(0, 0, 1),
             lambda qc: qc.rxx(0, 0, 1),
+            lambda qc: qc.ryy(0, 0, 1),
             lambda qc: qc.rzz(0, 0, 1),
         ],
     )
@@ -1981,7 +1982,7 @@ class TestQuantumCircuitGateMethods:
         assert len(qc.data) == 0
 
     # ------------------------------------------------------------------ #
-    # cp / rxx / rzz / xxyy                                              #
+    # cp / rxx / ryy / rzz / xxyy                                        #
     # ------------------------------------------------------------------ #
 
     def test_cp_appends_correct_instruction(self):
@@ -1997,6 +1998,13 @@ class TestQuantumCircuitGateMethods:
         qc.rxx(np.pi / 4, 0, 1)
         assert len(qc.data) == 1
         assert qc.data[0].op.name == "rxx"
+
+    def test_ryy_appends_correct_instruction(self):
+        """Ryy appends exactly one instruction named 'ryy'."""
+        qc = QuantumCircuit(2)
+        qc.ryy(np.pi / 4, 0, 1)
+        assert len(qc.data) == 1
+        assert qc.data[0].op.name == "ryy"
 
     def test_rzz_appends_correct_instruction(self):
         """Rzz appends exactly one instruction named 'rzz'."""
@@ -2323,6 +2331,15 @@ class TestQuantumCircuitGateMethodUnitaries:
         qc = QuantumCircuit(2)
         qc.rxx(phi, 0, 1)
         assert np.allclose(qc.get_unitary(), RXXGate(phi).get_unitary(), atol=1e-6)
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_ryy_unitary(self, phi):
+        """qc.ryy(phi) produces the RYY(phi) unitary."""
+        from qrisp.circuit.standard_operations import RYYGate
+
+        qc = QuantumCircuit(2)
+        qc.ryy(phi, 0, 1)
+        assert np.allclose(qc.get_unitary(), RYYGate(phi).get_unitary(), atol=1e-6)
 
     @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
     def test_rzz_unitary(self, phi):
