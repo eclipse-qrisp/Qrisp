@@ -2563,6 +2563,25 @@ class QuantumCircuit:
             return
         self.append(ops.RXXGate(phi), [qubits_0, qubits_1])
 
+    def ryy(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
+        """Instruct an RYY-gate.
+
+        Parameters
+        ----------
+        phi : FloatLike
+            The angle parameter.
+
+        qubits_0 : QubitLike
+            The Qubit to apply the gate on.
+
+        qubits_1 : QubitLike
+            The other Qubit to apply the gate on.
+
+        """
+        if phi == 0:
+            return
+        self.append(ops.RYYGate(phi), [qubits_0, qubits_1])
+
     def rzz(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """Instruct an RZZ-gate.
 
