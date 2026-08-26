@@ -112,7 +112,7 @@ def build_from_projector(
         # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
     """
-    if kernel or (right == None):
+    if kernel or (right is None):
         right = left
 
     # left

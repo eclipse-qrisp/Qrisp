@@ -27,8 +27,9 @@ def build_from_foqcs_lcu_operator(
     O: QubitOperator,  # noqa: E741 -- public, keyword-callable API name
     tol: float = 1e-12,
 ) -> BlockEncoding:
-    r"""Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
-    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) algorithm
+    r"""Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the FOQCS-LCU algorithm.
+
+    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU),
     specified in https://arxiv.org/abs/2507.20887.
 
     The input operator is analyzed automatically. If it matches the more

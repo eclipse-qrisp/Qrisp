@@ -620,7 +620,6 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-        import numpy as np
         from numpy import ndarray
         from scipy.sparse import csr_matrix
 

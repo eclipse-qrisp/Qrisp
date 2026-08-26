@@ -35,8 +35,7 @@ def X(arg: int) -> QubitOperator:
     """
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "X"}): 1})
-    else:
-        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+    raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
 def Y(arg: int) -> QubitOperator:
@@ -55,8 +54,7 @@ def Y(arg: int) -> QubitOperator:
     """
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Y"}): 1})
-    else:
-        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+    raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
 def Z(arg: int) -> QubitOperator:
@@ -75,8 +73,7 @@ def Z(arg: int) -> QubitOperator:
     """
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Z"}): 1})
-    else:
-        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+    raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
 def A(arg: int) -> QubitOperator:
