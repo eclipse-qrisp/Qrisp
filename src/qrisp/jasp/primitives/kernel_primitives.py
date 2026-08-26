@@ -25,7 +25,7 @@ consume_quantum_kernel_p = QuantumPrimitive("consume_quantum_kernel")
 
 
 @create_quantum_kernel_p.def_abstract_eval
-def quantum_kernel_abstract_eval():
+def create_quantum_kernel_abstract_eval():
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -41,7 +41,7 @@ def quantum_kernel_abstract_eval():
 
 
 @consume_quantum_kernel_p.def_abstract_eval
-def quantum_kernel_abstract_eval(abs_qst):
+def consume_quantum_kernel_abstract_eval(_abs_qst):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with

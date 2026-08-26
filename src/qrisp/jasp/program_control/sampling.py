@@ -56,7 +56,9 @@ def _backend_shots_marker(val):
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
-    r"""The ``sample`` function allows to take samples from a quantum computation
+    r"""Takes samples from a quantum computation specified by a sampling kernel.
+
+    The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
@@ -79,13 +81,22 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         that return *only* classical values.  Use ``terminal_sampling=False``
         for those cases.
 
+        Even when the kernel returns only
+        :ref:`QuantumVariables <QuantumVariable>`, terminal sampling relies on
+        the quantum state being **independent** of mid-circuit measurement
+        outcomes.  If a classical measurement result influences the quantum
+        circuit (e.g. via :func:`control <qrisp.control>`), terminal sampling
+        may produce an invalid distribution because it simulates the quantum
+        part only once.  See :func:`~qrisp.jasp.terminal_sampling` for details
+        and an example.
+
     Parameters
     ----------
     sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
-        The function may **not** receive quantum arguments because a quantum
+        The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
     shots : int
@@ -155,9 +166,13 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields (a tuple of two 1D arrays)
+        # Yields e.g. (a tuple of two 1D arrays)
         # (Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64),
         #  Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64))
+        #
+        # Both arrays agree entry by entry: every shot gives either 0 or 3
+        # with 50% probability each. The exact order of the entries is random
+        # and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -177,8 +192,11 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sampling_function(k)
 
         print(main(4))
-        # Yields
+        # Yields e.g.
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+        #
+        # Each entry is either 0 or 10 with 50% probability each. The exact
+        # order of entries is random and varies between runs.
 
     **Sampling kernels returning classical values**
 
@@ -266,7 +284,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         # build a **tuple of typed 1D accumulators** — one per leaf.
         # The pytree structure is captured on the first iteration via
         # ``tree_structure`` / ``tree_leaves`` and stored in
-        # ``return_amount``.  An ``AuxException`` then restarts the loop
+        # ``return_amount``.  An ``_MultiReturnDetected`` then restarts the loop
         # with the correctly-shaped accumulator tuple.
         #
         # On every iteration each leaf accumulator is updated
@@ -285,7 +303,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
             For pytree containers (``tuple``, ``list``, ``dict``) this
             captures the structure and per-leaf dtypes/shapes on the first
-            iteration, raises :class:`AuxException` if *acc* is still a
+            iteration, raises :class:`_MultiReturnDetected` if *acc* is still a
             plain 1D array, and updates a tuple of typed per-leaf
             accumulators.  Each leaf accumulator has shape
             ``(shots, *leaf_shape)`` so that array-valued leaves (e.g. a
@@ -317,14 +335,14 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     return_amount.append((struct, leaf_dtypes, leaf_shapes))
 
                 if not isinstance(acc, tuple):
-                    raise AuxException()
+                    raise _MultiReturnDetected()
 
                 return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
 
             # ----------------------------------------------------------
             # Single leaf (scalar or array — not a container).
             # True scalars take the fast path; arrays with shape need a
-            # shaped accumulator, captured via AuxException.
+            # shaped accumulator, captured via _MultiReturnDetected.
             # ----------------------------------------------------------
             if not isinstance(acc, tuple):
                 try:
@@ -338,7 +356,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 if not return_amount:
                     leaf_dtype = getattr(decoded_values, "dtype", None)
                     return_amount.append((struct, [leaf_dtype], [leaf_shape]))
-                raise AuxException()
+                raise _MultiReturnDetected()
 
             # Second pass: acc is a 1-tuple of shaped accumulators
             return tuple(a.at[i].set(v) for a, v in zip(acc, [decoded_values]))
@@ -381,9 +399,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # ----------------------------------------------------------
                 @qache
                 def sampling_helper_1(*args):
-                    res_list = []
-                    for reg in args:
-                        res_list.append(measure(reg))
+                    res_list = [measure(reg) for reg in args]
                     return tuple(res_list)
 
                 measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
@@ -402,53 +418,22 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                         classical_vals = args[:n_classical]
                         meas_ints = args[n_classical:]
 
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_vals[c_idx])
-                                c_idx += 1
+                        q_iter = iter(decoded_q)
+                        c_iter = iter(classical_vals)
 
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
+                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
-                        return result
+                        return post_processor(*full)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
 
                     def sampling_helper_2(*meas_ints):
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_tuple[c_idx])
-                                c_idx += 1
-
-                        if len(full) > 1:
-                            result = post_processor(*full)
-                        else:
-                            result = post_processor(*full)
-
-                        return result
+                        return post_processor(*decoded_q)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
@@ -459,12 +444,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                if len(classical_tuple) > 1:
-                    result = post_processor(*classical_tuple)
-                else:
-                    result = post_processor(*classical_tuple)
-
-                decoded_values = result
+                decoded_values = post_processor(*classical_tuple)
 
             # Update the accumulator (handles scalar / tuple / list /
             # nested returns transparently via typed per-leaf arrays).
@@ -473,7 +453,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return (acc, *args[1:])
 
         # On the first iteration the pytree structure and leaf dtypes of
-        # the return values are captured.  AuxException triggers a retry
+        # the return values are captured.  _MultiReturnDetected triggers a retry
         # with a tuple of typed 1D accumulators.  After the loop the
         # accumulator tuple is reconstructed into the original nested
         # shape via tree_unflatten.
@@ -483,7 +463,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         try:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
-        except AuxException:
+        except _MultiReturnDetected:
             struct, leaf_dtypes, leaf_shapes = return_amount[0]
             init_acc = _make_init_acc(shots, leaf_dtypes, leaf_shapes)
             loop_res = jax.lax.fori_loop(
@@ -499,8 +479,6 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     def return_function(*args):
 
         if check_for_tracing_mode():
-            if shots <= 0:
-                raise ValueError(f"shots must be a positive integer, got {shots}")
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
             return terminal_sampling(sampling_kernel, shots)(*args)
@@ -508,5 +486,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+
+    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

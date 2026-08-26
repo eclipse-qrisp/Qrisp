@@ -16,11 +16,12 @@
 """
 
 import numpy as np
-from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+from jax.extend.core import JaxprEqn, Var
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQubit
 
 
@@ -79,17 +80,6 @@ class ControlledJaspr(Jaspr):
 control_var_count = np.zeros(1)
 
 
-def copy_jaxpr(jaxpr):
-    return Jaxpr(
-        constvars=list(jaxpr.constvars),
-        invars=list(jaxpr.invars),
-        outvars=list(jaxpr.outvars),
-        eqns=list(jaxpr.eqns),
-        effects=jaxpr.effects,
-        debug_info=jaxpr.debug_info,
-    )
-
-
 def control_eqn(eqn, ctrl_qubit_var):
     """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
@@ -112,7 +102,30 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         invars = list(eqn.invars)
         if isinstance(eqn.params["jaxpr"], Jaspr):
-            new_params["jaxpr"] = new_params["jaxpr"].control(1)
+            orig_jaxpr = eqn.params["jaxpr"]
+            controlled_jaxpr = orig_jaxpr.control(1)
+
+            # Jaspr.control() may retrieve a pre-cached ctrl_jaspr (populated
+            # by the custom_control decorator's own retrace via make_jaspr),
+            # or build one via multi_control_jaspr. Either way, values that
+            # are only used inside nested jit/cond/while sub-equations (e.g.
+            # arrays closed over by q_switch case functions) can end up
+            # reclassified as unexpected constvars during that retrace. Fold
+            # any such constvars back into genuine invars so the wrapping
+            # equation's invars line up with the controlled callee's real
+            # invars, see fold_extra_constvars_into_invars.
+            from qrisp.jasp.jasp_expression.inv_transform import fold_extra_constvars_into_invars
+
+            # controlled_jaxpr.invars starts with the newly added control
+            # qubit (see custom_control_environment.ammended_func /
+            # multi_control_jaspr), so any newly introduced constvars must be
+            # folded back in right after it to line up with the wrapping
+            # equation's [ctrl_qubit_var] + eqn.invars ordering.
+            normalized = fold_extra_constvars_into_invars(controlled_jaxpr, len(orig_jaxpr.constvars), insert_at=1)
+            if normalized is not controlled_jaxpr:
+                controlled_jaxpr = Jaspr(normalized)
+
+            new_params["jaxpr"] = controlled_jaxpr
             new_params["name"] = "c" + new_params["name"]
 
             invars = [ctrl_qubit_var] + eqn.invars
@@ -147,8 +160,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["body_nconsts"] += 1
 
         else:
-            new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["body_jaxpr"].consts)
+            new_params["body_jaxpr"] = rebuild_closed_jaxpr(new_params["body_jaxpr"])
 
         if isinstance(cond_jaxpr.invars[-1].aval, AbstractQuantumState) and isinstance(
             cond_jaxpr.outvars[-1].aval, AbstractQuantumState
@@ -156,8 +168,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["cond_jaxpr"] = control_jaspr(Jaspr(eqn.params["cond_jaxpr"]))
 
         else:
-            new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr, eqn.params["cond_jaxpr"].consts)
+            new_params["cond_jaxpr"] = rebuild_closed_jaxpr(new_params["cond_jaxpr"])
 
         control_var_count[0] += 1
         temp = JaxprEqn(

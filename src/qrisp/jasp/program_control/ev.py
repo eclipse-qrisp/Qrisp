@@ -54,12 +54,24 @@ def _backend_shots_marker(val):
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=None):
-    r"""The ``expectation_value`` function allows to estimate the expectation value
+def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
+    r"""Estimates the expectation value from a sampling kernel.
+
+    The ``expectation_value`` function allows to estimate the expectation value
     from a *sampling kernel* — a Python function that receives only classical
     arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
     measured and decoded; classical values are interleaved in-place.
+
+    .. note::
+
+        When used inside :func:`~qrisp.jasp.jaspify` with
+        ``terminal_sampling=True``, the same restrictions apply as for
+        :func:`~qrisp.jasp.sample`: kernels that return classical values are
+        rejected, and kernels whose quantum state depends on mid-circuit
+        measurement outcomes may produce invalid results.  Use
+        ``terminal_sampling=False`` (the default) for those cases.  See
+        :func:`~qrisp.jasp.terminal_sampling` for details.
 
     Parameters
     ----------
@@ -67,7 +79,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
-        The function may **not** receive quantum arguments because a quantum
+        The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
     shots : int or jax.core.Tracer
@@ -126,11 +138,12 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
             return ev_function(k)
 
         print(main(3))
-        # Yields
+        # Yields e.g.
         # [1.44 1.44]
 
-    The true value 1.5 is not reached because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_.
-    To improve the approximation, feel free to increase the shots!
+    The true value 1.5 is not reached exactly because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_ —
+    the printed value fluctuates around 1.5 from run to run. To improve the
+    approximation, feel free to increase the shots!
 
     To demonstrate the ``post_processor`` keyword we define a simple post processing
     function
@@ -143,21 +156,24 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(sampling_kernel, shots = 50)
+            ev_function = expectation_value(state_prep, shots = 50,
+                                             post_processor = post_processor)
 
             return ev_function(k)
 
         print(main(3))
-        # Yields
-        # 4.338
+        # Yields e.g.
+        # 4.86
 
     This result is expected because the inputs of ``post_processor`` are
-    either (0,0) or (3,3) with 50% probability, so we get
+    either (0,0) or (3,3) with 50% probability, so the expectation value is
 
     .. math::
 
         4.5 = \frac{3\cdot 3 + 0\cdot 0}{2}
 
+    As with the previous example, the printed value fluctuates around this
+    expectation from run to run because of shot noise.
 
     """
     from qrisp.core import QuantumVariable, measure
@@ -178,7 +194,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
     # Qache the user function
     @qache
     def user_func(*args):
-        return sampling_kernel(*args)
+        return state_prep(*args)
 
     # This function performs the logic to evaluate the expectation value
     def expectation_value_eval_function(*args, shots=0):
@@ -199,7 +215,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
         # into one flat accumulator array (which forces a common dtype),
         # we build a tuple of typed running-sum accumulators — one per
         # leaf, each with the leaf's native shape and dtype.  The pytree
-        # structure is captured on the first iteration; AuxException
+        # structure is captured on the first iteration; _MultiReturnDetected
         # restarts the loop with the correctly-shaped accumulators.
         # After the loop each accumulator is divided by *shots* and the
         # pytree is reconstructed via tree_unflatten.
@@ -208,7 +224,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
             """Add *decoded_values* into *acc* (running sum).
 
             For pytree containers captures structure/dtypes/shapes on the
-            first iteration, raises AuxException if *acc* is still a
+            first iteration, raises _MultiReturnDetected if *acc* is still a
             plain 1D array, and adds each leaf into its typed accumulator.
             Scalar returns take the fast path ``acc + jnp.array(value)``.
             """
@@ -236,14 +252,14 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                     return_amount.append((struct, leaf_dtypes, leaf_shapes))
 
                 if not isinstance(acc, tuple):
-                    raise AuxException()
+                    raise _MultiReturnDetected()
 
                 return tuple(a + v for a, v in zip(acc, flat_values))
 
             # ----------------------------------------------------------
             # Single leaf (scalar or array — not a container).
             # True scalars take the fast path; arrays with shape need a
-            # shaped accumulator, captured via AuxException.
+            # shaped accumulator, captured via _MultiReturnDetected.
             # ----------------------------------------------------------
             if not isinstance(acc, tuple):
                 try:
@@ -257,10 +273,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 if not return_amount:
                     leaf_dtype = getattr(decoded_values, "dtype", None)
                     return_amount.append((struct, [leaf_dtype], [leaf_shape]))
-                raise AuxException()
-
-            # Second pass: acc is a 1-tuple of shaped accumulators
-            return tuple(a + v for a, v in zip(acc, [decoded_values]))
+                raise _MultiReturnDetected()
 
             # Second pass: acc is a 1-tuple of shaped accumulators
             return tuple(a + v for a, v in zip(acc, [decoded_values]))
@@ -300,9 +313,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 # Measure quantum registers only.
                 @qache
                 def sampling_helper_1(*args):
-                    res_list = []
-                    for reg in args:
-                        res_list.append(measure(reg))
+                    res_list = [measure(reg) for reg in args]
                     return tuple(res_list)
 
                 measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
@@ -318,20 +329,12 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                         classical_vals = args[:n_classical]
                         meas_ints = args[n_classical:]
 
-                        decoded_q = []
-                        for j in range(len(qv_tuple)):
-                            decoded_q.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        full = []
-                        q_idx = 0
-                        c_idx = 0
-                        for is_q in is_quantum:
-                            if is_q:
-                                full.append(decoded_q[q_idx])
-                                q_idx += 1
-                            else:
-                                full.append(classical_vals[c_idx])
-                                c_idx += 1
+                        q_iter = iter(decoded_q)
+                        c_iter = iter(classical_vals)
+
+                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
                         return post_processor(*full)
 
@@ -339,9 +342,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 else:
 
                     def sampling_helper_2(*meas_ints):
-                        res_list = []
-                        for j in range(len(qv_tuple)):
-                            res_list.append(qv_tuple[j].jdecoder(meas_ints[j]))
+                        res_list = [qv.jdecoder(meas) for qv, meas in zip(qv_tuple, meas_ints)]
                         return post_processor(*res_list)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
@@ -360,7 +361,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
                 if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
                     return_amount.append(len(decoded_values))
                     if acc.shape[0] == 1:
-                        raise AuxException()
+                        raise _MultiReturnDetected()
                 meas_res = jnp.array(decoded_values)
                 acc += meas_res
 
@@ -368,7 +369,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
             return (acc, *args[1:])
 
         # On the first iteration the pytree structure and leaf dtypes/shapes
-        # of the return values are captured.  AuxException triggers a retry
+        # of the return values are captured.  _MultiReturnDetected triggers a retry
         # with a tuple of typed accumulators.  After the loop each
         # accumulator is divided by *shots* and the pytree is reconstructed.
 
@@ -377,7 +378,7 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
         try:
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
             return loop_res[0][0] / shots
-        except AuxException:
+        except _MultiReturnDetected:
             if _use_pytree_acc:
                 struct, leaf_dtypes, leaf_shapes = return_amount[0]
                 init_acc = _make_init_acc(leaf_dtypes, leaf_shapes)
@@ -406,5 +407,8 @@ def expectation_value(sampling_kernel, shots, return_dict=False, post_processor=
     return return_function
 
 
-class AuxException(Exception):
-    pass
+class _MultiReturnDetected(Exception):
+    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+
+    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

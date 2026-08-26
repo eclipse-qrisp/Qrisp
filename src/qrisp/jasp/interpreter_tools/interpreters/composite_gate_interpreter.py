@@ -16,13 +16,18 @@
 """
 
 import jax.numpy as jnp
-from jax.extend.core import JaxprEqn
 from sympy import lambdify as _lambdify
 
 import qrisp.circuit.standard_operations as _std_ops
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit.operation import U3Gate as _U3Gate
-from qrisp.jasp.interpreter_tools import exec_eqn, extract_invalues, insert_outvalues, reinterpret
+from qrisp.jasp.interpreter_tools import (
+    copy_jaxpr_eqn,
+    exec_eqn,
+    extract_invalues,
+    insert_outvalues,
+    reinterpret,
+)
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
 
@@ -77,18 +82,6 @@ def _make_identity_param_op(op):
     if hasattr(identity, "lambdified_params"):
         del identity.lambdified_params
     return identity
-
-
-def _copy_eqn(eqn):
-    return JaxprEqn(
-        primitive=eqn.primitive,
-        invars=list(eqn.invars),
-        outvars=list(eqn.outvars),
-        params=dict(eqn.params),
-        source_info=eqn.source_info,
-        effects=eqn.effects,
-        ctx=eqn.ctx,
-    )
 
 
 def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
@@ -179,31 +172,34 @@ def decompose_eqn_evaluator(eqn, context_dic):
         return False  # equation handled; skip default exec_eqn
 
     elif eqn.primitive.name == "jit":
-        new_eqn = _copy_eqn(eqn)
-        new_eqn.params["jaxpr"] = _decompose_sub_jaxpr(eqn.params["jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("jaxpr",))
 
     elif eqn.primitive.name == "while":
-        new_eqn = _copy_eqn(eqn)
-        new_eqn.params["body_jaxpr"] = _decompose_sub_jaxpr(eqn.params["body_jaxpr"])
-        new_eqn.params["cond_jaxpr"] = _decompose_sub_jaxpr(eqn.params["cond_jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("body_jaxpr", "cond_jaxpr"))
 
     elif eqn.primitive.name == "cond":
-        new_eqn = _copy_eqn(eqn)
-        new_eqn.params["branches"] = tuple(_decompose_sub_jaxpr(branch) for branch in eqn.params["branches"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, tuple_params=("branches",))
 
     elif eqn.primitive.name == "scan":
-        new_eqn = _copy_eqn(eqn)
-        new_eqn.params["jaxpr"] = _decompose_sub_jaxpr(eqn.params["jaxpr"])
-        exec_eqn(new_eqn, context_dic)
-        return False
+        return _decompose_and_exec(eqn, context_dic, params=("jaxpr",))
 
     return True  # fall back to default execution
+
+
+def _decompose_and_exec(eqn, context_dic, params=(), tuple_params=()):
+    """Copy eqn, recursively decompose the named sub-jaxpr param(s), then execute.
+
+    `params` names params holding a single sub-jaxpr to decompose in place (e.g.
+    "jaxpr", or both "body_jaxpr"/"cond_jaxpr" for while); `tuple_params` names
+    params holding a tuple of sub-jaxprs (e.g. "branches" for cond).
+    """
+    new_eqn = copy_jaxpr_eqn(eqn)
+    for name in params:
+        new_eqn.params[name] = _decompose_sub_jaxpr(new_eqn.params[name])
+    for name in tuple_params:
+        new_eqn.params[name] = tuple(_decompose_sub_jaxpr(sub) for sub in new_eqn.params[name])
+    exec_eqn(new_eqn, context_dic)
+    return False
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
@@ -217,8 +213,10 @@ def _decompose_sub_jaxpr(jaxpr):
     if isinstance(jaxpr, Jaspr):
         return decompose_composite_gates(jaxpr)
     elif isinstance(jaxpr, ClosedJaxpr):
-        inner = reinterpret(jaxpr.jaxpr, decompose_eqn_evaluator)
-        return ClosedJaxpr(inner, jaxpr.consts)
+        # Passing jaxpr itself (not jaxpr.jaxpr) lets reinterpret() re-wrap the
+        # result in a ClosedJaxpr with the original consts internally, instead
+        # of duplicating that step here.
+        return reinterpret(jaxpr, decompose_eqn_evaluator)
     else:
         return jaxpr
 

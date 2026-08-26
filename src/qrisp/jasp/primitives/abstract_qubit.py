@@ -19,6 +19,8 @@ from jax.core import AbstractValue
 
 
 class AbstractQubit(AbstractValue):
+    """JAX abstract value representing a single traced qubit."""
+
     def __repr__(self):
         return "Qubit"
 
@@ -31,6 +33,8 @@ class AbstractQubit(AbstractValue):
         return isinstance(other, AbstractQubit)
 
     def _add(self, a, b):
+        # Deferred import: qrisp.jasp.tracing_logic is loaded after
+        # qrisp.jasp.primitives, so this can't be a top-level import.
         from qrisp.jasp import DynamicQubitArray, fuse_qb_array
 
         if isinstance(b, DynamicQubitArray):

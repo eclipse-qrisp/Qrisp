@@ -272,294 +272,260 @@ def test_expectation_value():
         return sum
 
 
-def test_sampling_classical_and_mixed():
-    """Tests for sample() with classical and mixed (quantum + classical) returns."""
+# ------------------------------------------------------------------
+# Shared state-preparation helpers for TestClassicalAndMixedReturns
+# ------------------------------------------------------------------
+
+
+def _sp_classical_scalar_sample():
+    qf = QuantumFloat(4)
+    h(qf[0])
+    h(qf[1])
+    return measure(qf)
+
+
+def _sp_classical_scalar_ev():
+    qf = QuantumFloat(3)
+    h(qf[0])
+    h(qf[1])
+    return measure(qf)
+
+
+def _sp_classical_tuple():
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    h(a[0])
+    cx(a[0], b[0])
+    return measure(a), measure(b)
+
+
+def _sp_pp():
+    qf = QuantumFloat(3)
+    h(qf[0])
+    return measure(qf)
+
+
+def _sp_mixed():
+    qf = QuantumFloat(3)
+    h(qf[0])
+    mes = measure(qf[1])  # classical (always 0, no superposition on bit 1)
+    return qf, mes
+
+
+def _pp_sum(x, y):
+    return x + y
+
+
+class TestClassicalAndMixedReturns:
+    """Tests for sample() and expectation_value() with classical/mixed returns and terminal-sampling rejection."""
 
     import jax.numpy as jnp
+    import pytest
 
-    # ------------------------------------------------------------------
-    # Classical scalar return
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # sample() — classical scalar return
+    # ==================================================================
 
-    def sp_classical_scalar():
-        qf = QuantumFloat(4)
-        h(qf[0])
-        h(qf[1])
-        return measure(qf)
+    def test_sample_classical_scalar(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(_sp_classical_scalar_sample, shots=30)()
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return sample(sp_classical_scalar, shots=30)()
+        res = main()
+        assert res.shape == (30,)
+        assert len(self.jnp.unique(res)) >= 2
 
-    res = main()
-    assert res.shape == (30,)
-    # With 2 qubits in superposition we should see variation
-    assert len(jnp.unique(res)) >= 2
+    def test_sample_classical_scalar_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(_sp_classical_scalar_sample, shots=30)()
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return sample(sp_classical_scalar, shots=30)()
+        with self.pytest.raises(ValueError):
+            main()
 
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
+    # ==================================================================
+    # sample() — classical tuple return
+    # ==================================================================
 
-    # ------------------------------------------------------------------
-    # Classical tuple return
-    # ------------------------------------------------------------------
+    def test_sample_classical_tuple(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(_sp_classical_tuple, shots=20)()
 
-    def sp_classical_tuple():
-        a = QuantumFloat(3)
-        b = QuantumFloat(3)
-        h(a[0])
-        cx(a[0], b[0])
-        return measure(a), measure(b)
+        res = main()
+        assert isinstance(res, tuple) and len(res) == 2
+        assert all(r.shape == (20,) for r in res)
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return sample(sp_classical_tuple, shots=20)()
+    def test_sample_classical_tuple_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(_sp_classical_tuple, shots=20)()
 
-    res = main()
-    assert isinstance(res, tuple) and len(res) == 2
-    assert all(r.shape == (20,) for r in res)
+        with self.pytest.raises(ValueError):
+            main()
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return sample(sp_classical_tuple, shots=20)()
+    # ==================================================================
+    # sample() — classical return with post_processor
+    # ==================================================================
 
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
+    def test_sample_classical_with_pp(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(_sp_pp, shots=20, post_processor=double)()
 
-    # ------------------------------------------------------------------
-    # Classical return with post_processor
-    # ------------------------------------------------------------------
+        res = main()
+        assert res.shape == (20,)
+        assert self.jnp.all(res % 2 == 0)
 
-    def sp_pp():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        return measure(qf)
+    def test_sample_classical_with_pp_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(_sp_pp, shots=20, post_processor=double)()
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return sample(sp_pp, shots=20, post_processor=double)()
+        with self.pytest.raises(ValueError):
+            main()
 
-    res = main()
-    assert res.shape == (20,)
-    # doubled values are always even
-    assert jnp.all(res % 2 == 0)
+    # ==================================================================
+    # sample() — mixed return (quantum + classical)
+    # ==================================================================
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return sample(sp_pp, shots=20, post_processor=double)()
+    def test_sample_mixed(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(_sp_mixed, shots=20)()
 
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
+        res = main()
+        assert isinstance(res, tuple) and len(res) == 2
+        assert all(r.shape == (20,) for r in res)
 
-    # ------------------------------------------------------------------
-    # Mixed return: one quantum, one classical
-    # ------------------------------------------------------------------
+    def test_sample_mixed_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(_sp_mixed, shots=20)()
 
-    def sp_mixed():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        mes = measure(qf[1])  # classical (always 0, no superposition on bit 1)
-        return qf, mes
+        with self.pytest.raises(ValueError):
+            main()
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return sample(sp_mixed, shots=20)()
+    # ==================================================================
+    # sample() — mixed return with post_processor
+    # ==================================================================
 
-    res = main()
-    assert isinstance(res, tuple) and len(res) == 2
-    assert all(r.shape == (20,) for r in res)
+    def test_sample_mixed_with_pp(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(_sp_mixed, shots=15, post_processor=_pp_sum)()
 
-    # Terminal sampling must reject classical returns
-    @jaspify(terminal_sampling=True)
-    def main():
-        return sample(sp_mixed, shots=20)()
+        res = main()
+        assert res.shape == (15,)
 
-    try:
-        main()
-        assert False, "Expected Exception for mixed returns with terminal_sampling"
-    except Exception:
-        pass
+    def test_sample_mixed_with_pp_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(_sp_mixed, shots=15, post_processor=_pp_sum)()
 
-    # ------------------------------------------------------------------
-    # Mixed return with post_processor
-    # ------------------------------------------------------------------
+        with self.pytest.raises(ValueError):
+            main()
 
-    def pp_sum(x, y):
-        return x + y
+    # ==================================================================
+    # expectation_value() — classical scalar return
+    # ==================================================================
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return sample(sp_mixed, shots=15, post_processor=pp_sum)()
+    def test_ev_classical_scalar(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return expectation_value(_sp_classical_scalar_ev, shots=500)()
 
-    res = main()
-    assert res.shape == (15,)
+        res = main()
+        assert abs(res - 1.5) < 0.3
 
-    # Terminal sampling must reject classical returns even with post_processor
-    @jaspify(terminal_sampling=True)
-    def main():
-        return sample(sp_mixed, shots=15, post_processor=pp_sum)()
+    def test_ev_classical_scalar_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(_sp_classical_scalar_ev, shots=500)()
 
-    try:
-        main()
-        assert False, "Expected Exception for mixed returns with terminal_sampling"
-    except Exception:
-        pass
+        with self.pytest.raises(ValueError):
+            main()
 
+    # ==================================================================
+    # expectation_value() — classical tuple return
+    # ==================================================================
 
-def test_expectation_value_classical_and_mixed():
-    """Tests for expectation_value() with classical and mixed returns."""
+    def test_ev_classical_tuple(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return expectation_value(_sp_classical_tuple, shots=500)()
 
-    import jax.numpy as jnp
+        res = main()
+        assert len(res) == 2
+        assert abs(res[0] - 0.5) < 0.3
+        assert abs(res[1] - 0.5) < 0.3
 
-    # ------------------------------------------------------------------
-    # Classical scalar return
-    # ------------------------------------------------------------------
+    def test_ev_classical_tuple_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(_sp_classical_tuple, shots=500)()
 
-    def sp_classical_scalar():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        h(qf[1])
-        return measure(qf)
+        with self.pytest.raises(ValueError):
+            main()
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return expectation_value(sp_classical_scalar, shots=500)()
+    # ==================================================================
+    # expectation_value() — classical return with post_processor
+    # ==================================================================
 
-    res = main()
-    # Two qubits in superposition → expected value 1.5
-    assert abs(res - 1.5) < 0.3
+    def test_ev_classical_with_pp(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return expectation_value(_sp_pp, shots=500, post_processor=double)()
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return expectation_value(sp_classical_scalar, shots=500)()
+        res = main()
+        assert abs(res - 1.0) < 0.3
 
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
+    def test_ev_classical_with_pp_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(_sp_pp, shots=500, post_processor=double)()
 
-    # ------------------------------------------------------------------
-    # Classical tuple return
-    # ------------------------------------------------------------------
+        with self.pytest.raises(ValueError):
+            main()
 
-    def sp_classical_tuple():
-        a = QuantumFloat(3)
-        b = QuantumFloat(3)
-        h(a[0])
-        cx(a[0], b[0])
-        return measure(a), measure(b)
+    # ==================================================================
+    # expectation_value() — mixed return (quantum + classical)
+    # ==================================================================
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return expectation_value(sp_classical_tuple, shots=500)()
+    def test_ev_mixed(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return expectation_value(_sp_mixed, shots=500)()
 
-    res = main()
-    assert len(res) == 2
-    # a in {0, 1} → expected 0.5; b in {0, 1} → expected 0.5
-    assert abs(res[0] - 0.5) < 0.3
-    assert abs(res[1] - 0.5) < 0.3
+        res = main()
+        assert len(res) == 2
+        assert abs(res[0] - 0.5) < 0.3
+        assert res[1] == 0.0
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return expectation_value(sp_classical_tuple, shots=500)()
+    def test_ev_mixed_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(_sp_mixed, shots=500)()
 
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
+        with self.pytest.raises(ValueError):
+            main()
 
-    # ------------------------------------------------------------------
-    # Classical return with post_processor
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # expectation_value() — mixed return with post_processor
+    # ==================================================================
 
-    def sp_pp():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        return measure(qf)
+    def test_ev_mixed_with_pp(self):
+        @jaspify(terminal_sampling=False)
+        def main():
+            return expectation_value(_sp_mixed, shots=500, post_processor=_pp_sum)()
 
-    @jaspify(terminal_sampling=False)
-    def main():
-        return expectation_value(sp_pp, shots=500, post_processor=double)()
+        res = main()
+        assert abs(res - 0.5) < 0.3
 
-    res = main()
-    # doubled values: expected = 2 * 0.5 = 1.0
-    assert abs(res - 1.0) < 0.3
+    def test_ev_mixed_with_pp_rejected_by_ts(self):
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(_sp_mixed, shots=500, post_processor=_pp_sum)()
 
-    @jaspify(terminal_sampling=True)
-    def main():
-        return expectation_value(sp_pp, shots=500, post_processor=double)()
-
-    try:
-        main()
-        assert False, "Expected Exception for classical returns with terminal_sampling"
-    except Exception:
-        pass
-
-    # ------------------------------------------------------------------
-    # Mixed return: one quantum, one classical
-    # ------------------------------------------------------------------
-
-    def sp_mixed():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        mes = measure(qf[1])  # always 0 (no superposition on bit 1)
-        return qf, mes
-
-    @jaspify(terminal_sampling=False)
-    def main():
-        return expectation_value(sp_mixed, shots=500)()
-
-    res = main()
-    assert len(res) == 2
-    # qf ∈ {0, 1} → expected 0.5; mes = 0 → expected 0.0
-    assert abs(res[0] - 0.5) < 0.3
-    assert res[1] == 0.0
-
-    @jaspify(terminal_sampling=True)
-    def main():
-        return expectation_value(sp_mixed, shots=500)()
-
-    try:
-        main()
-        assert False, "Expected Exception for mixed returns with terminal_sampling"
-    except Exception:
-        pass
-
-    # ------------------------------------------------------------------
-    # Mixed return with post_processor
-    # ------------------------------------------------------------------
-
-    def pp_sum(x, y):
-        return x + y
-
-    @jaspify(terminal_sampling=False)
-    def main():
-        return expectation_value(sp_mixed, shots=500, post_processor=pp_sum)()
-
-    res = main()
-    # qf + mes → expected 0.5 + 0 = 0.5
-    assert abs(res - 0.5) < 0.3
-
-    @jaspify(terminal_sampling=True)
-    def main():
-        return expectation_value(sp_mixed, shots=500, post_processor=pp_sum)()
-
-    try:
-        main()
-        assert False, "Expected Exception for mixed returns with terminal_sampling"
-    except Exception:
-        pass
+        with self.pytest.raises(ValueError):
+            main()

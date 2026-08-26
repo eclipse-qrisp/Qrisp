@@ -260,6 +260,10 @@ class QuantumModulus(QuantumFloat):
         self.modulus = modulus
         aux = smallest_power_of_two(modulus)
         QuantumFloat.__init__(self, msize=aux, qs=qs)
+        # A traced modulus must be threaded through the pytree as a proper leaf,
+        # otherwise it gets smuggled into static aux_data (via QuantumVariableTemplate's
+        # copy.copy(qv)) and leaks stale tracers across independent traces.
+        self.traced_attributes = self.traced_attributes + ["modulus"]
         # Dynamic modular arithmetic uses gidney_adder while static uses fourier_adder.
         # Consider reconciling it.
         if check_for_tracing_mode():
