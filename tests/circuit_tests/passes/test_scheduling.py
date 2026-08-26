@@ -26,6 +26,7 @@ from qrisp.circuit.pass_management.scheduling import (
     asap_schedule,
     is_error_channel,
     is_transparent,
+    vacuous_barriers,
 )
 from qrisp.circuit.quantum_circuit import is_full_width_barrier
 from qrisp.circuit.standard_operations import QubitAlloc, QubitDealloc
@@ -693,3 +694,60 @@ class TestBarrierToTick:
         qc.x(0)
         names = [instr.op.name for instr in layerize()(qc).data]
         assert names.index("h") < names.index("barrier") < names.index("x")
+
+
+class TestVacuousBarriers:
+    """A barrier with nothing in front of it fences nothing."""
+
+    def test_leading_barrier_is_vacuous(self):
+        qc = QuantumCircuit(2)
+        qc.barrier()
+        qc.h(0)
+        qc.barrier()
+        assert sorted(vacuous_barriers(qc)) == [0]
+
+    def test_barrier_over_untouched_qubits_is_vacuous(self):
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.barrier([qc.qubits[1]])  # q1 has seen nothing
+        qc.barrier([qc.qubits[0]])  # q0 has
+        assert sorted(vacuous_barriers(qc)) == [1]
+
+    def test_bookkeeping_and_channels_do_not_make_a_barrier_a_fence(self):
+        qc = QuantumCircuit(1)
+        qc.append(QubitAlloc(), [0])
+        qc.append(StimNoiseGate("X_ERROR", 0.5), [qc.qubits[0]])
+        qc.barrier()
+        assert sorted(vacuous_barriers(qc)) == [2]
+
+    def test_a_vacuous_barrier_costs_no_layer(self):
+        """The bug it exists to prevent: a layer with no gate and no channel."""
+        fenced = QuantumCircuit(2)
+        fenced.barrier([fenced.qubits[0]])
+        fenced.h(0)
+
+        plain = QuantumCircuit(2)
+        plain.h(0)
+
+        # The barrier rides along in the h's layer instead of ending one first.
+        assert asap_layers(fenced) == [0, 0]
+        assert len(set(asap_layers(fenced))) == len(set(asap_layers(plain))) == 1
+
+    def test_a_real_fence_still_costs_a_layer(self):
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.barrier()
+        qc.h(1)
+        # q0 has been touched, so the barrier is a genuine boundary and h(1)
+        # belongs to the next time step.
+        assert vacuous_barriers(qc) == frozenset()
+        assert asap_layers(qc) == [0, 0, 1]
+
+    def test_a_vacuous_barrier_does_not_reorder_anything(self):
+        """It stops being a scheduling constraint, not a positional one."""
+        qc = QuantumCircuit(2)
+        qc.barrier([qc.qubits[0]])
+        qc.h(0)
+        qc.h(1)
+        order = asap_schedule(qc).order
+        assert order.index(0) < order.index(1), "h(0) overtook the barrier"

@@ -419,25 +419,62 @@ def test_partial_barrier_does_not_synchronize_unnamed_qubits():
     assert q1_noise == ["X_ERROR", "DEPOLARIZE1", "DEPOLARIZE1"]
 
 
-def test_partial_barrier_still_fences_the_qubits_it_names():
-    # The named qubit's outstanding noise must not cross its own fence.  A
-    # partial barrier floats to the earliest layer its named qubits allow, so
-    # this one lands in layer 0 -- the very layer q1 idles through -- and has to
-    # take q1's idle channel with it rather than leave it for the h(1) after.
+def test_partial_barrier_only_constrains_the_qubits_it_names():
+    # q1 is fenced after its first h, so the second one moves to the next time
+    # step.  q0 is not named and keeps its own schedule, and q2 idles throughout.
+    qc = QuantumCircuit(3)
+    qc.h(1)
+    qc.barrier([qc.qubits[1]])
+    qc.h(1)
+    qc.h(0)
+
+    assert len(_time_steps(qc)) == 2
+    noisy = _assert_model_verifies(qc)
+
+    counts = _noise_count_per_qubit(noisy)
+    assert all(counts[q] == 2 for q in qc.qubits), counts
+
+
+def test_a_barrier_before_anything_is_not_a_fence():
+    """A barrier with nothing in front of it has nothing to separate.
+
+    Treating it as a fence would end a layer holding no gate and no channel.  The
+    pass rightly puts no noise in such a layer, but the scheduler would still
+    offer its free error slots to the first idle channel that can reach them, and
+    every qubit's noise would come out one time step early -- the leading round of
+    idle noise before the first gate that used to show up in a Jasp-traced QEC
+    circuit, where every round opens with a barrier over the ancillas.
+    """
+    fenced = QuantumCircuit(3)
+    fenced.barrier([fenced.qubits[0]])
+    fenced.h(0)
+
+    plain = QuantumCircuit(3)
+    plain.h(0)
+
+    # The barrier changes nothing: same time steps, same noise.
+    assert len(_time_steps(fenced)) == len(_time_steps(plain)) == 1
+    with_barrier = _assert_model_verifies(fenced)
+    without = _assert_model_verifies(plain)
+
+    def by_index(c):
+        counts = _noise_count_per_qubit(c)
+        return [counts[q] for q in c.qubits]
+
+    assert by_index(with_barrier) == by_index(without) == [1, 1, 1]
+
+
+def test_a_barrier_over_untouched_qubits_is_not_a_fence():
+    # Same rule per qubit: the barrier names only q1, which nothing has touched,
+    # so it does not push q1's h into a time step of its own.
     qc = QuantumCircuit(2)
     qc.h(0)
     qc.h(0)
     qc.barrier([qc.qubits[1]])
     qc.h(1)
 
-    noisy = insert_stim_noise(P1, P2, PX)(qc)
-    names = [i.op.name for i in noisy.data]
-    barrier_at = names.index("barrier")
-    q1_before = sum(1 for i in noisy.data[:barrier_at] if is_error_channel(i) and qc.qubits[1] in i.qubits)
-    assert q1_before == 1, f"idle noise crossed the fence: {names}"
-
-    # q0 is not named, so its layers are untouched by the fence and it keeps one
-    # channel per gate.  q1 idles in layer 0 and gates in layer 1.
+    assert len(_time_steps(qc)) == 2
+    noisy = _assert_model_verifies(qc)
     counts = _noise_count_per_qubit(noisy)
     assert counts[qc.qubits[0]] == 2
     assert counts[qc.qubits[1]] == 2

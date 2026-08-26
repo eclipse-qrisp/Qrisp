@@ -36,6 +36,10 @@ move past it.  ``QuantumCircuit.barrier()`` names every qubit, so the usual
 full-circuit fence still works, and only such a full-width barrier is a time
 boundary — see :func:`~qrisp.circuit.is_full_width_barrier`.
 
+**A barrier with nothing in front of it is no constraint at all.**  It separates
+nothing, so it ends no layer — see :func:`vacuous_barriers` for why that
+distinction is load-bearing rather than cosmetic.
+
 **A gate and the error channel annotating it share a layer, two errors do not.**
 The second error on a qubit belongs to the next layer.  This is also what puts
 readout noise, written in front of a measurement, in the measurement's layer:
@@ -57,6 +61,7 @@ __all__ = [
     "asap_schedule",
     "is_error_channel",
     "is_transparent",
+    "vacuous_barriers",
 ]
 
 # Operations that take no time step and cannot be recognised structurally:
@@ -208,6 +213,64 @@ def _kind(instr: Instruction) -> int:
     return _KIND_GATE
 
 
+def vacuous_barriers(qc: QuantumCircuit) -> frozenset[int]:
+    """Return the indices of the barriers in ``qc.data`` that fence nothing.
+
+    A barrier separates what came before it from what comes after.  One written
+    before anything has happened on any of the qubits it names - at the very start
+    of a circuit, typically, or on a qubit the program has not touched yet - has
+    nothing to separate and is therefore no constraint at all.
+
+    The distinction matters because a barrier that closes its qubits ends the
+    layer.  Doing that with nothing in front of it spends a layer on a time step
+    that never took place: the layer holds no gate and no channel, so
+    :func:`~qrisp.insert_stim_noise` rightly puts no noise in it, yet its error
+    slots stand open and the first idle channel that can reach them lands there -
+    which drags a whole circuit's idle noise one time step early.
+
+    Instructions that take no time step do not count as "something having
+    happened", so allocation markers and error channels in front of a barrier
+    leave it vacuous.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The circuit to inspect.
+
+    Returns
+    -------
+    frozenset[int]
+        Indices into ``qc.data`` of the barriers that fence nothing.
+
+    Examples
+    --------
+    A barrier before any gate fences nothing; the same barrier after one does:
+
+    >>> from qrisp import QuantumCircuit
+    >>> from qrisp.circuit.pass_management.scheduling import vacuous_barriers
+    >>> qc = QuantumCircuit(2)
+    >>> qc.barrier()
+    >>> qc.h(0)
+    >>> qc.barrier()
+    >>> sorted(vacuous_barriers(qc))
+    [0]
+
+    """
+    touched: set = set()
+    vacuous = []
+
+    for i, instr in enumerate(qc.data):
+        if instr.op.name == "barrier":
+            if touched.isdisjoint(instr.qubits):
+                vacuous.append(i)
+            continue
+        if is_transparent(instr):
+            continue
+        touched.update(instr.qubits)
+
+    return frozenset(vacuous)
+
+
 def _dependency_graph(qc: QuantumCircuit) -> tuple[list[int], list[list[int]]]:
     """Link consecutive instructions on a shared resource.
 
@@ -268,7 +331,8 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
       ``gphase``, ``parity`` — since they cost no time;
     * **a barrier ends the layer** for the qubits it names.  It needs no slot of
       its own, so it does not add to the depth, but nothing else on those qubits
-      may join afterwards.
+      may join afterwards.  A barrier that fences nothing is exempt; see
+      :func:`vacuous_barriers`.
 
     Parameters
     ----------
@@ -314,6 +378,14 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
     """
     data = qc.data
     remaining, successors = _dependency_graph(qc)
+    vacuous = vacuous_barriers(qc)
+
+    def kind_of(i: int) -> int:
+        # A vacuous barrier closes nothing, so it has no reason to wait for the
+        # layer's other rounds: draining it on sight releases the instructions
+        # behind it into the same layer, instead of leaving them to a round of
+        # their own after it.
+        return _KIND_BOOKKEEPING if i in vacuous else _kind(data[i])
 
     ready = {i for i, count in enumerate(remaining) if count == 0}
     layers = [0] * len(data)
@@ -346,7 +418,9 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
         instr = data[i]
         resources = _resources(instr)
         if instr.op.name == "barrier":
-            closed.update(resources)
+            # A vacuous barrier is no constraint, so it closes nothing.
+            if i not in vacuous:
+                closed.update(resources)
         elif is_error_channel(instr):
             errors.update(resources)
         elif not is_transparent(instr):
@@ -382,7 +456,7 @@ def asap_schedule(qc: QuantumCircuit) -> Schedule:
             progress = False
             for kind in _DRAIN_ORDER:
                 while True:
-                    group = [i for i in ready if _kind(data[i]) in (kind, _KIND_BOOKKEEPING) and fits(i)]
+                    group = [i for i in ready if kind_of(i) in (kind, _KIND_BOOKKEEPING) and fits(i)]
                     if not group:
                         break
                     progress = True

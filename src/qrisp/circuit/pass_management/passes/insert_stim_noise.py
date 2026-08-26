@@ -132,6 +132,7 @@ from qrisp.circuit.pass_management.scheduling import (
     asap_layers,
     is_error_channel,
     is_transparent,
+    vacuous_barriers,
 )
 from qrisp.circuit.quantum_circuit import QuantumCircuit, is_full_width_barrier
 
@@ -465,6 +466,7 @@ def insert_stim_noise(
 
         data = qc.data
         layers = asap_layers(qc)
+        vacuous = vacuous_barriers(qc)
 
         # ------------------------------------------------------------------
         # 1. Classify every instruction.  Doing this up front means an
@@ -652,9 +654,14 @@ def insert_stim_noise(
                 # it is about to occupy.  The obligations for the barrier's own
                 # layer therefore have to go out too, or they would be emitted on
                 # the far side of a fence that was meant to close them in.
-                flush_qubits = qc.qubits if is_full_width_barrier(instr, qc) else qubits
-                for q in flush_qubits:
-                    _flush_idle(q, layer + 1)
+                # A barrier that fences nothing is no boundary and no flush
+                # point: there is nothing for the noise to be on the wrong side
+                # of, and discharging obligations here would emit them ahead of
+                # the gates sharing the barrier's layer.
+                if idx not in vacuous:
+                    flush_qubits = qc.qubits if is_full_width_barrier(instr, qc) else qubits
+                    for q in flush_qubits:
+                        _flush_idle(q, layer + 1)
                 new_qc.append(instr)
                 continue
 
