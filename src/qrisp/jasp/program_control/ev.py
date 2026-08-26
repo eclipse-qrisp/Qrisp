@@ -191,7 +191,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     # Qache the user function
     @qache
     def user_func(*args):
-        return sampling_kernel(*args)
+        return state_prep(*args)
 
     # This function performs the logic to evaluate the expectation value
     def expectation_value_eval_function(*args, shots=0):
