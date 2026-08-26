@@ -114,8 +114,8 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
     ------
     ImportError
         If the ``xdsl`` package is not installed.
-    LinalgRankedTensorError
-        If the emitted module contains ``linalg.generic`` on ranked tensors.
+    CudaqUnsupportedArrayOperationError
+        If the emitted module contains an unsupported array operation.
 
     """
     # Step 0 – Produce the initial xDSL module with Jasp IR.

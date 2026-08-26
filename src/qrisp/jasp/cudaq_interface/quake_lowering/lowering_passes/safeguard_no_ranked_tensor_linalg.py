@@ -27,8 +27,8 @@ from xdsl.dialects import linalg
 from xdsl.dialects.builtin import ModuleOp, TensorType
 
 
-class LinalgRankedTensorError(RuntimeError):
-    """Raised when ranked-tensor ``linalg.generic`` survives emission."""
+class CudaqUnsupportedArrayOperationError(RuntimeError):
+    """Raised when an unsupported array operation survives emission."""
 
 
 def _is_ranked_tensor_type(t) -> bool:
@@ -48,18 +48,20 @@ def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
         if operand_has_ranked_tensor or result_has_ranked_tensor:
             location = getattr(current_op, "location", None)
             loc_info = str(location) if location is not None else "unknown location"
-            raise LinalgRankedTensorError(
-                "This program cannot be compiled for CUDA-Q because it performs "
-                "arithmetic on traced arrays inside the traced kernel body.\n\n"
-                "Why this fails: CUDA-Q's Quake dialect has no support for ranked "
-                "tensors or linalg operations. Any array arithmetic in the kernel body lowers "
-                "to such tensor/linalg operations, which Quake cannot represent.\n\n"
-                "How to fix it:\n"
-                "- Prefer scalar values inside the traced kernel body.\n"
-                "- Move array arithmetic outside tracing and pass only the needed "
-                "elements/scalars into the kernel.\n"
-                "- If you pass arrays as kernel parameters, stick to simple indexed "
-                "access patterns.\n\n"
-                f"[debug] location: {loc_info}\n"
-                f"[debug] offending operation: {current_op}"
+            raise CudaqUnsupportedArrayOperationError(
+                "This @cudaq_kernel function performs arithmetic on a dynamic "
+                "(traced) array, which CUDA-Q cannot compile.\n\n"
+                "Static Python arrays created inside the kernel are supported. "
+                "JAX arrays are dynamic during tracing, and every array passed "
+                "as a kernel argument is dynamic. CUDA-Q does not support "
+                "arithmetic on dynamic arrays inside a kernel.\n\n"
+                "To fix this:\n"
+                "- Move JAX array calculations outside the @cudaq_kernel function "
+                "and pass scalar results into it.\n"
+                "- When passing an array to the kernel, access individual elements "
+                "instead of combining or adding the whole array.\n"
+                "- Use scalar values or static Python arrays for calculations that "
+                "stay inside the kernel.\n\n"
+                # f"[debug] location: {loc_info}\n"
+                # f"[debug] offending operation: {current_op}"
             )

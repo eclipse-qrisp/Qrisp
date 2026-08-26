@@ -546,7 +546,7 @@ def test_traced_jax_array_arithmetic_triggers_helpful_safeguard_error():
     """Arithmetic on traced jax.numpy arrays should fail early with a helpful
     safeguard message for users."""
 
-    with pytest.raises(RuntimeError, match="arithmetic on traced arrays"):
+    with pytest.raises(RuntimeError, match=r"dynamic \(traced\) array"):
 
         @cudaq_kernel
         def bad_kernel(k: int):
