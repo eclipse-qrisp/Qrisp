@@ -32,6 +32,8 @@ def build_from_array(cls: type[BlockEncoding], A: MatrixType) -> BlockEncoding:
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     A : ndarray | csr_array | csr_matrix
         2-D array of shape ``(N,N,)`` for a power of two ``N``.
 

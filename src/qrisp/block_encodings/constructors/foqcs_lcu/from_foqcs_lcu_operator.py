@@ -22,7 +22,11 @@ from .foqcs_analysis import build_foqcs_lcu_prep_from_analysis, foqcs_analyze_op
 from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
 
 
-def build_from_foqcs_lcu_operator(cls: type[BlockEncoding], O: QubitOperator, tol: float = 1e-12) -> BlockEncoding:
+def build_from_foqcs_lcu_operator(
+    cls: type[BlockEncoding],
+    O: QubitOperator,  # noqa: E741 -- public, keyword-callable API name
+    tol: float = 1e-12,
+) -> BlockEncoding:
     r"""Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
     Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) algorithm
     specified in https://arxiv.org/abs/2507.20887.
@@ -39,6 +43,8 @@ def build_from_foqcs_lcu_operator(cls: type[BlockEncoding], O: QubitOperator, to
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     O : QubitOperator
         Operator to encode, supported operators are covered in `Notes`, e.g.
         ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
