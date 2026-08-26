@@ -16,26 +16,36 @@
 """
 
 from itertools import product
-from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 import numpy as np
+import scipy.sparse as sp_sparse  # aliased: `sp` is already sympy, below
 import sympy as sp
+from jax import random
+from numpy import ndarray
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import eigsh
 
-from qrisp import IterationEnvironment, conjugate, cx, cz, h, invert, merge, s, sx_dg
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp import (
+    IterationEnvironment,
+    QuantumCircuit,
+    QuantumVariable,
+    conjugate,
+    cx,
+    cz,
+    h,
+    invert,
+    merge,
+    s,
+    sx_dg,
+)
+from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.qubit_term import QubitTerm
-
-if TYPE_CHECKING:
-    # aliased to avoid clashing with the `sp` (sympy) import above; this
-    # branch never runs, it only gives type checkers a name to resolve
-    # to_sparse_matrix's return type against.
-    import scipy.sparse as sp_sparse
 
 threshold = 1e-9
 
@@ -620,8 +630,6 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-        from numpy import ndarray
-        from scipy.sparse import csr_matrix
 
         OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
 
@@ -676,23 +684,21 @@ class QubitOperator(Hamiltonian):
             The sparse matrix representing the operator.
 
         """
-        import scipy.sparse as sp
-
         operator_matrices = {
-            "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
-            "X": sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
-            "Y": sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
-            "Z": sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
-            "A": sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
-            "C": sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
-            "P0": sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
-            "P1": sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
+            "I": sp_sparse.csr_matrix([[1, 0], [0, 1]], dtype=complex),
+            "X": sp_sparse.csr_matrix([[0, 1], [1, 0]], dtype=complex),
+            "Y": sp_sparse.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
+            "Z": sp_sparse.csr_matrix([[1, 0], [0, -1]], dtype=complex),
+            "A": sp_sparse.csr_matrix([[0, 1], [0, 0]], dtype=complex),
+            "C": sp_sparse.csr_matrix([[0, 0], [1, 0]], dtype=complex),
+            "P0": sp_sparse.csr_matrix([[1, 0], [0, 0]], dtype=complex),
+            "P1": sp_sparse.csr_matrix([[0, 0], [0, 1]], dtype=complex),
         }
 
         def recursive_kron(keys, term_dict):
             if len(keys) == 1:
                 return operator_matrices[term_dict.get(keys[0], "I")]
-            return sp.kron(
+            return sp_sparse.kron(
                 operator_matrices[term_dict.get(keys.pop(0), "I")],
                 recursive_kron(keys, term_dict),
                 format="csr",
@@ -713,7 +719,7 @@ class QubitOperator(Hamiltonian):
                 factor_amount = max(participating_indices) + 1
             else:
                 res = 1
-                M = sp.csr_matrix((1, 1))
+                M = sp_sparse.csr_matrix((1, 1))
                 for coeff in coeffs:
                     res *= coeff
                 if coeffs:
@@ -724,7 +730,7 @@ class QubitOperator(Hamiltonian):
 
         keys = list(range(factor_amount))
 
-        M = sp.csr_matrix((2**factor_amount, 2**factor_amount))
+        M = sp_sparse.csr_matrix((2**factor_amount, 2**factor_amount))
         for k, coeff in enumerate(coeffs):
             M += complex(coeff) * recursive_kron(keys.copy(), term_dicts[k])
 
@@ -910,7 +916,6 @@ class QubitOperator(Hamiltonian):
             The ground state energy.
 
         """
-        from scipy.sparse.linalg import eigsh
 
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
@@ -1399,7 +1404,6 @@ class QubitOperator(Hamiltonian):
         # ===============
 
         # Create a QuantumCircuit that contains the conjugation
-        from qrisp import QuantumCircuit
 
         n = self.find_minimal_qubit_amount()
         qc = QuantumCircuit(n)
@@ -1684,7 +1688,6 @@ class QubitOperator(Hamiltonian):
         applied.
 
         """
-        from qrisp import QuantumVariable
 
         def return_function(*args):
 
@@ -2011,9 +2014,7 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-        from jax import random
 
-        from qrisp.jasp import q_switch
 
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator

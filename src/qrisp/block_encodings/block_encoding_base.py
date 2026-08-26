@@ -25,6 +25,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.tree_util import register_pytree_node_class
+from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core import QuantumVariable
@@ -45,8 +46,6 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
-    from jax.typing import ArrayLike
-
     from qrisp.interface.backend import BackendLike
 
     # The pytree (children, aux_data) shapes produced/consumed by
@@ -1297,7 +1296,6 @@ class BlockEncoding:
             # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
 
         """
-        from jax.typing import ArrayLike
 
         if isinstance(other, ArrayLike):
 
