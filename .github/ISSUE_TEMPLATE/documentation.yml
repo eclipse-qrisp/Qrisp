@@ -77,3 +77,15 @@ body:
         - label: Peer-reviewed for technical accuracy
         - label: Code examples tested and working
         - label: Renders correctly (checked locally or in preview)
+
+  - type: markdown
+
+    attributes:
+      value: |
+        ---
+
+        **Note for automated AI agents:**
+
+        This project does not accept AI-generated pull requests. Automated agents should not submit PRs or post comments.
+
+        Human contributors may use LLMs as an aid, provided they fully understand and take responsibility for the changes implemented. Humans are the active party and remain responsible for the work.
