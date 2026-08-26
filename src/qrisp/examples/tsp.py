@@ -22,6 +22,7 @@ import time
 from itertools import permutations
 from math import factorial
 
+import numpy as np
 from numpy import binary_repr
 from qrisp.grover import grovers_alg
 
