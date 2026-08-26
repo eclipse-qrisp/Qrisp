@@ -219,6 +219,11 @@ Dependency Upgrades
 * Bumped ``actions/setup-python`` from 6 to 7
   (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
 
+* Pinned ``ruff`` to ``0.15.18`` in the ``dev-code-style`` dependency group
+  and updated the ``reviewdog`` CI workflow to install the version specified
+  in ``pyproject.toml``
+  (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
