@@ -18,7 +18,6 @@
 
 """Converts Qrisp quantum circuits to PennyLane quantum functions."""
 
-
 import types
 from dataclasses import dataclass
 from typing import Callable, Optional

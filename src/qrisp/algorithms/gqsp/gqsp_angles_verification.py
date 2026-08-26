@@ -18,7 +18,6 @@
 
 """Classical utilities to verify and plot GQSP/QSP/QSVT angle computations against target polynomials."""
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.polynomial.chebyshev as cheb

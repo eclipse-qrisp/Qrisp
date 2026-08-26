@@ -32,7 +32,6 @@ JASP dialect, so we explicitly allow unregistered ops in the xDSL context
 outside of this file.
 """
 
-
 from xdsl.dialects import arith, builtin, scf, tensor
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,

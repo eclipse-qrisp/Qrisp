@@ -18,7 +18,6 @@
 
 """Defines the GMSEnvironment that compiles blocks of phase gates into ion-trap native GMS gates."""
 
-
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.misc.GMS_tools import GXX_converter
 

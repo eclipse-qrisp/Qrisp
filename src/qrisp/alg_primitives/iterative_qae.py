@@ -18,7 +18,6 @@
 
 """Implements Accelerated Iterative Quantum Amplitude Estimation (IQAE) without the QFT."""
 
-
 from jax.lax import while_loop
 
 from qrisp import z

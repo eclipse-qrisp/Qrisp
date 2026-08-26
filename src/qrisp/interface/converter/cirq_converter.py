@@ -18,7 +18,6 @@
 
 """Implements bidirectional conversion between Qrisp QuantumCircuit and Cirq Circuit objects."""
 
-
 import numpy as np
 
 from qrisp.circuit import ControlledOperation

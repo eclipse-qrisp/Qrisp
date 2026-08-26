@@ -18,7 +18,6 @@
 
 """Example script solving the MaxCut problem on a random graph using QAOAProblem and RX_mixer."""
 
-
 from operator import itemgetter
 
 import networkx as nx

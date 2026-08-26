@@ -30,7 +30,6 @@ Notes
   and falls back to ceil(log2(n)) when N is not provided.
 """
 
-
 from typing import Union
 
 import jax.numpy as jnp

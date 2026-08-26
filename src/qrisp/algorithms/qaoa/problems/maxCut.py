@@ -18,7 +18,6 @@
 
 """Implements the QAOA cost operator, cost function, and problem setup for the MaxCut problem."""
 
-
 from __future__ import annotations
 
 from collections.abc import Callable

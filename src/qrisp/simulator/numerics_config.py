@@ -18,7 +18,6 @@
 
 """Defines the numerics backend and simulator threshold parameters, configurable via environment variables."""
 
-
 import os
 
 import numpy as xp

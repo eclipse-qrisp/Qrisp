@@ -18,7 +18,6 @@
 
 """Implements the low-level Thapliyal adder circuit (TR gate and core addition procedure)."""
 
-
 import numpy as np
 
 from qrisp import QuantumCircuit

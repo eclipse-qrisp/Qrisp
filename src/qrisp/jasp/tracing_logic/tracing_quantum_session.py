@@ -18,7 +18,6 @@
 
 """Defines TracingQuantumSession, the singleton managing tracing-time quantum state construction."""
 
-
 from __future__ import annotations
 
 import weakref

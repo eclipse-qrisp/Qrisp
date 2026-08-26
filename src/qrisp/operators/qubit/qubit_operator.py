@@ -18,7 +18,6 @@
 
 """Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
-
 from itertools import product
 
 import jax.numpy as jnp

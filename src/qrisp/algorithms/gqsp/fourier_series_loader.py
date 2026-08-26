@@ -18,7 +18,6 @@
 
 """Prepares a quantum state approximating a signal's lowest Fourier modes via GQSP."""
 
-
 from typing import TYPE_CHECKING, Optional
 
 import jax.numpy as jnp

@@ -18,7 +18,6 @@
 
 """Converts a jaspr into a Catalyst Jaxpr, QIR, or MLIR representation."""
 
-
 import catalyst
 import jax.numpy as jnp
 import pennylane as qml

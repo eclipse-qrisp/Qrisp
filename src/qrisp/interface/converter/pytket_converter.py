@@ -18,7 +18,6 @@
 
 """Converts Qrisp quantum circuits to pytket circuits."""
 
-
 import numpy as np
 
 from qrisp import ControlledOperation

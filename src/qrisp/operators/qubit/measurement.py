@@ -18,7 +18,6 @@
 
 """Backend-sampling measurement of QubitOperator expectation values, including result caching."""
 
-
 import math
 
 import numpy as np

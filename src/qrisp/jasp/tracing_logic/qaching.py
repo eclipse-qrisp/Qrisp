@@ -18,7 +18,6 @@
 
 """Implements the qache decorator for caching and reusing traced Jasp function jaxprs."""
 
-
 import jax
 
 from qrisp.core import recursive_qa_search, recursive_qv_search

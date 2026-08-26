@@ -18,7 +18,6 @@
 
 """Implements the Quantum Singular Value Transformation (QSVT) for block-encoded operators."""
 
-
 from typing import TYPE_CHECKING, Literal
 
 from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles

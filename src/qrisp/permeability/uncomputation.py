@@ -18,7 +18,6 @@
 
 """Implements automatic uncomputation of QuantumVariables via the auto_uncompute decorator."""
 
-
 import numpy as np
 
 from qrisp.circuit import fast_append

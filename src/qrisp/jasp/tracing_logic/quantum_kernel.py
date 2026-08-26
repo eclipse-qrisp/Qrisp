@@ -18,7 +18,6 @@
 
 """Implements the quantum_kernel decorator marking a subroutine as a closed quantum kernel."""
 
-
 from qrisp.jasp.primitives import (
     AbstractQubit,
     AbstractQubitArray,

@@ -18,7 +18,6 @@
 
 """Collapses QuantumEnvironment enter/exit primitive pairs in a Jaxpr into nested Jaspr bodies."""
 
-
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 

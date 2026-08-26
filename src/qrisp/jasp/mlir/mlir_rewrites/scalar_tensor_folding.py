@@ -24,18 +24,16 @@ General Context:
     of rewrite patterns designed to collapse unnecessarily verbose chains.
 
 Specific Problem:
-    Intermediate lowering or folding steps often leave behind trivial, cancelling 
-    tensor operations. A scalar might be packed into a 0-D tensor only to be 
-    immediately extracted again. Furthermore, xDSL might leave unused 0-D tensors 
+    Intermediate lowering or folding steps often leave behind trivial, cancelling
+    tensor operations. A scalar might be packed into a 0-D tensor only to be
+    immediately extracted again. Furthermore, xDSL might leave unused 0-D tensors
     behind if standard DCE assumes they lack the `Pure` trait.
 
 Solution:
-    Rewrite patterns that fold `tensor.extract(tensor.from_elements(X))` directly 
-    back into the original scalar `X`. It also provides a targeted dead code 
+    Rewrite patterns that fold `tensor.extract(tensor.from_elements(X))` directly
+    back into the original scalar `X`. It also provides a targeted dead code
     elimination fallback to safely erase any unused `tensor.from_elements` operations.
 """
-
-
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, tensor

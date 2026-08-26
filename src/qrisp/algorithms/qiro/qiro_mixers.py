@@ -18,7 +18,6 @@
 
 """Implements QIRO-adapted RX/RZ and controlled mixers plus the matching initial state function."""
 
-
 from qrisp import auto_uncompute, control, rx, rz, x
 
 

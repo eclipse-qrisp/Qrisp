@@ -18,7 +18,6 @@
 
 """Transforms a Jaspr that creates and returns a QubitArray into one that receives it as an input."""
 
-
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn
 from qrisp.jasp.primitives import AbstractQuantumState

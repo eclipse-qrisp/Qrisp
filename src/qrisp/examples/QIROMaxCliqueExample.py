@@ -18,7 +18,6 @@
 
 """Solves the Max-Clique problem via QIRO and compares the result to NetworkX's approximation."""
 
-
 # imports
 import matplotlib.pyplot as plt
 import networkx as nx

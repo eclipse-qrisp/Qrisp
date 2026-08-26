@@ -18,7 +18,6 @@
 
 """This module defines :class:`VirtualBackend` and its associated :class:`VirtualJob`."""
 
-
 import warnings
 from typing import Sequence, cast
 

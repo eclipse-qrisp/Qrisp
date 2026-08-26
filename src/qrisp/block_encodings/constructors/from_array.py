@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding from a dense or sparse 2-D array via Pauli decomposition."""
 
-
 from typing import Any, Union
 
 import numpy.typing as npt

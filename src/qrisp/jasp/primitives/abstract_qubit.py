@@ -18,7 +18,6 @@
 
 """Defines :class:`AbstractQubit`, the JAX abstract value representing a single traced qubit."""
 
-
 from jax.core import AbstractValue
 
 

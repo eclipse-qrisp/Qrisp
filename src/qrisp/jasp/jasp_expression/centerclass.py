@@ -18,7 +18,6 @@
 
 """Defines the :class:`Jaspr` class, the ClosedJaxpr-based representation of hybrid quantum programs."""
 
-
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import Any, cast

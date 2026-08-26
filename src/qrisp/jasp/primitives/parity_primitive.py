@@ -18,7 +18,6 @@
 
 """Implements the parity primitive: multi-input XOR of measurements, used for QEC detectors."""
 
-
 import jax.numpy as jnp
 import numpy as np
 from jax.core import ShapedArray

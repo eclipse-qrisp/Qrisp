@@ -18,7 +18,6 @@
 
 """Implements the QIRO replacement routine, cost operator, mixer, and init function for MaxIndepSet."""
 
-
 import copy
 
 from qrisp import QuantumBool, mcx, rz, rzz, x

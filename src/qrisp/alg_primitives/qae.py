@@ -18,7 +18,6 @@
 
 """Implements the canonical quantum amplitude estimation (QAE) algorithm."""
 
-
 from collections.abc import Callable, Sequence
 from typing import Any
 

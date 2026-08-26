@@ -18,7 +18,6 @@
 
 """Checks whether a gate is permeable (block-diagonal) on a given set of qubits."""
 
-
 import numpy as np
 import sympy as sp
 

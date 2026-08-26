@@ -18,7 +18,6 @@
 
 """Flattens (inlines) pjit call equations in a jaxpr by evaluating their sub-jaxpr inline."""
 
-
 from jax import jit
 
 from qrisp.jasp.interpreter_tools import (

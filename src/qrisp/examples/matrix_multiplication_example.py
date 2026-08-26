@@ -18,7 +18,6 @@
 
 """Example demonstrating quantum matrix multiplication, tensordot, and quantum array indexing."""
 
-
 import numpy as np
 
 from qrisp import (

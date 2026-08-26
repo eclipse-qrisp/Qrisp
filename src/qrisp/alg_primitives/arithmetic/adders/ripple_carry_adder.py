@@ -18,7 +18,6 @@
 
 """Implements in-place ripple-carry addition of QuantumFloats using the Thapliyal adder."""
 
-
 from qrisp import *
 from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 

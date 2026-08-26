@@ -18,7 +18,6 @@
 
 """Defines a pass that recursively decomposes synthesized (composite) gates into elementary gates."""
 
-
 from __future__ import annotations
 
 from collections.abc import Callable

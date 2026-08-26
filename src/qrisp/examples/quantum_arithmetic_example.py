@@ -12,7 +12,6 @@
 
 """Benchmarks QuantumFloat multiplication and compares Qrisp's statevector simulator against Qiskit."""
 
-
 import time
 
 import numpy as np

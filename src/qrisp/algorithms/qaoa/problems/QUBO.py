@@ -18,7 +18,6 @@
 
 """Implements the QAOA cost operator, cost function, and solver for QUBO problems."""
 
-
 from operator import itemgetter
 
 import numpy as np

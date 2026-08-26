@@ -18,7 +18,6 @@
 
 """Defines BufferedQuantumState, which buffers gate applications before flushing them to a backend simulator."""
 
-
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 

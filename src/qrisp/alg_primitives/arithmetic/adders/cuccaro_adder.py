@@ -18,7 +18,6 @@
 
 """Implements the Cuccaro ripple-carry in-place adder for quantum and classical-quantum addition."""
 
-
 import jax.numpy as jnp
 
 from qrisp.circuit import Qubit

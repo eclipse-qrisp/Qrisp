@@ -27,7 +27,6 @@ Three key steps happen here:
 3) Run xDSL-based rewrites (e.g., control-flow fixes for quantum types).
 """
 
-
 from xdsl.dialects import builtin
 
 from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import decompose_composite_gates

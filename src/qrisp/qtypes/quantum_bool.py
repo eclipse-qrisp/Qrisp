@@ -18,7 +18,6 @@
 
 """Defines the QuantumBool type representing boolean truth values, usable as a ControlEnvironment."""
 
-
 import sys
 
 import jax.numpy as jnp

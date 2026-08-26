@@ -18,7 +18,6 @@
 
 """Implements the Dalzell kernel-reflection algorithm for solving quantum linear systems via QSVT."""
 
-
 from collections.abc import Callable
 
 import numpy as np

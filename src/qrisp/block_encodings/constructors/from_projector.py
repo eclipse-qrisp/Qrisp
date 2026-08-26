@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding of a projector or its kernel projector between two states."""
 
-
 from typing import Callable, Optional, Tuple, Union
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding

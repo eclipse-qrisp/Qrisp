@@ -18,7 +18,6 @@
 
 """Transforms a Maximum Set Packing instance into an equivalent Maximum Independent Set graph."""
 
-
 from itertools import combinations
 
 import networkx as nx

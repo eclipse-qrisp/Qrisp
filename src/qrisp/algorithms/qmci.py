@@ -18,7 +18,6 @@
 
 """Implements Quantum Monte Carlo Integration (QMCI) via amplitude estimation."""
 
-
 from qrisp import QuantumBool, auto_uncompute, h, x
 from qrisp.alg_primitives import IQAE
 

@@ -18,7 +18,6 @@
 
 """Defines ConjugationEnvironment and ConjugatedOperation for performing efficient conjugated operations."""
 
-
 import jax
 
 from qrisp.circuit import Operation

@@ -18,7 +18,6 @@
 
 """Equation evaluator that recursively decomposes composite quantum gates into primitive gates."""
 
-
 import jax.numpy as jnp
 from sympy import lambdify as _lambdify
 

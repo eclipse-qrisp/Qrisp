@@ -18,7 +18,6 @@
 
 """Defines :class:`AbstractQuantumState` and its create_qubits/delete_qubits/quantum_kernel primitives."""
 
-
 from jax.core import AbstractValue
 
 from qrisp.circuit import QubitAlloc, QubitDealloc

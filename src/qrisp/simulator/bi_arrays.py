@@ -18,7 +18,6 @@
 
 """Defines BiArray, SparseBiArray, DenseBiArray, and DummyBiArray for power-of-2 tensor contraction."""
 
-
 import threading
 import time
 

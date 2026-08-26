@@ -18,7 +18,6 @@
 
 """Implements jrange, a dynamic-bound loop iterator for Jasp, plus tracer and length helpers."""
 
-
 import jax.numpy as jnp
 from jax import jit
 from jax._src.array import ArrayImpl

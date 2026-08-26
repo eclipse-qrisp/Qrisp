@@ -18,7 +18,6 @@
 
 """Demonstrates applying diagonal Hamiltonians as phase functions to QuantumFloat and QuantumChar."""
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 

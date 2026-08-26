@@ -18,7 +18,6 @@
 
 """Defines the StimNoiseGate operation wrapping Stim noise instructions as Qrisp gates."""
 
-
 import stim
 
 from qrisp.circuit import Operation, QuantumCircuit

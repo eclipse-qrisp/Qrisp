@@ -18,7 +18,6 @@
 
 """Implements the Amy et al. T-depth-2 Toffoli gate with arbitrary control state support."""
 
-
 from qrisp.alg_primitives.mcx_algs.circuit_library import amy_toffoli_qc
 
 

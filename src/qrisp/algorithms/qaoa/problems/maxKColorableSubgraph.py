@@ -18,7 +18,6 @@
 
 """Implements the QuantumColor type and QAOA problem setup for the Max-k-Colorable-Subgraph problem."""
 
-
 import numpy as np
 
 from qrisp import QuantumVariable, cp, cx, mcp

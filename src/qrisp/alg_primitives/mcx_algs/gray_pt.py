@@ -18,7 +18,6 @@
 
 """Implements a phase-tolerant multi-controlled X gate via Margolus/Maslov circuits and Gray synthesis."""
 
-
 from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     margolus_qc,

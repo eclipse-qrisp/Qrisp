@@ -18,7 +18,6 @@
 
 """Implements in-place incrementation of QuantumFloats and qubit lists by constant classical values."""
 
-
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cx, mcx, x
 from qrisp.misc import gate_wrap

@@ -18,7 +18,6 @@
 
 """Implements cyclic convolution of a quantum state with a filter via the GQSP protocol."""
 
-
 from typing import TYPE_CHECKING
 
 from qrisp.alg_primitives import gidney_adder

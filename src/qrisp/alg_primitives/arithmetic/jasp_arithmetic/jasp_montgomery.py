@@ -18,7 +18,6 @@
 
 """Implements Jasp-traceable Montgomery reduction and multiplication (Rines & Chuang, 2018)."""
 
-
 from typing import Union
 
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder

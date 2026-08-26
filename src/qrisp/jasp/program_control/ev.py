@@ -18,7 +18,6 @@
 
 """Implements expectation_value, estimating expectation values via repeated quantum kernel sampling."""
 
-
 import jax
 import jax.numpy as jnp
 

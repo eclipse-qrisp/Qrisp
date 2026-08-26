@@ -18,7 +18,6 @@
 
 """Defines ConditionEnvironment for quantum if-conditionals and related condition-building decorators."""
 
-
 from qrisp.circuit import fast_append
 from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.quantum_variable import QuantumVariable

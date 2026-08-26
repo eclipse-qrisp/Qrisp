@@ -18,7 +18,6 @@
 
 """Defines DynamicQubitArray, a Jasp-compatible tracer-backed dynamic array of qubits."""
 
-
 from jax import tree_util
 
 from qrisp.jasp.primitives import AbstractQubit, fuse_qb_array, get_size, slice_qb_array

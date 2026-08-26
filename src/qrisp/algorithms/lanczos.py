@@ -18,7 +18,6 @@
 
 """Implements the quantum Lanczos algorithm for estimating ground-state energies via Krylov subspaces."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple

@@ -18,7 +18,6 @@
 
 """Example script demonstrating the GMSEnvironment for phase gates and a GMS-based QFT."""
 
-
 import numpy as np
 
 from qrisp import QFT, QuantumVariable, cp, h, p, x

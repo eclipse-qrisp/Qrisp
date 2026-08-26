@@ -18,7 +18,6 @@
 
 """Implements Gidney's AND-based in-place adder for classical-quantum and quantum-quantum addition."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

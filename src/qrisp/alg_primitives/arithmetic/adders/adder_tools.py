@@ -18,7 +18,6 @@
 
 """Decorator adapting a raw in-place adder to QuantumFloat alignment and classical/list operands."""
 
-
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumFloat, QuantumVariable
 

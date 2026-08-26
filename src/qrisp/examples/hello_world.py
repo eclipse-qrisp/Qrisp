@@ -18,7 +18,6 @@
 
 """Encodes and prints 'hello world' using a QuantumString."""
 
-
 from qrisp import QuantumString
 
 q_str = QuantumString(size=len("hello world"))

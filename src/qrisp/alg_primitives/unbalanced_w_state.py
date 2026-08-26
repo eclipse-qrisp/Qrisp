@@ -18,7 +18,6 @@
 
 """Prepares a generalized (unbalanced) W state with arbitrary amplitudes via a chain of XXYY gates."""
 
-
 from collections.abc import Sequence
 
 import jax.numpy as jnp

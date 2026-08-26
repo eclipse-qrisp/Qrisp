@@ -18,7 +18,6 @@
 
 """Implements the deprecated qswitch case-dispatch primitive, superseded by q_switch."""
 
-
 import warnings
 
 import jax.numpy as jnp

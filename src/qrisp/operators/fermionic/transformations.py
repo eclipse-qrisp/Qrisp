@@ -18,7 +18,6 @@
 
 """Implements the Jordan-Wigner mapping of single fermionic ladder operators to QubitOperators."""
 
-
 from functools import cache
 
 from qrisp.operators.qubit.qubit_operator import QubitOperator

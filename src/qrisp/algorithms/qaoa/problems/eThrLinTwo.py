@@ -18,7 +18,6 @@
 
 """Implements the QAOA cost operator and problem setup for the E3Lin2 constraint satisfaction problem."""
 
-
 from qrisp import conjugate, cx, rz
 
 

@@ -18,7 +18,6 @@
 
 """Defines the CircuitPass decorator for type-checked quantum circuit transformation passes."""
 
-
 from __future__ import annotations
 
 import functools

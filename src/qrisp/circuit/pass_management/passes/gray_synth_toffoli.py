@@ -18,7 +18,6 @@
 
 """Defines a pass replacing Toffoli gates with a CNOT-efficient gray-synthesis decomposition."""
 
-
 from __future__ import annotations
 
 import functools

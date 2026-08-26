@@ -18,7 +18,6 @@
 
 """Implements the Unqomp algorithm for automatically uncomputing qubits in a QuantumCircuit."""
 
-
 import networkx as nx
 
 from qrisp.circuit import ControlledOperation, PTControlledOperation, fast_append

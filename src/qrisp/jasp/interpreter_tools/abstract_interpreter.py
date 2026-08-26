@@ -18,7 +18,6 @@
 
 """Defines ContextDict and the generic Jaxpr equation-by-equation evaluator shared by Jasp's interpreters."""
 
-
 from collections.abc import Callable
 from typing import Any
 

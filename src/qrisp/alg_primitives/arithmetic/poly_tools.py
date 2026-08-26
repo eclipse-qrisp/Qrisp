@@ -18,7 +18,6 @@
 
 """Provides helper functions for converting sympy polynomial expressions to/from qubit symbol lists."""
 
-
 import sympy as sp
 
 

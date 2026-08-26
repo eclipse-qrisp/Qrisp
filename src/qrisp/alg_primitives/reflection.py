@@ -18,7 +18,6 @@
 
 """Implements a reflection operator around a prepared quantum state, used e.g. in amplitude amplification."""
 
-
 from collections.abc import Callable, Sequence
 from typing import Any
 

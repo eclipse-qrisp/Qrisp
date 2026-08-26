@@ -18,7 +18,6 @@
 
 """Defines the extract_stim decorator, converting Jasp functions into Stim circuits with typed index handles."""
 
-
 import numpy as np
 from jax.tree_util import tree_unflatten
 

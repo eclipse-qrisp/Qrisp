@@ -18,7 +18,6 @@
 
 """Prepares Dicke states on a QuantumVariable via deterministic or divide-and-conquer circuits."""
 
-
 from collections.abc import Sequence
 from typing import Literal, TypeAlias, assert_never, get_args
 

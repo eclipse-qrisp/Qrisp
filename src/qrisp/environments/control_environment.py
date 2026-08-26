@@ -18,7 +18,6 @@
 
 """Defines ControlEnvironment for controlling code blocks on qubits, plus the control() dispatch function."""
 
-
 import numpy as np
 from jax._src.array import ArrayImpl
 from jax.core import ShapedArray

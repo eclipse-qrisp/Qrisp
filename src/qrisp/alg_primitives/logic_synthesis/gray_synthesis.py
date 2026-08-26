@@ -18,7 +18,6 @@
 
 """Synthesizes phase polynomials and Boolean logic via Gray-code CNOT traversal of a Hamming TSP."""
 
-
 import numpy as np
 import sympy as sp
 

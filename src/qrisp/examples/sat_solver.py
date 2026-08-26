@@ -18,7 +18,6 @@
 
 """Example solving a 3-CNF SAT instance with Grover's algorithm via QuantumBool evaluation."""
 
-
 import numpy as np
 import sympy as sp
 from qrisp.grover import grovers_alg

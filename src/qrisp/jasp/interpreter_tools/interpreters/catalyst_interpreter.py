@@ -18,7 +18,6 @@
 
 """Equation evaluator that lowers Jaspr quantum primitives to Catalyst JAX primitives for QIR compilation."""
 
-
 import jax.numpy as jnp
 from catalyst.jax_primitives import (
     cond_p,

@@ -18,7 +18,6 @@
 
 """Implements Hamiltonian simulation of a block-encoded operator via Jacobi-Anger expansion."""
 
-
 from typing import TYPE_CHECKING
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding

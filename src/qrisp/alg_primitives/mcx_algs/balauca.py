@@ -18,7 +18,6 @@
 
 """Implements logarithmic-depth multi-controlled X/phase gates (Balauca algorithm) with clean/dirty ancillas."""
 
-
 import jax.numpy as jnp
 import numpy as np
 from jax import jit

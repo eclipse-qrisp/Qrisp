@@ -18,7 +18,6 @@
 
 """Implements the QAOA cost function and problem setup for the maximum clique problem."""
 
-
 import itertools
 
 import networkx as nx

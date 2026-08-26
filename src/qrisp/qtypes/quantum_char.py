@@ -18,7 +18,6 @@
 
 """Defines the QuantumChar type representing characters, with a qubit-saving NISQ mode."""
 
-
 from qrisp.core import QuantumVariable
 
 

@@ -18,7 +18,6 @@
 
 """Benchmarks and cross-validates Qrisp's unitary calculation against Qiskit's Aer simulator."""
 
-
 import time
 
 from numpy.linalg import norm

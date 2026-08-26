@@ -18,7 +18,6 @@
 
 """Defines :class:`AbstractQubitArray` and its get_qubit, get_size, slice, and fuse primitives."""
 
-
 from jax.core import AbstractValue, ShapedArray, Tracer
 
 from qrisp.jasp.primitives.abstract_qubit import AbstractQubit

@@ -18,7 +18,6 @@
 
 """Defines the Qubit class identifying a single quantum wire in a QuantumCircuit."""
 
-
 import numpy as np
 
 qubit_hash = np.zeros(1)

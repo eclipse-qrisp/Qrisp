@@ -18,7 +18,6 @@
 
 """Implements QFT-based Montgomery modular multiplication and reduction for QuantumFloats."""
 
-
 import numpy as np
 
 from qrisp.alg_primitives import QFT

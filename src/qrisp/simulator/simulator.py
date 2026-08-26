@@ -18,7 +18,6 @@
 
 """Simulation entry points: shot-based sampling, statevector, single-shot, and incremental circuit execution."""
 
-
 import shutil
 import sys
 import threading

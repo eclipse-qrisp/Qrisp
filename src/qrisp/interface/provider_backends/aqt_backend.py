@@ -18,7 +18,6 @@
 
 """Defines the AQTBackend and AQTJob classes for running Qrisp circuits on AQT quantum hardware."""
 
-
 import warnings
 
 from qiskit import QuantumCircuit as QiskitQuantumCircuit

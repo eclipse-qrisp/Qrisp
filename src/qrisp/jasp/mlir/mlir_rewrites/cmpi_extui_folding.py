@@ -28,17 +28,15 @@ Specific Problem:
     Booleans (i1) are often zero-extended into wider integers (e.g., i32, i64)
     only to be immediately compared against 0 or 1 to yield another boolean.
     For example: `measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → cmpi ne 0`.
-    This whole sequence is semantically equivalent to a simple boolean NOT 
+    This whole sequence is semantically equivalent to a simple boolean NOT
     of the original measurement.
 
 Solution:
     A rewrite pattern that statically resolves comparisons of zero-extended
-    booleans against 0 or 1. It bypasses the integer extension and folds the 
-    chain directly into the original boolean condition, its logical NOT, or a 
+    booleans against 0 or 1. It bypasses the integer extension and folds the
+    chain directly into the original boolean condition, its logical NOT, or a
     constant True/False.
 """
-
-
 
 from enum import Enum
 

@@ -18,7 +18,6 @@
 
 """Defines QuantumPrimitive, a JAX Primitive subclass tagging Qrisp's own tracing primitives."""
 
-
 from jax.extend.core import Primitive
 
 

@@ -200,7 +200,8 @@ Development
   module's documentation and flagged for style violations (``D205``,
   ``D212``, ...) on essentially every file; it was never meant to be read
   as documentation. Existing rich module-level documentation was preserved
-  verbatim, only reformatted to satisfy ``D205``.
+  verbatim, only reformatted to satisfy ``D205``
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
 
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``

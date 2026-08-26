@@ -18,7 +18,6 @@
 
 """Implements matrix inversion for quantum linear systems via QET, QSVT, or GQSVT."""
 
-
 from typing import Literal
 
 import numpy as np

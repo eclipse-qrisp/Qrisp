@@ -18,7 +18,6 @@
 
 """Implements the quantum Fourier transform (QFT) and its Jasp-traceable variant."""
 
-
 import numpy as np
 
 from qrisp.core import cp, cx, h, p, s, swap, x

@@ -18,7 +18,6 @@
 
 """Computes GQSP/QSP/QSVT phase angles from target polynomials via the non-linear Fourier transform."""
 
-
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 

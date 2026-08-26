@@ -18,7 +18,6 @@
 
 """Implements the Khattar multi-controlled X/phase gates using conditionally clean ancillae."""
 
-
 # Move this one layer up
 import jax.numpy as jnp
 from jax import jit

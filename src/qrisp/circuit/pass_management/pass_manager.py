@@ -18,7 +18,6 @@
 
 """Defines the PassManager class for composing and running sequences of CircuitPass instances."""
 
-
 from __future__ import annotations
 
 from collections.abc import Iterator

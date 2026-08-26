@@ -18,7 +18,6 @@
 
 """Provides helper functions to build and solve QUBO problems using COLD/LCD counterdiabatic driving."""
 
-
 import numpy as np
 import sympy as sp
 
@@ -86,9 +85,9 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
-        [h[i] * Z(i) for i in range(N)]
-    )
+    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum([
+        h[i] * Z(i) for i in range(N)
+    ])
 
     # AGP as function of alpha
     if uniform_AGP_coeffs:
@@ -227,9 +226,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
     # ) + sum([h[i] * Z(i) for i in range(N)])
 
-    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
-        [h[i] * Z(i) for i in range(N)]
-    )
+    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum([
+        h[i] * Z(i) for i in range(N)
+    ])
 
     # AGP
     A_lam = build_agp(agp_type, J, h)

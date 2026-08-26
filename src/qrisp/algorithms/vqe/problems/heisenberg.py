@@ -18,7 +18,6 @@
 
 """Builds VQE problem instances for the isotropic Heisenberg model using a Hamiltonian variational ansatz."""
 
-
 import networkx as nx
 
 from qrisp.core import cp, cx, gphase, h, rz, x

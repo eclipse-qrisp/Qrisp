@@ -18,7 +18,6 @@
 
 """Implements FOQCS-LCU PREP state-preparation circuits for Heisenberg and spin-glass Hamiltonians."""
 
-
 from collections.abc import Sequence
 from functools import partial
 from typing import Any

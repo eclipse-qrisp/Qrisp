@@ -18,7 +18,6 @@
 
 """Demonstrates Grover's algorithm on QuantumFloats with simple and arithmetic oracles."""
 
-
 import time
 
 import numpy as np

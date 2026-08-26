@@ -18,7 +18,6 @@
 
 """Implements the quantum-quantum higher-radix quantum carry-lookahead adder (qq_qcla)."""
 
-
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder

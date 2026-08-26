@@ -18,7 +18,6 @@
 
 """Implements qompiler, Qrisp's core compiler for dynamic qubit allocation and circuit optimization."""
 
-
 import numpy as np
 
 from qrisp.circuit import (

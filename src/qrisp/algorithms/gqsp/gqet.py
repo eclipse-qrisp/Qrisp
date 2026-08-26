@@ -18,7 +18,6 @@
 
 """Implements the Generalized Quantum Eigenvalue Transform (GQET) for Hermitian block-encoded operators."""
 
-
 from typing import TYPE_CHECKING, Literal
 
 from qrisp.algorithms.gqsp.gqsp import GQSP

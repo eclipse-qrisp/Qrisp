@@ -18,7 +18,6 @@
 
 """Defines ClControlEnvironment, executing quantum code conditioned on classical boolean values."""
 
-
 import jax
 from jax.lax import cond
 

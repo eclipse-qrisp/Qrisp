@@ -18,7 +18,6 @@
 
 """Defines the QuantumDictionary class for loading classical data relations via logic synthesis."""
 
-
 import itertools
 
 import numpy as np

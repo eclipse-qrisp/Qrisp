@@ -18,7 +18,6 @@
 
 """Example demonstrating quantum teleportation and BB84 key distribution over Qrisp's network simulator."""
 
-
 import random
 import time
 

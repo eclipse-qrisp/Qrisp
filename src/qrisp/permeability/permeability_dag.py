@@ -18,7 +18,6 @@
 
 """Defines the PermeabilityGraph DAG and node types used by the Unqomp (un)computation algorithm."""
 
-
 from builtins import id
 
 import matplotlib.pyplot as plt

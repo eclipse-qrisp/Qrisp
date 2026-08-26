@@ -18,7 +18,6 @@
 
 """Evaluates cond/while/scan as real traced JAX ops, with flatten/unflatten helpers for quantum types."""
 
-
 from collections.abc import Callable, Sequence
 from typing import Any
 

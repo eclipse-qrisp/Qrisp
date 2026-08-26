@@ -67,7 +67,6 @@ This module provides three key classes/concepts:
    - Delegates to default JAX evaluation for pure classical operations
 """
 
-
 import numpy as np
 
 # =============================================================================

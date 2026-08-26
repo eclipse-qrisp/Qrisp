@@ -18,7 +18,6 @@
 
 """Reorders circuit allocation/deallocation gates via topological sort to minimize qubit lifetime."""
 
-
 import networkx as nx
 import numpy as np
 import psutil

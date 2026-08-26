@@ -18,7 +18,6 @@
 
 """Configurable LRU-cache decorator and registry for clearing Qrisp compilation caches."""
 
-
 import os
 from functools import lru_cache as _lru_cache
 

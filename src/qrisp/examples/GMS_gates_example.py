@@ -18,7 +18,6 @@
 
 """Example script demonstrating the gms_multi_cx_fan_out and gms_multi_cp_gate GMS gates."""
 
-
 import numpy as np
 
 from qrisp import QuantumVariable, cp, h, transpile

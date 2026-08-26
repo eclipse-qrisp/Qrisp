@@ -18,7 +18,6 @@
 
 """Compiles jrange loop iterations into a JAX while_loop via the JIterationEnvironment primitive."""
 
-
 from jax.core import ShapedArray
 from jax.extend.core import Literal
 from jax.lax import while_loop

@@ -19,7 +19,6 @@
 """Re-exports IQMBackend from the optional iqm package, raising ImportError with install hint if missing."""
 
 
-
 class _MissingIQMBackend:
     """Placeholder for :class:`IQMBackend` when the ``iqm`` package is not installed.
 

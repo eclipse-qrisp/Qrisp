@@ -18,7 +18,6 @@
 
 """Example demonstrating in-place multiplication of a quantum vector by an invertible matrix."""
 
-
 import numpy as np
 
 from qrisp import QuantumArray

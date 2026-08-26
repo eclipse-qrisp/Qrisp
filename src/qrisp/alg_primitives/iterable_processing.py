@@ -18,7 +18,6 @@
 
 """Implements demux, cyclic shifts, and arbitrary permutations over quantum iterables."""
 
-
 import numpy as np
 
 from qrisp.core import cx, swap

@@ -18,7 +18,6 @@
 
 """Defines a pass that converts CX, CY, and SWAP gates into CZ-based decompositions."""
 
-
 from __future__ import annotations
 
 from collections.abc import Callable

@@ -18,7 +18,6 @@
 
 """Example demonstrating QuantumString creation, concatenation, and duplication."""
 
-
 from qrisp import QuantumString
 
 q_str = QuantumString(size=len("hello"))

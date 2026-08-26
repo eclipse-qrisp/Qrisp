@@ -18,7 +18,6 @@
 
 """Defines QIROProblem, a QAOAProblem subclass implementing the QIRO recursive reduction algorithm."""
 
-
 import copy
 
 from qrisp.algorithms.qaoa.qaoa_problem import QAOAProblem

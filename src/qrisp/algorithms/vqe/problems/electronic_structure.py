@@ -18,7 +18,6 @@
 
 """Builds VQE problem instances for molecular electronic structure using a QCCSD ansatz."""
 
-
 import itertools
 import math
 

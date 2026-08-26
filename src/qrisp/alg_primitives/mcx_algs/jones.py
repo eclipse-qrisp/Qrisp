@@ -18,7 +18,6 @@
 
 """Implements the Jones T-depth-1 Toffoli gate construction."""
 
-
 from qrisp import Operation, QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     amy_toffoli_qc,

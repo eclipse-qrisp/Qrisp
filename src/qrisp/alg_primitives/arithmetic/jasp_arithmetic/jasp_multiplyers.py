@@ -18,7 +18,6 @@
 
 """Implements Jasp-traceable QuantumFloat multiplication, squaring, and controlled multiplication."""
 
-
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import cx, x
 from qrisp.environments import control

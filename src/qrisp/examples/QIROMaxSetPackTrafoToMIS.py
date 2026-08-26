@@ -18,7 +18,6 @@
 
 """Transforms a Max-Set-Packing instance into a Max-Independent-Set graph and solves it via QIRO."""
 
-
 import random
 
 import networkx as nx

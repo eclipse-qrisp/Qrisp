@@ -18,7 +18,6 @@
 
 """Implements the non-restoring quantum integer square root algorithm for QuantumFloats."""
 
-
 from qrisp.circuit import Qubit
 from qrisp.core.gate_application_functions import cx, mcx, swap, x
 from qrisp.qtypes import QuantumFloat

@@ -48,7 +48,6 @@ Example usage::
               f"{sub_stats.inlined_eqn_count} eqns inlined")
 """
 
-
 from dataclasses import dataclass
 from typing import Dict
 

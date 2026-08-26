@@ -18,7 +18,6 @@
 
 """Implements matrix multiplication, dot, and tensordot operations for QuantumArrays."""
 
-
 import numpy as np
 import sympy as sp
 

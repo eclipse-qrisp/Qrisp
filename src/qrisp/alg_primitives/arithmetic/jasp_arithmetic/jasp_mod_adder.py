@@ -18,7 +18,6 @@
 
 """Implements a Jasp-traceable modular adder built from a plain in-place adder (default: Gidney)."""
 
-
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import cx
 from qrisp.environments import control, invert

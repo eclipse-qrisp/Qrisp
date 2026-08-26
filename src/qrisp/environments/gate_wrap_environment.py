@@ -18,7 +18,6 @@
 
 """Defines GateWrapEnvironment, which bundles contained operations into a single wrapped gate instruction."""
 
-
 from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc
 from qrisp.environments import QuantumEnvironment
 

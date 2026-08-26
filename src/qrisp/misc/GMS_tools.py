@@ -18,7 +18,6 @@
 
 """Tools for converting phase/cphase circuits into Moelmer-Soerensen (GMS) GXX/GZZ gate sequences."""
 
-
 import numpy as np
 
 from qrisp.circuit import Operation

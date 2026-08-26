@@ -18,7 +18,6 @@
 
 """Implements QuantumFloat comparison operators (lt, gt, leq, geq, eq, neq) as adaptive conditions."""
 
-
 from qrisp.environments import adaptive_condition, conjugate, control
 from qrisp.misc.utility import lifted
 

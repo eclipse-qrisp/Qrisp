@@ -18,7 +18,6 @@
 
 """Demonstrates the HHL algorithm solving a 2x2 linear system and compares to the classical solution."""
 
-
 import numpy as np
 from numpy.linalg import solve
 from scipy.linalg import expm

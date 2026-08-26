@@ -18,7 +18,6 @@
 
 """Provides the Grover diffuser, state-tagging oracle helper, and Grover's search algorithm."""
 
-
 from collections.abc import Callable, Sequence
 from typing import Any
 

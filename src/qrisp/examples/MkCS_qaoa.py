@@ -18,7 +18,6 @@
 
 """Defines the QuantumColor variable and solves the Max-k-Colorable Subgraph problem with QAOA."""
 
-
 import random
 from operator import itemgetter
 

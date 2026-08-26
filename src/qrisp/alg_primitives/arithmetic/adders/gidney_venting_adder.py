@@ -18,7 +18,6 @@
 
 """Implements Gidney's carry-venting classical-quantum in-place adder using mid-circuit measurements."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

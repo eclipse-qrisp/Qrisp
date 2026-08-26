@@ -18,7 +18,6 @@
 
 """Defines the DCQOProblem class for solving QUBOs via COLD/LCD counterdiabatic driving."""
 
-
 import numpy as np
 import sympy as sp
 from scipy.optimize import Bounds, minimize

@@ -18,7 +18,6 @@
 
 """Defines the QuantumSession class managing QuantumVariable lifecycles, environments, and compilation."""
 
-
 import weakref
 
 import numpy as np

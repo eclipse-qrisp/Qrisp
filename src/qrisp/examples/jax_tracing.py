@@ -18,7 +18,6 @@
 
 """Example exploring Jasp/JAX tracing of Qrisp functions via jaxpr inspection and evaluation."""
 
-
 from qrisp import *
 from qrisp.jasp import qfunc_def
 

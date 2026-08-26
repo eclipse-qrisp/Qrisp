@@ -18,7 +18,6 @@
 
 """Eagerly evaluates cond/while/scan equations by unrolling them with concrete Python control flow."""
 
-
 from collections.abc import Callable
 from typing import Any
 

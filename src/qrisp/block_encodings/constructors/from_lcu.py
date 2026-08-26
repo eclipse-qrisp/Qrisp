@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding via the Linear Combination of Unitaries (LCU) PREP-SELECT-PREP protocol."""
 
-
 from collections.abc import Callable
 from typing import Any
 

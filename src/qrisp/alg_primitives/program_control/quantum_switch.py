@@ -18,7 +18,6 @@
 
 """Implements the classical-mode backend for q_switch, dispatching branches by a quantum index."""
 
-
 import warnings
 
 import jax.numpy as jnp

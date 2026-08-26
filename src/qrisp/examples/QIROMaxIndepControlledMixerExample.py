@@ -18,7 +18,6 @@
 
 """Solves the Max Independent Set problem via QIRO using a controlled RZ mixer variant."""
 
-
 # imports
 import networkx as nx
 

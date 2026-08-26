@@ -18,7 +18,6 @@
 
 """Lowers a Jaxpr to MLIR (StableHLO/linalg) and converts the result into an xDSL module."""
 
-
 import sys
 from io import StringIO
 

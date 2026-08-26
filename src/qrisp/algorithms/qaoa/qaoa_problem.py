@@ -18,7 +18,6 @@
 
 """Defines the QAOAProblem class encapsulating the cost operator, mixer, and optimization routine."""
 
-
 import time
 
 import jax

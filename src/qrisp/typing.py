@@ -18,7 +18,6 @@
 
 """Type aliases (QubitLike, ScalarLike, ArrayLike, FloatLike, etc.) used for type hints throughout Qrisp."""
 
-
 from __future__ import annotations
 
 from typing import Sequence, TypeAlias

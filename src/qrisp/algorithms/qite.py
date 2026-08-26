@@ -18,7 +18,6 @@
 
 """Implements Double-Bracket Quantum Imaginary-Time Evolution (DB-QITE) via the GC and HOPF methods."""
 
-
 import jax.numpy as jnp
 import sympy as sp
 from jax import lax

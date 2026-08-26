@@ -18,7 +18,6 @@
 
 """Helper functions for rebuilding a Jaxpr or ClosedJaxpr with new equations and/or outvars."""
 
-
 from typing import TYPE_CHECKING
 
 from jax.extend.core import ClosedJaxpr, Jaxpr

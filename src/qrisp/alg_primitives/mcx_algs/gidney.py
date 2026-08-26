@@ -18,7 +18,6 @@
 
 """Implements Gidney's logical AND gate (T-count-optimal Toffoli) and its measurement-based uncomputation."""
 
-
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     ctrl_state_wrap,
     gidney_qc,

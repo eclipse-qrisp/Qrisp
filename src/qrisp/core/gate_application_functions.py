@@ -18,7 +18,6 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
-
 import jax
 import sympy
 

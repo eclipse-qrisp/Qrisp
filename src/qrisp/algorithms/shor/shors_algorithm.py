@@ -18,7 +18,6 @@
 
 """Implements Shor's integer factorization algorithm via quantum order finding."""
 
-
 import numpy as np
 from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 

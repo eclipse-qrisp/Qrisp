@@ -18,7 +18,6 @@
 
 """Defines the TruthTable class and dispatches Boolean function synthesis to gate-level circuits."""
 
-
 import numpy as np
 import sympy as sp
 

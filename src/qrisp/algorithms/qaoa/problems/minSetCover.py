@@ -18,7 +18,6 @@
 
 """Implements the QAOA mixer, cost function, and problem setup for the minimum set cover problem."""
 
-
 from qrisp import QuantumBool, QuantumVariable, mcx, x
 from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 

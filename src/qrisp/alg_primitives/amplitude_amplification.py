@@ -18,7 +18,6 @@
 
 """Implements quantum amplitude amplification, including the oblivious variant."""
 
-
 from collections.abc import Callable, Sequence
 from typing import Any
 

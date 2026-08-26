@@ -18,7 +18,6 @@
 
 """Tests symbolic circuit parameters and benchmarks bind_parameters performance for large circuits."""
 
-
 import random
 import time
 

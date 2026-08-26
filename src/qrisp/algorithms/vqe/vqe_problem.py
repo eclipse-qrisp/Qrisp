@@ -18,7 +18,6 @@
 
 """Defines the VQEProblem class encapsulating a Hamiltonian, ansatz, and VQE optimization routines."""
 
-
 import time
 
 import jax

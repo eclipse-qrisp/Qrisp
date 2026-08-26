@@ -18,7 +18,6 @@
 
 """Defines the FermionicTerm class representing a product of fermionic ladder operators."""
 
-
 #
 # FermionicTerm
 #

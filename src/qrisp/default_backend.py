@@ -35,7 +35,6 @@ The implementing classes live in
 for convenience.
 """
 
-
 from qrisp.interface.simulators.qrisp_simulator_backend import (
     QrispSimulatorBackend,
     QrispSimulatorJob,  # noqa: F401 — re-exported for convenience

@@ -18,7 +18,6 @@
 
 """Provides the find_max subroutine for locating maximal qubit correlations in QIRO."""
 
-
 import numpy as np
 
 

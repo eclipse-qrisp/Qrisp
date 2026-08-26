@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding from custom FOQCS-LCU PREP_R/PREP_L state-preparation routines."""
 
-
 from typing import Callable
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding

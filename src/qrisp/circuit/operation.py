@@ -18,7 +18,6 @@
 
 """Defines the Operation class hierarchy for quantum gates, including controlled and phase-tolerant variants."""
 
-
 from __future__ import annotations
 
 import copy

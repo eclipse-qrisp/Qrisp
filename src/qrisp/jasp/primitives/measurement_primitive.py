@@ -18,7 +18,6 @@
 
 """Defines the measurement and reset primitives for qubits and QubitArrays."""
 
-
 from jax.core import ShapedArray
 
 from qrisp.circuit import Clbit, QuantumCircuit, Qubit

@@ -18,7 +18,6 @@
 
 """Defines a pass that removes SWAP gates by folding them into a qubit permutation remap."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass

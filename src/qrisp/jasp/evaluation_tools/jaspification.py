@@ -18,7 +18,6 @@
 
 """Defines the jaspify/stimulate decorators and simulate_jaspr, the core Jasp equation-by-equation simulator."""
 
-
 from collections.abc import Callable
 from typing import Any, Literal
 

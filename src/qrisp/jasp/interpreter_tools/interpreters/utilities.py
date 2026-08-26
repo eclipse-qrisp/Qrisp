@@ -18,7 +18,6 @@
 
 """Shared helper functions (measurement behaviors, gate counting) used by the profiling interpreters."""
 
-
 from typing import Dict, List
 
 import jax

@@ -18,7 +18,6 @@
 
 """Defines the Pauli multiplication table and the QubitTerm class representing Pauli tensor products."""
 
-
 import numpy as np
 from sympy import Symbol
 

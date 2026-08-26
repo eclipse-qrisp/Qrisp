@@ -18,7 +18,6 @@
 
 """Reorders and prunes a circuit's instructions to keep only those in the light cone of given measurements."""
 
-
 import networkx as nx
 
 from qrisp.permeability.qc_transformations.memory_management import topological_sort

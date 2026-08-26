@@ -18,7 +18,6 @@
 
 """Defines standard and constrained QAOA mixer operators (RX, RY, XY, RZ, Grover, portfolio)."""
 
-
 from qrisp import (
     QuantumArray,
     QuantumVariable,

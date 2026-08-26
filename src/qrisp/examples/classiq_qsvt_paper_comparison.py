@@ -18,7 +18,6 @@
 
 """Implements the walk operator and reflection circuits from arXiv:2412.07372 and reports gate counts."""
 
-
 # This file implements the circuits described in https://arxiv.org/abs/2412.07372
 # and computes some performance metrics
 from qrisp import *

@@ -18,7 +18,6 @@
 
 """Prepares an arbitrary quantum state via a binary-tree decomposition using the q_switch primitive."""
 
-
 from __future__ import annotations
 
 from collections.abc import Callable

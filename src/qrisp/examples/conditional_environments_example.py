@@ -18,7 +18,6 @@
 
 """Demonstrates nested conditional quantum environments using custom adaptive equality conditions."""
 
-
 import time
 
 from qrisp import (

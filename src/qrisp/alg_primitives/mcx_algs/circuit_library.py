@@ -18,7 +18,6 @@
 
 """Defines a library of Toffoli-variant QuantumCircuits (Margolus, Maslov, Gidney, Amy, Jones, Selinger)."""
 
-
 from qrisp import CZGate, Instruction, QuantumCircuit, XGate
 
 

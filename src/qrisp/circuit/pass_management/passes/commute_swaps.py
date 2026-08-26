@@ -18,7 +18,6 @@
 
 """Implements the commute_swaps pass that commutes single-qubit instructions past SWAP gates."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.operation import Operation

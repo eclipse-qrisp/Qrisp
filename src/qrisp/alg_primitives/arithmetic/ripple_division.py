@@ -18,7 +18,6 @@
 
 """Implements non-restoring quantum integer division and multiplicative inversion for QuantumFloats."""
 
-
 from qrisp import gate_wrap
 from qrisp.core.gate_application_functions import x
 

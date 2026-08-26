@@ -18,7 +18,6 @@
 
 """Implements ancilla-supported multi-controlled X gates following Maslov's construction."""
 
-
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     margolus_qc,
     maslov_qc,

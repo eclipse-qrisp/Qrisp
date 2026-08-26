@@ -18,7 +18,6 @@
 
 """Graph-coloring utilities for grouping Hamiltonian terms and batched expectation-value measurement."""
 
-
 import networkx as nx
 import numba as nb
 import numpy as np

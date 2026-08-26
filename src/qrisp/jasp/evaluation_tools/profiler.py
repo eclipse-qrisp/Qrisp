@@ -24,7 +24,7 @@ given Jaspr into "counting instructions". That means instead of performing some
 quantum gate, we increment an index in an array, which keeps track of how many
 instructions of each type have been performed.
 
-To do this, we implement the 
+To do this, we implement the
 
 qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
 
@@ -32,7 +32,6 @@ Which handles the transformation logic of the Jaspr.
 This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
-
 
 from functools import wraps
 from typing import Any, Callable, NamedTuple, Tuple

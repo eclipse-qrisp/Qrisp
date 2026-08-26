@@ -18,7 +18,6 @@
 
 """Defines VQEBenchmark for evaluating, ranking, and visualizing VQE benchmarking results."""
 
-
 import dill as pickle
 import matplotlib.pyplot as plt
 

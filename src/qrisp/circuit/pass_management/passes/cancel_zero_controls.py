@@ -18,7 +18,6 @@
 
 """Implements the cancel_zero_controls pass, removing controlled gates guaranteed to act on a zero state."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.operation import (

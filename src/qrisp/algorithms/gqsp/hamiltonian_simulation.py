@@ -18,7 +18,6 @@
 
 """Approximates Hamiltonian time evolution exp(-itH) via Jacobi-Anger expansion and GQSP."""
 
-
 from typing import TYPE_CHECKING
 
 import jax

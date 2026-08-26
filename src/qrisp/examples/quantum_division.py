@@ -18,7 +18,6 @@
 
 """Example demonstrating quantum division, divmod, and float inversion on QuantumFloats."""
 
-
 import time
 
 from qrisp.alg_primitives.arithmetic import (

@@ -18,7 +18,6 @@
 
 """Defines the CompilationAccelerator context manager for toggling fast circuit-append mode."""
 
-
 import threading
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit

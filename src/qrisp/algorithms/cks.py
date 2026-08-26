@@ -18,7 +18,6 @@
 
 """Implements the Childs-Kothari-Somma (CKS) quantum algorithm for solving linear systems."""
 
-
 from typing import TYPE_CHECKING, Tuple
 
 import jax.numpy as jnp

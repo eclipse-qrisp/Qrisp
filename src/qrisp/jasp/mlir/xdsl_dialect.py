@@ -26,7 +26,6 @@ This module registers the JASP dialect with xDSL so that:
 - Non-variadic ops print in their custom assembly format (no quoted op names)
 """
 
-
 from xdsl.dialects.builtin import (
     ArrayAttr,
     IntegerAttr,

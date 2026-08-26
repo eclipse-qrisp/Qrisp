@@ -18,7 +18,6 @@
 
 """Synthesizes a multi-controlled X gate using Gray-code based logic synthesis."""
 
-
 import numpy as np
 
 from qrisp import QuantumCircuit

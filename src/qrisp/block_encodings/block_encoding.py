@@ -18,7 +18,6 @@
 
 """Assembles the BlockEncoding class by attaching its constructor and transformation methods."""
 
-
 from .block_encoding_base import BlockEncoding
 from .constructors import (
     build_from_array,

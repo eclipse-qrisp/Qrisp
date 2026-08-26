@@ -18,7 +18,6 @@
 
 """Defines the a() and c() factory functions for fermionic annihilation/creation operators."""
 
-
 from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 

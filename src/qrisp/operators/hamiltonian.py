@@ -18,7 +18,6 @@
 
 """Abstract Hamiltonian base class defining the common interface for operator arithmetic."""
 
-
 from abc import ABC, abstractmethod
 
 

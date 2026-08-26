@@ -18,7 +18,6 @@
 
 """Implements QuantumFloat mult/add/sub and phase-polynomial application via semi-Boolean polynomials."""
 
-
 import numpy as np
 import sympy as sp
 

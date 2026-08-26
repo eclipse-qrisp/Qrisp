@@ -18,7 +18,6 @@
 
 """Implements synthesis routines for building multi-controlled circuits and gates."""
 
-
 import numpy as np
 
 from qrisp.circuit import CXGate, QuantumCircuit, Qubit, XGate

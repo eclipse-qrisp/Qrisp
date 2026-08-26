@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding of a shifted identity matrix with ones on a chosen diagonal."""
 
-
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.qtypes import QuantumBool
 

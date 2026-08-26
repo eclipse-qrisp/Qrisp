@@ -18,7 +18,6 @@
 
 """Defines a no-op pass that prints the circuit to stdout for debugging PassManager pipelines."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass

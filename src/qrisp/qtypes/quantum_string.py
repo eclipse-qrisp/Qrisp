@@ -18,7 +18,6 @@
 
 """Defines the QuantumString type, a QuantumArray of QuantumChars representing quantum strings."""
 
-
 import numpy as np
 
 from qrisp.core.quantum_array import QuantumArray

@@ -67,7 +67,6 @@ running accumulator.  Non-zero accumulated phase is emitted as a single
 ``gphase`` gate at the end of the pass.
 """
 
-
 from __future__ import annotations
 
 import networkx as nx

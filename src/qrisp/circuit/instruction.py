@@ -19,7 +19,6 @@
 """Defines the Instruction class pairing an Operation with its qubit and clbit operands."""
 
 
-
 class Instruction:
     """This class combines Operation objects with their operands (ie. qubits and classical
     bits). The data attribute of the QuantumCircuit class consists of a list of

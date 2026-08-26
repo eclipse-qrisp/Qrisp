@@ -18,7 +18,6 @@
 
 """Implements the arrange_swaps pass that reorders SWAP qubits to expose redundant CX gates."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass

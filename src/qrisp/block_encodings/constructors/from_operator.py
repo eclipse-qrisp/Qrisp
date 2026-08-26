@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding from a QubitOperator or FermionicOperator via its Pauli-string LCU decomposition."""
 
-
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.block_encodings.constructors.from_lcu import build_from_lcu
 from qrisp.operators import FermionicOperator, QubitOperator

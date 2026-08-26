@@ -18,7 +18,6 @@
 
 """Implements Remaud's ancilla-free, polylogarithmic-depth in-place adder and its ladder-synthesis helpers."""
 
-
 from qrisp.core.gate_application_functions import cx, mcx, x
 from qrisp.environments import control, invert
 from qrisp.jasp import jlen, jnp, jrange, while_loop

@@ -18,7 +18,6 @@
 
 """Implements the QAOA mixer, cost function, and problem setup for the maximum independent set problem."""
 
-
 import itertools
 
 from qrisp import QuantumBool, mcx, x

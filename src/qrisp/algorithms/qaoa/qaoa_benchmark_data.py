@@ -18,7 +18,6 @@
 
 """Defines QAOABenchmark for evaluating, ranking, and visualizing QAOA benchmark run data."""
 
-
 import dill as pickle
 import matplotlib.pyplot as plt
 

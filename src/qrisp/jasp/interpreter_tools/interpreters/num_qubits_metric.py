@@ -18,7 +18,6 @@
 
 """Defines NumQubitsMetric, a profiling metric that tracks qubit allocations and deallocations in a Jaspr."""
 
-
 from collections.abc import Callable
 from typing import Tuple
 

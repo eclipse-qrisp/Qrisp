@@ -18,7 +18,6 @@
 
 """Defines the quantum_gate primitive that applies parametrized gate operations to qubits."""
 
-
 import jax
 import jax.numpy as jnp
 from sympy import symbols

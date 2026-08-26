@@ -18,7 +18,6 @@
 
 """Implements the QIRO replacement routine and reduced cost operator for the MaxClique problem."""
 
-
 import copy
 
 import networkx as nx

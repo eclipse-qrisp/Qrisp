@@ -18,7 +18,6 @@
 
 """Implements unsigned integer less-than comparisons (and derived >, <=, >=) via inverted in-place adders."""
 
-
 import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx

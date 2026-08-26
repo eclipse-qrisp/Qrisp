@@ -18,7 +18,6 @@
 
 """Provides JAX polynomial/Chebyshev basis conversion and Chebyshev approximation helper functions."""
 
-
 import warnings
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal

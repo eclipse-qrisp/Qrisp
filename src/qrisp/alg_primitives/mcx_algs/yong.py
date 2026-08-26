@@ -18,7 +18,6 @@
 
 """Implements the Yong recursive multi-controlled X gate construction."""
 
-
 from qrisp.core import h, mcx, s, s_dg, x
 from qrisp.environments import invert
 from qrisp.qtypes import QuantumBool

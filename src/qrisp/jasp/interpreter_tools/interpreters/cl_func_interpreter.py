@@ -1027,12 +1027,10 @@ def jaspr_to_cl_func_jaxpr(
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumState):
             # Quantum circuit -> (bit_array, free_qubits_jlist)
-            args.append(
-                (
-                    jnp.zeros(int(np.ceil(bit_array_padding / 64)), dtype=jnp.uint64),
-                    Jlist(jnp.arange(bit_array_padding), max_size=bit_array_padding),
-                )
-            )
+            args.append((
+                jnp.zeros(int(np.ceil(bit_array_padding / 64)), dtype=jnp.uint64),
+                Jlist(jnp.arange(bit_array_padding), max_size=bit_array_padding),
+            ))
         elif isinstance(invar.aval, AbstractQubitArray):
             # QubitArray -> empty Jlist (will be filled during execution)
             qreg = Jlist(

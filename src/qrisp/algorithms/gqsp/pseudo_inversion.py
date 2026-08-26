@@ -18,7 +18,6 @@
 
 """Implements the block-encoded threshold matrix pseudo-inverse via QSVT and Chebyshev approximation."""
 
-
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev

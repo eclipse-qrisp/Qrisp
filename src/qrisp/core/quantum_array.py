@@ -18,7 +18,6 @@
 
 """Defines the QuantumArray class, a numpy-ndarray-like container for QuantumVariables."""
 
-
 from __future__ import annotations
 
 import copy

@@ -18,7 +18,6 @@
 
 """Builds a BlockEncoding from a QubitOperator using the FOQCS-LCU algorithm with automatic PREP selection."""
 
-
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.operators import QubitOperator
 

@@ -18,7 +18,6 @@
 
 """Registers MLIR type and primitive lowering rules mapping Jasp primitives to the jasp MLIR dialect."""
 
-
 from jax.interpreters.mlir import ir_type_handlers
 from jaxlib.mlir import ir
 

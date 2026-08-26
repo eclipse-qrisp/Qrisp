@@ -18,7 +18,6 @@
 
 """Jasp-compatible quantum control flow primitives: q_while_loop, q_fori_loop, q_cond, and q_switch."""
 
-
 from jax.lax import cond, switch, while_loop
 
 from qrisp.core import recursive_qv_search

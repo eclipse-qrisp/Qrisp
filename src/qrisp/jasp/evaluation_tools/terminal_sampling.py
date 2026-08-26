@@ -18,7 +18,6 @@
 
 """Defines the terminal_sampling decorator for sampling a hybrid simulation's terminal quantum state directly."""
 
-
 from qrisp.jasp.jasp_expression import make_jaspr
 
 

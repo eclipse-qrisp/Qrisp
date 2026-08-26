@@ -18,7 +18,6 @@
 
 """Defines the custom_control decorator and supporting classes for user-specified controlled operations."""
 
-
 import functools
 import inspect
 

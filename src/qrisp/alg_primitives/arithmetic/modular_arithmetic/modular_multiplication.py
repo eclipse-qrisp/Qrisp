@@ -18,7 +18,6 @@
 
 """Implements adder-based Montgomery modular multiplication and reduction (Rines & Chuang, 2018)."""
 
-
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.comparisons import less_than

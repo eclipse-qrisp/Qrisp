@@ -18,7 +18,6 @@
 
 """Example solving the Traveling Salesman Problem via Grover's algorithm over permutations."""
 
-
 import time
 from itertools import permutations
 from math import factorial
@@ -32,14 +31,12 @@ from qrisp import QuantumFloat, auto_uncompute
 city_amount = 4
 
 distance_matrix = (
-    np.array(
-        [
-            [0, 0.25, 0.125, 0.5],
-            [0.25, 0, 0.625, 0.375],
-            [0.125, 0.625, 0, 0.75],
-            [0.5, 0.375, 0.75, 0],
-        ]
-    )
+    np.array([
+        [0, 0.25, 0.125, 0.5],
+        [0.25, 0, 0.625, 0.375],
+        [0.125, 0.625, 0, 0.75],
+        [0.5, 0.375, 0.75, 0],
+    ])
     / 4
 )
 
@@ -191,14 +188,12 @@ print("Permutation solution: ", perm_qa)
 city_amount = 4
 
 distance_matrix = (
-    np.array(
-        [
-            [0, 0.25, 0.125, 0.5],
-            [0.25, 0, 0.625, 0.375],
-            [0.125, 0.625, 0, 0.75],
-            [0.5, 0.375, 0.75, 0],
-        ]
-    )
+    np.array([
+        [0, 0.25, 0.125, 0.5],
+        [0.25, 0, 0.625, 0.375],
+        [0.125, 0.625, 0, 0.75],
+        [0.5, 0.375, 0.75, 0],
+    ])
     / 4
 )
 

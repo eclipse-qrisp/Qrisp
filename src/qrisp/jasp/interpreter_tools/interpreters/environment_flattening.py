@@ -18,7 +18,6 @@
 
 """Flattens QuantumEnvironment (q_env) primitives out of a Jaspr according to their semantics."""
 
-
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, exec_eqn, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumState

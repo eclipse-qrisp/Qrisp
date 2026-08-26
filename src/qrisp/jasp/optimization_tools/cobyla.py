@@ -18,7 +18,6 @@
 
 """Implements the COBYLA gradient-free optimization algorithm for use inside Jasp tracing."""
 
-
 import jax
 import jax.numpy as jnp
 from jax.scipy.optimize import OptimizeResults

@@ -18,7 +18,6 @@
 
 """Defines factory functions for standard gate Operations (X, H, CX, MCX, rotations, etc.)."""
 
-
 from __future__ import annotations
 
 import types

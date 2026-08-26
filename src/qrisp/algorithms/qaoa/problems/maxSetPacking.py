@@ -18,7 +18,6 @@
 
 """Implements the QAOA problem setup for the maximum set packing problem via reduction to MaxIndepSet."""
 
-
 from itertools import combinations
 
 import networkx as nx

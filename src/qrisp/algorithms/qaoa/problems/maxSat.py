@@ -18,7 +18,6 @@
 
 """Implements the QAOA cost operator and problem setup for the maximum satisfiability (MaxSat) problem."""
 
-
 import math
 
 import sympy as sp

@@ -18,7 +18,6 @@
 
 """Implements the terminal-sampling evaluator that batches measurement sampling via the Qrisp simulator."""
 
-
 import jax
 import jax.numpy as jnp
 import numpy as np

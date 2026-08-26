@@ -18,7 +18,6 @@
 
 """Implements QuantumSession merging and recursive search for sessions, variables, and arrays."""
 
-
 import weakref
 
 from jax._src.array import ArrayImpl

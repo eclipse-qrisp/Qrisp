@@ -18,7 +18,6 @@
 
 """Defines CountOpsMetric, a profiling metric that counts quantum gate operations in a Jaspr."""
 
-
 from collections.abc import Callable
 from typing import Dict, List, Tuple
 

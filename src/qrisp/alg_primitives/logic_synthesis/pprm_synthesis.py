@@ -18,7 +18,6 @@
 
 """Synthesizes Boolean truth tables into circuits using Positive Polarity Reed-Muller (PPRM) form."""
 
-
 import sympy as sp
 
 from qrisp.alg_primitives.logic_synthesis.truth_tables import TruthTable, synth_poly

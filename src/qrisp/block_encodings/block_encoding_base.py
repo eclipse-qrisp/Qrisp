@@ -18,7 +18,6 @@
 
 """Defines the BlockEncoding dataclass for representing, applying, and combining block-encoded operators."""
 
-
 from __future__ import annotations
 
 from collections.abc import Callable

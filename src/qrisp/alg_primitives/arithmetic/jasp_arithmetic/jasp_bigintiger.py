@@ -18,7 +18,6 @@
 
 """Defines the JAX-compatible fixed-width BigInteger type with modular and continued-fraction arithmetic."""
 
-
 from dataclasses import dataclass
 
 import jax

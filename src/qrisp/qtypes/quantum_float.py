@@ -18,7 +18,6 @@
 
 """Defines the QuantumFloat type for arbitrary-precision signed/unsigned quantum floating-point numbers."""
 
-
 import jax.numpy as jnp
 import numpy as np
 import sympy as sp

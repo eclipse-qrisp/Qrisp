@@ -18,7 +18,6 @@
 
 """Defines QuantumState, tracking per-qubit TensorFactors to entangle, measure, and disentangle lazily."""
 
-
 import numpy as np
 
 from qrisp.simulator.bi_array_helper import invert_permutation, permute_axes

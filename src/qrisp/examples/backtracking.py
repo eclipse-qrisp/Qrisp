@@ -18,7 +18,6 @@
 
 """Demonstrates the QuantumBacktrackingTree with custom accept/reject oracles and phase estimation."""
 
-
 from qrisp import *
 
 

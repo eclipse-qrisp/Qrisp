@@ -18,7 +18,6 @@
 
 """Implements the Quantum Eigenvalue Transform (QET) for block-encoded Hermitian operators."""
 
-
 from typing import TYPE_CHECKING, Literal
 
 import jax.numpy as jnp

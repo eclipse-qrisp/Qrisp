@@ -18,7 +18,6 @@
 
 """Implements Jaspr/equation inversion (daggering), including while-loop inversion for jrange loops."""
 
-
 import numpy as np
 from jax import make_jaxpr
 from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
@@ -414,6 +413,7 @@ def invert_loop_eqn(eqn):
 
         def swapped_cond(*carries):
             return carries[pos_b] >= carries[pos_a]
+
     else:
 
         def swapped_cond(*carries):

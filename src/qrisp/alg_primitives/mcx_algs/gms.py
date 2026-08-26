@@ -18,7 +18,6 @@
 
 """Synthesizes a multi-controlled X (Toffoli) gate from native GMS entangling gates."""
 
-
 import numpy as np
 
 from qrisp.circuit import QuantumCircuit

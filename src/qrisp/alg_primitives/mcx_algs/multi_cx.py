@@ -17,4 +17,3 @@
 # """
 
 """Empty module; multi-controlled X gate dispatch logic lives in mcx_algs/__init__.py."""
-

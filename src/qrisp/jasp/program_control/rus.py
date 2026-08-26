@@ -18,7 +18,6 @@
 
 """Implements the RUS (repeat-until-success) decorator for quantum subroutines."""
 
-
 import inspect
 
 from qrisp.jasp import (

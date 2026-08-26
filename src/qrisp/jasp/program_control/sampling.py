@@ -18,7 +18,6 @@
 
 """Implements sample, drawing measurement samples from a quantum sampling kernel."""
 
-
 import jax
 import jax.numpy as jnp
 

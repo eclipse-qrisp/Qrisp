@@ -18,7 +18,6 @@
 
 """Implements the QFT-based (Draper) in-place adder and its QuasiRZZ helper gate."""
 
-
 import numpy as np
 
 from qrisp.alg_primitives import QFT

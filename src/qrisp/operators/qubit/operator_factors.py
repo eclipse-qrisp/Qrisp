@@ -18,7 +18,6 @@
 
 """Defines factory functions X, Y, Z, A, C, P0, P1 for single-qubit QubitOperator terms."""
 
-
 from qrisp.operators.qubit.qubit_operator import QubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 

@@ -18,7 +18,6 @@
 
 """Defines Jlist, a JAX-compatible dynamic array type used to represent traced qubit index lists."""
 
-
 import copy
 
 import jax

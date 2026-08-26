@@ -18,7 +18,6 @@
 
 """Defines QuantumModulus, a QuantumFloat subtype for modular arithmetic used in e.g. Shor's algorithm."""
 
-
 import jax
 import jax.numpy as jnp
 import numpy as np

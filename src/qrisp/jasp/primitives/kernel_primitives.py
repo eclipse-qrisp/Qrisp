@@ -18,7 +18,6 @@
 
 """Defines the create_quantum_kernel and consume_quantum_kernel primitives."""
 
-
 import jax.numpy as jnp
 
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState

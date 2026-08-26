@@ -18,7 +18,6 @@
 
 """Defines StimBackend, a Backend that simulates Clifford circuits via Stim."""
 
-
 from typing import Sequence, cast
 
 import numpy as np

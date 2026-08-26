@@ -18,7 +18,6 @@
 
 """This module contains the main class to describe quantum circuits in Qrisp."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast

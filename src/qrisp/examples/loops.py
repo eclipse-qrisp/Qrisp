@@ -18,7 +18,6 @@
 
 """Example demonstrating quantum-controlled loops with qRange for iterative summation."""
 
-
 import time
 
 from qrisp import QuantumFloat, h, qRange

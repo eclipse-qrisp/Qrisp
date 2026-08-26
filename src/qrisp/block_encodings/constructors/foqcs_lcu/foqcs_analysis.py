@@ -18,7 +18,6 @@
 
 """Analyzes QubitOperators for FOQCS-LCU compatibility and builds PREP parameters."""
 
-
 from functools import partial
 
 import numpy as np

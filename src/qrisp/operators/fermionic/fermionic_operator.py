@@ -18,7 +18,6 @@
 
 """Implements the FermionicOperator class for ladder-operator Hamiltonians and their arithmetic."""
 
-
 import numpy as np
 import sympy as sp
 

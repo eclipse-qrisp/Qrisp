@@ -19,7 +19,6 @@
 """Converts Qrisp quantum circuits to Qulacs circuits via transpilation to a basis gate set."""
 
 
-
 def qulacs_converter(qc):
 
     import qulacs.gate as gt

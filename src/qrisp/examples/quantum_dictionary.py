@@ -18,7 +18,6 @@
 
 """Example demonstrating QuantumDictionary usage for dereferencing quantum keys into values."""
 
-
 from qrisp import QuantumDictionary, QuantumFloat, QuantumVariable, h
 
 # This example demonstrates the use of a QuantumDictionary with flexible types

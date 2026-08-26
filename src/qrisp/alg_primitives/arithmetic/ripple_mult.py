@@ -18,7 +18,6 @@
 
 """Implements ripple-carry quantum integer multiplication, out-of-place and in-place."""
 
-
 from qrisp import control, cx, x
 from qrisp.alg_primitives.arithmetic.adders import fourier_adder
 from qrisp.qtypes.quantum_float import QuantumFloat

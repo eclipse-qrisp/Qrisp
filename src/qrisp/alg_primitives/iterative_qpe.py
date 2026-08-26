@@ -18,7 +18,6 @@
 
 """Implements the iterative quantum phase estimation (IQPE) algorithm using a single ancilla qubit."""
 
-
 import numpy as np
 
 from qrisp import QuantumFloat, control, h, measure, rz

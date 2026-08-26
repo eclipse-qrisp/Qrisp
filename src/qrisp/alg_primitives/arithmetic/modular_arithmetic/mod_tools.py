@@ -18,7 +18,6 @@
 
 """Provides Montgomery encoding/decoding and modular inverse helper functions."""
 
-
 import jax.numpy as jnp
 from jax import lax
 

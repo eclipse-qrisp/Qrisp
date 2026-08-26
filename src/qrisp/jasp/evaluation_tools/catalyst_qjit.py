@@ -18,7 +18,6 @@
 
 """Defines the qjit decorator, compiling Jasp functions to QIR and executing via the Catalyst runtime."""
 
-
 from jax.tree_util import tree_unflatten
 
 from qrisp.jasp.jasp_expression import make_jaspr

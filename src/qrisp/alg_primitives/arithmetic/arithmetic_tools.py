@@ -18,7 +18,6 @@
 
 """Provides QuantumFloat utilities: max, min, floor, ceil, round, fractional part, and modf."""
 
-
 from typing import Tuple
 
 from qrisp.core import Qubit

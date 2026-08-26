@@ -18,7 +18,6 @@
 
 """Defines InversionEnvironment and the invert() shortcut for inverting blocks of quantum operations."""
 
-
 from qrisp.circuit import QubitAlloc, QubitDealloc
 from qrisp.environments.quantum_environments import QuantumEnvironment
 

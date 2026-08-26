@@ -18,7 +18,6 @@
 
 """Implements ControlledJaspr and the transformations that add quantum control to Jaspr equations."""
 
-
 import numpy as np
 from jax.extend.core import JaxprEqn, Var
 

@@ -18,7 +18,6 @@
 
 """Defines the stim_noise function for applying Stim noise channels to Qrisp qubits."""
 
-
 import stim
 from sympy import symbols
 

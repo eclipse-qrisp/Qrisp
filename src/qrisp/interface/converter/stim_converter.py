@@ -19,7 +19,6 @@
 """Converts Qrisp quantum circuits to Stim circuits, mapping measurements, detectors, and observables."""
 
 
-
 def qrisp_to_stim(
     qc,
     return_measurement_map=False,

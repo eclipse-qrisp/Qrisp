@@ -18,7 +18,6 @@
 
 """Implements matrix inversion of a block-encoded operator via QET, QSVT, or GQSVT."""
 
-
 from typing import Literal
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding

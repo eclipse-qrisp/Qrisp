@@ -18,7 +18,6 @@
 
 """Implements JAX pytree flatten/unflatten support for QuantumVariables via QuantumVariableTemplate."""
 
-
 import copy
 
 import jax.numpy as jnp

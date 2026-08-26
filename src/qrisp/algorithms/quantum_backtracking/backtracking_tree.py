@@ -18,7 +18,6 @@
 
 """Implements Montanaro's quantum backtracking algorithm via the QuantumBacktrackingTree class."""
 
-
 from itertools import product
 
 import networkx as nx

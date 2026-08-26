@@ -18,7 +18,6 @@
 
 """Defines a pass that removes all barrier instructions from a circuit."""
 
-
 from __future__ import annotations
 
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass

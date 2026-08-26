@@ -18,7 +18,6 @@
 
 """Implements the quantum singular value transformation (QSVT) of a block-encoded operator."""
 
-
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np

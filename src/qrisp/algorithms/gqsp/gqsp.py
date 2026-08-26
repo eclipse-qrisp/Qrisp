@@ -18,7 +18,6 @@
 
 """Implements Generalized Quantum Signal Processing (GQSP) for applying polynomials to a unitary."""
 
-
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 

@@ -18,7 +18,6 @@
 
 """Defines the minimize function, a SciPy-like gradient-free optimizer dispatcher for Jasp."""
 
-
 from qrisp.jasp.optimization_tools.cobyla import cobyla
 from qrisp.jasp.optimization_tools.spsa import spsa
 

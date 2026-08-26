@@ -18,7 +18,6 @@
 
 """Bidirectional converter between Qrisp and Qiskit quantum circuits."""
 
-
 import numpy as np
 from sympy import Expr, lambdify
 

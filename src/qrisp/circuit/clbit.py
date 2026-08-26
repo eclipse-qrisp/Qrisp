@@ -18,7 +18,6 @@
 
 """Defines the Clbit class representing classical bits in a QuantumCircuit."""
 
-
 import numpy as np
 
 

@@ -46,7 +46,6 @@ Usage
         return detectors, m1, m3
 """
 
-
 import jax
 import numpy as np
 import stim

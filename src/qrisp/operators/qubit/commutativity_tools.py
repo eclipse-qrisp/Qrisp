@@ -18,7 +18,6 @@
 
 """GF(2) linear algebra for constructing change-of-basis circuits for commuting Pauli operators."""
 
-
 import numpy as np
 
 
@@ -238,14 +237,12 @@ def construct_change_of_basis(S):
         D = S2[k:n, :]
         F = S2[-(n - k) :, :]
 
-        S3 = np.block(
-            [
-                [C, np.transpose(D)],
-                [D, np.zeros((n - k, n - k), dtype=int)],
-                [np.eye(k, dtype=int), np.zeros((k, n - k), dtype=int)],
-                [F, np.eye(n - k, dtype=int)],
-            ]
-        )
+        S3 = np.block([
+            [C, np.transpose(D)],
+            [D, np.zeros((n - k, n - k), dtype=int)],
+            [np.eye(k, dtype=int), np.zeros((k, n - k), dtype=int)],
+            [F, np.eye(n - k, dtype=int)],
+        ])
         R2_inv = np.block([[np.eye(k, dtype=int)], [np.zeros((n - k, k), dtype=int)]])
 
     else:
@@ -267,12 +264,10 @@ def construct_change_of_basis(S):
         if S4[:n, :][i, i] == 1:
             s_list.append(i)
 
-    Q2 = np.block(
-        [
-            [np.eye(n, dtype=int), S4[:n, :] * np.eye(n, dtype=int)],
-            [np.zeros((n, n), dtype=int), np.eye(n, dtype=int)],
-        ]
-    )
+    Q2 = np.block([
+        [np.eye(n, dtype=int), S4[:n, :] * np.eye(n, dtype=int)],
+        [np.zeros((n, n), dtype=int), np.eye(n, dtype=int)],
+    ])
 
     S4 = Q2 @ S4 % 2
 

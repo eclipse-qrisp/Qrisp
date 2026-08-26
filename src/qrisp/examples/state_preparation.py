@@ -18,7 +18,6 @@
 
 """Example demonstrating arbitrary quantum state preparation and amplitude inspection."""
 
-
 from qrisp import QuantumFloat
 
 qf = QuantumFloat(4, -2, signed=True)

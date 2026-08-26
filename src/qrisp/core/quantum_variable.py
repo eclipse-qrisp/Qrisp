@@ -18,7 +18,6 @@
 
 """Defines the QuantumVariable class, the quantum analogue of a classical variable."""
 
-
 import copy
 from typing import TYPE_CHECKING
 

@@ -19,6 +19,5 @@
 """This module defines exceptions used in Qrisp."""
 
 
-
 class QrispDeprecationWarning(UserWarning):
     """Warning for deprecated features in Qrisp."""

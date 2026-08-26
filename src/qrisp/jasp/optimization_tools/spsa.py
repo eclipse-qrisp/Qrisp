@@ -18,7 +18,6 @@
 
 """Implements the SPSA (Simultaneous Perturbation Stochastic Approximation) optimization algorithm."""
 
-
 import jax
 import jax.numpy as jnp
 from jax.lax import fori_loop

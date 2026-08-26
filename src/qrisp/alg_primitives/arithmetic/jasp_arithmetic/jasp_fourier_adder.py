@@ -18,7 +18,6 @@
 
 """Implements the QFT-based (Draper) adder for QuantumFloats under Jasp tracing."""
 
-
 import jax
 import numpy as np
 

@@ -18,7 +18,6 @@
 
 """Jasp/JAX-traceable expectation-value measurement of QubitOperators via sampling."""
 
-
 import jax
 import jax.numpy as jnp
 import numpy as np

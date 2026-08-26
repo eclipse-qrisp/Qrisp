@@ -18,7 +18,6 @@
 
 """Implements the Linear Combination of Unitaries (LCU) block-encoding primitive."""
 
-
 import numpy as np
 
 from qrisp import QuantumFloat, conjugate, measure

@@ -18,7 +18,6 @@
 
 """Defines StaticArg and pytree registration for treating functions as static Jasp arguments."""
 
-
 import types
 
 from jax import tree_util

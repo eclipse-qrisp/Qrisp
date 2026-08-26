@@ -18,7 +18,6 @@
 
 """Defines DepthMetric, a profiling metric that computes the circuit depth of a Jaspr."""
 
-
 from collections.abc import Callable, Iterator
 from typing import Any, List, Tuple
 

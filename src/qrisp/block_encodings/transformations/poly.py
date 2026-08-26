@@ -18,7 +18,6 @@
 
 """Applies a polynomial transformation to a block-encoded operator via GQET."""
 
-
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np

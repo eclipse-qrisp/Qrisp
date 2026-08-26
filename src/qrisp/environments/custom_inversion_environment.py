@@ -18,7 +18,6 @@
 
 """Defines the custom_inversion decorator for registering explicit inverse implementations of functions."""
 
-
 import jax.numpy as jnp
 
 from qrisp.jasp import (

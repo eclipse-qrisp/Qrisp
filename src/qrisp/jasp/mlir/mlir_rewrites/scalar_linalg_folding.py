@@ -24,9 +24,9 @@ General Context:
     of rewrite patterns designed to collapse unnecessarily verbose chains.
 
 Specific Problem:
-    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional 
-    `linalg.generic` ops. These ops carry significant structural overhead - such 
-    as regions, block arguments, and affine maps - for what is semantically just 
+    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional
+    `linalg.generic` ops. These ops carry significant structural overhead - such
+    as regions, block arguments, and affine maps - for what is semantically just
     scalar instructions.
 
 Solution:
@@ -34,8 +34,6 @@ Solution:
     the scalar operands using `tensor.extract`, clones the generic's inner block
     operations sequentially, and repacks the final result with `tensor.from_elements`.
 """
-
-
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor

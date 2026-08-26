@@ -18,7 +18,6 @@
 
 """Implements quantum counting to estimate the number of solutions to a Grover oracle."""
 
-
 from qrisp.alg_primitives import QPE
 from qrisp.core import h
 

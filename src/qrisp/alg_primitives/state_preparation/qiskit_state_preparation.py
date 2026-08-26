@@ -18,7 +18,6 @@
 
 """Prepares a quantum state from a target amplitude vector using Qiskit's StatePreparation."""
 
-
 import numpy as np
 from jax.errors import TracerArrayConversionError
 

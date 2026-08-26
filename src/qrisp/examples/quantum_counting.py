@@ -18,7 +18,6 @@
 
 """Example demonstrating the quantum counting algorithm with a Grover-style oracle."""
 
-
 from qrisp.grover import tag_state
 
 from qrisp import QuantumFloat, quantum_counting

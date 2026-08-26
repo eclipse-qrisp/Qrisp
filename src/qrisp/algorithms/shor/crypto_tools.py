@@ -18,7 +18,6 @@
 
 """Provides RSA encryption/decryption helpers, with decryption powered by Shor's algorithm factorization."""
 
-
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import modinv
