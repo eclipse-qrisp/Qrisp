@@ -46,8 +46,6 @@ def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
         result_has_ranked_tensor = any(_is_ranked_tensor_type(result.type) for result in current_op.results)
 
         if operand_has_ranked_tensor or result_has_ranked_tensor:
-            location = getattr(current_op, "location", None)
-            loc_info = str(location) if location is not None else "unknown location"
             raise CudaqUnsupportedArrayOperationError(
                 "This @cudaq_kernel function performs arithmetic on a dynamic "
                 "(traced) array, which CUDA-Q cannot compile.\n\n"
@@ -62,6 +60,4 @@ def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
                 "instead of combining or adding the whole array.\n"
                 "- Use scalar values or static Python arrays for calculations that "
                 "stay inside the kernel.\n\n"
-                # f"[debug] location: {loc_info}\n"
-                # f"[debug] offending operation: {current_op}"
             )
