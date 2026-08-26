@@ -37,6 +37,7 @@
 # in op.properties (a dict). Discardable attributes (cudaq-kernel, no_this, etc.)
 # live in op.attributes.
 
+from dataclasses import dataclass
 from typing import Literal
 
 from xdsl.dialects import func
@@ -60,6 +61,18 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
 # ===========================================================================
 # Internal helpers
 # ===========================================================================
+
+
+@dataclass(frozen=True)
+class _CudaqPreparationConfig:
+    """Configuration shared by the CUDA-Q module preparation steps."""
+
+    func_name: str
+    entry_point: str
+    unique_name: str
+    data_layout: str
+    target_triple: str | None
+    execution_mode: Literal["run", "sample"] = "run"
 
 
 def _find_func_by_name(module: ModuleOp, name: str):
@@ -278,22 +291,17 @@ def _pass_strip_returns(func_op: func.FuncOp) -> None:
 
 def _pass_inject_module_attrs(
     module: ModuleOp,
-    *,
-    func_name: str,
-    entry_point: str,
-    uniq_name: str,
-    data_layout: str,
-    target_triple,
+    config: _CudaqPreparationConfig,
     run_func_name=None,
     run_entry_name=None,
 ) -> None:
     """Set module-level attributes required by CUDA-Q."""
-    module.attributes["cc.python_uniqued"] = StringAttr(uniq_name)
-    module.attributes["llvm.data_layout"] = StringAttr(data_layout)
-    if target_triple:
-        module.attributes["llvm.target_triple"] = StringAttr(target_triple)
+    module.attributes["cc.python_uniqued"] = StringAttr(config.unique_name)
+    module.attributes["llvm.data_layout"] = StringAttr(config.data_layout)
+    if config.target_triple:
+        module.attributes["llvm.target_triple"] = StringAttr(config.target_triple)
 
-    name_map = {func_name: StringAttr(entry_point)}
+    name_map = {config.func_name: StringAttr(config.entry_point)}
     if run_func_name and run_entry_name:
         name_map[run_func_name] = StringAttr(run_entry_name)
     module.attributes["quake.mangled_name_map"] = DictionaryAttr(name_map)
@@ -306,13 +314,7 @@ def _pass_inject_module_attrs(
 
 def _prepare_module_for_cudaq(
     module: ModuleOp,
-    *,
-    func_name: str,
-    entry_point: str,
-    uniq_name: str,
-    data_layout: str,
-    target_triple,
-    execution_mode: Literal["run", "sample"] = "run",
+    config: _CudaqPreparationConfig,
 ) -> None:
     """Apply all CUDA-Q preparation passes to the module in-place.
 
@@ -320,54 +322,28 @@ def _prepare_module_for_cudaq(
     ----------
     module : ModuleOp
         xDSL module containing a @main function.
-    func_name : str
-        Target function name (e.g. "__nvqpp__mlirgen__<uuid>").
-    entry_point : str
-        CUDA-Q entry point name.
-    uniq_name : str
-        Unique kernel name for CUDA-Q registration.
-    data_layout : str
-        LLVM data layout string.
-    target_triple : str | None
-        LLVM target triple string.
-    execution_mode : "run" | "sample"
-        Whether to prepare for cudaq.run or cudaq.sample.
+    config : _CudaqPreparationConfig
+        Kernel names, LLVM metadata, and execution mode for the preparation.
 
     """
     _pass_strip_module_name(module)
-    main_func = _pass_rename_main(module, func_name)
+    main_func = _pass_rename_main(module, config.func_name)
 
-    if execution_mode == "sample":
+    if config.execution_mode == "sample":
         _pass_add_func_attrs(main_func, entrypoint=True, kernel=True)
         _pass_strip_returns(main_func)
-        _pass_inject_module_attrs(
-            module,
-            func_name=func_name,
-            entry_point=entry_point,
-            uniq_name=uniq_name,
-            data_layout=data_layout,
-            target_triple=target_triple,
-        )
+        _pass_inject_module_attrs(module, config)
 
-    elif execution_mode == "run":
+    elif config.execution_mode == "run":
         _pass_pack_multi_return(main_func)
         _pass_add_func_attrs(main_func, entrypoint=True, kernel=True)
 
-        run_func_name = func_name + ".run"
-        run_entry_name = func_name + ".run.entry"
+        run_func_name = config.func_name + ".run"
+        run_entry_name = config.func_name + ".run.entry"
 
         _pass_synthesize_run(module, main_func, run_func_name)
         _pass_synthesize_run_entry(module, main_func, run_entry_name)
-        _pass_inject_module_attrs(
-            module,
-            func_name=func_name,
-            entry_point=entry_point,
-            uniq_name=uniq_name,
-            data_layout=data_layout,
-            target_triple=target_triple,
-            run_func_name=run_func_name,
-            run_entry_name=run_entry_name,
-        )
+        _pass_inject_module_attrs(module, config, run_func_name, run_entry_name)
 
     else:
-        raise ValueError(f"Unknown execution_mode: {execution_mode!r}")
+        raise ValueError(f"Unknown execution_mode: {config.execution_mode!r}")

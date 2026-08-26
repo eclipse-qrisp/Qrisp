@@ -30,7 +30,10 @@ from cudaq.mlir.dialects import quake as cudaq_quake_dialect
 from cudaq.mlir.ir import Module, NoneType
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import _prepare_module_for_cudaq
+from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import (
+    _CudaqPreparationConfig,
+    _prepare_module_for_cudaq,
+)
 from qrisp.jasp.cudaq_interface.cudaq_ingestion.host_attributes import _get_llvm_attributes
 
 # ------------------------------------------------------------------ #
@@ -181,12 +184,14 @@ def _cudaq_kernel_from_xdsl_module(
     # Apply all structural passes (in-place on the xDSL module)
     _prepare_module_for_cudaq(
         module,
-        func_name=func_name,
-        entry_point=entry_point,
-        uniq_name=uniq_name,
-        data_layout=data_layout_str,
-        target_triple=target_triple_str,
-        execution_mode=execution_mode,
+        _CudaqPreparationConfig(
+            func_name=func_name,
+            entry_point=entry_point,
+            unique_name=uniq_name,
+            data_layout=data_layout_str,
+            target_triple=target_triple_str,
+            execution_mode=execution_mode,
+        ),
     )
 
     # Serialize to string exactly once, then normalize for CUDA-Q
