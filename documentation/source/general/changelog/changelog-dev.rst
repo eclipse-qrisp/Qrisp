@@ -25,6 +25,14 @@ New Features
 Improvements
 ------------
 
+- :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
+  now skip the live provider query and return the cached status once a job
+  is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
+  class docstring for ``status()``/``refresh()`` now consistently describes
+  this as an optional optimization implementations may take advantage of,
+  rather than a guarantee
+  (`PR #806 <https://github.com/eclipse-qrisp/Qrisp/pull/806>`_).
+
 - Updated docstrings for ``sample()``, ``expectation_value()``, and
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
