@@ -15,7 +15,7 @@
 ********************************************************************************
 """
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core import cx, cz
@@ -25,9 +25,12 @@ from qrisp.qtypes import QuantumVariable
 
 from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
+
 
 def build_from_foqcs_lcu_prep(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     prep_r: Callable[[QuantumVariable], None],
     prep_l: Callable[[QuantumVariable], None],
     num_q_ops: int = 1,

@@ -27,7 +27,7 @@ from qrisp.operators import QubitOperator
 MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
 
-def build_from_array(cls: BlockEncoding, A: MatrixType) -> BlockEncoding:
+def build_from_array(cls: type[BlockEncoding], A: MatrixType) -> BlockEncoding:
     r"""Constructs a BlockEncoding from a 2-D array.
 
     Parameters

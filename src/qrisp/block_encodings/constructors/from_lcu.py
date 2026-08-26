@@ -31,7 +31,7 @@ _TOLERANCE = 1e-12
 
 
 def build_from_lcu(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     coeffs: npt.NDArray[np.number],
     unitaries: list[Callable[..., Any]],
     num_ops: int = 1,

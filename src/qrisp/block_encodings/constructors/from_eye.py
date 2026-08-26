@@ -20,7 +20,7 @@ from qrisp.qtypes import QuantumBool
 
 
 def build_from_eye(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     diagonal_index: int = 0,
 ) -> BlockEncoding:
     r"""Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.

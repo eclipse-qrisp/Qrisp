@@ -19,38 +19,38 @@ from qrisp.operators.qubit.qubit_operator import QubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 
-def X(arg):
+def X(arg: int) -> QubitOperator:
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "X"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def Y(arg):
+def Y(arg: int) -> QubitOperator:
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Y"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def Z(arg):
+def Z(arg: int) -> QubitOperator:
     if isinstance(arg, int):
         return QubitOperator({QubitTerm({arg: "Z"}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def A(arg):
+def A(arg: int) -> QubitOperator:
     return QubitOperator({QubitTerm({arg: "A"}): 1})
 
 
-def C(arg):
+def C(arg: int) -> QubitOperator:
     return QubitOperator({QubitTerm({arg: "C"}): 1})
 
 
-def P0(arg):
+def P0(arg: int) -> QubitOperator:
     return QubitOperator({QubitTerm({arg: "P0"}): 1})
 
 
-def P1(arg):
+def P1(arg: int) -> QubitOperator:
     return QubitOperator({QubitTerm({arg: "P1"}): 1})

@@ -24,7 +24,7 @@ from qrisp.qtypes import QuantumBool
 
 
 def build_from_projector(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     left: Union[int, Tuple[int, ...], Callable],
     right: Optional[Union[int, Tuple[int, ...], Callable]] = None,
     kernel: bool = False,

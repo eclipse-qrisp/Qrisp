@@ -16,6 +16,7 @@
 """
 
 from itertools import product
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 import numpy as np
@@ -29,6 +30,12 @@ from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.qubit_term import QubitTerm
+
+if TYPE_CHECKING:
+    # aliased to avoid clashing with the `sp` (sympy) import above; this
+    # branch never runs, it only gives type checkers a name to resolve
+    # to_sparse_matrix's return type against.
+    import scipy.sparse as sp_sparse
 
 threshold = 1e-9
 
@@ -237,7 +244,7 @@ class QubitOperator(Hamiltonian):
             res = res * self
         return res
 
-    def __add__(self, other):
+    def __add__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -271,7 +278,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __sub__(self, other):
+    def __sub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator self and other.
 
         Parameters
@@ -305,7 +312,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator other and self.
 
         Parameters
@@ -339,7 +346,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __mul__(self, other):
+    def __mul__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the product of the operator self and other.
 
         Parameters
@@ -574,7 +581,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix, reverse_endianness=False):
+    def from_matrix(cls, matrix, reverse_endianness=False):
         r"""Represents a matrix as an operator
 
         .. math::
@@ -648,7 +655,7 @@ class QubitOperator(Hamiltonian):
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
 
-    def to_sparse_matrix(self, factor_amount=None):
+    def to_sparse_matrix(self, factor_amount=None) -> "sp_sparse.csr_matrix":
         r"""Returns a scipy matrix representing the operator
 
         .. math::
@@ -895,7 +902,7 @@ class QubitOperator(Hamiltonian):
 
         return QubitOperator(new_terms_dict).apply_threshold(0)
 
-    def ground_state_energy(self):
+    def ground_state_energy(self) -> float:
         """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
