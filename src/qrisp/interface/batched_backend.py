@@ -16,9 +16,7 @@
 # ********************************************************************************
 # """
 
-"""This module defines :class:`BatchedBackend`, obtained via
-:meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
-"""
+"""Defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched() <qrisp.interface.Backend.batched>`."""
 
 from __future__ import annotations
 

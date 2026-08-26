@@ -193,6 +193,15 @@ Development
   (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
   `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
 
+* Converted every source file's Eclipse Public License header from a
+  module-level docstring into a ``#``-prefixed comment block, and gave
+  every file that lacked one a real one-line module docstring. The header
+  had been written as a docstring, which pydocstyle interpreted as the
+  module's documentation and flagged for style violations (``D205``,
+  ``D212``, ...) on essentially every file; it was never meant to be read
+  as documentation. Existing rich module-level documentation was preserved
+  verbatim, only reformatted to satisfy ``D205``.
+
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
   (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
