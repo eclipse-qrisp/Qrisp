@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,7 +13,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Provides helper functions to build and solve QUBO problems using COLD/LCD counterdiabatic driving."""
 

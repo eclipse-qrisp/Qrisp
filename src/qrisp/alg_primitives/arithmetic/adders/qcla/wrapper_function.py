@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,11 +13,10 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Defines the public qcla adder, dispatching to classical-quantum or quantum-quantum QCLA implementations."""
 
-from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import *  # noqa: F403
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import *

@@ -1,4 +1,3 @@
-# """
 # *********************************************************************
 # * Copyright (c) 2026 the Qrisp Authors
 # *
@@ -8,7 +7,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0
 # **********************************************************************
-# """
 
 """Benchmarks QuantumFloat multiplication and compares Qrisp's statevector simulator against Qiskit."""
 

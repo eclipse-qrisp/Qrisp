@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2024 the Qrisp authors
 # *
@@ -14,7 +13,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Transforms a Max-Set-Packing instance into a Max-Independent-Set graph and solves it via QIRO."""
 

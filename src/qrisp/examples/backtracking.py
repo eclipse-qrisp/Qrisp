@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,11 +13,10 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Demonstrates the QuantumBacktrackingTree with custom accept/reject oracles and phase estimation."""
 
-from qrisp import *
+from qrisp import *  # noqa: F403
 
 
 @auto_uncompute

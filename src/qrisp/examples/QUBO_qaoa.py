@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,7 +13,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Collects example QUBO matrices from literature and solves the final one with QAOA."""
 
@@ -155,4 +153,4 @@ Q = np.array([
     [-160, -120, -100, -60, -20, 600],
 ])
 
-solution = solve_QUBO(Q, depth=1, backend=def_backend, n_solutions=7, print_res=True)
+solution = solve_QUBO(Q, depth=1, backend=def_backend, n_solutions=7, print_res=True)  # noqa: F405
