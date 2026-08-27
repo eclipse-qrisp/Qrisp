@@ -85,10 +85,16 @@ jobs:
         run: |
           set +e  # don't abort on reviewdog's non-zero exit; we decide failure at the end
           echo "🚨 mypy"
-          mypy --show-column-numbers src/ 2>&1 | \
-            reviewdog -f=mypy \
-                      -reporter=github-pr-annotations \
-                      -filter-mode=added \
-                      -fail-level=any
+          # Use reviewdog's -efm errorformat (as the official reviewdog/action-mypy
+          # does) instead of -f=mypy, because -f=mypy does not match findings
+          # against the PR diff, so -filter-mode=added silently drops them.
+          mypy --show-column-numbers --no-pretty src/ 2>&1 | \
+            reviewdog \
+              -efm="%f:%l:%c: %t%*[^:]: %m" \
+              -efm="%f:%l: %t%*[^:]: %m" \
+              -efm="%f: %t%*[^:]: %m" \
+              -reporter=github-pr-annotations \
+              -filter-mode=added \
+              -fail-level=any
           mypy_rc=$?  # capture exit code of the reviewdog run
           exit $mypy_rc  # fail if reviewdog flagged findings on added lines
