@@ -73,9 +73,13 @@ class TensorFactor:
             matrix = matrix * (np.abs(matrix) > float_thresh)
 
         # Match the dtype of the state to avoid mixing e.g. complex64 states with
-        # complex128 unitaries, which the numba contraction kernels cannot handle
-        if matrix.dtype != self.tensor_array.data.dtype and self.tensor_array.data.dtype != np.dtype("O"):
-            matrix = matrix.astype(self.tensor_array.data.dtype)
+        # complex128 unitaries, which the numba contraction kernels cannot handle.
+        # Object arrays (symbolic circuits) are handled by tensordot and must not
+        # be cast - they carry SymPy expressions that have no numeric value yet.
+        object_dtype = np.dtype("O")
+        state_dtype = self.tensor_array.data.dtype
+        if object_dtype not in (matrix.dtype, state_dtype) and matrix.dtype != state_dtype:
+            matrix = matrix.astype(state_dtype)
 
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)
