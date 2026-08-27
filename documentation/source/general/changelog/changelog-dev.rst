@@ -37,6 +37,13 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- Sped up ``BigInteger.__lshift__``/``__rshift__`` from an O(total bits)
+  bit-by-bit loop to a limb-wise shift, reusing the existing internal
+  ``_shl_bits``/``_shr_bits`` helpers. About 3x faster at 2048-bit
+  (64-limb) width; identical behavior in every case, including the
+  fixed-width truncation edge cases
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 Other New Features
 ------------------
 

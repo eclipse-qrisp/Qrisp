@@ -624,7 +624,7 @@ class BigInteger:
         return other.__le__(self)
 
     @jax.jit
-    def __lshift__(self, shift) -> "BigInteger":
+    def __lshift__(self, shift: int | jax.Array) -> "BigInteger":
         """Logical left shift by a non-negative number of bits.
 
         Shifts bits left by `shift` and fills with zeros, within fixed width.
@@ -641,28 +641,30 @@ class BigInteger:
             (self << shift) mod 2^(32*n).
 
         """
-        total_bits = self.digits.shape[0] * 32
-        zeros = BigInteger(jnp.zeros_like(self.digits))
+        n = self.digits.shape[0]
+        total_bits = n * 32
+        shift = jnp.asarray(shift, dtype=jnp.int32)
 
-        def do_shift(_):
-            def body_fun(i, x):
-                return lax.cond(
-                    self.get_bit(i) != 0,
-                    lambda: x.flip_bit(i + shift),
-                    lambda: x,
-                )
+        def do_shift(_: None) -> jax.Array:
+            # Whole-limb shift (little-endian: digit i moves to i + limb_shift),
+            # then a limb-wise sub-32-bit shift for the remainder. Avoids the
+            # O(total_bits) individual bit-flip loop below for large widths.
+            limb_shift = shift // 32
+            bit_shift = shift % 32
+            idx = jnp.arange(n) - limb_shift
+            valid = (idx >= 0) & (idx < n)
+            gathered = self.digits[jnp.clip(idx, 0, n - 1)]
+            shifted_by_limb = jnp.where(valid, gathered, jnp.uint32(0))
+            out, _carry = _shl_bits(shifted_by_limb, bit_shift)
+            return out
 
-            return lax.fori_loop(0, total_bits - shift, body_fun, zeros)
+        def zero(_: None) -> jax.Array:
+            return jnp.zeros_like(self.digits)
 
-        return lax.cond(
-            jnp.asarray(shift) >= total_bits,
-            lambda _: zeros,
-            do_shift,
-            operand=None,
-        )
+        return BigInteger(lax.cond(shift >= total_bits, zero, do_shift, operand=None))
 
     @jax.jit
-    def __rshift__(self, shift) -> "BigInteger":
+    def __rshift__(self, shift: int | jax.Array) -> "BigInteger":
         """Logical right shift by a non-negative number of bits.
 
         Shifts bits right by `shift` and fills with zeros, within fixed width.
@@ -679,25 +681,26 @@ class BigInteger:
             (self >> shift) within fixed width.
 
         """
-        total_bits = self.digits.shape[0] * 32
-        zeros = BigInteger(jnp.zeros_like(self.digits))
+        n = self.digits.shape[0]
+        total_bits = n * 32
+        shift = jnp.asarray(shift, dtype=jnp.int32)
 
-        def do_shift(_):
-            def body_fun(i, x):
-                return lax.cond(
-                    self.get_bit(i) != 0,
-                    lambda: x.flip_bit(i - shift),
-                    lambda: x,
-                )
+        def do_shift(_: None) -> jax.Array:
+            # Whole-limb shift (little-endian: digit i moves to i - limb_shift),
+            # then a limb-wise sub-32-bit shift for the remainder. Avoids the
+            # O(total_bits) individual bit-flip loop below for large widths.
+            limb_shift = shift // 32
+            bit_shift = shift % 32
+            idx = jnp.arange(n) + limb_shift
+            valid = (idx >= 0) & (idx < n)
+            gathered = self.digits[jnp.clip(idx, 0, n - 1)]
+            shifted_by_limb = jnp.where(valid, gathered, jnp.uint32(0))
+            return _shr_bits(shifted_by_limb, bit_shift)
 
-            return lax.fori_loop(shift, total_bits, body_fun, zeros)
+        def zero(_: None) -> jax.Array:
+            return jnp.zeros_like(self.digits)
 
-        return lax.cond(
-            jnp.asarray(shift) >= total_bits,
-            lambda _: zeros,
-            do_shift,
-            operand=None,
-        )
+        return BigInteger(lax.cond(shift >= total_bits, zero, do_shift, operand=None))
 
     @jax.jit
     def __and__(self, other: "BigInteger") -> "BigInteger":
@@ -1020,7 +1023,7 @@ def _ms_length(a: jnp.ndarray):
 
 
 @jax.jit
-def _shl_bits(arr: jnp.ndarray, s):
+def _shl_bits(arr: jnp.ndarray, s: int | jax.Array) -> tuple[jax.Array, jax.Array]:
     """Shift-left by `s` bits across limbs (0 <= s < 32).
 
     Parameters
@@ -1065,7 +1068,7 @@ def _shl_bits(arr: jnp.ndarray, s):
 
 
 @jax.jit
-def _shr_bits(arr: jnp.ndarray, s) -> jnp.ndarray:
+def _shr_bits(arr: jnp.ndarray, s: int | jax.Array) -> jnp.ndarray:
     """Shift-right by `s` bits across limbs (0 <= s < 32).
 
     Parameters
