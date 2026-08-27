@@ -118,9 +118,9 @@ def portfolio_cl_cost_function(problem):
             # new_key = [int(key[i])-int(key[i+half]) for i in range(half)]
             new_key = [int(key[0][i]) - int(key[1][i]) for i in range(half)]  # ??????
             key_list.append(new_key)
-            rr1 = sum([
-                risk_return * covar_matrix[i][j] * new_key[i] * new_key[j] for i in range(half) for j in range(half)
-            ])
+            rr1 = sum(
+                [risk_return * covar_matrix[i][j] * new_key[i] * new_key[j] for i in range(half) for j in range(half)]
+            )
             rr2 = sum([(1 - risk_return) * asset_return[j] * new_key[j] for j in range(half)])
             c_tc = sum([tc for i in range(half) if new_key[i] != old_pos[i]])
             energy -= (rr1 + rr2 + c_tc) * val

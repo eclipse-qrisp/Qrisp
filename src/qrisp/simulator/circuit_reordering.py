@@ -316,10 +316,12 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
         if qc.data[hash(non_unitary_nodes[i])].op.name == "final_op":
             node_costs.append((non_unitary_nodes[i], np.inf))
         else:
-            node_costs.append((
-                non_unitary_nodes[i],
-                reach_alg.numberOfReachableNodes(non_unitary_nodes[i]),
-            ))
+            node_costs.append(
+                (
+                    non_unitary_nodes[i],
+                    reach_alg.numberOfReachableNodes(non_unitary_nodes[i]),
+                )
+            )
 
     node_costs.sort(key=lambda x: x[1])
 

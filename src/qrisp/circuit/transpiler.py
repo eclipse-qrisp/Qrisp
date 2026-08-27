@@ -94,10 +94,12 @@ def transpile_inner(
                     for j in range(len(instr.qubits))
                 }
 
-                new_translation_dic.update({
-                    definition.clbits[j].identifier: translation_dic[instr.clbits[j].identifier]
-                    for j in range(len(instr.clbits))
-                })
+                new_translation_dic.update(
+                    {
+                        definition.clbits[j].identifier: translation_dic[instr.clbits[j].identifier]
+                        for j in range(len(instr.clbits))
+                    }
+                )
 
                 transpile_inner(
                     instr.op.definition,

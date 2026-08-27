@@ -1233,9 +1233,9 @@ def get_statevector_function(qs, decimals=None):
             qs = list(label_constellation.keys())[0].qs
 
             if len(label_constellation) != len(qs.qv_list):
-                missing_variables = set([qv.name for qv in qs.qv_list]) - set([
-                    qv.name for qv in label_constellation.keys()
-                ])
+                missing_variables = set([qv.name for qv in qs.qv_list]) - set(
+                    [qv.name for qv in label_constellation.keys()]
+                )
                 raise Exception(
                     "Tried to invoke statevector debugger without specifying an "
                     "outcome label for each QuantumVariable registered in "
