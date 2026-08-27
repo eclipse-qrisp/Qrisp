@@ -119,6 +119,27 @@ Bug Fixes
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
+* Fixed several crashes in the ``BigInteger``/Jasp-Montgomery arithmetic
+  backend, uncovered while adding pylint/pyright coverage and type hints:
+
+  - The continued-fraction period-recovery routines used by Shor's
+    algorithm post-processing (``bi_contfrac_best_approx`` and
+    ``bi_shor_recover_denominator``) crashed unconditionally on every call,
+    due to a ``lax.while_loop`` calling-convention mismatch and an invalid
+    use of ``lax.select`` directly on ``BigInteger`` pytree objects. The
+    bounded-denominator "best approximation" formula was also corrected,
+    as it could return a valid but suboptimal fraction when the denominator
+    bound forced truncation.
+  - ``montgomery_encoder``/``montgomery_decoder`` raised ``AttributeError``
+    when only one of the classical/``BigInteger`` operands was a
+    ``BigInteger``.
+  - A Jasp-traced Extended Euclidean Algorithm helper (``egcd`` in
+    ``jasp_mod_tools``) was completely broken due to an unpacking-arity
+    mismatch; unreachable from any other code path, so never previously
+    exercised.
+
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 Compatibility
 -------------
 

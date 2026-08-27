@@ -250,6 +250,25 @@ def cq_montgomery_multiply_inplace(
         tmp.delete()
 
 
+def _qq_mul(
+    ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray, inpl_adder: Callable
+) -> None:
+    """Accumulate ox * oy into ores via repeated controlled in-place addition."""
+    xrange = jrange if check_for_tracing_mode() else range
+    for i in xrange(jlen(oy)):
+        with control(oy[i]):
+            inpl_adder(ox[:], ores[i:])
+
+
+def _qc_mul_inplace(operand: QuantumFloat, cl_int: int | BigInteger, inpl_adder: Callable) -> None:
+    """Multiply operand by the classical cl_int in place via repeated controlled in-place addition."""
+    xrange = jrange if check_for_tracing_mode() else range
+    size = jlen(operand)
+    for i in xrange(size - 1):
+        with control(operand[size - 2 - i]):
+            inpl_adder(cl_int // 2, operand[size - 1 - i :])
+
+
 def qq_montgomery_multiply(
     x: QuantumFloat, y: QuantumFloat, N: int | BigInteger, m: int, inpl_adder: Callable = gidney_adder
 ) -> QuantumFloat:
@@ -274,32 +293,16 @@ def qq_montgomery_multiply(
         The mongomery product of the inputs.
 
     """
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
-
-    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray) -> None:
-        for i in xrange(jlen(oy)):
-            with control(oy[i]):
-                inpl_adder(ox[:], ores[i:])
-
-    def qc_mul_inplace(operand: QuantumFloat, cl_int: int | BigInteger) -> None:
-        size = jlen(operand)
-        for i in xrange(size - 1):
-            with control(operand[size - 2 - i]):
-                inpl_adder(cl_int // 2, operand[size - 1 - i :])
-
     n = jlen(y)
     res = QuantumFloat(n)
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 
-    qq_mul(x, y, wqf[:-1])
+    _qq_mul(x, y, wqf[:-1], inpl_adder)
     q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
-    qc_mul_inplace(aux, N)
+    _qc_mul_inplace(aux, N, inpl_adder)
     with invert():
-        qq_mul(x, y, aux[:])
+        _qq_mul(x, y, aux[:], inpl_adder)
     aux.delete()
 
     return res
@@ -345,22 +348,6 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> Quan
     n = smallest_power_of_two(N)
     m = smallest_power_of_two((N - 1) ** 2 + 1) - n
 
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
-
-    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray) -> None:
-        for i in xrange(jlen(oy)):
-            with control(oy[i]):
-                inpl_adder(ox[:], ores[i:])
-
-    def qc_mul_inplace(operand: QuantumFloat, cl_int: int | BigInteger) -> None:
-        size = jlen(operand)
-        for i in xrange(size - 1):
-            with control(operand[size - 2 - i]):
-                inpl_adder(cl_int // 2, operand[size - 1 - i :])
-
     res = QuantumModulus(N)
     # The result's Montgomery shift after reduction: (x.m + y.m) - m
     # (the reduction divides by 2^m, subtracting m from the accumulated shift)
@@ -369,11 +356,11 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> Quan
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 
-    qq_mul(x, y, wqf[:-1])
+    _qq_mul(x, y, wqf[:-1], inpl_adder)
     q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
-    qc_mul_inplace(aux, N)
+    _qc_mul_inplace(aux, N, inpl_adder)
     with invert():
-        qq_mul(x, y, aux[:])
+        _qq_mul(x, y, aux[:], inpl_adder)
     aux.delete()
 
     return res

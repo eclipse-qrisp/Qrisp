@@ -1637,8 +1637,36 @@ def bi_contfrac_best_approx(
         q1_is_zero = q1 == bi0
         t_num = max_den - q0
         t = t_num // jax.lax.cond(q1_is_zero, lambda: bi1, lambda: q1)
-        p_bound = t * p1 + p0
-        q_bound = t * q1 + q0
+        semiconv_p = t * p1 + p0
+        semiconv_q = t * q1 + q0
+
+        # A semiconvergent (p0 + t*p1)/(q0 + t*q1) is not always at least as
+        # good an approximation to a/b as the plain previous convergent
+        # p1/q1 (a simple t-vs-quot/2 threshold has an ambiguous boundary
+        # case at t == quot/2 exactly). Instead, compare their exact errors
+        # directly: for a candidate P/Q, |a*Q - b*P| is proportional to its
+        # distance from a/b (scaled by b*Q); compare two candidates by
+        # cross-multiplying these error terms by the other's denominator.
+        # a, b, p1, q1 are each <= n limbs, so their pairwise products need
+        # up to 2n limbs; the resulting error magnitudes are provably < b
+        # (a classical continued-fraction fact: they coincide with the
+        # remainder sequence of the Euclidean algorithm on a, b), so the
+        # subsequent multiplication by a <=n-limb denominator still fits
+        # comfortably within 2n limbs. q1_is_zero only occurs at the very
+        # first step, where the semiconvergent formula is the only valid
+        # choice (q1 itself would be an invalid, zero denominator).
+        a_w, b_w = a.get_larger(), b.get_larger()
+        p1_w, q1_w = p1.get_larger(), q1.get_larger()
+        sp_w, sq_w = semiconv_p.get_larger(), semiconv_q.get_larger()
+
+        def bi_abs_diff(x: BigInteger, y: BigInteger) -> BigInteger:
+            return bi_select(x < y, y - x, x - y)
+
+        err_prev = bi_abs_diff(a_w * q1_w, b_w * p1_w)
+        err_semi = bi_abs_diff(a_w * sq_w, b_w * sp_w)
+        use_semiconvergent = jnp.logical_or(err_semi * q1_w <= err_prev * sq_w, q1_is_zero)
+        p_bound = bi_select(use_semiconvergent, semiconv_p, p1)
+        q_bound = bi_select(use_semiconvergent, semiconv_q, q1)
 
         # Choose final result when done at this step
         sel_p = bi_select(exceed, p_bound, pn)
