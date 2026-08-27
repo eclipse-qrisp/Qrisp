@@ -39,4 +39,4 @@ from qrisp.interface.simulators.qrisp_simulator_backend import (
     QrispSimulatorJob,  # noqa: F401 — re-exported for convenience
 )
 
-def_backend = QrispSimulatorBackend()
+def_backend: QrispSimulatorBackend = QrispSimulatorBackend()
