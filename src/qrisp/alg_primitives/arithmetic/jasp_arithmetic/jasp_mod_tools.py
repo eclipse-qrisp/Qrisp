@@ -15,24 +15,20 @@
 ********************************************************************************
 """
 
-"""
-Utilities for modular arithmetic that work with both Python ints and BigInteger.
-
-All functions are JAX-friendly under tracing and avoid Python-side int() casts
-and non-traceable conditionals where they could occur during tracing.
-
-Notes
------
-- For BigInteger inputs, operations stay in BigInteger space.
-- For Python ints, standard integer arithmetic is used.
-- best_montgomery_shift implements the paper’s choice using N when available,
-  and falls back to ceil(log2(n)) when N is not provided.
-"""
-
-from typing import Union
+# Utilities for modular arithmetic that work with both Python ints and BigInteger.
+#
+# All functions are JAX-friendly under tracing and avoid Python-side int() casts
+# and non-traceable conditionals where they could occur during tracing.
+#
+# Notes
+# -----
+# - For BigInteger inputs, operations stay in BigInteger space.
+# - For Python ints, standard integer arithmetic is used.
+# - best_montgomery_shift implements the paper's choice using N when available,
+#   and falls back to ceil(log2(n)) when N is not provided.
 
 import jax.numpy as jnp
-from jax import jit, lax
+from jax import Array, jit, lax
 
 from qrisp import check_for_tracing_mode
 
@@ -45,7 +41,7 @@ from .jasp_bigintiger import (
 
 
 @jit
-def pow2_mod_N(m, N):
+def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     """Compute ``2 ** m % N`` for traced scalar inputs.
 
     Uses square-and-multiply inside ``lax.while_loop`` so the computation
@@ -93,7 +89,7 @@ def pow2_mod_N(m, N):
     return result
 
 
-def bi_pow2mod(exp, mod_bi):
+def bi_pow2mod(exp: int | Array, mod_bi: BigInteger) -> BigInteger:
     """Compute ``2 ** exp % mod_bi`` as a BigInteger.
 
     Uses square-and-multiply in double-width BigInteger space so that
@@ -138,7 +134,7 @@ def bi_pow2mod(exp, mod_bi):
     return BigInteger(result.digits[:k])
 
 
-def pow2mod(exp, modulus: Union[int, BigInteger]):
+def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array | BigInteger:
     """Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
 
     Dispatches to ``bi_pow2mod`` for BigInteger moduli, ``pow2_mod_N`` for
@@ -164,7 +160,9 @@ def pow2mod(exp, modulus: Union[int, BigInteger]):
     return pow(2, int(exp), int(modulus))
 
 
-def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
+def montgomery_encoder(
+    x: int | BigInteger | Array, R: int | BigInteger | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-encode x as x*R mod N.
 
     Parameters
@@ -183,14 +181,17 @@ def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: 
 
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        xb = x if isinstance(x, BigInteger) else BigInteger.create(x, N.digits.shape[0])
-        Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
-        return bi_montgomery_encode(xb, Rb, Nb)
+        width = next(v.digits.shape[0] for v in (x, R, N) if isinstance(v, BigInteger))
+        x_bi = x if isinstance(x, BigInteger) else BigInteger.create(x, width)
+        r_bi = R if isinstance(R, BigInteger) else BigInteger.create(R, width)
+        n_bi = N if isinstance(N, BigInteger) else BigInteger.create(N, width)
+        return bi_montgomery_encode(x_bi, r_bi, n_bi)
     return ((x % N) * (R % N)) % N
 
 
-def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]):
+def new_montgomery_decoder(
+    y: int | BigInteger | Array, m: int | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-decode y using the shift exponent m instead of an explicit radix.
 
     The helper supports plain Python ints, traced JAX scalars, and BigInteger
@@ -231,7 +232,9 @@ def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger],
     return montgomery_encoder(y, factor, N)
 
 
-def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
+def montgomery_decoder(
+    y: int | BigInteger | Array, R: int | BigInteger | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-decode y as y*R^{-1} mod N.
 
     Parameters
@@ -250,18 +253,18 @@ def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: 
 
     """
     if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        yb = y if isinstance(y, BigInteger) else BigInteger.create(y, N.digits.shape[0])
-        Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
-        return bi_montgomery_decode(yb, Rb, Nb)
+        width = next(v.digits.shape[0] for v in (y, R, N) if isinstance(v, BigInteger))
+        y_bi = y if isinstance(y, BigInteger) else BigInteger.create(y, width)
+        r_bi = R if isinstance(R, BigInteger) else BigInteger.create(R, width)
+        n_bi = N if isinstance(N, BigInteger) else BigInteger.create(N, width)
+        return bi_montgomery_decode(y_bi, r_bi, n_bi)
     # Handle fractional R (from negative Montgomery shifts)
-    if isinstance(R, float) and 0 < R < 1:
-        R = modinv(int(R**-1), N)
-    R1 = modinv(R, N)
-    return ((y % N) * (R1 % N)) % N
+    effective_R = modinv(int(R**-1), N) if isinstance(R, float) and 0 < R < 1 else R
+    R_inv = modinv(effective_R, N)
+    return ((y % N) * (R_inv % N)) % N
 
 
-def egcd(a: int, b: int):
+def egcd(a: int, b: int) -> tuple[int | Array, int | Array, int | Array]:
     """Extended Euclidean Algorithm (ints, JAX-friendly).
 
     Computes (g, x, y) such that a*x + b*y = g = gcd(a, b).
@@ -281,7 +284,7 @@ def egcd(a: int, b: int):
     """
 
     def cond_fun(state):
-        r, _, _, _ = state
+        r, _, _, _, _, _ = state
         return jnp.logical_not(r == 0)
 
     def body_fun(state):
@@ -290,11 +293,11 @@ def egcd(a: int, b: int):
         return (old_r - q * r, r, old_s - q * s, s, old_t - q * t, t)
 
     state = (b, a, 0, 1, 1, 0)
-    r, old_r, s, old_s, t, old_t = lax.while_loop(cond_fun, body_fun, state)
+    _, old_r, _, old_s, _, old_t = lax.while_loop(cond_fun, body_fun, state)
     return old_r, old_s, old_t
 
 
-def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
+def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | BigInteger | Array:
     """Modular inverse t = a^{-1} mod m.
 
     BigInteger inputs are handled via bi_modinv; ints use a JAX-compatible EEA
@@ -314,8 +317,9 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
 
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
-        a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, m.digits.shape[0])
-        m_bi = m if isinstance(m, BigInteger) else BigInteger.create(m, a.digits.shape[0])
+        width = next(v.digits.shape[0] for v in (a, m) if isinstance(v, BigInteger))
+        a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, width)
+        m_bi = m if isinstance(m, BigInteger) else BigInteger.create(m, width)
         return bi_modinv(a_bi, m_bi)
 
     if check_for_tracing_mode():
@@ -334,24 +338,24 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
             q = r // nr
             return (nt, t - q * nt, nr, r - q * nr)
 
-        t, nt, r, nr = lax.while_loop(cf, bf, (zero, one, m, a))
+        t, _, _, _ = lax.while_loop(cf, bf, (zero, one, m, a))
         return jnp.where(t < zero, t + m, t)
-    else:
-        t, nt, r, nr = 0, 1, m, a
-        while nr != 0:
-            q = r // nr
-            t, nt = nt, t - q * nt
-            r, nr = nr, r - q * nr
-        return t + m if t < 0 else t
+
+    t, nt, r, nr = 0, 1, m, a
+    while nr != 0:
+        q = r // nr
+        t, nt = nt, t - q * nt
+        r, nr = nr, r - q * nr
+    return t + m if t < 0 else t
 
 
-def smallest_power_of_two(n: Union[int, BigInteger]):
+def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
     """ceil(log2(n)) computed in a JAX-safe way.
 
     Parameters
     ----------
-    n : int or BigInteger
-        Positive integer (returns 0 for n <= 1).
+    n : int, BigInteger, or Array
+        Positive integer (returns 0 for n <= 1). May be a traced JAX scalar.
 
     Returns
     -------
@@ -363,7 +367,7 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
         # bit_size already yields ceil(log2(n)) with 0 for n==0
         return n.bit_size()
 
-    if hasattr(n, "bit_length"):
+    if isinstance(n, int):
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
@@ -374,7 +378,7 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
     raise TypeError(f"smallest_power_of_two expects int, BigInteger, or traced JAX scalar, got {type(n).__name__}")
 
 
-def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
+def best_montgomery_shift(n: int | BigInteger | Array, N: int | BigInteger | Array | None = None) -> int | Array:
     """Minimal auxiliary exponent m for Montgomery reduction.
 
     If N is provided (classical integer, possibly JAX-traced), use the tighter bound
@@ -403,13 +407,13 @@ def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] =
     # Use integer-safe ceil-division with JAX or Python ints
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
-        Nj = jnp.asarray(N)
-        num = nj * (Nj - 1)
-        den = Nj
+        mod_jax = jnp.asarray(N)
+        num = nj * (mod_jax - 1)
+        den = mod_jax
         # ceil(num/den) = (num + den - 1) // den
         ceil_div = (num + den - 1) // den
         return smallest_power_of_two(ceil_div)
-    else:
-        num = n * (N - 1)
-        ceil_div = (num + N - 1) // N
-        return smallest_power_of_two(ceil_div)
+
+    num = n * (N - 1)
+    ceil_div = (num + N - 1) // N
+    return smallest_power_of_two(ceil_div)

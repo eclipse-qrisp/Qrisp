@@ -15,19 +15,21 @@
 ********************************************************************************
 """
 
-from typing import Union
+from typing import Callable
 
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
-from qrisp.core import cx, swap, x
+from qrisp.core import QuantumArray, cx, swap, x
 from qrisp.environments import control, custom_control, invert
-from qrisp.jasp import check_for_tracing_mode, jlen, jrange, q_cond
-from qrisp.qtypes import QuantumFloat, QuantumModulus
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange, q_cond
+from qrisp.qtypes import QuantumBool, QuantumFloat, QuantumModulus
 
 from .jasp_bigintiger import BigInteger
 from .jasp_mod_tools import best_montgomery_shift, modinv, montgomery_decoder, montgomery_encoder, smallest_power_of_two
 
 
-def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder):
+def q_montgomery_reduction(
+    qf: QuantumFloat | DynamicQubitArray, N: int | BigInteger, m: int, inpl_adder: Callable = gidney_adder
+) -> None:
     """Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
 
     Implements the quantum Montgomery reduction from Rines & Chuang (2018),
@@ -82,14 +84,14 @@ def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, 
 
 
 def cq_montgomery_multiply(
-    X: Union[int, BigInteger],
+    X: int | BigInteger,
     y: QuantumFloat,
-    N: Union[int, BigInteger],
+    N: int | BigInteger,
     m: int,
-    inpl_adder=gidney_adder,
+    inpl_adder: Callable = gidney_adder,
     x_is_montgomery: bool = False,
-    res=None,
-):
+    res: QuantumFloat | None = None,
+) -> QuantumFloat:
     """Montgomery product of a classical X and a QuantumFloat y: X*y*R^{-1} mod N.
 
     Outline
@@ -175,14 +177,14 @@ def cq_montgomery_multiply(
 
 @custom_control
 def cq_montgomery_multiply_inplace(
-    X: Union[int, BigInteger],
+    X: int | BigInteger,
     y: QuantumFloat,
-    N: Union[int, BigInteger],
+    N: int | BigInteger,
     m: int,
-    inpl_adder=gidney_adder,
+    inpl_adder: Callable = gidney_adder,
     x_is_montgomery: bool = False,
-    ctrl=None,
-):
+    ctrl: QuantumBool | None = None,
+) -> None:
     """Montgomery product of a classical X and a QuantumFloat y, in-place on y.
 
     Notes
@@ -248,7 +250,9 @@ def cq_montgomery_multiply_inplace(
         tmp.delete()
 
 
-def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
+def qq_montgomery_multiply(
+    x: QuantumFloat, y: QuantumFloat, N: int | BigInteger, m: int, inpl_adder: Callable = gidney_adder
+) -> QuantumFloat:
     """Perform the montgomery product of two QuantumFloats. Note that both QuantumFloats must be in montgomery form.
 
     Parameters
@@ -275,12 +279,12 @@ def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inp
     else:
         xrange = range
 
-    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
+    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray) -> None:
         for i in xrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
-    def qc_mul_inplace(operand, cl_int):
+    def qc_mul_inplace(operand: QuantumFloat, cl_int: int | BigInteger) -> None:
         size = jlen(operand)
         for i in xrange(size - 1):
             with control(operand[size - 2 - i]):
@@ -301,7 +305,7 @@ def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inp
     return res
 
 
-def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
+def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> QuantumModulus:
     """Perform the montgomery product of two QuantumModuli.
     Compatible with ``montgomery_mod_mul``: inputs can be in any Montgomery
     representation (including standard form where ``m=0``).
@@ -328,9 +332,9 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     from qrisp.qtypes.quantum_modulus import _moduli_neq
 
     if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
-        raise Exception("Tried to multiply two QuantumModulus with differing modulus")
+        raise ValueError("Tried to multiply two QuantumModulus with differing modulus")
 
-    inpl_adder = x.inpl_adder
+    inpl_adder: Callable = x.inpl_adder
     N = x.modulus
 
     # Compute the reduction shift m = ceil(log2((N-1)^2 + 1)) - n.
@@ -346,12 +350,12 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     else:
         xrange = range
 
-    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
+    def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray) -> None:
         for i in xrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
-    def qc_mul_inplace(operand, cl_int):
+    def qc_mul_inplace(operand: QuantumFloat, cl_int: int | BigInteger) -> None:
         size = jlen(operand)
         for i in xrange(size - 1):
             with control(operand[size - 2 - i]):
@@ -375,18 +379,35 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     return res
 
 
-def cq_montgomery_mat_multiply(A, B, out):
+def cq_montgomery_mat_multiply(A: QuantumArray, B: QuantumArray, out: QuantumArray) -> QuantumArray:
+    """Multiply a classical matrix B into a QuantumArray of QuantumModulus entries A, accumulating into out.
+
+    Parameters
+    ----------
+    A : QuantumArray
+        2D array of QuantumModulus entries (quantum matrix).
+    B : QuantumArray
+        2D array of classical entries (classical matrix).
+    out : QuantumArray
+        2D array of QuantumModulus entries that accumulates A @ B.
+
+    Returns
+    -------
+    QuantumArray
+        The updated ``out`` array.
+
+    """
     if check_for_tracing_mode():
         xrange = jrange
         x_cond = q_cond
     else:
         xrange = range
 
-        def x_cond(condition, tf, ff):
-            if condition:
-                tf()
+        def x_cond(pred, true_fun, false_fun):
+            if pred:
+                true_fun()
             else:
-                ff()
+                false_fun()
 
     n1 = A.shape[0]
     n2 = B.shape[1]
@@ -400,7 +421,6 @@ def cq_montgomery_mat_multiply(A, B, out):
             for i in xrange(n1):
 
                 def true_fun():
-                    best_montgomery_shift(B[k, j], A[i, k].modulus)
                     shift = best_montgomery_shift(B[k, j], A[i, k].modulus)
                     aux = cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift)
                     out[i, j] += aux
