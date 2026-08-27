@@ -1619,6 +1619,7 @@ def bi_contfrac_best_approx(
             # lax.select operates on raw arrays; BigInteger is a pytree, so we
             # select on the underlying digit arrays and re-wrap.
             return BigInteger(jax.lax.select(pred, on_true.digits, on_false.digits))
+
         # Compute quotient and remainder
         quot = a0 // b0
         rem = a0 % b0

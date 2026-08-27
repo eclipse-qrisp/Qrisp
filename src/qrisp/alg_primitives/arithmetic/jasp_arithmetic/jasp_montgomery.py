@@ -250,9 +250,7 @@ def cq_montgomery_multiply_inplace(
         tmp.delete()
 
 
-def _qq_mul(
-    ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray, inpl_adder: Callable
-) -> None:
+def _qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat | DynamicQubitArray, inpl_adder: Callable) -> None:
     """Accumulate ox * oy into ores via repeated controlled in-place addition."""
     xrange = jrange if check_for_tracing_mode() else range
     for i in xrange(jlen(oy)):
