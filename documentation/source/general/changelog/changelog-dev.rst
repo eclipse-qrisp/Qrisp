@@ -234,6 +234,15 @@ Dependency Upgrades
   in ``pyproject.toml``
   (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
 
+* Bumped ``ruff`` from ``0.15.18`` to ``0.16.4``. On ``0.15.x``,
+  ``ruff format --check --output-format=rdjson`` silently required
+  ``--preview`` mode just to emit structured output at all — an unrelated
+  concern from preview *formatting rules*, which the project does not use —
+  causing the ``reviewdog`` formatter check to crash. ``0.16.0`` stabilized
+  structured output formats for the formatter, fixing this without changing
+  which formatting rules apply
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
