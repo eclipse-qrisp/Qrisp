@@ -67,6 +67,7 @@ docs = [
     "pydata-sphinx-theme==0.17.1",
 ]
 dev-code-style = [
+    "mypy==2.3.1",
     "ruff==0.15.18",
 ]
 dev-testing = [
@@ -127,6 +128,12 @@ ignore = [
     "PLC0415",  # import not at top of file (lazy/function-level imports to avoid circular imports)
     "E402",  # module-level import not at top of file (imports after a module docstring)
 ]
+
+[tool.mypy]
+python_version = "3.11"
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
 [tool.coverage.run]
 omit = ["*/__init__.py"]

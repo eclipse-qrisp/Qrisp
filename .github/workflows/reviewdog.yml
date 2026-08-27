@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "pyproject.toml"
       - ".github/workflows/reviewdog.yml"
 
 concurrency:
@@ -58,3 +59,36 @@ jobs:
                       -fail-level=any
           format_rc=$?  # capture exit code of the formatter reviewdog run
           exit $(( lint_rc | format_rc ))  # fail if either check flagged findings
+
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # Pinned to a full commit SHA instead of a mutable version tag (see ruff job above).
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
+
+      # Install the mypy version pinned in pyproject.toml
+      - name: Install mypy
+        run: |
+          MYPY_VERSION=$(sed -n 's/^.*"mypy==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "mypy==${MYPY_VERSION}"
+
+      - name: Run mypy via reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e  # don't abort on reviewdog's non-zero exit; we decide failure at the end
+          echo "🚨 mypy"
+          mypy --show-column-numbers src/ 2>&1 | \
+            reviewdog -f=mypy \
+                      -reporter=github-pr-annotations \
+                      -filter-mode=added \
+                      -fail-level=any
+          mypy_rc=$?  # capture exit code of the reviewdog run
+          exit $mypy_rc  # fail if reviewdog flagged findings on added lines
