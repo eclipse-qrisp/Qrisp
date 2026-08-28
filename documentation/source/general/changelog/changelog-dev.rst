@@ -119,6 +119,10 @@ Bug Fixes
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
+* Fix a code typo in the Jasp tutorial which printed the wrong variable
+  when checking which variables are dynamic.
+  (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
+
 Compatibility
 -------------
 
