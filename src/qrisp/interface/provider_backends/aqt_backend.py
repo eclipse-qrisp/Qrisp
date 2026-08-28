@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the AQTBackend and AQTJob classes for running Qrisp circuits on AQT quantum hardware."""
 
 import warnings
 
@@ -22,6 +23,7 @@ from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
+    JOB_FINAL_STATES,
     Job,
     JobCancelledError,
     JobFailureError,
@@ -143,7 +145,13 @@ class AQTJob(Job):
         return False
 
     def status(self) -> JobStatus:
-        """Return the current :class:`~qrisp.interface.JobStatus` by querying the AQT job."""
+        """Return the current :class:`~qrisp.interface.JobStatus`.
+
+        Once the job has reached a terminal state, that cached status is
+        returned directly.
+        """
+        if self._last_known_status in JOB_FINAL_STATES:
+            return self._last_known_status
         self._last_known_status = _map_aqt_status(self._aqt_job)
         return self._last_known_status
 

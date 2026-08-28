@@ -33,7 +33,9 @@ jobs:
       - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
 
       - name: Install ruff
-        run: pip install ruff
+        run: |
+          RUFF_VERSION=$(sed -n 's/^.*"ruff==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "ruff==${RUFF_VERSION}"
 
       - name: Run ruff via reviewdog
         env:
@@ -49,7 +51,7 @@ jobs:
           lint_rc=$?  # capture exit code of the linter reviewdog run
           echo
           echo "⚠️ ruff as a formatter"
-          ruff format src/ --check --output-format=rdjson --preview | \
+          ruff format src/ --check --output-format=rdjson | \
             reviewdog -f=rdjson \
                       -reporter=github-pr-annotations \
                       -filter-mode=added \

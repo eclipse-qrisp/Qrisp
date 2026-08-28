@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,7 +13,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """This module defines :class:`QiskitBackend` and its associated :class:`QiskitJob`."""
 
@@ -227,7 +225,13 @@ class QiskitJob(Job):
             return False
 
     def status(self) -> JobStatus:
-        """Return the current :class:`~qrisp.interface.JobStatus` by querying the Qiskit job."""
+        """Return the current :class:`~qrisp.interface.JobStatus`.
+
+        Once the job has reached a terminal state, that cached status is
+        returned directly.
+        """
+        if self._last_known_status in JOB_FINAL_STATES:
+            return self._last_known_status
         self._last_known_status = _map_qiskit_status(self._qiskit_job)
         return self._last_known_status
 
