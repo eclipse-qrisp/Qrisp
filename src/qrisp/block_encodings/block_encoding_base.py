@@ -1105,6 +1105,7 @@ class BlockEncoding:
             not match, or operand counts differ.
         TypeError
             If an item is not a BlockEncoding.
+
         """
         if len(block_encodings) == 0:
             raise ValueError("At least one block-encoding is required.")
@@ -1151,6 +1152,7 @@ class BlockEncoding:
         -------
         BlockEncoding
             A block-encoding of the weighted sum.
+
         """
         num_ops = terms[0][1].num_ops
         if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
@@ -1521,6 +1523,7 @@ class BlockEncoding:
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
 
     def __radd__(self, other):
+        """Support adding a BlockEncoding to the start value used by sum()."""
         if other == 0:
             return self
         return NotImplemented
