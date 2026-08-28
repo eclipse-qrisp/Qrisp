@@ -203,6 +203,16 @@ Development
   (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
   `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
 
+* Converted every source file's Eclipse Public License header from a
+  module-level docstring into a ``#``-prefixed comment block, and gave
+  every file that lacked one a real one-line module docstring. The header
+  had been written as a docstring, which pydocstyle interpreted as the
+  module's documentation and flagged for style violations (``D205``,
+  ``D212``, ...) on essentially every file; it was never meant to be read
+  as documentation. Existing rich module-level documentation was preserved
+  verbatim, only reformatted to satisfy ``D205``
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
   (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
@@ -233,6 +243,15 @@ Dependency Upgrades
   and updated the ``reviewdog`` CI workflow to install the version specified
   in ``pyproject.toml``
   (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
+
+* Bumped ``ruff`` from ``0.15.18`` to ``0.16.4``. On ``0.15.x``,
+  ``ruff format --check --output-format=rdjson`` silently required
+  ``--preview`` mode just to emit structured output at all — an unrelated
+  concern from preview *formatting rules*, which the project does not use —
+  causing the ``reviewdog`` formatter check to crash. ``0.16.0`` stabilized
+  structured output formats for the formatter, fixing this without changing
+  which formatting rules apply
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
 
 .. Add dependency upgrades above this line
 
