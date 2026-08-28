@@ -147,6 +147,48 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     compare_results(res_target, res_right, n)
 
 
+def test_block_encoding_flattened_linear_combination():
+    from jax.tree_util import tree_flatten, tree_unflatten
+
+    H1 = X(0) * X(1)
+    H2 = 0.4 * Y(0) + Z(1)
+    H3 = 0.7 * X(2)
+    coefficients = [2.0, -1.0, 0.5]
+
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
+    BE3 = BlockEncoding.from_operator(H3)
+
+    BE_chain = coefficients[0] * BE1 + coefficients[1] * BE2 + coefficients[2] * BE3
+    BE_direct = BlockEncoding.linear_combination([BE1, BE2, BE3], coefficients=coefficients)
+
+    assert len(BE_chain._lcu_terms) == 3
+    assert len(BE_direct._lcu_terms) == 3
+    assert BE_chain._anc_templates[0].qv_size == 2
+    assert BE_chain.num_ancs == 1 + BE1.num_ancs + BE2.num_ancs + BE3.num_ancs
+
+    leaves, treedef = tree_flatten(BE_chain)
+    reconstructed = tree_unflatten(treedef, leaves)
+    assert len(reconstructed._lcu_terms) == 3
+    assert len((reconstructed + BE1)._lcu_terms) == 4
+
+    H_target = coefficients[0] * H1 + coefficients[1] * H2 + coefficients[2] * H3
+    BE_target = BlockEncoding.from_operator(H_target)
+    n = max(
+        H1.find_minimal_qubit_amount(),
+        H2.find_minimal_qubit_amount(),
+        H3.find_minimal_qubit_amount(),
+    )
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+
+    res_target = main(BE_target)
+    compare_results(res_target, main(BE_chain), n)
+    compare_results(res_target, main(BE_direct), n)
+
+
 @pytest.mark.parametrize(
     "H1, H2",
     [
