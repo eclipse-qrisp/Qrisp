@@ -28,6 +28,7 @@ from jax.tree_util import register_pytree_node_class
 
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.state_preparation import prepare
+from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
@@ -1130,9 +1131,12 @@ class BlockEncoding:
         The resulting normalization is therefore
         ``sum(abs(coefficient * alpha_i))``.
 
-        The child ancilla templates are concatenated after one selector
-        register. The selector chooses exactly one child unitary, so nested
-        sums can be lowered to one preparation/select/preparation sequence.
+        The child ancillas are packed into one shared workspace after one
+        selector register. The workspace is sized to the largest child layout,
+        and each selected branch reconstructs its typed ancillas as views into
+        that workspace. Since the selector chooses exactly one child unitary,
+        nested sums can be lowered to one preparation/select/preparation
+        sequence.
         The term list is retained on the result so subsequent arithmetic can
         extend it instead of rebuilding a binary LCU tree.
 
@@ -1172,16 +1176,12 @@ class BlockEncoding:
             return result
 
         selector_size = (len(terms) - 1).bit_length()
-        term_anc_templates = [block_encoding._anc_templates for _, block_encoding in terms]
-        term_anc_sizes = [[template.qv_size for template in anc_templates] for anc_templates in term_anc_templates]
-        term_sizes = [sum(anc_sizes, start=jnp.array(0, dtype=int)) for anc_sizes in term_anc_sizes]
+        term_layouts = [_AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in terms]
 
         # All LCU branches are selected exclusively, so their ancillas can share
-        # one flat workspace. Use jnp.maximum even for static sizes, keeping the
-        # sizing path identical when sizes become dynamic during Jasp tracing.
-        shared_anc_size = jnp.array(0, dtype=int)
-        for term_size in term_sizes:
-            shared_anc_size = jnp.maximum(shared_anc_size, term_size)
+        # one flat workspace. The helper uses jnp.maximum for static and dynamic
+        # sizes alike, keeping this allocation strategy uniform under Jasp.
+        shared_anc_size = _maximum_layout_size(term_layouts)
 
         # The shared register is allocated once. Each branch below reconstructs
         # its original typed ancillas as views into the prefix it actually uses.
@@ -1194,13 +1194,7 @@ class BlockEncoding:
             branches = []
 
             for term_index, (_, block_encoding) in enumerate(terms):
-                ancilla_offset = jnp.array(0, dtype=int)
-                child_ancillas = []
-                for template, anc_size in zip(term_anc_templates[term_index], term_anc_sizes[term_index]):
-                    child_ancillas.append(
-                        template.construct(reg=shared_ancilla.reg[ancilla_offset : ancilla_offset + anc_size])
-                    )
-                    ancilla_offset += anc_size
+                child_ancillas = term_layouts[term_index].construct_views(shared_ancilla)
 
                 def branch(
                     *branch_args,
