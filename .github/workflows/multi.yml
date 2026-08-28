@@ -1,4 +1,4 @@
-name: Qrisp unit tests via Pytest
+name: Qrisp unit tests via Pytest Windows and macOS
 
 on:
   pull_request:
