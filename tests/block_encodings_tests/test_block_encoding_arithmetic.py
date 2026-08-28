@@ -148,6 +148,7 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
 
 
 def test_block_encoding_flattened_linear_combination():
+    """Verify that linear combinations of block encodings are flattened into one LCU."""
     from jax.tree_util import tree_flatten, tree_unflatten
 
     H1 = X(0) * X(1)
@@ -187,6 +188,24 @@ def test_block_encoding_flattened_linear_combination():
     res_target = main(BE_target)
     compare_results(res_target, main(BE_chain), n)
     compare_results(res_target, main(BE_direct), n)
+
+
+def test_block_encoding_linear_combination_validates_inputs():
+    """Verify that linear combination input errors are reported."""
+    block_encoding = BlockEncoding(1, [], lambda operand: None)
+    two_operand_block_encoding = BlockEncoding(1, [], lambda first, second: None, num_ops=2)
+
+    with pytest.raises(ValueError, match="At least one block-encoding is required"):
+        BlockEncoding.linear_combination([])
+
+    with pytest.raises(ValueError, match="number of coefficients"):
+        BlockEncoding.linear_combination([block_encoding], coefficients=[1, 2])
+
+    with pytest.raises(TypeError, match="Expected every item to be a BlockEncoding"):
+        BlockEncoding.linear_combination([object()])
+
+    with pytest.raises(ValueError, match="same number of operands"):
+        BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
 
 
 def test_block_encoding_lcu_reuses_heterogeneous_ancillas():
