@@ -15,16 +15,15 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
+from jax.core import ShapedArray
+from jax.lax import while_loop
 
 from qrisp.circuit import Operation, QuantumCircuit
 from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 parity_p = QuantumPrimitive("parity")
-
-import jax.numpy as jnp
-from jax.core import ShapedArray
-from jax.lax import while_loop
 
 
 @parity_p.def_abstract_eval
@@ -34,7 +33,7 @@ def parity_abstract_eval(*measurements, expectation=0, observable=False):
     Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
     """
     for b in measurements:
-        if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
+        if not isinstance(b, ShapedArray) or not np.issubdtype(b.dtype, np.bool_):
             raise Exception(f"Tried to trace parity primitive with value {b} (permitted is boolean)")
 
     return ShapedArray((), bool)
@@ -84,8 +83,9 @@ def parity(*measurements, expectation=0, observable=False):
         * If ``observable=False`` (default), a ``DETECTOR`` instruction is created.
         * If ``observable=True``, an ``OBSERVABLE_INCLUDE`` instruction is created.
 
-        If executed **without** ``extract_stim`` (i.e., in regular Qrisp simulation via :func:`~qrisp.jasp.jaspify`, for instance),
-        and ``observable=False``, the function verifies that the measured parity matches the ``expectation`` provided.
+        If executed **without** ``extract_stim`` (i.e., in regular Qrisp simulation via
+        :func:`~qrisp.jasp.jaspify`, for instance), and ``observable=False``, the function
+        verifies that the measured parity matches the ``expectation`` provided.
         Deviations from the parity expectation should solely stem from hardware noise,
         i.e. a deviation in a **noiseless** simulation is an error *in the program*.
         Because of this, an Exception is raised when the verification fails.
@@ -168,8 +168,6 @@ def parity(*measurements, expectation=0, observable=False):
         # Yields [False, False, False]
 
     """
-    import jax.numpy as jnp
-
     expectation = int(expectation)
     observable = bool(observable)
 
@@ -179,53 +177,53 @@ def parity(*measurements, expectation=0, observable=False):
     if all(s == () for s in shapes):
         # All scalars - direct call to primitive
         return parity_p.bind(*measurements, expectation=expectation, observable=observable)
-    else:
-        # At least one array - check that all arrays have the same shape
-        # Collect all non-scalar shapes
-        non_scalar_shapes = [s for s in shapes if s != ()]
 
-        if not non_scalar_shapes:
-            # This shouldn't happen given the if-else structure, but just in case
-            return parity_p.bind(*measurements, expectation=expectation, observable=observable)
+    # At least one array - check that all arrays have the same shape
+    # Collect all non-scalar shapes
+    non_scalar_shapes = [s for s in shapes if s != ()]
 
-        # Check that all non-scalar shapes are identical
-        first_shape = non_scalar_shapes[0]
-        if not all(s == first_shape for s in non_scalar_shapes):
-            raise ValueError(f"All array inputs to parity must have the same shape. Got shapes: {shapes}")
+    if not non_scalar_shapes:
+        # This shouldn't happen given the if-else structure, but just in case
+        return parity_p.bind(*measurements, expectation=expectation, observable=observable)
 
-        # Also check that scalar and non-scalar inputs are not mixed
-        if len(non_scalar_shapes) != len(shapes):
-            raise ValueError(f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}")
+    # Check that all non-scalar shapes are identical
+    first_shape = non_scalar_shapes[0]
+    if not all(s == first_shape for s in non_scalar_shapes):
+        raise ValueError(f"All array inputs to parity must have the same shape. Got shapes: {shapes}")
 
-        result_shape = first_shape
-        flat_result = jnp.zeros(measurements[0].size, dtype=bool)
+    # Also check that scalar and non-scalar inputs are not mixed
+    if len(non_scalar_shapes) != len(shapes):
+        raise ValueError(f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}")
 
-        # Flatten for element-wise processing
-        flat_measurements = [jnp.ravel(m) for m in measurements]
+    result_shape = first_shape
+    flat_result = jnp.zeros(measurements[0].size, dtype=bool)
 
-        init_val = (0, flat_result, flat_measurements)
+    # Flatten for element-wise processing
+    flat_measurements = [jnp.ravel(m) for m in measurements]
 
-        def body_function(val):
+    init_val = (0, flat_result, flat_measurements)
 
-            index, flat_result, flat_measurements = val
-            parity_res = parity(
-                *[meas[index] for meas in flat_measurements],
-                expectation=expectation,
-                observable=observable,
-            )
-            flat_result = flat_result.at[index].set(parity_res)
-            index += 1
+    def body_function(val):
 
-            return index, flat_result, flat_measurements
+        index, flat_result, flat_measurements = val
+        parity_res = parity(
+            *[meas[index] for meas in flat_measurements],
+            expectation=expectation,
+            observable=observable,
+        )
+        flat_result = flat_result.at[index].set(parity_res)
+        index += 1
 
-        def cond_function(val):
-            return val[0] < val[1].size
+        return index, flat_result, flat_measurements
 
-        while_res = while_loop(cond_function, body_function, init_val)
+    def cond_function(val):
+        return val[0] < val[1].size
 
-        flat_result = while_res[1]
+    while_res = while_loop(cond_function, body_function, init_val)
 
-        return jnp.reshape(flat_result, result_shape)
+    flat_result = while_res[1]
+
+    return jnp.reshape(flat_result, result_shape)
 
 
 @parity_p.def_impl

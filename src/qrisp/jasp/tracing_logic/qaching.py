@@ -23,13 +23,18 @@ from qrisp.jasp.tracing_logic import (
     TracingQuantumSession,
     check_for_tracing_mode,
     get_last_equation,
+    tracing_scope,
 )
 
 
 def qache(*func, **kwargs):
-    """This decorator allows you to mark a function as "reusable". Reusable here means
+    """This decorator allows you to mark a function as "reusable".
+
+    Reusable here means
     that the jasp expression of this function will be cached and reused in the next
-    calls (if the function is called with the same signature).
+    calls (if the function is called with the same signature, i.e. arguments of the
+    same abstract type/shape, and, if any arguments are marked static via ``kwargs``,
+    the same concrete value for those).
 
     A qached function therefore has to be traced by the Python interpreter only once
     and after that the function can be called without any Python-interpreter induced
@@ -52,11 +57,13 @@ def qache(*func, **kwargs):
     ----------
     func : callable
         The function to be qached.
+    kwargs : dict, optional
+        Keyword arguments that are forwarded to `jax.jit <https://docs.jax.dev/en/latest/_autosummary/jax.jit.html>`_.
 
     Returns
     -------
     qached_function : callable
-        A function that will be traced on it's first execution and retrieved from
+        A function that will be traced on its first execution and retrieved from
         the cache in any other call.
 
     Examples
@@ -102,45 +109,43 @@ def qache(*func, **kwargs):
     has been traced twice and recalled from the cache twice. We take a look at the :ref:`jaspr`.
 
     >>> print(jaspr)
-    let inner_function = { lambda ; a:QuantumState b:QubitArray. let
-        c:Qubit = jasp.get_qubit b 0
-        d:QuantumState = jasp.h a c
-        e:Qubit = jasp.get_qubit b 1
-        f:QuantumState = jasp.cx d c e
-        g:QuantumState h:bool[] = jasp.measure f c
+    let inner_function = { lambda ; a:QubitArray b:QuantumState. let
+        c:Qubit = jasp.get_qubit a 0:i64[]
+        d:QuantumState = jasp.quantum_gate[gate=h] c b
+        e:Qubit = jasp.get_qubit a 1:i64[]
+        f:QuantumState = jasp.quantum_gate[gate=cx] c e d
+        g:bool[] h:QuantumState = jasp.measure c f
       in (g, h) } in
-    let inner_function1 = { lambda ; i:QuantumState j:QubitArray k:i32[] l:bool[]. let
-        m:Qubit = jasp.get_qubit j 0
-        n:QuantumState = jasp.h i m
-        o:Qubit = jasp.get_qubit j 1
-        p:QuantumState = jasp.cx n m o
-        q:QuantumState r:bool[] = jasp.measure p m
-      in (q, r) } in
-    { lambda ; s:QuantumState. let
-        t:QuantumState u:QubitArray = jasp.create_qubits s 2
-        v:QuantumState w:QubitArray = jasp.create_qubits t 2
-        x:QuantumState y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
-          u
-        z:QuantumState ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
-          w 0 False
-        bb:QuantumState bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
-          u
-        bd:QuantumState be:bool[] = pjit[
-          name=inner_function
-          jaxpr=inner_function1
-        ] bb w 0 False
-        bf:bool[] = and y ba
+    let inner_function1 = { lambda ; i:QubitArray j:i64[] k:QuantumState. let
+        l:Qubit = jasp.get_qubit i 0:i64[]
+        m:QuantumState = jasp.quantum_gate[gate=h] l k
+        n:Qubit = jasp.get_qubit i 1:i64[]
+        o:QuantumState = jasp.quantum_gate[gate=cx] l n m
+        p:bool[] q:QuantumState = jasp.measure l o
+      in (p, q) } in
+    { lambda ; r:QuantumState. let
+        s:QubitArray t:QuantumState = jasp.create_qubits 2:i64[] r
+        u:QubitArray v:QuantumState = jasp.create_qubits 2:i64[] t
+        w:bool[] x:QuantumState = jit[name=inner_function jaxpr=inner_function] s v
+        y:bool[] z:QuantumState = jit[name=inner_function jaxpr=inner_function1] u 0:i64[]
+          x
+        ba:bool[] bb:QuantumState = jit[name=inner_function jaxpr=inner_function] s z
+        bc:bool[] bd:QuantumState = jit[name=inner_function jaxpr=inner_function1] u
+          0:i64[] bb
+        be:bool[] = and w y
+        bf:bool[] = and be ba
         bg:bool[] = and bf bc
-        bh:bool[] = and bg be
-        bi:QuantumState = jasp.reset bd u
-        bj:QuantumState = jasp.delete_qubits bi u
-      in (bj, bh) }
+      in (bg, bd) }
 
     As expected, we see three different function definitions:
 
-    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
-    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` and ``.signed`` attribute are also passed to the function.
-    * The third function definition is ``outer_function``, which calls the previously defined functions.
+    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind
+      of signature only the ``QubitArray`` is required.
+    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the
+      ``QubitArray``, the ``.exponent`` attribute is also passed to the function, because it is a *traced*
+      attribute.
+    * The third block is the anonymous top-level function representing ``main``, which calls the
+      previously defined functions.
 
     **Illegal functions**
 
@@ -181,7 +186,7 @@ def qache(*func, **kwargs):
             inner_function(qf)
 
         main()
-        # Yields: Exception: Found in-place parameter modification of QuantumVariable qf
+        # Yields: Exception: Found in-place parameter modification of QuantumVariable
 
     """
     if kwargs and len(func) == 0:
@@ -276,28 +281,24 @@ def qache_helper(func, jax_kwargs):
 
         # Get the AbstractQuantumState for tracing
         tr_qs = TracingQuantumSession.get_instance()
-        tr_qs.start_tracing(tr_qs.abs_qst)
 
-        # Make sure literals are 32 bit
-        args = list(args)
-        # for i in range(len(args)):
-        #     if isinstance(args[i], bool):
-        #         args[i] = jnp.array(args[i], dtype = jnp.bool)
-        #     elif isinstance(args[i], int):
-        #         args[i] = jnp.array(args[i], dtype = jnp.int64)
-        #     elif isinstance(args[i], float):
-        #         args[i] = jnp.array(args[i], dtype = jnp.float64)
-        #     elif isinstance(args[i], complex):
-        #         args[i] = jnp.array(args[i], dtype = jnp.complex)
+        with tracing_scope(tr_qs, tr_qs.abs_qst):
+            # Make sure literals are 32 bit
+            args = list(args)
+            # for i in range(len(args)):
+            #     if isinstance(args[i], bool):
+            #         args[i] = jnp.array(args[i], dtype = jnp.bool)
+            #     elif isinstance(args[i], int):
+            #         args[i] = jnp.array(args[i], dtype = jnp.int64)
+            #     elif isinstance(args[i], float):
+            #         args[i] = jnp.array(args[i], dtype = jnp.float64)
+            #     elif isinstance(args[i], complex):
+            #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
-        # Excecute the function
-        ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10 * "~"] = tr_qs.abs_qst
-        try:
+            # Excecute the function
+            ammended_kwargs = dict(kwargs)
+            ammended_kwargs[10 * "~"] = tr_qs.abs_qst
             res, abs_qst_new = ammended_function(*args, **ammended_kwargs)
-        except Exception as e:
-            tr_qs.conclude_tracing()
-            raise e
 
         tr_qs.conclude_tracing()
 

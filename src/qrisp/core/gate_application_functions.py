@@ -610,7 +610,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         # if 3 < n < 5:
         #     return mcx(qubits_0, qubits_1, method = "maslov", ctrl_state = ctrl_state)
         # else:
-        #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
+        #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa: E501
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
 
@@ -1116,6 +1116,28 @@ def rxx(phi, qubits_0, qubits_1):
     else:
         rxx_gate = std_ops.RXXGate(phi)
         append_operation(rxx_gate, [qubits_0, qubits_1])
+    return qubits_0, qubits_1
+
+
+def ryy(phi, qubits_0, qubits_1):
+    """Applies an RYY gate.
+
+    Parameters
+    ----------
+    phi : float or sympy.Symbol
+        The phase to apply.
+    qubits_0 : Qubit or list[Qubit] or QuantumVariable
+        The first argument to perform the RYY gate one.
+    qubits_1 : Qubit or list[Qubit] or QuantumVariable
+        The second argument to perform the RYY gate one.
+
+    """
+    if check_for_tracing_mode():
+        ryy_gate = std_ops.RYYGate(sympy.Symbol("alpha"))
+        append_operation(ryy_gate, [qubits_0, qubits_1], param_tracers=[phi])
+    else:
+        ryy_gate = std_ops.RYYGate(phi)
+        append_operation(ryy_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 

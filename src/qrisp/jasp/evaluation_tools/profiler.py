@@ -51,6 +51,9 @@ from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
     get_num_qubits_profiler,
     simulate_num_qubits,
 )
+from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
+    get_cached_jaspr,
+)
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -109,6 +112,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 
 def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
     """Decorator to determine resources of large scale quantum computations.
+
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
@@ -176,12 +180,13 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(c)
 
         print(main(5))
-        # {'s': 45, 'x': 22, 't_dg': 98, 'cx': 510, 't': 96, 'h': 139, 'measure': 55}
+        # {'t': 100, 's': 50, 't_dg': 100, 'h': 139, 'x': 22, 'cx': 577, 'measure': 49}
         print(main(5000))
-        # {'t': 751506, 'h': 1127254, 'x': 2002, 's': 375750, 't_dg': 751508, 'cx': 4629255, 'measure': 752500}
+        # {'t': 75025000, 's': 37512500, 't_dg': 75025000, 'h': 112527499,
+        #  'x': 20002, 'cx': 500089987, 'measure': 37512499}
 
     Note that even though the second computation contains more than 800 million gates,
-    determining the resources takes less than 200ms, highlighting the scalability
+    determining the resources takes well under a second, highlighting the scalability
     features of the Jasp infrastructure.
 
     **Modifying the measurement behavior via a random number generator**
@@ -235,7 +240,7 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
     measurements.
 
     For some algorithms (such as :ref:`RUS`) sampling the measurement result
-    from a simple distribution won't cut it because the required ressource can
+    from a simple distribution won't cut it because the required resources can
     be heavily influenced by measurement outcomes. For this matter it is also
     possible to perform a full simulation. Note that this simulation is no
     longer deterministic.
@@ -255,30 +260,17 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(qv)
 
         print(main(0))
-        {'measure': 4, 'x': 2}
+        # {'measure': 4, 'x': 2}
         print(main(1))
-        {'measure': 4}
+        # {'measure': 4}
 
     """
 
     def count_ops_decorator(function):
 
         def ops_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
-            )
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.count_ops(*args, meas_behavior=meas_behavior, callback_threshold=callback_threshold)
 
         return ops_counter
 
@@ -398,7 +390,7 @@ def depth(
 
     .. warning::
 
-        The depth metric an experimental feature and may not behave as expected in certain edge cases.
+        The depth metric is an experimental feature and may not behave as expected in certain edge cases.
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
@@ -412,19 +404,8 @@ def depth(
     def depth_decorator(function):
 
         def depth_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].depth(
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
             )
 
@@ -587,20 +568,8 @@ def num_qubits(
     def num_qubits_decorator(function):
 
         def qubits_counter(*args):
-
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].num_qubits(
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.num_qubits(
                 *args,
                 meas_behavior=meas_behavior,
                 max_allocations=max_allocations,

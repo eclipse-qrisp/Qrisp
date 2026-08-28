@@ -722,7 +722,7 @@ class QuantumCircuit:
         Returns
         -------
         numpy.ndarray
-            The unitary matrix. ``dtype`` is ``complex64`` for numeric
+            The unitary matrix. ``dtype`` is ``complex128`` for numeric
             circuits and ``object`` for symbolic ones.
 
 
@@ -743,7 +743,7 @@ class QuantumCircuit:
         array([[ 1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],
                [ 0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j],
                [ 0.+0.j,  0.+0.j,  1.+0.j,  0.+0.j],
-               [ 0.+0.j,  0.+0.j,  0.+0.j, -1.+0.j]], dtype=complex64)
+               [ 0.+0.j,  0.+0.j,  0.+0.j, -1.+0.j]], dtype=complex128)
 
         We now synthesize the exact same QuantumCircuit, but this time ``phi`` is a SymPy
         symbol.
@@ -2562,6 +2562,25 @@ class QuantumCircuit:
         if phi == 0:
             return
         self.append(ops.RXXGate(phi), [qubits_0, qubits_1])
+
+    def ryy(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
+        """Instruct an RYY-gate.
+
+        Parameters
+        ----------
+        phi : FloatLike
+            The angle parameter.
+
+        qubits_0 : QubitLike
+            The Qubit to apply the gate on.
+
+        qubits_1 : QubitLike
+            The other Qubit to apply the gate on.
+
+        """
+        if phi == 0:
+            return
+        self.append(ops.RYYGate(phi), [qubits_0, qubits_1])
 
     def rzz(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """Instruct an RZZ-gate.

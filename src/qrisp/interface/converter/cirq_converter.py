@@ -102,6 +102,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         "gphase": None,
         "xxyy": None,
         "rxx": None,
+        "ryy": None,
         "rzz": None,
         # skip qubit allocation and deallocation ops in the converter
         "qb_alloc": None,

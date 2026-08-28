@@ -17,10 +17,14 @@
 
 from jax.core import AbstractValue
 
-from qrisp.jasp.primitives import AbstractQubitArray, QuantumPrimitive
+from qrisp.circuit import QubitAlloc, QubitDealloc
+from qrisp.jasp.primitives.abstract_quantum_register import AbstractQubitArray
+from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 
 class AbstractQuantumState(AbstractValue):
+    """JAX abstract value representing the quantum state threaded through tracing."""
+
     def __init__(self):
         self.vma = None
         AbstractValue.__init__(self)
@@ -36,6 +40,7 @@ class AbstractQuantumState(AbstractValue):
 
 
 def create_qubits(size, state):
+    """Bind the create_qubits primitive."""
     return create_qubits_p.bind(size, state)
 
 
@@ -45,7 +50,7 @@ create_qubits_p.multiple_results = True
 
 
 @create_qubits_p.def_abstract_eval
-def create_qubits_abstract_eval(size, qc):
+def create_qubits_abstract_eval(_size, qc):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -64,11 +69,10 @@ def create_qubits_abstract_eval(size, qc):
 
 @create_qubits_p.def_impl
 def create_qubit_impl(size, qc):
-    from qrisp.circuit import QubitAlloc
-
+    """Concrete evaluation of the create_qubits primitive."""
     qubit_list = []
 
-    for i in range(int(size)):
+    for _ in range(int(size)):
         qubit_list.append(qc.add_qubit())
         qc.append(QubitAlloc(), [qubit_list[-1]])
 
@@ -80,7 +84,7 @@ delete_qubits_p = QuantumPrimitive("delete_qubits")
 
 
 @delete_qubits_p.def_abstract_eval
-def delete_qubits_abstract_eval(qarr, qc):
+def delete_qubits_abstract_eval(_qarr, _qc):
     """Abstract evaluation of the primitive.
 
     This function does not need to be JAX traceable. It will be invoked with
@@ -97,10 +101,9 @@ def delete_qubits_abstract_eval(qarr, qc):
 
 @delete_qubits_p.def_impl
 def delete_qubits_impl(qarr, qc):
-    from qrisp.circuit import QubitDealloc
-
-    for i in range(len(qarr)):
-        qc.append(QubitDealloc(), [qarr[i]])
+    """Concrete evaluation of the delete_qubits primitive."""
+    for qubit in qarr:
+        qc.append(QubitDealloc(), [qubit])
 
     return qc
 

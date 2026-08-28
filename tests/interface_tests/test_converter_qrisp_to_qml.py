@@ -37,6 +37,7 @@ from qrisp.circuit.standard_operations import (  # Barrier,
     RXGate,
     RXXGate,
     RYGate,
+    RYYGate,
     RZGate,
     RZZGate,
     SGate,
@@ -87,6 +88,7 @@ SINGLE_GATE_MAP_DIFF_PARAMS = [
 MULTI_GATE_MAP = [
     (SwapGate, qml.SWAP, 2, []),
     (RXXGate, qml.IsingXX, 2, [np.pi / 2]),
+    (RYYGate, qml.IsingYY, 2, [np.pi / 4]),
     (RZZGate, qml.IsingZZ, 2, [np.pi / 3]),
 ]
 
@@ -190,6 +192,11 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
         (
             RXXGate,
             lambda t: qml.IsingXX(t, wires=[0, 1]),
+            [(np.pi / 3,), (1.5,), (0.0,)],
+        ),
+        (
+            RYYGate,
+            lambda t: qml.IsingYY(t, wires=[0, 1]),
             [(np.pi / 3,), (1.5,), (0.0,)],
         ),
         (
@@ -556,13 +563,14 @@ class TestMultiQubitGateConversion:
 
         check_statevector_equivalence(qv, qml_res)
 
-    def test_swap_rxx_rzz_gates(self):
-        """Test conversion of SWAP, RXX, RZZ gates from Qrisp to PennyLane."""
+    def test_swap_rxx_ryy_rzz_gates(self):
+        """Test conversion of SWAP, RXX, RYY, RZZ gates from Qrisp to PennyLane."""
         qrisp_qv = QuantumVariable(2)
         qrisp_qs = qrisp_qv.qs
 
         qrisp_qs.append(SwapGate(), [qrisp_qv[0], qrisp_qv[1]])
         qrisp_qs.append(RXXGate(np.pi / 2), [qrisp_qv[0], qrisp_qv[1]])
+        qrisp_qs.append(RYYGate(np.pi / 3), [qrisp_qv[0], qrisp_qv[1]])
         qrisp_qs.append(RZZGate(np.pi / 4), [qrisp_qv[1], qrisp_qv[0]])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
@@ -571,6 +579,7 @@ class TestMultiQubitGateConversion:
         expected_ops = [
             qml.SWAP(wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
             qml.IsingXX(np.pi / 2, wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
+            qml.IsingYY(np.pi / 3, wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
             qml.IsingZZ(np.pi / 4, wires=[qrisp_qv[1].identifier, qrisp_qv[0].identifier]),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)

@@ -150,8 +150,8 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
 
 def q_fori_loop(lower, upper, body_fun, init_val):
-    """Jasp compatible version of
-    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
+    """Jasp compatible version of `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
+
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed
@@ -187,6 +187,9 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
     ::
 
+        from qrisp import *
+        from qrisp.jasp import *
+
         @jaspify
         def main(k):
 
@@ -219,6 +222,73 @@ def q_fori_loop(lower, upper, body_fun, init_val):
         return i < upper
 
     return q_while_loop(new_cond_fun, new_body_fun, (init_val, lower, upper))[0]
+
+
+def _wrap_branch_for_tracing(fn, qs):
+    """Wrap a q_cond/q_switch branch function for tracing under jax.lax.cond/switch.
+
+    Starts a nested tracing scope on the incoming AbstractQuantumState, registers
+    every QuantumVariable found in the operands so it can be resolved during
+    tracing, calls the branch, then concludes tracing and returns (result,
+    updated_abs_qst) -- the two-tuple shape jax.lax.cond/switch's own branch
+    functions must return.
+    """
+
+    def wrapped(*operands):
+        qs.start_tracing(operands[1])
+        for qv in recursive_qv_search(operands[0]):
+            qs.register_qv(qv, None)
+        res = fn(*operands[0])
+        abs_qst = qs.conclude_tracing()
+        return (res, abs_qst)
+
+    return wrapped
+
+
+def _get_last_cond_eqn():
+    """Find the most recently traced 'cond' equation.
+
+    JAX sometimes performs an automatic type conversion after a cond/switch
+    call, so the cond equation isn't always the very last one traced -- this
+    walks backwards until it finds it.
+    """
+    i = 1
+    while True:
+        eqn = get_last_equation(-i)
+        if eqn.primitive.name == "cond":
+            return eqn
+        i += 1
+
+
+def _finalize_branch_eqn(eqn, branch_jaxprs, res, qs, fun_name):
+    """Validate and finalize a traced cond/switch equation's branch jaxprs.
+
+    Raises if the AbstractQuantumState was implicitly imported (i.e. not part
+    of the traced body's own signature). If none of the branches actually
+    touch the quantum state, strips the now-unused trailing QuantumState
+    invar/outvar from the equation and every branch and returns the plain
+    result; otherwise writes back the (Jaspr-cached) branches, updates
+    qs.abs_qst from the traced result, and returns the result.
+    """
+    from qrisp.jasp import Jaspr
+
+    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumState):
+        raise Exception(
+            f"Found implicit variable import in {fun_name}. "
+            "Please make sure all used variables are part of the body signature."
+        )
+
+    if all(not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState) for branch_jaxpr in branch_jaxprs):
+        eqn.invars.pop(-1)
+        for branch_jaxpr in branch_jaxprs:
+            branch_jaxpr.jaxpr.invars.pop(-1)
+        return res[0]
+
+    eqn.params["branches"] = tuple(Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs)
+
+    qs.abs_qst = res[-1]
+
+    return res[0]
 
 
 def q_cond(pred, true_fun, false_fun, *operands):
@@ -297,66 +367,21 @@ def q_cond(pred, true_fun, false_fun, *operands):
         else:
             return false_fun(*operands)
 
-    def new_true_fun(*operands):
-        qs.start_tracing(operands[1])
-        for qv in recursive_qv_search(operands[0]):
-            qs.register_qv(qv, None)
-        res = true_fun(*operands[0])
-        abs_qst = qs.conclude_tracing()
-        return (res, abs_qst)
-
-    def new_false_fun(*operands):
-        qs.start_tracing(operands[1])
-        for qv in recursive_qv_search(operands[0]):
-            qs.register_qv(qv, None)
-        res = false_fun(*operands[0])
-        abs_qst = qs.conclude_tracing()
-        return (res, abs_qst)
-
     qs = TracingQuantumSession.get_instance()
     abs_qst = qs.abs_qst
 
     new_operands = (operands, abs_qst)
 
-    cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
-
-    # There seem to be situations, where Jax performs some automatic type
-    # conversion after the cond call. This results in the cond equation
-    # not being the most recent equation.
-    # We therefore search for the last cond primitive.
-    i = 1
-    while True:
-        eqn = get_last_equation(-i)
-        if eqn.primitive.name == "cond":
-            break
-        i += 1
-
-    false_jaxpr = eqn.params["branches"][0]
-    true_jaxpr = eqn.params["branches"][1]
-
-    if not isinstance(false_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumState):
-        raise Exception(
-            "Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature."
-        )
-
-    from qrisp.jasp import Jaspr
-
-    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)) and (
-        not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)
-    ):
-        eqn.invars.pop(-1)
-        false_jaxpr.jaxpr.invars.pop(-1)
-        true_jaxpr.jaxpr.invars.pop(-1)
-        return cond_res[0]
-
-    eqn.params["branches"] = (
-        Jaspr.from_cache(false_jaxpr),
-        Jaspr.from_cache(true_jaxpr),
+    cond_res = cond(
+        pred,
+        _wrap_branch_for_tracing(true_fun, qs),
+        _wrap_branch_for_tracing(false_fun, qs),
+        *new_operands,
     )
 
-    qs.abs_qst = cond_res[-1]
+    eqn = _get_last_cond_eqn()
 
-    return cond_res[0]
+    return _finalize_branch_eqn(eqn, eqn.params["branches"], cond_res, qs, "q_cond")
 
 
 # Switch implementation for classical index
@@ -423,59 +448,18 @@ def _q_switch_c(index, branches, *operands):
     if not check_for_tracing_mode():
         return branches[index](*operands)
 
-    def convert_branch(branch):
-
-        def new_branch(*operands):
-            qs.start_tracing(operands[1])
-            for qv in recursive_qv_search(operands[0]):
-                qs.register_qv(qv, None)
-            res = branch(*operands[0])
-            abs_qst = qs.conclude_tracing()
-            return (res, abs_qst)
-
-        return new_branch
-
-    new_branches = [convert_branch(branch) for branch in branches]
-
     qs = TracingQuantumSession.get_instance()
     abs_qst = qs.abs_qst
+
+    new_branches = [_wrap_branch_for_tracing(branch, qs) for branch in branches]
 
     new_operands = (operands, abs_qst)
 
     switch_res = switch(index, new_branches, *new_operands)
 
-    # There seem to be situations, where Jax performs some automatic type
-    # conversion after the cond call. This results in the cond equation
-    # not being the most recent equation.
-    # We therefore search for the last cond primitive.
-    i = 1
-    while True:
-        eqn = get_last_equation(-i)
-        if eqn.primitive.name == "cond":
-            break
-        i += 1
+    eqn = _get_last_cond_eqn()
 
-    branch_jaxprs = eqn.params["branches"]
-
-    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumState):
-        raise Exception(
-            "Found implicit variable import in q_switch. Please make sure all used variables are part of the body signature."
-        )
-
-    from qrisp.jasp import Jaspr
-
-    if all(
-        [not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState) for branch_jaxpr in branch_jaxprs]
-    ):
-        eqn.invars.pop(-1)
-        [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
-        return switch_res[0]
-
-    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
-
-    qs.abs_qst = switch_res[-1]
-
-    return switch_res[0]
+    return _finalize_branch_eqn(eqn, eqn.params["branches"], switch_res, qs, "q_switch")
 
 
 def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
