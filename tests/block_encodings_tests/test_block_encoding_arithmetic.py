@@ -18,7 +18,7 @@
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable, terminal_sampling
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, jaspify, measure, terminal_sampling, x
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -187,6 +187,41 @@ def test_block_encoding_flattened_linear_combination():
     res_target = main(BE_target)
     compare_results(res_target, main(BE_chain), n)
     compare_results(res_target, main(BE_direct), n)
+
+
+def test_block_encoding_lcu_reuses_heterogeneous_ancillas():
+    """Verify that heterogeneous child ancillas share one workspace."""
+
+    def two_ancilla_unitary(float_ancilla, bool_ancilla, operand):
+        x(float_ancilla)
+        x(bool_ancilla)
+
+    def one_ancilla_unitary(float_ancilla, operand):
+        x(float_ancilla)
+
+    BE_two_ancillas = BlockEncoding(
+        1,
+        [QuantumFloat(2), QuantumBool()],
+        two_ancilla_unitary,
+    )
+    BE_one_ancilla = BlockEncoding(1, [QuantumFloat(1)], one_ancilla_unitary)
+    BE = BlockEncoding.linear_combination([BE_two_ancillas, BE_one_ancilla])
+
+    expected_ancilla_count = 2
+    expected_shared_size = 3
+    assert BE.num_ancs == expected_ancilla_count
+    assert BE._anc_templates[1].qv_size == expected_shared_size
+
+    operand = QuantumVariable(1)
+    BE.apply(operand)
+
+    @jaspify
+    def main(block_encoding):
+        operand = QuantumVariable(1)
+        block_encoding.apply(operand)
+        return measure(operand)
+
+    assert main(BE) == 0
 
 
 @pytest.mark.parametrize(

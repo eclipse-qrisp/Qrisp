@@ -1172,17 +1172,35 @@ class BlockEncoding:
             return result
 
         selector_size = (len(terms) - 1).bit_length()
-        child_anc_templates = [template for _, block_encoding in terms for template in block_encoding._anc_templates]
-        new_anc_templates = [QuantumFloat(selector_size).template()] + child_anc_templates
+        term_anc_templates = [block_encoding._anc_templates for _, block_encoding in terms]
+        term_anc_sizes = [[template.qv_size for template in anc_templates] for anc_templates in term_anc_templates]
+        term_sizes = [sum(anc_sizes, start=jnp.array(0, dtype=int)) for anc_sizes in term_anc_sizes]
+
+        # All LCU branches are selected exclusively, so their ancillas can share
+        # one flat workspace. Use jnp.maximum even for static sizes, keeping the
+        # sizing path identical when sizes become dynamic during Jasp tracing.
+        shared_anc_size = jnp.array(0, dtype=int)
+        for term_size in term_sizes:
+            shared_anc_size = jnp.maximum(shared_anc_size, term_size)
+
+        # The shared register is allocated once. Each branch below reconstructs
+        # its original typed ancillas as views into the prefix it actually uses.
+        shared_anc_template = QuantumVariable(shared_anc_size).template()
+        new_anc_templates = [QuantumFloat(selector_size).template(), shared_anc_template]
 
         def unitary(*args):
             selector = args[0]
-            ancilla_offset = 1
+            shared_ancilla = args[1]
             branches = []
 
-            for _, block_encoding in terms:
-                child_ancillas = args[ancilla_offset : ancilla_offset + block_encoding.num_ancs]
-                ancilla_offset += block_encoding.num_ancs
+            for term_index, (_, block_encoding) in enumerate(terms):
+                ancilla_offset = jnp.array(0, dtype=int)
+                child_ancillas = []
+                for template, anc_size in zip(term_anc_templates[term_index], term_anc_sizes[term_index]):
+                    child_ancillas.append(
+                        template.construct(reg=shared_ancilla.reg[ancilla_offset : ancilla_offset + anc_size])
+                    )
+                    ancilla_offset += anc_size
 
                 def branch(
                     *branch_args,
@@ -1197,7 +1215,7 @@ class BlockEncoding:
                 pass
 
             branches.extend([identity_branch] * ((1 << selector_size) - len(branches)))
-            operands = args[ancilla_offset:]
+            operands = args[2:]
             coefficients = jnp.array(
                 [coefficient * block_encoding.alpha for coefficient, block_encoding in terms],
                 dtype=complex,
