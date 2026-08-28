@@ -58,3 +58,43 @@ jobs:
                       -fail-level=any
           format_rc=$?  # capture exit code of the formatter reviewdog run
           exit $(( lint_rc | format_rc ))  # fail if either check flagged findings
+
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # Pinned to a full commit SHA instead of a mutable version tag (see ruff job above).
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
+
+      # Install the mypy version pinned in pyproject.toml
+      - name: Install mypy
+        run: |
+          MYPY_VERSION=$(sed -n 's/^.*"mypy==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "mypy==${MYPY_VERSION}"
+
+      - name: Run mypy via reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e  # don't abort on reviewdog's non-zero exit; we decide failure at the end
+          echo "🚨 mypy"
+          echo "For a quick introduction to adding type hints, see: https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html"
+          # Use reviewdog's -efm errorformat (as the official reviewdog/action-mypy
+          # does) instead of -f=mypy, because -f=mypy does not match findings
+          # against the PR diff, so -filter-mode=added silently drops them.
+          mypy --show-column-numbers --no-pretty src/ 2>&1 | \
+            reviewdog \
+              -efm="%f:%l:%c: %t%*[^:]: %m" \
+              -efm="%f:%l: %t%*[^:]: %m" \
+              -efm="%f: %t%*[^:]: %m" \
+              -reporter=github-pr-annotations \
+              -filter-mode=added \
+              -fail-level=any
+          mypy_rc=$?  # capture exit code of the reviewdog run
+          exit $mypy_rc  # fail if reviewdog flagged findings on added lines

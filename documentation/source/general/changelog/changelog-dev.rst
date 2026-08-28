@@ -210,6 +210,12 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
+* Added static type checking to the ``reviewdog`` CI workflow via ``mypy``,
+  pinned in the ``dev-code-style`` dependency group and configured under
+  ``[tool.mypy]`` in ``pyproject.toml``. Findings on newly added lines are
+  surfaced as annotations on the GitHub Checks tab
+  (`PR #821 <https://github.com/eclipse-qrisp/Qrisp/pull/821>`_).
+
 Dependency Upgrades
 -------------------
 
