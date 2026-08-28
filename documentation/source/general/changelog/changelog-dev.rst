@@ -57,6 +57,13 @@ Other New Features
   default is ``"deterministic"``, so existing code is unaffected
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
+- **Added an AI policy note to the issue templates**
+  All issue templates now state that the project does not accept
+  AI-generated pull requests and that automated agents should not submit PRs
+  or post comments. Human contributors may use LLMs as an aid, provided they
+  fully understand and take responsibility for the changes implemented
+  (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
