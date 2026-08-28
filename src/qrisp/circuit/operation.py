@@ -205,7 +205,7 @@ class Operation:
         array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
-               [0.+0.j, 0.+0.j, 0.+0.j, 0.+1.j]], dtype=complex64)
+               [0.+0.j, 0.+0.j, 0.+0.j, 0.+1.j]], dtype=complex128)
 
         """
         if self.name == "barrier":

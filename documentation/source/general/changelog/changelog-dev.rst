@@ -62,6 +62,12 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
+  Unitary matrices are now computed in ``complex128`` precision, removing the
+  spurious ~1e-7 off-diagonal entries that previously appeared where a
+  unitary should vanish exactly (e.g. phase-tolerant controlled gates).
+  (`PR #787 <https://github.com/eclipse-qrisp/Qrisp/pull/787>`_).
+
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
   (`PR #642 <https://github.com/eclipse-qrisp/Qrisp/pull/642>`_).
