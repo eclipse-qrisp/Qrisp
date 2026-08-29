@@ -54,6 +54,14 @@ New Features
 Improvements
 ------------
 
+- :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
+  now skip the live provider query and return the cached status once a job
+  is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
+  class docstring for ``status()``/``refresh()`` now consistently describes
+  this as an optional optimization implementations may take advantage of,
+  rather than a guarantee
+  (`PR #806 <https://github.com/eclipse-qrisp/Qrisp/pull/806>`_).
+
 - Updated docstrings for ``sample()``, ``expectation_value()``, and
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
@@ -61,10 +69,40 @@ Improvements
 Other New Features
 ------------------
 
+- Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
+  and ``RZZGate``
+  (`PR #797 <https://github.com/eclipse-qrisp/Qrisp/pull/797>`_).
+  
+- **Dicke state preparation via divide-and-conquer**
+  :func:`~qrisp.dicke_state` now accepts a ``method`` keyword argument.  In
+  addition to the existing ``"deterministic"`` method
+  (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_), the new
+  ``"divide-and-conquer"`` method
+  (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_) prepares the two
+  halves of the variable on disjoint qubits, roughly halving the circuit
+  depth.  It requires the input to have Hamming weight exactly ``k``, whereas
+  ``"deterministic"`` implements the full Dicke state unitary and therefore
+  also accepts any input weight ``l <= k``, preparing ``D(n, l)``.  The
+  default is ``"deterministic"``, so existing code is unaffected
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+- **Added an AI policy note to the issue templates**
+  All issue templates now state that the project does not accept
+  AI-generated pull requests and that automated agents should not submit PRs
+  or post comments. Human contributors may use LLMs as an aid, provided they
+  fully understand and take responsibility for the changes implemented
+  (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
 ---------
+
+* Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
+  Unitary matrices are now computed in ``complex128`` precision, removing the
+  spurious ~1e-7 off-diagonal entries that previously appeared where a
+  unitary should vanish exactly (e.g. phase-tolerant controlled gates).
+  (`PR #787 <https://github.com/eclipse-qrisp/Qrisp/pull/787>`_).
 
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
@@ -117,9 +155,24 @@ Bug Fixes
 * Updated broken link in TSP tutorial to point to the
   correct archived Qiskit textbook.
   (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
+  
+* Fixed :func:`dicke_state <qrisp.dicke_state>` for ``k = 0``, which emitted a
+  ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
+  negative-length loop range under Jasp
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* Fix a code typo in the Jasp tutorial which printed the wrong variable
+  when checking which variables are dynamic.
+  (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
 
 Compatibility
 -------------
+
+* :func:`~qrisp.dicke_state` now raises a ``ValueError`` for an unrecognized
+  ``method``, and for a ``k`` outside ``0 <= k <= len(qv)`` when both are
+  plain Python integers (i.e. outside of Jasp tracing).  The latter previously
+  produced an incorrect state silently
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 .. Add compatibility notes above this line
 
@@ -191,6 +244,16 @@ Development
   (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
   `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
 
+* Converted every source file's Eclipse Public License header from a
+  module-level docstring into a ``#``-prefixed comment block, and gave
+  every file that lacked one a real one-line module docstring. The header
+  had been written as a docstring, which pydocstyle interpreted as the
+  module's documentation and flagged for style violations (``D205``,
+  ``D212``, ...) on essentially every file; it was never meant to be read
+  as documentation. Existing rich module-level documentation was preserved
+  verbatim, only reformatted to satisfy ``D205``
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
   (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
@@ -217,6 +280,20 @@ Dependency Upgrades
 * Bumped ``actions/setup-python`` from 6 to 7
   (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
 
+* Pinned ``ruff`` to ``0.15.18`` in the ``dev-code-style`` dependency group
+  and updated the ``reviewdog`` CI workflow to install the version specified
+  in ``pyproject.toml``
+  (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
+
+* Bumped ``ruff`` from ``0.15.18`` to ``0.16.4``. On ``0.15.x``,
+  ``ruff format --check --output-format=rdjson`` silently required
+  ``--preview`` mode just to emit structured output at all — an unrelated
+  concern from preview *formatting rules*, which the project does not use —
+  causing the ``reviewdog`` formatter check to crash. ``0.16.0`` stabilized
+  structured output formats for the formatter, fixing this without changing
+  which formatting rules apply
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
@@ -226,3 +303,4 @@ First Time Contributors 🎉
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
+* `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
