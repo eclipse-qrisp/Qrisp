@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Define xDSL operations and types for CUDA-Q's classical-control dialect."""
+
 # xDSL dialect definitions for the CUDA-Q Classical Control (CC) dialect.
 # =========================================================================
 #

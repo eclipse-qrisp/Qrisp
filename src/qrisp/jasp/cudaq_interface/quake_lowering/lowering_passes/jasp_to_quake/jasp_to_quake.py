@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Run the complete Jasp-to-Quake lowering pipeline."""
+
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.lower_jasp_to_quake import (
     _lower_jasp_to_quake,
 )

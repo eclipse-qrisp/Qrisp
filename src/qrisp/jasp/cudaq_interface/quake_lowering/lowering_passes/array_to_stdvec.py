@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Lower CC arrays to standard vectors."""
+
 # CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
 # =======================================================
 #

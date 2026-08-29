@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide host LLVM target attributes required by CUDA-Q."""
+
 # Host/LLVM target attribute detection (pipeline stage 1 – "Target Extraction").
 # ================================================================================
 

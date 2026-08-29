@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide xDSL dialects for CUDA-Q Quake and classical-control IR."""
+
 # xDSL dialect definitions for the CUDA-Q Quake and CC dialects.
 # =================================================================
 #

@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide lowering passes from Jasp IR to CUDA-Q Quake IR."""
+
 from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (

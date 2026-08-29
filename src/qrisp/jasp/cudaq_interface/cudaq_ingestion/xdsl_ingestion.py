@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Compile normalized xDSL MLIR into native CUDA-Q kernels."""
+
 # Normalizing xDSL-printed MLIR and compiling it into a native CUDA-Q
 # kernel (pipeline stage 3 – "Re-Compilation").
 # =======================================================================

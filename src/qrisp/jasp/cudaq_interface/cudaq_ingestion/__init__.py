@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide utilities for ingesting lowered modules into CUDA-Q."""
+
 # CUDA-Q runtime ingestion: turning a Quake/CC xDSL module into a native,
 # callable CUDA-Q kernel.
 # =========================================================================

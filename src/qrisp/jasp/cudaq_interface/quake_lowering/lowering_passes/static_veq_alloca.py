@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Rewrite dynamic Quake vector allocations to static allocations."""
+
 # Static-size quake.alloca rewriting.
 # ===============================================
 #

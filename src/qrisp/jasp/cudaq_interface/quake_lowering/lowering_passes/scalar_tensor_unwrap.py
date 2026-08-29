@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Unwrap scalar tensors and rewrite scalar return values."""
+
 # Tensor unwrapping and scalar return rewriting.
 # ================================================
 #
