@@ -1,22 +1,23 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-import types
-from typing import Any, Callable, Iterator, List, Tuple
+"""Defines DepthMetric, a profiling metric that computes the circuit depth of a Jaspr."""
+
+from collections.abc import Callable, Iterator
+from typing import Any, List, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -25,12 +26,10 @@ from jax.typing import ArrayLike
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit.instruction import Instruction
-from qrisp.jasp.interpreter_tools import (
-    BaseMetric,
-    eval_jaxpr,
-    make_profiling_eqn_evaluator,
+from qrisp.jasp.interpreter_tools import BaseMetric
+from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
+    build_metric_profiler,
 )
-from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     is_abstract,
 )
@@ -400,27 +399,7 @@ def get_depth_profiler(
     """
     depth_metric = DepthMetric(meas_behavior, max_qubits)
 
-    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
-    # stats are threaded into the profiling evaluator so that frequently
-    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
-    # to avoid XLA compilation blowup (see profiling_interpreter.py).
-    _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(depth_metric, call_graph_stats, callback_threshold)
-    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
-
-    def depth_profiler(*args):
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        # Import here to avoid circular import issues
-        from qrisp.operators import FermionicOperator, QubitOperator
-
-        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
-
-        initial_metric = depth_metric.initial_metric()
-
-        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
-        return jitted_evaluator(*filtered_args)
-
-    return depth_profiler, None
+    return build_metric_profiler(jaspr, depth_metric, callback_threshold), None
 
 
 def simulate_depth(jaspr: Jaspr, *_, **__) -> int:

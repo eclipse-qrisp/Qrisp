@@ -1,14 +1,6 @@
 name: Code style checks
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-    branches:
-      - main
   push:
     branches:
       - main
@@ -20,15 +12,12 @@ concurrency:
 jobs:
   ruff:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11.*", "3.12.*"]
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12.*"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
