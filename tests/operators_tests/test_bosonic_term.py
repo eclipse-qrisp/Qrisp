@@ -18,7 +18,7 @@
 from qrisp import *
 
 
-def test_fermionic_term():
+def test_bosonic_term():
     from qrisp.operators.bosonic import a_b as a, c_b as c
 
     O_0 = a(0) * c(1)
