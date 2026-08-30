@@ -1079,11 +1079,13 @@ class BlockEncoding:
         block_encodings: list[BlockEncoding],
         coefficients: "ArrayLike | None" = None,
     ) -> BlockEncoding:
-        r"""Constructs one LCU block-encoding from several block-encodings.
+        r"""Returns a BlockEncoding of a linear combination of operators.
 
-        The child block-encodings are combined in one selector instead of
-        recursively composing binary LCU block-encodings. This is also the
-        lowering target used by ``+``, ``-`` and scalar multiplication.
+        This method implements the linear combination $\sum_i\alpha_iA_i$ via the LCU
+        (Linear Combination of Unitaries) framework, where $A_i$ are
+        the operators encoded by the respective instances, and $\alpha_i$ are real coefficients.
+
+        Equivalently, block-encoded operators can also be combined via ``+``, ``-`` and scalar multiplication.
 
         Parameters
         ----------
@@ -1243,7 +1245,7 @@ class BlockEncoding:
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""Returns a BlockEncoding of the sum of two operators.
 
-        This method implements the linear combination $A + B$ via the LCU
+        This method implements the addition $A + B$ via the LCU
         (Linear Combination of Unitaries) framework, where $A$ and $B$ are
         the operators encoded by the respective instances.
 
@@ -1309,9 +1311,9 @@ class BlockEncoding:
     def __sub__(self, other: BlockEncoding) -> BlockEncoding:
         r"""Returns a BlockEncoding of the difference between two operators.
 
-        This method implements the subtraction $A - B$ using a linear combination
-        of unitaries (LCU), where $A$ is the operator encoded by this instance
-        and $B$ is the operator encoded by 'other'.
+        This method implements the subtraction $A - B$ via the LCU
+        (Linear Combination of Unitaries) framework, where $A$ and $B$ are
+        the operators encoded by the respective instances.
 
         Parameters
         ----------

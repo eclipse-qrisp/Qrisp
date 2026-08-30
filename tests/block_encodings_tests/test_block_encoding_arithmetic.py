@@ -15,6 +15,7 @@
 ********************************************************************************
 """
 
+from jax.tree_util import tree_flatten, tree_unflatten
 import numpy as np
 import pytest
 
@@ -23,11 +24,11 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
-def compare_results(res_dict_1, res_dict_2, n):
+def _compare_results(res_dict_1, res_dict_2, n):
     for k in range(2**n):
         val_1 = res_dict_1.get(k, 0)
         val_2 = res_dict_2.get(k, 0)
-        assert np.isclose(val_1, val_2), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
+        assert np.isclose(val_1, val_2)
 
 
 @pytest.mark.parametrize(
@@ -39,6 +40,7 @@ def compare_results(res_dict_1, res_dict_2, n):
     ],
 )
 def test_block_encoding_addition(H1, H2):
+    """Test addition of block encodings corresponding to Hermitian operators."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
@@ -55,7 +57,7 @@ def test_block_encoding_addition(H1, H2):
 
     res_be3 = main(BE3)
     res_be_add = main(BE_addition)
-    compare_results(res_be3, res_be_add, n)
+    _compare_results(res_be3, res_be_add, n)
 
 
 @pytest.mark.parametrize(
@@ -67,6 +69,7 @@ def test_block_encoding_addition(H1, H2):
     ],
 )
 def test_block_encoding_subtraction(H1, H2):
+    """Test subtraction of block encodings corresponding to Hermitian operators."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
@@ -83,7 +86,7 @@ def test_block_encoding_subtraction(H1, H2):
 
     res_be3 = main(BE3)
     res_be_sub = main(BE_subtraction)
-    compare_results(res_be3, res_be_sub, n)
+    _compare_results(res_be3, res_be_sub, n)
 
 
 # The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
@@ -97,6 +100,7 @@ def test_block_encoding_subtraction(H1, H2):
     ],
 )
 def test_block_encoding_multiplication(H1, H2):
+    """Test multiplication of block encodings corresponding to commuting Hermitian operators."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
@@ -113,7 +117,7 @@ def test_block_encoding_multiplication(H1, H2):
 
     res_be3 = main(BE3)
     res_be_mul = main(BE_multiplication)
-    compare_results(res_be3, res_be_mul, n)
+    _compare_results(res_be3, res_be_mul, n)
 
 
 @pytest.mark.parametrize(
@@ -143,13 +147,12 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     res_target = main(BE_target)
     res_left = main(BE_left)
     res_right = main(BE_right)
-    compare_results(res_target, res_left, n)
-    compare_results(res_target, res_right, n)
+    _compare_results(res_target, res_left, n)
+    _compare_results(res_target, res_right, n)
 
 
 def test_block_encoding_flattened_linear_combination():
     """Verify that linear combinations of block encodings are flattened into one LCU."""
-    from jax.tree_util import tree_flatten, tree_unflatten
 
     H1 = X(0) * X(1)
     H2 = 0.4 * Y(0) + Z(1)
@@ -166,7 +169,9 @@ def test_block_encoding_flattened_linear_combination():
     assert len(BE_chain._lcu_terms) == 3
     assert len(BE_direct._lcu_terms) == 3
     assert BE_chain._anc_templates[0].qv_size == 2
-    assert BE_chain.num_ancs == 1 + BE1.num_ancs + BE2.num_ancs + BE3.num_ancs
+    # A linear combination of block encodings has exactly 2 ancillas:
+    # one for the LCU selection and one for the workspace.
+    assert BE_chain.num_ancs == 2
 
     leaves, treedef = tree_flatten(BE_chain)
     reconstructed = tree_unflatten(treedef, leaves)
@@ -186,8 +191,8 @@ def test_block_encoding_flattened_linear_combination():
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
     res_target = main(BE_target)
-    compare_results(res_target, main(BE_chain), n)
-    compare_results(res_target, main(BE_direct), n)
+    _compare_results(res_target, main(BE_chain), n)
+    _compare_results(res_target, main(BE_direct), n)
 
 
 def test_block_encoding_linear_combination_validates_inputs():
@@ -226,10 +231,12 @@ def test_block_encoding_lcu_reuses_heterogeneous_ancillas():
     BE_one_ancilla = BlockEncoding(1, [QuantumFloat(1)], one_ancilla_unitary)
     BE = BlockEncoding.linear_combination([BE_two_ancillas, BE_one_ancilla])
 
-    expected_ancilla_count = 2
-    expected_shared_size = 3
-    assert BE.num_ancs == expected_ancilla_count
-    assert BE._anc_templates[1].qv_size == expected_shared_size
+    # A linear combination of block encodings has exactly 2 ancillas:
+    # one for the LCU selection and one for the workspace.
+    assert BE.num_ancs == 2
+    # The workspace ancilla is the second one, which is a QuantumVariable of size 3
+    # (2 for the float and 1 for the bool).
+    assert BE._anc_templates[1].qv_size == 3
 
     operand = QuantumVariable(1)
     BE.apply(operand)
@@ -252,6 +259,7 @@ def test_block_encoding_lcu_reuses_heterogeneous_ancillas():
     ],
 )
 def test_block_encoding_negation(H1, H2):
+    """Test negation of block encodings corresponding to Hermitian operators."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE_neg = -BE1
@@ -266,7 +274,7 @@ def test_block_encoding_negation(H1, H2):
 
     res_be2 = main(BE2)
     res_be_neg = main(BE_neg)
-    compare_results(res_be2, res_be_neg, n)
+    _compare_results(res_be2, res_be_neg, n)
 
 
 @pytest.mark.parametrize(
@@ -277,6 +285,7 @@ def test_block_encoding_negation(H1, H2):
     ],
 )
 def test_block_encoding_kron(H1, H2):
+    """Test the Kronecker product of two block encodings corresponding to Hermitian operators."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
@@ -309,4 +318,4 @@ def test_block_encoding_kron(H1, H2):
         for l in range(2**n2):
             val_be_kron = result_be_kron.get((k, l), 0)
             val_be1_be2 = result_be1_be2.get((k, l), 0)
-            assert np.isclose(val_be_kron, val_be1_be2), f"Mismatch at state |{k}>: {val_be_kron} vs {val_be1_be2}"
+            assert np.isclose(val_be_kron, val_be1_be2)
