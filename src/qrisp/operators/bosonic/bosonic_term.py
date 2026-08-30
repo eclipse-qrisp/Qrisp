@@ -118,7 +118,7 @@ class BosonicTerm:
         pass
 
     def sort(self):
-        # Sort ladder operators (ladder operator semantics are order in-dependent)
+        # Sort ladder operators (ladder operator semantics are order independent)
         sorting_list = [-index for index, is_creator in self.ladder_list]
         perm = np.argsort(sorting_list, kind="stable")
         ladder_list = [self.ladder_list[i] for i in perm]
