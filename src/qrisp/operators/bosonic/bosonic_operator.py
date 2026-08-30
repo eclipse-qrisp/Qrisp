@@ -46,7 +46,7 @@ class BosonicOperator(Hamiltonian):
 
     .. math::
 
-        [a_i,a_j^{\dagger}] &= a_ia_j^{\dagger}+a_j^{\dagger}a_i = \delta_{ij}\\
+        [a_i,a_j^{\dagger}] &= a_ia_j^{\dagger}-a_j^{\dagger}a_i = \delta_{ij}\\
         [a_i^{\dagger},a_j^{\dagger}] &= [a_i,a_j] = 0
 
     Examples
