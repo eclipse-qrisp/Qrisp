@@ -396,6 +396,29 @@ class BosonicOperator(Hamiltonian):
     __radd__ = __add__
     __rmul__ = __mul__
 
+    def __pow__(self, exp: int):
+        """Returns the operator self exponentiated by int.
+
+        Parameters
+        ----------
+        exp : int
+            A positive integer with which self is exponentiated.
+
+        Returns
+        -------
+        result : BosonicOperator
+            The exponentiated operator self.
+
+        """
+        if not (isinstance(exp, int) and exp > 0):
+            raise TypeError("Operators can be exponentiated only with positive integers.")
+
+        res = self
+        for _ in range(exp - 1):
+            res = res * self
+
+        return res
+
     #
     # Inplace arithmetic
     #
