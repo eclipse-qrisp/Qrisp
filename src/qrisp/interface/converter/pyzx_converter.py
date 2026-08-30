@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -15,10 +16,47 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumCircuit, RYGate, RZGate, SXGate, SwapGate, HGate, ZGate, u3Gate
-import numpy as np
-from functools import partial
 from fractions import Fraction
+from functools import partial
+
+import numpy as np
+
+from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
+
+
+def _transpile(qrisp_circuit, gate_map):
+    # repeatedly transpile unknown gates until only known ones remain
+    def _unknown_names(circuit):
+        return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
+
+    while True:
+        unknown = _unknown_names(qrisp_circuit)
+        if not unknown:
+            break
+
+        def _transpile_predicate(op, _unknown=unknown):
+            return op.name in _unknown
+
+        try:
+            transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
+        except Exception as exc:
+            raise ValueError(
+                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to PyZX converter."
+            ) from exc
+
+        new_unknown = _unknown_names(transpiled)
+        if new_unknown == unknown:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(
+                f"The following gates could not be decomposed into elementary "
+                f"instructions: {names}. Try transpiling the circuit with "
+                f"Qrisp's transpile() method before calling to_pyzx(), or "
+                f"use only gates supported natively by the converter."
+            )
+
+        qrisp_circuit = transpiled
+
+    return qrisp_circuit
 
 
 def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
@@ -89,36 +127,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         "id": None,
     }
 
-    # repeatedly transpile unknown gates until only known ones remain
-    def _unknown_names(circuit):
-        return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
-
-    while True:
-        unknown = _unknown_names(qrisp_circuit)
-        if not unknown:
-            break
-
-        def _transpile_predicate(op, _unknown=unknown):
-            return op.name in _unknown
-
-        try:
-            transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
-        except Exception as exc:
-            raise ValueError(
-                f"Gates {unknown} could not be transpiled and are not supported by the Qrisp to PyZX converter."
-            ) from exc
-
-        new_unknown = _unknown_names(transpiled)
-        if new_unknown == unknown:
-            names = ", ".join(sorted(unknown))
-            raise ValueError(
-                f"The following gates could not be decomposed into elementary "
-                f"instructions: {names}. Try transpiling the circuit with "
-                f"Qrisp's transpile() method before calling to_pyzx(), or "
-                f"use only gates supported natively by the converter."
-            )
-
-        qrisp_circuit = transpiled
+    qrisp_circuit = _transpile(qrisp_circuit, gate_map)
 
     num_qubits = qrisp_circuit.num_qubits()
     pyzx_circuit = Circuit(num_qubits)
@@ -135,18 +144,18 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         pyxz_gate = gate_map[name]
         pyxz_op_qubits = [qubit_map[q] for q in qubits]
 
+        special_gate_actions = {
+            **dict.fromkeys(["id", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
+            "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2)),
+            "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4)),
+            "p": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0] / np.pi),
+            "sx_dg": lambda: pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2)),
+        }
+
         # gate with no direct PyXZ equivalent
         if pyxz_gate is None:
-            if name in ["id", "gphase", "qb_alloc", "qb_dealloc"]:
-                pass
-            elif name == "s_dg":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2))
-            elif name == "t_dg":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4))
-            elif name == "p":
-                pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0] / np.pi)
-            elif name == "sx_dg":
-                pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2))
+            if name in special_gate_actions:
+                special_gate_actions[name]()
             # decompose via its .definition circuit (e.g. xxyy)
             elif instr.op.definition:
                 pyzx_circuit.add_circuit(convert_to_pyzx(instr.op.definition), mask=pyxz_op_qubits)
@@ -191,6 +200,7 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
     Gates that exist in PyZX but not in Qrisp are either substituted directly if they
     have a straightforward equivalent (applies to U2 and several controlled gates),
     or it is used PyZX's to_basic_gates() method to decompose those gates.
+
     """
     qc = QuantumCircuit(pyzx_circuit.qubits)
 
