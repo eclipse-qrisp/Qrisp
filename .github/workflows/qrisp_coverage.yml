@@ -12,6 +12,8 @@ on:
   push:
     branches:
       - main
+      - Enable_Python_3.13_in_the_CI_pipeline
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,11 +23,15 @@ jobs:
   core:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12.*"
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - run: |
           python -m pip install --upgrade pip
@@ -37,22 +43,26 @@ jobs:
             --cov-branch \
             --cov-report=term:skip-covered
         env:
-          COVERAGE_FILE: .coverage.core
+          COVERAGE_FILE: .coverage.core.${{ matrix.python-version }}
       - name: Upload core coverage data
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-core
-          path: .coverage.core
+          name: coverage-core-${{ matrix.python-version }}
+          path: .coverage.core.${{ matrix.python-version }}
           include-hidden-files: true
 
   algorithms-and-integrations:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12.*"
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - run: |
           python -m pip install --upgrade pip
@@ -64,12 +74,12 @@ jobs:
             --cov-branch \
             --cov-report=term:skip-covered
         env:
-          COVERAGE_FILE: .coverage.algorithms
+          COVERAGE_FILE: .coverage.algorithms.${{ matrix.python-version }}
       - name: Upload algorithms coverage data
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-algorithms
-          path: .coverage.algorithms
+          name: coverage-algorithms-${{ matrix.python-version }}
+          path: .coverage.algorithms.${{ matrix.python-version }}
           include-hidden-files: true
 
   report:
@@ -79,7 +89,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12.*"
+          python-version: "3.12"
       - run: pip install coverage
       - name: Download coverage data
         uses: actions/download-artifact@v8
