@@ -44,7 +44,7 @@
 #    We inject the extracted hardware specifications
 #    into the Qrisp-generated MLIR. Crucially, we also clone the primary
 #    entry function to create a required `.run` variant. During this cloning,
-#    we translate standard `func.return` instructions into `cc.log_output`
+#    we translate standard `func.return` instructions into `quake.log_output`
 #    operations. This structural change is required, as it is the exact
 #    mechanism CUDA-Q uses to capture and aggregate individual per-shot
 #    measurement data during simulation.
