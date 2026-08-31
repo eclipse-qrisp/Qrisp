@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 r"""Backend-sampling Jaspr interpreter.
 
@@ -134,9 +133,9 @@ Key design properties
   quantum-kernel bookkeeping all propagate with the custom evaluator.
 """
 
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
@@ -144,7 +143,6 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     insert_outvalues,
 )
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
-
 
 # ===========================================================================
 # Jaspr traversal utility
@@ -173,6 +171,7 @@ def find_named_jaxpr(jaxpr, target_name):
     jax.extend.core.ClosedJaxpr or None
         The matching sub-Jaxpr, or ``None`` if no equation with that name
         is found.
+
     """
     for eqn in jaxpr.eqns:
         # Check direct jit / pjit calls.
@@ -204,14 +203,14 @@ def find_named_jaxpr(jaxpr, target_name):
 
 
 class _FirstBodyCall(Exception):
-    """Raised to stop evaluation after capturing the first
-    ``sampling_body_func`` invalues."""
+    """Raised to stop evaluation after capturing the first ``sampling_body_func`` invalues."""
 
 
 def _extract_to_qc_args(inner_jaxpr, body_jaspr, *invals):
-    """Run *inner_jaxpr* until the first ``sampling_body_func`` call,
-    capture its invalues, and return them (minus the trailing
-    QuantumState) as the *to_qc_args* for *body_jaspr*.
+    """Capture the *to_qc_args* for *body_jaspr* from the first ``sampling_body_func`` call.
+
+    Runs *inner_jaxpr* until that call, captures its invalues, and returns
+    them minus the trailing QuantumState.
 
     This lets JAX's own evaluator handle all captured closure
     variables, accumulator initialisation, and loop-index setup —
@@ -304,7 +303,6 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # args (kernel_args + shots), everything before is captured.
         n_expected = len(inner_jaxpr.jaxpr.invars)
         actual_args = invals[-n_expected:]
-        kernel_args = list(actual_args[:-1])
         shots = int(actual_args[-1])
 
         # ── Phase 1: static analysis ────────────────────────────────
@@ -371,8 +369,10 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 
 
 def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
-    """Build an ``eqn_evaluator`` for the *inner_jaxpr*
-    (``sampling_eval_function`` / ``expectation_value_eval_function``).
+    """Build an ``eqn_evaluator`` for the *inner_jaxpr*.
+
+    The *inner_jaxpr* is a ``sampling_eval_function`` or an
+    ``expectation_value_eval_function``.
 
     Intercepts:
     * ``sampling_body_func`` pjit — replaced by *post_proc* with the

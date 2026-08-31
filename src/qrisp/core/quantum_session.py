@@ -1234,7 +1234,4 @@ class QuantumSession(QuantumCircuit):
 
 
 class QuantumVariableNamingError(Exception):
-    """
-    The error to be thrown when a QuantumVariable already exists
-    in a QuantumSession
-    """
+    """The error to be thrown when a QuantumVariable already exists in a QuantumSession"""

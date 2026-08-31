@@ -24,8 +24,11 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 @jax.jit
 def _backend_shots_marker(val):
-    """Identity marker so that ``backend_sampler`` can reliably locate the
-    shot count inside a traced expectation_value Jaxpr."""
+    """Identity marker for the shot count.
+
+    Allows ``backend_sampler`` to reliably locate the shot count inside a traced
+    expectation_value Jaxpr.
+    """
     return val
 
 
