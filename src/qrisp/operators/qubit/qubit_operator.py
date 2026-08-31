@@ -591,7 +591,9 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(cls, matrix, reverse_endianness=False):
+    def from_matrix(
+        cls: "type[QubitOperator]", matrix: ndarray | csr_matrix, reverse_endianness: bool = False
+    ) -> "QubitOperator":
         r"""Represents a matrix as an operator
 
         .. math::
@@ -662,7 +664,7 @@ class QubitOperator(Hamiltonian):
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
 
-    def to_sparse_matrix(self, factor_amount=None) -> "sp_sparse.csr_matrix":
+    def to_sparse_matrix(self, factor_amount: int | None = None) -> "sp_sparse.csr_matrix":
         r"""Returns a scipy matrix representing the operator
 
         .. math::
@@ -728,6 +730,7 @@ class QubitOperator(Hamiltonian):
         elif participating_indices and factor_amount < max(participating_indices) + 1:
             raise Exception("Tried to construct matrix with insufficient factor_amount")
 
+        assert factor_amount is not None  # every branch above either sets it or returns
         keys = list(range(factor_amount))
 
         M = sp_sparse.csr_matrix((2**factor_amount, 2**factor_amount))
