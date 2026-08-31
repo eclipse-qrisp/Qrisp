@@ -611,3 +611,38 @@ class BosonicOperator(Hamiltonian):
             groups.append(O)
 
         return groups
+
+
+def get_bosonic_encoding_qubit_number(truncation, binary_encoding):
+    if binary_encoding != "one_hot":
+        return int(np.ceil(np.log2(truncation)))
+    else:
+        return truncation
+
+
+from qrisp.operators.bosonic.bosonic_term import gray_code, standard_binary, one_hot
+from qrisp import QuantumVariable, x
+
+
+def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str = "gray_code"):
+    if not 0 <= n < truncation:
+        raise ValueError("n must be between 0 an truncation-1")
+
+    n_qubits = get_bosonic_encoding_qubit_number(truncation, binary_encoding)
+
+    qv = QuantumVariable(n_qubits)
+
+    if binary_encoding == "gray_code":
+        qubits = gray_code(n_qubits)[n]
+    elif binary_encoding == "standard_binary":
+        qubits = standard_binary(n_qubits)[n]
+    elif binary_encoding == "one_hot":
+        qubits = one_hot(n_qubits)[n]
+    else:
+        raise Exception(f"Don't know binary encoding type {binary_encoding}")
+
+    for i, q in enumerate(qubits):
+        if q:
+            x(qv[i])
+
+    return qv
