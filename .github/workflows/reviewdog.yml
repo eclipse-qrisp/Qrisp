@@ -51,7 +51,7 @@ jobs:
           lint_rc=$?  # capture exit code of the linter reviewdog run
           echo
           echo "⚠️ ruff as a formatter"
-          ruff format src/ --check --output-format=rdjson --preview | \
+          ruff format src/ --check --output-format=rdjson | \
             reviewdog -f=rdjson \
                       -reporter=github-pr-annotations \
                       -filter-mode=added \
