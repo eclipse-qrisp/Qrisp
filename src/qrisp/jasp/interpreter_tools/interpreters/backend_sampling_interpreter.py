@@ -142,6 +142,9 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_while_loop_under_trace,
+)
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 
 # ===========================================================================
@@ -420,31 +423,9 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
             return False
 
         if prim_name == "while":
-            invalues = extract_invalues(eqn, context_dic)
-            n_body_consts = eqn.params.get("body_nconsts", 0)
-            n_cond_consts = eqn.params.get("cond_nconsts", 0)
-            total_consts = n_body_consts + n_cond_consts
-
-            def body_fun(loop_state):
-                # loop_state = (cond_consts, body_consts, *carries)
-                body_consts = loop_state[n_cond_consts:total_consts]
-                carries = loop_state[total_consts:]
-                res = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator)(
-                    *(list(body_consts) + list(carries))
-                )
-                if not isinstance(res, tuple):
-                    res = (res,)
-                return loop_state[:total_consts] + tuple(res)
-
-            def cond_fun(loop_state):
-                cond_consts = loop_state[:n_cond_consts]
-                carries = loop_state[total_consts:]
-                return eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator)(
-                    *(list(cond_consts) + list(carries))
-                )
-
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[total_consts:]
-            insert_outvalues(eqn, context_dic, outvalues)
+            # Propagate this evaluator through the loop body/condition so the
+            # interceptions above still apply inside the loop.
+            evaluate_while_loop_under_trace(eqn, context_dic, eqn_evaluator=eqn_evaluator)
             return False
 
         # ── Default (all other primitives) ──────────────────────────

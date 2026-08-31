@@ -74,11 +74,17 @@ from qrisp.jasp import make_jaxpr
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     extract_invalues,
+    insert_call_outvalues,
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.interpreters.backend_sampling_interpreter import (
     _make_backend_sampling_fn,
     find_named_jaxpr,
+)
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_cond_under_trace,
+    evaluate_scan_under_trace,
+    evaluate_while_loop_under_trace,
 )
 
 __all__ = ["backend_sampler", "find_named_jaxpr"]
@@ -276,119 +282,32 @@ def backend_sampler(backend):
 # Control-flow handlers — propagate the custom evaluator downwards
 # ===========================================================================
 #
-# Each handler re-evaluates the primitive's sub-Jaxpr(s) with *eqn_evaluator*,
-# so that sample() / expectation_value() calls nested inside jit, while, cond
-# or scan are intercepted and replaced with pure_callback.  All handlers
-# return ``False`` to signal that the equation has been fully handled.
+# ``while``/``cond``/``scan`` are delegated to the shared *under_trace*
+# helpers, which re-interpret the sub-Jaxpr(s) with *eqn_evaluator* and replay
+# them as real traced JAX primitives.  ``jit``/``pjit`` has no shared helper,
+# so it is handled here (as in post_processing_interpreter.py).  Handlers are
+# called for their side effect on *context_dic*; the dispatch below reports the
+# equation as handled.
 
 
 def _handle_jit(eqn, context_dic, eqn_evaluator):
     """Re-evaluate a ``jit``/``pjit`` call with *eqn_evaluator*."""
     closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
     if closed_jaxpr is None:
-        return False
+        return
 
     invalues = extract_invalues(eqn, context_dic)
     inner_eval = eval_jaxpr(closed_jaxpr, eqn_evaluator=eqn_evaluator)
     outvals = inner_eval(*(invalues + list(closed_jaxpr.consts)))
-
-    if len(closed_jaxpr.jaxpr.outvars) == 1:
-        outvals = [outvals]
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_while(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``while`` loop with *eqn_evaluator* in both sub-Jaxprs."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    n_cond = eqn.params["cond_nconsts"]
-    n_body = eqn.params["body_nconsts"]
-    n_all = n_cond + n_body
-
-    def body_fun(val):
-        consts = val[n_cond:n_all]
-        carries = val[n_all:]
-        res = eval_jaxpr(
-            eqn.params["body_jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(consts + carries))
-        if not isinstance(res, tuple):
-            res = (res,)
-        return val[:n_all] + tuple(res)
-
-    def cond_fun(val):
-        consts = val[:n_cond]
-        carries = val[n_all:]
-        return eval_jaxpr(
-            eqn.params["cond_jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(consts + carries))
-
-    outvals = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[n_all:]
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_cond(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``cond`` with *eqn_evaluator* in every branch."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    branches = [eval_jaxpr(b, eqn_evaluator=eqn_evaluator) for b in eqn.params["branches"]]
-    outvals = jax.lax.switch(invalues[0], branches, *invalues[1:])
-    if len(eqn.outvars) == 1:
-        outvals = (outvals,)
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_scan(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``scan`` with *eqn_evaluator* in the body Jaxpr."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    n_consts = eqn.params.get("num_consts", 0)
-    n_carry = eqn.params.get("num_carry", 0)
-    length = eqn.params.get("length", None)
-
-    const_args = tuple(invalues[:n_consts])
-
-    def body_fun(carry, x):
-        carry_args = carry if isinstance(carry, tuple) else (carry,)
-        xs_args = x if isinstance(x, tuple) else (x,)
-        res = eval_jaxpr(
-            eqn.params["jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(const_args + carry_args + xs_args))
-        if not isinstance(res, tuple):
-            res = (res,)
-        return res[:n_carry], res[n_carry:] if len(res) > n_carry else ()
-
-    carry_init = tuple(invalues[n_consts : n_consts + n_carry])
-    if n_carry == 1:
-        carry_init = carry_init[0]
-    xs = tuple(invalues[n_consts + n_carry :])
-    if len(xs) == 1:
-        xs = xs[0]
-
-    outvals = jax.lax.scan(body_fun, carry_init, xs, length=length)
-
-    # Result is (carry, ys); flatten for insert
-    flat_out = list(outvals[0]) if isinstance(outvals[0], tuple) else [outvals[0]]
-    if outvals[1] is not None:
-        flat_out.extend(list(outvals[1]) if isinstance(outvals[1], tuple) else [outvals[1]])
-    insert_outvalues(eqn, context_dic, tuple(flat_out))
-    return False
+    insert_call_outvalues(eqn, context_dic, outvals, len(closed_jaxpr.jaxpr.outvars))
 
 
 _CONTROL_FLOW_HANDLERS = {
     "jit": _handle_jit,
     "pjit": _handle_jit,
-    "while": _handle_while,
-    "cond": _handle_cond,
-    "scan": _handle_scan,
+    "while": evaluate_while_loop_under_trace,
+    "cond": evaluate_cond_under_trace,
+    "scan": evaluate_scan_under_trace,
 }
 
 
@@ -432,7 +351,8 @@ def _make_backend_sampler_wrapper(func, backend):
                 handler = _CONTROL_FLOW_HANDLERS.get(eqn.primitive.name)
                 if handler is None:
                     return True
-                return handler(eqn, context_dic, eqn_evaluator)
+                handler(eqn, context_dic, eqn_evaluator)
+                return False
 
             return eqn_evaluator
 
