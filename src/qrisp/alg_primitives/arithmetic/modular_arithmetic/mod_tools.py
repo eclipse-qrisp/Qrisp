@@ -22,8 +22,11 @@ from jax import Array, lax
 from qrisp import check_for_tracing_mode
 
 
-def montgomery_decoder(y: int | Array, R: int | float | Array, N: int | Array) -> int | float | Array:
+def montgomery_decoder(y: int | float, R: int | float, N: int) -> int | float:
     """Montgomery-decode y as y*R^{-1} mod N.
+
+    Not traceable under ``jax.jit``. Use ``jasp_mod_tools.montgomery_decoder``
+    for Jasp-traced code.
 
     Parameters
     ----------
@@ -47,13 +50,19 @@ def montgomery_decoder(y: int | Array, R: int | float | Array, N: int | Array) -
     42
 
     """
+    # TODO: this whole function crashes under jax.jit tracing (Python `if`/`int()`
+    # on a value that can be a tracer here, and mixed int/float dtypes reaching
+    # modinv's lax.while_loop). This needs a tracing-safe rewrite.
     if 0 < R < 1:
-        R = modinv(R**-1, N)
-    return (y * modinv(R, N)) % N
+        R = int(modinv(int(R**-1), N))
+    return (y * modinv(R, N)) % N  # type: ignore[return-value]
 
 
-def montgomery_encoder(y: int | Array, R: int | float | Array, N: int) -> int:
+def montgomery_encoder(y: int | float, R: int | float, N: int) -> int:
     """Montgomery-encode y as y*R mod N.
+
+    Not traceable under ``jax.jit``. Use ``jasp_mod_tools.montgomery_encoder``
+    for Jasp-traced code.
 
     Parameters
     ----------
@@ -77,7 +86,7 @@ def montgomery_encoder(y: int | Array, R: int | float | Array, N: int) -> int:
 
     """
     if 0 < R < 1:
-        R = modinv(R**-1, N)
+        R = int(modinv(int(R**-1), N))
     return (int(y) % N * int(R) % N) % N
 
 

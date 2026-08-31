@@ -70,6 +70,7 @@ def _find_optimal_a(N: int) -> list[int]:
 def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
     if mes_kwargs is None:
         mes_kwargs = {}
+    orig_a = a
     qg = QuantumModulus(N, inpl_adder)
     qg[:] = 1
     qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
@@ -82,7 +83,7 @@ def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: 
 
     mes_res = qpe_res.get_measurement(**mes_kwargs)
 
-    return _extract_order(mes_res, a, N)
+    return _extract_order(mes_res, orig_a, N)
 
 
 def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:

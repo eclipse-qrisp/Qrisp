@@ -59,6 +59,21 @@ def test_extract_order_from_synthetic_measurement():
     assert _extract_order(mes_res, 2, 15) == expected_order  # type: ignore[arg-type]
 
 
+def test_extract_order_rejects_wrong_candidate_before_true_order():
+    """`_extract_order` must verify candidates against the given base, not accept the first one blindly.
+
+    Regression test: `_find_order` used to pass its repeatedly-squared loop
+    variable (not the original base) into `_extract_order`, which can make
+    this verification vacuous (e.g. base**(2**n) == 1) and silently accept
+    an unverified, possibly-wrong order.
+    """
+    # a=2, N=15: true order is 4. The synthetic outcome list puts a wrong
+    # candidate (order 3) first; 2**3 % 15 != 1, so it must be rejected in
+    # favor of the correct order 4 recovered from the second outcome.
+    mes_res = {1 / 3: 0.5, 0.25: 0.5}
+    assert _extract_order(mes_res, 2, 15) == 4  # type: ignore[arg-type]
+
+
 def test_bitstring_to_string_decodes_7bit_chars():
     """`_bitstring_to_string` must decode a 7-bit-per-character bitstring."""
     bitstring = "".join(format(ord(c), "b").zfill(7) for c in "Hi")
