@@ -96,10 +96,23 @@ Other New Features
   default is ``"deterministic"``, so existing code is unaffected
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
+- **Added an AI policy note to the issue templates**
+  All issue templates now state that the project does not accept
+  AI-generated pull requests and that automated agents should not submit PRs
+  or post comments. Human contributors may use LLMs as an aid, provided they
+  fully understand and take responsibility for the changes implemented
+  (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
 ---------
+
+* Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
+  Unitary matrices are now computed in ``complex128`` precision, removing the
+  spurious ~1e-7 off-diagonal entries that previously appeared where a
+  unitary should vanish exactly (e.g. phase-tolerant controlled gates).
+  (`PR #787 <https://github.com/eclipse-qrisp/Qrisp/pull/787>`_).
 
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
@@ -157,6 +170,10 @@ Bug Fixes
   ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* Fix a code typo in the Jasp tutorial which printed the wrong variable
+  when checking which variables are dynamic.
+  (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
 
 Compatibility
 -------------
@@ -232,6 +249,16 @@ Development
   (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
   `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
 
+* Converted every source file's Eclipse Public License header from a
+  module-level docstring into a ``#``-prefixed comment block, and gave
+  every file that lacked one a real one-line module docstring. The header
+  had been written as a docstring, which pydocstyle interpreted as the
+  module's documentation and flagged for style violations (``D205``,
+  ``D212``, ...) on essentially every file; it was never meant to be read
+  as documentation. Existing rich module-level documentation was preserved
+  verbatim, only reformatted to satisfy ``D205``
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
   (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
@@ -257,6 +284,20 @@ Dependency Upgrades
   
 * Bumped ``actions/setup-python`` from 6 to 7
   (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
+
+* Pinned ``ruff`` to ``0.15.18`` in the ``dev-code-style`` dependency group
+  and updated the ``reviewdog`` CI workflow to install the version specified
+  in ``pyproject.toml``
+  (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
+
+* Bumped ``ruff`` from ``0.15.18`` to ``0.16.4``. On ``0.15.x``,
+  ``ruff format --check --output-format=rdjson`` silently required
+  ``--preview`` mode just to emit structured output at all — an unrelated
+  concern from preview *formatting rules*, which the project does not use —
+  causing the ``reviewdog`` formatter check to crash. ``0.16.0`` stabilized
+  structured output formats for the formatter, fixing this without changing
+  which formatting rules apply
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
 
 .. Add dependency upgrades above this line
 
