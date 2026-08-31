@@ -227,6 +227,14 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
+* Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
+  ``Hamiltonian`` operator algebra. This exposed two latent bugs:
+  ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,
+  etc.) had their ``cls`` parameter typed as an instance rather than
+  ``type[BlockEncoding]``, and ``Hamiltonian``'s abstract methods were
+  typed as returning ``None``, breaking every subclass override
+  (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
+
 Dependency Upgrades
 -------------------
 
