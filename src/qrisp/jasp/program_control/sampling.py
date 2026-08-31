@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements sample, drawing measurement samples from a quantum sampling kernel."""
 
 import jax
 import jax.numpy as jnp
@@ -47,7 +48,9 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
-    r"""The ``sample`` function allows to take samples from a quantum computation
+    r"""Takes samples from a quantum computation specified by a sampling kernel.
+
+    The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
@@ -152,7 +155,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields
+        # Yields e.g.
         # [[3. 3.]
         #  [0. 0.]
         #  [0. 0.]
@@ -163,6 +166,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         #  [3. 3.]
         #  [0. 0.]
         #  [0. 0.]]
+        #
+        # Each row is either [0, 0] or [3, 3] with 50% probability each.
+        # The exact order of rows is random and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -182,8 +188,11 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sampling_function(k)
 
         print(main(4))
-        # Yields
+        # Yields e.g.
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+        #
+        # Each entry is either 0 or 10 with 50% probability each. The exact
+        # order of entries is random and varies between runs.
 
     **Sampling kernels returning classical values**
 
@@ -385,6 +394,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
 
 class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values
-    (a tuple) instead of a single scalar.  This triggers a retry of the
-    sampling loop with a multi-dimensional accumulator of the correct shape."""
+    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+
+    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

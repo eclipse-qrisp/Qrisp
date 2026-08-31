@@ -17,22 +17,22 @@ For example, we prepare the state
 
 .. math::
 
-    \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}
+    \ket{\psi_{\theta}} = (\cos(\theta/2)\ket{0}+\sin(\theta/2)\ket{1})^{\otimes 2}
 
 ::
-            
+
     from qrisp import *
-    from qrisp.operators import X,Y,Z
+    from qrisp.operators import Z
     import numpy as np
 
     def state_prep(theta):
         qv = QuantumFloat(2)
 
         ry(theta,qv)
-    
+
         return qv
 
-And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+And compute the expectation value of the Hamiltonian $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
 
 ::
 

@@ -1,19 +1,21 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the boolean_simulation decorator for fast classical simulation of boolean-only Jasp functions."""
+
 
 # Boolean Simulation Decorator
 # ============================
@@ -35,9 +37,9 @@
 #    code, it can be used to benchmark the classical logic portion of algorithms.
 #
 # Supported Operations:
-# - X, SWAP gates (unconditional bit operations)
-# - Controlled variants: CX, CCX, CSWAP, multi-controlled X, etc.
-# - Phase gates (Z, S, T, RZ, P): These are no-ops in classical simulation
+# - X, Y, SWAP gates (unconditional bit operations)
+# - Controlled variants: CX, CY, CCX, CSWAP, multi-controlled X/Y, etc.
+# - Phase gates (Z, S, T, S_dg, T_dg, RZ, P): These are no-ops in classical simulation
 # - Measurement: Returns the current classical bit values
 #
 # Unsupported Operations:
@@ -63,7 +65,7 @@ def boolean_simulation(
     bit_array_padding: int = 2**16,
     callback_threshold: int | None = None,
 ) -> Callable:
-    """Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
+    r"""Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
 
     This decorator transforms the function into a JAX expression without any
     quantum primitives and leverages the JAX compilation pipeline to compile
@@ -87,7 +89,7 @@ def boolean_simulation(
         sized arrays but Jasp supports dynamically sized QuantumVariables, the
         array has to be "padded". The padding therefore indicates an upper boundary
         for how many qubits are required to execute ``func``. A large padding
-        slows down the simulation but prevents overflow errors.The default is
+        slows down the simulation but prevents overflow errors. The default is
         ``2**16``. The minimum value is 64. This threshold describes the maximum
         OVERALL amount of qubits that can appear in the simulation. The maximum
         amount per QuantumVariable/per QuantumArray is tied to this number
@@ -141,7 +143,7 @@ def boolean_simulation(
             return measure(c)
 
     This script evaluates the multiplication of the two inputs 150 times and adds
-    them into the same QuantumFloat. The respected result is therefore ``i*j*150``.
+    them into the same QuantumFloat. The expected result is therefore ``i*j*150``.
 
     >>> main(1,2)
     Array(300., dtype=float64)
@@ -201,7 +203,8 @@ def boolean_simulation(
     >>> main(1,2)
     Array(8.92323439e+08, dtype=float64)
 
-    A faulty result because the script needs more than 64 qubits.
+    A faulty result (instead of the expected one) because the script
+    needs more than 64 qubits.
 
     Increasing the padding ensures that enough qubits are available at the cost
     of simulation speed.
@@ -221,7 +224,7 @@ def boolean_simulation(
     target_func: Callable = func[0]
 
     if bit_array_padding < 64:
-        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
+        raise Exception("Tried to initialize boolean_simulation with less than 64 bits")
 
     @jit
     def return_function(*args: Any) -> Any:

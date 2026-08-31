@@ -1,26 +1,27 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the minimize function, a SciPy-like gradient-free optimizer dispatcher for Jasp."""
 
 from qrisp.jasp.optimization_tools.cobyla import cobyla
 from qrisp.jasp.optimization_tools.spsa import spsa
 
 
 def minimize(fun, x0, args=(), method="COBYLA", options={}):
-    r"""Minimization of scalar functions of one ore more variables via gradient-free solvers.
+    r"""Minimization of scalar functions of one or more variables via gradient-free solvers.
 
     The API for this function matches SciPy with some minor deviations.
 
@@ -34,15 +35,18 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
         1-D array with shape ``(n,)`` and ``args`` is a tuple of parameters needed to specify the function.
     x0 : jax.Array
         Initial guess. Array of real elements of size ``(n,)``, where ``n`` is the number of independent variables.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to the objective function.
     method : str, optional
-        The solver type. Supported are ``SPSA`` and ``COBYLA``.
+        The solver type. Supported are ``SPSA`` and ``COBYLA``. The default is ``COBYLA``.
     options : dict, optional
         A dictionary of solver options. All methods accept the following generic options:
 
         * maxiter : int
             Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
+
+        Additionally, the method-specific keyword arguments of :func:`~qrisp.jasp.cobyla` or :func:`~qrisp.jasp.spsa`
+        may be supplied here, depending on the chosen ``method``.
 
     Returns
     -------
@@ -56,7 +60,7 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
 
     .. math::
 
-        \ket{\psi_{\theta}} = \cos(\theta)\ket{0} + \sin(\theta)\ket{1}
+        \ket{\psi_{\theta}} = \cos(\theta/2)\ket{0} + \sin(\theta/2)\ket{1}
 
     ::
 
@@ -76,7 +80,8 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
         def objective(theta, state_prep):
             return expectation_value(state_prep, shots=100)(theta)
 
-    Finally, we use ``optimize`` to find the optimal choice of the parameter $\theta_0$ that minimizes the objective function
+    Finally, we use ``minimize`` to find the optimal choice of the parameter $\theta_0$
+    that minimizes the objective function
 
     ::
 
@@ -85,11 +90,14 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
 
             x0 = jnp.array([1.0])
 
-            return minimize(objective,x0,args=(state_prep,))
+            return minimize(objective, x0, args=(state_prep,))
 
         results = main()
         print(results.x)
         print(results.fun)
+        # Yields e.g.
+        # [0.098]
+        # 0.0
 
     """
     if method == "SPSA":

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements the quantum_kernel decorator marking a subroutine as a closed quantum kernel."""
 
 from qrisp.jasp.primitives import (
     AbstractQubit,
@@ -31,11 +32,12 @@ from qrisp.jasp.tracing_logic import (
 
 def quantum_kernel(func):
     """This decorator allows you to annotate a subroutine as a "quantum kernel".
+
     Quantum kernels are functions that are restricted in the sense that they
     can not have quantum inputs or outputs, yet their inner working can be quantum.
     What is the benefit in that? The underlying idea why this
     can be helpful is that future execution environments might host several
-    QPUs that can operate in parallel, much like many of todays HPC
+    QPUs that can operate in parallel, much like many of today's HPC
     environments can access multiple GPUs.
 
     Annotating a function as a quantum kernel therefore allows the execution
@@ -50,8 +52,8 @@ def quantum_kernel(func):
         If you need to execute a 1000 shots of a certain quantum circuit, but
         you have 4 QPUs available, you can execute the task 4 times faster by
         assigning 250 shots to each QPU.
-        As such the :ref:`sample <sample>` and :ref:`expectation_value <expectation_value>` function
-        automatically wraps the state preparation and measurement into a
+        As such the :ref:`sample <sample>` and :ref:`expectation_value <expectation_value>`
+        functions automatically wrap the state preparation and measurement into a
         dedicated quantum kernel.
 
 
@@ -59,19 +61,19 @@ def quantum_kernel(func):
     ----------
     func : callable
         A function that receives only classical values as inputs and returns
-        classical values as outpus. The function's body can however perform
+        classical values as outputs. The function's body can however perform
         quantum logic.
 
     Returns
     -------
     quantum_kernel : callable
         A function that performs the task of the input but the compiler can
-        identify it as a closed quantum procedure without any external entaglement.
+        identify it as a closed quantum procedure without any external entanglement.
 
     Examples
     --------
-    We demonstrate a naive implementation of an expectation value please use
-    :ref:`expectation_value` if you required this functionality. For this
+    We demonstrate a naive implementation of an expectation value. Please use
+    :ref:`expectation_value` if you require this functionality. For this
     we define a state preparation procedure and call it from a kernelized
     function.
 

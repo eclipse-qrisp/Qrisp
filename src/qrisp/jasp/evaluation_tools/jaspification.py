@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the jaspify/stimulate decorators and simulate_jaspr, the core Jasp equation-by-equation simulator."""
 
 from collections.abc import Callable
 from typing import Any, Literal
@@ -44,6 +45,7 @@ from qrisp.jasp.primitives import (
 
 def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False) -> Callable:
     """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
 
@@ -61,7 +63,7 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
     terminal_sampling : bool, optional
         Whether to leverage the terminal sampling strategy. Significantly fast
         for all sampling tasks but can yield incorrect results in some situations.
-        Check out :ref:`terminal_sampling` form more details. The default is False.
+        Check out :ref:`terminal_sampling` for more details. The default is False.
 
     Returns
     -------
@@ -431,8 +433,7 @@ def compile_cl_func(jaxpr: Jaxpr, function_name: str) -> tuple[Callable, list[bo
 
 
 def _jaspr_has_name(jaxpr, target_name):
-    """Return True if *target_name* appears as a ``jit`` call name in *jaxpr*
-    or its nested sub-jaxprs, skipping ``user_func`` subtrees."""
+    """Return True if *target_name* is a ``jit`` call name in *jaxpr* or a sub-jaxpr, skipping ``user_func``."""
     for eqn in jaxpr.jaxpr.eqns:
         if eqn.primitive.name == "jit":
             if eqn.params.get("name") == target_name:

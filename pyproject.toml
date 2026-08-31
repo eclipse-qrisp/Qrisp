@@ -67,7 +67,7 @@ docs = [
     "pydata-sphinx-theme==0.17.1",
 ]
 dev-code-style = [
-    "ruff",
+    "ruff==0.16.4",
 ]
 dev-testing = [
     "pytest==9.1.1",
@@ -80,6 +80,16 @@ dev-testing = [
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
+]
+# aqt is intentionally excluded from `all` because qiskit-aqt-provider ships a
+# pytest plugin (qiskit_aqt_provider.test.fixtures) that fails to load when
+# pytest-httpx is not installed, breaking any pytest invocation. 
+# aqt also requires qiskit >=1,<2 (Qiskit 1.x), which reached end of life with
+# the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
+# security updates, or other patches
+# (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
+all = [
+    "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
 
 [project.urls]
@@ -103,14 +113,19 @@ select = ["I", "E", "W", "D", "PL", "F"]
 # F -- pyflakes
 
 
-# Rules considered over other incompatible ones
-exclude = ["*.ipynb"]
-
 ignore = [
     "D203",  # inconsistent with D211 (no-blank-line-before-class)
+    "D209",  # new-line-after-last-paragraph
+    "D212",  # inconsistent with D213 (multi-line-summary-first-line)
     "D213",  # inconsistent with D212 (multi-line-summary-first-line)
     "D400",  # first-line-should-end-with-period
+    "D401",  # first line of docstring should be in imperative mood
+    "D402",  # first-line-should-not-be-signature
+    "D404",  # docstring should start with a proper description (not 'This' or 'A')
     "D415",  # ends-in-punctuation
+    "D416",  # section-name-should-end-with-colon
+    "PLC0415",  # import not at top of file (lazy/function-level imports to avoid circular imports)
+    "E402",  # module-level import not at top of file (imports after a module docstring)
 ]
 
 [tool.coverage.run]
