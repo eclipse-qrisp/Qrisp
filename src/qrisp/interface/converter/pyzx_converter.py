@@ -25,7 +25,13 @@ from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate
 
 
 def _transpile(qrisp_circuit, gate_map):
-    # repeatedly transpile unknown gates until only known ones remain
+    """
+    Helper function that transpiles a qrisp_circuit such that only gates from gate_map remain in the circuit.
+    To that end, it repeatedly transpiles unknown gates until only known ones remain.
+    Used in the conversion from Qrisp to PyZX.
+    The code was adapted from the Cirq converter.
+    """
+
     def _unknown_names(circuit):
         return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
 
