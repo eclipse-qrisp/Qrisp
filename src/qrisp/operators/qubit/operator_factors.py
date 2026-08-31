@@ -77,7 +77,7 @@ def Z(arg: int) -> QubitOperator:
 
 
 def A(arg: int) -> QubitOperator:
-    r"""Returns a QubitOperator representing the raising (ladder) operator acting on qubit ``arg``.
+    r"""Returns a QubitOperator representing the lowering (ladder) operator acting on qubit ``arg``.
 
     Parameters
     ----------
@@ -94,7 +94,7 @@ def A(arg: int) -> QubitOperator:
 
 
 def C(arg: int) -> QubitOperator:
-    r"""Returns a QubitOperator representing the lowering (ladder) operator acting on qubit ``arg``.
+    r"""Returns a QubitOperator representing the raising (ladder) operator acting on qubit ``arg``.
 
     Parameters
     ----------

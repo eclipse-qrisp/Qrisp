@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import jax
 import jax.numpy as jnp
@@ -1301,10 +1301,7 @@ class BlockEncoding:
 
             def new_unitary(*args):
                 self.unitary(*args)
-                # `other` is documented (see above) as a real scalar; cast narrows away
-                # the `complex` branch of ArrayLike, which doesn't support "<", without
-                # changing what's actually accepted at runtime.
-                with control(cast("int | float", other) < 0):
+                with control(other < 0):
                     gphase(np.pi, args[0][0])
 
             return BlockEncoding(
@@ -1317,7 +1314,7 @@ class BlockEncoding:
 
         return NotImplemented
 
-    def __matmul__(self, other: "ArrayLike | BlockEncoding") -> BlockEncoding:
+    def __matmul__(self, other: "BlockEncoding") -> BlockEncoding:
         r"""Returns a BlockEncoding of the product of two operators.
 
         This method implements the operator product $A \cdot B$ by composing
