@@ -161,6 +161,11 @@ New Tutorials/ Updated Documentation
 
 .. Add new tutorials above this line
 
+
+* Replaced usage of ``sbp_mult`` with the ``*`` operator in the
+  ``QuantumSession.compile`` and ``IterationEnvironment`` docstrings
+  (`PR #733 <https://github.com/eclipse-qrisp/Qrisp/pull/733>`_).
+
 API Changes
 -----------
 
