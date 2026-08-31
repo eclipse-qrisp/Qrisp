@@ -144,8 +144,9 @@ Bug Fixes
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 * Fixed ``shors_alg``'s order-finding verifying candidates against a
-  mutated value instead of the original base, and the resulting
-  exponential-time fallback once that verification became meaningful
+  mutated value instead of the original base, several exact (rather than
+  modular) big-integer exponentiations, and an exponential-time
+  candidate-combination fallback
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 * Fix a code typo in the Jasp tutorial which printed the wrong variable

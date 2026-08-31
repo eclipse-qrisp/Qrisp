@@ -49,7 +49,7 @@ def _find_optimal_a(N: int) -> list[int]:
     for a in proposals:
         m_values = []
         for k in range(2 * n + 1):
-            inpl_multiplier = (a ** (2**k)) % N
+            inpl_multiplier = pow(a, 2**k, N)
 
             if inpl_multiplier == 1:
                 continue
@@ -101,7 +101,7 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
         r_values = _get_r_values(approximations.pop(0))
 
         for r in r_values:
-            if (a**r) % N == 1:
+            if pow(a, r, N) == 1:
                 return r
 
         # Combine this outcome's candidates pairwise with each previously
@@ -113,7 +113,7 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
         for prev_r_values in collected_r_values:
             for r1, r2 in product(r_values, prev_r_values):
                 r = int(np.lcm(r1, r2))
-                if (a**r) % N == 1:
+                if pow(a, r, N) == 1:
                     return r
 
         collected_r_values.append(r_values)
@@ -174,7 +174,11 @@ def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | Non
         if r % 2:
             continue
 
-        g = int(np.gcd(a ** (r // 2) + 1, N))
+        # gcd(x, N) == gcd(x mod N, N) for any integer x, so reducing a**(r//2)
+        # modulo N before the +1 is mathematically exact and avoids computing
+        # a**(r//2) in full precision, which can be an enormous number for
+        # large r.
+        g = int(np.gcd(pow(a, r // 2, N) + 1, N))
 
         if g not in [N, 1]:
             res = g
