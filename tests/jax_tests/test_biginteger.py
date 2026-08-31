@@ -29,7 +29,7 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BASE
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BASE, bi_contfrac_convergents
 
 # ----------------- Global parameter lists -----------------
 SEEDS = [0, 1, 2]
@@ -468,3 +468,50 @@ def test_bi_extended_euclidean_small_range(size, seed):
     # Additional divisibility checks
     assert a % g == 0
     assert b % g == 0
+
+
+# ----------------- create_dynamic / coerce / get_larger -----------------
+
+
+def test_create_dynamic_matches_create():
+    """`create_dynamic` must be a pure alias of `create`."""
+    for iv, size in [(0, 4), (12345, 4), (2**31, 4)]:
+        assert to_int(BigInteger.create_dynamic(iv, size)) == to_int(BigInteger.create(iv, size))
+
+
+def test_coerce_same_width_widen_and_reject_narrowing():
+    """`coerce` must keep matching widths, zero-pad narrower ones, and reject narrowing."""
+    x = BigInteger.create_static(123456789, 4)
+    # Matching width: returned unchanged
+    assert BigInteger.coerce(x, 4) is x
+    # Smaller width: zero-padded to the target width
+    smaller = BigInteger.create_static(42, 2)
+    widened = BigInteger.coerce(smaller, 4)
+    assert to_int(widened) == 42
+    assert widened.digits.shape[0] == 4
+    # Larger width than target: rejected to avoid silent truncation
+    with pytest.raises(ValueError):
+        BigInteger.coerce(x, 2)
+    # Plain Python int is routed through create_static
+    assert to_int(BigInteger.coerce(999, 4)) == 999
+
+
+def test_get_larger_doubles_width_preserves_value():
+    """`get_larger` must double the limb width while preserving the represented value."""
+    x = BigInteger.create_static(123456789, 4)
+    xw = x.get_larger()
+    assert xw.digits.shape[0] == 8
+    assert to_int(xw) == 123456789
+
+
+# ----------------- Continued-fraction convergents -----------------
+
+
+def test_bi_contfrac_convergents_last_is_exact_rational():
+    """`bi_contfrac_convergents` must yield the exact rational as its final convergent."""
+    # 64/256 reduces exactly to 1/4; the final convergent must equal it.
+    a = BigInteger.create_static(64, 4)
+    b = BigInteger.create_static(256, 4)
+    convergents = list(bi_contfrac_convergents(a, b))
+    last_p, last_q = convergents[-1]
+    assert (to_int(last_p), to_int(last_q)) == (1, 4)

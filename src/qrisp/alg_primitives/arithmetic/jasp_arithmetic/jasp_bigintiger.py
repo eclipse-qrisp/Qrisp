@@ -172,6 +172,14 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
 
+        Examples
+        --------
+        >>> a = BigInteger.create(123456789, 4)
+        >>> a()
+        123456789
+        >>> (a + BigInteger.create(1, 4))()
+        123456790
+
         """
 
         def body_fun(i, args):
@@ -931,8 +939,7 @@ class BigInteger:
         return BigInteger(r_digits), BigInteger(q_digits)
 
     def get_larger(self) -> "BigInteger":
-        """Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the
-        same number
+        """Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the same number.
 
         Returns
         -------
@@ -1332,6 +1339,16 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     Uses `//` and `%` which rely on exact multi-precision division implemented
     in this module. Both `a` and `m` are treated as fixed-width unsigned values.
 
+    Examples
+    --------
+    >>> a = BigInteger.create(3, 2)
+    >>> m = BigInteger.create(11, 2)
+    >>> t = bi_modinv(a, m)
+    >>> t()
+    4
+    >>> (a * t % m)()
+    1
+
     """
     # Widen to 2n limbs
     n = a.digits.shape[0]
@@ -1387,6 +1404,19 @@ def bi_extended_euclidean(a: BigInteger, b: BigInteger | int) -> tuple[BigIntege
     -----
     All operations occur modulo 2^(32*n), so the interpretation follows
     fixed-width arithmetic semantics.
+
+    Examples
+    --------
+    >>> g, x, y = bi_extended_euclidean(BigInteger.create(35, 2), BigInteger.create(15, 2))
+    >>> g()
+    5
+
+    A negative Bézout coefficient wraps around to its unsigned complement
+    modulo 2**(32*n) (here y represents -2 in a 64-bit ring); the identity
+    still holds when checked in that same ring:
+
+    >>> (35 * x() + 15 * y()) % 2**64
+    5
 
     """
     n = a.digits.shape[0]
@@ -1451,6 +1481,17 @@ def bi_montgomery_encode(x: BigInteger, R: BigInteger, modulus: BigInteger) -> B
       modulo reduction. The remainder is strictly less than modulus < 2^(32*n), so it
       fits in n limbs and can be safely truncated back.
     - All three inputs must share the same limb width n.
+
+    Examples
+    --------
+    >>> R = BigInteger.create(1024, 2)
+    >>> N = BigInteger.create(97, 2)
+    >>> x = BigInteger.create(42, 2)
+    >>> encoded = bi_montgomery_encode(x, R, N)
+    >>> encoded()
+    37
+    >>> bi_montgomery_decode(encoded, R, N)()
+    42
 
     """
     n = modulus.digits.shape[0]
@@ -1579,6 +1620,17 @@ def bi_contfrac_best_approx(
     - All operands must share the same width (number of limbs).
     - Arithmetic is exact in the fixed-width ring; for valid inputs arising in Shor's
       post-processing (with q <= b and typical bounds <= b), no wrap-around occurs.
+
+    Examples
+    --------
+    A phase-estimation-style measurement of 64/256 (= 1/4 exactly), recovered
+    under a denominator bound of 15:
+
+    >>> a = BigInteger.create(64, 4)
+    >>> b = BigInteger.create(256, 4)
+    >>> p, q = bi_contfrac_best_approx(a, b, max_den=BigInteger.create(15, 4))
+    >>> p(), q()
+    (1, 4)
 
     """
     n_limbs = a.digits.shape[0]
@@ -1731,6 +1783,17 @@ def bi_shor_recover_denominator(
     - If N_bound is an int, it is promoted to a BigInteger of the same width as a,b.
     - Returns the denominator of the CF-derived convergent; caller should perform
       the usual validity checks for Shor (closeness, non-trivial factor conditions, etc.).
+
+    Examples
+    --------
+    Same 64/256 measurement as in `bi_contfrac_best_approx`, recovering a
+    candidate order r <= 15 directly:
+
+    >>> a = BigInteger.create(64, 4)
+    >>> b = BigInteger.create(256, 4)
+    >>> r = bi_shor_recover_denominator(a, b, N_bound=BigInteger.create(15, 4))
+    >>> r()
+    4
 
     """
     n_limbs = a.digits.shape[0]

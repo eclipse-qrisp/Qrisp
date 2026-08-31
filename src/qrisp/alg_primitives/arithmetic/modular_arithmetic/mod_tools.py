@@ -23,12 +23,59 @@ from qrisp import check_for_tracing_mode
 
 
 def montgomery_decoder(y: int | Array, R: int | float | Array, N: int | Array) -> int | float | Array:
+    """Montgomery-decode y as y*R^{-1} mod N.
+
+    Parameters
+    ----------
+    y : int
+        Montgomery-encoded value.
+    R : int or float
+        Montgomery radix used during encoding. A value with ``0 < R < 1`` is
+        interpreted as ``2**m`` for a negative Montgomery shift ``m``.
+    N : int
+        Modulus.
+
+    Returns
+    -------
+    int
+        Decoded value in standard representation.
+
+    Examples
+    --------
+    >>> encoded = montgomery_encoder(42, 1024, 97)
+    >>> montgomery_decoder(encoded, 1024, 97)
+    42
+
+    """
     if 0 < R < 1:
         R = modinv(R**-1, N)
     return (y * modinv(R, N)) % N
 
 
 def montgomery_encoder(y: int | Array, R: int | float | Array, N: int) -> int:
+    """Montgomery-encode y as y*R mod N.
+
+    Parameters
+    ----------
+    y : int
+        Value to encode.
+    R : int or float
+        Montgomery radix (e.g., R = 2^m). A value with ``0 < R < 1`` is
+        interpreted as ``2**m`` for a negative Montgomery shift ``m``.
+    N : int
+        Modulus.
+
+    Returns
+    -------
+    int
+        y in Montgomery form.
+
+    Examples
+    --------
+    >>> montgomery_encoder(42, 1024, 97)
+    37
+
+    """
     if 0 < R < 1:
         R = modinv(R**-1, N)
     return (int(y) % N * int(R) % N) % N
@@ -37,6 +84,31 @@ def montgomery_encoder(y: int | Array, R: int | float | Array, N: int) -> int:
 def egcd(
     a: int | float | Array, b: int | float | Array
 ) -> tuple[int | float | Array, int | float | Array, int | float | Array]:
+    """Extended Euclidean Algorithm.
+
+    Computes (g, x, y) such that a*x + b*y = g = gcd(a, b).
+
+    Parameters
+    ----------
+    a : int
+        First integer.
+    b : int
+        Second integer.
+
+    Returns
+    -------
+    tuple
+        (g, x, y) with gcd and Bézout coefficients.
+
+    Examples
+    --------
+    >>> g, x, y = egcd(35, 15)
+    >>> g
+    5
+    >>> 35 * x + 15 * y
+    5
+
+    """
     if a == 0:
         return (b, 0, 1)
     g, y, x = egcd(b % a, a)
@@ -44,6 +116,34 @@ def egcd(
 
 
 def modinv(a: int | float | Array, m: int | float | Array) -> int | float | Array:
+    """Modular inverse t = a^{-1} mod m.
+
+    Parameters
+    ----------
+    a : int
+        Value to invert (must be coprime to m).
+    m : int
+        Modulus.
+
+    Returns
+    -------
+    int
+        Modular inverse in [0, m).
+
+    Raises
+    ------
+    ValueError
+        If a and m are not coprime, so no inverse exists (non-traced mode only).
+
+    Examples
+    --------
+    >>> t = modinv(3, 11)
+    >>> t
+    4
+    >>> (3 * t) % 11
+    1
+
+    """
     if check_for_tracing_mode():
 
         def cf(val):

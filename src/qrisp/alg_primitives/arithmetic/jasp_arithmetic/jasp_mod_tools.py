@@ -27,6 +27,7 @@
 #   and falls back to ceil(log2(n)) when N is not provided.
 
 import jax.numpy as jnp
+import numpy as np
 from jax import Array, jit, lax
 
 from qrisp import check_for_tracing_mode
@@ -151,6 +152,13 @@ def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array 
     int, jnp scalar, or BigInteger
         ``2 ** exp % modulus`` in the representation matching ``modulus``.
 
+    Examples
+    --------
+    >>> pow2mod(10, 97)
+    54
+    >>> pow(2, 10, 97)
+    54
+
     """
     if isinstance(modulus, BigInteger):
         return bi_pow2mod(exp, modulus)
@@ -182,6 +190,20 @@ def montgomery_encoder(
     -------
     int or BigInteger
         x in Montgomery form.
+
+    Examples
+    --------
+    All-classical inputs:
+
+    >>> montgomery_encoder(42, 1024, 97)
+    37
+
+    Mixing a ``BigInteger`` operand with plain Python ints also works; the
+    others are promoted to match its limb width:
+
+    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    >>> montgomery_encoder(BigInteger.create(42, 4), 1024, 97)()
+    37
 
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
@@ -319,6 +341,14 @@ def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | Bi
     int or BigInteger
         Modular inverse in [0, m).
 
+    Examples
+    --------
+    >>> t = modinv(3, 11)
+    >>> t
+    4
+    >>> (3 * t) % 11
+    1
+
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
         width = _bigint_width(a, m)
@@ -366,12 +396,20 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
     int or jnp.int64
         ceil(log2(n)) with 0 for n <= 1.
 
+    Examples
+    --------
+    >>> smallest_power_of_two(100)
+    7
+    >>> 2**7 >= 100 > 2**6
+    True
+
     """
     if isinstance(n, BigInteger):
         # bit_size already yields ceil(log2(n)) with 0 for n==0
         return n.bit_size()
 
-    if isinstance(n, int):
+    if isinstance(n, (int, np.integer)):
+        n = int(n)
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
@@ -402,6 +440,13 @@ def best_montgomery_shift(n: int | BigInteger | Array, N: int | BigInteger | Arr
     -------
     int or jnp.int64
         Exponent m such that R = 2^m.
+
+    Examples
+    --------
+    >>> best_montgomery_shift(10, 97)
+    4
+    >>> best_montgomery_shift(10)
+    4
 
     """
     # Fallback (no modulus or unsupported BigInteger modulus): ceil(log2 n)

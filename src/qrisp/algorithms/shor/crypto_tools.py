@@ -214,10 +214,10 @@ def rsa_decrypt_string(e: int, N: int, ciphertext: str, backend: "BackendLike | 
         plaintext_int = pow(cipher_int, d, N)
         plaintext_bitstring += bin(plaintext_int)[2:].zfill(chunksize - 1)
 
-    return bitstring_to_string(plaintext_bitstring)
+    return _bitstring_to_string(plaintext_bitstring)
 
 
-def bitstring_to_string(bitstring: str) -> str:
+def _bitstring_to_string(bitstring: str) -> str:
     chars = []
     for i in range(0, len(bitstring) // 7 * 7, 7):
         byte = bitstring[i : i + 7] + " "

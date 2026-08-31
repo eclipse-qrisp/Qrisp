@@ -35,7 +35,7 @@ cnot_count = []
 qubits = []
 
 
-def find_optimal_a(N: int) -> list[int]:
+def _find_optimal_a(N: int) -> list[int]:
     n = int(np.ceil(np.log2(N)))
     proposals = []
 
@@ -67,7 +67,7 @@ def find_optimal_a(N: int) -> list[int]:
     return proposals
 
 
-def find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
+def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
     if mes_kwargs is None:
         mes_kwargs = {}
     qg = QuantumModulus(N, inpl_adder)
@@ -82,10 +82,10 @@ def find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: d
 
     mes_res = qpe_res.get_measurement(**mes_kwargs)
 
-    return extract_order(mes_res, a, N)
+    return _extract_order(mes_res, a, N)
 
 
-def extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
+def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
 
     collected_r_values = []
 
@@ -97,7 +97,7 @@ def extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
         pass
 
     while True:
-        r_values = get_r_values(approximations.pop(0))
+        r_values = _get_r_values(approximations.pop(0))
 
         for r in r_values:
             if (a**r) % N == 1:
@@ -111,13 +111,14 @@ def extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
                 return r
 
 
-def get_r_values(approx: int | float) -> list[int]:
+def _get_r_values(approx: int | float) -> list[int]:
     rationals = continued_fraction_convergents(continued_fraction_iterator(Rational(approx)))
     return [rat.q for rat in rationals if 1 < rat.q]
 
 
 def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
     """Performs `Shor's factorization algorithm <https://arxiv.org/abs/quant-ph/9508027>`_ on a given integer N.
+
     The adder used for factorization can be customized. To learn more about
     this feature, please read :ref:`QuantumModulus`
 
@@ -151,7 +152,7 @@ def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | Non
     if mes_kwargs is None:
         mes_kwargs = {}
 
-    a_proposals = find_optimal_a(N)
+    a_proposals = _find_optimal_a(N)
 
     for a in a_proposals:
         K = np.gcd(a, N)
@@ -160,7 +161,7 @@ def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | Non
             res = K
             break
 
-        r = find_order(a, N, inpl_adder, mes_kwargs)
+        r = _find_order(a, N, inpl_adder, mes_kwargs)
 
         if r % 2:
             continue

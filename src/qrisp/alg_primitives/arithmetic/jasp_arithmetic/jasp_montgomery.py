@@ -140,6 +140,20 @@ def cq_montgomery_multiply(
     QuantumFloat
         The Montgomery product X*y mod N in standard representation.
 
+    Examples
+    --------
+    >>> from qrisp import QuantumFloat, boolean_simulation, gidney_adder, measure
+    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import best_montgomery_shift
+    >>> @boolean_simulation
+    ... def cq(X, y, N):
+    ...     qy = QuantumFloat(y.bit_length())
+    ...     qy[:] = y
+    ...     m = best_montgomery_shift(X, N)
+    ...     res = cq_montgomery_multiply(X, qy, N, m, gidney_adder)
+    ...     return measure(res)
+    >>> cq(5, 11, 97)
+    # 55  (== 5*11 mod 97)
+
     """
     # Build R = 2^m with width matching X if BigInteger
     R = _montgomery_radix(X, m)
@@ -309,6 +323,7 @@ def qq_montgomery_multiply(
 
 def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> QuantumModulus:
     """Perform the montgomery product of two QuantumModuli.
+
     Compatible with ``montgomery_mod_mul``: inputs can be in any Montgomery
     representation (including standard form where ``m=0``).
 
@@ -329,6 +344,17 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> Quan
     -------
     QuantumModulus
         The montgomery product of the inputs.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumModulus, gidney_adder, multi_measurement
+    >>> a = QuantumModulus(97, inpl_adder=gidney_adder)
+    >>> b = QuantumModulus(97, inpl_adder=gidney_adder)
+    >>> a[:] = 12
+    >>> b[:] = 7
+    >>> res = qq_montgomery_multiply_modulus(a, b)
+    >>> multi_measurement([a, b, res])
+    # {(12, 7, 84): 1.0}  (== 12*7 mod 97)
 
     """
     from qrisp.qtypes.quantum_modulus import _moduli_neq
