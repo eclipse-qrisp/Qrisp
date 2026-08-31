@@ -143,6 +143,11 @@ Bug Fixes
   against a classical matrix
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+* Fixed ``shors_alg``'s order-finding verifying candidates against a
+  mutated value instead of the original base, and the resulting
+  exponential-time fallback once that verification became meaningful
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 * Fix a code typo in the Jasp tutorial which printed the wrong variable
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).

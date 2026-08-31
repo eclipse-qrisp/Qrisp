@@ -104,12 +104,19 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
             if (a**r) % N == 1:
                 return r
 
-        collected_r_values.append(r_values)
+        # Combine this outcome's candidates pairwise with each previously
+        # seen outcome's candidates. Two independent QPE measurements are,
+        # in practice, essentially always enough to recover the true order;
+        # combining every candidate from every accumulated outcome at once
+        # (as a single N-way product) grows exponentially with the number
+        # of outcomes examined and can make this effectively never return.
+        for prev_r_values in collected_r_values:
+            for r1, r2 in product(r_values, prev_r_values):
+                r = int(np.lcm(r1, r2))
+                if (a**r) % N == 1:
+                    return r
 
-        for comb in product(*collected_r_values):
-            r = np.lcm.reduce(comb)
-            if (a**r) % N == 1:
-                return r
+        collected_r_values.append(r_values)
 
 
 def _get_r_values(approx: int | float) -> list[int]:
