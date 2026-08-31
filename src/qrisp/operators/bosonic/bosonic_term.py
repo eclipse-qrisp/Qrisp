@@ -98,25 +98,6 @@ class BosonicTerm:
         result_ladder_list = other.ladder_list + self.ladder_list
         return BosonicTerm(result_ladder_list)
 
-    def order(self):
-        """Not that important, since relevant Hamiltonians consist of ordered terms.
-        What is needed for trotterization?
-
-        Bosonic commutation relations:
-
-        [a_i,a_j^dagger] = a_i*a_j^dagger - a_j^dagger*a_i = delta_{ij}
-        [a_i^dagger,a_j^dagger] = [a_i,a_j] = 0
-
-
-        Order ladder terms such that
-            1) Raising operators preceed lowering operators
-            2) Operators are ordered in descending order of bosonic modes
-
-        Example: a_5^dagger a_2^dagger a_3 a_1
-
-        """
-        pass
-
     def sort(self):
         # Sort ladder operators (ladder operator semantics are order independent)
         sorting_list = [-index for index, is_creator in self.ladder_list]
@@ -124,45 +105,6 @@ class BosonicTerm:
         ladder_list = [self.ladder_list[i] for i in perm]
 
         return BosonicTerm(ladder_list)
-
-    def bosonic_swap(self, permutation: list):
-
-        permutation = [permutation.index(i) for i in range(len(permutation))]
-        new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
-
-        return BosonicTerm(new_ladder_list)
-
-    def unipolars_intersect(self, other: Self):
-        """Checks if two terms have intersecting unipolar factos.
-        Unipolar factors are factors that are not of the form a(i)*c(i),
-        i.e. the index i appears only once.
-        """
-        return len(set(self.get_unipolars()).intersection(other.get_unipolars())) != 0
-
-    def unipolars_agree(self, other: Self):
-        """Checks if two terms have intersecting unipolar factos.
-        Unipolar factors are factors that are not of the form a(i)*c(i),
-        i.e. the index i appears only once.
-        """
-        return set(self.get_unipolars()) == set(other.get_unipolars())
-
-    def get_unipolars(self):
-        if hasattr(self, "unipolars"):
-            return list(self.unipolars)
-        else:
-            index_list = [index for index, is_creator in self.ladder_list]
-            index_list.sort()
-
-            i = 0
-            while i < len(index_list) - 1:
-                if index_list[i] == index_list[i + 1]:
-                    index_list.pop(i)
-                    index_list.pop(i)
-                    continue
-                i += 1
-
-            self.unipolars = index_list[::-1]
-            return list(self.unipolars)
 
     def to_qubit_term(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Maps a bosonic term to a qubit term.
