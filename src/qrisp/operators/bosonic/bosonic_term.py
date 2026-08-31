@@ -149,13 +149,18 @@ class BosonicTerm:
 
         for ind in indices_present:
             ladder_ops = [x[1] for x in self.ladder_list if x[0] == ind]
+            k = sum(ladder_ops)     # number of creators
+
             # bring term into matrix form
-            M = np.identity(truncation)
+            M = np.identity(truncation+k)   # by temporarily increasing the matrix size to truncation+k we avoid ambiguities due to
+                                            # intermediate running out of truncated space (corresponds to normal ordering the operator first)
             for l in ladder_ops:
                 if l:
-                    M = c_matrix(truncation) @ M
+                    M = c_matrix(truncation+k) @ M
                 else:
-                    M = a_matrix(truncation) @ M
+                    M = a_matrix(truncation+k) @ M
+
+            M = M[:truncation, :truncation]
 
             temp = 0
             for i in range(truncation):
