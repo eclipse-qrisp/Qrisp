@@ -27,6 +27,8 @@ def build_from_eye(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     diagonal_index : int
         Index of the diagonal to set to one: 0 (the default) refers to the main diagonal,
         a positive value refers to an upper diagonal, and a negative value to a lower diagonal.

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def build_from_foqcs_lcu_prep(
+def build_from_foqcs_lcu_prep(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
     cls: type[BlockEncoding],
     prep_r: Callable[[QuantumVariable], None],
     prep_l: Callable[[QuantumVariable], None],
@@ -89,6 +89,8 @@ def build_from_foqcs_lcu_prep(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     prep_r : Callable[[QuantumVariable], None]
         Right FOQCS-LCU PREP routine, corresponding to :math:`P_{R} = \mathrm{PREP}(\alpha)`
         The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.

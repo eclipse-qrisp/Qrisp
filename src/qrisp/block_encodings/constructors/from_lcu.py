@@ -84,6 +84,8 @@ def build_from_lcu(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     coeffs : np.ndarray
         1-D array containing the real non-negative or complex coefficients.
             - If all coefficients are real and non-negative, the block encoding unitary is constructed as $U = PREP \cdot SEL \cdot PREP^{\dagger}$.

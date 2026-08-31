@@ -34,6 +34,8 @@ def build_from_projector(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     left : int | tuple of int | Callable
         An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
         or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
