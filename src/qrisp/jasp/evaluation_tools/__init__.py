@@ -28,7 +28,6 @@ try:
     from qrisp.jasp.cudaq_interface import (
         FixedShapeNDArray,
         cudaq_kernel,
-        cudaq_kernel_from_xdsl_module,
     )
 except ImportError:
     pass
