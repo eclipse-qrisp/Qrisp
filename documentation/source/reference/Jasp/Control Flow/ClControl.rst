@@ -4,6 +4,6 @@ Classical Control
 =================
 
 .. currentmodule:: qrisp.environments
-.. autofunction:: ClControlEnvironment
+.. autoclass:: ClControlEnvironment
 
 

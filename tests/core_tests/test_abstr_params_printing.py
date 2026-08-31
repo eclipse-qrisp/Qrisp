@@ -20,18 +20,17 @@
 import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit.circuit import Parameter, QuantumCircuit
 
-# from qrisp.circuit.quantum_circuit import rxx, ryy, rzz
 from sympy import Symbol, symbols
 
-from qrisp import p, rx, ry, rz
+from qrisp import p, rx, ry, rz, rxx, ryy, rzz
 from qrisp.core import QuantumVariable
 from qrisp.interface import convert_from_qiskit, convert_to_qiskit
 
 
 def test_abstract_params_printing():
-    qiskit_qc = QuantumCircuit(5)
+    qiskit_qc = QuantumCircuit(9)
 
-    params = symbols("c:5")
+    params = symbols("c:8")
     # gates_list = [qsk_gates.RXGate(),qsk_gates.RYGate(),qsk_gates.RZGate(),qsk_gates.PhaseGate(),qsk_gates.CPhaseGate()]
     qiskit_ins_list = []
     theta = Parameter(str(params[0]))
@@ -40,15 +39,21 @@ def test_abstract_params_printing():
     qiskit_qc.append(qsk_gates.RZGate(Parameter(str(params[2]))), [2], [])
     qiskit_qc.append(qsk_gates.PhaseGate(Parameter(str(params[3]))), [3], [])
     # qiskit_qc.append(qsk_gates.CPhaseGate(Parameter(str(params[4]))), [4],[])
+    qiskit_qc.append(qsk_gates.RXXGate(Parameter(str(params[5]))), [5, 6], [])
+    qiskit_qc.append(qsk_gates.RYYGate(Parameter(str(params[6]))), [6, 7], [])
+    qiskit_qc.append(qsk_gates.RZZGate(Parameter(str(params[7]))), [7, 8], [])
     # print(str(qiskit_qc.qasm()))
     str(qiskit_qc)
     # print(qiskit_qc)
 
-    qv = QuantumVariable(5)
+    qv = QuantumVariable(9)
     rx(params[0], qv[0])
     ry(params[1], qv[1])
     rz(params[2], qv[2])
     p(params[3], qv[3])
+    rxx(params[5], qv[5], qv[6])
+    ryy(params[6], qv[6], qv[7])
+    rzz(params[7], qv[7], qv[8])
     # print(str(qv.qs))
     # print(qv.qs)
     qisk = convert_to_qiskit(qv.qs)
@@ -57,11 +62,11 @@ def test_abstract_params_printing():
     # assert str(qisk) == str(qiskit_qc)
     qisk_list = []
     for gate in qisk.data:
-        qisk_list.append((gate[0].name, gate[0].params))
+        qisk_list.append((gate.operation.name, gate.operation.params))
 
     qiskit_list = []
     for gate in qiskit_qc.data:
-        qiskit_list.append((gate[0].name, gate[0].params))
+        qiskit_list.append((gate.operation.name, gate.operation.params))
 
     assert len(qisk_list) == len(qisk_list)
     for index in range(len(qisk_list)):

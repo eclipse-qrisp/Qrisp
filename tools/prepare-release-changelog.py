@@ -206,9 +206,14 @@ API Changes
 .. Add API changes above this line
 
 Development
------------
+----------
 
 .. Add development changes above this line
+
+Dependency Upgrades
+-------------------
+
+.. Add dependency upgrades above this line
 
 First Time Contributors 🎉
 --------------------------

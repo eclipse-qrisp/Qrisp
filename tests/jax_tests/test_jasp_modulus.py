@@ -633,3 +633,82 @@ def test_comparison_nonzero_shift_vs_non_modulus_raises():
     b[:] = 5
     with pytest.raises(Exception, match="non-zero Montgomery shift"):
         a == b
+
+
+# ----- Traced-modulus tracer-leak regression tests -----
+# Regression for: repeated, independent @jaspify calls with a QuantumModulus
+# built from a traced modulus argument used to raise jax.errors.UnexpectedTracerError
+# on the 2nd call, because `modulus` wasn't threaded through the pytree as a
+# proper traced leaf (it got smuggled into static aux_data instead).
+
+
+def test_traced_modulus_qache_repeated_calls():
+    """A @qache'd subroutine touching a traced-modulus QuantumModulus must not
+    leak a tracer across independent @jaspify calls."""
+
+    @qache
+    def op(f, root):
+        f[0] += root
+
+    @jaspify
+    def solve(q, root):
+        f = QuantumArray(QuantumModulus(q), shape=(1,))
+        op(f, root)
+        return measure(f)
+
+    for _ in range(3):
+        assert list(solve(13, 5)) == [5.0]
+
+
+def test_traced_modulus_custom_inversion_repeated_calls():
+    """A @custom_inversion function used inside conjugate() on a traced-modulus
+    QuantumModulus must not leak a tracer across independent @jaspify calls."""
+
+    @custom_inversion
+    def op(f, root, inv=False):
+        if inv:
+            f[0] -= root
+        else:
+            f[0] += root
+
+    @jaspify
+    def solve(q, root):
+        f = QuantumArray(QuantumModulus(q), shape=(1,))
+        with conjugate(op)(f, root):
+            pass
+        return measure(f)
+
+    for _ in range(3):
+        assert list(solve(13, 5)) == [0.0]
+
+
+def test_traced_modulus_jnp_array_repeated_calls():
+    """A modulus passed as a concrete jnp.array (not a function argument) must
+    still yield consistent, correct results across repeated calls."""
+
+    @jaspify
+    def main():
+        q = jnp.array(13)
+        a = QuantumModulus(q)
+        b = QuantumModulus(q)
+        a[:] = 3
+        b[:] = 5
+        res = a + b
+        return measure(res)
+
+    for _ in range(3):
+        assert int(main()) == 8
+
+
+def test_static_modulus_hardcoded_literal_repeated_calls():
+    """A hardcoded, static modulus inside @jaspify must still work across repeated calls."""
+
+    @jaspify
+    def solve():
+        f = QuantumModulus(13)
+        f[:] = 3
+        f += 5
+        return measure(f)
+
+    for _ in range(3):
+        assert int(solve()) == 8

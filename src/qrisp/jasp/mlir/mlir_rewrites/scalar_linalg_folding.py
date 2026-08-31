@@ -1,23 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-"""
-Optimization pass for unwrapping 0-dimensional linalg.generic operations
-in MLIR/xDSL.
+"""Optimization pass for unwrapping 0-dimensional linalg.generic operations in MLIR/xDSL.
 
 General Context:
     The JAX-to-MLIR lowering frequently produces verbose operation chains to
@@ -25,9 +22,9 @@ General Context:
     of rewrite patterns designed to collapse unnecessarily verbose chains.
 
 Specific Problem:
-    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional 
-    `linalg.generic` ops. These ops carry significant structural overhead - such 
-    as regions, block arguments, and affine maps - for what is semantically just 
+    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional
+    `linalg.generic` ops. These ops carry significant structural overhead - such
+    as regions, block arguments, and affine maps - for what is semantically just
     scalar instructions.
 
 Solution:
@@ -35,7 +32,6 @@ Solution:
     the scalar operands using `tensor.extract`, clones the generic's inner block
     operations sequentially, and repacks the final result with `tensor.from_elements`.
 """
-
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor

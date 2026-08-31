@@ -1,3 +1,5 @@
+"""Computes adiabatic gauge potential (AGP) coefficients for counterdiabatic driving via Pauli algebra."""
+
 from collections import defaultdict
 
 import numpy as np

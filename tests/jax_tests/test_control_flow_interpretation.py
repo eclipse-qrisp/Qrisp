@@ -184,3 +184,67 @@ def test_control_flow_interpretation():
 
     out = test_scan_multi_input()
     assert np.all(out == np.array([4, 10, 18]))
+
+
+def test_qswitch_prepare_invert_control():
+    # Regression test (issue #412): prepare(..., method = "qswitch") used to raise
+    # "ValueError: Tried to evaluate jaxpr with insufficient arguments"
+    # when used within an InversionEnvironment or a ControlEnvironment.
+    # This is because prepare_qswitch's case functions close over classical
+    # arrays (thetas/u_params/phases) instead of receiving them as explicit
+    # arguments. Retracing such a nested jit equation (during .inverse() or
+    # .control()) caused these closed-over values to be reclassified as new
+    # constvars, without the wrapping equation being updated accordingly.
+
+    coeffs = jnp.array([1.0, 2.0, 1.0, 3.0])
+
+    # Round trip: prepare followed by its inverse should restore |0>
+    @terminal_sampling
+    def invert_roundtrip():
+        qv = QuantumFloat(2)
+        prepare(qv, coeffs, method="qswitch")
+        with invert():
+            prepare(qv, coeffs, method="qswitch")
+        return qv
+
+    res = invert_roundtrip()
+    assert res == {0.0: 1.0}
+
+    # Controlled round trip: with the control qubit in |1>, prepare followed
+    # by its inverse (both controlled) should restore |0>
+    @terminal_sampling
+    def control_roundtrip():
+        qb = QuantumBool()
+        x(qb)
+        qv = QuantumFloat(2)
+        with control(qb):
+            prepare(qv, coeffs, method="qswitch")
+            with invert():
+                prepare(qv, coeffs, method="qswitch")
+        return qv
+
+    res = control_roundtrip()
+    assert res == {0.0: 1.0}
+
+    # Controlled state preparation: with the control qubit in superposition,
+    # the resulting distribution should be a 50/50 mix of the |0> state
+    # (control off) and the prepared distribution (control on).
+    @terminal_sampling
+    def controlled_prepare():
+        qb = QuantumBool()
+        h(qb)
+        qv = QuantumFloat(2)
+        with control(qb):
+            prepare(qv, coeffs, method="qswitch")
+        return qv
+
+    res = controlled_prepare()
+    probs = np.abs(coeffs) ** 2
+    probs = probs / np.sum(probs)
+    expected = {0.0: 0.5 + 0.5 * probs[0]}
+    for i in range(1, len(probs)):
+        expected[float(i)] = 0.5 * probs[i]
+
+    assert set(res.keys()) == set(expected.keys())
+    for key in expected:
+        assert abs(res[key] - expected[key]) < 1e-2
