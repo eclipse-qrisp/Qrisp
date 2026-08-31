@@ -25,7 +25,7 @@
 # - Structured control-flow ops (cc.if, cc.loop, cc.condition, cc.continue, cc.break)
 # - Pointer arithmetic ops (cc.compute_ptr, cc.cast)
 # - StdVec ops (cc.stdvec_data)
-# - Struct ops (cc.undef, cc.insert_value, cc.log_output) – used by CUDA-Q
+# - Struct ops (cc.undef, cc.insert_value) – used by CUDA-Q
 #   preparation for multi-return packing and .run variant synthesis.
 #
 # Control-flow semantics
@@ -675,33 +675,6 @@ class CcInsertValueOp(IRDLOperation):
         printer.print_attribute(self.result.type)
 
 
-@irdl_op_definition
-class CcLogOutputOp(IRDLOperation):
-    """Log a classical value for retrieval by ``cudaq.run``.
-
-    ::
-
-        cc.log_output %val : i64
-
-    This op is a side-effecting terminator-like op that records the value
-    for the CUDA-Q runtime to collect across shots. It has no results.
-    """
-
-    name = "cc.log_output"
-    value = operand_def(AnyAttr())
-
-    def __init__(self, value: SSAValue) -> None:
-        """Initialize the object."""
-        super().__init__(operands=[value])
-
-    def print(self, printer: Printer) -> None:
-        """Print the CC log-output operation."""
-        printer.print_string(" ")
-        printer.print_ssa_value(self.value)
-        printer.print_string(" : ")
-        printer.print_attribute(self.value.type)
-
-
 # ---------------------------------------------------------------------------
 # Dialect registration
 # ---------------------------------------------------------------------------
@@ -730,6 +703,5 @@ class CcDialect(Dialect):
         # Struct / value
         CcUndefOp,
         CcInsertValueOp,
-        CcLogOutputOp,
     ]
     attributes = [CcArrayType, CcPtrType, CcMeasureHandleType, CcStdVecType, CcStructType]
