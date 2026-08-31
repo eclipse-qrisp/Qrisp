@@ -103,7 +103,7 @@ class Hamiltonian(ABC):
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract from the operator self.
+            A scalar or a Hamiltonian to subtract from the operator self.
 
         Returns
         -------
@@ -120,7 +120,7 @@ class Hamiltonian(ABC):
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract the operator self from.
+            A scalar or a Hamiltonian to subtract the operator self from.
 
         Returns
         -------
@@ -161,12 +161,12 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def __isub__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
-        """Substracts other from the operator self.
+        """Subtracts other from the operator self.
 
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract from the operator self.
+            A scalar or a Hamiltonian to subtract from the operator self.
 
         """
         pass

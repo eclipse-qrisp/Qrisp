@@ -728,7 +728,7 @@ class QubitOperator(Hamiltonian):
                     M[0, 0] = res
                 return M
         elif participating_indices and factor_amount < max(participating_indices) + 1:
-            raise Exception("Tried to construct matrix with insufficient factor_amount")
+            raise ValueError("Tried to construct matrix with insufficient factor_amount")
 
         assert factor_amount is not None  # every branch above either sets it or returns
         keys = list(range(factor_amount))
