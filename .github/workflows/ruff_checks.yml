@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - Enable_Python_3.13_in_the_CI_pipeline
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.12.*"
+          python-version: ["3.12.*", "3.13.*"]
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
