@@ -391,9 +391,10 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -421,8 +422,14 @@ class VQEProblem:
             The expectation value of the Hamiltonian after applying the optimal VQE circuit to the quantum argument.
 
         """
+        from qrisp import QuantumVariableTemplate
+
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
         else:
             template = qarg.template()
 
@@ -476,9 +483,10 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -507,8 +515,14 @@ class VQEProblem:
             The :ref:`QuantumVariable` then represents the ground state of the problem Hamiltonian.
 
         """
+        from qrisp import QuantumVariableTemplate
+
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
         else:
             template = qarg.template()
 
@@ -571,9 +585,10 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
         precision_range : list[float]
@@ -637,8 +652,14 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
+        from qrisp import QuantumVariableTemplate
+
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
         else:
             template = qarg.template()
 
