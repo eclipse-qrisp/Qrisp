@@ -142,6 +142,9 @@ def rsa_encrypt_string(e: int, N: int, message: str) -> str:
 
     chunksize = N.bit_length() - 1
 
+    # TODO: the last chunk's right-zero-padding is indistinguishable from real
+    # message bits on decryption, corrupting the round-trip (extra trailing char)
+    # whenever the message length isn't a multiple of chunksize. Pre-existing.
     chunks = [
         message_bitstring[i * chunksize : (i + 1) * chunksize][::-1].zfill(chunksize)[::-1]
         for i in range(int(np.ceil(len(message_bitstring) / chunksize)))

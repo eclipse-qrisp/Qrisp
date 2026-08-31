@@ -14,8 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-# Utilities for modular arithmetic that work with both Python ints and BigInteger.
-#
+"""Modular-arithmetic helpers shared across Python ints, traced JAX scalars, and BigInteger."""
+
 # All functions are JAX-friendly under tracing and avoid Python-side int() casts
 # and non-traceable conditionals where they could occur during tracing.
 #
@@ -416,6 +416,12 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
         nj = jnp.asarray(n)
         # Avoid log2(0); define result 0 for n<=1
         return jnp.where(nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64))
+
+    if isinstance(n, Array):
+        # Concrete (non-traced) JAX scalar, e.g. from indexing a jnp.ndarray
+        # outside of tracing.
+        n = int(n)
+        return (n - 1).bit_length() if n > 1 else 0
 
     raise TypeError(f"smallest_power_of_two expects int, BigInteger, or traced JAX scalar, got {type(n).__name__}")
 

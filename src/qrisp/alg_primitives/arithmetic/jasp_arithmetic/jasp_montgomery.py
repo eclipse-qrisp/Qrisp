@@ -145,13 +145,13 @@ def cq_montgomery_multiply(
     >>> from qrisp import QuantumFloat, boolean_simulation, gidney_adder, measure
     >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import best_montgomery_shift
     >>> @boolean_simulation
-    ... def cq(X, y, N):
-    ...     qy = QuantumFloat(y.bit_length())
+    ... def cq(X, y, n, N):
+    ...     qy = QuantumFloat(n)
     ...     qy[:] = y
     ...     m = best_montgomery_shift(X, N)
     ...     res = cq_montgomery_multiply(X, qy, N, m, gidney_adder)
     ...     return measure(res)
-    >>> cq(5, 11, 97)
+    >>> cq(5, 11, (11).bit_length(), 97)
     # 55  (== 5*11 mod 97)
 
     """

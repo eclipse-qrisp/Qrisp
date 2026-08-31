@@ -38,10 +38,8 @@ Improvements
   the new arbitrary-return-value capability.
 
 - Sped up ``BigInteger.__lshift__``/``__rshift__`` from an O(total bits)
-  bit-by-bit loop to a limb-wise shift, reusing the existing internal
-  ``_shl_bits``/``_shr_bits`` helpers. About 3x faster at 2048-bit
-  (64-limb) width; identical behavior in every case, including the
-  fixed-width truncation edge cases
+  bit-by-bit loop to a limb-wise shift (~3x faster at 2048-bit width),
+  with identical behavior
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 Other New Features
@@ -139,34 +137,10 @@ Bug Fixes
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
-* Fixed several crashes in the ``BigInteger``/Jasp-Montgomery arithmetic
-  backend, uncovered while adding pylint/pyright coverage, type hints, and
-  test coverage:
-
-  - The continued-fraction period-recovery routines used by Shor's
-    algorithm post-processing (``bi_contfrac_best_approx`` and
-    ``bi_shor_recover_denominator``) crashed unconditionally on every call,
-    due to a ``lax.while_loop`` calling-convention mismatch and an invalid
-    use of ``lax.select`` directly on ``BigInteger`` pytree objects. The
-    bounded-denominator "best approximation" formula was also corrected,
-    as it could return a valid but suboptimal fraction when the denominator
-    bound forced truncation.
-  - ``montgomery_encoder``/``montgomery_decoder`` raised ``AttributeError``
-    when only one of the classical/``BigInteger`` operands was a
-    ``BigInteger``.
-  - A Jasp-traced Extended Euclidean Algorithm helper (``egcd`` in
-    ``jasp_mod_tools``) was completely broken due to an unpacking-arity
-    mismatch; unreachable from any other code path, so never previously
-    exercised.
-  - ``quantum_array @ numpy_array`` (matrix multiplication of a
-    :class:`~qrisp.QuantumArray` of :class:`~qrisp.QuantumModulus` against
-    a classical ``numpy`` integer matrix) raised a ``TypeError`` for any
-    standard ``numpy`` integer dtype, including the exact matrix used in
-    its own docstring example. ``smallest_power_of_two`` only accepted
-    Python ``int``, not the ``numpy.int64`` values produced by indexing a
-    ``numpy`` array. Uncovered while adding a regression test for
-    ``cq_montgomery_mat_multiply``, which previously had no test coverage.
-
+* Fixed several crashes in the ``BigInteger``/Jasp-Montgomery backend:
+  continued-fraction period recovery, mixed-type Montgomery encode/decode,
+  a broken traced ``egcd``, and ``QuantumArray`` matrix multiplication
+  against a classical matrix
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 * Fix a code typo in the Jasp tutorial which printed the wrong variable
@@ -192,11 +166,9 @@ New Tutorials/ Updated Documentation
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
-- Added doctest-verified ``Examples`` sections to previously example-less
-  functions across the ``BigInteger``/Jasp-Montgomery arithmetic backend
-  (``jasp_bigintiger.py``, ``jasp_mod_tools.py``, ``jasp_montgomery.py``)
-  and its static, non-Jasp counterpart (``modular_arithmetic/mod_tools.py``,
-  which previously had no docstrings at all)
+- Added doctest-verified ``Examples`` to previously example-less functions
+  across the ``BigInteger``/Jasp-Montgomery backend and its static
+  counterpart (``modular_arithmetic/mod_tools.py``)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 .. Add new tutorials above this line
@@ -212,14 +184,9 @@ API Changes
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
 
-* Renamed five internal helper functions of ``qrisp.shor`` to be private
-  (leading underscore): ``find_optimal_a``, ``find_order``,
-  ``extract_order``, ``get_r_values`` (in ``shors_algorithm.py``), and
-  ``bitstring_to_string`` (in ``crypto_tools.py``). None of these are part
-  of the documented public API (only ``shors_alg``, ``rsa_encrypt``,
-  ``rsa_decrypt``, ``rsa_encrypt_string``, and ``rsa_decrypt_string`` are),
-  but a missing ``__all__`` previously left them reachable via
-  ``from qrisp.shor import *``
+* Renamed five internal ``qrisp.shor`` helper functions to be private
+  (leading underscore); none were part of the documented public API, but a
+  missing ``__all__`` previously left them reachable via ``import *``
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 .. Add API changes above this line
@@ -281,16 +248,9 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
-* Added test coverage for previously-untested code paths in the
-  ``BigInteger``/Jasp-Montgomery arithmetic backend (``coerce``,
-  ``get_larger``, ``create_dynamic``, ``bi_contfrac_convergents``,
-  ``bi_pow2mod``, ``pow2_mod_N``, ``egcd``, the mixed-``BigInteger``
-  dispatch of ``montgomery_encoder``/``montgomery_decoder``,
-  ``new_montgomery_decoder``, ``qq_montgomery_multiply_modulus``, and
-  ``cq_montgomery_mat_multiply``), and for Shor's algorithm/RSA
-  (``shors_algorithm.py``, ``crypto_tools.py``, and the static
-  ``modular_arithmetic/mod_tools.py``), none of which had any prior test
-  references
+* Added test coverage for previously-untested code in the
+  ``BigInteger``/Jasp-Montgomery backend and in Shor's algorithm/RSA,
+  none of which had any prior test references
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 Dependency Upgrades
