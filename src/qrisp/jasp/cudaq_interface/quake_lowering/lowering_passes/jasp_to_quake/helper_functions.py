@@ -1,0 +1,267 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Provide helper functions for Jasp-to-Quake lowering."""
+
+from xdsl.dialects import arith, tensor
+from xdsl.dialects.builtin import (
+    BFloat16Type,
+    DenseIntOrFPElementsAttr,
+    Float16Type,
+    Float32Type,
+    Float64Type,
+    IntegerAttr,
+    IntegerType,
+    TensorType,
+    f64,
+)
+from xdsl.ir import (
+    Attribute,
+    SSAValue,
+)
+from xdsl.pattern_rewriter import (
+    PatternRewriter,
+)
+from xdsl.rewriter import InsertPoint
+
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
+    QuakeRefType,
+    QuakeVeqType,
+    VeqSizeOp,
+    _make_gate_op,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import GateInfo
+from qrisp.jasp.mlir.xdsl_dialect import (
+    QuantumGateOp,
+    QuantumStateType,
+    QubitArrayType,
+    QubitType,
+)
+
+# ---------------------------------------------------------------------------
+# Helpers to identify Jasp types
+# ---------------------------------------------------------------------------
+
+
+def _is_qst(t: Attribute) -> bool:
+    """Return True if *t* is ``!jasp.QuantumState``."""
+    return isinstance(t, QuantumStateType)
+
+
+def _is_qubit_array(t: Attribute) -> bool:
+    """Return True if *t* is ``!jasp.QubitArray``."""
+    return isinstance(t, QubitArrayType)
+
+
+def _is_qubit(t: Attribute) -> bool:
+    """Return True if *t* is ``!jasp.Qubit``."""
+    return isinstance(t, QubitType)
+
+
+def _quake_type_for(jasp_type: Attribute) -> Attribute | None:
+    """Map a Jasp qubit type to its Quake equivalent, or None for qst."""
+    if _is_qubit_array(jasp_type):
+        return QuakeVeqType()
+    if _is_qubit(jasp_type):
+        return QuakeRefType()
+    return None  # QuantumState → dropped
+
+
+# ---------------------------------------------------------------------------
+# Numeric-type helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_qubit_type(t: Attribute) -> bool:
+    """Return True if *t* is any qubit/veq type (Jasp or Quake)."""
+    return isinstance(t, (QuakeRefType, QuakeVeqType)) or _is_qubit(t) or _is_qubit_array(t)
+
+
+def _is_numeric_type(t: Attribute) -> bool:
+    """Return True if *t* is a scalar or rank-0 tensor of int/float."""
+    scalar = t
+    if isinstance(t, TensorType):
+        if t.get_shape():  # only rank-0
+            return False
+        scalar = t.element_type
+    return isinstance(scalar, IntegerType) or _is_float_type(scalar)
+
+
+def _is_float_type(t: Attribute) -> bool:
+    """Return True for any xDSL float type."""
+    return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
+
+
+def _scalar_type_of(t: Attribute) -> Attribute:
+    """Return the scalar element type (unwrap rank-0 tensor if needed)."""
+    if isinstance(t, TensorType) and not t.get_shape():
+        return t.element_type
+    return t
+
+
+# ---------------------------------------------------------------------------
+# Numeric-type helpers for rewriter
+# ---------------------------------------------------------------------------
+
+
+def _coerce_to_f64_for_rewriter(val: SSAValue, rewriter: PatternRewriter) -> SSAValue:
+    """Extract from tensor if needed, then cast to f64."""
+    scalar_type = _scalar_type_of(val.type)
+    scalar = _extract_scalar_for_rewriter(val, scalar_type, rewriter)
+
+    if scalar.type == f64:
+        return scalar
+
+    if _is_float_type(scalar.type):
+        cast = arith.ExtFOp(scalar, f64)
+        rewriter.insert_op(cast, InsertPoint.before(rewriter.current_operation))
+        return cast.result
+
+    if isinstance(scalar.type, IntegerType):
+        cast = arith.SIToFPOp(scalar, f64)
+        rewriter.insert_op(cast, InsertPoint.before(rewriter.current_operation))
+        return cast.result
+
+    raise ValueError(f"Cannot coerce {scalar.type} to f64")
+
+
+def _try_get_constant_int(value: SSAValue) -> int | None:
+    """Return the compile-time integer value feeding *value*, if any.
+
+    Sees through a single ``tensor.extract`` (the standard rank-0
+    tensor-scalar round-trip emitted for jasp indices) down to the
+    underlying ``arith.constant`` (scalar or dense-tensor), else None.
+    """
+    owner = value.owner
+    if isinstance(owner, tensor.ExtractOp):
+        owner = owner.tensor.owner
+
+    if not isinstance(owner, arith.ConstantOp):
+        return None
+
+    attr = owner.value
+    if isinstance(attr, IntegerAttr):
+        return attr.value.data
+    if isinstance(attr, DenseIntOrFPElementsAttr):
+        values = list(attr.get_values())
+        if len(values) == 1:
+            return values[0]
+    return None
+
+
+def _normalize_index_for_veq_rewriter(veq: SSAValue, idx: SSAValue, rewriter: PatternRewriter) -> SSAValue:
+    """Python-style negative indexing: if idx < 0, return idx + size(veq).
+
+    When ``idx`` is already a compile-time constant, its sign is known
+    statically, so the cmpi/select scaffold is skipped: a non-negative
+    constant is used as-is, and a negative one only needs the addi (no
+    cmpi/select needed since the branch is resolved).
+    """
+    const_idx = _try_get_constant_int(idx)
+    if const_idx is not None:
+        if const_idx >= 0:
+            return idx
+        size = VeqSizeOp(veq)
+        idx_plus_size = arith.AddiOp(idx, size.result)
+        rewriter.insert_op([size, idx_plus_size], InsertPoint.before(rewriter.current_operation))
+        return idx_plus_size.result
+
+    size = VeqSizeOp(veq)
+    zero = arith.ConstantOp(IntegerAttr(0, 64))
+    is_neg = arith.CmpiOp(idx, zero.result, "slt")
+    idx_plus_size = arith.AddiOp(idx, size.result)
+    norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
+
+    rewriter.insert_op(
+        [size, zero, is_neg, idx_plus_size, norm],
+        InsertPoint.before(rewriter.current_operation),
+    )
+    return norm.result
+
+
+# ---------------------------------------------------------------------------
+# Tensor-extract helpers for rewriter
+# ---------------------------------------------------------------------------
+
+
+def _extract_scalar_for_rewriter(val: SSAValue, scalar_type: Attribute, rewriter: PatternRewriter) -> SSAValue:
+    """Insert ``tensor.extract`` if val is a tensor; return scalar SSAValue."""
+    if val.type == scalar_type:
+        return val
+    extract = tensor.ExtractOp(val, [], scalar_type)
+    rewriter.insert_op(extract, InsertPoint.before(rewriter.current_operation))
+    return extract.result
+
+
+def _wrap_scalar_for_rewriter(val: SSAValue, tensor_type: Attribute, rewriter: PatternRewriter) -> SSAValue:
+    """Insert ``tensor.from_elements`` to wrap scalar into tensor."""
+    if val.type == tensor_type:
+        return val
+    from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
+    rewriter.insert_op(from_elem, InsertPoint.before(rewriter.current_operation))
+    return from_elem.result
+
+
+# ---------------------------------------------------------------------------
+# Quantum-gate helpers
+# ---------------------------------------------------------------------------
+
+
+def _classify_gate_operands(op: QuantumGateOp, rewriter: PatternRewriter) -> tuple[list[SSAValue], list[SSAValue]]:
+    """Separate quantum-gate operands into qubits and converted parameters."""
+    qubit_operands: list[SSAValue] = []
+    param_operands: list[SSAValue] = []
+    for operand in op.operands:
+        if _is_qst(operand.type):
+            continue
+        if _is_qubit_type(operand.type):
+            qubit_operands.append(operand)
+        elif _is_numeric_type(operand.type):
+            param_operands.append(_coerce_to_f64_for_rewriter(operand, rewriter))
+        else:
+            qubit_operands.append(operand)
+    return qubit_operands, param_operands
+
+
+def _split_gate_operands(qubit_operands: list[SSAValue], gate_info: GateInfo) -> tuple[list[SSAValue], list[SSAValue]]:
+    """Split gate qubits into controls and targets according to gate metadata."""
+    if gate_info.num_controls == -1:
+        return qubit_operands[:-1], qubit_operands[-1:]
+    if gate_info.num_controls == 0:
+        return [], qubit_operands
+    return qubit_operands[: gate_info.num_controls], qubit_operands[gate_info.num_controls :]
+
+
+def _emit_gate(
+    gate_name: str,
+    gate_info: GateInfo,
+    gate_operands: tuple[list[SSAValue], list[SSAValue], list[SSAValue]],
+    rewriter: PatternRewriter,
+) -> None:
+    """Create and insert either a custom gate decomposition or a Quake gate."""
+    controls, param_operands, targets = gate_operands
+    final_params = param_operands[: gate_info.num_params]
+    if gate_info.emit is not None:
+        emitted_ops = gate_info.emit(controls, final_params, targets)
+        if not emitted_ops:
+            raise RuntimeError(f"Gate '{gate_name}' emit() returned empty list.")
+        rewriter.insert_op(emitted_ops, InsertPoint.before(rewriter.current_operation))
+        return
+
+    gate_op = _make_gate_op(gate_name, controls, final_params, targets)
+    if gate_op is None:
+        raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
+    rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))

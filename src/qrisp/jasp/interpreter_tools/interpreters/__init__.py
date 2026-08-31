@@ -26,3 +26,4 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import *
 from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import *
 from qrisp.jasp.interpreter_tools.interpreters.post_processing_interpreter import *
 from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import *
+from qrisp.jasp.interpreter_tools.interpreters.static_register_interpreter import *

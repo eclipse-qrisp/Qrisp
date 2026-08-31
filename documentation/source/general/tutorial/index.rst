@@ -379,3 +379,5 @@ So, take these concepts, experiment, and start building the future of quantum co
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb
+   CUDAQ.ipynb
+
