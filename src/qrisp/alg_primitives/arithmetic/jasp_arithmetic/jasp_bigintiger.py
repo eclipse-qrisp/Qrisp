@@ -15,8 +15,8 @@
 ********************************************************************************
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 import jax
 import jax.core
@@ -322,26 +322,6 @@ class BigInteger:
 
         _, result = lax.fori_loop(0, a.shape[0], add_step, (0, result))
         return BigInteger(result)
-
-    @jax.jit
-    def __sub_alt__(self, other: "BigInteger") -> "BigInteger":
-        """Alternative subtraction using bitwise complement identity.
-
-        Computes (self - other) as `~((~self) + other)` with wraparound
-        modulo 2^(32*n).
-
-        Parameters
-        ----------
-        other : BigInteger or int
-            Subtrahend.
-
-        Returns
-        -------
-        BigInteger
-            (self - other) mod 2^(32*n).
-
-        """
-        return ~((~self) + other)
 
     @jax.jit
     def __mul__(self, other: "BigInteger") -> "BigInteger":
@@ -913,8 +893,10 @@ class BigInteger:
 
             ms = lax.while_loop(cond_fun, body_fun, n - 1)
             limb = self.digits[ms]
-            # bit length of a 32-bit limb
-            limb_bits = jnp.floor(jnp.log2(jnp.float64(limb))).astype(jnp.int64) + 1
+            # Bit length of a 32-bit limb, via exact leading-zero count
+            # rather than float64 log2 (avoids relying on float precision
+            # for what is otherwise an exact integer computation).
+            limb_bits = jnp.int64(32) - jnp.int64(_clz32(limb))
             return jnp.int64(32) * jnp.int64(ms) + limb_bits
 
         return lax.cond(is_zero, lambda: jnp.int64(0), nonzero_len)

@@ -15,13 +15,18 @@
 ********************************************************************************
 """
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import modinv
 from qrisp.algorithms.shor import shors_alg
 
+if TYPE_CHECKING:
+    from qrisp.interface.backend import BackendLike
 
-def rsa_decrypt(e, N, cipher_int, backend=None):
+
+def rsa_decrypt(e: int, N: int, cipher_int: int, backend: "BackendLike | None" = None) -> int:
     """Decrypts an integer using factorization powered by Shor's algorithm.
 
     Parameters
@@ -63,7 +68,7 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
     phi = (p - 1) * (q - 1)
 
     # Calculate the private key
-    d = modinv(e, phi)
+    d = int(modinv(e, phi))
 
     # Decrypt the ciphertext
     plaintext = pow(cipher_int, d, N)
@@ -71,7 +76,7 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
     return plaintext
 
 
-def rsa_encrypt(e, N, message_int):
+def rsa_encrypt(e: int, N: int, message_int: int) -> int:
     """Encrypts an integer using a public key pair $(e,N)$.
 
     Parameters
@@ -106,7 +111,7 @@ def rsa_encrypt(e, N, message_int):
     return ciphertext
 
 
-def rsa_encrypt_string(e, N, message):
+def rsa_encrypt_string(e: int, N: int, message: str) -> str:
     """Encrypts an arbitrary Python string using RSA.
 
     Parameters
@@ -143,14 +148,14 @@ def rsa_encrypt_string(e, N, message):
 
     ciphertext = ""
 
-    for i in range(len(chunks)):
-        encrypted_int = rsa_encrypt(e, N, int(chunks[i], 2))
+    for chunk in chunks:
+        encrypted_int = rsa_encrypt(e, N, int(chunk, 2))
         ciphertext += bin(encrypted_int)[2:].zfill(chunksize + 1)
 
     return ciphertext
 
 
-def rsa_decrypt_string(e, N, ciphertext, backend=None):
+def rsa_decrypt_string(e: int, N: int, ciphertext: str, backend: "BackendLike | None" = None) -> str:
     """Decrypts a bitstring into a human readable string.
 
     Parameters
@@ -173,7 +178,10 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
     --------
     We decrypt the message we encrypted in the example of :meth:`rsa_encrypt_string <qrisp.shor.rsa_encrypt_string>`.
 
-    >>> ciphertext = '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
+    >>> ciphertext = (
+    ...     '0101000000010100101000110010011001001000010100001000110100001010001101'
+    ...     '0101110011101000100100011100000100000100110111101000011000111110111111'
+    ... )
     >>> from qrisp.shor import rsa_decrypt_string
     >>> rsa_decrypt_string(e = 7, N = 65, ciphertext = ciphertext)
     'Qrisp is awesome!'
@@ -193,22 +201,22 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
     phi = (p - 1) * (q - 1)
 
     # Calculate the private key
-    d = modinv(e, phi)
+    d = int(modinv(e, phi))
 
     chunksize = (N).bit_length()
 
     chunks = [ciphertext[i * chunksize : (i + 1) * chunksize] for i in range(int(np.ceil(len(ciphertext) / chunksize)))]
 
     plaintext_bitstring = ""
-    for i in range(len(chunks)):
-        cipher_int = int(chunks[i], 2)
+    for chunk in chunks:
+        cipher_int = int(chunk, 2)
         plaintext_int = pow(cipher_int, d, N)
         plaintext_bitstring += bin(plaintext_int)[2:].zfill(chunksize - 1)
 
     return bitstring_to_string(plaintext_bitstring)
 
 
-def bitstring_to_string(bitstring):
+def bitstring_to_string(bitstring: str) -> str:
     chars = []
     for i in range(0, len(bitstring) // 7 * 7, 7):
         byte = bitstring[i : i + 7] + " "

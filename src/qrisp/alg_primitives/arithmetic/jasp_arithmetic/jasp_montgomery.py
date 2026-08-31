@@ -15,7 +15,7 @@
 ********************************************************************************
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import QuantumArray, cx, swap, x
@@ -83,6 +83,13 @@ def q_montgomery_reduction(
     cx(qf[m + 1], qf[m])
 
 
+def _montgomery_radix(X: int | BigInteger, m: int) -> int | BigInteger:
+    """Build the Montgomery radix R = 2^m, matching X's limb width if X is a BigInteger."""
+    if isinstance(X, BigInteger):
+        return BigInteger.create(1, X.digits.shape[0]) << m
+    return 1 << m
+
+
 def cq_montgomery_multiply(
     X: int | BigInteger,
     y: QuantumFloat,
@@ -134,10 +141,7 @@ def cq_montgomery_multiply(
 
     """
     # Build R = 2^m with width matching X if BigInteger
-    if isinstance(X, BigInteger):
-        R = BigInteger.create(1, X.digits.shape[0]) << m
-    else:
-        R = 1 << m
+    R = _montgomery_radix(X, m)
 
     if not x_is_montgomery:
         X = montgomery_encoder(X, R, N)
@@ -222,11 +226,7 @@ def cq_montgomery_multiply_inplace(
         cq_montgomery_multiply(X, y, N, m, inpl_adder, x_is_montgomery, tmp)
 
         if x_is_montgomery:
-            if isinstance(X, BigInteger):
-                R = BigInteger.create(1, X.digits.shape[0]) << m
-                X = montgomery_decoder(X, R, N)
-            else:
-                X = montgomery_decoder(X, 1 << m, N)
+            X = montgomery_decoder(X, _montgomery_radix(X, m), N)
         X1 = modinv(X, N)
 
         if ctrl is not None:

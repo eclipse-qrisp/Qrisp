@@ -16,36 +16,37 @@
 """
 
 import jax.numpy as jnp
-from jax import lax
+from jax import Array, lax
 
 from qrisp import check_for_tracing_mode
 
 
-def montgomery_decoder(y, R, N):
+def montgomery_decoder(y: int | Array, R: int | float | Array, N: int | Array) -> int | float | Array:
     if 0 < R < 1:
         R = modinv(R**-1, N)
     return (y * modinv(R, N)) % N
 
 
-def montgomery_encoder(y, R, N):
+def montgomery_encoder(y: int | Array, R: int | float | Array, N: int) -> int:
     if 0 < R < 1:
         R = modinv(R**-1, N)
     return (int(y) % N * int(R) % N) % N
 
 
-def egcd(a, b):
+def egcd(
+    a: int | float | Array, b: int | float | Array
+) -> tuple[int | float | Array, int | float | Array, int | float | Array]:
     if a == 0:
         return (b, 0, 1)
-    else:
-        g, y, x = egcd(b % a, a)
-        return (g, x - (b // a) * y, y)
+    g, y, x = egcd(b % a, a)
+    return (g, x - (b // a) * y, y)
 
 
-def modinv(a, m):
+def modinv(a: int | float | Array, m: int | float | Array) -> int | float | Array:
     if check_for_tracing_mode():
 
         def cf(val):
-            t, new_t, r, new_r = val
+            _, _, _, new_r = val
             return new_r != 0
 
         def bf(val):
@@ -55,13 +56,12 @@ def modinv(a, m):
             r, new_r = new_r, r - quotient * new_r
             return t, new_t, r, new_r
 
-        t, new_t, r, new_r = lax.while_loop(cf, bf, (0, 1, m, a))
+        t, _, _, _ = lax.while_loop(cf, bf, (0, 1, m, a))
 
         # Ensure result is in [0, MOD)
         return jnp.where(t < 0, t + m, t)
-    else:
-        g, x, y = egcd(a, m)
-        if g != 1:
-            raise Exception("modular inverse does not exist")
-        else:
-            return x % m
+
+    g, x, _ = egcd(a, m)
+    if g != 1:
+        raise ValueError("modular inverse does not exist")
+    return x % m

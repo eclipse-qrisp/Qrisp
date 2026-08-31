@@ -15,11 +15,18 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
+from itertools import product
+from typing import TYPE_CHECKING
+
 import numpy as np
 from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 
 from qrisp import QuantumFloat, QuantumModulus, control, h
 from qrisp.alg_primitives import QFT
+
+if TYPE_CHECKING:
+    from qrisp.interface.measurement_result import DecodedMeasurementResult
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
 
 depths = []
@@ -27,7 +34,7 @@ cnot_count = []
 qubits = []
 
 
-def find_optimal_a(N):
+def find_optimal_a(N: int) -> list[int]:
     n = int(np.ceil(np.log2(N)))
     proposals = []
 
@@ -56,28 +63,18 @@ def find_optimal_a(N):
 
     proposals.sort(key=lambda a: cost_dic[a])
 
-    optimal_a = proposals[0]
-
-    m_values = []
-
-    for k in range(2 * n + 1):
-        inpl_multiplier = ((optimal_a) ** (2**k)) % N
-
-        if inpl_multiplier == 1:
-            continue
-
-        m_values.append(find_optimal_m(inpl_multiplier, N))
-
     return proposals
 
 
-def find_order(a, N, inpl_adder=None, mes_kwargs={}):
+def find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
+    if mes_kwargs is None:
+        mes_kwargs = {}
     qg = QuantumModulus(N, inpl_adder)
     qg[:] = 1
     qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
     h(qpe_res)
-    for i in range(len(qpe_res)):
-        with control(qpe_res[i]):
+    for qb in qpe_res:
+        with control(qb):
             qg *= a
             a = (a * a) % N
     QFT(qpe_res, inv=True, inpl_adder=inpl_adder)
@@ -87,7 +84,7 @@ def find_order(a, N, inpl_adder=None, mes_kwargs={}):
     return extract_order(mes_res, a, N)
 
 
-def extract_order(mes_res, a, N):
+def extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
 
     collected_r_values = []
 
@@ -106,7 +103,6 @@ def extract_order(mes_res, a, N):
                 return r
 
         collected_r_values.append(r_values)
-        from itertools import product
 
         for comb in product(*collected_r_values):
             r = np.lcm.reduce(comb)
@@ -114,14 +110,15 @@ def extract_order(mes_res, a, N):
                 return r
 
 
-def get_r_values(approx):
+def get_r_values(approx: int | float) -> list[int]:
     rationals = continued_fraction_convergents(continued_fraction_iterator(Rational(approx)))
     return [rat.q for rat in rationals if 1 < rat.q]
 
 
-def shors_alg(N, inpl_adder=None, mes_kwargs={}):
+def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
     """Performs `Shor's factorization algorithm <https://arxiv.org/abs/quant-ph/9508027>`_ on a given integer N.
-    The adder used for factorization can be customized. To learn more about this feature, please read :ref:`QuantumModulus`
+    The adder used for factorization can be customized. To learn more about
+    this feature, please read :ref:`QuantumModulus`
 
     Parameters
     ----------
@@ -130,7 +127,8 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     inpl_adder : callable, optional
         A function that performs in-place addition. The default is None.
     mes_kwargs : dict, optional
-        A dictionary of keyword arguments for :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`. This especially allows you to specify an execution backend. The default is {}.
+        A dictionary of keyword arguments for :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`.
+        This especially allows you to specify an execution backend. The default is {}.
 
     Returns
     -------
@@ -148,6 +146,9 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     """
     if not N % 2:
         return 2
+
+    if mes_kwargs is None:
+        mes_kwargs = {}
 
     a_proposals = find_optimal_a(N)
 
@@ -168,4 +169,8 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
         if g not in [N, 1]:
             res = g
             break
+    else:
+        raise RuntimeError(
+            f"Shor's algorithm failed to find a nontrivial factor of {N} using the given candidate bases"
+        )
     return res
