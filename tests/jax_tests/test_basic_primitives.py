@@ -467,3 +467,34 @@ def test_make_jaspr_return_shape():
 
     jaspr, out_tree = make_jaspr(env_function, flatten_envs=True, return_shape=True)()
     assert hasattr(jaspr, "jaxpr"), "Should work with flatten_envs"
+
+
+def test_abstract_types_equality_hash_and_repr():
+    """AbstractQubit/AbstractQubitArray/AbstractQuantumState's __eq__/__hash__/__repr__.
+
+    These are otherwise only exercised implicitly (JAX hashing avals internally,
+    str(jaspr) invoking __repr__ on the types it prints) -- never directly.
+    """
+    from qrisp.jasp.primitives import AbstractQuantumState, AbstractQubit, AbstractQubitArray
+
+    # Two fresh instances of the same type must compare equal and hash equal
+    # (this is what lets JAX treat separately-constructed instances as the
+    # same abstract value); different types must not compare equal.
+    assert AbstractQubit() == AbstractQubit()
+    assert hash(AbstractQubit()) == hash(AbstractQubit())
+    assert AbstractQubit() != AbstractQubitArray()
+    assert AbstractQubit() != AbstractQuantumState()
+
+    assert AbstractQubitArray() == AbstractQubitArray()
+    assert hash(AbstractQubitArray()) == hash(AbstractQubitArray())
+    assert AbstractQubitArray() != AbstractQuantumState()
+
+    assert AbstractQuantumState() == AbstractQuantumState()
+    assert hash(AbstractQuantumState()) == hash(AbstractQuantumState())
+    assert AbstractQuantumState() != AbstractQubit()
+
+    # repr is used when printing a Jaspr; each type must have a distinct,
+    # non-empty representation.
+    assert repr(AbstractQubit()) == "Qubit"
+    assert repr(AbstractQubitArray()) == "QubitArray"
+    assert repr(AbstractQuantumState()) == "QuantumState"

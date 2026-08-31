@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the qjit decorator, compiling Jasp functions to QIR and executing via the Catalyst runtime."""
 
 from jax.tree_util import tree_unflatten
 
@@ -21,8 +22,8 @@ from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def qjit(function=None, device=None):
-    """Decorator to leverage the jasp + Catalyst infrastructure to compile the given
-    function to QIR and run it on the Catalyst QIR runtime.
+    """Decorator that compiles the given function to QIR and runs it on the Catalyst QIR runtime via jasp + Catalyst.
+
     Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
     Parameters
@@ -85,11 +86,11 @@ def qjit(function=None, device=None):
     We execute the function a couple of times to demonstrate the randomness
 
     >>> test_fun(4)
-    [array(5.25, dtype=float64)]
+    Array(5.25, dtype=float64)
     >>> test_fun(5)
-    [array(3., dtype=float64)]
+    Array(3., dtype=float64)
     >>> test_fun(5)
-    [array(7.25, dtype=float64)]
+    Array(7.25, dtype=float64)
 
 
     For executing on "lightning.gpu" we specify the device:

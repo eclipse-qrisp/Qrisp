@@ -22,7 +22,7 @@ import sympy
 from jax import lax
 from jax.extend.core import ClosedJaxpr
 
-from qrisp import QuantumVariable, cx, h, mcx, measure, prepare, rxx, rzz, x, xxyy
+from qrisp import QuantumVariable, cx, h, mcx, measure, prepare, rxx, ryy, rzz, x, xxyy
 from qrisp.jasp import make_jaspr, qache, quantum_kernel
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
 from qrisp.jasp.primitives import quantum_gate_p
@@ -361,10 +361,10 @@ def test_decompose_constant_param_subgates():
     assert_same_unitary(jaspr_fixed, decomposed_fixed)
 
 
-@pytest.mark.parametrize("gate", [rxx, rzz])
+@pytest.mark.parametrize("gate", [rxx, ryy, rzz])
 def test_decompose_parametrized_rxx_rzz(gate):
-    """Rxx and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
-    expressions (-phi/2 and phi respectively).  Before the fix, the param
+    """Rxx, ryy, and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
+    expressions (-phi/2 and phi respectively). Before the fix, the param
     tracers were silently dropped during decomposition, leaving those sub-gates
     with no dynamic parameter invars.
 

@@ -240,6 +240,44 @@ def test_parity_count_ops_in_while():
     assert "parity" not in ops, "Parity should not be counted as an operation"
 
 
+def test_scan_count_ops_num_carry_one():
+    """Test that a jax.lax.scan with a single (non-tuple) carry is profiled by count_ops.
+
+    Regression test for two bugs found and fixed in evaluate_scan_under_trace
+    (control_flow_interpretation.py), both specific to num_carry == 1 (a bare,
+    non-tuple carry): an unguarded list(carry) call that crashed with
+    "TypeError: iteration over a 0-d array", and a carry/pytree structure
+    mismatch between scan's input and output that crashed with a jax.lax.scan
+    structure-mismatch error.
+    """
+    import jax
+    import jax.numpy as jnp
+
+    @count_ops(meas_behavior="0")
+    def test_scan_x_gates():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+
+        init_carry = jnp.int64(m0) + jnp.int64(m1) + jnp.int64(m2)
+        xs = jnp.array([1, 2, 3], dtype=jnp.int64)
+
+        def body(carry, xi):
+            return carry + xi, carry
+
+        # init_carry is a bare scalar, not a tuple -> num_carry == 1
+        final_carry, _ = jax.lax.scan(body, init_carry, xs)
+        return final_carry
+
+    ops = test_scan_x_gates()
+    assert ops["x"] == 2, f"Expected 2 x gates, got {ops.get('x', 0)}"
+    assert ops["measure"] == 3, f"Expected 3 measurements, got {ops.get('measure', 0)}"
+
+
 def test_callback_threshold_count_ops():
     """Test that count_ops with callback_threshold produces correct results.
 
