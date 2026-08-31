@@ -15,7 +15,8 @@
 ********************************************************************************
 """
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core import cx, cz
