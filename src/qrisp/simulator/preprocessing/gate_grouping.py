@@ -48,6 +48,8 @@ from qrisp.circuit import ClControlledOperation, Instruction, QuantumCircuit
 _WINDOW_SIZE = 100  # The number of instructions to consider in a single window for grouping.
 _CHUNK_SIZE = 62  # Bits per int64 chunk in the chunked qubit-bitmask path (62 to keep the sign bit free).
 _MAX_GROUP_QUBITS = 7  # A group's precalculated unitary is capped at this many qubits.
+_SCALAR_BITMASK_LIMIT = _CHUNK_SIZE + 1
+_GROUPING_RECURSION_PARAMETERS = ((16, 2), (20, 3), (24, 4), (28, 6), (32, 7), (34, 8))
 
 
 # This class is supposed to describe a group of instructions
@@ -63,6 +65,7 @@ class GroupedInstruction:
     # Using the qubits argument, is possible to provide a list of qubits, where the
     # instruction are acting on.
     def __init__(self, int_qc: IntegerCircuit, indices: list[int], qubits: list[Any] | None = None) -> None:
+        """Initialize a grouped instruction from circuit indices and qubits."""
         self.gate_signature_list = []
 
         if qubits is None:
@@ -132,7 +135,6 @@ class GroupedInstruction:
 # gain.
 def group_qc(qc: QuantumCircuit) -> QuantumCircuit:
     """Groups the instructions of a quantum circuit into larger blocks to reduce simulation overhead."""
-
     max_recursion_depth = optimal_grouping_recursion_parameter(len(qc.qubits)) + 12
 
     int_qc = IntegerCircuit(qc)
@@ -211,7 +213,6 @@ def find_grouping_options(
     current_idx: int,
 ) -> list[GroupedInstruction]:
     """Recursively finds all possible groupings of instructions starting from the current index."""
-
     hashable_qubits = tuple(qubits) if isinstance(qubits, np.ndarray) else qubits
     traversed_qb_sets.add(hashable_qubits)
 
@@ -253,7 +254,6 @@ def get_circuit_block_(
     current_idx: int,
 ) -> tuple[list[int], list[Any]]:
     """Determines which instructions can be grouped together based on the current set of qubits."""
-
     if int_qc.use_chunks:
         # Pass a copy: the chunked jitted function modifies the qubits array
         # in-place (qubits[c] = ...) and Numba propagates that back to the
@@ -298,6 +298,7 @@ def binary_get_circuit_block_jitted(
     current_idx: int,
 ) -> tuple[list[int], int]:
     """Determines which instructions can be grouped together based on the current set of qubits.
+
     Path A: Ultra-fast scalar bitwise logic for circuits < 63 qubits"""
     expansion_options = 0
     instruction_indices = []
@@ -364,6 +365,7 @@ def binary_get_circuit_block_jitted_chunked(
     num_chunks: int,
 ) -> tuple[list[int], np.ndarray]:
     """Determines which instructions can be grouped together based on the current set of qubits.
+
     Path B: Chunked-Vector logic for massive circuits >= 63 qubits"""
     expansion_options = np.zeros(num_chunks, dtype=np.int64)
     instruction_indices = []
@@ -477,6 +479,7 @@ class IntegerCircuit:
     """A representation of a quantum circuit using integer bitmasks for efficient processing."""
 
     def __init__(self, qc: QuantumCircuit) -> None:
+        """Initialize an integer bitmask representation of a quantum circuit."""
         self.source = qc
         self.qb_to_index = {qc.qubits[i]: i for i in range(len(qc.qubits))}
         self.n = len(qc.qubits)
@@ -491,7 +494,7 @@ class IntegerCircuit:
 
         self.is_unitary = np.array(is_unitary_list, dtype=np.bool_)
 
-        if self.n < 63:
+        if self.n < _SCALAR_BITMASK_LIMIT:
             self.use_chunks = False
             res_list = []
             for instr in qc.data:
@@ -516,17 +519,8 @@ class IntegerCircuit:
 # Empirically determined parameters that seem to work best.
 def optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
     """Determines the optimal recursion depth for grouping based on the number of qubits."""
-    if qubit_amount <= 16:
-        return 2
-    if 16 < qubit_amount <= 20:
-        return 3
-    if 20 < qubit_amount <= 24:
-        return 4
-    if 24 < qubit_amount <= 28:
-        return 6
-    if 28 < qubit_amount <= 32:
-        return 7
-    if 32 < qubit_amount < 35:
-        return 8
+    for threshold, recursion_depth in _GROUPING_RECURSION_PARAMETERS:
+        if qubit_amount <= threshold:
+            return recursion_depth
 
     return 8

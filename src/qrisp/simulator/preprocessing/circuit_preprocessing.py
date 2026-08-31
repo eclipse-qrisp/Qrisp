@@ -46,6 +46,8 @@ from qrisp.circuit import QuantumCircuit
 from qrisp.simulator.preprocessing.disentangling import insert_disentangling
 from qrisp.simulator.preprocessing.gate_grouping import group_qc
 
+_DISENTANGLING_QUBIT_THRESHOLD = 45
+
 
 def circuit_preprocessor(qc: QuantumCircuit) -> QuantumCircuit:
     """Preprocesses a quantum circuit by applying disentangling, grouping, and reordering operations."""
@@ -55,7 +57,7 @@ def circuit_preprocessor(qc: QuantumCircuit) -> QuantumCircuit:
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
-    if len(qc.qubits) > 45:
+    if len(qc.qubits) > _DISENTANGLING_QUBIT_THRESHOLD:
         qc = insert_disentangling(qc)
 
     qc = group_qc(qc)

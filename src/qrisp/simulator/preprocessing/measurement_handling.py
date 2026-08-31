@@ -70,12 +70,12 @@ def extract_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instr
         for qb in instr.qubits:
             try:
                 qubits.remove(qb)
-            except:
+            except ValueError:
                 pass
         for cb in instr.clbits:
             try:
                 clbits.remove(cb)
-            except:
+            except ValueError:
                 pass
 
     new_qc = qc.clearcopy()

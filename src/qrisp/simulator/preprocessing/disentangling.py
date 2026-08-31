@@ -90,6 +90,7 @@ class Disentangler(Operation):
     """A custom operation that indicates where the circuit can be split into separate branches for simulation."""
 
     def __init__(self, warning: bool = False):
+        """Initialize a disentangling operation."""
         super().__init__("disentangle", num_qubits=1)
         self.definition = QuantumCircuit(1)
         self.permeability = {0: False}

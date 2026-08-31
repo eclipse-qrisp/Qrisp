@@ -56,7 +56,6 @@ class BufferedQuantumState:
     """
 
     def __init__(self, simulator: Literal["qrisp", "stim"] = "qrisp") -> None:
-
         self.quantum_state: "QuantumState | stim.TableauSimulator"
         if simulator == "qrisp":
             self.quantum_state = QuantumState(n=0)
@@ -112,7 +111,6 @@ class BufferedQuantumState:
         removed from ``buffer_qc`` and ``qubit_to_index_dict``, and the
         buffer is cleared.
         """
-
         if self.simulator == "qrisp":
             assert isinstance(self.quantum_state, QuantumState)
             self.quantum_state = advance_quantum_state(

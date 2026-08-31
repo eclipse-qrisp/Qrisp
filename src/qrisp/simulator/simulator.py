@@ -16,20 +16,19 @@
 
 """Simulation entry points: shot-based sampling, statevector, single-shot, and incremental circuit execution."""
 
+import random
 import shutil
 import sys
 import threading
 
 import numpy as np
 from numba import njit
-import random
 from tqdm import tqdm
 
 from qrisp.circuit import QuantumCircuit, fast_append
 from qrisp.simulator.preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
-    extract_measurements,
     group_qc,
     insert_multiverse_measurements,
 )
@@ -440,6 +439,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
     -------
     QuantumState
         The quantum state after applying all instructions in ``qc``.
+
     """
     if len(qc.data) == 0:
         return quantum_state

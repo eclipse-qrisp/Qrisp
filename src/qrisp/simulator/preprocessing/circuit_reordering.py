@@ -65,13 +65,13 @@ always visits the child with the highest topological index first.
 
 from __future__ import annotations
 
+import itertools
 from collections import deque
 from collections.abc import Callable
-import itertools
 
 import networkx as nx
-from networkx import descendants, topological_sort
 import numpy as np
+from networkx import descendants, topological_sort
 
 from qrisp.circuit import Operation, QuantumCircuit
 
@@ -91,6 +91,7 @@ def reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = N
     -------
     QuantumCircuit
         The reordered quantum circuit.
+
     """
     if preferential_gates is None:
         preferential_gates = []
@@ -124,8 +125,8 @@ def nx_get_causal_graph(
         The causal graph of the quantum circuit.
     tuple[nx.DiGraph, list[int]]
         If get_non_unitary_nodes is True, also return a list of non-unitary nodes.
-    """
 
+    """
     if preferential_gates is None:
         preferential_gates = []
 
@@ -205,8 +206,8 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
     -------
     QuantumCircuit
         The reordered quantum circuit.
-    """
 
+    """
     if preferential_gates is None:
         preferential_gates = []
 
@@ -265,7 +266,6 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
         descendants of the starting node at once, sorts them based on their
         topological index, and applies the callback function sequentially.#
         """
-
         if node in visited_nodes:
             return
 
