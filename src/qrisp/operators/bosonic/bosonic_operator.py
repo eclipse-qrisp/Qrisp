@@ -49,18 +49,62 @@ class BosonicOperator(Hamiltonian):
         [a_i,a_j^{\dagger}] &= a_ia_j^{\dagger}-a_j^{\dagger}a_i = \delta_{ij}\\
         [a_i^{\dagger},a_j^{\dagger}] &= [a_i,a_j] = 0
 
+    In contrast to fermions, which can be represented by a two-dimensional Fock space, the bosonic Fock space is infinite-dimensional and needs to be truncated for representation on a quantum computer.
+    Furthermore, there are several possibilities to encode the single Fock states in qubit states. Three such encodings are supported:
+
+    - A one-hot encoding requires as many qubits as Fock states are represented. It is thus the most inefficient in terms of qubits, but typically leads to the smallest number of gates in Hamiltonian simulation.
+    - A standard binary encoding needs only $\log_2 n$ qubits to represent $n$ Fock states. E.g. when representing 8 Fock states, the qubit states $|000\rangle, |001\rangle, |010\rangle, \dots$ are mapped to the Fock states $|0\rangle, |1\rangle, |2\rangle, \dots$.
+    - A Gray code encoding works very similar to standard binary encoding, with the only difference that the qubit states are ordered differently such that subsequent states always differ in only one qubit. This is particularly efficient for the representation of ladder operators, which possess only one non-zero off-diagonal. Hence, gate count is typically slightly reduced compared to the standard binary encoding.
+
+    Details on these three encodings and their respective advantages and disadvantages can be found in https://www.nature.com/articles/s41534-020-0278-0.
+
+    The representation of bosonic ladder operators by finite matrices comes with the particular problem that it is impossible to get the correct bosonic commutation relations with finite matrices, as for a finite matrix $a$ we have $\mathrm{Tr}(aa^\dagger-a^\dagger a) = 0 \neq \mathrm{Tr}(\mathbb{1})$.
+    As a consequence, there is an ambiguity in the representation of bosonic operators, because applying the Fock space truncation before or after the application of a commutation relation can lead to different results.
+    Here, this ambiguity is removed by truncating the normal-ordered version (with all creators moved to the left) of an operator.
+
+    Both the truncation and the encoding need not to be specified until the point where a ``BosonicOperator`` is converted to a ``QubitOperator``. The latter becomes necessary internally also if its expectation value, ground state energy, sparse matrix representation or trotterized version are computed.
+    Until this point, a purely abstract representation of the operator is stored internally.
+
+    For convenience, the module contains also a function ``prepare_bosonic_fock_state`` that creates a qubit state representing a bosonic Fock state with a specific truncation and in a specific encoding.
+
     Examples
     --------
     A ladder term operator can be specified conveniently in terms of ``a_b`` (lowering, i.e., annihilation), ``c_b`` (raising, i.e., creation) operators:
 
     ::
-        
+
         from qrisp.operators.bosonic import a_b, c_b
 
         O = a_b(2)*c_b(1)+a_b(3)*c_b(2)
         O
 
     Yields $a_2c_1+a_3c_2$.
+
+    Convert an operator to a Pauli representation for a particular encoding and truncation:
+
+    ::
+        from qrisp.operators.bosonic import a_b, c_b
+
+        O = c_b(0)*a_b(0)
+
+        print(O.to_qubit_operator(truncation=3, binary_encoding="one_hot").to_pauli())
+        # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2) - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
+
+        print(O.to_qubit_operator(truncation=8, binary_encoding="standard_binary").to_pauli())
+        # yields 3.5 - 2.0*Z(0) - 1.0*Z(1) - 0.5*Z(2)
+
+        print(O.to_qubit_operator(truncation=8, binary_encoding="gray_code").to_pauli())
+        # yields 3.5 - 2.0*Z(0) - 1.0*Z(0)*Z(1) - 0.5*Z(0)*Z(1)*Z(2)
+
+    Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
+
+    ::
+        from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
+
+        O = c_b(0)*a_b(0)
+
+        O.expectation_value(prepare_bosonic_fock_state, truncation=8, binary_encoding="gray_code")(3, 8, "gray_code")
+        # yields 2.9999999999999996
 
     """
 
@@ -536,6 +580,7 @@ class BosonicOperator(Hamiltonian):
 
     def to_qubit_operator(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Transforms the BosonicOperator to a :ref:`QubitOperator`.
+        To that end, the bosonic Fock space is truncated to `truncation`. The remaining states are encoded in qubit states by one of three methods, a one-hot, standard binary or Gray code representation. See the general documentation of `BosonicOperator` and https://www.nature.com/articles/s41534-020-0278-0 for more details.
 
         Parameters
         ----------
@@ -548,6 +593,25 @@ class BosonicOperator(Hamiltonian):
         -------
         O : :ref:`QubitOperator`
             The resulting QubitOperator.
+
+        Examples
+        --------
+        Convert an operator to a Pauli representation for a particular encoding and truncation:
+
+        ::
+            from qrisp.operators.bosonic import a_b, c_b
+
+            O = c_b(0)*a_b(0)
+
+            print(O.to_qubit_operator(truncation=3, binary_encoding="one_hot").to_pauli())
+            # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2) - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
+
+            print(O.to_qubit_operator(truncation=8, binary_encoding="standard_binary").to_pauli())
+            # yields 3.5 - 2.0*Z(0) - 1.0*Z(1) - 0.5*Z(2)
+
+            print(O.to_qubit_operator(truncation=8, binary_encoding="gray_code").to_pauli())
+            # yields 3.5 - 2.0*Z(0) - 1.0*Z(0)*Z(1) - 0.5*Z(0)*Z(1)*Z(2)
+
         """
         if binary_encoding in ["gray_code", "standard_binary", "one_hot"]:
             res = QubitOperator({})
@@ -588,6 +652,19 @@ class BosonicOperator(Hamiltonian):
         callable
             A function returning an array containing the expectation value.
 
+
+        Examples
+        --------
+        Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
+
+        ::
+            from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
+
+            O = c_b(0)*a_b(0)
+
+            O.expectation_value(prepare_bosonic_fock_state, truncation=8, binary_encoding="gray_code")(3, 8, "gray_code")
+            # yields 2.9999999999999996
+
         """
         qubit_operator = self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding)
         return qubit_operator.expectation_value(state_prep, **measurement_kwargs)
@@ -597,7 +674,35 @@ class BosonicOperator(Hamiltonian):
     #
 
     def trotterization(self, truncation: int = 8, binary_encoding: str = "gray_code", forward_evolution: bool = True):
-        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization."""
+        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
+
+        Parameters
+        ----------
+        truncation : int, optional
+            How many bosonic occupation numbers to take into account
+        binary_encoding : str, optional
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
+
+        Returns
+        -------
+        callable
+            A function that takes a quantum variable qv and a time t as arguments and applies an evolution of exp(-itH) to qv, with H being the `BosonicOperator` instance itself.
+
+        Examples
+        --------
+        Apply an evolution with $H = a + a^\dagger$ to a Fock state:
+
+        ::
+            from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
+            H = a_b(0) + c_b(0)
+            N = c_b(0)*a_b(0)
+            U = H.trotterization(truncation=8, binary_encoding="gray_code")
+            psi = prepare_bosonic_fock_state(n=3, truncation=8, binary_encoding="gray_code")
+            U(psi, t=0.5)
+            N.expectation_value(lambda: psi, truncation=8, binary_encoding="gray_code")()
+            # yields ~4.1
+
+        """
         qubit_operator = self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding)
         return qubit_operator.trotterization(forward_evolution=forward_evolution)
 

@@ -27,7 +27,11 @@ from qrisp.operators.qubit import A, C, Z, P0, P1
 
 
 class BosonicTerm:
-    r""" """
+    r"""This class implements single bosonic terms, which are the constituents of `BosonicOperators`.
+    Such terms are internally represented by a list of 2-tuples, which store the modes onto which the ladder operators act and whether they are creation or annihilation operators.
+    For details on the conversion of bosonic operators to qubit operators and examples, see the documentation of the `BosonicOperator` class.
+
+    """
 
     def __init__(self, ladder_list=[]):
 
@@ -121,7 +125,13 @@ class BosonicTerm:
             The number of bosonic occupation numbers one wants to describe.
             Note that 0 also counts as an occupation number, so occupation numbers from 0 to truncation-1 are represented.
         binary_encoding: str, optional
-            How to embed the bosonic matrix into qubits. Possible values are "gray_code", "standard_binary" and "one_hot".
+            How to embed the bosonic matrix into qubits. Possible values are "gray_code", "standard_binary" and "one_hot". Default is "gray_code".
+
+        Returns
+        -------
+        QubitOperator
+            The qubit operator representation of the term. Depending on the binary_encoding, the size of the qubit operator is either equal to `truncation` ("one_hot" encoding) or to `int(np.ceil(np.log2(truncation)))` ("gray_code" and "standard_binary" encoding).
+
         """
         if not np.isclose(np.log2(truncation) % 1, 0) and binary_encoding != "one_hot":
             warnings.warn("truncation is not a power of 2, could be chosen larger with same amount of qubits.")
@@ -149,16 +159,17 @@ class BosonicTerm:
 
         for ind in indices_present:
             ladder_ops = [x[1] for x in self.ladder_list if x[0] == ind]
-            k = sum(ladder_ops)     # number of creators
+            k = sum(ladder_ops)  # number of creators
 
             # bring term into matrix form
-            M = np.identity(truncation+k)   # by temporarily increasing the matrix size to truncation+k we avoid ambiguities due to
-                                            # intermediate running out of truncated space (corresponds to normal ordering the operator first)
+            M = np.identity(
+                truncation + k
+            )  # by temporarily increasing the matrix size to truncation+k we avoid ambiguities due to intermediate running out of truncated space (corresponds to normal ordering the operator before truncation)
             for l in ladder_ops:
                 if l:
-                    M = c_matrix(truncation+k) @ M
+                    M = c_matrix(truncation + k) @ M
                 else:
-                    M = a_matrix(truncation+k) @ M
+                    M = a_matrix(truncation + k) @ M
 
             M = M[:truncation, :truncation]
 
