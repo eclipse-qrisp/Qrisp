@@ -136,6 +136,10 @@ Bug Fixes
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
 
+* Removed a stray double blank line in ``QubitOperator.simulate``, left behind
+  by an import-hoisting cleanup, which broke ``ruff format --check`` on
+  ``main`` right after merge.
+
 Compatibility
 -------------
 
@@ -234,6 +238,11 @@ Development
   ``type[BlockEncoding]``, and ``Hamiltonian``'s abstract methods were
   typed as returning ``None``, breaking every subclass override
   (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
+
+* Added a ``pull_request`` trigger to the ``ruff format --check`` workflow,
+  which previously ran only on pushes to ``main``. This meant formatting
+  regressions were never caught during PR review and only surfaced once
+  merged into ``main``.
 
 Dependency Upgrades
 -------------------

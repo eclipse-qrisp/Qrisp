@@ -2019,7 +2019,6 @@ class QubitOperator(Hamiltonian):
 
         """
 
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function
