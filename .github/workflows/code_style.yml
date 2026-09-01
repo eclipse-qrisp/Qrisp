@@ -22,9 +22,28 @@ permissions:
   checks: write
 
 jobs:
+  changes:
+    name: Detect src changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to a full commit SHA, matching the repo's convention for
+      # third-party actions.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+
   lint:
     name: ruff lint (reviewdog)
-    if: github.event_name == 'pull_request'
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
