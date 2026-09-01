@@ -23,7 +23,7 @@ Simulating a 50+ qubit statevector is practically impossible if fully entangled.
 However, many algorithms naturally "disentangle" certain qubits during execution
 (e.g., via measurements, resets, or specific uncomputations).
 
-- `insert_disentangling` identifies points in the circuit where wave-function
+- `_insert_disentangling` identifies points in the circuit where wave-function
   branches no longer interact.
 - It inserts a custom `disentangle` instruction. The simulator catches this and
   splits the massive simulation into smaller, separate, parallelizable wave-functions,
@@ -86,7 +86,7 @@ from qrisp.permeability.type_checker import is_permeable
 # U|1>|b> = exp(i*phi_1) |0> U_1 |b>
 
 
-class Disentangler(Operation):
+class _Disentangler(Operation):
     """A custom operation that indicates where the circuit can be split into separate branches for simulation."""
 
     def __init__(self, warning: bool = False):
@@ -97,7 +97,7 @@ class Disentangler(Operation):
         self.warning = warning
 
 
-def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
+def _insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
     """Inserts disentangling operations into the circuit where appropriate."""
     for qb in qc.qubits:
         qc.reset(qb)
@@ -124,7 +124,7 @@ def insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
                 qubit_index = instr.qubits.index(qubit)
 
                 if is_permeable(instr.op, [qubit_index]):
-                    reversed_data.insert(j + 1, Instruction(Disentangler(), [qubit]))
+                    reversed_data.insert(j + 1, Instruction(_Disentangler(), [qubit]))
                     disentangling_counter += 1
                     j += 1
                 else:

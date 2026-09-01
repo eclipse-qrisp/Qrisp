@@ -21,13 +21,13 @@ from qrisp.circuit import Instruction
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.standard_operations import Barrier, QubitAlloc, QubitDealloc
 from qrisp.simulator.preprocessing.measurement_handling import (
-    count_measurements_and_treat_alloc,
-    extract_measurements,
-    insert_multiverse_measurements,
+    _count_measurements_and_treat_alloc,
+    _extract_measurements,
+    _insert_multiverse_measurements,
 )
 
 # ---------------------------------------------------------------------------
-# count_measurements_and_treat_alloc
+# _count_measurements_and_treat_alloc
 # ---------------------------------------------------------------------------
 
 
@@ -39,7 +39,7 @@ class TestCountMeasurementsAndTreatAlloc:
         qc.measure(0, 0)
         qc.h(1)
         qc.measure(1, 1)
-        assert count_measurements_and_treat_alloc(qc) == 2
+        assert _count_measurements_and_treat_alloc(qc) == 2
 
     def test_removes_barrier_and_alloc(self):
         """Barrier and qb_alloc instructions are dropped entirely."""
@@ -47,18 +47,18 @@ class TestCountMeasurementsAndTreatAlloc:
         qc.data.append(Instruction(QubitAlloc(), [qc.qubits[0]]))
         qc.h(0)
         qc.data.append(Instruction(Barrier(1), [qc.qubits[0]]))
-        count_measurements_and_treat_alloc(qc)
+        _count_measurements_and_treat_alloc(qc)
         names = [instr.op.name for instr in qc.data]
         assert "qb_alloc" not in names
         assert "barrier" not in names
         assert names == ["h"]
 
     def test_dealloc_replaced_by_disentangler_when_insert_reset(self):
-        """With insert_reset=True, qb_dealloc becomes a Disentangler."""
+        """With insert_reset=True, qb_dealloc becomes a _Disentangler."""
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.data.append(Instruction(QubitDealloc(), [qc.qubits[0]]))
-        count_measurements_and_treat_alloc(qc, insert_reset=True)
+        _count_measurements_and_treat_alloc(qc, insert_reset=True)
         names = [instr.op.name for instr in qc.data]
         assert names == ["h", "disentangle"]
 
@@ -67,13 +67,13 @@ class TestCountMeasurementsAndTreatAlloc:
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.data.append(Instruction(QubitDealloc(), [qc.qubits[0]]))
-        count_measurements_and_treat_alloc(qc, insert_reset=False)
+        _count_measurements_and_treat_alloc(qc, insert_reset=False)
         names = [instr.op.name for instr in qc.data]
         assert names == ["h"]
 
 
 # ---------------------------------------------------------------------------
-# extract_measurements
+# _extract_measurements
 # ---------------------------------------------------------------------------
 
 
@@ -85,7 +85,7 @@ class TestExtractMeasurements:
         qc.measure(0, 0)
         qc.h(1)
         qc.measure(1, 1)
-        new_qc, mes_list = extract_measurements(qc)
+        new_qc, mes_list = _extract_measurements(qc)
         assert [instr.op.name for instr in new_qc.data] == ["h", "h"]
         assert len(mes_list) == 2
 
@@ -95,7 +95,7 @@ class TestExtractMeasurements:
         qc.h(0)
         qc.measure(0, 0)
         qc.x(0)
-        new_qc, mes_list = extract_measurements(qc)
+        new_qc, mes_list = _extract_measurements(qc)
         assert [instr.op.name for instr in new_qc.data] == ["h", "measure", "x"]
         assert len(mes_list) == 0
 
@@ -103,13 +103,13 @@ class TestExtractMeasurements:
         """A circuit without measurements returns an empty measurement list."""
         qc = QuantumCircuit(1)
         qc.h(0)
-        new_qc, mes_list = extract_measurements(qc)
+        new_qc, mes_list = _extract_measurements(qc)
         assert [instr.op.name for instr in new_qc.data] == ["h"]
         assert mes_list == []
 
 
 # ---------------------------------------------------------------------------
-# insert_multiverse_measurements
+# _insert_multiverse_measurements
 # ---------------------------------------------------------------------------
 
 
@@ -122,7 +122,7 @@ class TestInsertMultiverseMeasurements:
         qc.measure(0, 0)
         qc.x(0)
 
-        result_qc, measurements = insert_multiverse_measurements(qc)
+        result_qc, measurements = _insert_multiverse_measurements(qc)
 
         names = [instr.op.name for instr in result_qc.data]
         assert "measure" not in names
@@ -137,7 +137,7 @@ class TestInsertMultiverseMeasurements:
         qc.h(0)
         qc.measure(0, 0)
 
-        result_qc, measurements = insert_multiverse_measurements(qc)
+        result_qc, measurements = _insert_multiverse_measurements(qc)
 
         names = [instr.op.name for instr in result_qc.data]
         assert names == ["h", "disentangle"]

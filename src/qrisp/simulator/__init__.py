@@ -23,7 +23,6 @@ from qrisp.simulator.bi_arrays import (
     SparseBiArray,
     tensordot,
 )
-from qrisp.simulator.preprocessing import reorder_circuit
 from qrisp.simulator.quantum_state import QuantumState, TensorFactor
 from qrisp.simulator.simulator import *
 from qrisp.simulator.unitary_management import *

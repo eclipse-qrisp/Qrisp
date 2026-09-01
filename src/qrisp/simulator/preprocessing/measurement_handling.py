@@ -19,19 +19,19 @@
 Measurement and Allocation Management
 =====================================
 
-- `extract_measurements` and `count_measurements_and_treat_alloc` optimize
+- `_extract_measurements` and `_count_measurements_and_treat_alloc` optimize
   how classical measurements and temporary qubit allocations are handled.
-- `insert_multiverse_measurements` handles deferred measurement patterns by
+- `_insert_multiverse_measurements` handles deferred measurement patterns by
   introducing ancilla qubits and CNOT gates, ensuring probability distributions
     are correctly captured without breaking coherence prematurely.
 """
 
 from qrisp.circuit import ClControlledOperation, CXGate, Instruction, Measurement, QuantumCircuit
 from qrisp.permeability.type_checker import is_permeable
-from qrisp.simulator.preprocessing.disentangling import Disentangler
+from qrisp.simulator.preprocessing.disentangling import _Disentangler
 
 
-def count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool = True) -> int:
+def _count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool = True) -> int:
     """Counts the number of measurement instructions in the circuit and handles qubit allocation/deallocation."""
     counter = 0
     i = 0
@@ -48,14 +48,14 @@ def count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool = 
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(Disentangler(True), qubits=instr.qubits))
+                qc.data.insert(i, Instruction(_Disentangler(True), qubits=instr.qubits))
             else:
                 continue
         i += 1
     return counter
 
 
-def extract_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instruction]]:
+def _extract_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instruction]]:
     """Extracts measurement instructions from the circuit and returns a new circuit without them."""
     qubits = list(qc.qubits)
     clbits = list(qc.clbits)
@@ -83,7 +83,7 @@ def extract_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instr
     return new_qc, mes_list
 
 
-def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instruction]]:
+def _insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instruction]]:
     """Inserts multiverse measurements into the circuit to handle deferred measurement patterns."""
     new_data = []
     new_measurements = []
@@ -114,7 +114,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
                 if data[j].op.name == "measure" and data[j].qubits[0] == meas_qubit:
                     break
             else:
-                new_data.append(Instruction(Disentangler(), [meas_qubit]))
+                new_data.append(Instruction(_Disentangler(), [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
 
@@ -123,7 +123,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
 
             if next_instr_is_reset:
                 new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-                new_data.append(Instruction(Disentangler(), [meas_qubit]))
+                new_data.append(Instruction(_Disentangler(), [meas_qubit]))
 
             cb_to_qb_dic[instr.clbits[0]] = qb
             mes_instr = instr.copy()
@@ -131,7 +131,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
 
         elif instr.op.name == "reset":
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(Disentangler(), [meas_qubit]))
+            new_data.append(Instruction(_Disentangler(), [meas_qubit]))
 
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
@@ -143,7 +143,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
             new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-            new_data.append(Instruction(Disentangler(), [qb]))
+            new_data.append(Instruction(_Disentangler(), [qb]))
 
         elif isinstance(instr.op, ClControlledOperation):
             new_qubits = []
@@ -168,7 +168,7 @@ def insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, 
                 )
 
             for qb in control_qubits:
-                new_data.append(Instruction(Disentangler(), [qb]))
+                new_data.append(Instruction(_Disentangler(), [qb]))
         else:
             new_data.append(instr)
 

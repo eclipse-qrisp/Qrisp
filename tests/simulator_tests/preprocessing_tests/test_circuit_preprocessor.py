@@ -20,7 +20,7 @@ from __future__ import annotations
 import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.simulator.preprocessing import circuit_preprocessor
+from qrisp.simulator.preprocessing.circuit_preprocessing import _circuit_preprocessor
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -52,7 +52,7 @@ class TestCircuitPreprocessorEdgeCases:
     def test_empty_circuit_returns_copy(self):
         """An empty circuit is returned as an independent copy, untouched."""
         qc = QuantumCircuit(2)
-        result = circuit_preprocessor(qc)
+        result = _circuit_preprocessor(qc)
         assert len(result.data) == 0
         assert result is not qc
 
@@ -64,14 +64,14 @@ class TestCircuitPreprocessorUnitaryEquivalence:
     def test_random_circuit_unitary_preserved(self):
         """The full pipeline must not change the computed unitary."""
         qc = _random_circuit(n_qubits=5, depth=25, seed=7)
-        result = circuit_preprocessor(qc)
+        result = _circuit_preprocessor(qc)
         assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)
 
     def test_random_circuit_unitary_preserved_multiple_seeds(self):
         """Unitary equivalence holds across several random circuits."""
         for seed in range(5):
             qc = _random_circuit(n_qubits=4, depth=20, seed=seed)
-            result = circuit_preprocessor(qc)
+            result = _circuit_preprocessor(qc)
             assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)
 
 
@@ -83,7 +83,7 @@ class TestCircuitPreprocessorMeasurements:
         qc.cx(0, 1)
         qc.measure(0, 0)
         qc.h(2)
-        result = circuit_preprocessor(qc)
+        result = _circuit_preprocessor(qc)
         assert sum(1 for instr in result.data if instr.op.name == "measure") == 1
 
 
@@ -96,7 +96,7 @@ class TestCircuitPreprocessorDisentangling:
         qc.h(0)
         for i in range(49):
             qc.cx(i, i + 1)
-        result = circuit_preprocessor(qc)
+        result = _circuit_preprocessor(qc)
         assert any(instr.op.name == "disentangle" for instr in result.data)
 
     def test_disentangling_does_not_trigger_below_threshold(self):
@@ -105,5 +105,5 @@ class TestCircuitPreprocessorDisentangling:
         qc.h(0)
         for i in range(9):
             qc.cx(i, i + 1)
-        result = circuit_preprocessor(qc)
+        result = _circuit_preprocessor(qc)
         assert not any(instr.op.name == "disentangle" for instr in result.data)

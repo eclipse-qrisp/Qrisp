@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.simulator.preprocessing.disentangling import Disentangler, insert_disentangling
+from qrisp.simulator.preprocessing.disentangling import _Disentangler, _insert_disentangling
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -35,8 +35,8 @@ def _instr_key(qc: QuantumCircuit, instr) -> tuple:
 
 
 class TestInsertDisentanglingStructuralInvariants:
-    """insert_disentangling always appends one reset per qubit and only inserts
-    Disentangler markers, never altering the original computational instructions."""
+    """_insert_disentangling always appends one reset per qubit and only inserts
+    _Disentangler markers, never altering the original computational instructions."""
 
     def test_reset_appended_per_qubit(self):
         """One reset instruction is appended for every qubit."""
@@ -44,7 +44,7 @@ class TestInsertDisentanglingStructuralInvariants:
         qc.h(0)
         qc.x(1)
         qc.cx(1, 2)
-        result = insert_disentangling(qc)
+        result = _insert_disentangling(qc)
         assert sum(1 for instr in result.data if instr.op.name == "reset") == 3
 
     def test_original_instructions_preserved_in_order(self):
@@ -55,7 +55,7 @@ class TestInsertDisentanglingStructuralInvariants:
         qc.cx(0, 1)
         original = [_instr_key(qc, instr) for instr in qc.data]
 
-        result = insert_disentangling(qc)
+        result = _insert_disentangling(qc)
         filtered = [_instr_key(result, instr) for instr in result.data if instr.op.name not in ("reset", "disentangle")]
         assert filtered == original
 
@@ -64,17 +64,17 @@ class TestInsertDisentanglingStructuralInvariants:
         qc = QuantumCircuit(3, 1)
         qc.h(0)
         qc.measure(0, 0)
-        result = insert_disentangling(qc)
+        result = _insert_disentangling(qc)
         assert set(result.qubits) == set(qc.qubits)
         assert set(result.clbits) == set(qc.clbits)
 
     def test_disentangler_ops_are_single_qubit(self):
-        """Every inserted Disentangler instruction acts on exactly one qubit."""
+        """Every inserted _Disentangler instruction acts on exactly one qubit."""
         qc = QuantumCircuit(2)
         qc.h(0)
         qc.p(0.3, 0)
         qc.cx(0, 1)
-        result = insert_disentangling(qc)
+        result = _insert_disentangling(qc)
         for instr in result.data:
             if instr.op.name == "disentangle":
                 assert len(instr.qubits) == 1
@@ -82,20 +82,20 @@ class TestInsertDisentanglingStructuralInvariants:
     def test_empty_circuit(self):
         """An empty circuit still gets a terminal reset per qubit."""
         qc = QuantumCircuit(2)
-        result = insert_disentangling(qc)
+        result = _insert_disentangling(qc)
         assert sum(1 for instr in result.data if instr.op.name == "reset") == 2
 
 
 class TestDisentangler:
-    """Disentangler is a 1-qubit marker operation with trivial permeability."""
+    """_Disentangler is a 1-qubit marker operation with trivial permeability."""
 
     def test_name_and_qubit_count(self):
-        """Disentangler is named 'disentangle' and acts on a single qubit."""
-        op = Disentangler()
+        """_Disentangler is named 'disentangle' and acts on a single qubit."""
+        op = _Disentangler()
         assert op.name == "disentangle"
         assert op.num_qubits == 1
 
     def test_permeability_is_false(self):
-        """Disentangler is not permeable, so it blocks further grouping."""
-        op = Disentangler()
+        """_Disentangler is not permeable, so it blocks further grouping."""
+        op = _Disentangler()
         assert op.permeability == {0: False}

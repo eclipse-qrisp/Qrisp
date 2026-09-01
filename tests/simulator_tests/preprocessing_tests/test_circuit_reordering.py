@@ -20,7 +20,7 @@ from __future__ import annotations
 import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.simulator.preprocessing.circuit_reordering import reorder_circuit
+from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -63,7 +63,7 @@ class TestReorderCircuitStructuralInvariants:
     def test_instruction_count_preserved(self):
         """Reordering only permutes instructions, never adds or drops any."""
         qc = _random_circuit(4, 20, seed=1)
-        result = reorder_circuit(qc, [])
+        result = _reorder_circuit(qc, [])
         assert len(result.data) == len(qc.data)
 
     def test_causal_order_preserved_per_qubit(self):
@@ -75,13 +75,13 @@ class TestReorderCircuitStructuralInvariants:
         qc.measure(0, 0)
         qc.x(1)
 
-        result = reorder_circuit(qc, ["measure", "reset", "disentangle"])
+        result = _reorder_circuit(qc, ["measure", "reset", "disentangle"])
         assert _per_qubit_sequence(result) == _per_qubit_sequence(qc)
 
     def test_empty_circuit(self):
         """An empty circuit stays empty."""
         qc = QuantumCircuit(2)
-        result = reorder_circuit(qc, [])
+        result = _reorder_circuit(qc, [])
         assert len(result.data) == 0
 
 
@@ -94,12 +94,12 @@ class TestReorderCircuitUnitaryEquivalence:
     def test_random_circuit_unitary_preserved(self):
         """Reordering a random circuit must not change its unitary."""
         qc = _random_circuit(4, 20, seed=1)
-        result = reorder_circuit(qc, [])
+        result = _reorder_circuit(qc, [])
         assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)
 
     def test_random_circuit_unitary_preserved_multiple_seeds(self):
         """Unitary equivalence holds across several random circuits."""
         for seed in range(5):
             qc = _random_circuit(4, 20, seed=seed)
-            result = reorder_circuit(qc, [])
+            result = _reorder_circuit(qc, [])
             assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)

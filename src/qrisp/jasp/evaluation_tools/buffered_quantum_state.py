@@ -102,7 +102,7 @@ class BufferedQuantumState:
 
         For the "qrisp" backend, the buffered circuit is handed to
         qrisp.simulator.advance_quantum_state, which preprocesses
-        (e.g. gate-grouping via ``group_qc``) and executes it, advancing
+        (e.g. gate-grouping via ``_group_qc``) and executes it, advancing
         ``self.quantum_state`` in place. For the "stim" backend, each
         buffered instruction is dispatched to the corresponding
         stim.TableauSimulator method.

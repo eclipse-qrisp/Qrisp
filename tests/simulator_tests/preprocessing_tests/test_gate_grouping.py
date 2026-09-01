@@ -20,7 +20,7 @@ from __future__ import annotations
 import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.simulator.preprocessing.gate_grouping import IntegerCircuit, group_qc
+from qrisp.simulator.preprocessing.gate_grouping import _IntegerCircuit, _group_qc
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -53,19 +53,19 @@ def _random_circuit(n_qubits: int, depth: int, seed: int) -> QuantumCircuit:
 
 
 class TestGroupQcStructuralInvariants:
-    """group_qc must not add, drop, or illegally reorder any instruction."""
+    """_group_qc must not add, drop, or illegally reorder any instruction."""
 
     def test_empty_circuit(self):
         """An empty circuit stays empty."""
         qc = QuantumCircuit(3)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert _num_gates(result) == 0
 
     def test_single_gate_untouched(self):
         """A single gate has nothing to group with."""
         qc = QuantumCircuit(1)
         qc.h(0)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert _num_gates(result) == 1
 
     def test_disjoint_qubits_are_not_merged(self):
@@ -75,7 +75,7 @@ class TestGroupQcStructuralInvariants:
         qc.x(1)
         qc.y(2)
         qc.z(3)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert _num_gates(result) == _num_gates(qc)
 
     def test_connected_chain_is_merged(self):
@@ -88,7 +88,7 @@ class TestGroupQcStructuralInvariants:
         qc.cx(0, 1)
         qc.cx(1, 2)
         qc.cx(2, 3)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert _num_gates(result) == 1
 
     def test_measurement_blocks_grouping_across_it(self):
@@ -97,7 +97,7 @@ class TestGroupQcStructuralInvariants:
         qc.h(0)
         qc.measure(0, 0)
         qc.x(0)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         names = [instr.op.name for instr in result.data]
         assert names.count("measure") == 1
 
@@ -107,7 +107,7 @@ class TestGroupQcStructuralInvariants:
         qc.h(0)
         qc.cx(0, 1)
         qc.cx(2, 3)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert set(result.qubits) == set(qc.qubits)
 
 
@@ -122,14 +122,14 @@ class TestGroupQcUnitaryEquivalence:
     def test_random_circuit_unitary_preserved(self):
         """Grouping a random circuit must not change its unitary."""
         qc = _random_circuit(n_qubits=5, depth=30, seed=42)
-        result = group_qc(qc)
+        result = _group_qc(qc)
         assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)
 
     def test_random_circuit_unitary_preserved_multiple_seeds(self):
         """Unitary equivalence holds across several random circuits."""
         for seed in range(5):
             qc = _random_circuit(n_qubits=4, depth=20, seed=seed)
-            result = group_qc(qc)
+            result = _group_qc(qc)
             assert np.allclose(qc.get_unitary(), result.get_unitary(), atol=1e-6)
 
 
@@ -145,13 +145,13 @@ class TestIntegerCircuitDualPath:
         """Below 63 qubits, the scalar int64 bitmask path is used."""
         qc = QuantumCircuit(62)
         qc.h(0)
-        assert IntegerCircuit(qc).use_chunks is False
+        assert _IntegerCircuit(qc).use_chunks is False
 
     def test_chunked_path_at_and_above_threshold(self):
         """At 63 qubits and above, the chunked bitmask path is used."""
         qc = QuantumCircuit(63)
         qc.h(0)
-        assert IntegerCircuit(qc).use_chunks is True
+        assert _IntegerCircuit(qc).use_chunks is True
 
     def test_grouping_reduces_instruction_count_across_the_boundary(self):
         """A fully-connected chain circuit is grouped down to fewer
@@ -163,5 +163,5 @@ class TestIntegerCircuitDualPath:
                 qc.h(i)
             for i in range(n - 1):
                 qc.cx(i, i + 1)
-            result = group_qc(qc)
+            result = _group_qc(qc)
             assert _num_gates(result) < _num_gates(qc)

@@ -36,29 +36,28 @@ submodules into a single preprocessing pipeline:
 4. :mod:`~qrisp.simulator.preprocessing.circuit_reordering` -- Circuit
     Reordering
 
-The :func:`circuit_preprocessor` function evaluates the incoming circuit,
+The :func:`_circuit_preprocessor` function evaluates the incoming circuit,
 applies disentangling if the circuit is dangerously wide, groups the gates for
 performance, and finally reorders the circuit to safely push measurements,
 resets, and disentanglers to the end of execution blocks.
 """
 
 from qrisp.circuit import QuantumCircuit
-from qrisp.simulator.preprocessing.disentangling import insert_disentangling
-from qrisp.simulator.preprocessing.gate_grouping import group_qc
+from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
+from qrisp.simulator.preprocessing.disentangling import _insert_disentangling
+from qrisp.simulator.preprocessing.gate_grouping import _group_qc
 
 _DISENTANGLING_QUBIT_THRESHOLD = 45
 
 
-def circuit_preprocessor(qc: QuantumCircuit) -> QuantumCircuit:
+def _circuit_preprocessor(qc: QuantumCircuit) -> QuantumCircuit:
     """Preprocesses a quantum circuit by applying disentangling, grouping, and reordering operations."""
-    from qrisp.simulator import reorder_circuit
-
     if len(qc.data) == 0:
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
     if len(qc.qubits) > _DISENTANGLING_QUBIT_THRESHOLD:
-        qc = insert_disentangling(qc)
+        qc = _insert_disentangling(qc)
 
-    qc = group_qc(qc)
-    return reorder_circuit(qc, ["measure", "reset", "disentangle"])
+    qc = _group_qc(qc)
+    return _reorder_circuit(qc, ["measure", "reset", "disentangle"])

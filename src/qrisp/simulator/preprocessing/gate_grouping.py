@@ -22,14 +22,14 @@ Gate Grouping (Instruction Merging)
 Applying many small unitary matrices (e.g., 1-qubit or 2-qubit gates) to a
 massive 2^n statevector is inefficient due to high memory bandwidth usage.
 
-- The `GroupedInstruction` class and `group_qc` function recursively search
+- The `_GroupedInstruction` class and `_group_qc` function recursively search
   the circuit for sets of small, adjacent, or commuting gates.
 - These gates are grouped together so their combined "medium-sized" unitary
   can be pre-calculated. Applying one medium unitary saves millions of
   floating-point operations (FLOPs) compared to applying many small ones.
-- To make this search fast, `IntegerCircuit` translates the circuit into a
+- To make this search fast, `_IntegerCircuit` translates the circuit into a
   bitwise representation, allowing the Numba-jitted search functions
-  (`binary_get_circuit_block_jitted`, `binary_get_circuit_block_jitted_chunked`)
+    (`_binary_get_circuit_block_jitted`, `_binary_get_circuit_block_jitted_chunked`)
   to evaluate gate commutativity using ultra-fast bitwise logic.
   It features a dual-path that vectorizes qubit bitmasks into chunks to bypass
     64-bit memory limitations on massive statevector simulations.
@@ -57,14 +57,14 @@ _GROUPING_RECURSION_PARAMETERS = ((16, 2), (20, 3), (24, 4), (28, 6), (32, 7), (
 # to precalculate their unitary. This saves alot of time because applying
 # a medium size unitary on a large statevector is more efficient than applying
 # many small unitaries. This estimation is elaborated in the calc_gain method.
-class GroupedInstruction:
+class _GroupedInstruction:
     """Represents a group of quantum instructions that can be merged for efficient simulation."""
 
     # The constructor takes a list of instruction (for instance from a quantum circuit)
     # and a list of indices, which describe which instruction to include in the group
     # Using the qubits argument, is possible to provide a list of qubits, where the
     # instruction are acting on.
-    def __init__(self, int_qc: IntegerCircuit, indices: list[int], qubits: list[Any] | None = None) -> None:
+    def __init__(self, int_qc: _IntegerCircuit, indices: list[int], qubits: list[Any] | None = None) -> None:
         """Initialize a grouped instruction from circuit indices and qubits."""
         self.gate_signature_list = []
 
@@ -73,7 +73,7 @@ class GroupedInstruction:
             for i in indices:
                 qubit_set |= int_qc.data[i]
 
-            self.qubits = int_to_qb_set_generic(qubit_set, int_qc.source)
+            self.qubits = _int_to_qb_set_generic(qubit_set, int_qc.source)
         else:
             self.qubits = list(set(qubits))
 
@@ -133,11 +133,11 @@ class GroupedInstruction:
 
 # The idea is now to iterate through different groupings and find the one with the most
 # gain.
-def group_qc(qc: QuantumCircuit) -> QuantumCircuit:
+def _group_qc(qc: QuantumCircuit) -> QuantumCircuit:
     """Groups the instructions of a quantum circuit into larger blocks to reduce simulation overhead."""
-    max_recursion_depth = optimal_grouping_recursion_parameter(len(qc.qubits)) + 12
+    max_recursion_depth = _optimal_grouping_recursion_parameter(len(qc.qubits)) + 12
 
-    int_qc = IntegerCircuit(qc)
+    int_qc = _IntegerCircuit(qc)
     num_instructions = len(int_qc.data)
     processed = np.zeros(num_instructions, dtype=bool)
 
@@ -155,7 +155,7 @@ def group_qc(qc: QuantumCircuit) -> QuantumCircuit:
             current_idx += 1
             continue
 
-        group = find_group(int_qc, max_recursion_depth, current_idx, processed)
+        group = _find_group(int_qc, max_recursion_depth, current_idx, processed)
 
         final_data.append(group.get_instruction())
 
@@ -171,9 +171,9 @@ def group_qc(qc: QuantumCircuit) -> QuantumCircuit:
     return grouped_qc
 
 
-def find_group(
-    int_qc: IntegerCircuit, max_recursion_depth: int, current_idx: int, processed: np.ndarray
-) -> GroupedInstruction:
+def _find_group(
+    int_qc: _IntegerCircuit, max_recursion_depth: int, current_idx: int, processed: np.ndarray
+) -> _GroupedInstruction:
     """Finds the best grouping of instructions starting from the current index."""
     traversed_qb_sets = set()
     # For the chunked path int_qc.data[i] is a row-view of the 2D array; copy
@@ -181,7 +181,7 @@ def find_group(
     # corrupt int_qc.data for subsequent instructions.
     initial_qubits = int_qc.data[current_idx].copy() if int_qc.use_chunks else int_qc.data[current_idx]
 
-    options = find_grouping_options(
+    options = _find_grouping_options(
         int_qc=int_qc,
         traversed_qb_sets=traversed_qb_sets,
         max_recursion_depth=max_recursion_depth,
@@ -203,37 +203,37 @@ def find_group(
 
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
-def find_grouping_options(
-    int_qc: IntegerCircuit,
+def _find_grouping_options(
+    int_qc: _IntegerCircuit,
     traversed_qb_sets: set,
     max_recursion_depth: int,
     qubits: int | np.ndarray,
     established_indices: list[int],
     processed: np.ndarray,
     current_idx: int,
-) -> list[GroupedInstruction]:
+) -> list[_GroupedInstruction]:
     """Recursively finds all possible groupings of instructions starting from the current index."""
     hashable_qubits = tuple(qubits) if isinstance(qubits, np.ndarray) else qubits
     traversed_qb_sets.add(hashable_qubits)
 
-    instruction_indices, expansion_options = get_circuit_block_(
+    instruction_indices, expansion_options = _get_circuit_block(
         int_qc, qubits, established_indices, processed, current_idx
     )
 
-    qb_list = int_to_qb_set_generic(qubits, int_qc.source)
-    options = [GroupedInstruction(int_qc, instruction_indices, qb_list)]
+    qb_list = _int_to_qb_set_generic(qubits, int_qc.source)
+    options = [_GroupedInstruction(int_qc, instruction_indices, qb_list)]
 
     if len(expansion_options) == 0 or max_recursion_depth == 0 or len(qb_list) >= _MAX_GROUP_QUBITS:
         return options
 
     for i in range(len(expansion_options)):
-        opt_int = qb_set_to_int_generic([expansion_options[i]], int_qc)
+        opt_int = _qb_set_to_int_generic([expansion_options[i]], int_qc)
         proposed_set = qubits | opt_int
 
         prop_hashable = tuple(proposed_set) if isinstance(proposed_set, np.ndarray) else proposed_set
 
         if prop_hashable not in traversed_qb_sets:
-            options += find_grouping_options(
+            options += _find_grouping_options(
                 int_qc=int_qc,
                 traversed_qb_sets=traversed_qb_sets,
                 max_recursion_depth=max_recursion_depth - 1,
@@ -246,8 +246,8 @@ def find_grouping_options(
     return options
 
 
-def get_circuit_block_(
-    int_qc: IntegerCircuit,
+def _get_circuit_block(
+    int_qc: _IntegerCircuit,
     qubits: int | np.ndarray,
     established_indices: list[int],
     processed: np.ndarray,
@@ -258,8 +258,8 @@ def get_circuit_block_(
         # Pass a copy: the chunked jitted function modifies the qubits array
         # in-place (qubits[c] = ...) and Numba propagates that back to the
         # caller.  Without a copy the caller's qubits variable would be
-        # corrupted, causing GroupedInstruction to miss qubit entries.
-        instruction_indices, expansion_options = binary_get_circuit_block_jitted_chunked(
+        # corrupted, causing _GroupedInstruction to miss qubit entries.
+        instruction_indices, expansion_options = _binary_get_circuit_block_jitted_chunked(
             int_qc.data,
             int_qc.is_unitary,
             qubits.copy(),
@@ -269,7 +269,7 @@ def get_circuit_block_(
             int_qc.num_chunks,
         )
     else:
-        instruction_indices, expansion_options = binary_get_circuit_block_jitted(
+        instruction_indices, expansion_options = _binary_get_circuit_block_jitted(
             int_qc.data,
             int_qc.is_unitary,
             qubits,
@@ -278,7 +278,7 @@ def get_circuit_block_(
             current_idx,
         )
 
-    return instruction_indices, int_to_qb_set_generic(expansion_options, int_qc.source)
+    return instruction_indices, _int_to_qb_set_generic(expansion_options, int_qc.source)
 
 
 # ==============================================================================
@@ -289,7 +289,7 @@ def get_circuit_block_(
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
 @njit(cache=True)
-def binary_get_circuit_block_jitted(
+def _binary_get_circuit_block_jitted(
     int_qc_data: np.ndarray,
     is_unitary: np.ndarray,
     qubits: int,
@@ -355,7 +355,7 @@ def binary_get_circuit_block_jitted(
 
 
 @njit(cache=True)
-def binary_get_circuit_block_jitted_chunked(
+def _binary_get_circuit_block_jitted_chunked(
     int_qc_data: np.ndarray,
     is_unitary: np.ndarray,
     qubits: np.ndarray,
@@ -432,7 +432,7 @@ def binary_get_circuit_block_jitted_chunked(
 # ==============================================================================
 
 
-def int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[Any]:
+def _int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[Any]:
     """Converts an integer or array of integers representing qubit indices into a list of qubit objects."""
     res = []
     if isinstance(data, np.ndarray):
@@ -458,7 +458,7 @@ def int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[An
     return res
 
 
-def qb_set_to_int_generic(qubits: list[Any], int_qc: IntegerCircuit) -> int | np.ndarray:
+def _qb_set_to_int_generic(qubits: list[Any], int_qc: _IntegerCircuit) -> int | np.ndarray:
     """Converts a list of qubit objects into an integer or array of integers representing their indices."""
     if int_qc.use_chunks:
         res = np.zeros(int_qc.num_chunks, dtype=np.int64)
@@ -475,7 +475,7 @@ def qb_set_to_int_generic(qubits: list[Any], int_qc: IntegerCircuit) -> int | np
     return res
 
 
-class IntegerCircuit:
+class _IntegerCircuit:
     """A representation of a quantum circuit using integer bitmasks for efficient processing."""
 
     def __init__(self, qc: QuantumCircuit) -> None:
@@ -517,7 +517,7 @@ class IntegerCircuit:
 
 
 # Empirically determined parameters that seem to work best.
-def optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
+def _optimal_grouping_recursion_parameter(qubit_amount: int) -> int:
     """Determines the optimal recursion depth for grouping based on the number of qubits."""
     for threshold, recursion_depth in _GROUPING_RECURSION_PARAMETERS:
         if qubit_amount <= threshold:

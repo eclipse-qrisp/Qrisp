@@ -76,7 +76,7 @@ from networkx import descendants, topological_sort
 from qrisp.circuit import Operation, QuantumCircuit
 
 
-def reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
+def _reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
     """
     Reorder the given quantum circuit based on a topological sorting of its causal graph.
 
@@ -96,10 +96,10 @@ def reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = N
     if preferential_gates is None:
         preferential_gates = []
 
-    return nx_reorder_circuit(qc, preferential_gates)
+    return _nx_reorder_circuit(qc, preferential_gates)
 
 
-def nx_get_causal_graph(
+def _nx_get_causal_graph(
     qc: QuantumCircuit,
     inverted: bool = False,
     get_non_unitary_nodes: bool = False,
@@ -191,7 +191,7 @@ def nx_get_causal_graph(
     return graph
 
 
-def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
+def _nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None = None) -> QuantumCircuit:
     """
     Reorder the given quantum circuit based on a topological sorting of its causal graph.
 
@@ -215,7 +215,7 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
         qc.append(Operation("final_op", num_qubits=1), [qb])
 
     # Acquire causal graph
-    graph, non_unitary_nodes = nx_get_causal_graph(
+    graph, non_unitary_nodes = _nx_get_causal_graph(
         qc,
         inverted=True,
         get_non_unitary_nodes=True,
@@ -256,7 +256,7 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
 
     visited_nodes = set()
 
-    def topological_desc_traversal(
+    def _topological_desc_traversal(
         graph: nx.DiGraph, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
     ) -> None:
         """
@@ -278,7 +278,7 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
 
         callback(node)
 
-    def topological_df_traversal(
+    def _topological_df_traversal(
         graph: nx.DiGraph, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
     ) -> None:
         """
@@ -298,7 +298,7 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
         # Recursively traverse
         for n in neighbors:
             if n not in visited_nodes:
-                topological_df_traversal(graph, n, tp_dic, callback)
+                _topological_df_traversal(graph, n, tp_dic, callback)
 
         callback(node)
 
@@ -324,7 +324,7 @@ def nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None 
                 visited_nodes.add(x)
 
         # Traverse causal graph
-        topological_desc_traversal(graph, evaluation_node, tp_dic, callback)
+        _topological_desc_traversal(graph, evaluation_node, tp_dic, callback)
         # topological_df_traversal(graph, evaluation_node, tp_dic, callback)
 
         # Create circuit
