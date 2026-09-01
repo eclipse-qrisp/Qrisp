@@ -305,10 +305,10 @@ class BosonicOperator(Hamiltonian):
 
         return True
 
-    def __neg__(self):
+    def __neg__(self) -> Self:
         return -1 * self
 
-    def __add__(self, other: Self):
+    def __add__(self, other: int | float | complex | Self) -> Self:
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -342,7 +342,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __sub__(self, other: Self):
+    def __sub__(self, other: int | float | complex | Self) -> Self:
         """Returns the difference of the operator self and other.
 
         Parameters
@@ -376,7 +376,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __rsub__(self, other: Self):
+    def __rsub__(self, other: int | float | complex | Self) -> Self:
         """Returns the difference of the operator other and self.
 
         Parameters
@@ -410,7 +410,7 @@ class BosonicOperator(Hamiltonian):
         result = BosonicOperator(res_terms_dict)
         return result
 
-    def __mul__(self, other: Self):
+    def __mul__(self, other: int | float | complex | Self) -> Self:
         """Returns the product of the operator self and other.
 
         Parameters
@@ -442,7 +442,7 @@ class BosonicOperator(Hamiltonian):
     __radd__ = __add__
     __rmul__ = __mul__
 
-    def __pow__(self, exp: int):
+    def __pow__(self, exp: int) -> Self:
         """Returns the operator self exponentiated by int.
 
         Parameters
@@ -469,7 +469,7 @@ class BosonicOperator(Hamiltonian):
     # Inplace arithmetic
     #
 
-    def __iadd__(self, other: Self):
+    def __iadd__(self, other: int | float | complex | Self) -> Self:
         """Adds other to the operator self.
 
         Parameters
@@ -491,7 +491,7 @@ class BosonicOperator(Hamiltonian):
         self.terms_dict = BosonicOperator(self.terms_dict).terms_dict
         return self
 
-    def __isub__(self, other: Self):
+    def __isub__(self, other: int | float | complex | Self) -> Self:
         """Substracts other from the operator self.
 
         Parameters
@@ -512,7 +512,7 @@ class BosonicOperator(Hamiltonian):
                 del self.terms_dict[ladder_term]
         return self
 
-    def __imul__(self, other: Self):
+    def __imul__(self, other: int | float | complex | Self) -> Self:
         """Multiplys other to the operator self.
 
         Parameters
