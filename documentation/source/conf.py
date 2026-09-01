@@ -145,17 +145,22 @@ html_theme_options = {
     ],
     "navbar_start": ["navbar-logo"],
     "navbar_center": ["navbar-nav"],
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],
     "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygment_light_style": "lovelace",
+    "pygment_dark_style": "monokai",
     "secondary_sidebar_items": [
         "page-toc.html",
         "discord_link.html",
         "dynamic_sidebar.html",
         "thebe_button.html",
     ],
+    "logo": {
+        "image_light": "../../logo/qrisp_logo.png",
+        "image_dark": "../../logo/qrisp_logo_with_contour.png",
+    },
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs"],
@@ -185,9 +190,6 @@ html_static_path = ["_static"]
 html_show_sourcelink = False
 
 html_favicon = "../../logo/qrisp_favicon.png"
-
-# html_logo = "../../logo/logo_extended.png"
-html_logo = "../../logo/qrisp_logo.png"
 
 
 add_module_names = False

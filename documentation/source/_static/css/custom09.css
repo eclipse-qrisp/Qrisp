@@ -22,6 +22,11 @@ html[data-theme="dark"] {
   --pst-color-plot-background: rgb(218, 219, 220);
 }
 
+html[data-theme="dark"] .bd-content img:not(.only-dark, .only-light) {
+  background-color: transparent !important;
+  border-radius: 0 !important;
+}
+
 /* PyDataSphinx link underlining overide */
 .bd-header .navbar-nav li a.nav-link:hover {
   text-decoration: none !important;
@@ -114,10 +119,17 @@ div.nboutput.container div.prompt
     padding: 0px 0px 19px;
 }
 
+html[data-theme="dark"] .thebelab-cell {
+    background-color: #1e1e2e;
+}
 
 .jp-OutputArea > :first-child {
     padding-top: 1em !important;
     border-top: 1px solid #aaa;
+}
+
+html[data-theme="dark"] .jp-OutputArea > :first-child {
+    border-top-color: #45475a;
 }
 
 .thebelab-cell .jp-OutputArea {
@@ -146,6 +158,27 @@ div.nboutput.container div.prompt
 
 .cm-s-default .cm-string {
   color: #b83838 !important;
+}
+
+html[data-theme="dark"] .cm-s-default .cm-keyword {
+  color: #89b4fa !important;
+}
+
+html[data-theme="dark"] .cm-s-default .cm-variable {
+  color: #cdd6f4 !important;
+}
+
+html[data-theme="dark"] .cm-s-default .cm-builtin {
+  color: #a6e3a1 !important;
+}
+
+html[data-theme="dark"] .cm-s-default .cm-comment {
+  color: #6c7086 !important;
+  font-style: italic !important;
+}
+
+html[data-theme="dark"] .cm-s-default .cm-string {
+  color: #f38ba8 !important;
 }
 
 /* run button */ 
@@ -195,6 +228,10 @@ button.sidebar-button.thebelab-run-button::before {
   -webkit-animation: spin 2s linear infinite;
   animation: spin 0.5s linear infinite !important;
   margin-left: 0.8em;
+}
+
+html[data-theme="dark"] .thebelab-busy-spinner {
+  border-color: #313244;
 }
 
 /* Quantum Color */

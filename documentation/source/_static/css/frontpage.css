@@ -38,6 +38,10 @@ h1:not(.sd-d-none) {
     letter-spacing: -0.02em;
 }
 
+html[data-theme="dark"] h1:not(.sd-d-none) {
+    color: #7b8fd4;
+}
+
 h3:not(#hero h3) {
     font-weight: bold;
     text-align: center;
@@ -292,12 +296,20 @@ h3:not(#hero h3) {
     line-height: 1.6;
 }
 
+html[data-theme="dark"] .section-subtitle {
+    color: #7b8fd4;
+}
+
 /* ===== FEATURE CARDS ===== */
 #key-features .sd-card {
     border-radius: 16px !important;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(1, 89, 153, 0.05) !important;
     background: #ffffff !important;
+}
+
+html[data-theme="dark"] #key-features .sd-card {
+    background: var(--pst-color-on-background) !important;
 }
 
 #key-features .sd-card:hover {
@@ -321,7 +333,16 @@ h3:not(#hero h3) {
     padding: 3rem 2rem !important;
 }
 
+html[data-theme="dark"] #dive-into-qrisp-code {
+    background: linear-gradient(180deg, #1a2236 0%, #1e2840 100%);
+}
+
 /* ===== PARTNER LOGOS ===== */
+#who-is-behind-qrisp .sd-card,
+#who-is-behind-qrisp .sd-card-body {
+    background: #ffffff !important;
+}
+
 #who-is-behind-qrisp .sd-card {
     transition: all 0.3s ease;
     border-radius: 12px !important;
@@ -422,7 +443,7 @@ h3:not(#hero h3) {
     }
 
     #hero-left .scaled-image,
-    #hero-left img[src$="logo_white.png"] {
+    #hero-left img[src$="qrisp_logo_white.png"] {
         margin-left: auto !important;
         margin-right: auto !important;
     }
