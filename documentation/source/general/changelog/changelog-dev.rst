@@ -10,6 +10,23 @@ changelog enforcement.
 New Features
 ------------
 
+- **Pytree-aware return signatures for** ``sample()`` **and**
+  ``expectation_value()``
+  The return structure now mirrors the structure of the sampling kernel's
+  return value.  For example ``return a, b, c`` from a kernel produces
+  ``(array_a, array_b, array_c)`` — a tuple of three 1D arrays — instead of
+  a single flat ``(shots, 3)`` array.  Nested tuples, lists, and dicts are
+  preserved (e.g. ``[ (a,b), c ]`` → ``[ (array_a, array_b), array_c ]``).
+  Each leaf retains its native dtype (``bool`` stays ``bool``, ``int`` stays
+  ``int``) and array-valued leaves naturally stack along the leading
+  dimension (``(3,)`` → ``(shots, 3)``).  User-defined JAX pytree types
+  raise a descriptive ``TypeError``.
+
+  **Breaking change:** Multi-value returns are now tuples of arrays instead
+  of a single 2D array.  Code that indexed ``res[:, i]`` must use
+  ``res[i]``.  The same applies to ``expectation_value()`` which now returns
+  a tuple of scalars for multi-value kernels.
+
 - **sample() and expectation_value() now accept arbitrary return values**
   Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
   :func:`~qrisp.jasp.expectation_value`) may now return classical values
@@ -21,6 +38,28 @@ New Features
   Terminal sampling (decorator and Japify with ``terminal_sampling=True``) 
   rejects kernels that return classical values with a descriptive 
   error — use ``terminal_sampling=False`` (the default) for those cases.
+
+- **Backend-based sampling via** ``@backend_sampler``
+  The new :func:`~qrisp.jasp.backend_sampler` decorator routes
+  :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+  calls through a real quantum backend instead of the Jaspify simulator.
+  The quantum circuit is extracted once, executed on the backend for all
+  shots, and the classical post-processing (decoding, accumulator updates,
+  expectation-value computation) is replayed via the Jaspr's own while-loop
+  — compiled through :func:`jax.jit`.
+
+  Key capabilities:
+
+  * Supports any backend implementing the :ref:`Backend Interface <BackendInterface>`.
+  * Handles multiple ``sample()`` / ``expectation_value()`` calls in the
+    same decorated function, each independently routed.
+  * Propagates the backend interception through JAX control-flow
+    primitives (``fori_loop``, ``while_loop``, ``cond``, ``scan``,
+    nested ``jit`` / ``pjit``).
+  * Raises ``RuntimeError`` for kernels containing real-time feedback
+    (mid-circuit measurements whose outcomes control subsequent gates).
+  * Raises ``RuntimeError`` when quantum operations are used without a
+    surrounding ``sample()`` / ``expectation_value()`` call.
 
 Improvements
 ------------

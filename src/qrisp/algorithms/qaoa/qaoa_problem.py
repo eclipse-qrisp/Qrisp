@@ -580,6 +580,8 @@ class QAOAProblem:
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
 
         """
+        from qrisp import QuantumVariableTemplate
+
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumArray):
@@ -589,6 +591,10 @@ class QAOAProblem:
             def qarg_prep():
                 return QuantumArray(qtype=template.construct(), shape=shape)
 
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
         else:
             template = qarg.template()
 
