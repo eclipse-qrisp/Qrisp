@@ -15,12 +15,11 @@
 ********************************************************************************
 """
 
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import QuantumBool, QuantumFloat, cx, h, measure, x
+from qrisp.jasp import backend_sampler, expectation_value, jaspify, sample
 
 # ===========================================================================
 # Helpers
@@ -57,7 +56,7 @@ def test_ev_hadamard():
 
     res = main()
     # 50% 0, 50% 1 → expectation ≈ 0.5
-    assert 0.3 < float(res) < 0.7, f"expected ~0.5, got {res}"
+    assert 0.3 < float(res) < 0.7
 
 
 def test_ev_deterministic():
@@ -73,7 +72,7 @@ def test_ev_deterministic():
         return expectation_value(kernel, shots=200)()
 
     res = main()
-    assert 4.5 < float(res) < 5.5, f"expected ~5.0, got {res}"
+    assert np.isclose(res, 5.0)
 
 
 def test_ev_uniform():
@@ -89,7 +88,7 @@ def test_ev_uniform():
         return expectation_value(kernel, shots=1000)()
 
     res = main()
-    assert 2.5 < float(res) < 4.5, f"expected ~3.5, got {res}"
+    assert 2.5 < float(res) < 4.5
 
 
 def test_ev_boolean():
@@ -105,7 +104,7 @@ def test_ev_boolean():
         return expectation_value(kernel, shots=500)()
 
     res = main()
-    assert 0.0 < float(res) < 1.0, f"expected ~0.5, got {res}"
+    assert 0.0 < float(res) < 1.0
 
 
 def test_ev_ghz():
@@ -124,7 +123,7 @@ def test_ev_ghz():
         return expectation_value(kernel, shots=500)()
 
     res = main()
-    assert 5.0 < float(res) < 10.0, f"expected ~7.5, got {res}"
+    assert 5.0 < float(res) < 10.0
 
 
 # ===========================================================================
@@ -146,7 +145,7 @@ def test_ev_postproc():
         return expectation_value(kernel, shots=500)()
 
     res = main()
-    assert 3.0 < float(res) < 5.0, f"expected ~4.0, got {res}"
+    assert 3.0 < float(res) < 5.0
 
 
 def test_ev_postproc_with_fn():
@@ -166,7 +165,7 @@ def test_ev_postproc_with_fn():
 
     res = main()
     # 0^2 and 1^2 equally likely → expectation ≈ 0.5
-    assert 0.3 < float(res) < 0.7, f"expected ~0.5, got {res}"
+    assert 0.3 < float(res) < 0.7
 
 
 # ===========================================================================
@@ -194,8 +193,10 @@ def test_ev_compare_jaspify():
     r_backend = float(backend_main())
     r_jaspify = float(jaspify_main())
 
-    # Both should be ~1.5 (avg of 0,1,2,3)
-    assert abs(r_backend - r_jaspify) < 0.3, f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
+    # Both estimate the same mean of ~1.5 (avg of 0,1,2,3). The standard
+    # error of the difference is ~0.091, so 0.5 is a ~5.5 sigma bound:
+    # tight enough to catch a real divergence, loose enough not to flake.
+    assert abs(r_backend - r_jaspify) < 0.5
 
 
 def test_ev_compare_jaspify_many_shots():
@@ -217,8 +218,9 @@ def test_ev_compare_jaspify_many_shots():
     r_backend = float(backend_main())
     r_jaspify = float(jaspify_main())
 
-    # Both should be ~3.5 (avg of 0..7)
-    assert abs(r_backend - r_jaspify) < 0.2, f"backend={r_backend:.3f}, jaspify={r_jaspify:.3f}, diff too large"
+    # Both estimate the same mean of ~3.5 (avg of 0..7). The standard error
+    # of the difference is ~0.072, so 0.5 is a ~6.9 sigma bound.
+    assert abs(r_backend - r_jaspify) < 0.5
 
 
 # ===========================================================================
@@ -238,7 +240,7 @@ def test_ev_all_zeros():
         return expectation_value(kernel, shots=100)()
 
     res = main()
-    assert float(res) == 0.0, f"expected 0.0, got {res}"
+    assert np.isclose(res, 0.0)
 
 
 def test_ev_all_ones():
@@ -254,7 +256,7 @@ def test_ev_all_ones():
         return expectation_value(kernel, shots=100)()
 
     res = main()
-    assert float(res) == 7.0, f"expected 7.0, got {res}"
+    assert np.isclose(res, 7.0)
 
 
 # ===========================================================================
@@ -275,7 +277,7 @@ def test_ev_dynamic_kernel_arg():
         return expectation_value(kernel, shots=100)(s)
 
     res = main(4)
-    assert 2.5 < float(res) < 3.5, f"expected ~3.0, got {res}"
+    assert np.isclose(res, 3.0)
 
 
 def test_ev_large_qubits():
@@ -292,11 +294,16 @@ def test_ev_large_qubits():
         return expectation_value(kernel, shots=100)()
 
     res = main()
-    assert 0.0 <= float(res) <= 1023.0, f"unexpected value {res}"
+    assert 0.0 <= float(res) <= 1023.0
 
 
 def test_ev_zero_shots():
-    """Zero shots should raise or return NaN."""
+    """shots=0 raises; it does not return NaN.
+
+    With zero iterations the sampling body is never reached, so circuit
+    extraction fails inside the callback and surfaces wrapped in an
+    XlaRuntimeError. Only the fact that it raises is asserted.
+    """
 
     def kernel():
         qf = QuantumFloat(4)
@@ -306,12 +313,8 @@ def test_ev_zero_shots():
     def main():
         return expectation_value(kernel, shots=0)()
 
-    try:
-        res = main()
-        # Should either raise or return something sensible
-        print(f"Zero shots returned: {res}")
-    except Exception:
-        pass  # expected
+    with pytest.raises(Exception):
+        main()
 
 
 def test_ev_multiple_calls():
@@ -334,8 +337,8 @@ def test_ev_multiple_calls():
         return ev_a, ev_b
 
     ra, rb = main()
-    assert 4.0 < float(ra) < 6.0, f"expected ~5.0, got {ra}"
-    assert 9.0 < float(rb) < 11.0, f"expected ~10.0, got {rb}"
+    assert np.isclose(ra, 5.0)
+    assert np.isclose(rb, 10.0)
 
 
 # ===========================================================================
@@ -360,7 +363,7 @@ def test_ev_custom_backend():
         return expectation_value(kernel, shots=50)()
 
     res = main()
-    assert 6.0 < float(res) < 8.0, f"expected ~7.0, got {res}"
+    assert np.isclose(res, 7.0)
 
 
 def test_ev_default_backend():
@@ -377,7 +380,7 @@ def test_ev_default_backend():
         return expectation_value(kernel, shots=50)()
 
     res = main()
-    assert 0.5 < float(res) < 1.5, f"expected ~1.0, got {res}"
+    assert np.isclose(res, 1.0)
 
 
 # ===========================================================================
@@ -401,8 +404,8 @@ def test_ev_and_sample_together():
 
     samples, ev = main()
     assert samples.shape == (30,)
-    assert 2.0 < float(ev) < 4.0, f"expected ~3.0, got {ev}"
-    assert all(float(v) == 3.0 for v in samples)
+    assert np.isclose(ev, 3.0)
+    assert np.allclose(samples, 3.0)
 
 
 def test_return_dict_is_rejected():

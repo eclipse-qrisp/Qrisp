@@ -15,12 +15,25 @@
 ********************************************************************************
 """
 
+import jax
 import jax.numpy as jnp
-import numpy as np
 import pytest
 
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    cx,
+    h,
+    invert,
+    mcx,
+    measure,
+    rx,
+    ry,
+    x,
+)
+from qrisp.jasp import backend_sampler, jaspify, q_cond, sample
 
 # ===========================================================================
 # Helpers
@@ -57,7 +70,7 @@ def test_single_return_hadamard():
 
     res = main(1)
     assert res.shape == (200,)
-    assert {float(v) for v in res[:100]} == {0.0, 1.0}
+    assert {float(v) for v in res} == {0.0, 1.0}
 
 
 def test_single_return_uniform_superposition():
@@ -75,7 +88,7 @@ def test_single_return_uniform_superposition():
     res = main()
     assert res.shape == (500,)
     vals = {int(v) for v in res}
-    assert len(vals) >= 6, f"expected ≥6 values from 0-7, got {len(vals)}"
+    assert len(vals) >= 6
 
 
 def test_multi_return_cat_state():
@@ -97,8 +110,8 @@ def test_multi_return_cat_state():
 
     res = main(3)
     assert res.shape == (300, 2)
-    pairs = {(float(r[0]), float(r[1])) for r in res[:200]}
-    assert pairs == {(0.0, 0.0), (3.0, 3.0)}, f"got {pairs}"
+    pairs = {(float(r[0]), float(r[1])) for r in res}
+    assert pairs == {(0.0, 0.0), (3.0, 3.0)}
 
 
 def test_single_return_boolean():
@@ -115,7 +128,7 @@ def test_single_return_boolean():
 
     res = main()
     assert res.shape == (200,)
-    assert {bool(v) for v in res[:100]} == {True, False}
+    assert {bool(v) for v in res} == {True, False}
 
 
 def test_triple_return():
@@ -137,9 +150,9 @@ def test_triple_return():
 
     res = main()
     assert res.shape == (300, 3)
-    assert {float(r[0]) for r in res[:100]} == {0.0, 1.0}
-    assert {float(r[1]) for r in res[:100]} == {1.0}
-    assert len({float(r[2]) for r in res[:100]}) >= 3
+    assert {float(r[0]) for r in res} == {0.0, 1.0}
+    assert {float(r[1]) for r in res} == {1.0}
+    assert len({float(r[2]) for r in res}) >= 3
 
 
 # ===========================================================================
@@ -163,8 +176,8 @@ def test_postproc_arithmetic():
 
     res = main()
     assert res.shape == (300,)
-    assert all(int(v) % 2 == 1 for v in res[:200])
-    assert {int(v) for v in res[:200]} == {1, 3, 5, 7}
+    assert all(int(v) % 2 == 1 for v in res)
+    assert {int(v) for v in res} == {1, 3, 5, 7}
 
 
 def test_postproc_multi_step():
@@ -186,7 +199,7 @@ def test_postproc_multi_step():
 
     res = main()
     assert res.shape == (300,)
-    assert all(int(v) % 2 == 0 for v in res[:200])
+    assert all(int(v) % 2 == 0 for v in res)
 
 
 def test_postproc_jax_array():
@@ -209,8 +222,8 @@ def test_postproc_jax_array():
 
     res = main()
     assert res.shape == (200,)
-    vals = {int(v) for v in res[:100]}
-    assert all(0 <= v <= 2 for v in vals), f"values in [0,2], got {vals}"
+    vals = {int(v) for v in res}
+    assert all(0 <= v <= 2 for v in vals)
 
 
 def test_postproc_tuple_return():
@@ -254,8 +267,8 @@ def test_bell_state():
 
     res = main()
     assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), bool(r[1])) for r in res[:200]}
-    assert pairs == {(False, False), (True, True)}, f"got {pairs}"
+    pairs = {(bool(r[0]), bool(r[1])) for r in res}
+    assert pairs == {(False, False), (True, True)}
 
 
 def test_ghz_state():
@@ -275,7 +288,7 @@ def test_ghz_state():
 
     res = main()
     assert res.shape == (300,)
-    assert {int(v) for v in res[:200]} == {0, 15}
+    assert {int(v) for v in res} == {0, 15}
 
 
 def test_controlled_operation():
@@ -295,8 +308,8 @@ def test_controlled_operation():
 
     res = main()
     assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), float(r[1])) for r in res[:200]}
-    assert pairs == {(False, 0.0), (True, 5.0)}, f"got {pairs}"
+    pairs = {(bool(r[0]), float(r[1])) for r in res}
+    assert pairs == {(False, 0.0), (True, 5.0)}
 
 
 def test_multi_controlled_x():
@@ -317,7 +330,7 @@ def test_multi_controlled_x():
 
     res = main()
     assert res.shape == (200,)
-    assert all(bool(v) for v in res[:100])
+    assert all(bool(v) for v in res)
 
 
 def test_inversion_environment():
@@ -357,7 +370,7 @@ def test_dynamic_kernel_arg():
 
     res = main(4)
     assert res.shape == (150,)
-    assert {float(v) for v in res[:80]} == {0.0, 1.0}
+    assert {float(v) for v in res} == {0.0, 1.0}
 
 
 def test_large_qubit_count():
@@ -402,7 +415,11 @@ def test_multiple_sample_calls():
 
 
 def test_zero_shots():
-    """Zero shots should raise"""
+    """shots=0 raises.
+
+    The failure comes from indexing the empty measurement array rather than
+    from an explicit guard, so only the fact that it raises is asserted.
+    """
 
     def kernel():
         qf = QuantumFloat(4)
@@ -413,10 +430,8 @@ def test_zero_shots():
     def main():
         return sample(kernel, shots=0)()
 
-    try:
+    with pytest.raises(Exception):
         main()
-    except Exception:
-        pass  # expected
 
 
 # ===========================================================================
@@ -442,7 +457,7 @@ def test_custom_backend():
 
     res = main()
     assert res.shape == (50,)
-    vals = {float(v) for v in res[:50]}
+    vals = {float(v) for v in res}
     assert 0.0 in vals and 1.0 in vals
 
 
@@ -530,7 +545,7 @@ def test_compare_with_jaspify():
     for k in bc:
         if k in jc:
             ratio = bc[k] / max(1, jc[k])
-            assert 0.4 < ratio < 1.6, f"count ratio for {k}: {ratio:.2f}"
+            assert 0.4 < ratio < 1.6
 
 
 # ===========================================================================
@@ -553,8 +568,8 @@ def test_measure_all_qubits():
 
     res = main()
     assert res.shape == (200, 4)
-    assert {bool(r[1]) for r in res[:100]} == {False}
-    assert {bool(r[3]) for r in res[:100]} == {False}
+    assert {bool(r[1]) for r in res} == {False}
+    assert {bool(r[3]) for r in res} == {False}
 
 
 def test_parameterized_gates():
@@ -588,11 +603,8 @@ def test_raises_without_sample():
         h(qf[0])
         return measure(qf)
 
-    try:
+    with pytest.raises(RuntimeError):
         no_sample()
-        assert False, "should have raised RuntimeError"
-    except RuntimeError:
-        pass
 
 
 def test_raises_on_realtime_feedback():
