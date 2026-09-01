@@ -407,13 +407,20 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # Run the backend ONCE.
         raw = backend.run(qc, shots=shots)
 
-        # Expand & shuffle into a list of *shots* measurement arrays.
-        meas_results_list = []
-        for bitstring, count in raw.items():
-            bit_array = jnp.array([c == "1" for c in bitstring], dtype=jnp.bool_)
-            meas_results_list.extend([bit_array] * int(count))
-        np.random.shuffle(meas_results_list)
-        meas_results_array = jnp.stack(meas_results_list) if meas_results_list else jnp.array([], dtype=jnp.bool_)
+        # Expand & shuffle into an array of *shots* measurement rows.
+        # Each distinct bitstring is parsed once and the rows are duplicated in
+        # bulk with np.repeat.  The backend reports O(distinct outcomes)
+        # entries while the expansion is O(shots), so building one small array
+        # per shot and stacking them dominates the runtime at high shot counts.
+        items = list(raw.items())
+        counts = [int(count) for _, count in items]
+        if sum(counts):
+            unique_bits = np.array([[c == "1" for c in bitstring] for bitstring, _ in items], dtype=np.bool_)
+            expanded_bits = np.repeat(unique_bits, counts, axis=0)
+            np.random.shuffle(expanded_bits)
+            meas_results_array = jnp.asarray(expanded_bits)
+        else:
+            meas_results_array = jnp.array([], dtype=jnp.bool_)
 
         # ── Phase 2: dynamic loop evaluation ────────────────────────
         def post_proc(meas_results, *all_non_qs_args):
