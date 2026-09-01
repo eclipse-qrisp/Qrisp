@@ -41,7 +41,7 @@ class QuantumBool(QuantumVariable):
 
     >>> from qrisp import QuantumBool, h
     >>> q_bool_0 = QuantumBool()
-    >>> h(q_bool_0)
+    >>> _ = h(q_bool_0)
     >>> print(q_bool_0)
     {False: 0.5, True: 0.5}
 
@@ -66,7 +66,7 @@ class QuantumBool(QuantumVariable):
 
 
     >>> qf = QuantumFloat(4)
-    >>> h(qf[3])
+    >>> _ = h(qf[3])
     >>> print(qf)
     {0: 0.5, 8: 0.5}
     >>> q_bool_3 = (qf >=  4)
@@ -76,10 +76,8 @@ class QuantumBool(QuantumVariable):
     To use a QuantumBool as a :ref:`ControlEnvironment`, we simply put it in a ``with``
     statement:
 
-    ::
-
-        with q_bool_3:
-            qf += 2
+    >>> with q_bool_3:
+    ...     qf += 2
 
     >>> print(qf)
     {0: 0.5, 10: 0.5}
@@ -87,12 +85,10 @@ class QuantumBool(QuantumVariable):
     QuantumBools that are created directly after a ``with`` statement are uncomputed
     automatically:
 
-    ::
+    >>> with qf == 10:
+    ...     _ = q_bool_3.flip()
 
-        with qf == 10:
-            q_bool_3.flip()
-
-    >>> print(qf.qs)
+    >>> _ = qf.qs
 
     .. code-block:: none
 
