@@ -203,7 +203,7 @@ def _find_group(
 
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
-def _find_grouping_options(
+def _find_grouping_options(  # noqa: PLR0913, PLR0917
     int_qc: _IntegerCircuit,
     traversed_qb_sets: set,
     max_recursion_depth: int,
@@ -289,7 +289,7 @@ def _get_circuit_block(
 # The groupings are determined by choosing a set of qubits and then trying which
 # instructions can be executed on these qubits without "leaving" this set of qubits.
 @njit(cache=True)
-def _binary_get_circuit_block_jitted(
+def _binary_get_circuit_block_jitted(  # noqa: PLR0913, PLR0917
     int_qc_data: np.ndarray,
     is_unitary: np.ndarray,
     qubits: int,
@@ -355,7 +355,7 @@ def _binary_get_circuit_block_jitted(
 
 
 @njit(cache=True)
-def _binary_get_circuit_block_jitted_chunked(
+def _binary_get_circuit_block_jitted_chunked(  # noqa: PLR0912, PLR0913, PLR0917
     int_qc_data: np.ndarray,
     is_unitary: np.ndarray,
     qubits: np.ndarray,
