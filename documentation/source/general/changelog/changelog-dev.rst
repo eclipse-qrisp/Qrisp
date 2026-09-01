@@ -140,6 +140,12 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
+* Fixed static ``QuantumFloat`` addition and subtraction leaking JAX scalar
+  metadata through output type inference, which could cause later arithmetic
+  with negative exponents to fail. Static metadata is now kept as Python
+  integers while traced metadata remains compatible with Jasp
+  (`PR #841 <https://github.com/eclipse-qrisp/Qrisp/pull/841>`_).
+
 Compatibility
 -------------
 

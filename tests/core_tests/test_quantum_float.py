@@ -115,6 +115,7 @@ def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bo
         qf.encoder(out_of_bounds_value)
 
 
+# Regression test for issue #840
 def test_static_arithmetic_keeps_output_metadata_scalar():
     """Test static arithmetic keeps output exponents as Python integers."""
     first = QuantumFloat(3, -1)
