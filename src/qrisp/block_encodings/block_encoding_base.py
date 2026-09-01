@@ -1,23 +1,24 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the BlockEncoding dataclass for representing, applying, and combining block-encoded operators."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -25,6 +26,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.tree_util import register_pytree_node_class
+from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core import QuantumVariable
@@ -45,9 +47,12 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
-    from jax.typing import ArrayLike
-
     from qrisp.interface.backend import BackendLike
+
+    # The pytree (children, aux_data) shapes produced/consumed by
+    # tree_flatten/tree_unflatten below.
+    PyTreeChildren = tuple[ArrayLike, list[QuantumVariableTemplate]]
+    PyTreeAuxData = tuple[Callable[..., None], int, bool]
 
 
 @register_pytree_node_class
@@ -97,7 +102,7 @@ class BlockEncoding:
     ----------
     alpha : ArrayLike
         The scalar scaling factor.
-    ancillas : list[QuantumVariable | QuantumVariableTemplate]
+    ancillas : Sequence[QuantumVariable | QuantumVariableTemplate]
         A list of QuantumVariables or QuantumVariableTemplates. These serve as 
         templates for the ancilla variables used in the block-encoding.
     unitary : Callable
@@ -256,7 +261,7 @@ class BlockEncoding:
     def __init__(
         self,
         alpha: "ArrayLike",
-        ancillas: list[QuantumVariable | QuantumVariableTemplate],
+        ancillas: Sequence[QuantumVariable | QuantumVariableTemplate],
         unitary: Callable[..., None],
         num_ops: int = 1,
         is_hermitian: bool = False,
@@ -272,7 +277,7 @@ class BlockEncoding:
         # More robust than inferring the number of operands for the unitary via inspect.
         self.num_ops = num_ops
 
-    def tree_flatten(self):
+    def tree_flatten(self) -> tuple[PyTreeChildren, PyTreeAuxData]:
         """PyTree flatten for JAX.
 
         Returns
@@ -294,7 +299,7 @@ class BlockEncoding:
         return (children, aux_data)
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
+    def tree_unflatten(cls: type[BlockEncoding], aux_data: PyTreeAuxData, children: PyTreeChildren) -> BlockEncoding:
         """PyTree unflatten for JAX.
 
         Parameters
@@ -650,7 +655,7 @@ class BlockEncoding:
         meas_behavior: str | Callable = "0",
         max_qubits: int = 1024,
         max_allocations: int = 1000,
-    ):
+    ) -> dict[str, Any]:
         r"""Estimate the quantum resources required for the BlockEncoding.
 
         This method uses the ``count_ops``, ``depth`` and ``num_qubits`` decorators to obtain gate counts, circuit depth,
@@ -1292,7 +1297,6 @@ class BlockEncoding:
             # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
 
         """
-        from jax.typing import ArrayLike
 
         if isinstance(other, ArrayLike):
 
@@ -1311,7 +1315,7 @@ class BlockEncoding:
 
         return NotImplemented
 
-    def __matmul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
+    def __matmul__(self, other: "BlockEncoding") -> BlockEncoding:
         r"""Returns a BlockEncoding of the product of two operators.
 
         This method implements the operator product $A \cdot B$ by composing
@@ -1567,3 +1571,45 @@ class BlockEncoding:
             num_ops=self.num_ops,
             is_hermitian=self.is_hermitian,
         )
+
+    # ------------------------------------------------------------------
+    # The methods below are attached to this class after its definition, in
+    # block_encoding.py: each one is implemented in its own module under
+    # constructors/ or transformations/, and each of those modules needs to
+    # import BlockEncoding itself, so importing them here at runtime would
+    # be circular. Re-declaring them under TYPE_CHECKING (never executed at
+    # runtime) makes them visible to type checkers as ordinary members of
+    # this class, without changing any runtime behaviour or reintroducing
+    # that circular import.
+    # ------------------------------------------------------------------
+    if TYPE_CHECKING:
+        from .constructors import (
+            build_from_array,
+            build_from_eye,
+            build_from_foqcs_lcu_operator,
+            build_from_foqcs_lcu_prep,
+            build_from_lcu,
+            build_from_operator,
+            build_from_projector,
+        )
+        from .transformations import (
+            apply_inv,
+            apply_poly,
+            apply_pseudo_inv,
+            apply_sim,
+            apply_svt,
+        )
+
+        from_array = classmethod(build_from_array)
+        from_eye = classmethod(build_from_eye)
+        from_lcu = classmethod(build_from_lcu)
+        from_foqcs_lcu_prep = classmethod(build_from_foqcs_lcu_prep)
+        from_foqcs_lcu_operator = classmethod(build_from_foqcs_lcu_operator)
+        from_operator = classmethod(build_from_operator)
+        from_projector = classmethod(build_from_projector)
+
+        inv = apply_inv
+        poly = apply_poly
+        pseudo_inv = apply_pseudo_inv
+        sim = apply_sim
+        svt = apply_svt

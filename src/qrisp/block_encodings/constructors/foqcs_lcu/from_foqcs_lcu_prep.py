@@ -1,21 +1,23 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-from typing import Callable
+"""Builds a BlockEncoding from custom FOQCS-LCU PREP_R/PREP_L state-preparation routines."""
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core import cx, cz
@@ -25,9 +27,12 @@ from qrisp.qtypes import QuantumVariable
 
 from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
-def build_from_foqcs_lcu_prep(
-    cls: BlockEncoding,
+
+def build_from_foqcs_lcu_prep(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
+    cls: type[BlockEncoding],
     prep_r: Callable[[QuantumVariable], None],
     prep_l: Callable[[QuantumVariable], None],
     num_q_ops: int = 1,
@@ -85,6 +90,8 @@ def build_from_foqcs_lcu_prep(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     prep_r : Callable[[QuantumVariable], None]
         Right FOQCS-LCU PREP routine, corresponding to :math:`P_{R} = \mathrm{PREP}(\alpha)`
         The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.
