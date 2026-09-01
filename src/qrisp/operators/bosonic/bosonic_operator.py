@@ -83,6 +83,7 @@ class BosonicOperator(Hamiltonian):
     Convert an operator to a Pauli representation for a particular encoding and truncation:
 
     ::
+
         from qrisp.operators.bosonic import a_b, c_b
 
         O = c_b(0)*a_b(0)
@@ -99,6 +100,7 @@ class BosonicOperator(Hamiltonian):
     Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
 
     ::
+
         from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
 
         O = c_b(0)*a_b(0)
@@ -580,7 +582,7 @@ class BosonicOperator(Hamiltonian):
 
     def to_qubit_operator(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Transforms the BosonicOperator to a :ref:`QubitOperator`.
-        To that end, the bosonic Fock space is truncated to `truncation`. The remaining states are encoded in qubit states by one of three methods, a one-hot, standard binary or Gray code representation. See the general documentation of `BosonicOperator` and https://www.nature.com/articles/s41534-020-0278-0 for more details.
+        To that end, the bosonic Fock space is truncated to ``truncation`` states. These states are encoded in qubit states by one of three methods, a one-hot, standard binary or Gray code representation. See the general documentation of :ref:`BosonicOperator` and https://www.nature.com/articles/s41534-020-0278-0 for more details.
 
         Parameters
         ----------
@@ -599,6 +601,7 @@ class BosonicOperator(Hamiltonian):
         Convert an operator to a Pauli representation for a particular encoding and truncation:
 
         ::
+
             from qrisp.operators.bosonic import a_b, c_b
 
             O = c_b(0)*a_b(0)
@@ -658,6 +661,7 @@ class BosonicOperator(Hamiltonian):
         Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
 
         ::
+
             from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
 
             O = c_b(0)*a_b(0)
@@ -693,6 +697,7 @@ class BosonicOperator(Hamiltonian):
         Apply an evolution with $H = a + a^\dagger$ to a Fock state:
 
         ::
+
             from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
             H = a_b(0) + c_b(0)
             N = c_b(0)*a_b(0)
