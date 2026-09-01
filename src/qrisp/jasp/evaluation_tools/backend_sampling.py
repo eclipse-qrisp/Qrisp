@@ -79,7 +79,6 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.backend_sampling_interpreter import (
     _make_backend_sampling_fn,
-    find_named_jaxpr,
 )
 from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
     evaluate_cond_under_trace,
@@ -87,7 +86,7 @@ from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretatio
     evaluate_while_loop_under_trace,
 )
 
-__all__ = ["backend_sampler", "find_named_jaxpr"]
+__all__ = ["backend_sampler"]
 
 
 # ===========================================================================
@@ -218,13 +217,15 @@ def backend_sampler(backend):
         result = main(1)
         # result is a JAX array of shape (100,) with backend results
 
-    Using a custom backend:
+    Using a different backend -- any :class:`~qrisp.interface.Backend` works,
+    for instance Qiskit's ``AerSimulator``:
 
     .. code-block:: python
 
-        from qrisp.interface import QrispSimulatorBackend
+        from qiskit_aer import AerSimulator
+        from qrisp.interface import QiskitBackend
 
-        backend = QrispSimulatorBackend()
+        backend = QiskitBackend(backend=AerSimulator())
 
         @backend_sampler(backend=backend)
         def main():

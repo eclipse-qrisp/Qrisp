@@ -72,7 +72,7 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
 
     { lambda ; a:QuantumState. let
         b:f64[500] = pjit[
-          name=sampling_eval_function          ← intercept ② (outer, in evaluation_tools)
+          name=sampling_eval_function          ← intercept ① (outer, in evaluation_tools)
           jaxpr={ lambda ; d:f64[500] e:i64[]. let
               _:i64[] = pjit[
                 name=_backend_shots_marker
@@ -83,7 +83,7 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
                 body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let
                     j:QuantumState = jasp.create_quantum_kernel
                     k:QuantumState l:f64[500] = pjit[
-                      name=sampling_body_func  ← intercept ③ (this module)
+                      name=sampling_body_func  ← intercept ② (this module)
                       jaxpr={ ...
                         pjit[name=user_func] ...
                         pjit[name=sampling_helper_1] ...
@@ -98,19 +98,23 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
         ] ...
       in (b,) }
 
-The three interception points ①②③ correspond to the architecture
-described above.  Interception ② lives in the evaluation-tools module;
-interception ③ (and the supporting ``_extract_to_qc_args``) lives here.
+There are two interception points, ① and ② (note that these do not
+line up one-to-one with the three *pieces* above).  Interception ① is
+Piece 3: it swaps the eval-function pjit for a :func:`jax.pure_callback`
+and lives in the evaluation-tools module.  Interception ② is Pieces 1
+and 2: it replaces ``sampling_body_func`` with the pre-computed
+post-processing, and lives here along with the supporting
+:func:`_extract_to_qc_args`.
 
 ::
 
     ┌─ outer Jaspr ──────────────────────────────────────────────┐
     │                                                             │
-    │  sampling_eval_function / expectation_value_eval_function   │  ← pure_callback (evaluation_tools)
+    │  sampling_eval_function / expectation_value_eval_function   │  ← intercept ① pure_callback (evaluation_tools)
     │  ┌─ inner Jaxpr ─────────────────────────────────────────┐ │
     │  │  while i < shots:                                      │ │
     │  │    create_quantum_kernel                               │ │
-    │  │    sampling_body_func(i, acc, *kernel_args, qs)        │ │  ← intercept ③ (this module)
+    │  │    sampling_body_func(i, acc, *kernel_args, qs)        │ │  ← intercept ② (this module)
     │  │    consume_quantum_kernel                              │ │
     │  └────────────────────────────────────────────────────────┘ │
     │  result = acc (or acc / shots for EV)                      │
@@ -120,8 +124,8 @@ Key design properties
 ---------------------
 
 * **Single backend call per invocation** — the circuit is built once,
-  the backend runs once, and only lightweight post-processing varies
-  per shot.
+  the backend runs once with the specified number of shots,
+  and only lightweight post-processing is applied per shot.
 * **No manual accumulator logic** — the Jaspr's own while-loop,
   accumulator typing, indexing, and update rules are reused via
   :func:`eval_jaxpr`.  The module never inspects accumulator shapes
@@ -152,7 +156,7 @@ from qrisp.jasp.jasp_expression.centerclass import Jaspr
 # ===========================================================================
 
 
-def find_named_jaxpr(jaxpr, target_name):
+def _find_named_jaxpr(jaxpr, target_name):
     """Recursively find a ``jit`` / ``pjit`` sub-Jaxpr with the given name.
 
     Searches through nested jit calls and control-flow bodies
@@ -184,7 +188,7 @@ def find_named_jaxpr(jaxpr, target_name):
             # Recurse into nested jit bodies.
             sub = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
             if sub is not None:
-                result = find_named_jaxpr(sub.jaxpr, target_name)
+                result = _find_named_jaxpr(sub.jaxpr, target_name)
                 if result is not None:
                     return result
         # Recurse into control-flow bodies (while, cond, scan).
@@ -194,7 +198,7 @@ def find_named_jaxpr(jaxpr, target_name):
                 if not isinstance(branches, (list, tuple)):
                     branches = [branches]
                 for branch in branches:
-                    result = find_named_jaxpr(branch.jaxpr, target_name)
+                    result = _find_named_jaxpr(branch.jaxpr, target_name)
                     if result is not None:
                         return result
     return None
@@ -271,7 +275,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     measurement bits for that shot.  All accumulator typing, indexing,
     and update logic is handled by the Jaspr itself.
     """
-    body_jaxpr = find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
+    body_jaxpr = _find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
     if body_jaxpr is None:
         raise RuntimeError("sampling_body_func not found inside eval function Jaxpr")
     body_jaspr = Jaspr(body_jaxpr)
