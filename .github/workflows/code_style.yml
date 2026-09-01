@@ -24,6 +24,7 @@ permissions:
 jobs:
   changes:
     name: Detect src changes
+    # Used to gate the reviewdog linter job: it only runs when src/ changes.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
