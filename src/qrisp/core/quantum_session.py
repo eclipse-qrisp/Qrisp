@@ -537,7 +537,7 @@ class QuantumSession(QuantumCircuit):
         self.data.clear()
 
     def statevector(self, return_type="sympy", plot=False, decimals=None):
-        r"""Returns a representation of the statevector. Three options are available:
+        r"""Returns a representation of the statevector. Four options are available:
 
         * ``sympy`` returns a `Sympy quantum state
           <https://docs.sympy.org/latest/modules/physics/quantum/state.html>`_,
@@ -551,15 +551,16 @@ class QuantumSession(QuantumCircuit):
           investigated by calling this function on a dictionary of this QuantumSession's
           QuantumVariables.
 
-        If you need to retrieve the statevector as a numpy array, please use the
-        corresponding
+        * ``array`` returns an array, just like the corresponding
         :meth:`QuantumCircuit method <qrisp.QuantumCircuit.statevector_array>`.
+        If you don't need the options ``plot`` and ``decimals`` then please use
+        that function instead.
 
         Parameters
         ----------
         return_type : str, optional
             String indicating how the statevector should be returned. Available are
-            ``sympy``, ``array`` and ``function``. The default is ``sympy``.
+            ``sympy``, ``latex``, ``function`` and ``array``. The default is ``sympy``.
         plot : bool, optional
             If the return type is set to ``array``, this boolean will trigger a plot of
             the statevector. The default is ``False``.
