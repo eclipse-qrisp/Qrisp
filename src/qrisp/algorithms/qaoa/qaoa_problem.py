@@ -26,7 +26,7 @@ from sympy import Symbol
 
 from qrisp import QuantumArray, h, x
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
-from qrisp.jasp import check_for_tracing_mode, jrange, sample
+from qrisp.jasp import QuantumVariableTemplate, check_for_tracing_mode, jrange, sample
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
@@ -581,8 +581,6 @@ class QAOAProblem:
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumArray):
@@ -596,6 +594,7 @@ class QAOAProblem:
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -734,8 +733,6 @@ class QAOAProblem:
                 print([index for index, value in enumerate(res) if value == '1'], prob, cl_cost({res : 1}))
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumArray):
@@ -749,6 +746,7 @@ class QAOAProblem:
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -867,8 +865,6 @@ class QAOAProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumArray):
@@ -882,6 +878,7 @@ class QAOAProblem:
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 

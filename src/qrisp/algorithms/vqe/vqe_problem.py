@@ -25,7 +25,7 @@ from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp import QuantumVariableTemplate, check_for_tracing_mode
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 from qrisp.operators.fermionic import FermionicOperator
 from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
@@ -422,14 +422,13 @@ class VQEProblem:
             The expectation value of the Hamiltonian after applying the optimal VQE circuit to the quantum argument.
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumVariableTemplate):
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -515,14 +514,13 @@ class VQEProblem:
             The :ref:`QuantumVariable` then represents the ground state of the problem Hamiltonian.
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumVariableTemplate):
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -652,14 +650,13 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
-        from qrisp import QuantumVariableTemplate
-
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumVariableTemplate):
 
             def qarg_prep():
                 return qarg.construct()
+
         else:
             template = qarg.template()
 
