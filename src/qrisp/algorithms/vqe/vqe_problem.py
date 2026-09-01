@@ -477,8 +477,12 @@ class VQEProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
-        such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
+        r"""Train a circuit with a given instance of a ``VQEProblem``.
+
+        Returns a function that can be applied to a :ref:`QuantumVariable`, such
+        that it prepares the ground state of the problem Hamiltonian. The function
+        therefore applies a circuit for the problem instance with optimized
+        parameters.
 
         Parameters
         ----------

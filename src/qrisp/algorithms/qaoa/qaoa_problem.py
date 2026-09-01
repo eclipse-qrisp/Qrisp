@@ -545,8 +545,11 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
-        measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
+        r"""Run the specific QAOA problem instance.
+
+        Takes the quantum argument, the depth of the QAOA circuit, the measurement
+        keyword arguments (mes_kwargs) and the maximum number of iterations for the
+        optimization (max_iter).
 
         Parameters
         ----------
@@ -655,8 +658,11 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
-        such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
+        r"""Train a circuit with a given ``QAOAProblem`` instance.
+
+        Returns a function that can be applied to a ``QuantumVariable``, such that
+        it represents a solution to the problem instance. When applied to a
+        ``QuantumVariable``, the function therefore prepares the state
 
         .. math::
 
