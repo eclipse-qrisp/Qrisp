@@ -40,7 +40,9 @@ Improvements
 - Improved the simulator's circuit preprocessing: circuit reordering is
   faster, and gate grouping for circuits with 63+ qubits now stays on the
   fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
-  back to a slower, non-jitted implementation.
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
   (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
 
 Other New Features
