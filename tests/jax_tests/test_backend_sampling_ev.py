@@ -17,6 +17,7 @@
 
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 from qrisp import *
 from qrisp.jasp import *
@@ -402,3 +403,25 @@ def test_ev_and_sample_together():
     assert samples.shape == (30,)
     assert 2.0 < float(ev) < 4.0, f"expected ~3.0, got {ev}"
     assert all(float(v) == 3.0 for v in samples)
+
+
+def test_return_dict_is_rejected():
+    """``return_dict=True`` marks the eval function for terminal sampling.
+
+    ``backend_sampler`` returns through a jitted ``pure_callback``, which needs
+    a static output shape and so cannot produce a dict. Left unintercepted the
+    quantum state reaches the jit boundary and XLA raises an opaque aval error,
+    so the decorator rejects it explicitly instead.
+    """
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return expectation_value(kernel, shots=20, return_dict=True)()
+
+    with pytest.raises(NotImplementedError, match="return_dict"):
+        main()

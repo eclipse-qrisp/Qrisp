@@ -107,6 +107,24 @@ def _make_backend_eqn_evaluator(backend):
         name = eqn.params.get("name", "")
         prim = eqn.primitive.name
 
+        # ``expectation_value(..., return_dict=True)`` renames its eval
+        # function to mark itself for the terminal-sampling interpreter,
+        # which returns a dict of outcomes.  There is no equivalent here:
+        # results leave this decorator through a jitted
+        # :func:`jax.pure_callback`, which has to declare a static output
+        # shape and so cannot return a dict.  Reject it rather than fall
+        # through -- untouched, the quantum state reaches the jit boundary
+        # and XLA fails with an unintelligible aval error.
+        if prim in ("jit", "pjit") and name == "dict_sampling_eval_function":
+            raise NotImplementedError(
+                "backend_sampler does not support "
+                "expectation_value(..., return_dict=True): a dict of outcomes "
+                "cannot be returned through the jitted pure_callback this "
+                "decorator relies on. Use return_dict=False to obtain the "
+                "expectation value, sample() to obtain the individual shots, "
+                "or terminal_sampling() for the dict form."
+            )
+
         if prim in ("jit", "pjit") and name in (
             "sampling_eval_function",
             "expectation_value_eval_function",
