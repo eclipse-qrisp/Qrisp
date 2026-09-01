@@ -34,7 +34,25 @@ from qrisp.simulator.circuit_preprocessing import (
 from qrisp.simulator.quantum_state import QuantumState
 
 
+def _progress_enabled():
+    # CI and pytest capture stdout, while Jupyter uses a non-TTY stream for its
+    # interactive kernel. Keep progress output for the latter, but not for captured output.
+    if sys.stdout.isatty():
+        return True
+
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        return False
+
+    shell = get_ipython()
+    return shell is not None and shell.__class__.__name__ == "ZMQInteractiveShell"
+
+
 def _clear_progress_line():
+    if not _progress_enabled():
+        return
+
     width = min(85, shutil.get_terminal_size().columns)
     print("\r" + (" " * width), end="\r")
 
@@ -58,9 +76,13 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
         position=0,
         smoothing=1,
         file=sys.stdout,
+        disable=not _progress_enabled(),
     )
 
-    progress_bar.display()
+    # Disabled tqdm instances may not initialize terminal-only attributes, so
+    # avoid calling display() when output is captured.
+    if not progress_bar.disable:
+        progress_bar.display()
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
@@ -230,10 +252,12 @@ def statevector_sim(qc):
         position=0,
         smoothing=1,
         file=sys.stdout,
+        disable=not _progress_enabled(),
         # colour = "green"
     )
 
-    progress_bar.display()
+    if not progress_bar.disable:
+        progress_bar.display()
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
@@ -426,9 +450,11 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         position=0,
         smoothing=1,
         file=sys.stdout,
+        disable=not _progress_enabled(),
     )
 
-    progress_bar.display()
+    if not progress_bar.disable:
+        progress_bar.display()
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less

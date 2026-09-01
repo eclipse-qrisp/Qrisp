@@ -1,0 +1,47 @@
+name: Qrisp doctests via Pytest
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doctest:
+    name: Doctest Py${{ matrix.python-version }} (${{ matrix.package.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12.*"]
+        package:
+          - name: qtypes
+            path: src/qrisp/qtypes
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all]"
+      - name: Run ${{ matrix.package.name }} doctests
+        run: |
+          python -m pytest --doctest-modules --doctest-continue-on-failure \
+            "${{ matrix.package.path }}"

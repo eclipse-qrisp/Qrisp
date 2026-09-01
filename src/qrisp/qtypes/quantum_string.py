@@ -68,7 +68,7 @@ class QuantumString(QuantumArray):
     of them, this will potentially affect the others:
 
     >>> from qrisp import h
-    >>> h(q_str_2[0][0])
+    >>> _ = h(q_str_2[0][0])
     >>> print(q_str_0)
     {'hello world': 0.5, 'hello xorld': 0.5}
 
