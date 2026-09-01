@@ -159,6 +159,11 @@ New Tutorials/ Updated Documentation
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
+- Added a barebones ``CONTRIBUTING.md`` in the repository root and a
+  "Contributing" section to the README that link to the Development Guide in
+  the documentation
+  (`PR #815 <https://github.com/eclipse-qrisp/Qrisp/pull/815>`_).
+
 .. Add new tutorials above this line
 
 API Changes

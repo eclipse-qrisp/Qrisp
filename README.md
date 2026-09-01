@@ -78,6 +78,9 @@ To find out how this can be used to break encryption be sure to check the [tutor
 
 Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
 
+## Contributing
+We welcome contributions! Please read the [Development Guide](https://qrisp.eu/reference/Development%20Guide/index.html) to learn how to set up your development environment, write tests, and submit pull requests.
+
 ## Feedback and Contact
 If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
 
