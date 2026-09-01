@@ -16,8 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
-from qrisp.operators.qubit import *
-from qrisp.operators.fermionic import *
-from qrisp.operators.bosonic import *
+# -*- coding: utf-8 -*-
+from qrisp.operators.bosonic.bosonic_operator import *
+from qrisp.operators.bosonic.bosonic import *

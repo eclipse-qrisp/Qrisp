@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,30 @@
 ********************************************************************************
 """
 
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
-from qrisp.operators.qubit import *
-from qrisp.operators.fermionic import *
-from qrisp.operators.bosonic import *
+#
+# ONLY USED FOR LATEX PRINTING
+#
+
+from sympy import Symbol
+
+#
+# Bosonic symbols (only used for visualization, i.e., LateX printing with SymPy)
+#
+
+
+class a_(Symbol):
+    __slots__ = ("ladder", "index")
+
+    def __new__(cls, index: int):
+        obj = Symbol.__new__(cls, "%s%s" % ("a", index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
+
+
+class c_(Symbol):
+    __slots__ = ("ladder", "index")
+
+    def __new__(cls, index: int):
+        obj = Symbol.__new__(cls, "%s%s" % ("c", index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,19 @@
 ********************************************************************************
 """
 
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
-from qrisp.operators.qubit import *
-from qrisp.operators.fermionic import *
-from qrisp.operators.bosonic import *
+from qrisp.operators.bosonic.bosonic_operator import BosonicOperator
+from qrisp.operators.bosonic.bosonic_term import BosonicTerm
+
+
+def a_b(arg: int):
+    if isinstance(arg, int):
+        return BosonicOperator({BosonicTerm([(arg, False)]): 1})
+    else:
+        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+
+
+def c_b(arg: int):
+    if isinstance(arg, int):
+        return BosonicOperator({BosonicTerm([(arg, True)]): 1})
+    else:
+        raise Exception("Cannot initialize operator from type " + str(type(arg)))
