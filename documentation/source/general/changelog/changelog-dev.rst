@@ -144,7 +144,7 @@ API Changes
   ``_split_cycle_shift``, marking it private.  Its parameters were renamed
   from ``highIndex``/``lowIndex`` to ``n``/``k`` to match the notation of
   `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
-  implemented is unchanged
+  implemented is unchanged.
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 .. Add API changes above this line
