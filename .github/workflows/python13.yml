@@ -21,6 +21,8 @@ concurrency:
 jobs:
   build:
     name: Test Py${{ matrix.python-version }} (${{ matrix.test-group.name }})
+    # Skip non-3.11 Python versions when running on pull requests
+    if: github.event_name != 'pull_request' || matrix.python-version == '3.11.*'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
