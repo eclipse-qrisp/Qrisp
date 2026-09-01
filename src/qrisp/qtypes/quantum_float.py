@@ -1125,69 +1125,76 @@ class QuantumFloat(QuantumVariable):
         quantum_bit_shift(self, shift_amount)
 
 
-def create_output_qf(operands, op):
-    if isinstance(op, sp.core.expr.Expr):
-        from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
+def _create_output_qf_from_polynomial(operands, op):
+    """Create an output QuantumFloat from a SymPy polynomial expression."""
+    from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
 
-        expr_list = expr_to_list(op)
+    expr_list = expr_to_list(op)
 
-        for i in range(len(expr_list)):
-            if not isinstance(expr_list[i][0], sp.Symbol):
-                expr_list[i].pop(0)
+    for i in range(len(expr_list)):
+        if not isinstance(expr_list[i][0], sp.Symbol):
+            expr_list[i].pop(0)
 
-        operands.sort(key=lambda x: x.name)
+    operands = sorted(operands, key=lambda x: x.name)
 
-        def prod(iter):
-            iter = list(iter)
-            a = iter[0]
-            for i in range(1, len(iter)):
-                a *= iter[i]
+    def prod(iter):
+        iter = list(iter)
+        a = iter[0]
+        for i in range(1, len(iter)):
+            a *= iter[i]
 
-            return a
+        return a
 
-        from sympy import Abs, Poly, Symbol
+    from sympy import Abs, Poly, Symbol
 
-        poly = Poly(op)
-        monom_list = [a * prod(x**k for x, k in zip(poly.gens, mon)) for a, mon in zip(poly.coeffs(), poly.monoms())]
+    poly = Poly(op)
+    monom_list = [a * prod(x**k for x, k in zip(poly.gens, mon)) for a, mon in zip(poly.coeffs(), poly.monoms())]
 
-        max_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
-        min_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
+    max_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
+    min_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
 
-        abs_poly = sum([Abs(monom) for monom in monom_list], 0)
+    abs_poly = sum([Abs(monom) for monom in monom_list], 0)
 
-        min_poly_value = min([float(Abs(monom).subs(min_value_dic)) for monom in monom_list])
+    min_poly_value = min([float(Abs(monom).subs(min_value_dic)) for monom in monom_list])
 
-        max_poly_value = float(abs_poly.subs(max_value_dic))
+    max_poly_value = float(abs_poly.subs(max_value_dic))
 
-        min_sig = int(np.floor(np.log2(min_poly_value)))
-        max_sig = int(np.ceil(np.log2(max_poly_value)))
+    min_sig = int(np.floor(np.log2(min_poly_value)))
+    max_sig = int(np.ceil(np.log2(max_poly_value)))
 
-        msize = max_sig - min_sig
-        exponent = min_sig
+    msize = max_sig - min_sig
+    exponent = min_sig
 
-        signed = bool(sum([int(operand.signed) for operand in operands]))
+    signed = bool(sum([int(operand.signed) for operand in operands]))
 
-        return QuantumFloat(msize, exponent=exponent, signed=signed)
+    return QuantumFloat(msize, exponent=exponent, signed=signed)
 
-    from qrisp.qtypes import QuantumModulus
 
-    if all(isinstance(operand, QuantumModulus) for operand in operands):
-        res = operands[0].duplicate()
-        if op == "mul":
-            res.m = (
-                operands[0].m
-                + operands[1].m
-                - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
-            )
-        return res
+def _create_output_qf_for_modulus(operands, op):
+    """Create an output QuantumModulus for arithmetic between moduli."""
+    res = operands[0].duplicate()
+    if op == "mul":
+        res.m = (
+            operands[0].m
+            + operands[1].m
+            - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
+        )
+    return res
 
-    if op == "add":
-        signed = operands[0].signed or operands[1].signed
-        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
-        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
+
+def _get_arithmetic_output_shape(operands, op):
+    """Determine the output shape and signedness for QuantumFloat arithmetic."""
+    if op in ("add", "sub"):
+        if check_for_tracing_mode():
+            exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
+            max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
+        else:
+            exponent = min(int(operands[0].exponent), int(operands[1].exponent))
+            max_sig = max(int(operands[0].mshape[1]), int(operands[1].mshape[1])) + 1
+
         msize = max_sig - exponent + 1
-
-        return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name="add_res*")
+        signed = operands[0].signed or operands[1].signed or op == "sub"
+        return msize, exponent, signed
 
     if op == "mul":
         signed = operands[0].signed or operands[1].signed
@@ -1195,20 +1202,29 @@ def create_output_qf(operands, op):
         if operands[0].reg == operands[1].reg and (operands[0].signed and operands[1].signed):
             signed = False
 
-        return QuantumFloat(
-            operands[0].msize + operands[1].msize + operands[0].signed * operands[1].signed,
-            operands[0].exponent + operands[1].exponent,
-            operands[0].qs,
-            signed=signed,
-            name="mul_res*",
-        )
+        msize = operands[0].msize + operands[1].msize + operands[0].signed * operands[1].signed
+        if check_for_tracing_mode():
+            exponent = operands[0].exponent + operands[1].exponent
+        else:
+            exponent = int(operands[0].exponent) + int(operands[1].exponent)
 
-    if op == "sub":
-        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
-        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
-        msize = max_sig - exponent + 1
+        return msize, exponent, signed
 
-        return QuantumFloat(msize, exponent, operands[0].qs, signed=True, name="sub_res*")
+    raise ValueError(f"Unsupported QuantumFloat output operation: {op}")
+
+
+def create_output_qf(operands, op):
+    """Create an output quantum type for the given operands and operation."""
+    if isinstance(op, sp.core.expr.Expr):
+        return _create_output_qf_from_polynomial(operands, op)
+
+    from qrisp.qtypes import QuantumModulus
+
+    if all(isinstance(operand, QuantumModulus) for operand in operands):
+        return _create_output_qf_for_modulus(operands, op)
+
+    msize, exponent, signed = _get_arithmetic_output_shape(operands, op)
+    return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name=f"{op}_res*")
 
 
 # Initiates the value of qf2 into qf1 where qf1 has to hold the value 0

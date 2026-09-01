@@ -113,3 +113,18 @@ def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bo
 
     with pytest.raises(ValueError, match="Not enough qubits to encode value"):
         qf.encoder(out_of_bounds_value)
+
+
+def test_static_arithmetic_keeps_output_metadata_scalar():
+    """Test static arithmetic keeps output exponents as Python integers."""
+    first = QuantumFloat(3, -1)
+    second = QuantumFloat(2, -2, signed=True)
+    first[:] = 1.5
+    second[:] = 0.25
+
+    added = first + second
+    subtracted = first - added
+
+    assert type(added.exponent) is int
+    assert type(added.msize) is int
+    assert subtracted.get_measurement() == {-0.25: 1.0}
