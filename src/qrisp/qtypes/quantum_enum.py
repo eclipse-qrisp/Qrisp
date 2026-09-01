@@ -18,8 +18,7 @@
 from enum import Enum
 from math import log2, ceil
 from typing import Self, Union
-from qrisp import QuantumVariable
-from qrisp import cp, cx, mcp
+from qrisp.core import QuantumVariable, cp, cx, mcp
 
 
 class QuantumEnum(QuantumVariable):
