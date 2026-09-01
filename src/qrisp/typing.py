@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence, TypeAlias
+from typing import Any, Sequence, TypeAlias
 
 import jax
 import jax.core
