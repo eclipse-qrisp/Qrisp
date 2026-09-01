@@ -792,3 +792,64 @@ def test_switch_around_sample():
     for i in range(3):
         res = main(i)
         assert res.shape == (20,)
+
+
+# ===========================================================================
+# Captured-value tests
+#
+# The loop counter is located structurally, from the sampling loop's own
+# condition. An earlier implementation inferred it from avals, which broke
+# once JAX prepended a captured closure value whose aval collided with the
+# accumulator's or with the counter's.
+# ===========================================================================
+
+
+def test_captured_array_matching_accumulator_shape():
+    """A captured array shaped like the accumulator must not be mistaken for it."""
+
+    @backend_sampler(backend=_get_backend())
+    def main(k):
+        captured = jnp.zeros((4,), dtype=jnp.float64) + k
+
+        def kernel():
+            qf = QuantumFloat(2)
+            h(qf[0])
+            return measure(qf) + captured[0]
+
+        return sample(kernel, shots=4)()
+
+    result = main(2.0)
+
+    assert result.shape == (4,)
+    assert {float(value) for value in result} <= {2.0, 3.0}
+
+
+def test_captured_int_scalar_does_not_shadow_loop_index():
+    """A captured int scalar must not be mistaken for the loop counter.
+
+    Selecting it would silently make every iteration read the same shot,
+    so this asserts the shots actually vary rather than just that the call
+    succeeds.
+    """
+
+    def kernel_factory(extra):
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            h(qf[1])
+            h(qf[2])
+            return measure(qf) + extra
+
+        return kernel
+
+    @backend_sampler(backend=_get_backend())
+    def with_capture(k):
+        captured_idx = jnp.int64(0) + k
+        return sample(kernel_factory(captured_idx * 0), shots=50)()
+
+    result = with_capture(0)
+
+    assert result.shape == (50,)
+    # A uniform superposition over 3 qubits: collapsing to a single repeated
+    # shot is the failure mode this guards against.
+    assert len(set(float(value) for value in result)) > 1

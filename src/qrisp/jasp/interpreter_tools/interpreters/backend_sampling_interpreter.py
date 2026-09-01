@@ -260,6 +260,93 @@ def _extract_to_qc_args(inner_jaxpr, body_jaspr, *invals):
     return captured_invalues[0][:-1]
 
 
+def _sampling_body_call(body_jaxpr):
+    """Return the ``sampling_body_func`` call inside a loop body, or ``None``."""
+    for body_eqn in body_jaxpr.eqns:
+        if body_eqn.primitive.name in ("jit", "pjit") and body_eqn.params.get("name") == "sampling_body_func":
+            return body_eqn
+    return None
+
+
+def _cond_carry_indices(cond_jaxpr, cond_nconsts):
+    """Return the indices of the carries referenced by a loop condition."""
+    indices = []
+    for cond_eqn in cond_jaxpr.eqns:
+        for operand in cond_eqn.invars:
+            for pos, invar in enumerate(cond_jaxpr.invars):
+                carry = pos - cond_nconsts
+                if invar is operand and carry >= 0 and carry not in indices:
+                    indices.append(carry)
+    return indices
+
+
+def _find_sampling_loop_index(jaxpr):
+    """Return the position of the loop counter in the ``sampling_body_func`` invars.
+
+    The counter is derived structurally rather than inferred from avals.
+    The sampling loop's ``cond_jaxpr`` is an ``i < shots`` comparison, which
+    narrows the carries down to two: the counter and the shot bound.  Of
+    those two, only the counter is threaded into ``sampling_body_func``, so
+    intersecting the condition's operands with the body call's arguments
+    identifies it uniquely -- without relying on the order of either the
+    comparison's operands or the loop's carries.
+
+    This deliberately avoids matching on shapes and dtypes.  JAX prepends
+    captured closure values to the loop body's invars and to the body call's
+    arguments, so an aval-based search can select a captured value instead of
+    the counter -- silently, when that value is an integer scalar, leaving
+    every iteration reading the same shot.
+
+    Parameters
+    ----------
+    jaxpr : jax.extend.core.Jaxpr
+        The eval-function Jaxpr (``sampling_eval_function`` or
+        ``expectation_value_eval_function``) containing the sampling loop.
+
+    Returns
+    -------
+    int
+        Index of the loop counter within the ``sampling_body_func`` call's
+        invars.
+
+    """
+    for eqn in jaxpr.eqns:
+        if eqn.primitive.name != "while":
+            continue
+
+        body_jaxpr = eqn.params["body_jaxpr"].jaxpr
+        call_eqn = _sampling_body_call(body_jaxpr)
+        if call_eqn is None:
+            continue
+
+        body_nconsts = eqn.params["body_nconsts"]
+        carries = _cond_carry_indices(eqn.params["cond_jaxpr"].jaxpr, eqn.params["cond_nconsts"])
+
+        hits = []
+        for carry in carries:
+            body_pos = body_nconsts + carry
+            if body_pos >= len(body_jaxpr.invars):
+                continue
+            body_var = body_jaxpr.invars[body_pos]
+            pos = next((i for i, operand in enumerate(call_eqn.invars) if operand is body_var), None)
+            if pos is not None:
+                hits.append((pos, body_var.aval))
+
+        if len(hits) != 1:
+            raise RuntimeError(
+                "Could not unambiguously identify the sampling loop index: "
+                f"{len(hits)} of the loop condition's operands are passed to "
+                "sampling_body_func (expected exactly one)."
+            )
+
+        i_pos, aval = hits[0]
+        if getattr(aval, "shape", None) != () or not jnp.issubdtype(aval.dtype, jnp.integer):
+            raise RuntimeError(f"Expected the sampling loop index to be an integer scalar, found {aval}.")
+        return i_pos
+
+    raise RuntimeError("Could not locate the sampling while loop inside the eval function Jaxpr")
+
+
 def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     """Return ``fn(*kernel_args, shots) → result`` for a given eval Jaxpr.
 
@@ -280,29 +367,9 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         raise RuntimeError("sampling_body_func not found inside eval function Jaxpr")
     body_jaspr = Jaspr(body_jaxpr)
 
-    # ── Pre-compute invar positions ─────────────────────────────────
-    # The accumulator output is always the first outvar (return value
-    # of sampling_body_func).  Match its aval against the invars to
-    # find the accumulator position (robust against captured vars).
-    # The loop index *i* is the first int64 scalar before the acc.
-    acc_out_aval = body_jaspr.outvars[0].aval
-    acc_pos = None
-    for idx, invar in enumerate(body_jaspr.invars):
-        aval = invar.aval
-        if type(aval) is type(acc_out_aval) and aval.shape == acc_out_aval.shape and aval.dtype == acc_out_aval.dtype:
-            acc_pos = idx
-            break
-    if acc_pos is None:
-        raise RuntimeError("Could not identify accumulator position in sampling_body_func invars")
-
-    i_pos = None
-    for idx in range(acc_pos):
-        aval = body_jaspr.invars[idx].aval
-        if hasattr(aval, "dtype") and aval.dtype == jnp.int64 and aval.shape == ():
-            i_pos = idx
-            break
-    if i_pos is None:
-        raise RuntimeError("Could not identify loop-index position in sampling_body_func invars")
+    # ── Locate the loop counter ───────────────────────────────────
+    # Derived from the loop's own condition; see _find_sampling_loop_index.
+    i_pos = _find_sampling_loop_index(inner_jaxpr.jaxpr)
 
     def backend_sampling_fn(*invals):
         # invals may include JAX-implicitly-prepended captured closure
@@ -359,7 +426,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
             """
             return body_jaspr.extract_post_processing(*all_non_qs_args)(meas_results)
 
-        loop_eqn_evaluator = _body_loop_evaluator(post_proc, meas_results_array, i_pos, acc_pos)
+        loop_eqn_evaluator = _body_loop_evaluator(post_proc, meas_results_array, i_pos)
 
         # Evaluate the inner Jaspr (the ``sampling_eval_function`` /
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
@@ -375,7 +442,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 # ===========================================================================
 
 
-def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
+def _body_loop_evaluator(post_proc, meas_results, i_pos):
     """Build an ``eqn_evaluator`` for the *inner_jaxpr*.
 
     The *inner_jaxpr* is a ``sampling_eval_function`` or an
@@ -399,7 +466,7 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
         if prim_name in ("jit", "pjit") and eqn.params.get("name") == "sampling_body_func":
             invalues = extract_invalues(eqn, context_dic)
             # invalues = [*captured, i, acc, *kernel_args, qs]
-            # acc is at acc_pos, qs at -1, i at i_pos
+            # qs is at -1, the loop counter at i_pos
             iteration = invalues[i_pos]
             qs_val = invalues[-1]
 
