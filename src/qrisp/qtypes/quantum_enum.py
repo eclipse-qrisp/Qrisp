@@ -174,5 +174,6 @@ class QuantumEnum(QuantumVariable):
 
             return decorator
 
-    def auto(enum_cls: Union[Binary, OneHot]) -> Self:
-        return enum_cls.auto_implement(enum_cls)
+@staticmethod
+def auto(enum_cls: type[Enum]):
+    return enum_cls.auto_implement(enum_cls)
