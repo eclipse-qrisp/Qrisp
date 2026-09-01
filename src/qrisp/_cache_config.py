@@ -32,8 +32,6 @@ def qrisp_lru_compilation_cache(func=None, *, maxsize=None):
 
     Can be used as ``@qrisp_lru_compilation_cache`` or ``@qrisp_lru_compilation_cache()``.
     """
-
-
     if maxsize is None:
         maxsize = QRISP_COMPILATION_CACHE_SIZE
 
