@@ -26,6 +26,8 @@ Measurement and Allocation Management
     are correctly captured without breaking coherence prematurely.
 """
 
+from typing import Any
+
 from qrisp.circuit import ClControlledOperation, CXGate, Instruction, Measurement, QuantumCircuit
 from qrisp.permeability.type_checker import is_permeable
 from qrisp.simulator.preprocessing.disentangling import _Disentangler
@@ -83,11 +85,103 @@ def _extract_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Inst
     return new_qc, mes_list
 
 
+def _find_measurement_follow_up(data: list[Instruction], meas_qubit: Any, meas_clbit: Any) -> bool | None:
+    """Find a blocking operation after a measurement and remove an adjacent reset."""
+    for j, instr in enumerate(data):
+        if meas_qubit in instr.qubits:
+            if instr.op.name == "reset":
+                data.pop(j)
+                return True
+            if not is_permeable(instr.op, [instr.qubits.index(meas_qubit)]):
+                return False
+        if meas_clbit in instr.clbits and not isinstance(instr, ClControlledOperation):
+            return False
+        if instr.op.name == "measure" and instr.qubits[0] == meas_qubit:
+            return False
+
+    return None
+
+
+def _handle_deferred_measurement(
+    instr: Instruction,
+    qc: QuantumCircuit,
+    new_data: list[Instruction],
+    clbit_to_ancilla: dict[Any, Any],
+    next_instr_is_reset: bool,
+) -> None:
+    """Replace a measurement that is used later with an ancilla-based copy."""
+    ancilla = qc.add_qubit()
+    new_data.append(Instruction(CXGate(), instr.qubits + [ancilla]))
+
+    if next_instr_is_reset:
+        new_data.append(Instruction(CXGate(), [ancilla] + instr.qubits))
+        new_data.append(Instruction(_Disentangler(), [instr.qubits[0]]))
+
+    clbit_to_ancilla[instr.clbits[0]] = ancilla
+
+
+def _handle_reset(
+    instr: Instruction,
+    data: list[Instruction],
+    qc: QuantumCircuit,
+    new_data: list[Instruction],
+) -> None:
+    """Replace a reset that is used later with an ancilla-based reset."""
+    reset_qubit = instr.qubits[0]
+    new_data.append(Instruction(_Disentangler(), [reset_qubit]))
+
+    for following_instr in data:
+        if reset_qubit in following_instr.qubits:
+            if not is_permeable(following_instr.op, [following_instr.qubits.index(reset_qubit)]):
+                break
+    else:
+        return
+
+    ancilla = qc.add_qubit()
+    new_data.append(Instruction(CXGate(), instr.qubits + [ancilla]))
+    new_data.append(Instruction(CXGate(), [ancilla] + instr.qubits))
+    new_data.append(Instruction(_Disentangler(), [ancilla]))
+
+
+def _handle_classical_control(
+    instr: Instruction,
+    qc: QuantumCircuit,
+    new_data: list[Instruction],
+    clbit_to_ancilla: dict[Any, Any],
+) -> None:
+    """Replace classical controls with quantum controls where an ancilla exists."""
+    ctrl_state = instr.op.ctrl_state
+    control_qubits = []
+    for j, clbit in enumerate(instr.clbits):
+        if clbit not in clbit_to_ancilla:
+            if ctrl_state[j] == "1":
+                break
+
+            control_qubits.append(qc.add_qubit())
+        else:
+            control_qubits.append(clbit_to_ancilla[clbit])
+    else:
+        new_data.append(
+            Instruction(
+                instr.op.base_op.control(len(control_qubits), ctrl_state=ctrl_state),
+                control_qubits + instr.qubits,
+            )
+        )
+
+    for qubit in control_qubits:
+        new_data.append(Instruction(_Disentangler(), [qubit]))
+
+
+def _make_measurement_instructions(measurements: list[tuple[Any, Any]]) -> list[Instruction]:
+    """Create measurement instructions from deferred qubit/classical-bit pairs."""
+    return [Instruction(Measurement(), [qubit], [clbit]) for qubit, clbit in set(measurements)]
+
+
 def _insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit, list[Instruction]]:
     """Inserts multiverse measurements into the circuit to handle deferred measurement patterns."""
     new_data = []
     new_measurements = []
-    cb_to_qb_dic = {}
+    clbit_to_ancilla = {}
     data = list(qc.data)
 
     while data:
@@ -97,88 +191,23 @@ def _insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit,
             meas_qubit = instr.qubits[0]
             meas_clbit = instr.clbits[0]
 
-            next_instr_is_reset = False
-            for j in range(len(data)):
-                if meas_qubit in data[j].qubits:
-                    if data[j].op.name == "reset":
-                        next_instr_is_reset = True
-                        data.pop(j)
-                        break
-                    if not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
-                        break
-                if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
-                    break
-                # This treats the case that two measurements with the same outcome are performed
-                # in this case we break the loop to make the first measurement appear as a
-                # separate qubit.
-                if data[j].op.name == "measure" and data[j].qubits[0] == meas_qubit:
-                    break
-            else:
+            next_instr_is_reset = _find_measurement_follow_up(data, meas_qubit, meas_clbit)
+            if next_instr_is_reset is None:
                 new_data.append(Instruction(_Disentangler(), [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
 
-            qb = qc.add_qubit()
-            new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
-
-            if next_instr_is_reset:
-                new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-                new_data.append(Instruction(_Disentangler(), [meas_qubit]))
-
-            cb_to_qb_dic[instr.clbits[0]] = qb
-            mes_instr = instr.copy()
-            mes_instr.qubits = [qb]
+            _handle_deferred_measurement(instr, qc, new_data, clbit_to_ancilla, next_instr_is_reset)
 
         elif instr.op.name == "reset":
-            meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(_Disentangler(), [meas_qubit]))
-
-            for j in range(len(data)):
-                if meas_qubit in data[j].qubits:
-                    if not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
-                        break
-            else:
-                continue
-
-            qb = qc.add_qubit()
-            new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
-            new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-            new_data.append(Instruction(_Disentangler(), [qb]))
+            _handle_reset(instr, data, qc, new_data)
 
         elif isinstance(instr.op, ClControlledOperation):
-            new_qubits = []
-            ctrl_state = instr.op.ctrl_state
-            control_qubits = []
-            for j, cb in enumerate(instr.clbits):
-                if cb not in cb_to_qb_dic:
-                    if ctrl_state[j] == "1":
-                        break
-
-                    qb = qc.add_qubit()
-                    new_qubits.append(qb)
-                    control_qubits.append(qb)
-                else:
-                    control_qubits.append(cb_to_qb_dic[cb])
-            else:
-                new_data.append(
-                    Instruction(
-                        instr.op.base_op.control(len(control_qubits), ctrl_state=ctrl_state),
-                        control_qubits + instr.qubits,
-                    )
-                )
-
-            for qb in control_qubits:
-                new_data.append(Instruction(_Disentangler(), [qb]))
+            _handle_classical_control(instr, qc, new_data, clbit_to_ancilla)
         else:
             new_data.append(instr)
 
-    for cb, qb in cb_to_qb_dic.items():
-        new_measurements.append((qb, cb))
-
-    new_measurements = list(set(new_measurements))
-    measurements = []
-    for qb, cb in new_measurements:
-        measurements.append(Instruction(Measurement(), [qb], [cb]))
+    new_measurements.extend((ancilla, clbit) for clbit, ancilla in clbit_to_ancilla.items())
 
     qc.data = new_data
-    return qc, measurements
+    return qc, _make_measurement_instructions(new_measurements)
