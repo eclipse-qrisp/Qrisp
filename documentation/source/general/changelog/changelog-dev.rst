@@ -37,9 +37,10 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
-- Sped up ``BigInteger.__lshift__``/``__rshift__`` from an O(total bits)
-  bit-by-bit loop to a limb-wise shift (~3x faster at 2048-bit width),
-  with identical behavior
+- Sped up ``BigInteger.__lshift__``/``__rshift__`` (~3x faster at 2048-bit
+  width), added doctest-verified ``Examples``, and added test coverage
+  across the ``BigInteger``/Jasp-Montgomery backend and Shor's
+  algorithm/RSA, previously untested
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 Other New Features
@@ -137,16 +138,13 @@ Bug Fixes
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
-* Fixed several crashes in the ``BigInteger``/Jasp-Montgomery backend:
-  continued-fraction period recovery, mixed-type Montgomery encode/decode,
-  a broken traced ``egcd``, and ``QuantumArray`` matrix multiplication
-  against a classical matrix
-  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
-
-* Fixed ``shors_alg``'s order-finding verifying candidates against a
-  mutated value instead of the original base, several exact (rather than
-  modular) big-integer exponentiations, and an exponential-time
-  candidate-combination fallback
+* Fixed several crashes and a correctness bug in the ``BigInteger``/Shor's
+  algorithm backend: continued-fraction period recovery, mixed-type
+  Montgomery encode/decode, a broken traced ``egcd``, ``QuantumArray``
+  matrix multiplication against a classical matrix, and order-finding
+  verifying candidates against a mutated value instead of the original
+  base (which also masked an exponential-time candidate-combination
+  fallback)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 * Fix a code typo in the Jasp tutorial which printed the wrong variable
@@ -172,11 +170,6 @@ New Tutorials/ Updated Documentation
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
-- Added doctest-verified ``Examples`` to previously example-less functions
-  across the ``BigInteger``/Jasp-Montgomery backend and its static
-  counterpart (``modular_arithmetic/mod_tools.py``)
-  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
-
 .. Add new tutorials above this line
 
 API Changes
@@ -190,9 +183,9 @@ API Changes
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
 
-* Renamed five internal ``qrisp.shor`` helper functions to be private
-  (leading underscore); none were part of the documented public API, but a
-  missing ``__all__`` previously left them reachable via ``import *``
+* Renamed five internal ``qrisp.shor`` helper functions to be private, and
+  removed the unused ``BigInteger.__sub_alt__`` method as none were part of
+  the documented public API
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 .. Add API changes above this line
@@ -253,11 +246,6 @@ Development
   used to avoid circular imports) and ``E402`` (module-level imports placed
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
-
-* Added test coverage for previously-untested code in the
-  ``BigInteger``/Jasp-Montgomery backend and in Shor's algorithm/RSA,
-  none of which had any prior test references
-  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 Dependency Upgrades
 -------------------
