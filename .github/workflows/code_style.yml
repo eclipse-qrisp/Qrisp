@@ -22,13 +22,11 @@ permissions:
   checks: write
 
 jobs:
-  changes:
-    name: Detect src changes
-    # Used to gate the reviewdog linter job: it only runs when src/ changes.
+  lint:
+    name: ruff lint (reviewdog)
+    # Runs on PRs only, and the reviewdog step is gated on changes under src/.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    outputs:
-      src: ${{ steps.filter.outputs.src }}
     steps:
       - uses: actions/checkout@v7
 
@@ -40,14 +38,6 @@ jobs:
           filters: |
             src:
               - 'src/**'
-
-  lint:
-    name: ruff lint (reviewdog)
-    needs: changes
-    if: needs.changes.outputs.src == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
@@ -65,6 +55,7 @@ jobs:
           pip install "ruff==${RUFF_VERSION}"
 
       - name: Run ruff via reviewdog
+        if: steps.filter.outputs.src == 'true'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
