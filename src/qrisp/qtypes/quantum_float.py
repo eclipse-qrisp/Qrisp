@@ -16,28 +16,37 @@
 
 """Defines the QuantumFloat type for arbitrary-precision signed/unsigned quantum floating-point numbers."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import jax.numpy as jnp
 import numpy as np
 import sympy as sp
 from jax import Array, jit
 from jax.core import Tracer
 
-from qrisp.core import QuantumVariable, cx
+from qrisp.core import QuantumVariable, cx, x
 from qrisp.environments import conjugate, invert
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import gate_wrap
+from qrisp.typing import FloatLike, ScalarLike
+
+if TYPE_CHECKING:
+    from qrisp.circuit.qubit import Qubit
+    from qrisp.qtypes.quantum_bool import QuantumBool
 
 
-def _signed_int_iso(x, n):
-    """Computes the signed integer isomorphism for a given bit-width.
+def _signed_int_iso(value: int | Array, n: int) -> Array:
+    """Compute the signed integer isomorphism for a given bit-width.
 
-    This function maps an integer `x` from the signed range [-2^n, 2^n - 1]
-    into the unsigned range [0, 2^(n+1) - 1].
-    This is equivalent to the mathematical operation: x % 2^(n+1).
+    This function maps an integer ``value`` from the signed range
+    [-2^n, 2^n - 1] into the unsigned range [0, 2^(n+1) - 1].
+    This is equivalent to the mathematical operation: value % 2^(n+1).
 
     Parameters
     ----------
-    x : int or jax.Array
+    value : int or jax.Array
         The signed integer or array of integers to be transformed.
     n : int
         The bit-width for the signed integer representation.
@@ -45,18 +54,18 @@ def _signed_int_iso(x, n):
     Returns
     -------
     jax.Array
-        A jnp.int64 array where each element of `x` has been mapped to
+        A jnp.int64 array where each element of ``value`` has been mapped to
         the unsigned range [0, 2^(n+1) - 1].
 
     """
-    # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
+    # 1. Modular wrap: Ensure value is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
-    return jnp.int64(x) & mask
+    return jnp.int64(value) & mask
 
 
 @jit
-def _signed_int_iso_inv(y, n):
-    """Computes the inverse signed integer isomorphism for a given bit-width.
+def _signed_int_iso_inv(y: int | Array, n: int) -> Array:
+    """Compute the inverse signed integer isomorphism for a given bit-width.
 
     This function maps an integer `y` from the unsigned range [0, 2^(n+1) - 1]
     back into the signed range [-2^n, 2^n - 1]. It performs a manual
@@ -86,40 +95,40 @@ def _signed_int_iso_inv(y, n):
     return jnp.where(y_wrapped & sign_bit, y_wrapped - (jnp.int64(1) << (n + 1)), y_wrapped)
 
 
-# def signed_int_iso(x, n):
-#    if int(x) < -(2**n) or int(x) >= 2**n:
-#        raise Exception("Applying signed integer isomorphism resulted in overflow")
+def trunc_poly(poly: sp.Expr, trunc_bounds: tuple[int, int]) -> sp.Expr:
+    """Truncate a polynomial to the given power-of-2 bounds.
 
-#    if x >= 0:
-#        return x % 2**n
-#    else:
-#        return -abs(x) % 2 ** (n + 1)
+    Truncates a polynomial of the form ``p(x) = 2**k_0*x**i_0 +
+    2**k_1*x**i_1 + ...`` by removing every summand whose coefficient's
+    power of 2 does not lie within ``trunc_bounds``.
 
+    Parameters
+    ----------
+    poly : sympy.Expr
+        The polynomial to truncate.
+    trunc_bounds : tuple[int, int]
+        The (lower, upper) power-of-2 bounds to truncate to.
 
-# def signed_int_iso_inv(y, n):
-#    y = y % 2 ** (n + 1)
-#    if y < 2**n:
-#        return y
-#    else:
-#        return -(2 ** (n + 1)) + y
+    Returns
+    -------
+    sympy.Expr
+        The truncated polynomial, expanded.
 
-
-# Truncates a polynomial of the form p(x) = 2**k_0*x*i_0 + 2**k_1*x**i_1 ...
-# where every summand where the power of the coefficients does not lie in the interval
-# trunc bounds is removed
-def trunc_poly(poly, trunc_bounds):
+    """
+    # sympy's type stubs don't model Poly's dynamic attribute surface, so
+    # pyright can't see .trunc()/.expr here even though they're real members.
     # Convert to sympy polynomial
-    poly = sp.poly(poly)
+    poly_repr = sp.poly(poly)
 
     # Clip upper bound
-    poly = poly.trunc(2.0 ** (trunc_bounds[1]))
+    poly_repr = poly_repr.trunc(2.0 ** (trunc_bounds[1]))  # pyright: ignore[reportAttributeAccessIssue]
 
     # Clip lower bound
-    poly = poly / 2.0 ** trunc_bounds[0]
-    poly = poly - sp.poly(poly).trunc(1)
-    poly = poly * 2.0 ** trunc_bounds[0]
+    poly_repr = poly_repr / 2.0 ** trunc_bounds[0]
+    poly_repr = poly_repr - sp.poly(poly_repr).trunc(1)
+    poly_repr = poly_repr * 2.0 ** trunc_bounds[0]
 
-    return poly.expr.expand()
+    return poly_repr.expr.expand()
 
 
 class QuantumFloat(QuantumVariable):
@@ -319,7 +328,7 @@ class QuantumFloat(QuantumVariable):
 
     >>> from qrisp import h
     >>> a = QuantumFloat(4)
-    >>> h(a[2])
+    >>> _ = h(a[2])
     >>> print(a)
     {0: 0.5, 4: 0.5}
     >>> comparison_qbl_0 = (a < 4 )
@@ -339,7 +348,32 @@ class QuantumFloat(QuantumVariable):
 
     """
 
-    def __init__(self, msize, exponent=0, qs=None, name=None, signed=False):
+    def __init__(
+        self,
+        msize: int | Array,
+        exponent: int | Array = 0,
+        qs: Any = None,
+        name: str | None = None,
+        signed: bool = False,
+    ) -> None:
+        """Construct a QuantumFloat with the given mantissa size, exponent, and sign.
+
+        Parameters
+        ----------
+        msize : int or jax.Array
+            The amount of mantissa qubits.
+        exponent : int or jax.Array, optional
+            The exponent, determining the precision. The default is 0.
+        qs : QuantumSession, optional
+            A QuantumSession object, where the QuantumFloat is supposed to be
+            registered. The default is None.
+        name : str, optional
+            A name which uniquely identifies the QuantumFloat. The default is None.
+        signed : bool, optional
+            If ``True``, an additional qubit is allocated to represent the
+            sign. The default is False.
+
+        """
         # Boolean to indicate if the float is signed
         self.signed = signed
         # Exponent
@@ -355,19 +389,47 @@ class QuantumFloat(QuantumVariable):
         self.static_attributes = ["signed"]
 
     @property
-    def msize(self):
+    def msize(self) -> int:
+        """The amount of mantissa qubits (excludes the sign qubit, if any).
+
+        Returns
+        -------
+        int
+            The mantissa size.
+
+        """
         return self.size - self.signed
 
     @property
-    def mshape(self):
-        # Tuple that consists of (log2(min), log2(max)) where min and max are the
-        # minimal and maximal values of the absolutes that the QuantumFloat can
-        # represent.
+    def mshape(self) -> tuple[int | Array, int | Array]:
+        """The (log2(min), log2(max)) bounds of the absolute values this
+        QuantumFloat can represent.
+
+        Returns
+        -------
+        tuple[int, int]
+            The (minimal, maximal) exponent of the representable magnitude.
+
+        """
         return (self.exponent, self.exponent + self.msize)
 
     # Define outcome_labels
-    def decoder(self, i):
-        """Convert measurement outcome (integer) back to human-readable value."""
+    def decoder(self, i: int | Array) -> int | float | Array:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Convert a measurement outcome (integer) back to a human-readable value.
+
+        Parameters
+        ----------
+        i : int or jax.Array
+            The integer outcome of a measurement of this QuantumFloat's qubits.
+
+        Returns
+        -------
+        int, float, or jax.Array
+            The decoded value: an ``int`` or ``float`` outside of tracing
+            mode (depending on whether the exponent is non-negative), or a
+            traced ``jax.Array`` while tracing.
+
+        """
         if self.signed:
             res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
         else:
@@ -375,23 +437,55 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             return res
-        elif self.exponent >= 0:
+        if self.exponent >= 0:
             return int(res)
-        else:
-            return float(res)
+        return float(res)
 
-    def jdecoder(self, i):
+    def jdecoder(self, i: int | Array) -> int | float | Array:
+        """JAX-traceable version of :meth:`decoder`, used internally during tracing.
+
+        Parameters
+        ----------
+        i : int or jax.Array
+            The integer outcome of a measurement of this QuantumFloat's qubits.
+
+        Returns
+        -------
+        int, float, or jax.Array
+            The decoded value, see :meth:`decoder`.
+
+        """
         return self.decoder(i)
 
-    def encoder(self, i):
+    def encoder(self, i: ScalarLike) -> int | Array:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Convert a human-readable value to an integer that represents the measurement result.
 
         Also validates that the input value can be represented within the bounds of the provided
         QuantumFloat in static mode.
+
+        .. note::
+
+            Unlike the base :meth:`QuantumVariable.encoder
+            <qrisp.QuantumVariable.encoder>`, this parameter is named ``i``
+            (not ``value``) for historical reasons specific to QuantumFloat.
+
+        Parameters
+        ----------
+        i : ScalarLike
+            A human-readable numeric value.
+
+        Returns
+        -------
+        int or jax.Array
+            The integer encoding the given value.
+
         """
         # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
-        if not check_for_tracing_mode() and not self.signed and i < 0:
+        # ScalarLike includes complex, which isn't orderable -- i is never
+        # actually complex here (a complex value could never satisfy the
+        # bounds check below either), so this comparison is always safe.
+        if not check_for_tracing_mode() and not self.signed and i < 0:  # pyright: ignore[reportOperatorIssue]
             raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
 
         # the following check is based on the math for fixed point arithmetic which varies according to the
@@ -432,10 +526,9 @@ class QuantumFloat(QuantumVariable):
 
         if isinstance(res, (int, float)):
             return int(res)
-        else:
-            return res.astype(int)
+        return res.astype(int)
 
-    def sb_poly(self, m=0):
+    def sb_poly(self, m: int = 0) -> sp.Expr:
         """Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
         the image extension parameter.
 
@@ -455,10 +548,15 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
+        The polynomial's symbols are named after this QuantumFloat's ``hash``
+        (to guarantee uniqueness across QuantumFloats), so we inspect its
+        coefficients rather than its literal string representation:
+
         >>> from qrisp import QuantumFloat
+        >>> import sympy as sp
         >>> x = QuantumFloat(3, -1, signed = True, name = "x")
-        >>> print(x.sb_poly(5))
-        0.5*x_0 + 1.0*x_1 + 2.0*x_2 + 28.0*x_3
+        >>> [float(c) for c in sp.Poly(x.sb_poly(5)).coeffs()]
+        [0.5, 1.0, 2.0, 28.0]
 
         """
         if m == 0:
@@ -466,43 +564,71 @@ class QuantumFloat(QuantumVariable):
 
         symbols = [sp.symbols(str(hash(self)) + "_" + str(i)) for i in range(self.size)]
 
-        poly = sum([2.0 ** (i) * symbols[i] for i in range(self.size)])
+        poly = sum(2.0**i * symbols[i] for i in range(self.size))
 
         if self.signed:
             poly += (2.0 ** (m + 1) - 2.0 ** (self.size)) * symbols[-1]
 
-        return 2**self.exponent * poly
+        # sympy's Symbol arithmetic isn't precisely typed, and self.exponent
+        # can be a traced jax.Array -- both are real Expr-producing operations
+        # at runtime.
+        return 2**self.exponent * poly  # pyright: ignore[reportReturnType]
 
-    def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
-        """Initialize a QuantumFloat to a specific value."""
+    def encode(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, encoding_number: ScalarLike, rounding: bool = False, permit_dirtyness: bool = False
+    ) -> None:
+        """Initialize a QuantumFloat to a specific value.
+
+        .. note::
+
+            Unlike the base :meth:`QuantumVariable.encode
+            <qrisp.QuantumVariable.encode>`, this method additionally accepts
+            ``rounding`` (inserted before ``permit_dirtyness``, for
+            historical reasons specific to QuantumFloat).
+
+        Parameters
+        ----------
+        encoding_number : ScalarLike
+            The value to encode.
+        rounding : bool, optional
+            If ``True``, round ``encoding_number`` to the value this
+            QuantumFloat can represent that is closest to it, before
+            encoding. The default is False.
+        permit_dirtyness : bool, optional
+            Suppresses the error message when calling encode on dirty
+            qubits. The default is False.
+
+        Returns
+        -------
+        None
+
+        """
+        value = encoding_number
         if rounding:
             # Round value to closest fitting number
             outcome_labels = [self.decoder(i) for i in range(2**self.size)]
-            encoding_number = outcome_labels[np.argmin(np.abs(encoding_number - np.array(outcome_labels)))]
+            value = outcome_labels[np.argmin(np.abs(encoding_number - np.array(outcome_labels)))]
 
-        super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
+        super().encode(value, permit_dirtyness=permit_dirtyness)
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __mul__(self, other):
-
-        from qrisp.jasp import check_for_tracing_mode
-
+    def __mul__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Multiply this QuantumFloat by another QuantumFloat or a classical int."""
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import jasp_multiplyer, jasp_squaring
 
             if isinstance(other, QuantumFloat):
                 if self is other:
                     return jasp_squaring(self)
-                else:
-                    return jasp_multiplyer(other, self)
-            else:
-                raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
+                return jasp_multiplyer(other, self)
+            raise TypeError(f"Tried to multiply class {type(other)} with QuantumFloat")
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder, q_mult
 
         if isinstance(other, QuantumFloat):
-            return q_mult(self, other)
-        elif isinstance(other, (int, np.integer)):
+            return q_mult(self, other)  # pyright: ignore[reportReturnType]
+
+        if isinstance(other, (int, np.integer)):
             bit_shift = 0
             while not other % 2:
                 other = other >> 1
@@ -521,21 +647,21 @@ class QuantumFloat(QuantumVariable):
                     signed=False,
                 )
 
-            polynomial_encoder([self], output_qf, other * sp.Symbol("x"))
+            # int.__mul__ doesn't know about Symbol's __rmul__, but this works fine at runtime.
+            polynomial_encoder([self], output_qf, other * sp.Symbol("x"))  # pyright: ignore[reportOperatorIssue]
 
             output_qf.exp_shift(bit_shift)
 
             return output_qf
-        else:
-            raise Exception(
-                "QuantumFloat multiplication for type " + str(type(other)) + ""
-                " not implemented (available are QuantumFloat and int)"
-            )
+
+        raise TypeError(
+            "QuantumFloat multiplication for type " + str(type(other)) + ""
+            " not implemented (available are QuantumFloat and int)"
+        )
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __add__(self, other):
-
-        from qrisp import check_for_tracing_mode
+    def __add__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Add another QuantumFloat or a classical scalar to this QuantumFloat."""
         from qrisp.alg_primitives.arithmetic import sbp_add
 
         if isinstance(other, QuantumFloat):
@@ -544,20 +670,18 @@ class QuantumFloat(QuantumVariable):
                 cx(self, res)
                 res += other
                 return res
-            else:
-                return sbp_add(self, other)
+            return sbp_add(self, other)
 
-        elif isinstance(other, (int, float, Tracer)):
+        if isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res += other
             return res
-        else:
-            raise Exception("Addition with type " + str(type(other)) + " not implemented")
+        raise TypeError("Addition with type " + str(type(other)) + " not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __sub__(self, other):
-        from qrisp import check_for_tracing_mode
+    def __sub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Subtract another QuantumFloat or a classical scalar from this QuantumFloat."""
         from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
@@ -566,89 +690,86 @@ class QuantumFloat(QuantumVariable):
                 cx(self, res)
                 res -= other
                 return res
-            else:
-                return sbp_sub(self, other)
+            return sbp_sub(self, other)
 
-        elif isinstance(other, (int, float, Tracer)):
+        if isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res -= other
             return res
-        else:
-            raise Exception("Subtraction with type " + str(type(other)) + " not implemented")
+        raise TypeError("Subtraction with type " + str(type(other)) + " not implemented")
 
     __radd__ = __add__
     __rmul__ = __mul__
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __rsub__(self, other):
-        from qrisp import x
+    def __rsub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Subtract this QuantumFloat from a classical scalar or QuantumFloat."""
         from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
             return sbp_sub(other, self)
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             res = self.duplicate(init=True)
             if not res.signed:
                 res.add_sign()
             x(res)
             res += other + 2**res.exponent
             return res
-        else:
-            raise Exception("Subtraction with type " + str(type(other)) + " not implemented")
+        raise TypeError("Subtraction with type " + str(type(other)) + " not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __truediv__(self, other):
+    def __truediv__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Divide this QuantumFloat by another QuantumFloat."""
         from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other)
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __floordiv__(self, other):
+    def __floordiv__(self, other: QuantumFloat) -> QuantumFloat:
+        """Floor-divide this (unsigned, integer) QuantumFloat by another one."""
         if self.signed or other.signed:
-            raise Exception("Floor division not implemented for signed QuantumFloats")
+            raise NotImplementedError("Floor division not implemented for signed QuantumFloats")
 
         if self.exponent < 0 or other.exponent < 0:
-            raise Exception("Tried to perform floor division on non-integer QuantumFloats")
+            raise ValueError("Tried to perform floor division on non-integer QuantumFloats")
         from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other, prec=0)
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __pow__(self, power):
+    def __pow__(self, power: int) -> QuantumFloat:
+        """Raise this QuantumFloat to an integer power (-1 means inversion)."""
         if power == -1:
             from qrisp.alg_primitives.arithmetic import qf_inversion
 
             return qf_inversion(self)
-        elif power == 0:
+        if power == 0:
             res = self.duplicate()
             res[:] = 1
             return res
-        else:
-            from qrisp import jasp_multiplyer
 
-            def power_conjugator(base, power, temp_results):
-                cx(base, temp_results[0])
-                for i in range(power - 1):
-                    (temp_results[i + 1] << jasp_multiplyer)(base, temp_results[i])
-                    # (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
+        from qrisp.alg_primitives.arithmetic import jasp_multiplyer
 
-            temp_results = [QuantumFloat((i + 1) * self.size) for i in range(power)]
+        def power_conjugator(base, power, temp_results):
+            cx(base, temp_results[0])
+            for i in range(power - 1):
+                (temp_results[i + 1] << jasp_multiplyer)(base, temp_results[i])
 
-            res = QuantumFloat(self.size * power)
-            with conjugate(power_conjugator)(self, power, temp_results):
-                cx(temp_results[-1], res)
+        temp_results = [QuantumFloat((i + 1) * self.size) for i in range(power)]
 
-            for qv in temp_results:
-                qv.delete()
+        res = QuantumFloat(self.size * power)
+        with conjugate(power_conjugator)(self, power, temp_results):
+            cx(temp_results[-1], res)
 
-            return res
+        for qv in temp_results:
+            qv.delete()
+
+        return res
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __iadd__(self, other):
-
-        from qrisp.jasp import check_for_tracing_mode
-
+    def __iadd__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Add another QuantumFloat or a classical scalar to this QuantumFloat, in place."""
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
@@ -662,11 +783,12 @@ class QuantumFloat(QuantumVariable):
             elif isinstance(other, (int, float, np.integer, np.floating)) or (
                 isinstance(other, Tracer) and isinstance(other, Array)
             ):
-                gidney_adder(self.encoder(other), self)
+                # gidney_adder's stub predates encoder() returning a traced
+                # jax.Array here; a concrete int or a traced Array both work
+                # at runtime.
+                gidney_adder(self.encoder(other), self)  # pyright: ignore[reportArgumentType]
             else:
-                print(isinstance(other, Tracer))
-                print(type(other.dtype))
-                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
+                raise TypeError(f"Don't know how to handle quantum addition with type {type(other)}")
 
             return self
 
@@ -679,10 +801,8 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         elif isinstance(other, (int, float, np.number)):
-            # self.incr(other)
-
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
-                raise Exception(
+                raise ValueError(
                     "Tried to perform in-place addition with invalid number. QuantumFloat precision too low."
                 )
 
@@ -692,15 +812,14 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise Exception("In-place addition for type " + str(type(other)) + " not implemented")
+            raise TypeError("In-place addition for type " + str(type(other)) + " not implemented")
 
         return self
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __isub__(self, other):
-
+    def __isub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+        """Subtract another QuantumFloat or a classical scalar from this QuantumFloat, in place."""
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
-        from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
             with invert():
@@ -715,7 +834,7 @@ class QuantumFloat(QuantumVariable):
 
         elif isinstance(other, (int, float, np.integer, np.floating)):
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
-                raise Exception(
+                raise ValueError(
                     "Tried to perform in-place subtraction with invalid number. QuantumFloat precision too low."
                 )
 
@@ -725,90 +844,92 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise Exception("In-place substraction for type " + str(type(other)) + " not implemented")
+            raise TypeError("In-place substraction for type " + str(type(other)) + " not implemented")
 
         return self
 
     @gate_wrap(permeability=[], is_qfree=True)
-    def __imul__(self, other):
-
+    def __imul__(self, other: FloatLike) -> QuantumFloat:
+        """Multiply this QuantumFloat by a classical scalar, in place."""
         from qrisp.alg_primitives.arithmetic import inpl_mult
 
         inpl_mult(self, other)
 
         return self
 
-    def __irshift__(self, k):
+    def __irshift__(self, k: int) -> QuantumFloat:
+        """Shift this QuantumFloat's exponent down by k (a free, gate-less bitshift)."""
         self.exp_shift(-k)
         return self
 
-    def __ilshift__(self, k):
+    def __ilshift__(self, k: int) -> QuantumFloat:
+        """Shift this QuantumFloat's exponent up by k (a free, gate-less bitshift)."""
         self.exp_shift(k)
         return self
 
-    def __lt__(self, other):
+    def __lt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<)."""
         from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
 
         if check_for_tracing_mode():
-            return uint_lt(self, other, gidney_adder)
-        else:
-            if not isinstance(other, (QuantumFloat, int, float)):
-                raise Exception(f"Comparison with type {type(other)} not implemented")
+            return uint_lt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
-            return lt(self, other)
+        return lt(self, other)  # pyright: ignore[reportReturnType]
 
-    def __gt__(self, other):
+    def __gt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>)."""
         from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
 
         if check_for_tracing_mode():
-            return uint_gt(self, other, gidney_adder)
-        else:
-            if not isinstance(other, (QuantumFloat, int, float)):
-                raise Exception(f"Comparison with type {type(other)} not implemented")
+            return uint_gt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
-            return gt(self, other)
+        return gt(self, other)  # pyright: ignore[reportReturnType]
 
-    def __le__(self, other):
+    def __le__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<=)."""
         from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
 
         if check_for_tracing_mode():
             return uint_le(self, other, gidney_adder)
-        else:
-            if not isinstance(other, (QuantumFloat, int, float)):
-                raise Exception(f"Comparison with type {type(other)} not implemented")
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
-            return leq(self, other)
+        return leq(self, other)
 
-    def __ge__(self, other):
+    def __ge__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>=)."""
         from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
 
         if check_for_tracing_mode():
             return uint_ge(self, other, gidney_adder)
-        else:
-            if not isinstance(other, (QuantumFloat, int, float)):
-                raise Exception(f"Comparison with type {type(other)} not implemented")
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
-            return geq(self, other)
+        return geq(self, other)
 
-    def __eq__(self, other):
-
+    def __eq__(self, other: object) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (==)."""
         from qrisp.alg_primitives.arithmetic import eq
 
         if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
 
-    def __ne__(self, other):
-
+    def __ne__(self, other: object) -> "QuantumBool":
+        """Compare this QuantumFloat to another QuantumFloat or a classical scalar (!=)."""
         from qrisp.alg_primitives.arithmetic import neq
 
         if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
 
         return neq(self, other)
 
-    def exp_shift(self, shift):
+    def exp_shift(self, shift: int) -> None:
         """Performs an internal bit shift. Note that this method doesn't cost any
         quantum gates. For the quantum version of this method, see
         :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bitshift>`.
@@ -820,7 +941,7 @@ class QuantumFloat(QuantumVariable):
 
         Raises
         ------
-        Exception
+        TypeError
             Tried to shift QuantumFloat exponent by non-integer value
 
         Examples
@@ -853,16 +974,16 @@ class QuantumFloat(QuantumVariable):
 
         """
         if not isinstance(shift, int):
-            raise Exception("Tried to shift QuantumFloat exponent by non-integer value")
+            raise TypeError("Tried to shift QuantumFloat exponent by non-integer value")
 
         self.exponent += shift
 
-    def add_sign(self):
+    def add_sign(self) -> None:
         """Turns an unsigned QuantumFloat into its signed version.
 
         Raises
         ------
-        Exception
+        ValueError
             Tried to add sign to signed QuantumFloat.
 
         Examples
@@ -877,12 +998,12 @@ class QuantumFloat(QuantumVariable):
 
         """
         if self.signed:
-            raise Exception(r"Tried to add sign to signed QuantumFloat")
+            raise ValueError(r"Tried to add sign to signed QuantumFloat")
 
         self.extend(1, self.size)
         self.signed = True
 
-    def sign(self):
+    def sign(self) -> "Qubit":
         r"""Returns the sign qubit.
 
         This qubit is in state $\ket{1}$ if the QuantumFloat holds a negative value and
@@ -905,7 +1026,7 @@ class QuantumFloat(QuantumVariable):
 
         Raises
         ------
-        Exception
+        ValueError
             Tried to retrieve sign qubit of unsigned QuantumFloat.
 
         Returns
@@ -923,17 +1044,33 @@ class QuantumFloat(QuantumVariable):
         >>> n_amp = 1/3**0.5
         >>> qf[:] = {-1 : n_amp, -2 : n_amp, 1 : n_amp}
         >>> qbl = QuantumBool()
-        >>> cx(qf.sign(), qbl)
+        >>> _ = cx(qf.sign(), qbl)
         >>> print(qbl)
-        {True: 0.6667, False: 0.3333}
+        {True: 0.66667, False: 0.33333}
 
         """
         if not self.signed:
-            raise Exception("Tried to retrieve sign qubit of unsigned QuantumFloat")
+            raise ValueError("Tried to retrieve sign qubit of unsigned QuantumFloat")
 
-        return self[-1]
+        return self[-1]  # pyright: ignore[reportReturnType]
 
-    def init_from(self, other, ignore_rounding_errors=False, ignore_overflow_errors=False):
+    def init_from(
+        self, other: QuantumFloat, ignore_rounding_errors: bool = False, ignore_overflow_errors: bool = False
+    ) -> None:
+        """Initialize this (zero-valued) QuantumFloat with the value of another one.
+
+        Parameters
+        ----------
+        other : QuantumFloat
+            The QuantumFloat to copy the value from.
+        ignore_rounding_errors : bool, optional
+            If ``True``, don't raise if ``other`` has more precision than
+            this QuantumFloat can represent. The default is False.
+        ignore_overflow_errors : bool, optional
+            If ``True``, don't raise if ``other`` can represent larger
+            magnitudes than this QuantumFloat. The default is False.
+
+        """
         copy_qf(
             self,
             other,
@@ -941,17 +1078,27 @@ class QuantumFloat(QuantumVariable):
             ignore_overflow_errors=ignore_overflow_errors,
         )
 
-    def incr(self, x=None):
+    def incr(self, value: FloatLike | None = None) -> None:
+        """Increment this QuantumFloat in place by a classical value.
+
+        Parameters
+        ----------
+        value : FloatLike, optional
+            The value to increment by. The default is this QuantumFloat's
+            smallest representable increment, ``2**self.exponent``.
+
+        """
         from qrisp.alg_primitives.arithmetic.adders.incrementation import increment
 
-        if x is None:
-            x = 2**self.exponent
-        increment(self, x)
+        if value is None:
+            value = 2**self.exponent
+        increment(self, value)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Hash by object identity (QuantumFloats define __eq__, which disables the default hash)."""
         return id(self)
 
-    def significant(self, k):
+    def significant(self, k: int) -> "Qubit":
         """Returns the qubit with significance $k$.
 
         Parameters
@@ -961,7 +1108,7 @@ class QuantumFloat(QuantumVariable):
 
         Raises
         ------
-        Exception
+        ValueError
             Tried to retrieve invalid significant from QuantumFloat
 
         Returns
@@ -975,13 +1122,14 @@ class QuantumFloat(QuantumVariable):
 
         >>> from qrisp import QuantumFloat, x
         >>> qf = QuantumFloat(6, -3)
-        >>> x(qf.significant(-2))
+        >>> _ = x(qf.significant(-2))
         >>> print(qf)
         {0.25: 1.0}
 
         The qubit with significance $-2$ corresponds to the value $0.25 = 2^{-2}$.
 
-        >>> x(qf.significant(2))
+        >>> _ = x(qf.significant(2))
+        >>> print(qf)
         {4.25: 1.0}
 
         The qubit with significance $2$ corresponds to the value $4 = 2^{2}$.
@@ -990,19 +1138,19 @@ class QuantumFloat(QuantumVariable):
         sig_list = list(range(self.mshape[0], self.mshape[1]))
 
         if k not in sig_list:
-            raise Exception(
+            raise ValueError(
                 f"Tried to retrieve invalid significant {k} from QuantumFloat with mantissa shape {self.mshape}"
             )
 
-        return self[sig_list.index(k)]
+        return self[sig_list.index(k)]  # pyright: ignore[reportReturnType]
 
-    def truncate(self, x):
+    def truncate(self, value: float) -> float:
         """Receives a regular float and returns the float that is closest to the input but
         can still be encoded.
 
         Parameters
         ----------
-        x : float
+        value : float
             A float that is supposed to be truncated.
 
         Returns
@@ -1012,14 +1160,15 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-        We create a QuantumFloat and round a value to fit the encoder and subsequently
-        initiate:
+        We create a QuantumFloat and round a value to the closest one it can
+        represent. Note that directly encoding an unrepresentable value (like
+        ``0.5102341`` below, which doesn't fit this QuantumFloat's precision
+        of $2^{-1} = 0.5$) already truncates silently, so ``truncate`` is
+        most useful when you want to know the resulting value ahead of time:
 
         >>> from qrisp import QuantumFloat
         >>> qf = QuantumFloat(4, -1)
         >>> value = 0.5102341
-        >>> qf[:] = value
-        Exception: Value 0.5102341 not supported by encoder.
         >>> rounded_value = qf.truncate(value)
         >>> rounded_value
         0.5
@@ -1028,7 +1177,7 @@ class QuantumFloat(QuantumVariable):
         {0.5: 1.0}
 
         """
-        res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
+        res = jnp.int64(jnp.round(value / jnp.float64(2) ** self.exponent))
         res = jnp.minimum(2**self.msize - 1, res)
 
         if self.signed:
@@ -1037,9 +1186,9 @@ class QuantumFloat(QuantumVariable):
         else:
             res = jnp.maximum(0, res)
 
-        return self.decoder(res)
+        return self.decoder(res)  # pyright: ignore[reportReturnType]
 
-    def get_ev(self, **mes_kwargs):
+    def get_ev(self, **mes_kwargs: Any) -> float:
         """Retrieves the expectation value of self.
 
         Parameters
@@ -1058,16 +1207,16 @@ class QuantumFloat(QuantumVariable):
 
         >>> from qrisp import QuantumFloat, h
         >>> qf = QuantumFloat(4)
-        >>> h(qf)
+        >>> _ = h(qf)
         >>> qf.get_ev()
         7.5
 
         """
         mes_res = self.get_measurement(**mes_kwargs)
 
-        return sum([k * v for k, v in mes_res.items()])
+        return sum(k * v for k, v in mes_res.items())  # pyright: ignore[reportReturnType]
 
-    def quantum_bit_shift(self, shift_amount):
+    def quantum_bit_shift(self, shift_amount: int | QuantumFloat) -> None:
         """Performs a bit shift in the quantum device.
         While :meth:`exp_shift<qrisp.QuantumFloat.exp_shift>` performs a bit shift
         in the compiler (thus costing no quantum gates) this method performs the
@@ -1094,14 +1243,15 @@ class QuantumFloat(QuantumVariable):
 
         Raises
         ------
-        Exception
+        TypeError
             Tried to shift QuantumFloat exponent by non-integer value
         Exception
             Quantum-quantum bitshifting is currently only supported for unsigned arguments
 
         Examples
         --------
-        We create a QuantumFloat and a QuantumBool to perform a controlled bit shift.
+        We create a QuantumFloat and a QuantumBool to perform a controlled bit
+        shift, then evaluate the resulting (superposed) state:
 
         ::
 
@@ -1114,10 +1264,9 @@ class QuantumFloat(QuantumVariable):
             with qbl:
                 qf.quantum_bit_shift(2)
 
-        Evaluate the result
-
-        >>> print(qf.qs.statevector())
-        sqrt(2)*(|1>*|False> + |4>*|True>)/2
+            print(qf.qs.statevector())
+            # Yields
+            # sqrt(2)*(|1>*|False> + |4>*|True>)/2
 
         """
         from qrisp.alg_primitives.arithmetic import quantum_bit_shift
@@ -1125,37 +1274,90 @@ class QuantumFloat(QuantumVariable):
         quantum_bit_shift(self, shift_amount)
 
 
-def create_output_qf(operands, op):
+def _addsub_bounds(op0: QuantumFloat, op1: QuantumFloat) -> tuple[int | Array, int | Array]:
+    """Compute the (exponent, max_sig) bounds for an add/sub output QuantumFloat.
+
+    Comparisons like min/max need concrete values to branch on, which a jax
+    tracer can't provide -- so this only uses jnp when actually tracing (see
+    :func:`check_for_tracing_mode`). Outside of tracing, jnp.minimum/maximum
+    would silently turn a plain-int exponent into a 0-d jax.Array, which then
+    breaks any later ``2**exponent`` with a negative exponent (jax's
+    integer_pow rejects negative integer exponents).
+
+    Parameters
+    ----------
+    op0 : QuantumFloat
+        The first operand.
+    op1 : QuantumFloat
+        The second operand.
+
+    Returns
+    -------
+    tuple[int or jax.Array, int or jax.Array]
+        The (exponent, max_sig) bounds for sizing the output QuantumFloat.
+
+    """
+    if check_for_tracing_mode():
+        exponent = jnp.minimum(op0.exponent, op1.exponent)
+        max_sig = jnp.maximum(op0.mshape[1], op1.mshape[1]) + 1
+    else:
+        exponent = min(op0.exponent, op1.exponent)
+        max_sig = max(op0.mshape[1], op1.mshape[1]) + 1
+    return exponent, max_sig
+
+
+def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> QuantumFloat:
+    """Determine the appropriately-sized output QuantumFloat for an arithmetic operation.
+
+    Parameters
+    ----------
+    operands : list[QuantumFloat]
+        The QuantumFloats participating in the operation.
+    op : str or sympy.Expr
+        Either one of "add", "sub", "mul", or a sympy expression describing
+        a polynomial encoding (see :func:`polynomial_encoder <qrisp.polynomial_encoder>`).
+
+    Returns
+    -------
+    QuantumFloat
+        A freshly allocated QuantumFloat, sized to hold the result of ``op``
+        without overflow.
+
+    """
     if isinstance(op, sp.core.expr.Expr):
         from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
 
         expr_list = expr_to_list(op)
 
-        for i in range(len(expr_list)):
-            if not isinstance(expr_list[i][0], sp.Symbol):
-                expr_list[i].pop(0)
+        for term in expr_list:
+            if not isinstance(term[0], sp.Symbol):
+                term.pop(0)
 
-        operands.sort(key=lambda x: x.name)
+        operands.sort(key=lambda operand: operand.name)
 
-        def prod(iter):
-            iter = list(iter)
-            a = iter[0]
-            for i in range(1, len(iter)):
-                a *= iter[i]
+        def prod(values):
+            values = list(values)
+            res = values[0]
+            for value in values[1:]:
+                res *= value
 
-            return a
+            return res
 
-        from sympy import Abs, Poly, Symbol
+        # sympy's type stubs don't model Poly's/Abs's dynamic attribute
+        # surface, so pyright can't see .gens/.coeffs()/.monoms()/.subs()
+        # here even though they're all real Poly/Basic members.
+        poly = sp.Poly(op)  # pyright: ignore[reportAttributeAccessIssue]
+        monom_list = [
+            a * prod(sym**k for sym, k in zip(poly.gens, mon))  # pyright: ignore[reportAttributeAccessIssue]
+            for a, mon in zip(poly.coeffs(), poly.monoms())  # pyright: ignore[reportAttributeAccessIssue]
+        ]
 
-        poly = Poly(op)
-        monom_list = [a * prod(x**k for x, k in zip(poly.gens, mon)) for a, mon in zip(poly.coeffs(), poly.monoms())]
+        max_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
+        min_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
 
-        max_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
-        min_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
+        abs_poly = sum((sp.Abs(monom) for monom in monom_list), 0)  # pyright: ignore[reportCallIssue, reportArgumentType]
 
-        abs_poly = sum([Abs(monom) for monom in monom_list], 0)
-
-        min_poly_value = min([float(Abs(monom).subs(min_value_dic)) for monom in monom_list])
+        min_poly_value = min(float(sp.Abs(monom).subs(min_value_dic)) for monom in monom_list)  # pyright: ignore[reportAttributeAccessIssue]
 
         max_poly_value = float(abs_poly.subs(max_value_dic))
 
@@ -1165,26 +1367,30 @@ def create_output_qf(operands, op):
         msize = max_sig - min_sig
         exponent = min_sig
 
-        signed = bool(sum([int(operand.signed) for operand in operands]))
+        signed = bool(sum(int(operand.signed) for operand in operands))
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
     from qrisp.qtypes import QuantumModulus
 
+    # pyright can't narrow `operands`' element type through all(isinstance(...)
+    # for ... in ...), even though every element is a QuantumModulus here.
     if all(isinstance(operand, QuantumModulus) for operand in operands):
         res = operands[0].duplicate()
         if op == "mul":
-            res.m = (
-                operands[0].m
-                + operands[1].m
-                - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
+            res.m = (  # pyright: ignore[reportAttributeAccessIssue]
+                operands[0].m  # pyright: ignore[reportAttributeAccessIssue]
+                + operands[1].m  # pyright: ignore[reportAttributeAccessIssue]
+                - (
+                    int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1))  # pyright: ignore[reportAttributeAccessIssue]
+                    - operands[0].size
+                )
             )
         return res
 
     if op == "add":
         signed = operands[0].signed or operands[1].signed
-        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
-        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
+        exponent, max_sig = _addsub_bounds(operands[0], operands[1])
         msize = max_sig - exponent + 1
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name="add_res*")
@@ -1204,48 +1410,72 @@ def create_output_qf(operands, op):
         )
 
     if op == "sub":
-        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
-        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
+        exponent, max_sig = _addsub_bounds(operands[0], operands[1])
         msize = max_sig - exponent + 1
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=True, name="sub_res*")
 
+    raise ValueError(f"Don't know how to create output QuantumFloat for operation {op}")
+
 
 # Initiates the value of qf2 into qf1 where qf1 has to hold the value 0
-def copy_qf(qf1, qf2, ignore_overflow_errors=False, ignore_rounding_errors=False):
+def copy_qf(
+    qf1: QuantumFloat, qf2: QuantumFloat, ignore_overflow_errors: bool = False, ignore_rounding_errors: bool = False
+) -> None:
+    """Initiate the value of qf2 into qf1, where qf1 has to hold the value 0.
+
+    Parameters
+    ----------
+    qf1 : QuantumFloat
+        The (zero-valued) QuantumFloat to copy the value into.
+    qf2 : QuantumFloat
+        The QuantumFloat to copy the value from.
+    ignore_overflow_errors : bool, optional
+        If ``True``, don't raise if qf2 can represent larger magnitudes than
+        qf1. The default is False.
+    ignore_rounding_errors : bool, optional
+        If ``True``, don't raise if qf2 has more precision than qf1 can
+        represent. The default is False.
+
+    """
     # Lists that translate Qubit index => Significance
     qf1_sign_list = [qf1.exponent + i for i in range(qf1.size)]
     qf2_sign_list = [qf2.exponent + i for i in range(qf2.size)]
 
     # Check overflow/underflow
     if max(qf1_sign_list) < max(qf2_sign_list) and not ignore_overflow_errors:
-        raise Exception("Copy operation would result in overflow (use ignore_overflow_errors = True)")
+        raise ValueError("Copy operation would result in overflow (use ignore_overflow_errors = True)")
 
     if min(qf1_sign_list) > min(qf2_sign_list) and not ignore_rounding_errors:
-        raise Exception("Copy operation would result in rounding (use ignore_rounding_errors = True)")
+        raise ValueError("Copy operation would result in rounding (use ignore_rounding_errors = True)")
 
     qs = qf1.qs
 
     if qf2.signed:
         if not qf1.signed:
-            raise Exception("Tried to copy signed into unsigend float")
+            raise ValueError("Tried to copy signed into unsigend float")
 
         # Remove last entry from significance list (last qubit is the sign qubit)
         qf2_sign_list.pop(-1)
         qf1_sign_list.pop(-1)
 
-    for i in range(len(qf1_sign_list)):
+    # QuantumVariable.qs/__getitem__ aren't typed precisely enough for pyright
+    # to see qs as a QuantumSession (with .cx) here rather than the
+    # TracingQuantumSession union member, or single-index __getitem__ as
+    # returning a Qubit rather than DynamicQubitArray -- both hold in this
+    # non-tracing, single-qubit-index context.
+    for i, significance in enumerate(qf1_sign_list):
         # If we are in a realm where both floats have overlapping significance
         # => CNOT into each other
-        if qf1_sign_list[i] in qf2_sign_list:
-            qf2_index = qf2_sign_list.index(qf1_sign_list[i])
-            qs.cx(qf2[qf2_index], qf1[i])
+        if significance in qf2_sign_list:
+            qf2_index = qf2_sign_list.index(significance)
+            qs.cx(qf2[qf2_index], qf1[i])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
             continue
 
         # Otherwise copy the sign bit into the bits of higher significance than qf2
-        if qf1_sign_list[i] > max(qf2_sign_list) and qf2.signed:
-            qs.cx(qf2[-1], qf1[i])
+        if significance > max(qf2_sign_list) and qf2.signed:
+            qs.cx(qf2[-1], qf1[i])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
     # Copy the sign bit
     if qf2.signed:
-        qs.cx(qf2[-1], qf1[-1])
+        qs.cx(qf2[-1], qf1[-1])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]

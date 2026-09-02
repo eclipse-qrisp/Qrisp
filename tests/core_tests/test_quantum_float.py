@@ -17,7 +17,7 @@
 
 import pytest
 
-from qrisp import QuantumFloat
+from qrisp import QuantumFloat, h, x
 
 
 @pytest.mark.parametrize(
@@ -113,3 +113,224 @@ def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bo
 
     with pytest.raises(ValueError, match="Not enough qubits to encode value"):
         qf.encoder(out_of_bounds_value)
+
+
+class TestArithmeticDifferentExponents:
+    """Regression tests for create_output_qf.
+
+    Its "add"/"sub" branches used to compute the output's exponent with
+    jnp.minimum/jnp.maximum unconditionally, even outside of tracing mode.
+    This silently turned a plain-int exponent into a 0-d jax.Array, which
+    then crashed with "TypeError: Integers cannot be raised to negative
+    powers" the moment that output was used in a further operation involving
+    2**exponent with a negative exponent (a very common case: the class
+    docstring's own subtraction example is exactly this).
+    """
+
+    def test_add_then_reuse_result_with_negative_exponent(self):
+        """Test that a QuantumFloat produced by + keeps a plain-int exponent."""
+        a = QuantumFloat(3, -1, signed=False)
+        b = QuantumFloat(2, -2, signed=True)
+        a[:] = 1.5
+        b[:] = 0.25
+
+        c = a + b
+        assert isinstance(c.exponent, int)
+        assert c.get_measurement() == {1.75: 1.0}
+
+        # Used to raise: c.exponent was a jax.Array, and 2**(negative Array
+        # exponent) hits jax's integer_pow, which rejects negative exponents.
+        d = a - c
+        assert isinstance(d.exponent, int)
+        assert d.get_measurement() == {-0.25: 1.0}
+
+        e = d * b
+        assert e.get_measurement() == {-0.0625: 1.0}
+
+    def test_sub_different_exponents(self):
+        """Test that subtracting operands with different exponents works.
+
+        Also checks that the result keeps a plain-int exponent.
+        """
+        a = QuantumFloat(4, 0, signed=True)
+        b = QuantumFloat(3, -2, signed=False)
+        a[:] = 3
+        b[:] = 1.5
+
+        c = a - b
+        assert isinstance(c.exponent, int)
+        assert c.get_measurement() == {1.5: 1.0}
+
+
+class TestArithmeticOperators:
+    """Tests for QuantumFloat arithmetic operators outside of tracing mode."""
+
+    def test_mul_classical_int(self):
+        """Test multiplication of a QuantumFloat by a classical int."""
+        a = QuantumFloat(3)
+        a[:] = 3
+        b = a * 5
+        assert b.get_measurement() == {15: 1.0}
+
+    def test_mul_classical_negative_int(self):
+        """Test multiplication of a signed QuantumFloat by a negative int."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * -2
+        assert b.get_measurement() == {-6: 1.0}
+
+    def test_rsub(self):
+        """Test reflected subtraction (classical value minus a QuantumFloat)."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 2
+        b = 5 - a
+        assert b.get_measurement() == {3: 1.0}
+
+    def test_pow_zero(self):
+        """Test that a QuantumFloat to the power of 0 encodes 1."""
+        a = QuantumFloat(3)
+        a[:] = 5
+        b = a**0
+        assert b.get_measurement() == {1: 1.0}
+
+    def test_pow_positive_integer(self):
+        """Test exponentiation of a QuantumFloat by a positive integer."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        b = a**3
+        assert b.get_measurement() == {8: 1.0}
+
+
+class TestComparisonOperators:
+    """Tests for QuantumFloat comparison operators outside of tracing mode."""
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(2, 5, True), (5, 2, False), (3, 3, False)],
+    )
+    def test_lt(self, a_value, b_value, expected):
+        """Test the < operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a < b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(5, 2, True), (2, 5, False), (3, 3, False)],
+    )
+    def test_gt(self, a_value, b_value, expected):
+        """Test the > operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a > b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(2, 5, True), (5, 2, False), (3, 3, True)],
+    )
+    def test_le(self, a_value, b_value, expected):
+        """Test the <= operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a <= b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(5, 2, True), (2, 5, False), (3, 3, True)],
+    )
+    def test_ge(self, a_value, b_value, expected):
+        """Test the >= operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a >= b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(3, 3, True), (3, 4, False)],
+    )
+    def test_eq(self, a_value, b_value, expected):
+        """Test the == operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a == b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(3, 3, False), (3, 4, True)],
+    )
+    def test_ne(self, a_value, b_value, expected):
+        """Test the != operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a != b).get_measurement() == {expected: 1.0}
+
+
+class TestUtilityMethods:
+    """Tests for QuantumFloat's non-dunder public methods."""
+
+    def test_exp_shift(self):
+        """Test that exp_shift performs a free (gate-less) bitshift."""
+        a = QuantumFloat(4)
+        a[:] = 2
+        a.exp_shift(2)
+        assert a.get_measurement() == {8: 1.0}
+
+    def test_exp_shift_rejects_non_integer(self):
+        """Test that exp_shift rejects a non-integer shift amount."""
+        a = QuantumFloat(4)
+        with pytest.raises(TypeError, match="non-integer"):
+            a.exp_shift(1.5)
+
+    def test_add_sign(self):
+        """Test that add_sign turns an unsigned QuantumFloat into a signed one."""
+        qf = QuantumFloat(4)
+        assert qf.signed is False
+        qf.add_sign()
+        assert qf.signed is True
+
+    def test_add_sign_rejects_already_signed(self):
+        """Test that add_sign raises when called on an already-signed QuantumFloat."""
+        qf = QuantumFloat(4, signed=True)
+        with pytest.raises(ValueError, match="Tried to add sign to signed QuantumFloat"):
+            qf.add_sign()
+
+    def test_sign_rejects_unsigned(self):
+        """Test that sign() raises when called on an unsigned QuantumFloat."""
+        qf = QuantumFloat(4, signed=False)
+        with pytest.raises(ValueError, match="Tried to retrieve sign qubit of unsigned QuantumFloat"):
+            qf.sign()
+
+    def test_significant(self):
+        """Test that significant(k) returns the qubit with significance k."""
+        qf = QuantumFloat(6, -3)
+        x(qf.significant(-2))
+        assert qf.get_measurement() == {0.25: 1.0}
+
+    def test_significant_rejects_out_of_range(self):
+        """Test that significant() raises for a significance outside mshape."""
+        qf = QuantumFloat(4, 0)
+        with pytest.raises(ValueError, match="Tried to retrieve invalid significant"):
+            qf.significant(100)
+
+    def test_truncate(self):
+        """Test that truncate rounds a value to the closest representable one."""
+        qf = QuantumFloat(4, -1)
+        assert qf.truncate(0.5102341) == 0.5
+
+    def test_get_ev(self):
+        """Test that get_ev computes the expectation value of a measurement."""
+        qf = QuantumFloat(4)
+        h(qf)
+        assert qf.get_ev() == 7.5
