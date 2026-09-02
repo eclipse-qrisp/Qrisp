@@ -605,9 +605,20 @@ class QuantumFloat(QuantumVariable):
         """
         value = encoding_number
         if rounding:
-            # Round value to closest fitting number
-            outcome_labels = [self.decoder(i) for i in range(2**self.size)]
-            value = outcome_labels[np.argmin(np.abs(encoding_number - np.array(outcome_labels)))]
+            # Round value to closest fitting number. Vectorized equivalent of
+            # [self.decoder(i) for i in range(2**self.size)], since that grows
+            # exponentially with the qubit count.
+            indices = np.arange(2**self.size)
+            if self.signed:
+                outcome_labels = np.asarray(_signed_int_iso_inv(indices, self.msize)) * (2.0**self.exponent)
+            else:
+                outcome_labels = indices * (2.0**self.exponent)
+            # Coerce explicitly: ScalarLike also covers complex/Tracer, which
+            # encoding_number never actually is here (this is an eager-only
+            # rounding path), but numpy's stubs can't express that narrowing.
+            diffs = np.asarray(encoding_number, dtype=float) - outcome_labels
+            closest = outcome_labels[np.argmin(np.abs(diffs))]
+            value = int(closest) if self.exponent >= 0 else float(closest)
 
         super().encode(value, permit_dirtyness=permit_dirtyness)
 
@@ -615,6 +626,7 @@ class QuantumFloat(QuantumVariable):
     def __mul__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Multiply this QuantumFloat by another QuantumFloat or a classical int."""
         if check_for_tracing_mode():
+            # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
             from qrisp.alg_primitives.arithmetic import jasp_multiplyer, jasp_squaring
 
             if isinstance(other, QuantumFloat):
@@ -623,6 +635,7 @@ class QuantumFloat(QuantumVariable):
                 return jasp_multiplyer(other, self)
             raise TypeError(f"Tried to multiply class {type(other)} with QuantumFloat")
 
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import polynomial_encoder, q_mult
 
         if isinstance(other, QuantumFloat):
@@ -662,6 +675,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Add another QuantumFloat or a classical scalar to this QuantumFloat."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_add
 
         if isinstance(other, QuantumFloat):
@@ -682,6 +696,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Subtract another QuantumFloat or a classical scalar from this QuantumFloat."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
@@ -705,6 +720,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Subtract this QuantumFloat from a classical scalar or QuantumFloat."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
@@ -721,6 +737,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __truediv__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Divide this QuantumFloat by another QuantumFloat."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other)
@@ -733,6 +750,7 @@ class QuantumFloat(QuantumVariable):
 
         if self.exponent < 0 or other.exponent < 0:
             raise ValueError("Tried to perform floor division on non-integer QuantumFloats")
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other, prec=0)
@@ -741,6 +759,7 @@ class QuantumFloat(QuantumVariable):
     def __pow__(self, power: int) -> QuantumFloat:
         """Raise this QuantumFloat to an integer power (-1 means inversion)."""
         if power == -1:
+            # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
             from qrisp.alg_primitives.arithmetic import qf_inversion
 
             return qf_inversion(self)
@@ -749,6 +768,7 @@ class QuantumFloat(QuantumVariable):
             res[:] = 1
             return res
 
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import jasp_multiplyer
 
         def power_conjugator(base, power, temp_results):
@@ -771,6 +791,7 @@ class QuantumFloat(QuantumVariable):
     def __iadd__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Add another QuantumFloat or a classical scalar to this QuantumFloat, in place."""
         if check_for_tracing_mode():
+            # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
             from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
             if isinstance(other, QuantumFloat):
@@ -792,6 +813,7 @@ class QuantumFloat(QuantumVariable):
 
             return self
 
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
 
         if isinstance(other, QuantumFloat):
@@ -819,6 +841,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
         """Subtract another QuantumFloat or a classical scalar from this QuantumFloat, in place."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
 
         if check_for_tracing_mode():
@@ -851,6 +874,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability=[], is_qfree=True)
     def __imul__(self, other: FloatLike) -> QuantumFloat:
         """Multiply this QuantumFloat by a classical scalar, in place."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import inpl_mult
 
         inpl_mult(self, other)
@@ -869,6 +893,7 @@ class QuantumFloat(QuantumVariable):
 
     def __lt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
 
         if check_for_tracing_mode():
@@ -880,6 +905,7 @@ class QuantumFloat(QuantumVariable):
 
     def __gt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
 
         if check_for_tracing_mode():
@@ -891,6 +917,7 @@ class QuantumFloat(QuantumVariable):
 
     def __le__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<=)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
 
         if check_for_tracing_mode():
@@ -902,6 +929,7 @@ class QuantumFloat(QuantumVariable):
 
     def __ge__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>=)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
 
         if check_for_tracing_mode():
@@ -913,6 +941,7 @@ class QuantumFloat(QuantumVariable):
 
     def __eq__(self, other: object) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (==)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import eq
 
         if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
@@ -922,6 +951,7 @@ class QuantumFloat(QuantumVariable):
 
     def __ne__(self, other: object) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (!=)."""
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import neq
 
         if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
@@ -1088,6 +1118,7 @@ class QuantumFloat(QuantumVariable):
             smallest representable increment, ``2**self.exponent``.
 
         """
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic.adders.incrementation import increment
 
         if value is None:
@@ -1135,14 +1166,14 @@ class QuantumFloat(QuantumVariable):
         The qubit with significance $2$ corresponds to the value $4 = 2^{2}$.
 
         """
-        sig_list = list(range(self.mshape[0], self.mshape[1]))
+        min_sig, max_sig = self.mshape
 
-        if k not in sig_list:
+        if not min_sig <= k < max_sig:
             raise ValueError(
                 f"Tried to retrieve invalid significant {k} from QuantumFloat with mantissa shape {self.mshape}"
             )
 
-        return self[sig_list.index(k)]  # pyright: ignore[reportReturnType]
+        return self[k - min_sig]  # pyright: ignore[reportReturnType]
 
     def truncate(self, value: float) -> float:
         """Receives a regular float and returns the float that is closest to the input but
@@ -1269,6 +1300,7 @@ class QuantumFloat(QuantumVariable):
             # sqrt(2)*(|1>*|False> + |4>*|True>)/2
 
         """
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import quantum_bit_shift
 
         quantum_bit_shift(self, shift_amount)
@@ -1325,6 +1357,7 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
 
     """
     if isinstance(op, sp.core.expr.Expr):
+        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
 
         expr_list = expr_to_list(op)
@@ -1371,6 +1404,8 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
+    # NOTE: Local import to avoid a circular import (QuantumModulus subclasses QuantumFloat, so
+    # qrisp.qtypes can only expose QuantumModulus after this module has finished loading).
     from qrisp.qtypes import QuantumModulus
 
     # pyright can't narrow `operands`' element type through all(isinstance(...)
@@ -1459,6 +1494,19 @@ def copy_qf(
         qf2_sign_list.pop(-1)
         qf1_sign_list.pop(-1)
 
+    # qf2_sign_list is a contiguous run of significances by construction above,
+    # so membership/index reduce to O(1) arithmetic instead of an O(n) scan per
+    # qf1 qubit below. qf2_max is only computed when the loop can actually reach
+    # it, so it still raises the same error max(qf2_sign_list) would for a
+    # signed, zero-mantissa qf2 -- an edge case that otherwise never gets
+    # touched because qf1_sign_list would then also be empty.
+    qf2_start = qf2.exponent
+    qf2_len = len(qf2_sign_list)
+    # Falls back to qf2_start (any same-typed value would do) when unused, so
+    # qf2_max never needs an Optional type -- see the loop below, which only
+    # ever reads it when qf2.signed is True.
+    qf2_max = max(qf2_sign_list) if (qf2.signed and qf1_sign_list) else qf2_start
+
     # QuantumVariable.qs/__getitem__ aren't typed precisely enough for pyright
     # to see qs as a QuantumSession (with .cx) here rather than the
     # TracingQuantumSession union member, or single-index __getitem__ as
@@ -1467,13 +1515,13 @@ def copy_qf(
     for i, significance in enumerate(qf1_sign_list):
         # If we are in a realm where both floats have overlapping significance
         # => CNOT into each other
-        if significance in qf2_sign_list:
-            qf2_index = qf2_sign_list.index(significance)
-            qs.cx(qf2[qf2_index], qf1[i])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
+        rel_index = significance - qf2_start
+        if 0 <= rel_index < qf2_len:
+            qs.cx(qf2[rel_index], qf1[i])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
             continue
 
         # Otherwise copy the sign bit into the bits of higher significance than qf2
-        if significance > max(qf2_sign_list) and qf2.signed:
+        if qf2.signed and significance > qf2_max:
             qs.cx(qf2[-1], qf1[i])  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
     # Copy the sign bit

@@ -324,6 +324,14 @@ class TestUtilityMethods:
         with pytest.raises(ValueError, match="Tried to retrieve invalid significant"):
             qf.significant(100)
 
+    def test_significant_at_mshape_bounds(self):
+        """Test significant() at both ends of mshape, where it's most likely to be off-by-one."""
+        qf = QuantumFloat(6, -3)
+        min_sig, max_sig = qf.mshape
+        x(qf.significant(min_sig))
+        x(qf.significant(max_sig - 1))
+        assert qf.get_measurement() == {2**min_sig + 2 ** (max_sig - 1): 1.0}
+
     def test_truncate(self):
         """Test that truncate rounds a value to the closest representable one."""
         qf = QuantumFloat(4, -1)
@@ -334,3 +342,39 @@ class TestUtilityMethods:
         qf = QuantumFloat(4)
         h(qf)
         assert qf.get_ev() == 7.5
+
+    def test_encode_rounding_unsigned(self):
+        """Test that encode(rounding=True) rounds to the closest representable value."""
+        qf = QuantumFloat(4, -1)
+        qf.encode(0.5102341, rounding=True)
+        assert qf.get_measurement() == {0.5: 1.0}
+
+    def test_encode_rounding_signed(self):
+        """Test that encode(rounding=True) rounds correctly for a signed QuantumFloat."""
+        qf = QuantumFloat(3, -1, signed=True)
+        qf.encode(-1.2, rounding=True)
+        assert qf.get_measurement() == {-1.0: 1.0}
+
+    def test_init_from_same_shape(self):
+        """Test that init_from copies a value between identically-shaped QuantumFloats."""
+        a = QuantumFloat(4, -1)
+        a[:] = 2.5
+        b = QuantumFloat(4, -1)
+        b.init_from(a)
+        assert b.get_measurement() == {2.5: 1.0}
+
+    def test_init_from_signed_different_size(self):
+        """Test that init_from copies a signed value into a larger signed QuantumFloat."""
+        a = QuantumFloat(3, 0, signed=True)
+        a[:] = -3
+        b = QuantumFloat(5, 0, signed=True)
+        b.init_from(a)
+        assert b.get_measurement() == {-3: 1.0}
+
+    def test_init_from_unsigned_different_exponent(self):
+        """Test that init_from copies a value between QuantumFloats with different exponents."""
+        a = QuantumFloat(3, -2, signed=False)
+        a[:] = 1.5
+        b = QuantumFloat(5, -3, signed=False)
+        b.init_from(a)
+        assert b.get_measurement() == {1.5: 1.0}
