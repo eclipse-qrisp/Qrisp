@@ -21,15 +21,25 @@ import jax.numpy as jnp
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
+def _is_quantum_register(obj):
+    """Return True if ``obj`` is a quantum register, i.e. a QuantumVariable
+    (or subclass thereof), a DynamicQubitArray or a list of Qubits."""
+    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
+        return True
+    if isinstance(obj, list):
+        return all(isinstance(qb, Qubit) for qb in obj)
+    return False
+
+
 @custom_control
 def cuccaro_adder(
-    a: int | QuantumVariable,
-    b: QuantumVariable,
+    a: int | QuantumVariable | DynamicQubitArray | list,
+    b: QuantumVariable | DynamicQubitArray | list,
     c_in: QuantumBool | Qubit | None = None,
     c_out: QuantumBool | Qubit | None = None,
     ctrl: QuantumBool | None = None,
@@ -37,9 +47,10 @@ def cuccaro_adder(
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
-    type and one quantum type. Note that when the first input is larger than the second input, the function will perform
-    modulo addition (relative to the size of the second input) after the first input is truncated to be the same size as
-    the second input.
+    type and one quantum type. All :ref:`QuantumTypes <QuantumTypes>` (e.g. QuantumFloat, QuantumBool, QuantumModulus,
+    ...), as well as lists of Qubits and DynamicQubitArrays, are supported as quantum inputs. Note that when the first
+    input is larger than the second input, the function will perform modulo addition (relative to the size of the second
+    input) after the first input is truncated to be the same size as the second input.
 
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
@@ -51,9 +62,9 @@ def cuccaro_adder(
 
     Parameters
     ----------
-    a : int or QuantumVariable
+    a : int or QuantumVariable or list[Qubit] or DynamicQubitArray
         The value that should be added.
-    b : QuantumVariable or list[Qubit]
+    b : QuantumVariable or list[Qubit] or DynamicQubitArray
         The value that should be modified in the in-place addition.
     c_in : QuantumBool or Qubit, optional
         An optional carry in value. The default is None.
@@ -86,10 +97,25 @@ def cuccaro_adder(
     {9: 1.0}
 
     """
+    # The second argument is required to be a (non-empty) quantum register
+    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
+        raise ValueError(
+            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+        )
+
+    # A list that does not contain only Qubits is neither a valid quantum register
+    # nor a valid classical input.
+    if isinstance(a, list) and not _is_quantum_register(a):
+        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+
     # convert the classical input to a quantum input
-    if not isinstance(a, QuantumVariable):
-        # create a QuantumFloat of the same size as the other quantum input
-        q_a = b.duplicate()
+    if not _is_quantum_register(a):
+        # truncate the classical value modulo 2**len(b) so that values larger than the
+        # target register are handled via modulo addition (as documented above)
+        a = a % (1 << jlen(b))
+
+        # create a quantum variable of the same size as the other quantum input
+        q_a = QuantumVariable(jlen(b))
 
         with conjugate(int_encoder)(q_a, a):
             cuccaro_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
@@ -99,13 +125,10 @@ def cuccaro_adder(
         q_a.delete()
         return
 
-    if not isinstance(b, QuantumVariable):
-        raise ValueError("The second argument must be of type QuantumVariable.")
-
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
-    dim_a = a.size
-    dim_b = b.size
+    dim_a = jlen(a)
+    dim_b = jlen(b)
 
     max_size = jnp.maximum(dim_a, dim_b)
 
