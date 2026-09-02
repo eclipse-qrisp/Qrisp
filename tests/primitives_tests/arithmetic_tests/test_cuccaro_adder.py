@@ -20,6 +20,7 @@ import pytest
 from qrisp import (
     QuantumBool,
     QuantumFloat,
+    QuantumModulus,
     QuantumVariable,
     boolean_simulation,
     control,
@@ -28,6 +29,7 @@ from qrisp import (
     x,
 )
 from qrisp.circuit import Qubit
+from qrisp.misc import int_encoder
 
 # ---------------------------------------------------------------------------
 # Static smoke tests — just a few representative cases with small registers
@@ -495,3 +497,339 @@ def _run_cout_ctrl_exhaustive():
 
 def test_cuccaro_adder_cout_ctrl_dynamic():
     _run_cout_ctrl_exhaustive()
+
+
+# ---------------------------------------------------------------------------
+# Type-compatibility tests.
+#
+# The in-place-adder interface (see ``inpl_adder_test``) allows ``a`` to be a
+# QuantumVariable, a list of Qubits or a classical int, and ``b`` to be a
+# QuantumVariable or a list of Qubits. In addition to QuantumFloat, all quantum
+# types (QuantumVariable, QuantumBool, QuantumModulus, ...) must be accepted as
+# inputs. These tests lock in that contract.
+#
+# See https://github.com/eclipse-qrisp/Qrisp/issues/839 (QuantumModulus passes a
+# raw list[Qubit] to the configured in-place adder).
+# ---------------------------------------------------------------------------
+
+
+def _measure_int(qv):
+    """Return the single-shot integer outcome of ``qv``.
+
+    Works regardless of the decoder of the concrete quantum type (int, bool or
+    little-endian bit string keys).
+    """
+    (key, _), = qv.get_measurement().items()
+    if isinstance(key, bool):
+        return int(key)
+    if isinstance(key, str):
+        return int(key[::-1], 2) if key else 0
+    return key
+
+
+# -- static smoke tests: list[Qubit] targets and addends --------------------
+
+
+def test_cuccaro_adder_static_smoke_classical_a_list_b():
+    """Classical a + list[Qubit] target (the addend passed by QuantumModulus)."""
+    b = QuantumFloat(3)
+    b[:] = 3
+    cuccaro_adder(5, b[:])
+    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+
+
+def test_cuccaro_adder_static_smoke_quantum_a_list_b():
+    """Quantum a + list[Qubit] target."""
+    a = QuantumFloat(3)
+    a[:] = 5
+    b = QuantumFloat(3)
+    b[:] = 3
+    cuccaro_adder(a, b[:])
+    assert a.get_measurement() == {5: 1.0}
+    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+
+
+def test_cuccaro_adder_static_smoke_list_a_quantum_b():
+    """list[Qubit] addend a + QuantumVariable target b."""
+    a = QuantumFloat(3)
+    a[:] = 5
+    b = QuantumFloat(3)
+    b[:] = 3
+    cuccaro_adder(a[:], b)
+    assert a.get_measurement() == {5: 1.0}
+    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+
+
+def test_cuccaro_adder_static_smoke_list_a_list_b():
+    """list[Qubit] addend a + list[Qubit] target b."""
+    a = QuantumFloat(3)
+    a[:] = 5
+    b = QuantumFloat(3)
+    b[:] = 3
+    cuccaro_adder(a[:], b[:])
+    assert a.get_measurement() == {5: 1.0}
+    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+
+
+def test_cuccaro_adder_static_smoke_list_unequal_sizes():
+    """list[Qubit] inputs of unequal size (truncation + extension ancillas)."""
+    a = QuantumFloat(5)
+    a[:] = 3
+    b = QuantumFloat(3)
+    b[:] = 7
+    cuccaro_adder(a[:], b[:])
+    assert b.get_measurement() == {2: 1.0}  # (7 + 3) % 8
+
+    a = QuantumFloat(3)
+    a[:] = 3
+    b = QuantumFloat(5)
+    b[:] = 7
+    cuccaro_adder(a[:], b[:])
+    assert b.get_measurement() == {10: 1.0}  # 7 + 3
+
+
+def test_cuccaro_adder_static_smoke_classical_a_larger_than_b():
+    """Classical a wider than the target register wraps modulo 2**len(b)."""
+    b = QuantumFloat(3)
+    b[:] = 5
+    cuccaro_adder(10, b)
+    assert b.get_measurement() == {7: 1.0}  # (5 + 10) % 8
+
+    b = QuantumFloat(3)
+    b[:] = 5
+    cuccaro_adder(10, b[:])
+    assert b.get_measurement() == {7: 1.0}
+
+
+def test_cuccaro_adder_static_smoke_quantum_variable():
+    """Base QuantumVariable registers as a and b."""
+    a = QuantumVariable(3)
+    b = QuantumVariable(3)
+    int_encoder(a, 5)
+    int_encoder(b, 3)
+    cuccaro_adder(a, b)
+    assert _measure_int(a) == 5
+    assert _measure_int(b) == 0  # (3 + 5) % 8
+
+    b = QuantumVariable(3)
+    int_encoder(b, 3)
+    cuccaro_adder(5, b)
+    assert _measure_int(b) == 0  # (3 + 5) % 8
+
+
+def test_cuccaro_adder_static_smoke_quantum_bool():
+    """QuantumBool (single-qubit) registers as a and b."""
+    a = QuantumBool()
+    b = QuantumBool()
+    a.flip()  # a = 1
+    b.flip()  # b = 1
+    cuccaro_adder(a, b)
+    assert b.get_measurement() == {False: 1.0}  # (1 + 1) % 2
+
+    b = QuantumBool()
+    cuccaro_adder(1, b)
+    assert b.get_measurement() == {True: 1.0}
+
+
+def test_cuccaro_adder_static_smoke_quantum_modulus():
+    """QuantumModulus registers as a and b (sum stays below the modulus)."""
+    a = QuantumModulus(13)
+    b = QuantumModulus(13)
+    a[:] = 5
+    b[:] = 3
+    cuccaro_adder(a, b)
+    assert a.get_measurement() == {5: 1.0}
+    assert b.get_measurement() == {8: 1.0}
+
+    b = QuantumModulus(13)
+    b[:] = 3
+    cuccaro_adder(5, b)
+    assert b.get_measurement() == {8: 1.0}
+
+
+def test_cuccaro_adder_static_invalid_inputs_raise_value_error():
+    """Non-quantum b and non-qubit lists are rejected with ValueError."""
+    a = QuantumFloat(3)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 1
+
+    with pytest.raises(ValueError, match="second argument"):
+        cuccaro_adder(a, 7)
+    with pytest.raises(ValueError, match="second argument"):
+        cuccaro_adder(a, [])
+    with pytest.raises(ValueError, match="first argument"):
+        cuccaro_adder([1, 0], b)
+
+
+def test_cuccaro_adder_quantum_modulus_issue_839():
+    """QuantumModulus with cuccaro_adder as inpl_adder (regression for #839).
+
+    QuantumModulus hands the configured adder a raw ``list[Qubit]`` target (the
+    auxiliary register of the Montgomery multiplication). Before the fix this
+    raised ``AttributeError: 'list' object has no attribute 'duplicate'`` while
+    the circuit was being constructed.
+    """
+    a = QuantumModulus(13, inpl_adder=cuccaro_adder)
+    a[:] = 5
+    a *= 10
+    a.qs.compile()
+
+    @boolean_simulation
+    def montgomery_multiply(N, value, factor):
+        qm = QuantumModulus(N, inpl_adder=cuccaro_adder)
+        qm[:] = value
+        qm *= factor
+        return measure(qm)
+
+    assert montgomery_multiply(13, 5, 10) == 11  # 5 * 10 % 13
+
+
+# -- dynamic (boolean_simulation) exhaustive tests --------------------------
+
+
+def test_cuccaro_adder_list_target_dynamic():
+    """Exhaustive classical-quantum and quantum-quantum addition on list[Qubit]."""
+
+    @boolean_simulation
+    def add_cq(N, j, k):
+        B = QuantumFloat(N)
+        B[:] = k
+        cuccaro_adder(j, B[:])
+        return measure(B)
+
+    @boolean_simulation
+    def add_qq_list_a(N, L, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        cuccaro_adder(A[:], B[:])
+        return measure(A), measure(B)
+
+    for N in range(2, 5):
+        for j in range(1 << N):
+            for k in range(1 << N):
+                assert add_cq(N, j, k) == (k + j) % (1 << N)
+
+    for N in range(2, 5):
+        for L in range(2, 5):
+            for j in range(1 << N):
+                for k in range(1 << L):
+                    A, B = add_qq_list_a(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % (1 << L)
+
+
+def test_cuccaro_adder_classical_a_wider_than_b_dynamic():
+    """Classical a wider than the target wraps modulo 2**len(b) in dynamic mode."""
+
+    @boolean_simulation
+    def add(N, j, k):
+        B = QuantumFloat(N)
+        B[:] = k
+        cuccaro_adder(j, B)
+        return measure(B)
+
+    for N in range(2, 6):
+        # sweep classical a far beyond the register width
+        for j in range(0, 1 << (N + 3)):
+            for k in range(1 << N):
+                assert add(N, j, k) == (k + j) % (1 << N)
+
+
+def test_cuccaro_adder_quantum_variable_dynamic():
+    """Base QuantumVariable registers as a and b (quantum & classical a)."""
+
+    @boolean_simulation
+    def add_qq(N, L, j, k):
+        A = QuantumVariable(N)
+        B = QuantumVariable(L)
+        int_encoder(A, j)
+        int_encoder(B, k)
+        cuccaro_adder(A, B)
+        return measure(A), measure(B)
+
+    @boolean_simulation
+    def add_cq(N, j, k):
+        B = QuantumVariable(N)
+        int_encoder(B, k)
+        cuccaro_adder(j, B)
+        return measure(B)
+
+    for N in range(2, 5):
+        for L in range(2, 5):
+            for j in range(1 << N):
+                for k in range(1 << L):
+                    A, B = add_qq(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % (1 << L)
+
+    for N in range(2, 5):
+        for j in range(1 << N):
+            for k in range(1 << N):
+                assert add_cq(N, j, k) == (k + j) % (1 << N)
+
+
+def test_cuccaro_adder_quantum_bool_dynamic():
+    """Single-qubit QuantumBool registers as a and b."""
+
+    @boolean_simulation
+    def add_qq(j, k):
+        A = QuantumBool()
+        B = QuantumBool()
+        int_encoder(A, j)
+        int_encoder(B, k)
+        cuccaro_adder(A, B)
+        return measure(A), measure(B)
+
+    @boolean_simulation
+    def add_cq(j, k):
+        B = QuantumBool()
+        int_encoder(B, k)
+        cuccaro_adder(j, B)
+        return measure(B)
+
+    for j in range(2):
+        for k in range(2):
+            A, B = add_qq(j, k)
+            assert A == j
+            assert B == (k + j) % 2
+            assert add_cq(j, k) == (k + j) % 2
+
+
+def test_cuccaro_adder_quantum_modulus_dynamic():
+    """QuantumModulus registers as a and b.
+
+    The Cuccaro adder operates on the raw qubits, so the measurement outcome
+    corresponds to the raw modulo-2**size addition, which the QuantumModulus
+    decoder reports modulo the modulus (default Montgomery shift is 0).
+    """
+
+    @boolean_simulation
+    def add_qq(N, j, k):
+        A = QuantumModulus(N)
+        B = QuantumModulus(N)
+        A[:] = j
+        B[:] = k
+        cuccaro_adder(A, B)
+        return measure(A), measure(B)
+
+    @boolean_simulation
+    def add_cq(N, j, k):
+        B = QuantumModulus(N)
+        B[:] = k
+        cuccaro_adder(j, B)
+        return measure(B)
+
+    for j in range(13):
+        for k in range(13):
+            A, B = add_qq(13, j, k)
+            assert A == j
+            # raw addition is modulo 2**4 = 16, decoded modulo 13
+            assert B == ((j + k) % 16) % 13
+
+    for j in range(13):
+        for k in range(13):
+            assert add_cq(13, j, k) == ((j + k) % 16) % 13
+
