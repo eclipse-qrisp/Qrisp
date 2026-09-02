@@ -520,7 +520,7 @@ def _measure_int(qv):
     Works regardless of the decoder of the concrete quantum type (int, bool or
     little-endian bit string keys).
     """
-    (key, _), = qv.get_measurement().items()
+    ((key, _),) = qv.get_measurement().items()
     if isinstance(key, bool):
         return int(key)
     if isinstance(key, str):
@@ -833,4 +833,3 @@ def test_cuccaro_adder_quantum_modulus_dynamic():
     for j in range(13):
         for k in range(13):
             assert add_cq(13, j, k) == ((j + k) % 16) % 13
-
