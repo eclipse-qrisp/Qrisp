@@ -33,23 +33,23 @@ from qrisp.circuit import Qubit
 from qrisp.misc import int_encoder
 
 # ---------------------------------------------------------------------------
-# Static smoke tests — just a few representative cases with small registers
-# to catch gross regressions without the full statevector-simulation cost.
-# Exhaustive coverage lives in the boolean_simulation tests below.
+# Static smoke tests — a few representative cases with small registers to catch
+# gross regressions without the full statevector-simulation cost. Exhaustive
+# coverage lives in the boolean_simulation tests further down.
 # ---------------------------------------------------------------------------
 
 
-def test_cuccaro_adder_static_smoke_quantum_a():
+def test_cuccaro_adder_static_quantum_a():
     """Quantum a + quantum b, equal size, no optional args."""
     a = QuantumFloat(3)
     b = QuantumFloat(3)
     a[:] = 5
     b[:] = 3
     cuccaro_adder(a, b)
-    assert b.get_measurement() == {0: 1.0}  # (5+3) % 8
+    assert b.get_measurement() == {0: 1.0}  # (5 + 3) % 8
 
 
-def test_cuccaro_adder_static_smoke_classical_a():
+def test_cuccaro_adder_static_classical_a():
     """Classical a + quantum b."""
     b = QuantumFloat(3)
     b[:] = 3
@@ -57,7 +57,7 @@ def test_cuccaro_adder_static_smoke_classical_a():
     assert b.get_measurement() == {0: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_cin():
+def test_cuccaro_adder_static_cin():
     """c_in with classical a."""
     b = QuantumFloat(3)
     b[:] = 2
@@ -67,7 +67,7 @@ def test_cuccaro_adder_static_smoke_cin():
     assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
 
 
-def test_cuccaro_adder_static_smoke_cin_qubit():
+def test_cuccaro_adder_static_cin_qubit():
     """c_in of type Qubit."""
     b = QuantumFloat(3)
     b[:] = 2
@@ -76,32 +76,29 @@ def test_cuccaro_adder_static_smoke_cin_qubit():
     assert isinstance(c_in, Qubit)
     x(c_in)
     cuccaro_adder(3, b, c_in=c_in)
-    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
+    assert b.get_measurement() == {6: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_c_in_type_error():
+def test_cuccaro_adder_static_c_in_type_error():
     """TypeError when c_in is neither QuantumBool nor Qubit."""
     b = QuantumFloat(4)
     b[:] = 3
-    with pytest.raises(TypeError, match="c_in must be of type QuantumBool or Qubit"):
-        cuccaro_adder(1, b, c_in=QuantumFloat(2))
-    with pytest.raises(TypeError, match="c_in must be of type QuantumBool or Qubit"):
-        cuccaro_adder(1, b, c_in="invalid")
-    with pytest.raises(TypeError, match="c_in must be of type QuantumBool or Qubit"):
-        cuccaro_adder(1, b, c_in=42)
+    for bad_c_in in (QuantumFloat(2), "invalid", 42):
+        with pytest.raises(TypeError, match="c_in must be of type QuantumBool or Qubit"):
+            cuccaro_adder(1, b, c_in=bad_c_in)
 
 
-def test_cuccaro_adder_static_smoke_cout_overflow():
+def test_cuccaro_adder_static_cout_overflow():
     """c_out captures overflow."""
     b = QuantumFloat(3)
     b[:] = 6
     c_out = QuantumBool()
     cuccaro_adder(3, b, c_out=c_out)
-    assert b.get_measurement() == {1: 1.0}  # (6+3) % 8
+    assert b.get_measurement() == {1: 1.0}  # (6 + 3) % 8
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_ctrl():
+def test_cuccaro_adder_static_ctrl():
     """Controlled addition (ctrl kwarg)."""
     a = QuantumFloat(3)
     b = QuantumFloat(3)
@@ -110,10 +107,10 @@ def test_cuccaro_adder_static_smoke_ctrl():
     ctrl = QuantumBool()
     x(ctrl[0])
     cuccaro_adder(a, b, ctrl=ctrl)
-    assert b.get_measurement() == {0: 1.0}  # (5+3)%8
+    assert b.get_measurement() == {0: 1.0}  # (5 + 3) % 8
 
 
-def test_cuccaro_adder_static_smoke_cin_and_cout():
+def test_cuccaro_adder_static_cin_cout():
     """c_in + c_out together."""
     b = QuantumFloat(3)
     b[:] = 6
@@ -125,7 +122,7 @@ def test_cuccaro_adder_static_smoke_cin_and_cout():
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_cin_qubit_and_cout():
+def test_cuccaro_adder_static_cin_qubit_cout():
     """c_in of type Qubit with c_out together."""
     b = QuantumFloat(3)
     b[:] = 6
@@ -139,7 +136,7 @@ def test_cuccaro_adder_static_smoke_cin_qubit_and_cout():
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_cout_and_ctrl():
+def test_cuccaro_adder_static_cout_ctrl():
     """c_out + ctrl (ctrl=on) — exercises the MAJ-phase cx(a[-1], c_out) path."""
     a = QuantumFloat(3)
     b = QuantumFloat(3)
@@ -149,11 +146,11 @@ def test_cuccaro_adder_static_smoke_cout_and_ctrl():
     ctrl = QuantumBool()
     x(ctrl[0])
     cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
-    assert b.get_measurement() == {4: 1.0}  # (6+6)%8
+    assert b.get_measurement() == {4: 1.0}  # (6 + 6) % 8
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_inputs_unmodified():
+def test_cuccaro_adder_static_inputs_unmodified():
     """Input QuantumFloat sizes are unchanged after addition."""
     a = QuantumFloat(5)
     b = QuantumFloat(7)
@@ -165,423 +162,31 @@ def test_cuccaro_adder_static_smoke_inputs_unmodified():
     assert b.size == orig_b
 
 
-# ---------------------------------------------------------------------------
-# Fast exhaustive tests via @boolean_simulation.
-# Each helper factory captures configuration as CLOSURE variables (not function
-# parameters) so JAX treats them as compile-time constants during @jit tracing.
-# Loops live in plain Python outer functions to keep the JAX cache warm.
-# ---------------------------------------------------------------------------
+# -- list[Qubit] compatibility -----------------------------------------------
 
 
-# -- helpers that create @boolean_simulation functions for each config --------
-
-
-def _mk_add_basic():
-    """No optional args."""
-
-    @boolean_simulation
-    def add(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        cuccaro_adder(A, B)
-        return measure(A), measure(B)
-
-    return add
-
-
-def _mk_add_cin(c_in_val):
-    """c_in_val: 0 or 1."""
-
-    @boolean_simulation
-    def add(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        c_in = QuantumBool()
-        if c_in_val:
-            c_in.flip()
-        cuccaro_adder(A, B, c_in=c_in)
-        return measure(B)
-
-    return add
-
-
-def _mk_add_cin_qubit(c_in_val):
-    """c_in_val: 0 or 1; c_in is a bare Qubit."""
-
-    @boolean_simulation
-    def add(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        qv = QuantumVariable(1)
-        c_in = qv[0]
-        if c_in_val:
-            x(c_in)
-        cuccaro_adder(A, B, c_in=c_in)
-        return measure(B)
-
-    return add
-
-
-def _mk_add_cout(c_in_val):
-    """c_in_val: 0 or 1; c_out always present.  Classical a."""
-
-    @boolean_simulation
-    def add(L, j, k):
-        B = QuantumFloat(L)
-        B[:] = k
-        c_in = QuantumBool()
-        if c_in_val:
-            c_in.flip()
-        c_out = QuantumBool()
-        cuccaro_adder(j, B, c_in=c_in, c_out=c_out)
-        return measure(B), measure(c_out)
-
-    return add
-
-
-def _mk_add_cout_qubit(c_in_val):
-    """c_in_val: 0 or 1; c_out always present; c_in is a bare Qubit.  Classical a."""
-
-    @boolean_simulation
-    def add(L, j, k):
-        B = QuantumFloat(L)
-        B[:] = k
-        qv = QuantumVariable(1)
-        c_in = qv[0]
-        if c_in_val:
-            x(c_in)
-        c_out = QuantumBool()
-        cuccaro_adder(j, B, c_in=c_in, c_out=c_out)
-        return measure(B), measure(c_out)
-
-    return add
-
-
-def _mk_add_cout_qq(c_in_val):
-    """c_in_val: 0 or 1; c_out always present.  Quantum a, equal sizes."""
-
-    @boolean_simulation
-    def add(L, j, k):
-        A = QuantumFloat(L)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        c_in = QuantumBool()
-        if c_in_val:
-            c_in.flip()
-        c_out = QuantumBool()
-        cuccaro_adder(A, B, c_in=c_in, c_out=c_out)
-        return measure(A), measure(B), measure(c_out)
-
-    return add
-
-
-def _mk_add_ctrl(c_in_val, use_kwarg):
-    """c_in_val: 0 or 1.  use_kwarg: bool — ctrl= vs with control()."""
-
-    @boolean_simulation
-    def add(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        qbl = QuantumBool()
-        qbl.flip()  # ctrl is always |1>
-        c_in = QuantumBool()
-        if c_in_val:
-            c_in.flip()
-        if use_kwarg:
-            cuccaro_adder(A, B, c_in=c_in, ctrl=qbl)
-        else:
-            with control(qbl):
-                cuccaro_adder(A, B, c_in=c_in)
-        return measure(A), measure(B)
-
-    return add
-
-
-def _mk_add_ctrl_qubit(c_in_val, use_kwarg):
-    """c_in_val: 0 or 1; c_in is a bare Qubit.  use_kwarg: bool — ctrl= vs with control()."""
-
-    @boolean_simulation
-    def add(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        qbl = QuantumBool()
-        qbl.flip()  # ctrl is always |1>
-        qv = QuantumVariable(1)
-        c_in = qv[0]
-        if c_in_val:
-            x(c_in)
-        if use_kwarg:
-            cuccaro_adder(A, B, c_in=c_in, ctrl=qbl)
-        else:
-            with control(qbl):
-                cuccaro_adder(A, B, c_in=c_in)
-        return measure(A), measure(B)
-
-    return add
-
-
-def _mk_add_cout_ctrl(c_in_val):
-    """c_in_val: 0 or 1.  c_out and ctrl together, ctrl is always |1>."""
-
-    @boolean_simulation
-    def add(L, j, k):
-        A = QuantumFloat(L)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        c_in = QuantumBool()
-        if c_in_val:
-            c_in.flip()
-        c_out = QuantumBool()
-        ctrl = QuantumBool()
-        ctrl.flip()
-        cuccaro_adder(A, B, c_in=c_in, c_out=c_out, ctrl=ctrl)
-        return measure(A), measure(B), measure(c_out)
-
-    return add
-
-
-# -- exhaustive test runners -------------------------------------------------
-
-
-def _run_basic_exhaustive():
-    add = _mk_add_basic()
-    for N in range(2, 6):
-        for L in range(2, 6):
-            for j in range(1 << N):
-                for k in range(1 << L):
-                    A, B = add(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j) % (1 << L)
-
-
-def test_cuccaro_adder_basic_dynamic():
-    """Exhaustive quantum-quantum addition over small register sizes."""
-    _run_basic_exhaustive()
-
-
-def _run_cin_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cin(c_in_val)
-        for N in range(2, 6):
-            for L in range(2, 6):
-                for j in range(1 << N):
-                    for k in range(1 << L):
-                        B = add(N, L, j, k)
-                        assert B == (k + j + c_in_val) % (1 << L)
-
-
-def test_cuccaro_adder_cin_dynamic():
-    """Exhaustive addition with a carry-in qubit."""
-    _run_cin_exhaustive()
-
-
-def _run_cin_qubit_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cin_qubit(c_in_val)
-        for N in range(2, 6):
-            for L in range(2, 6):
-                for j in range(1 << N):
-                    for k in range(1 << L):
-                        B = add(N, L, j, k)
-                        assert B == (k + j + c_in_val) % (1 << L)
-
-
-def test_cuccaro_adder_cin_qubit_dynamic():
-    """Exhaustive addition with a bare Qubit carry-in."""
-    _run_cin_qubit_exhaustive()
-
-
-def _run_cout_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cout(c_in_val)
-        for L in range(2, 6):
-            for j in range(1 << L):
-                for k in range(1 << L):
-                    total = k + j + c_in_val
-                    B, cout = add(L, j, k)
-                    assert B == total % (1 << L)
-                    assert cout == (total >= (1 << L))
-
-
-def test_cuccaro_adder_cout_dynamic():
-    """Exhaustive addition capturing the carry-out overflow."""
-    _run_cout_exhaustive()
-
-
-def _run_cout_qubit_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cout_qubit(c_in_val)
-        for L in range(2, 6):
-            for j in range(1 << L):
-                for k in range(1 << L):
-                    total = k + j + c_in_val
-                    B, cout = add(L, j, k)
-                    assert B == total % (1 << L)
-                    assert cout == (total >= (1 << L))
-
-
-def test_cuccaro_adder_cout_qubit_dynamic():
-    """Exhaustive addition with a bare Qubit carry-out."""
-    _run_cout_qubit_exhaustive()
-
-
-def _run_cout_equal_sizes_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cout_qq(c_in_val)
-        for L in range(2, 6):
-            for j in range(1 << L):
-                for k in range(1 << L):
-                    total = k + j + c_in_val
-                    A_res, B_res, cout = add(L, j, k)
-                    assert A_res == j
-                    assert B_res == total % (1 << L)
-                    assert cout == (total >= (1 << L))
-
-
-def test_cuccaro_adder_cout_equal_sizes_dynamic():
-    """Exhaustive equal-size addition with carry-out."""
-    _run_cout_equal_sizes_exhaustive()
-
-
-def _run_ctrl_exhaustive():
-    for c_in_val in (0, 1):
-        for use_kwarg in (False, True):
-            add = _mk_add_ctrl(c_in_val, use_kwarg)
-            for N in range(2, 5):
-                for L in range(2, 5):
-                    for j in range(1 << N):
-                        for k in range(1 << L):
-                            A, B = add(N, L, j, k)
-                            assert A == j
-                            assert B == (k + j + c_in_val) % (1 << L)
-
-
-def test_cuccaro_adder_ctrl_dynamic():
-    """Exhaustive controlled addition via ctrl kwarg and control environment."""
-    _run_ctrl_exhaustive()
-
-
-def _run_ctrl_qubit_exhaustive():
-    for c_in_val in (0, 1):
-        for use_kwarg in (False, True):
-            add = _mk_add_ctrl_qubit(c_in_val, use_kwarg)
-            for N in range(2, 5):
-                for L in range(2, 5):
-                    for j in range(1 << N):
-                        for k in range(1 << L):
-                            A, B = add(N, L, j, k)
-                            assert A == j
-                            assert B == (k + j + c_in_val) % (1 << L)
-
-
-def test_cuccaro_adder_ctrl_qubit_dynamic():
-    """Exhaustive controlled addition with a bare Qubit carry-in."""
-    _run_ctrl_qubit_exhaustive()
-
-
-def _run_cout_ctrl_exhaustive():
-    for c_in_val in (0, 1):
-        add = _mk_add_cout_ctrl(c_in_val)
-        for L in range(2, 5):
-            for j in range(1 << L):
-                for k in range(1 << L):
-                    total = k + j + c_in_val
-                    A_res, B_res, cout = add(L, j, k)
-                    assert A_res == j
-                    assert B_res == total % (1 << L)
-                    assert cout == (total >= (1 << L))
-
-
-def test_cuccaro_adder_cout_ctrl_dynamic():
-    """Exhaustive addition with carry-out and control combined."""
-    _run_cout_ctrl_exhaustive()
-
-
-# ---------------------------------------------------------------------------
-# Type-compatibility tests.
-#
-# The in-place-adder interface (see ``inpl_adder_test``) allows ``a`` to be a
-# QuantumVariable, a list of Qubits or a classical int, and ``b`` to be a
-# QuantumVariable or a list of Qubits. In addition to QuantumFloat, all quantum
-# types (QuantumVariable, QuantumBool, QuantumModulus, ...) must be accepted as
-# inputs. These tests lock in that contract.
-#
-# See https://github.com/eclipse-qrisp/Qrisp/issues/839 (QuantumModulus passes a
-# raw list[Qubit] to the configured in-place adder).
-# ---------------------------------------------------------------------------
-
-
-def _measure_int(qv):
-    """Return the single-shot integer outcome of ``qv``.
-
-    Works regardless of the decoder of the concrete quantum type (int, bool or
-    little-endian bit string keys).
-    """
-    ((key, _),) = qv.get_measurement().items()
-    if isinstance(key, bool):
-        return int(key)
-    if isinstance(key, str):
-        return int(key[::-1], 2) if key else 0
-    return key
-
-
-# -- static smoke tests: list[Qubit] targets and addends --------------------
-
-
-def test_cuccaro_adder_static_smoke_classical_a_list_b():
-    """Classical a + list[Qubit] target (the addend passed by QuantumModulus)."""
+@pytest.mark.parametrize("a_spec", ["quantum", "classical", "list"])
+@pytest.mark.parametrize("b_spec", ["variable", "list"])
+def test_cuccaro_adder_static_list_combinations(a_spec, b_spec):
+    """QuantumVariable and list[Qubit] inputs in all a/b combinations."""
     b = QuantumFloat(3)
     b[:] = 3
-    cuccaro_adder(5, b[:])
+    if a_spec == "classical":
+        a_arg = 5
+    else:
+        a = QuantumFloat(3)
+        a[:] = 5
+        a_arg = a[:] if a_spec == "list" else a
+    b_arg = b[:] if b_spec == "list" else b
+
+    cuccaro_adder(a_arg, b_arg)
+
     assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+    if a_spec == "quantum":
+        assert a.get_measurement() == {5: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_quantum_a_list_b():
-    """Quantum a + list[Qubit] target."""
-    a = QuantumFloat(3)
-    a[:] = 5
-    b = QuantumFloat(3)
-    b[:] = 3
-    cuccaro_adder(a, b[:])
-    assert a.get_measurement() == {5: 1.0}
-    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
-
-
-def test_cuccaro_adder_static_smoke_list_a_quantum_b():
-    """list[Qubit] addend a + QuantumVariable target b."""
-    a = QuantumFloat(3)
-    a[:] = 5
-    b = QuantumFloat(3)
-    b[:] = 3
-    cuccaro_adder(a[:], b)
-    assert a.get_measurement() == {5: 1.0}
-    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
-
-
-def test_cuccaro_adder_static_smoke_list_a_list_b():
-    """list[Qubit] addend a + list[Qubit] target b."""
-    a = QuantumFloat(3)
-    a[:] = 5
-    b = QuantumFloat(3)
-    b[:] = 3
-    cuccaro_adder(a[:], b[:])
-    assert a.get_measurement() == {5: 1.0}
-    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
-
-
-def test_cuccaro_adder_static_smoke_list_unequal_sizes():
+def test_cuccaro_adder_static_list_unequal_sizes():
     """list[Qubit] inputs of unequal size (truncation + extension ancillas)."""
     a = QuantumFloat(5)
     a[:] = 3
@@ -598,37 +203,50 @@ def test_cuccaro_adder_static_smoke_list_unequal_sizes():
     assert b.get_measurement() == {10: 1.0}  # 7 + 3
 
 
-def test_cuccaro_adder_static_smoke_classical_a_larger_than_b():
+@pytest.mark.parametrize("b_is_list", [False, True])
+def test_cuccaro_adder_static_classical_a_larger_than_b(b_is_list):
     """Classical a wider than the target register wraps modulo 2**len(b)."""
     b = QuantumFloat(3)
     b[:] = 5
-    cuccaro_adder(10, b)
+    cuccaro_adder(10, b[:] if b_is_list else b)
     assert b.get_measurement() == {7: 1.0}  # (5 + 10) % 8
 
-    b = QuantumFloat(3)
-    b[:] = 5
-    cuccaro_adder(10, b[:])
-    assert b.get_measurement() == {7: 1.0}
+
+# -- other quantum types ------------------------------------------------------
 
 
-def test_cuccaro_adder_static_smoke_quantum_variable():
+def _measure_int(qv):
+    """Return the single-shot integer outcome of ``qv``.
+
+    Works regardless of the decoder of the concrete quantum type (int, bool or
+    little-endian bit string keys).
+    """
+    ((key, _),) = qv.get_measurement().items()
+    if isinstance(key, bool):
+        return int(key)
+    if isinstance(key, str):
+        return int(key[::-1], 2) if key else 0
+    return key
+
+
+def test_cuccaro_adder_static_quantum_variable():
     """Base QuantumVariable registers as a and b."""
-    A_VAL, B_VAL = 5, 3
+    a_val, b_val = 5, 3
     a = QuantumVariable(3)
     b = QuantumVariable(3)
-    int_encoder(a, A_VAL)
-    int_encoder(b, B_VAL)
+    int_encoder(a, a_val)
+    int_encoder(b, b_val)
     cuccaro_adder(a, b)
-    assert _measure_int(a) == A_VAL
+    assert _measure_int(a) == a_val
     assert _measure_int(b) == 0  # (3 + 5) % 8
 
     b = QuantumVariable(3)
-    int_encoder(b, 3)
-    cuccaro_adder(5, b)
+    int_encoder(b, b_val)
+    cuccaro_adder(a_val, b)
     assert _measure_int(b) == 0  # (3 + 5) % 8
 
 
-def test_cuccaro_adder_static_smoke_quantum_bool():
+def test_cuccaro_adder_static_quantum_bool():
     """QuantumBool (single-qubit) registers as a and b."""
     a = QuantumBool()
     b = QuantumBool()
@@ -642,7 +260,7 @@ def test_cuccaro_adder_static_smoke_quantum_bool():
     assert b.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_smoke_quantum_modulus():
+def test_cuccaro_adder_static_quantum_modulus():
     """QuantumModulus registers as a and b (sum stays below the modulus)."""
     a = QuantumModulus(13)
     b = QuantumModulus(13)
@@ -656,6 +274,9 @@ def test_cuccaro_adder_static_smoke_quantum_modulus():
     b[:] = 3
     cuccaro_adder(5, b)
     assert b.get_measurement() == {8: 1.0}
+
+
+# -- input validation and issue #839 regression -------------------------------
 
 
 def test_cuccaro_adder_static_invalid_inputs_raise_value_error():
@@ -693,153 +314,295 @@ def test_cuccaro_adder_quantum_modulus_issue_839():
         qm *= factor
         return measure(qm)
 
-    assert montgomery_multiply(13, 5, 10) == (5 * 10) % 13  # 5 * 10 % 13
+    assert montgomery_multiply(13, 5, 10) == (5 * 10) % 13
 
 
-# -- dynamic (boolean_simulation) exhaustive tests --------------------------
+# ---------------------------------------------------------------------------
+# Exhaustive tests via @boolean_simulation.
+#
+# Configuration is captured as CLOSURE variables (not function parameters) so
+# JAX treats them as compile-time constants during tracing. Sweeps run in plain
+# Python outer functions to keep the JAX cache warm.
+# ---------------------------------------------------------------------------
 
 
-def test_cuccaro_adder_list_target_dynamic():
-    """Exhaustive classical-quantum and quantum-quantum addition on list[Qubit]."""
+def _mk_add(inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0):
+    """Factory for a ``@boolean_simulation`` ``cuccaro_adder`` wrapper.
 
-    @boolean_simulation
-    def add_cq(N, j, k):
-        B = QuantumFloat(N)
-        B[:] = k
-        cuccaro_adder(j, B[:])
-        return measure(B)
-
-    @boolean_simulation
-    def add_qq_list_a(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        cuccaro_adder(A[:], B[:])
-        return measure(A), measure(B)
-
-    for N in range(2, 5):
-        for j in range(1 << N):
-            for k in range(1 << N):
-                assert add_cq(N, j, k) == (k + j) % (1 << N)
-
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(1 << N):
-                for k in range(1 << L):
-                    A, B = add_qq_list_a(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j) % (1 << L)
-
-
-def test_cuccaro_adder_classical_a_wider_than_b_dynamic():
-    """Classical a wider than the target wraps modulo 2**len(b) in dynamic mode."""
-
-    @boolean_simulation
-    def add(N, j, k):
-        B = QuantumFloat(N)
-        B[:] = k
-        cuccaro_adder(j, B)
-        return measure(B)
-
-    for N in range(2, 6):
-        # sweep classical a far beyond the register width
-        for j in range(0, 1 << (N + 3)):
-            for k in range(1 << N):
-                assert add(N, j, k) == (k + j) % (1 << N)
-
-
-def test_cuccaro_adder_quantum_variable_dynamic():
-    """Base QuantumVariable registers as a and b (quantum & classical a)."""
-
-    @boolean_simulation
-    def add_qq(N, L, j, k):
-        A = QuantumVariable(N)
-        B = QuantumVariable(L)
-        int_encoder(A, j)
-        int_encoder(B, k)
-        cuccaro_adder(A, B)
-        return measure(A), measure(B)
-
-    @boolean_simulation
-    def add_cq(N, j, k):
-        B = QuantumVariable(N)
-        int_encoder(B, k)
-        cuccaro_adder(j, B)
-        return measure(B)
-
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(1 << N):
-                for k in range(1 << L):
-                    A, B = add_qq(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j) % (1 << L)
-
-    for N in range(2, 5):
-        for j in range(1 << N):
-            for k in range(1 << N):
-                assert add_cq(N, j, k) == (k + j) % (1 << N)
-
-
-def test_cuccaro_adder_quantum_bool_dynamic():
-    """Single-qubit QuantumBool registers as a and b."""
-
-    @boolean_simulation
-    def add_qq(j, k):
-        A = QuantumBool()
-        B = QuantumBool()
-        int_encoder(A, j)
-        int_encoder(B, k)
-        cuccaro_adder(A, B)
-        return measure(A), measure(B)
-
-    @boolean_simulation
-    def add_cq(j, k):
-        B = QuantumBool()
-        int_encoder(B, k)
-        cuccaro_adder(j, B)
-        return measure(B)
-
-    for j in range(2):
-        for k in range(2):
-            A, B = add_qq(j, k)
-            assert A == j
-            assert B == (k + j) % 2
-            assert add_cq(j, k) == (k + j) % 2
-
-
-def test_cuccaro_adder_quantum_modulus_dynamic():
-    """QuantumModulus registers as a and b.
-
-    The Cuccaro adder operates on the raw qubits, so the measurement outcome
-    corresponds to the raw modulo-2**size addition, which the QuantumModulus
-    decoder reports modulo the modulus (default Montgomery shift is 0).
+    - inputs: (a_kind, b_kind), with a_kind in {"quantum", "classical", "list"}
+      and b_kind in {"variable", "list"}.
+    - c_in_kind: None | "qbool" | "qubit" — optional carry-in.
+    - c_out: add a carry-out register.
+    - ctrl_kind: None | "kwarg" | "env" — optional control, via ``ctrl=`` or
+      ``with control()``.
+    - c_in_val: value (0/1) of the carry-in.
     """
+    a_kind, b_kind = inputs
+
+    def build_c_in():
+        if c_in_kind == "qubit":
+            c_in = QuantumVariable(1)[0]
+            if c_in_val:
+                x(c_in)
+        else:
+            c_in = QuantumBool()
+            if c_in_val:
+                c_in.flip()
+        return c_in
+
+    def apply(a_arg, b_arg, kwargs):
+        if ctrl_kind is None:
+            cuccaro_adder(a_arg, b_arg, **kwargs)
+        else:
+            qbl = QuantumBool()
+            qbl.flip()  # ctrl is always |1>
+            if ctrl_kind == "kwarg":
+                cuccaro_adder(a_arg, b_arg, ctrl=qbl, **kwargs)
+            else:
+                with control(qbl):
+                    cuccaro_adder(a_arg, b_arg, **kwargs)
 
     @boolean_simulation
-    def add_qq(N, j, k):
-        A = QuantumModulus(N)
-        B = QuantumModulus(N)
-        A[:] = j
+    def add(N, L, j, k):
+        B = QuantumFloat(L)
         B[:] = k
-        cuccaro_adder(A, B)
-        return measure(A), measure(B)
+        b_arg = B[:] if b_kind == "list" else B
+
+        if a_kind == "classical":
+            a_arg = j
+        else:
+            A = QuantumFloat(N)
+            A[:] = j
+            a_arg = A[:] if a_kind == "list" else A
+
+        kwargs = {}
+        if c_in_kind is not None:
+            kwargs["c_in"] = build_c_in()
+        if c_out:
+            c_out_qb = QuantumBool()
+            kwargs["c_out"] = c_out_qb
+
+        apply(a_arg, b_arg, kwargs)
+
+        res = []
+        if a_kind != "classical":
+            res.append(measure(A))
+        res.append(measure(B))
+        if c_out:
+            res.append(measure(c_out_qb))
+        return tuple(res)
+
+    return add
+
+
+def _sweep(add, sizes_a, sizes_b, check):
+    for N in sizes_a:
+        for L in sizes_b:
+            for j in range(1 << N):
+                for k in range(1 << L):
+                    check(add, N, L, j, k)
+
+
+def _sweep_equal(add, sizes, check):
+    for N in sizes:
+        for j in range(1 << N):
+            for k in range(1 << N):
+                check(add, N, N, j, k)
+
+
+def _check_qq(c_in_val=0):
+    """Check factory: quantum a, A unchanged, B += a + c_in (mod 2**L)."""
+
+    def check(add, N, L, j, k):
+        A, B = add(N, L, j, k)
+        assert A == j
+        assert B == (k + j + c_in_val) % (1 << L)
+
+    return check
+
+
+def _check_cout_qq(c_in_val=0):
+    """Check factory: quantum a with carry-out, overflow captured in c_out."""
+
+    def check(add, N, L, j, k):
+        A, B, cout = add(N, L, j, k)
+        total = k + j + c_in_val
+        assert A == j
+        assert B == total % (1 << L)
+        assert cout == (total >= (1 << L))
+
+    return check
+
+
+def _check_cq(c_in_val=0):
+    """Check factory: classical a, B += a + c_in (mod 2**L)."""
+
+    def check(add, N, L, j, k):
+        (B,) = add(N, L, j, k)
+        assert B == (k + j + c_in_val) % (1 << L)
+
+    return check
+
+
+def _check_cout_cq(c_in_val=0):
+    """Check factory: classical a with carry-out, overflow captured in c_out."""
+
+    def check(add, N, L, j, k):
+        B, cout = add(N, L, j, k)
+        total = k + j + c_in_val
+        assert B == total % (1 << L)
+        assert cout == (total >= (1 << L))
+
+    return check
+
+
+def test_cuccaro_adder_dynamic_basic():
+    """Exhaustive quantum-quantum addition over small register sizes."""
+    _sweep(_mk_add(("quantum", "variable")), range(2, 6), range(2, 6), _check_qq())
+
+
+def test_cuccaro_adder_dynamic_cin():
+    """Exhaustive addition with a QuantumBool carry-in."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("quantum", "variable"), c_in_kind="qbool", c_in_val=c_in_val)
+        _sweep(add, range(2, 6), range(2, 6), _check_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_cin_qubit():
+    """Exhaustive addition with a bare Qubit carry-in."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("quantum", "variable"), c_in_kind="qubit", c_in_val=c_in_val)
+        _sweep(add, range(2, 6), range(2, 6), _check_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_cout():
+    """Exhaustive classical-a addition capturing the carry-out overflow."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("classical", "variable"), c_in_kind="qbool", c_out=True, c_in_val=c_in_val)
+        _sweep_equal(add, range(2, 6), _check_cout_cq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_cout_qubit():
+    """Exhaustive classical-a addition with a bare Qubit carry-in and carry-out."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("classical", "variable"), c_in_kind="qubit", c_out=True, c_in_val=c_in_val)
+        _sweep_equal(add, range(2, 6), _check_cout_cq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_cout_equal_sizes():
+    """Exhaustive equal-size quantum addition with carry-out."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("quantum", "variable"), c_in_kind="qbool", c_out=True, c_in_val=c_in_val)
+        _sweep_equal(add, range(2, 6), _check_cout_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_ctrl():
+    """Exhaustive controlled addition via ctrl kwarg and control environment."""
+    for c_in_val in (0, 1):
+        for ctrl_kind in ("kwarg", "env"):
+            add = _mk_add(("quantum", "variable"), c_in_kind="qbool", ctrl_kind=ctrl_kind, c_in_val=c_in_val)
+            _sweep(add, range(2, 5), range(2, 5), _check_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_ctrl_qubit():
+    """Exhaustive controlled addition with a bare Qubit carry-in."""
+    for c_in_val in (0, 1):
+        for ctrl_kind in ("kwarg", "env"):
+            add = _mk_add(("quantum", "variable"), c_in_kind="qubit", ctrl_kind=ctrl_kind, c_in_val=c_in_val)
+            _sweep(add, range(2, 5), range(2, 5), _check_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_cout_ctrl():
+    """Exhaustive addition with carry-out and control combined."""
+    for c_in_val in (0, 1):
+        add = _mk_add(("quantum", "variable"), c_in_kind="qbool", c_out=True, ctrl_kind="kwarg", c_in_val=c_in_val)
+        _sweep_equal(add, range(2, 5), _check_cout_qq(c_in_val))
+
+
+def test_cuccaro_adder_dynamic_list_target():
+    """Exhaustive classical-quantum and quantum-quantum addition on list[Qubit]."""
+    add_cq = _mk_add(("classical", "list"))
+    _sweep_equal(add_cq, range(2, 5), _check_cq())
+
+    add_qq = _mk_add(("list", "list"))
+    _sweep(add_qq, range(2, 5), range(2, 5), _check_qq())
+
+
+def test_cuccaro_adder_dynamic_classical_a_wider_than_b():
+    """Classical a wider than the target wraps modulo 2**len(b) in dynamic mode."""
+    add = _mk_add(("classical", "variable"))
+    check = _check_cq()
+    for N in range(2, 6):
+        for j in range(1 << (N + 3)):
+            for k in range(1 << N):
+                check(add, N, N, j, k)
+
+
+# -- other quantum types (dynamic) -------------------------------------------
+
+
+QTYPE_SPECS = {
+    "qvariable": {
+        "make": QuantumVariable,
+        "encode": int_encoder,
+        "sizes": [2, 3, 4],
+        "values": lambda n: range(1 << n),
+        "expected": lambda j, k, n: (k + j) % (1 << n),
+    },
+    "qbool": {
+        "make": lambda n: QuantumBool(),
+        "encode": int_encoder,
+        "sizes": [1],
+        "values": lambda n: range(2),
+        "expected": lambda j, k, n: (k + j) % 2,
+    },
+    "qmodulus": {
+        "make": QuantumModulus,
+        "encode": lambda qv, v: qv.__setitem__(slice(None), v),
+        "sizes": [13],
+        "values": range,
+        "expected": lambda j, k, n: ((k + j) % (1 << n.bit_length())) % n,
+    },
+}
+
+
+def _mk_type_add(make, encode, a_kind):
+    """Factory for a ``@boolean_simulation`` adder on non-QuantumFloat types."""
 
     @boolean_simulation
-    def add_cq(N, j, k):
-        B = QuantumModulus(N)
-        B[:] = k
-        cuccaro_adder(j, B)
+    def add(n_a, n_b, j, k):
+        if a_kind == "quantum":
+            A = make(n_a)
+            encode(A, j)
+            a_arg = A
+        else:
+            a_arg = j
+        B = make(n_b)
+        encode(B, k)
+        cuccaro_adder(a_arg, B)
+        if a_kind == "quantum":
+            return measure(A), measure(B)
         return measure(B)
 
-    for j in range(13):
-        for k in range(13):
-            A, B = add_qq(13, j, k)
-            assert A == j
-            # raw addition is modulo 2**4 = 16, decoded modulo 13
-            assert B == ((j + k) % 16) % 13
+    return add
 
-    for j in range(13):
-        for k in range(13):
-            assert add_cq(13, j, k) == ((j + k) % 16) % 13
+
+@pytest.mark.parametrize("qtype", ["qvariable", "qbool", "qmodulus"])
+def test_cuccaro_adder_dynamic_quantum_types(qtype):
+    """Exhaustive addition on QuantumVariable, QuantumBool and QuantumModulus."""
+    spec = QTYPE_SPECS[qtype]
+    add_qq = _mk_type_add(spec["make"], spec["encode"], "quantum")
+    add_cq = _mk_type_add(spec["make"], spec["encode"], "classical")
+
+    for n_a in spec["sizes"]:
+        for n_b in spec["sizes"]:
+            for j in spec["values"](n_a):
+                for k in spec["values"](n_b):
+                    A, B = add_qq(n_a, n_b, j, k)
+                    assert A == spec["expected"](j, 0, n_a)  # A is unchanged
+                    assert B == spec["expected"](j, k, n_b)
+
+    for n in spec["sizes"]:
+        for j in spec["values"](n):
+            for k in spec["values"](n):
+                assert add_cq(n, n, j, k) == spec["expected"](j, k, n)
