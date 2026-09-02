@@ -19,7 +19,9 @@
 from fractions import Fraction
 
 import numpy as np
+import pytest
 
+import qrisp.algorithms.shor.shors_algorithm as shor_mod
 from qrisp.algorithms.shor.crypto_tools import (
     _bitstring_to_string,
     rsa_decrypt,
@@ -83,6 +85,29 @@ def test_extract_order_combines_three_outcomes():
     assert _extract_order(mes_res, 99, 181) == expected_order  # type: ignore[arg-type]
 
 
+def test_extract_order_combination_beyond_int64_range(monkeypatch):
+    """`_extract_order` must combine large candidates via `math.lcm`, not `np.lcm`, which overflows above int64 range."""
+    # r1, r2 differ by 2 and are both odd, so gcd(r1, r2) == 1 and their lcm
+    # is their exact product, well beyond numpy's int64 range. Neither is a
+    # multiple of the true order (4) alone or combined, so the combination
+    # step actually runs (isn't skipped by an early return) without crashing.
+    r1, r2 = 2**40 + 1, 2**40 + 3
+    outcomes = iter([[r1], [r2]])
+    monkeypatch.setattr(shor_mod, "_get_r_values", lambda approx: next(outcomes))
+
+    with pytest.raises(RuntimeError):
+        shor_mod._extract_order({0.1: 0.5, 0.2: 0.5}, 2, 15)  # type: ignore[arg-type]
+
+
+def test_extract_order_raises_on_exhaustion(monkeypatch):
+    """`_extract_order` must raise a clear error, not a bare `IndexError`, once all outcomes are exhausted."""
+    # 7 never divides the true order (4) of 2 mod 15, alone or combined with itself.
+    monkeypatch.setattr(shor_mod, "_get_r_values", lambda approx: [7])
+
+    with pytest.raises(RuntimeError):
+        shor_mod._extract_order({0.1: 0.5, 0.2: 0.5}, 2, 15)  # type: ignore[arg-type]
+
+
 def test_bitstring_to_string_decodes_7bit_chars():
     """`_bitstring_to_string` must decode a 7-bit-per-character bitstring."""
     bitstring = "".join(format(ord(c), "b").zfill(7) for c in "Hi")
@@ -101,6 +126,24 @@ def test_rsa_encrypt_is_modular_exponentiation():
 def test_shors_alg_factors_small_composite():
     """`shors_alg` must find a nontrivial factor of a small composite number."""
     assert shors_alg(15) in (3, 5)
+
+
+def test_shors_alg_retries_after_order_finding_exhaustion(monkeypatch):
+    """`shors_alg` must try the next candidate base, not crash, when order-finding is exhausted for one."""
+    real_find_order = shor_mod._find_order
+    attempted_bases = []
+
+    def flaky_find_order(a, N, inpl_adder=None, mes_kwargs=None):
+        attempted_bases.append(a)
+        if len(attempted_bases) == 1:
+            raise RuntimeError("synthetic order-finding exhaustion for test")
+        return real_find_order(a, N, inpl_adder, mes_kwargs)
+
+    monkeypatch.setattr(shor_mod, "_find_order", flaky_find_order)
+
+    assert shor_mod.shors_alg(15) in (3, 5)
+    min_expected_attempts = 2
+    assert len(attempted_bases) >= min_expected_attempts
 
 
 def test_rsa_decrypt_roundtrip_via_shors_alg():

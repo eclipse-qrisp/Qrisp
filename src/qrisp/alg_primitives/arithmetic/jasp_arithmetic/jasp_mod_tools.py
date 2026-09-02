@@ -168,8 +168,18 @@ def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array 
 
 
 def _bigint_width(*values: int | BigInteger | Array) -> int:
-    """Return the limb width of the first BigInteger among values."""
-    return next(v.digits.shape[0] for v in values if isinstance(v, BigInteger))
+    """Return the limb width shared by every BigInteger among values.
+
+    Raises
+    ------
+    ValueError
+        If two or more BigInteger operands have different limb widths.
+
+    """
+    widths = {v.digits.shape[0] for v in values if isinstance(v, BigInteger)}
+    if len(widths) > 1:
+        raise ValueError(f"Mixed BigInteger limb widths are not supported: {sorted(widths)}")
+    return next(iter(widths))
 
 
 def montgomery_encoder(

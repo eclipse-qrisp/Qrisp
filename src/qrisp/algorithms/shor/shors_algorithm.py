@@ -16,10 +16,10 @@
 
 """Implements Shor's integer factorization algorithm via quantum order finding."""
 
+import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-import numpy as np
 from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 
 from qrisp import QuantumFloat, QuantumModulus, control, h
@@ -35,13 +35,16 @@ qubits = []
 
 
 def _find_optimal_a(N: int) -> list[int]:
-    n = int(np.ceil(np.log2(N)))
+    # N.bit_length() would be off by one for N an exact power of two; this
+    # is the exact-integer equivalent of ceil(log2(N)), safe for N far
+    # beyond float64/int64 range (unlike np.log2/np.ceil).
+    n = (N - 1).bit_length() if N > 1 else 0
     proposals = []
 
     # Search through the first O(1) possibilities to find a good a
     for a in range(2, min(100, N - 1)):
         # We only append non-trivial proposals
-        if np.gcd(a, N) == 1:
+        if math.gcd(a, N) == 1:
             proposals.append(a)
 
     cost_dic = {}
@@ -101,7 +104,7 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
     except ValueError:
         pass
 
-    while True:
+    while approximations:
         r_values = _get_r_values(approximations.pop(0))
 
         for r in r_values:
@@ -115,7 +118,7 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
         new_candidates = []
         for prev_r in accumulated_r_values:
             for r in r_values:
-                combined = int(np.lcm(r, prev_r))
+                combined = math.lcm(r, prev_r)
                 if pow(a, combined, N) == 1:
                     return combined
                 if combined not in accumulated_r_values and combined not in new_candidates:
@@ -125,6 +128,11 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
         accumulated_r_values.extend(new_candidates)
         if len(accumulated_r_values) > max_candidates:
             accumulated_r_values = accumulated_r_values[-max_candidates:]
+
+    # Noisy or finite-shot measurements can produce outcomes that never yield
+    # a valid order; let the caller decide whether to retry with another base
+    # instead of crashing on a bare IndexError from the exhausted list.
+    raise RuntimeError(f"could not recover the order of {a} mod {N} from the given measurement outcomes")
 
 
 def _get_r_values(approx: int | float) -> list[int]:
@@ -171,13 +179,16 @@ def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | Non
     a_proposals = _find_optimal_a(N)
 
     for a in a_proposals:
-        K = np.gcd(a, N)
+        K = math.gcd(a, N)
 
         if K != 1:
             res = K
             break
 
-        r = _find_order(a, N, inpl_adder, mes_kwargs)
+        try:
+            r = _find_order(a, N, inpl_adder, mes_kwargs)
+        except RuntimeError:
+            continue
 
         if r % 2:
             continue
@@ -186,7 +197,7 @@ def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | Non
         # modulo N before the +1 is mathematically exact and avoids computing
         # a**(r//2) in full precision, which can be an enormous number for
         # large r.
-        g = int(np.gcd(pow(a, r // 2, N) + 1, N))
+        g = math.gcd(pow(a, r // 2, N) + 1, N)
 
         if g not in [N, 1]:
             res = g

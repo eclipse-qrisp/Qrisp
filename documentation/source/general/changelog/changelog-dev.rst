@@ -147,6 +147,12 @@ Bug Fixes
   fallback)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+* Fixed ``OverflowError``\ s from ``numpy``'s fixed-width ``gcd``/``lcm`` on
+  large integers in Shor's algorithm, a silent wrong-result bug when
+  Montgomery-encoding mismatched ``BigInteger`` widths, and a bare
+  ``IndexError`` when order-finding exhausts all measurement outcomes
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 * Fix a code typo in the Jasp tutorial which printed the wrong variable
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).

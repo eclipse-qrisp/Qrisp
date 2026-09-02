@@ -310,6 +310,17 @@ def test_montgomery_encoder_decoder_mixed_bigint_roundtrip():
     assert decoded() == x
 
 
+def test_montgomery_encoder_rejects_mismatched_bigint_widths():
+    """`montgomery_encoder` must reject BigIntegers with different limb widths, not silently return a wrong result."""
+    import pytest
+
+    from qrisp import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
+
+    with pytest.raises(ValueError):
+        montgomery_encoder(BigInteger.create(42, 4), BigInteger.create(1024, 8), 97)
+
+
 def test_new_montgomery_decoder_positive_and_negative_shift():
     """`new_montgomery_decoder` must decode both positive (inverse) and non-positive shifts."""
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
