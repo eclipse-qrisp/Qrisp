@@ -594,3 +594,46 @@ class TestModuleLevelHelpers:
         sym_x = sp.symbols("x")
         poly = 8 * sym_x + 4 * sym_x**2 + 1
         assert trunc_poly(poly, (2, 3)) == 4.0 * sym_x**2
+
+    def test_create_output_qf_add_msize_is_tight(self):
+        """Test that create_output_qf's add sizing fits every possible sum without a spare qubit."""
+        a = QuantumFloat(3, -1)
+        b = QuantumFloat(2, -2, signed=True)
+        out = create_output_qf([a, b], "add")
+        assert out.msize == 5
+
+        a_vals = [float(a.decoder(i)) for i in range(2**a.size)]
+        b_vals = [float(b.decoder(i)) for i in range(2**b.size)]
+        for av in a_vals:
+            for bv in b_vals:
+                out.encoder(av + bv)  # must not raise
+
+        too_tight = QuantumFloat(out.msize - 1, out.exponent, signed=out.signed)
+        with pytest.raises(ValueError):
+            for av in a_vals:
+                for bv in b_vals:
+                    too_tight.encoder(av + bv)
+
+    def test_create_output_qf_polynomial_operand_order_independent(self):
+        """Test that create_output_qf's polynomial sizing doesn't depend on operand list order."""
+        u = QuantumFloat(3, -1, name="order_u")
+        v = QuantumFloat(2, -2, name="order_v", signed=True)
+        sym_u, sym_v = sp.symbols("order_u order_v")
+        poly = sym_u * sym_v
+
+        forward = create_output_qf([u, v], poly)
+        reverse = create_output_qf([v, u], poly)
+        assert (forward.msize, forward.exponent, forward.signed) == (
+            reverse.msize,
+            reverse.exponent,
+            reverse.signed,
+        )
+
+    def test_create_output_qf_polynomial_duplicate_name_raises(self):
+        """Test that create_output_qf rejects operands sharing a name instead of silently mis-sizing."""
+        u = QuantumFloat(3, -1, name="dup_name")
+        v = QuantumFloat(2, -2, name="dup_name", signed=True)
+        poly = sp.Symbol("dup_name") ** 2
+
+        with pytest.raises(ValueError, match="Duplicate QuantumFloat name"):
+            create_output_qf([u, v], poly)

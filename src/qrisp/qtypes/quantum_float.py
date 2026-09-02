@@ -684,6 +684,15 @@ class QuantumFloat(QuantumVariable):
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
+                # TODO: res only matches self's own shape, not the sum's, so
+                # any of other's bits outside that range (below self.exponent
+                # or above self's mantissa) are silently dropped whenever the
+                # operands' exponents differ. A correct fix needs a
+                # sign-extension-aware way to widen a QuantumFloat's value
+                # into a larger register under tracing: gidney_adder
+                # zero-pads a narrower operand to match a wider target, which
+                # corrupts a signed negative operand (its sign bit must be
+                # replicated into the new high bits, not zero-filled).
                 res = self.duplicate()
                 cx(self, res)
                 res += other
@@ -705,6 +714,7 @@ class QuantumFloat(QuantumVariable):
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
+                # TODO: see the identical gap in __add__ above.
                 res = self.duplicate()
                 cx(self, res)
                 res -= other
@@ -1359,6 +1369,9 @@ def _addsub_bounds(op0: QuantumFloat, op1: QuantumFloat) -> tuple[int | Array, i
     -------
     tuple[int or jax.Array, int or jax.Array]
         The (exponent, max_sig) bounds for sizing the output QuantumFloat.
+        ``max_sig`` includes the extra bit a sum can carry into, so
+        ``msize = max_sig - exponent`` sizes the output to hold every
+        possible add/sub result.
 
     """
     if check_for_tracing_mode():
@@ -1421,8 +1434,10 @@ def _polynomial_output_qf(operands: list[QuantumFloat], op: sp.Expr) -> QuantumF
     Parameters
     ----------
     operands : list[QuantumFloat]
-        The QuantumFloats participating in the polynomial. Sorted in place
-        by name as a side effect (matching ``op``'s generator order).
+        The QuantumFloats participating in the polynomial. Every operand's
+        ``name`` must be unique: ``op`` refers to each operand by
+        ``sympy.Symbol(operand.name)``, so a repeated name would make two
+        distinct operands indistinguishable in the polynomial.
     op : sympy.Expr
         The polynomial expression being encoded.
 
@@ -1432,6 +1447,11 @@ def _polynomial_output_qf(operands: list[QuantumFloat], op: sp.Expr) -> QuantumF
         A freshly allocated QuantumFloat, sized to hold the result of ``op``
         without overflow.
 
+    Raises
+    ------
+    ValueError
+        If two or more operands share the same ``name``.
+
     """
     # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
     from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
@@ -1440,7 +1460,13 @@ def _polynomial_output_qf(operands: list[QuantumFloat], op: sp.Expr) -> QuantumF
     # actually a polynomial); sp.Poly() below doesn't catch that on its own.
     _ = expr_to_list(op)
 
-    operands.sort(key=lambda operand: operand.name)
+    names = [operand.name for operand in operands]
+    if len(set(names)) != len(names):
+        duplicates = {name for name in names if names.count(name) > 1}
+        raise ValueError(
+            f"Duplicate QuantumFloat name(s) {sorted(duplicates)} among operands; "
+            "polynomial encoding requires every operand to have a unique name."
+        )
 
     # sympy's type stubs don't model Poly's/Abs's dynamic attribute
     # surface, so pyright can't see .gens/.coeffs()/.monoms()/.subs()
@@ -1504,7 +1530,7 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
     if op == "add":
         signed = operands[0].signed or operands[1].signed
         exponent, max_sig = _addsub_bounds(operands[0], operands[1])
-        msize = max_sig - exponent + 1
+        msize = max_sig - exponent
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name="add_res*")
 
@@ -1524,7 +1550,7 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
 
     if op == "sub":
         exponent, max_sig = _addsub_bounds(operands[0], operands[1])
-        msize = max_sig - exponent + 1
+        msize = max_sig - exponent
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=True, name="sub_res*")
 
