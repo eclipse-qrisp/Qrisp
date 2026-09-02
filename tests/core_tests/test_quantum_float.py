@@ -18,7 +18,7 @@
 import pytest
 import sympy as sp
 
-from qrisp import QuantumBool, QuantumFloat, h, x
+from qrisp import QuantumBool, QuantumFloat, h, multi_measurement, x
 from qrisp.qtypes.quantum_float import create_output_qf, trunc_poly
 
 
@@ -559,7 +559,10 @@ class TestUtilityMethods:
         with qbl:
             qf.quantum_bit_shift(2)
 
-        assert str(qf.qs.statevector()) == "sqrt(2)*(|1>*|False> + |4>*|True>)/2"
+        # Joint measurement (rather than the statevector's pretty-printed string,
+        # which is brittle across sympy/Qrisp versions) confirms the shift is
+        # correlated with qbl: unshifted (1) when False, shifted (4) when True.
+        assert multi_measurement([qf, qbl]) == {(1, False): 0.5, (4, True): 0.5}
 
 
 class TestModuleLevelHelpers:

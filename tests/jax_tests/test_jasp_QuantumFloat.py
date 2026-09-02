@@ -95,7 +95,9 @@ def test_jasp_QuantumFloat_comparisons():
             return a >= b
         if op == "eq":
             return a == b
-        return a != b
+        if op == "ne":
+            return a != b
+        raise ValueError(f"Unknown comparison op {op!r} (available are 'lt', 'gt', 'le', 'ge', 'eq', 'ne')")
 
     assert compare(2, 5, "lt") == {True: 1.0}
     assert compare(5, 2, "lt") == {False: 1.0}

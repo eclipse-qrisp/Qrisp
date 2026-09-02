@@ -621,7 +621,7 @@ class QuantumFloat(QuantumVariable):
         super().encode(value, permit_dirtyness=permit_dirtyness)
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __mul__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __mul__(self, other: QuantumFloat | int | np.integer) -> QuantumFloat:
         """Multiply this QuantumFloat by another QuantumFloat or a classical int."""
         if check_for_tracing_mode():
             # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
@@ -1568,13 +1568,13 @@ def copy_qf(
     qf1_start = qf1.exponent
     qf2_start = qf2.exponent
 
-    # qf2_max is only computed when the loop can actually reach it, so it
-    # still raises the same error max() over an empty range would for a
-    # signed, zero-mantissa qf2 -- an edge case that otherwise never gets
-    # touched because qf1_len would then also be 0. Falls back to qf2_start
-    # (any same-typed value would do) when unused, so qf2_max never needs an
-    # Optional type.
-    qf2_max = max(range(qf2_start, qf2_start + qf2_len)) if (qf2.signed and qf1_len) else qf2_start
+    # Highest significance in qf2's own mantissa range, i.e.
+    # max(range(qf2_start, qf2_start + qf2_len)) without constructing a range
+    # (and calling max() on it) just to handle qf2_len == 0: for a signed,
+    # zero-mantissa qf2, this correctly evaluates to qf2_start - 1, so every
+    # significance in qf1 at or above qf2_start (there being no actual qf2
+    # mantissa bit to overlap with) is still sign-extended below.
+    qf2_max = qf2_start + qf2_len - 1
 
     # QuantumVariable.qs/__getitem__ aren't typed precisely enough for pyright
     # to see qs as a QuantumSession (with .cx) here rather than the
