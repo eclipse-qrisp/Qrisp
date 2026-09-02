@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - Enable_Python_3.13_in_the_CI_pipeline
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,4 +30,3 @@ jobs:
       #   uses: astral-sh/ruff-action@v3
       #   with:
       #     args: check  # wait for fix from Niko's student
-      
