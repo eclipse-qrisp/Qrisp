@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 import jax.numpy as jnp
 import numpy as np
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
     from qrisp.circuit.qubit import Qubit
     from qrisp.qtypes.quantum_bool import QuantumBool
+    from qrisp.qtypes.quantum_modulus import QuantumModulus
 
 
 def _signed_int_iso(value: int | Array, n: int) -> Array:
@@ -643,7 +644,7 @@ class QuantumFloat(QuantumVariable):
         from qrisp.alg_primitives.arithmetic import polynomial_encoder, q_mult
 
         if isinstance(other, QuantumFloat):
-            return q_mult(self, other)  # pyright: ignore[reportReturnType]
+            return q_mult(self, other)
 
         if isinstance(other, (int, np.integer)):
             bit_shift = 0
@@ -1387,6 +1388,23 @@ def _prod(values: Iterable[sp.Expr]) -> sp.Expr:
     return res
 
 
+def _all_quantum_modulus(operands: list[QuantumFloat]) -> TypeGuard[list[QuantumModulus]]:
+    """Check whether every operand is a QuantumModulus, narrowing the list element type.
+
+    A plain ``all(isinstance(operand, QuantumModulus) for operand in operands)``
+    is just as correct at runtime, but pyright can't propagate a narrowed
+    element type out of that expression -- wrapping it in a
+    :data:`~typing.TypeGuard`-annotated function is what lets callers use
+    ``operands[i].m``/``.modulus`` afterwards without a type: ignore.
+
+    """
+    # NOTE: Local import to avoid a circular import (QuantumModulus subclasses QuantumFloat, so
+    # qrisp.qtypes can only expose QuantumModulus after this module has finished loading).
+    from qrisp.qtypes import QuantumModulus
+
+    return all(isinstance(operand, QuantumModulus) for operand in operands)
+
+
 def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> QuantumFloat:
     """Determine the appropriately-sized output QuantumFloat for an arithmetic operation.
 
@@ -1445,22 +1463,13 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
-    # NOTE: Local import to avoid a circular import (QuantumModulus subclasses QuantumFloat, so
-    # qrisp.qtypes can only expose QuantumModulus after this module has finished loading).
-    from qrisp.qtypes import QuantumModulus
-
-    # pyright can't narrow `operands`' element type through all(isinstance(...)
-    # for ... in ...), even though every element is a QuantumModulus here.
-    if all(isinstance(operand, QuantumModulus) for operand in operands):
+    if _all_quantum_modulus(operands):
         res = operands[0].duplicate()
         if op == "mul":
-            res.m = (  # pyright: ignore[reportAttributeAccessIssue]
-                operands[0].m  # pyright: ignore[reportAttributeAccessIssue]
-                + operands[1].m  # pyright: ignore[reportAttributeAccessIssue]
-                - (
-                    int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1))  # pyright: ignore[reportAttributeAccessIssue]
-                    - operands[0].size
-                )
+            res.m = (
+                operands[0].m
+                + operands[1].m
+                - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
             )
         return res
 
