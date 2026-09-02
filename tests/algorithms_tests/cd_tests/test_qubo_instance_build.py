@@ -48,8 +48,7 @@ def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
         [h[i] * Z(i) for i in range(N)]
     )
     A_lam_naive = [
-        -2 * (h[i] * Y(i) + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)]))
-        for i in range(N)
+        -2 * (h[i] * Y(i) + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)])) for i in range(N)
     ]
 
     _, _, H_prob, A_lam, _, _ = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=False)

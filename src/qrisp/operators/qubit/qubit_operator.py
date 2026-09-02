@@ -1847,7 +1847,6 @@ class QubitOperator(Hamiltonian):
         commuting_groups = O.group_up(lambda a, b: a.commute_pauli(b))
 
         if method == "commuting_qw":
-
             com_qw_cache = []
             for com_group in commuting_groups:
                 qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
@@ -1876,14 +1875,13 @@ class QubitOperator(Hamiltonian):
                                     )
 
         if method == "commuting":
-
             com_qw_cache = []
             for com_group in commuting_groups:
                 qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
                 com_qw_cache.append((com_group, qw_groups))
 
             intersect_cache = {}
-            
+
             def trotter_step(qarg, t, steps):
                 for com_group, qw_groups in com_qw_cache:
                     for qw_group in qw_groups:

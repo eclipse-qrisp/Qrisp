@@ -84,10 +84,12 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = QubitOperator.sum(itertools.chain(
-        (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
-        (h[i] * Z(i) for i in range(N)),
-    ))
+    H_prob = QubitOperator.sum(
+        itertools.chain(
+            (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
+            (h[i] * Z(i) for i in range(N)),
+        )
+    )
 
     # AGP as function of alpha
     if uniform_AGP_coeffs:
@@ -134,11 +136,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
         def nested_commutators(J, h):
             A_lam = [
-                -2
-                * (
-                    h[i] * Y(i)
-                    + QubitOperator.sum(J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i))
-                )
+                -2 * (h[i] * Y(i) + QubitOperator.sum(J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)))
                 for i in range(N)
             ]
             return A_lam
@@ -231,10 +229,12 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
     # ) + sum([h[i] * Z(i) for i in range(N)])
 
-    H_prob = QubitOperator.sum(itertools.chain(
-        (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
-        (h[i] * Z(i) for i in range(N)),
-    ))
+    H_prob = QubitOperator.sum(
+        itertools.chain(
+            (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
+            (h[i] * Z(i) for i in range(N)),
+        )
+    )
 
     # AGP
     A_lam = build_agp(agp_type, J, h)
