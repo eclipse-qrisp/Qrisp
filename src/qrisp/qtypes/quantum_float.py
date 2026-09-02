@@ -145,7 +145,7 @@ class QuantumFloat(QuantumVariable):
     >>> from qrisp import QuantumFloat
     >>> a = QuantumFloat(3, -1, signed = False)
 
-    Here, the 3 indicates the amount of mantissa qubits and the -1 indicates the
+    Here, the 3 indicates the number of mantissa qubits and the -1 indicates the
     exponent.
 
     For unsigned QuantumFloats, the decoder function is given by
@@ -178,7 +178,7 @@ class QuantumFloat(QuantumVariable):
         f_{k}^{n}(i) = \begin{cases} i2^{k} & \text{if } i < 2^n \\ (i - 2^{n+1})2^k &
         \text{else} \end{cases}
 
-    Where $k$ is again, the exponent and $n$ is the mantissa size.
+    Where $k$ is again the exponent and $n$ is the mantissa size.
 
 
     Another example:
@@ -248,7 +248,7 @@ class QuantumFloat(QuantumVariable):
     {0.25: 1.0}
 
     Note that the latter is only an approximate result. This is because in many cases,
-    the results of division can not be stored in a finite amount of qubits, forcing us
+    the results of division cannot be stored in a finite number of qubits, forcing us
     to approximate.
     To get a better approximation we can use the :meth:`q_div <qrisp.q_div>` and
     :meth:`qf_inversion <qrisp.qf_inversion>` functions and specify the precision:
@@ -267,12 +267,12 @@ class QuantumFloat(QuantumVariable):
     >>> 1/7 - 0.140625
     0.002232142857142849
 
-    We see that the result is inside the expected precision of $2^{-6} =  0.015625$.
+    We see that the result is inside the expected precision of $2^{-6} = 0.015625$.
 
 
     **In-place Operations**
 
-    Further supported operations are inplace addition, subtraction (with both classical
+    Further supported operations are in-place addition, subtraction (with both classical
     and quantum values):
 
     >>> a = QuantumFloat(4, signed = True)
@@ -295,7 +295,7 @@ class QuantumFloat(QuantumVariable):
         >>> print(c)
         {1: 1.0}
 
-    For inplace multiplications, only classical values are allowed:
+    For in-place multiplications, only classical values are allowed:
 
     >>> a *= -3
     >>> print(a)
@@ -345,7 +345,7 @@ class QuantumFloat(QuantumVariable):
     >>> comparison_qbl_1.qs.statevector()
     sqrt(2)*(|0>*|True>*|4>*|False> + |4>*|False>*|4>*|True>)/2
 
-    The first tensor factor containing a boolean value is corresponding to
+    The first tensor factor containing a boolean value corresponds to
     ``comparison_qbl_0`` and the second one is ``comparison_qbl_1``.
 
     """
@@ -368,7 +368,7 @@ class QuantumFloat(QuantumVariable):
         Parameters
         ----------
         msize : int or jax.Array
-            The amount of mantissa qubits.
+            The number of mantissa qubits.
         exponent : int or jax.Array, optional
             The exponent, determining the precision. The default is 0.
         qs : QuantumSession, optional
@@ -397,7 +397,7 @@ class QuantumFloat(QuantumVariable):
 
     @property
     def msize(self) -> int:
-        """The amount of mantissa qubits (excludes the sign qubit, if any).
+        """The number of mantissa qubits (excludes the sign qubit, if any).
 
         Returns
         -------
@@ -948,7 +948,7 @@ class QuantumFloat(QuantumVariable):
 
         Note that this method doesn't cost any quantum gates. For the quantum
         version of this method, see
-        :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bitshift>`.
+        :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bit_shift>`.
 
         Parameters
         ----------
@@ -1027,7 +1027,7 @@ class QuantumFloat(QuantumVariable):
 
         .. warning::
 
-            Performing an X gate on this qubit does not flip the sign! Use inplace
+            Performing an X gate on this qubit does not flip the sign! Use in-place
             multiplication instead.
 
             >>> from qrisp import QuantumFloat
@@ -1233,12 +1233,12 @@ class QuantumFloat(QuantumVariable):
         """Performs a bit shift in the quantum device.
 
         While :meth:`exp_shift<qrisp.QuantumFloat.exp_shift>` performs a bit shift
-        in the compiler (thus costing no quantum gates) this method performs the
-        bitshift on the hardware.
+        in the compiler (thus costing no quantum gates), this method performs the
+        bit shift on the hardware.
 
-        This has the advantage, that it can be controlled if called within a
+        This has the advantage that it can be controlled if called within a
         :ref:`ControlEnvironment` and furthermore admits bit shifts based on the
-        state of a QuantumFloat
+        state of a QuantumFloat.
 
         .. note::
 
