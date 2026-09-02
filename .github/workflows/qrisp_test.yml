@@ -26,7 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         # Evaluates to ['3.11.*'] on PRs, and ['3.11.*', '3.12.*', '3.13.*'] on push/main
-        python-version: ${{ github.event_name == 'pull_request' && fromJSON('["3.11.*"]') || fromJSON('["3.11.*", "3.12.*", "3.13.*"]') }}
+        # python-version: ${{ github.event_name == 'pull_request' && fromJSON('["3.11.*"]') || fromJSON('["3.11.*", "3.12.*", "3.13.*"]') }}
+
+        # Temporarily enabled full Python version matrix on PRs for testing
+        python-version: ['3.11.*', '3.12.*', '3.13.*']
         test-group:
           - name: core
             paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
