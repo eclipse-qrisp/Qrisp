@@ -18,25 +18,13 @@
 
 import jax.numpy as jnp
 
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool, QuantumFloat
-
-
-def _is_quantum_register(obj):
-    """Return True if ``obj`` is a quantum register.
-
-    A quantum register is a QuantumVariable (or subclass thereof), a
-    DynamicQubitArray or a list of Qubits.
-    """
-    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
-        return True
-    if isinstance(obj, list):
-        return all(isinstance(qb, Qubit) for qb in obj)
-    return False
 
 
 @custom_control
