@@ -86,12 +86,10 @@ def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: 
 
 
 def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
-    # Bounds the accumulated-candidate search below, keeping it polynomial
-    # (not exponential) in the number of outcomes examined even in an
-    # adversarial case. Combining every candidate from every outcome
-    # simultaneously, unbounded, previously made this effectively never
-    # return; two or three independent QPE measurements are, in practice,
-    # essentially always enough to recover the true order.
+    # Caps the accumulated-candidate search so it stays polynomial (not
+    # exponential) in the number of outcomes examined, even adversarially.
+    # Two or three independent QPE measurements are, in practice, almost
+    # always enough to recover the true order.
     max_candidates = 64
 
     accumulated_r_values: list[int] = []
@@ -110,12 +108,10 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
             if pow(a, r, N) == 1:
                 return r
 
-        # Combine this outcome's candidates against every LCM combination
-        # accumulated from *all* previous outcomes so far (not just each
-        # individual past outcome in isolation), so an order that only
-        # emerges from combining three or more outcomes (e.g. an order of
-        # 30 recovered as lcm(2, 3, 5), where no pairwise combination
-        # alone divides 30) is still found.
+        # Combine this outcome's candidates with every LCM accumulated from
+        # all outcomes seen so far, so an order that only emerges from
+        # combining three or more outcomes (e.g. 30 = lcm(2, 3, 5), where no
+        # pairwise combination alone divides 30) is still found.
         new_candidates = []
         for prev_r in accumulated_r_values:
             for r in r_values:

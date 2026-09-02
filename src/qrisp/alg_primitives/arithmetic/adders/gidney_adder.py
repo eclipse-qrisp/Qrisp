@@ -68,7 +68,8 @@ def _validate_gidney_adder_inputs(a, b):
 
     # TODO: outside of tracing, a concrete (non-traced) jax.Array scalar (e.g. from
     # indexing a jnp.ndarray) is rejected here, unlike numpy.integer. Breaks
-    # QuantumArray @ jax_numpy_matrix one layer below smallest_power_of_two's fix.
+    # QuantumArray @ jax_numpy_matrix, one level below smallest_power_of_two
+    # (which accepts numpy.integer here but not a concrete jax.Array).
     is_valid_classical = isinstance(a, (int, np.integer, str)) or (
         check_for_tracing_mode()
         and (

@@ -339,12 +339,7 @@ def test_qq_montgomery_multiply_modulus():
 
 
 def test_cq_montgomery_mat_multiply():
-    """Regression test for `QuantumArray @ np.ndarray`.
-
-    This previously crashed for any standard numpy integer matrix, because
-    entries indexed out as numpy.int64 were rejected by
-    smallest_power_of_two's int type check.
-    """
+    """`QuantumArray @ np.ndarray` must work for a standard numpy integer matrix."""
     import numpy as np
 
     from qrisp import QuantumArray, QuantumModulus, gidney_adder, multi_measurement
