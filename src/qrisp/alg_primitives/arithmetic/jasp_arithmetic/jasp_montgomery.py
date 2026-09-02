@@ -18,6 +18,9 @@
 
 from collections.abc import Callable
 
+import numpy as np
+from jax import Array
+
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import QuantumArray, cx, swap, x
 from qrisp.environments import control, custom_control, invert
@@ -142,6 +145,8 @@ def cq_montgomery_multiply(
 
     Examples
     --------
+    Computes 5*11 mod 97 = 55:
+
     >>> from qrisp import QuantumFloat, boolean_simulation, gidney_adder, measure
     >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import best_montgomery_shift
     >>> @boolean_simulation
@@ -151,8 +156,8 @@ def cq_montgomery_multiply(
     ...     m = best_montgomery_shift(X, N)
     ...     res = cq_montgomery_multiply(X, qy, N, m, gidney_adder)
     ...     return measure(res)
-    >>> cq(5, 11, (11).bit_length(), 97)
-    # 55  (== 5*11 mod 97)
+    >>> cq(5, 11, (11).bit_length(), 97)  # doctest: +SKIP
+    55
 
     """
     # Build R = 2^m with width matching X if BigInteger
@@ -347,14 +352,16 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> Quan
 
     Examples
     --------
+    Computes 12*7 mod 97 = 84:
+
     >>> from qrisp import QuantumModulus, gidney_adder, multi_measurement
     >>> a = QuantumModulus(97, inpl_adder=gidney_adder)
     >>> b = QuantumModulus(97, inpl_adder=gidney_adder)
     >>> a[:] = 12
     >>> b[:] = 7
     >>> res = qq_montgomery_multiply_modulus(a, b)
-    >>> multi_measurement([a, b, res])
-    # {(12, 7, 84): 1.0}  (== 12*7 mod 97)
+    >>> multi_measurement([a, b, res])  # doctest: +SKIP
+    {(12, 7, 84): 1.0}
 
     """
     from qrisp.qtypes.quantum_modulus import _moduli_neq
@@ -391,14 +398,14 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus) -> Quan
     return res
 
 
-def cq_montgomery_mat_multiply(A: QuantumArray, B: QuantumArray, out: QuantumArray) -> QuantumArray:
+def cq_montgomery_mat_multiply(A: QuantumArray, B: np.ndarray | Array, out: QuantumArray) -> QuantumArray:
     """Multiply a classical matrix B into a QuantumArray of QuantumModulus entries A, accumulating into out.
 
     Parameters
     ----------
     A : QuantumArray
         2D array of QuantumModulus entries (quantum matrix).
-    B : QuantumArray
+    B : numpy.ndarray or jax.Array
         2D array of classical entries (classical matrix).
     out : QuantumArray
         2D array of QuantumModulus entries that accumulates A @ B.

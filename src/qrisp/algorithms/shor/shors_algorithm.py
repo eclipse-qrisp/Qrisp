@@ -17,7 +17,6 @@
 """Implements Shor's integer factorization algorithm via quantum order finding."""
 
 from collections.abc import Callable
-from itertools import product
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -87,8 +86,15 @@ def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: 
 
 
 def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
+    # Bounds the accumulated-candidate search below, keeping it polynomial
+    # (not exponential) in the number of outcomes examined even in an
+    # adversarial case. Combining every candidate from every outcome
+    # simultaneously, unbounded, previously made this effectively never
+    # return; two or three independent QPE measurements are, in practice,
+    # essentially always enough to recover the true order.
+    max_candidates = 64
 
-    collected_r_values = []
+    accumulated_r_values: list[int] = []
 
     approximations = list(mes_res.keys())
 
@@ -104,19 +110,25 @@ def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
             if pow(a, r, N) == 1:
                 return r
 
-        # Combine this outcome's candidates pairwise with each previously
-        # seen outcome's candidates. Two independent QPE measurements are,
-        # in practice, essentially always enough to recover the true order;
-        # combining every candidate from every accumulated outcome at once
-        # (as a single N-way product) grows exponentially with the number
-        # of outcomes examined and can make this effectively never return.
-        for prev_r_values in collected_r_values:
-            for r1, r2 in product(r_values, prev_r_values):
-                r = int(np.lcm(r1, r2))
-                if pow(a, r, N) == 1:
-                    return r
+        # Combine this outcome's candidates against every LCM combination
+        # accumulated from *all* previous outcomes so far (not just each
+        # individual past outcome in isolation), so an order that only
+        # emerges from combining three or more outcomes (e.g. an order of
+        # 30 recovered as lcm(2, 3, 5), where no pairwise combination
+        # alone divides 30) is still found.
+        new_candidates = []
+        for prev_r in accumulated_r_values:
+            for r in r_values:
+                combined = int(np.lcm(r, prev_r))
+                if pow(a, combined, N) == 1:
+                    return combined
+                if combined not in accumulated_r_values and combined not in new_candidates:
+                    new_candidates.append(combined)
 
-        collected_r_values.append(r_values)
+        accumulated_r_values.extend(r_values)
+        accumulated_r_values.extend(new_candidates)
+        if len(accumulated_r_values) > max_candidates:
+            accumulated_r_values = accumulated_r_values[-max_candidates:]
 
 
 def _get_r_values(approx: int | float) -> list[int]:

@@ -16,6 +16,8 @@
 
 """Tests for the classical helpers and quantum order-finding in Shor's algorithm and RSA."""
 
+from fractions import Fraction
+
 import numpy as np
 
 from qrisp.algorithms.shor.crypto_tools import (
@@ -76,6 +78,23 @@ def test_extract_order_rejects_wrong_candidate_before_true_order():
     expected_order = 4
     mes_res = {0.5: 0.5, 0.25: 0.5}
     assert _extract_order(mes_res, 2, 15) == expected_order  # type: ignore[arg-type]
+
+
+def test_extract_order_combines_three_outcomes():
+    """`_extract_order` must find an order that only emerges from combining three outcomes.
+
+    Regression test for a real gap in the pairwise-only combination fallback:
+    for order 30 (= lcm(2, 3, 5)), no pairwise combination of 2, 3, and 5
+    divides 30, so a fallback that only ever combines two outcomes at a time
+    would exhaust its candidates and never find it. `a=99, N=181` is a real
+    (non-synthetic) pair with true order exactly 30.
+    """
+    # Exact Fraction phases (not floats) to avoid sympy's float-to-Rational
+    # precision artifacts for non-power-of-two denominators (see the test
+    # above for the same reasoning with 1/3).
+    expected_order = 30
+    mes_res = {Fraction(1, 2): 1 / 3, Fraction(1, 3): 1 / 3, Fraction(1, 5): 1 / 3}
+    assert _extract_order(mes_res, 99, 181) == expected_order  # type: ignore[arg-type]
 
 
 def test_bitstring_to_string_decodes_7bit_chars():
