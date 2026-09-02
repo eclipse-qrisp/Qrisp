@@ -640,6 +640,12 @@ class QuantumFloat(QuantumVariable):
             return q_mult(self, other)
 
         if isinstance(other, (int, np.integer)):
+            if other == 0:
+                # Multiplying by the classical scalar 0 always yields 0, regardless
+                # of self's state, so no entanglement with self is needed. Handled
+                # separately since the bit-shift/log2 logic below assumes other != 0.
+                return QuantumFloat(1, self.exponent, signed=self.signed)
+
             bit_shift = 0
             while not other % 2:
                 other = other >> 1
@@ -748,11 +754,20 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __pow__(self, power: int) -> QuantumFloat:
         """Raise this QuantumFloat to an integer power (-1 means inversion)."""
+        if not isinstance(power, (int, np.integer)):
+            raise TypeError(f"QuantumFloat exponentiation requires an integer power, got {type(power)}")
+
         if power == -1:
             # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
             from qrisp.alg_primitives.arithmetic import qf_inversion
 
             return qf_inversion(self)
+
+        if power < 0:
+            raise NotImplementedError(
+                f"QuantumFloat exponentiation only supports inversion (power=-1) for negative powers, got power={power}"
+            )
+
         if power == 0:
             res = self.duplicate()
             res[:] = 1

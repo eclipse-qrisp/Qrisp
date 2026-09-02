@@ -177,12 +177,33 @@ class TestArithmeticOperators:
         assert b.get_measurement() == {-6: 1.0}
         assert b.signed is True
 
+    def test_mul_classical_zero(self):
+        """Test that multiplying by the classical scalar 0 returns 0 instead of hanging."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * 0
+        assert b.get_measurement() == {0: 1.0}
+
     def test_rsub(self):
         """Test reflected subtraction (classical value minus a QuantumFloat)."""
         a = QuantumFloat(3, signed=True)
         a[:] = 2
         b = 5 - a
         assert b.get_measurement() == {3: 1.0}
+
+    def test_pow_negative_not_inversion_raises(self):
+        """Test that a negative power other than -1 raises NotImplementedError."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        with pytest.raises(NotImplementedError):
+            _ = a**-2
+
+    def test_pow_non_integer_raises(self):
+        """Test that a non-integer power raises TypeError."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        with pytest.raises(TypeError):
+            _ = a**1.5
 
     def test_pow_zero(self):
         """Test that a QuantumFloat to the power of 0 encodes 1."""

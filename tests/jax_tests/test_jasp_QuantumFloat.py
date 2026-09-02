@@ -71,6 +71,8 @@ def test_jasp_QuantumFloat():
         assert a.signed
         assert not b.signed
 
+    check_signed_static_exponent_dynamic()
+
 
 def test_jasp_QuantumFloat_comparisons():
     """Test QuantumFloat's comparison operators under Jasp tracing."""
