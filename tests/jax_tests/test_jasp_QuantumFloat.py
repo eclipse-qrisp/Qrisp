@@ -70,3 +70,36 @@ def test_jasp_QuantumFloat():
 
         assert a.signed == True
         assert b.signed == False
+
+
+def test_jasp_QuantumFloat_comparisons():
+    """Test QuantumFloat's comparison operators under Jasp tracing."""
+    from qrisp import QuantumFloat
+    from qrisp.jasp import terminal_sampling
+
+    @terminal_sampling
+    def compare(a_value, b_value, op):
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        if op == "lt":
+            return a < b
+        if op == "gt":
+            return a > b
+        if op == "le":
+            return a <= b
+        if op == "ge":
+            return a >= b
+        if op == "eq":
+            return a == b
+        return a != b
+
+    assert compare(2, 5, "lt") == {True: 1.0}
+    assert compare(5, 2, "lt") == {False: 1.0}
+    assert compare(5, 2, "gt") == {True: 1.0}
+    assert compare(3, 3, "le") == {True: 1.0}
+    assert compare(3, 3, "ge") == {True: 1.0}
+    assert compare(4, 4, "eq") == {True: 1.0}
+    assert compare(4, 5, "eq") == {False: 1.0}
+    assert compare(4, 5, "ne") == {True: 1.0}

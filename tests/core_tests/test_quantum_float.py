@@ -179,6 +179,14 @@ class TestArithmeticOperators:
         b = a * -2
         assert b.get_measurement() == {-6: 1.0}
 
+    def test_mul_unsigned_by_negative_int(self):
+        """Test that multiplying an unsigned QuantumFloat by a negative int still signs the result."""
+        a = QuantumFloat(3, signed=False)
+        a[:] = 3
+        b = a * -2
+        assert b.get_measurement() == {-6: 1.0}
+        assert b.signed is True
+
     def test_rsub(self):
         """Test reflected subtraction (classical value minus a QuantumFloat)."""
         a = QuantumFloat(3, signed=True)
