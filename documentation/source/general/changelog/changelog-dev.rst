@@ -43,8 +43,8 @@ Improvements
 
 - Improved the performance of :class:`~qrisp.QuantumFloat`'s ``significant()``,
   ``init_from()``, and ``encode(..., rounding=True)``. The latter previously
-  searched every representable outcome for the closest one — exponential in
-  the qubit count — and now finds it directly the same way ``truncate()``
+  searched every representable outcome for the closest one (exponential in
+  the qubit count) and now finds it directly the same way ``truncate()``
   does (round-and-clip against the uniform grid of representable values),
   in O(1)
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
@@ -156,7 +156,7 @@ Bug Fixes
   operands with different exponents, outside of Jasp tracing, silently
   turned the result's exponent into a 0-d ``jax.Array`` instead of a plain
   ``int``. This crashed any later operation computing ``2**exponent`` with a
-  negative exponent — including the class's own docstring example
+  negative exponent, including the class's own docstring example
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Compatibility
@@ -168,10 +168,10 @@ Compatibility
   produced an incorrect state silently
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
-* :class:`~qrisp.QuantumFloat` methods now raise specific exception types —
-  ``TypeError`` for an unsupported operand type, ``ValueError`` for an
+* :class:`~qrisp.QuantumFloat` methods now raise specific exception types
+  (``TypeError`` for an unsupported operand type, ``ValueError`` for an
   invalid value or state, ``NotImplementedError`` for a genuinely
-  unimplemented feature — instead of a generic ``Exception``, at the 26
+  unimplemented feature) instead of a generic ``Exception``, at the 26
   call sites that previously did so. Code using ``except Exception:``
   continues to work; code catching a more specific type now can
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
