@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests cuccaro_adder addition with c_in, c_out, ctrl, and classical/quantum addends."""
+"""Tests for the Cuccaro ripple-carry in-place adder."""
 
 import pytest
 
@@ -367,6 +367,7 @@ def _run_basic_exhaustive():
 
 
 def test_cuccaro_adder_basic_dynamic():
+    """Exhaustive quantum-quantum addition over small register sizes."""
     _run_basic_exhaustive()
 
 
@@ -382,6 +383,7 @@ def _run_cin_exhaustive():
 
 
 def test_cuccaro_adder_cin_dynamic():
+    """Exhaustive addition with a carry-in qubit."""
     _run_cin_exhaustive()
 
 
@@ -397,6 +399,7 @@ def _run_cin_qubit_exhaustive():
 
 
 def test_cuccaro_adder_cin_qubit_dynamic():
+    """Exhaustive addition with a bare Qubit carry-in."""
     _run_cin_qubit_exhaustive()
 
 
@@ -413,6 +416,7 @@ def _run_cout_exhaustive():
 
 
 def test_cuccaro_adder_cout_dynamic():
+    """Exhaustive addition capturing the carry-out overflow."""
     _run_cout_exhaustive()
 
 
@@ -429,6 +433,7 @@ def _run_cout_qubit_exhaustive():
 
 
 def test_cuccaro_adder_cout_qubit_dynamic():
+    """Exhaustive addition with a bare Qubit carry-out."""
     _run_cout_qubit_exhaustive()
 
 
@@ -446,6 +451,7 @@ def _run_cout_equal_sizes_exhaustive():
 
 
 def test_cuccaro_adder_cout_equal_sizes_dynamic():
+    """Exhaustive equal-size addition with carry-out."""
     _run_cout_equal_sizes_exhaustive()
 
 
@@ -463,6 +469,7 @@ def _run_ctrl_exhaustive():
 
 
 def test_cuccaro_adder_ctrl_dynamic():
+    """Exhaustive controlled addition via ctrl kwarg and control environment."""
     _run_ctrl_exhaustive()
 
 
@@ -480,6 +487,7 @@ def _run_ctrl_qubit_exhaustive():
 
 
 def test_cuccaro_adder_ctrl_qubit_dynamic():
+    """Exhaustive controlled addition with a bare Qubit carry-in."""
     _run_ctrl_qubit_exhaustive()
 
 
@@ -497,6 +505,7 @@ def _run_cout_ctrl_exhaustive():
 
 
 def test_cuccaro_adder_cout_ctrl_dynamic():
+    """Exhaustive addition with carry-out and control combined."""
     _run_cout_ctrl_exhaustive()
 
 
@@ -604,12 +613,13 @@ def test_cuccaro_adder_static_smoke_classical_a_larger_than_b():
 
 def test_cuccaro_adder_static_smoke_quantum_variable():
     """Base QuantumVariable registers as a and b."""
+    A_VAL, B_VAL = 5, 3
     a = QuantumVariable(3)
     b = QuantumVariable(3)
-    int_encoder(a, 5)
-    int_encoder(b, 3)
+    int_encoder(a, A_VAL)
+    int_encoder(b, B_VAL)
     cuccaro_adder(a, b)
-    assert _measure_int(a) == 5
+    assert _measure_int(a) == A_VAL
     assert _measure_int(b) == 0  # (3 + 5) % 8
 
     b = QuantumVariable(3)
@@ -683,7 +693,7 @@ def test_cuccaro_adder_quantum_modulus_issue_839():
         qm *= factor
         return measure(qm)
 
-    assert montgomery_multiply(13, 5, 10) == 11  # 5 * 10 % 13
+    assert montgomery_multiply(13, 5, 10) == (5 * 10) % 13  # 5 * 10 % 13
 
 
 # -- dynamic (boolean_simulation) exhaustive tests --------------------------
