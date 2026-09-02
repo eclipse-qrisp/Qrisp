@@ -132,8 +132,7 @@ def trunc_poly(poly: sp.Expr, trunc_bounds: tuple[int, int]) -> sp.Expr:
 
 
 class QuantumFloat(QuantumVariable):
-    r"""This subclass of :ref:`QuantumVariable` can represent floating point numbers
-    (signed and unsigned) up to an arbitrary precision.
+    r"""This subclass of :ref:`QuantumVariable` represents signed or unsigned floats to arbitrary precision.
 
     The technical details of the employed arithmetic can be found in this
     `article <https://ieeexplore.ieee.org/document/9815035>`_.
@@ -402,8 +401,7 @@ class QuantumFloat(QuantumVariable):
 
     @property
     def mshape(self) -> tuple[int | Array, int | Array]:
-        """The (log2(min), log2(max)) bounds of the absolute values this
-        QuantumFloat can represent.
+        """The (log2(min), log2(max)) bounds of the absolute values this QuantumFloat can represent.
 
         Returns
         -------
@@ -529,8 +527,7 @@ class QuantumFloat(QuantumVariable):
         return res.astype(int)
 
     def sb_poly(self, m: int = 0) -> sp.Expr:
-        """Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
-        the image extension parameter.
+        """Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies the image extension parameter.
 
         For the technical details we refer to:
         https://ieeexplore.ieee.org/document/9815035
@@ -960,8 +957,10 @@ class QuantumFloat(QuantumVariable):
         return neq(self, other)
 
     def exp_shift(self, shift: int) -> None:
-        """Performs an internal bit shift. Note that this method doesn't cost any
-        quantum gates. For the quantum version of this method, see
+        """Performs an internal bit shift.
+
+        Note that this method doesn't cost any quantum gates. For the quantum
+        version of this method, see
         :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bitshift>`.
 
         Parameters
@@ -1176,8 +1175,7 @@ class QuantumFloat(QuantumVariable):
         return self[k - min_sig]  # pyright: ignore[reportReturnType]
 
     def truncate(self, value: float) -> float:
-        """Receives a regular float and returns the float that is closest to the input but
-        can still be encoded.
+        """Receives a regular float and returns the float that is closest to the input but can still be encoded.
 
         Parameters
         ----------
@@ -1249,6 +1247,7 @@ class QuantumFloat(QuantumVariable):
 
     def quantum_bit_shift(self, shift_amount: int | QuantumFloat) -> None:
         """Performs a bit shift in the quantum device.
+
         While :meth:`exp_shift<qrisp.QuantumFloat.exp_shift>` performs a bit shift
         in the compiler (thus costing no quantum gates) this method performs the
         bitshift on the hardware.
