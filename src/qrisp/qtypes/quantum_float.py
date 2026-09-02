@@ -1213,9 +1213,9 @@ class QuantumFloat(QuantumVariable):
         {0.5: 1.0}
 
         """
-        # Clip in floating point before converting to int64: a huge input (e.g.
-        # 1e30) would otherwise overflow int64 on the cast, which is platform-
-        # dependent behavior rather than a guaranteed saturating clamp.
+        # Clip in floating point before converting to int64: converting a
+        # float far outside int64's range is platform-dependent behavior, not
+        # a guaranteed saturating clamp.
         res = jnp.round(value / jnp.float64(2) ** self.exponent)
         res = jnp.minimum(2.0**self.msize - 1, res)
 
@@ -1580,10 +1580,8 @@ def copy_qf(
     qf1_start = qf1.exponent
     qf2_start = qf2.exponent
 
-    # Highest significance in qf2's own mantissa range, i.e.
-    # max(range(qf2_start, qf2_start + qf2_len)) without constructing a range
-    # (and calling max() on it) just to handle qf2_len == 0: for a signed,
-    # zero-mantissa qf2, this correctly evaluates to qf2_start - 1, so every
+    # Highest significance in qf2's own mantissa range. For a signed,
+    # zero-mantissa qf2 (qf2_len == 0), this is qf2_start - 1, so every
     # significance in qf1 at or above qf2_start (there being no actual qf2
     # mantissa bit to overlap with) is still sign-extended below.
     qf2_max = qf2_start + qf2_len - 1

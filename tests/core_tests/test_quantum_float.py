@@ -131,8 +131,9 @@ class TestArithmeticDifferentExponents:
         assert isinstance(c.exponent, int)
         assert c.get_measurement() == {1.75: 1.0}
 
-        # Used to raise: c.exponent was a jax.Array, and 2**(negative Array
-        # exponent) hits jax's integer_pow, which rejects negative exponents.
+        # c.exponent must be a plain int here: a jax.Array exponent would hit
+        # jax's integer_pow, which rejects negative exponents, when raising
+        # 2**exponent below.
         d = a - c
         assert isinstance(d.exponent, int)
         assert d.get_measurement() == {-0.25: 1.0}
