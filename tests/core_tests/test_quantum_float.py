@@ -16,8 +16,10 @@
 """
 
 import pytest
+import sympy as sp
 
-from qrisp import QuantumFloat, h, x
+from qrisp import QuantumBool, QuantumFloat, h, x
+from qrisp.qtypes.quantum_float import create_output_qf, trunc_poly
 
 
 @pytest.mark.parametrize(
@@ -208,6 +210,98 @@ class TestArithmeticOperators:
         b = a**3
         assert b.get_measurement() == {8: 1.0}
 
+    def test_pow_inversion(self):
+        """Test that a QuantumFloat to the power of -1 computes its (approximate) inverse."""
+        a = QuantumFloat(3, -1)
+        a[:] = 2
+        b = a**-1
+        assert b.get_measurement() == {0.5: 1.0}
+
+    def test_truediv(self):
+        """Test division of one QuantumFloat by another."""
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 6
+        b[:] = 2
+        c = a / b
+        assert c.get_measurement() == {3.0: 1.0}
+
+    def test_floordiv(self):
+        """Test floor division of one unsigned, integer QuantumFloat by another."""
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 2
+        c = a // b
+        assert c.get_measurement() == {3: 1.0}
+
+    def test_floordiv_rejects_signed(self):
+        """Test that floor division raises for signed operands."""
+        a = QuantumFloat(3, signed=True)
+        b = QuantumFloat(3)
+        with pytest.raises(NotImplementedError, match="Floor division not implemented for signed QuantumFloats"):
+            a // b
+
+    def test_floordiv_rejects_non_integer_exponent(self):
+        """Test that floor division raises for operands with a negative exponent."""
+        a = QuantumFloat(3, -1)
+        b = QuantumFloat(3)
+        with pytest.raises(ValueError, match="Tried to perform floor division on non-integer QuantumFloats"):
+            a // b
+
+    def test_add_classical_scalar(self):
+        """Test addition of a classical scalar to a QuantumFloat."""
+        a = QuantumFloat(4)
+        a[:] = 3
+        b = a + 2
+        assert b.get_measurement() == {5: 1.0}
+
+    def test_sub_classical_scalar(self):
+        """Test subtraction of a classical scalar from a QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        a[:] = 5
+        b = a - 2
+        assert b.get_measurement() == {3: 1.0}
+
+    def test_iadd_quantum_float(self):
+        """Test in-place addition of a QuantumFloat to another QuantumFloat."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 3
+        b[:] = 2
+        a += b
+        assert a.get_measurement() == {5: 1.0}
+
+    def test_isub_classical_scalar(self):
+        """Test in-place subtraction of a classical scalar from a QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        a[:] = 5
+        a -= 2
+        assert a.get_measurement() == {3: 1.0}
+
+    def test_isub_quantum_float(self):
+        """Test in-place subtraction of a QuantumFloat from another QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        b = QuantumFloat(4)
+        a[:] = 5
+        b[:] = 2
+        a -= b
+        assert a.get_measurement() == {3: 1.0}
+
+    def test_imul(self):
+        """Test in-place multiplication of a QuantumFloat by a classical scalar."""
+        a = QuantumFloat(4)
+        a[:] = 3
+        a *= 2
+        assert a.get_measurement() == {6: 1.0}
+
+    def test_ilshift(self):
+        """Test that <<= shifts a QuantumFloat's exponent up by k."""
+        a = QuantumFloat(4)
+        a[:] = 2
+        a <<= 2
+        assert a.get_measurement() == {8: 1.0}
+
 
 class TestComparisonOperators:
     """Tests for QuantumFloat comparison operators outside of tracing mode."""
@@ -386,3 +480,71 @@ class TestUtilityMethods:
         b = QuantumFloat(5, -3, signed=False)
         b.init_from(a)
         assert b.get_measurement() == {1.5: 1.0}
+
+    def test_incr_default_step(self):
+        """Test that incr() with no argument increments by 2**exponent."""
+        qf = QuantumFloat(4, -1)
+        qf[:] = 1.0
+        qf.incr()
+        assert qf.get_measurement() == {1.5: 1.0}
+
+    def test_incr_explicit_value(self):
+        """Test that incr(value) increments by the given classical value."""
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        qf.incr(2)
+        assert qf.get_measurement() == {5: 1.0}
+
+    def test_hash(self):
+        """Test that __hash__ is based on object identity."""
+        qf = QuantumFloat(3)
+        assert hash(qf) == id(qf)
+
+    def test_msize(self):
+        """Test that msize excludes the sign qubit from the total qubit count."""
+        qf = QuantumFloat(4, signed=True)
+        assert qf.msize == 4
+        assert qf.size == 5
+
+    def test_sb_poly(self):
+        """Test that sb_poly returns the expected semi-boolean polynomial coefficients."""
+        qf = QuantumFloat(3, -1, signed=True, name="sb_poly_test_x")
+        coeffs = [float(c) for c in sp.Poly(qf.sb_poly(5)).coeffs()]
+        assert coeffs == [0.5, 1.0, 2.0, 28.0]
+
+    def test_jdecoder(self):
+        """Test that jdecoder matches decoder outside of tracing mode."""
+        qf = QuantumFloat(3, -1, signed=True)
+        assert qf.jdecoder(5) == qf.decoder(5)
+
+    def test_quantum_bit_shift(self):
+        """Test that quantum_bit_shift performs a controlled bit shift on the hardware."""
+        qf = QuantumFloat(4)
+        qf[:] = 1
+        qbl = QuantumBool()
+        h(qbl)
+
+        with qbl:
+            qf.quantum_bit_shift(2)
+
+        assert str(qf.qs.statevector()) == "sqrt(2)*(|1>*|False> + |4>*|True>)/2"
+
+
+class TestModuleLevelHelpers:
+    """Tests for quantum_float.py's module-level helper functions."""
+
+    def test_create_output_qf_sympy_expr(self):
+        """Test create_output_qf sizing an output for an arbitrary polynomial expression."""
+        a = QuantumFloat(3, 0, signed=False, name="cq_helper_a")
+        b = QuantumFloat(3, 0, signed=False, name="cq_helper_b")
+        sym_a, sym_b = sp.symbols("cq_helper_a cq_helper_b")
+        poly = sym_a * sym_b + 2 * sym_a + 3
+
+        out = create_output_qf([a, b], poly)
+        assert (out.msize, out.exponent, out.signed) == (7, 0, False)
+
+    def test_trunc_poly(self):
+        """Test that trunc_poly removes summands outside the given power-of-2 bounds."""
+        sym_x = sp.symbols("x")
+        poly = 8 * sym_x + 4 * sym_x**2 + 1
+        assert trunc_poly(poly, (2, 3)) == 4.0 * sym_x**2

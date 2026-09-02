@@ -17,7 +17,7 @@
 
 
 def test_jasp_QuantumFloat():
-
+    """Test QuantumFloat's decoder under Jasp tracing, and that signed/exponent are static/dynamic respectively."""
     # Test decoder for QuantumFloat (Issue #271)
     from qrisp import QuantumFloat, h
     from qrisp.jasp import make_jaspr, qache, terminal_sampling
@@ -60,7 +60,7 @@ def test_jasp_QuantumFloat():
         return qf.signed
 
     @make_jaspr
-    def main():
+    def check_signed_static_exponent_dynamic():
         a = QuantumFloat(3, -1, signed=True)
         inner(a)
         inner(a)
@@ -68,8 +68,8 @@ def test_jasp_QuantumFloat():
         inner(b)
         inner(b)
 
-        assert a.signed == True
-        assert b.signed == False
+        assert a.signed
+        assert not b.signed
 
 
 def test_jasp_QuantumFloat_comparisons():
@@ -103,3 +103,57 @@ def test_jasp_QuantumFloat_comparisons():
     assert compare(4, 4, "eq") == {True: 1.0}
     assert compare(4, 5, "eq") == {False: 1.0}
     assert compare(4, 5, "ne") == {True: 1.0}
+
+
+def test_jasp_QuantumFloat_arithmetic():
+    """Test QuantumFloat's arithmetic operators under Jasp tracing."""
+    from qrisp import QuantumFloat
+    from qrisp.jasp import terminal_sampling
+
+    @terminal_sampling
+    def add():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 3
+        b[:] = 2
+        return a + b
+
+    @terminal_sampling
+    def sub():
+        a = QuantumFloat(4, signed=True)
+        b = QuantumFloat(4)
+        a[:] = 5
+        b[:] = 2
+        return a - b
+
+    @terminal_sampling
+    def mul():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 3
+        b[:] = 2
+        return a * b
+
+    @terminal_sampling
+    def iadd():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 3
+        b[:] = 2
+        a += b
+        return a
+
+    @terminal_sampling
+    def isub():
+        a = QuantumFloat(4, signed=True)
+        b = QuantumFloat(4)
+        a[:] = 5
+        b[:] = 2
+        a -= b
+        return a
+
+    assert add() == {5.0: 1.0}
+    assert sub() == {3.0: 1.0}
+    assert mul() == {6.0: 1.0}
+    assert iadd() == {5.0: 1.0}
+    assert isub() == {3.0: 1.0}
