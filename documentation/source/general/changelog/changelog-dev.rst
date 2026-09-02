@@ -43,9 +43,10 @@ Improvements
 
 - Improved the performance of :class:`~qrisp.QuantumFloat`'s ``significant()``,
   ``init_from()``, and ``encode(..., rounding=True)``. The latter previously
-  decoded every representable outcome one at a time in a Python loop —
-  exponential in the qubit count — and now does so with a single vectorized
-  call
+  searched every representable outcome for the closest one — exponential in
+  the qubit count — and now finds it directly the same way ``truncate()``
+  does (round-and-clip against the uniform grid of representable values),
+  in O(1)
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Other New Features

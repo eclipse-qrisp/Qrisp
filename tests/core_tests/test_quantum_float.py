@@ -378,6 +378,38 @@ class TestComparisonOperators:
         b[:] = b_value
         assert (a != b).get_measurement() == {expected: 1.0}
 
+    def test_comparison_as_conditional_environment(self):
+        """Regression test: comparisons must also work as `with` conditions.
+
+        Comparisons are decorated with ``adaptive_condition``, which decides
+        between returning a plain QuantumBool and a ConditionEnvironment by
+        inspecting the literal source text of its caller's call site a fixed
+        number of stack frames up. Routing a comparison through any extra
+        function call between the dunder and the decorated comparison
+        function shifts that lookup to the wrong line and silently breaks
+        `with qf == 0:`-style usage, without affecting plain `a == b` calls.
+        """
+        qf = QuantumFloat(3)
+        qbl = QuantumBool()
+        qf[:] = 0
+        with qf == 0:
+            qbl.flip()
+        assert qbl.get_measurement() == {True: 1.0}
+
+        qf2 = QuantumFloat(3)
+        qbl2 = QuantumBool()
+        qf2[:] = 3
+        with qf2 == 0:
+            qbl2.flip()
+        assert qbl2.get_measurement() == {False: 1.0}
+
+        qf3 = QuantumFloat(3)
+        qbl3 = QuantumBool()
+        qf3[:] = 1
+        with qf3 < 3:
+            qbl3.flip()
+        assert qbl3.get_measurement() == {True: 1.0}
+
 
 class TestUtilityMethods:
     """Tests for QuantumFloat's non-dunder public methods."""

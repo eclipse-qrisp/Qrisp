@@ -33,7 +33,7 @@ from qrisp.misc import gate_wrap
 from qrisp.typing import FloatLike, ScalarLike
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
 
     from qrisp.circuit.qubit import Qubit
     from qrisp.qtypes.quantum_bool import QuantumBool
@@ -610,20 +610,13 @@ class QuantumFloat(QuantumVariable):
         """
         value = encoding_number
         if rounding:
-            # Round value to closest fitting number. Vectorized equivalent of
-            # [self.decoder(i) for i in range(2**self.size)], since that grows
-            # exponentially with the qubit count.
-            indices = np.arange(2**self.size)
-            if self.signed:
-                outcome_labels = np.asarray(_signed_int_iso_inv(indices, self.msize)) * (2.0**self.exponent)
-            else:
-                outcome_labels = indices * (2.0**self.exponent)
-            # Coerce explicitly: ScalarLike also covers complex/Tracer, which
-            # encoding_number never actually is here (this is an eager-only
-            # rounding path), but numpy's stubs can't express that narrowing.
-            diffs = np.asarray(encoding_number, dtype=float) - outcome_labels
-            closest = outcome_labels[np.argmin(np.abs(diffs))]
-            value = int(closest) if self.exponent >= 0 else float(closest)
+            # Round to the closest representable value the same way truncate()
+            # does: representable values form a uniform grid, so the nearest
+            # one is found directly by rounding and clipping, in O(1) --
+            # no need to enumerate all 2**size outcomes to search for it.
+            # ScalarLike also covers complex/Tracer, which encoding_number
+            # never actually is here (this is an eager-only rounding path).
+            value = self.truncate(encoding_number)  # pyright: ignore[reportArgumentType]
 
         super().encode(value, permit_dirtyness=permit_dirtyness)
 
@@ -881,81 +874,73 @@ class QuantumFloat(QuantumVariable):
         self.exp_shift(k)
         return self
 
-    def _compare(
-        self,
-        other: object,
-        cmp: Callable[..., "QuantumBool"],
-        uint_cmp: Callable[..., "QuantumBool"] | None = None,
-    ) -> "QuantumBool":
-        """Share the dispatch logic behind <, >, <=, >=, ==, and !=.
-
-        While tracing, ``uint_cmp`` (called with ``self``, ``other``, and
-        ``gidney_adder``) is used if given -- <, >, <=, and >= dispatch to a
-        dedicated unsigned-integer comparator during tracing, whereas == and
-        != (``uint_cmp=None``) use ``cmp`` unconditionally, tracing or not.
-        Outside of tracing, ``other``'s type is always validated first.
-
-        """
-        tracing = check_for_tracing_mode()
-        if tracing and uint_cmp is not None:
-            # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-            from qrisp.alg_primitives.arithmetic import gidney_adder
-
-            return uint_cmp(self, other, gidney_adder)
-        if tracing:
-            return cmp(self, other)
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise TypeError(f"Comparison with type {type(other)} not implemented")
-
-        return cmp(self, other)
-
     def __lt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import lt, uint_lt
+        from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
 
-        # lt's inferred signature admits a None return that never actually
-        # happens for QuantumFloat/int/float operands (the only ones reaching
-        # this point).
-        return self._compare(other, lt, uint_lt)  # pyright: ignore[reportArgumentType]
+        if check_for_tracing_mode():
+            return uint_lt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return lt(self, other)  # pyright: ignore[reportReturnType]
 
     def __gt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import gt, uint_gt
+        from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
 
-        # gt's inferred signature admits a None return that never actually
-        # happens for QuantumFloat/int/float operands (the only ones reaching
-        # this point).
-        return self._compare(other, gt, uint_gt)  # pyright: ignore[reportArgumentType]
+        if check_for_tracing_mode():
+            return uint_gt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return gt(self, other)  # pyright: ignore[reportReturnType]
 
     def __le__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import leq, uint_le
+        from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
 
-        return self._compare(other, leq, uint_le)
+        if check_for_tracing_mode():
+            return uint_le(self, other, gidney_adder)
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return leq(self, other)
 
     def __ge__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import geq, uint_ge
+        from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
 
-        return self._compare(other, geq, uint_ge)
+        if check_for_tracing_mode():
+            return uint_ge(self, other, gidney_adder)
+        if not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return geq(self, other)
 
     def __eq__(self, other: object) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (==)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import eq
 
-        return self._compare(other, eq)
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return eq(self, other)
 
     def __ne__(self, other: object) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (!=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import neq
 
-        return self._compare(other, neq)
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+            raise TypeError(f"Comparison with type {type(other)} not implemented")
+
+        return neq(self, other)
 
     def exp_shift(self, shift: int) -> None:
         """Performs an internal bit shift.
