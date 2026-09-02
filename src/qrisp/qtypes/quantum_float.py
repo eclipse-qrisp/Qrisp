@@ -30,7 +30,6 @@ from qrisp.core import QuantumVariable, cx, x
 from qrisp.environments import conjugate, invert
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import gate_wrap
-from qrisp.typing import FloatLike
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -622,9 +621,7 @@ class QuantumFloat(QuantumVariable):
             # does: representable values form a uniform grid, so the nearest
             # one is found directly by rounding and clipping, in O(1) --
             # no need to enumerate all 2**size outcomes to search for it.
-            # truncate() is typed strictly as float, but a bool/np.integer/
-            # np.floating/Tracer here all support the same arithmetic at runtime.
-            value = self.truncate(encoding_number)  # pyright: ignore[reportArgumentType]
+            value = self.truncate(encoding_number)
 
         super().encode(value, permit_dirtyness=permit_dirtyness)
 
@@ -652,7 +649,9 @@ class QuantumFloat(QuantumVariable):
                 # Multiplying by the classical scalar 0 always yields 0, regardless
                 # of self's state, so no entanglement with self is needed. Handled
                 # separately since the bit-shift/log2 logic below assumes other != 0.
-                return QuantumFloat(1, self.exponent, signed=self.signed)
+                # Attached to self.qs (like every other branch here) even though no
+                # gates act on it: gate_wrap only merges sessions its gates touch.
+                return QuantumFloat(1, self.exponent, self.qs, signed=self.signed)
 
             bit_shift = 0
             while not other % 2:
@@ -803,7 +802,7 @@ class QuantumFloat(QuantumVariable):
         return res
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __iadd__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __iadd__(self, other: QuantumFloat | int | float | np.integer | np.floating | Array) -> QuantumFloat:
         """Add another QuantumFloat or a classical scalar to this QuantumFloat, in place."""
         if check_for_tracing_mode():
             # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
@@ -855,7 +854,7 @@ class QuantumFloat(QuantumVariable):
         return self
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __isub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __isub__(self, other: QuantumFloat | int | float | np.integer | np.floating | Array) -> QuantumFloat:
         """Subtract another QuantumFloat or a classical scalar from this QuantumFloat, in place."""
         if check_for_tracing_mode():
             with invert():
@@ -889,7 +888,7 @@ class QuantumFloat(QuantumVariable):
         return self
 
     @gate_wrap(permeability=[], is_qfree=True)
-    def __imul__(self, other: FloatLike) -> QuantumFloat:
+    def __imul__(self, other: int | float | np.integer | np.floating) -> QuantumFloat:
         """Multiply this QuantumFloat by a classical scalar, in place."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import inpl_mult
@@ -908,7 +907,7 @@ class QuantumFloat(QuantumVariable):
         self.exp_shift(k)
         return self
 
-    def __lt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+    def __lt__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
@@ -920,7 +919,7 @@ class QuantumFloat(QuantumVariable):
 
         return lt(self, other)  # pyright: ignore[reportReturnType]
 
-    def __gt__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+    def __gt__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
@@ -932,7 +931,7 @@ class QuantumFloat(QuantumVariable):
 
         return gt(self, other)  # pyright: ignore[reportReturnType]
 
-    def __le__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+    def __le__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
@@ -944,7 +943,7 @@ class QuantumFloat(QuantumVariable):
 
         return leq(self, other)
 
-    def __ge__(self, other: QuantumFloat | FloatLike) -> "QuantumBool":
+    def __ge__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
@@ -1124,12 +1123,12 @@ class QuantumFloat(QuantumVariable):
             ignore_overflow_errors=ignore_overflow_errors,
         )
 
-    def incr(self, value: FloatLike | None = None) -> None:
+    def incr(self, value: int | float | np.integer | np.floating | None = None) -> None:
         """Increment this QuantumFloat in place by a classical value.
 
         Parameters
         ----------
-        value : FloatLike, optional
+        value : int, float, np.integer, or np.floating, optional
             The value to increment by. The default is this QuantumFloat's
             smallest representable increment, ``2**self.exponent``.
 
@@ -1138,7 +1137,10 @@ class QuantumFloat(QuantumVariable):
         from qrisp.alg_primitives.arithmetic.adders.incrementation import increment
 
         if value is None:
-            value = 2**self.exponent
+            # increment() is eager-only (Python-level control flow on the
+            # amount), so self.exponent is concretely int here even though
+            # its class-level type also allows a traced jax.Array.
+            value = 2**self.exponent  # pyright: ignore[reportAssignmentType]
         increment(self, value)
 
     def __hash__(self) -> int:
@@ -1191,18 +1193,21 @@ class QuantumFloat(QuantumVariable):
 
         return self[k - min_sig]  # pyright: ignore[reportReturnType]
 
-    def truncate(self, value: float) -> float:
+    def truncate(self, value: int | float | bool | np.integer | np.floating | Tracer) -> int | float | Array:
         """Receives a regular float and returns the float that is closest to the input but can still be encoded.
 
         Parameters
         ----------
-        value : float
-            A float that is supposed to be truncated.
+        value : int, float, bool, np.integer, np.floating, or jax.core.Tracer
+            A real-valued number that is supposed to be truncated.
 
         Returns
         -------
-        float
-            The truncated float.
+        int, float, or jax.Array
+            The truncated value: an ``int`` or ``float`` outside of tracing
+            mode (depending on whether the exponent is non-negative, see
+            :meth:`decoder <qrisp.QuantumFloat.decoder>`), or a traced
+            ``jax.Array`` while tracing.
 
         Examples
         --------
@@ -1226,17 +1231,21 @@ class QuantumFloat(QuantumVariable):
         # Clip in floating point before converting to int64: converting a
         # float far outside int64's range is platform-dependent behavior, not
         # a guaranteed saturating clamp.
+        # 2.0**self.msize is computed via jax (not plain Python float
+        # exponentiation) so an oversized msize (>= 1024) saturates to inf
+        # instead of raising OverflowError.
+        bound = jnp.float64(2.0) ** self.msize
         res = jnp.round(value / jnp.float64(2) ** self.exponent)
-        res = jnp.minimum(2.0**self.msize - 1, res)
+        res = jnp.minimum(bound - 1, res)
 
         if self.signed:
-            res = jnp.maximum(-(2.0**self.msize), res)
+            res = jnp.maximum(-bound, res)
             res = _signed_int_iso(jnp.int64(res), self.size)
         else:
             res = jnp.maximum(0.0, res)
             res = jnp.int64(res)
 
-        return self.decoder(res)  # pyright: ignore[reportReturnType]
+        return self.decoder(res)
 
     def get_ev(self, **mes_kwargs: Any) -> float:
         """Retrieves the expectation value of self.

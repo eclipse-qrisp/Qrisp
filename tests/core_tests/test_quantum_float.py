@@ -185,6 +185,16 @@ class TestArithmeticOperators:
         b = a * 0
         assert b.get_measurement() == {0: 1.0}
 
+    def test_mul_classical_zero_shares_session(self):
+        """Test that the zero-product result joins self's session instead of a detached one."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * 0
+        assert b.qs is a.qs
+
+        c = a + b
+        assert c.get_measurement() == {3: 1.0}
+
     def test_rsub(self):
         """Test reflected subtraction (classical value minus a QuantumFloat)."""
         a = QuantumFloat(3, signed=True)
@@ -481,6 +491,12 @@ class TestUtilityMethods:
         signed_qf = QuantumFloat(4, signed=True)
         assert signed_qf.truncate(1e30) == 15
         assert signed_qf.truncate(-1e30) == -16
+
+    def test_truncate_large_msize(self):
+        """Test that truncate's clipping bound doesn't overflow for a very large mantissa size."""
+        qf = QuantumFloat(1024)
+        assert qf.truncate(0) == 0
+        assert qf.truncate(5) == 5
 
     def test_get_ev(self):
         """Test that get_ev computes the expectation value of a measurement."""
