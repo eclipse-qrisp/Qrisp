@@ -21,13 +21,15 @@ from qrisp.qtypes import QuantumBool
 
 
 def build_from_eye(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     diagonal_index: int = 0,
 ) -> BlockEncoding:
     r"""Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     diagonal_index : int
         Index of the diagonal to set to one: 0 (the default) refers to the main diagonal,
         a positive value refers to an upper diagonal, and a negative value to a lower diagonal.

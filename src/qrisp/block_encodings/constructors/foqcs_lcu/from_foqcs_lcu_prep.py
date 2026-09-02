@@ -16,7 +16,8 @@
 
 """Builds a BlockEncoding from custom FOQCS-LCU PREP_R/PREP_L state-preparation routines."""
 
-from typing import Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.core import cx, cz
@@ -26,9 +27,12 @@ from qrisp.qtypes import QuantumVariable
 
 from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
-def build_from_foqcs_lcu_prep(
-    cls: BlockEncoding,
+
+def build_from_foqcs_lcu_prep(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
+    cls: type[BlockEncoding],
     prep_r: Callable[[QuantumVariable], None],
     prep_l: Callable[[QuantumVariable], None],
     num_q_ops: int = 1,
@@ -86,6 +90,8 @@ def build_from_foqcs_lcu_prep(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     prep_r : Callable[[QuantumVariable], None]
         Right FOQCS-LCU PREP routine, corresponding to :math:`P_{R} = \mathrm{PREP}(\alpha)`
         The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.
