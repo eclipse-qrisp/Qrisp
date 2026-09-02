@@ -27,8 +27,11 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 def _is_quantum_register(obj):
-    """Return True if ``obj`` is a quantum register, i.e. a QuantumVariable
-    (or subclass thereof), a DynamicQubitArray or a list of Qubits."""
+    """Return True if ``obj`` is a quantum register.
+
+    A quantum register is a QuantumVariable (or subclass thereof), a
+    DynamicQubitArray or a list of Qubits.
+    """
     if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
         return True
     if isinstance(obj, list):
@@ -70,6 +73,9 @@ def cuccaro_adder(
         An optional carry in value. The default is None.
     c_out : QuantumBool or Qubit, optional
         An optional carry out value. The default is None.
+    ctrl : QuantumBool, optional
+        An optional control qubit. If provided, the addition is only applied
+        when the control qubit is in the ``|1>`` state. The default is None.
 
     Raises
     ------
