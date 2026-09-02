@@ -17,10 +17,11 @@
 
 import numpy as np
 import sympy as sp
+import itertools
 
 from qrisp.algorithms.cold import DCQOProblem, solve_alpha
 from qrisp.core import QuantumVariable
-from qrisp.operators.qubit import X, Y, Z
+from qrisp.operators.qubit import X, Y, Z, QubitOperator
 
 
 def create_COLD_instance(Q, uniform_AGP_coeffs):
@@ -82,9 +83,10 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
-        [h[i] * Z(i) for i in range(N)]
-    )
+    H_prob = QubitOperator.sum(itertools.chain(
+        (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
+        (h[i] * Z(i) for i in range(N)),
+    ))
 
     # AGP as function of alpha
     if uniform_AGP_coeffs:
@@ -130,8 +132,13 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return A_lam
 
         def nested_commutators(J, h):
-            A_lam = -2 * [
-                h[i] * Y(i) + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)]) for i in range(N)
+            A_lam = [
+                -2
+                * (
+                    h[i] * Y(i)
+                    + QubitOperator.sum(J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i))
+                )
+                for i in range(N)
             ]
             return A_lam
 
@@ -182,14 +189,14 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 )
 
                 alph = -nom / denom
-                alph = [N * [alph]]
+                alph = [alph] * N
                 return alph
 
             return alpha
 
         def nc_nonuniform(J, h):
             def alpha(lam):
-                alph = [solve_alpha(h, J, lam)]
+                alph = solve_alpha(h, J, lam)
                 return alph
 
             return alpha
@@ -223,9 +230,10 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
     # ) + sum([h[i] * Z(i) for i in range(N)])
 
-    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
-        [h[i] * Z(i) for i in range(N)]
-    )
+    H_prob = QubitOperator.sum(itertools.chain(
+        (J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i, N)),
+        (h[i] * Z(i) for i in range(N)),
+    ))
 
     # AGP
     A_lam = build_agp(agp_type, J, h)

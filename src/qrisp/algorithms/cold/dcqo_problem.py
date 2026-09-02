@@ -21,6 +21,7 @@ from scipy.optimize import Bounds, minimize
 
 from qrisp import h, z
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from qrisp.algorithms.cold.fast_trotterization import fast_trotterization
 from qrisp.operators import QubitOperator
 
 
@@ -56,6 +57,23 @@ class DCQOProblem:
         By default, the groundstate of the x-operator $\ket{-}^n$ is prepared.
 
 
+    Notes
+    -----
+    For performance, ``H_init``, ``H_prob``, ``A_lam``, and ``H_control`` are
+    Trotterized via :func:`fast_trotterization
+    <qrisp.algorithms.cold.fast_trotterization.fast_trotterization>`, which
+    emits native single- and two-qubit rotation gates directly (bypassing
+    :meth:`QubitOperator.trotterization <qrisp.operators.qubit.QubitOperator.trotterization>`'s
+    general per-term environment machinery) whenever a Hamiltonian contains
+    only identity, single-qubit Pauli, or two-qubit $Z \\otimes Z$ terms --
+    which covers the built-in QUBO Hamiltonians constructed by
+    :func:`create_COLD_instance <qrisp.algorithms.cold.problems.QUBO.create_COLD_instance>`
+    and :func:`create_LCD_instance <qrisp.algorithms.cold.problems.QUBO.create_LCD_instance>`.
+    This is what makes :meth:`compile_U_cold <qrisp.algorithms.cold.DCQOProblem.compile_U_cold>`
+    practical for larger problems; Hamiltonians containing ladder operators
+    or other Pauli structures fall back automatically to the general
+    Trotterization and remain fully correct, just without this speedup.
+
     Examples
     --------
     For a quick demonstration we build a DCQO problem instance for a 4x4 QUBO. We choose a first order AGP ansatz with uniform coefficients and solve it with LCD.
@@ -82,8 +100,13 @@ class DCQOProblem:
 
         H_init = 1 * sum([X(i) for i in range(N)])
 
-        H_prob = (sum([sum([J[i][j]*Z(i)*Z(j) for j in range(i)]) for i in range(N)])
-                + sum([h[i]*Z(i) for i in range(N)]))
+        # QubitOperator.sum merges all terms in a single pass -- for a dense
+        # QUBO (O(N^2) coupling terms), Python's built-in sum() would instead
+        # fold pairwise via repeated __add__ calls, each copying the full
+        # running total, costing O(N^4) instead of O(N^2).
+        H_prob = QubitOperator.sum(
+            J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i)
+        ) + QubitOperator.sum(h[i] * Z(i) for i in range(N))
 
         # Create AGP
         A_lam = sum([Y(i) for i in range(N)]) # uniform
@@ -258,6 +281,11 @@ class DCQOProblem:
         quantum argument via trotterization. The LCD Hamiltonian consists
         of the system Hamiltonian and the adiabatic gauge potential (AGP).
 
+        ``H_init``, ``H_prob``, ``A_lam``, and (for COLD) ``H_control`` are each
+        Trotterized via :func:`fast_trotterization`, which automatically uses a
+        fast native-gate path for Ising-type Hamiltonians and falls back to
+        :meth:`QubitOperator.trotterization` otherwise.
+
         Parameters
         ----------
         qarg : :ref:`QuantumVariable`
@@ -275,14 +303,14 @@ class DCQOProblem:
         self._precompute_timegrid(N_steps, T, "LCD")
 
         # Trotterize Hamiltonian in different parts with each one needing different coefficients
-        U1 = self.H_init.trotterization()
-        U2 = self.H_prob.trotterization()
+        U1 = fast_trotterization(self.H_init)
+        U2 = fast_trotterization(self.H_prob)
         if isinstance(self.A_lam, QubitOperator):
             # Uniform AGP coefficients
-            U3 = self.A_lam.trotterization()
+            U3 = fast_trotterization(self.A_lam)
         else:
             # Non-uniform AGP coefficients
-            U3 = [A_lam.trotterization() for A_lam in self.A_lam]
+            U3 = [fast_trotterization(A_lam) for A_lam in self.A_lam]
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -306,6 +334,11 @@ class DCQOProblem:
         on a quantumvariable via trotterization. The COLD Hamiltonian consists
         of the system Hamiltonian, the adiabatic gauge potential (AGP) and
         local pulses (given by ``H_control``) with optimized parameters.
+
+        ``H_init``, ``H_prob``, ``A_lam``, and (for COLD) ``H_control`` are each
+        Trotterized via :func:`fast_trotterization`, which automatically uses a
+        fast native-gate path for Ising-type Hamiltonians and falls back to
+        :meth:`QubitOperator.trotterization` otherwise.
 
         Parameters
         ----------
@@ -334,15 +367,15 @@ class DCQOProblem:
         beta = opt_params
 
         # Trotterize Hamiltonian in different parts with each one needing different coefficients
-        U1 = self.H_init.trotterization()
-        U2 = self.H_prob.trotterization()
+        U1 = fast_trotterization(self.H_init)
+        U2 = fast_trotterization(self.H_prob)
         if isinstance(self.A_lam, QubitOperator):
             # Uniform AGP coefficients
-            U3 = self.A_lam.trotterization()
+            U3 = fast_trotterization(self.A_lam)
         else:
             # Non-uniform AGP coefficients
-            U3 = [A_lam.trotterization() for A_lam in self.A_lam]
-        U4 = self.H_control.trotterization()
+            U3 = [fast_trotterization(A_lam) for A_lam in self.A_lam]
+        U4 = fast_trotterization(self.H_control)
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -370,6 +403,18 @@ class DCQOProblem:
 
     def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
         """Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
+
+        Notes
+        -----
+        Compilation time is dominated by how many Trotter-step gates need to be
+        built and compiled, which scales like $O(N^2 \\cdot N_{steps})$ for a dense
+        QUBO. Ising-type Hamiltonians (the default for QUBO problems built via
+        :func:`create_COLD_instance <qrisp.algorithms.cold.problems.QUBO.create_COLD_instance>`)
+        are Trotterized via the fast native-gate path in
+        :func:`fast_trotterization <qrisp.algorithms.cold.fast_trotterization.fast_trotterization>`,
+        which avoids per-term QuantumSession merging overhead that otherwise
+        dominates for larger N.
+
 
         Parameters
         ----------
