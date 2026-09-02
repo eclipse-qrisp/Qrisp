@@ -1388,6 +1388,61 @@ def _all_quantum_modulus(operands: list[QuantumFloat]) -> TypeGuard[list[Quantum
     return all(isinstance(operand, QuantumModulus) for operand in operands)
 
 
+def _polynomial_output_qf(operands: list[QuantumFloat], op: sp.Expr) -> QuantumFloat:
+    """Size the output QuantumFloat for a polynomial-encoding operation.
+
+    Parameters
+    ----------
+    operands : list[QuantumFloat]
+        The QuantumFloats participating in the polynomial. Sorted in place
+        by name as a side effect (matching ``op``'s generator order).
+    op : sympy.Expr
+        The polynomial expression being encoded.
+
+    Returns
+    -------
+    QuantumFloat
+        A freshly allocated QuantumFloat, sized to hold the result of ``op``
+        without overflow.
+
+    """
+    # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
+    from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
+
+    # Only called for its validation side effect (raises if op isn't
+    # actually a polynomial); sp.Poly() below doesn't catch that on its own.
+    _ = expr_to_list(op)
+
+    operands.sort(key=lambda operand: operand.name)
+
+    # sympy's type stubs don't model Poly's/Abs's dynamic attribute
+    # surface, so pyright can't see .gens/.coeffs()/.monoms()/.subs()
+    # here even though they're all real Poly/Basic members.
+    poly = sp.Poly(op)  # pyright: ignore[reportAttributeAccessIssue]
+    monom_list = [
+        a * _prod(sym**k for sym, k in zip(poly.gens, mon))  # pyright: ignore[reportAttributeAccessIssue]
+        for a, mon in zip(poly.coeffs(), poly.monoms())  # pyright: ignore[reportAttributeAccessIssue]
+    ]
+
+    max_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
+    min_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
+
+    abs_poly = sum((sp.Abs(monom) for monom in monom_list), 0)  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+    min_poly_value = min(float(sp.Abs(monom).subs(min_value_dic)) for monom in monom_list)  # pyright: ignore[reportAttributeAccessIssue]
+
+    max_poly_value = float(abs_poly.subs(max_value_dic))
+
+    min_sig = int(np.floor(np.log2(min_poly_value)))
+    max_sig = int(np.ceil(np.log2(max_poly_value)))
+
+    return QuantumFloat(
+        max_sig - min_sig,
+        exponent=min_sig,
+        signed=any(operand.signed for operand in operands),
+    )
+
+
 def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> QuantumFloat:
     """Determine the appropriately-sized output QuantumFloat for an arithmetic operation.
 
@@ -1406,45 +1461,8 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
         without overflow.
 
     """
-    if isinstance(op, sp.core.expr.Expr):
-        # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
-
-        expr_list = expr_to_list(op)
-
-        for term in expr_list:
-            if not isinstance(term[0], sp.Symbol):
-                term.pop(0)
-
-        operands.sort(key=lambda operand: operand.name)
-
-        # sympy's type stubs don't model Poly's/Abs's dynamic attribute
-        # surface, so pyright can't see .gens/.coeffs()/.monoms()/.subs()
-        # here even though they're all real Poly/Basic members.
-        poly = sp.Poly(op)  # pyright: ignore[reportAttributeAccessIssue]
-        monom_list = [
-            a * _prod(sym**k for sym, k in zip(poly.gens, mon))  # pyright: ignore[reportAttributeAccessIssue]
-            for a, mon in zip(poly.coeffs(), poly.monoms())  # pyright: ignore[reportAttributeAccessIssue]
-        ]
-
-        max_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
-        min_value_dic = {sp.Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
-
-        abs_poly = sum((sp.Abs(monom) for monom in monom_list), 0)  # pyright: ignore[reportCallIssue, reportArgumentType]
-
-        min_poly_value = min(float(sp.Abs(monom).subs(min_value_dic)) for monom in monom_list)  # pyright: ignore[reportAttributeAccessIssue]
-
-        max_poly_value = float(abs_poly.subs(max_value_dic))
-
-        min_sig = int(np.floor(np.log2(min_poly_value)))
-        max_sig = int(np.ceil(np.log2(max_poly_value)))
-
-        msize = max_sig - min_sig
-        exponent = min_sig
-
-        signed = any(operand.signed for operand in operands)
-
-        return QuantumFloat(msize, exponent=exponent, signed=signed)
+    if isinstance(op, sp.Expr):
+        return _polynomial_output_qf(operands, op)
 
     if _all_quantum_modulus(operands):
         res = operands[0].duplicate()
