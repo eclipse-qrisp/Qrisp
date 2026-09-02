@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the QuantumArray class, a numpy-ndarray-like container for QuantumVariables."""
 
 from __future__ import annotations
 
@@ -354,7 +355,7 @@ class QuantumArray:
         for i in jrange(self.size):
             flat_self[i][:] = flattened_value_array[i]
 
-    def reshape(self, *args):
+    def reshape(self, *args, order="C"):
         """Adjusts the shape of the QuantumArray with similar semantics as
         `numpy.ndarray.reshape <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.reshape.html>`_.
 
@@ -412,7 +413,7 @@ class QuantumArray:
         else:
             shape = args
         res = copy.copy(self)
-        res.ind_array = self.ind_array.reshape(shape)
+        res.ind_array = self.ind_array.reshape(shape, order=order)
         return res
 
     def flatten(self):
@@ -2133,6 +2134,9 @@ class QuantumArrayIterator:
     def __init__(self, qa):
         self.qa = qa
         self.counter = -1
+
+    def __iter__(self):
+        return self
 
     def __next__(self):
         self.counter += 1

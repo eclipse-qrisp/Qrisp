@@ -1,28 +1,46 @@
-"""********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2024 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
 from itertools import product
 
 import jax.numpy as jnp
 import numpy as np
+import scipy.sparse as sp_sparse  # aliased: `sp` is already sympy, below
 import sympy as sp
+from jax import random
+from numpy import ndarray
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import eigsh
 
-from qrisp import IterationEnvironment, conjugate, cx, cz, h, invert, merge, s, sx_dg
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp import (
+    IterationEnvironment,
+    QuantumCircuit,
+    QuantumVariable,
+    conjugate,
+    cx,
+    cz,
+    h,
+    invert,
+    merge,
+    s,
+    sx_dg,
+)
+from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
@@ -269,7 +287,7 @@ class QubitOperator(Hamiltonian):
             res = res * self
         return res
 
-    def __add__(self, other):
+    def __add__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -303,7 +321,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __sub__(self, other):
+    def __sub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator self and other.
 
         Parameters
@@ -337,7 +355,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator other and self.
 
         Parameters
@@ -371,7 +389,7 @@ class QubitOperator(Hamiltonian):
         result = QubitOperator(res_terms_dict)
         return result
 
-    def __mul__(self, other):
+    def __mul__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the product of the operator self and other.
 
         Parameters
@@ -606,7 +624,9 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix, reverse_endianness=False):
+    def from_matrix(
+        cls: "type[QubitOperator]", matrix: ndarray | csr_matrix, reverse_endianness: bool = False
+    ) -> "QubitOperator":
         r"""Represents a matrix as an operator
 
         .. math::
@@ -645,9 +665,6 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-        import numpy as np
-        from numpy import ndarray
-        from scipy.sparse import csr_matrix
 
         OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
 
@@ -680,7 +697,7 @@ class QubitOperator(Hamiltonian):
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
 
-    def to_sparse_matrix(self, factor_amount=None):
+    def to_sparse_matrix(self, factor_amount: int | None = None) -> "sp_sparse.csr_matrix":
         r"""Returns a scipy matrix representing the operator
 
         .. math::
@@ -702,23 +719,21 @@ class QubitOperator(Hamiltonian):
             The sparse matrix representing the operator.
 
         """
-        import scipy.sparse as sp
-
         operator_matrices = {
-            "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
-            "X": sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
-            "Y": sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
-            "Z": sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
-            "A": sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
-            "C": sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
-            "P0": sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
-            "P1": sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
+            "I": sp_sparse.csr_matrix([[1, 0], [0, 1]], dtype=complex),
+            "X": sp_sparse.csr_matrix([[0, 1], [1, 0]], dtype=complex),
+            "Y": sp_sparse.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
+            "Z": sp_sparse.csr_matrix([[1, 0], [0, -1]], dtype=complex),
+            "A": sp_sparse.csr_matrix([[0, 1], [0, 0]], dtype=complex),
+            "C": sp_sparse.csr_matrix([[0, 0], [1, 0]], dtype=complex),
+            "P0": sp_sparse.csr_matrix([[1, 0], [0, 0]], dtype=complex),
+            "P1": sp_sparse.csr_matrix([[0, 0], [0, 1]], dtype=complex),
         }
 
         def recursive_kron(keys, term_dict):
             if len(keys) == 1:
                 return operator_matrices[term_dict.get(keys[0], "I")]
-            return sp.kron(
+            return sp_sparse.kron(
                 operator_matrices[term_dict.get(keys.pop(0), "I")],
                 recursive_kron(keys, term_dict),
                 format="csr",
@@ -739,18 +754,19 @@ class QubitOperator(Hamiltonian):
                 factor_amount = max(participating_indices) + 1
             else:
                 res = 1
-                M = sp.csr_matrix((1, 1))
+                M = sp_sparse.csr_matrix((1, 1))
                 for coeff in coeffs:
                     res *= coeff
                 if coeffs:
                     M[0, 0] = res
                 return M
         elif participating_indices and factor_amount < max(participating_indices) + 1:
-            raise Exception("Tried to construct matrix with insufficient factor_amount")
+            raise ValueError("Tried to construct matrix with insufficient factor_amount")
 
+        assert factor_amount is not None  # every branch above either sets it or returns
         keys = list(range(factor_amount))
 
-        M = sp.csr_matrix((2**factor_amount, 2**factor_amount))
+        M = sp_sparse.csr_matrix((2**factor_amount, 2**factor_amount))
         for k, coeff in enumerate(coeffs):
             M += complex(coeff) * recursive_kron(keys.copy(), term_dicts[k])
 
@@ -927,7 +943,7 @@ class QubitOperator(Hamiltonian):
 
         return QubitOperator(new_terms_dict).apply_threshold(0)
 
-    def ground_state_energy(self):
+    def ground_state_energy(self) -> float:
         """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
@@ -936,7 +952,6 @@ class QubitOperator(Hamiltonian):
             The ground state energy.
 
         """
-        from scipy.sparse.linalg import eigsh
 
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
@@ -1425,7 +1440,6 @@ class QubitOperator(Hamiltonian):
         # ===============
 
         # Create a QuantumCircuit that contains the conjugation
-        from qrisp import QuantumCircuit
 
         n = self.find_minimal_qubit_amount()
         qc = QuantumCircuit(n)
@@ -1710,7 +1724,6 @@ class QubitOperator(Hamiltonian):
         applied.
 
         """
-        from qrisp import QuantumVariable
 
         def return_function(*args):
 
@@ -2060,9 +2073,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-        from jax import random
-
-        from qrisp.jasp import q_switch
 
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
