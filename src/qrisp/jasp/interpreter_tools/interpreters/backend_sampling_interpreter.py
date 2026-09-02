@@ -379,6 +379,19 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         actual_args = invals[-n_expected:]
         shots = int(actual_args[-1])
 
+        # sample() carries a static shot count, which the decorator already
+        # rejected at tracing time.  An expectation_value shot count is a tracer
+        # by then -- even when the user passed a plain int -- so it arrives here
+        # unvalidated, and here it is finally concrete.  Catch it before it turns
+        # into an opaque failure further down (a sampling body that is never
+        # reached, or an empty measurement array to index).
+        if shots < 1:
+            raise ValueError(
+                f"backend_sampler requires a positive number of shots, got shots={shots}. "
+                "A shot count of 0 selects exact probabilities, which only a simulator can provide "
+                "(see terminal_sampling)."
+            )
+
         # ── Phase 1: static analysis ────────────────────────────────
         # Extract to_qc_args by running inner_jaxpr until the first
         # sampling_body_func call.  This lets JAX's own evaluator

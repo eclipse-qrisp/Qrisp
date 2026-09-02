@@ -415,10 +415,10 @@ def test_multiple_sample_calls():
 
 
 def test_zero_shots():
-    """shots=0 raises.
+    """shots=0 is rejected while tracing.
 
-    The failure comes from indexing the empty measurement array rather than
-    from an explicit guard, so only the fact that it raises is asserted.
+    sample() requires a static shot count, so the check in sample() covers
+    every case and the error surfaces before any circuit is built.
     """
 
     def kernel():
@@ -430,7 +430,7 @@ def test_zero_shots():
     def main():
         return sample(kernel, shots=0)()
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="at least one shot is required"):
         main()
 
 

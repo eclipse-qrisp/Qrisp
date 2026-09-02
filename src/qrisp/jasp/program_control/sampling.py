@@ -401,6 +401,18 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     def return_function(*args):
 
         if check_for_tracing_mode():
+            # Under tracing the sampling loop writes one row per shot, so a
+            # non-positive count has no meaningful result and would otherwise
+            # fail obscurely while indexing the zero-length accumulator.
+            # Outside tracing mode shots=0 is legitimate -- it selects the exact
+            # probabilities via terminal_sampling -- so the branch below is
+            # deliberately left unguarded.
+            if shots < 1:
+                raise ValueError(
+                    f"Tried to sample with a shots value of {shots} inside a traced function "
+                    "(at least one shot is required). A shot count of 0 returns exact "
+                    "probabilities, which is only available outside of tracing mode."
+                )
             return sampling_eval_function(*args, tracerized_shots=shots)
         else:
             return terminal_sampling(sampling_kernel, shots)(*args)

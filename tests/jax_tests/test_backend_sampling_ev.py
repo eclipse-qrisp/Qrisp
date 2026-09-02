@@ -298,11 +298,11 @@ def test_ev_large_qubits():
 
 
 def test_ev_zero_shots():
-    """shots=0 raises; it does not return NaN.
+    """shots=0 is rejected by backend_sampler.
 
-    With zero iterations the sampling body is never reached, so circuit
-    extraction fails inside the callback and surfaces wrapped in an
-    XlaRuntimeError. Only the fact that it raises is asserted.
+    Unlike sample(), expectation_value runs even a plain int through
+    make_tracer, so the count is no longer inspectable while tracing. It is
+    caught in the callback instead, which means JAX wraps the ValueError.
     """
 
     def kernel():
@@ -313,8 +313,30 @@ def test_ev_zero_shots():
     def main():
         return expectation_value(kernel, shots=0)()
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="positive number of shots"):
         main()
+
+
+def test_ev_zero_shots_dynamic():
+    """A dynamic shots=0 is rejected once it is resolved.
+
+    Same guard as the static case: the callback is where a traced shot count
+    finally becomes concrete.
+    """
+
+    def kernel():
+        qf = QuantumFloat(4)
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main(n):
+        return expectation_value(kernel, shots=n)()
+
+    with pytest.raises(Exception, match="positive number of shots"):
+        main(0)
+
+    # a positive dynamic shot count still works
+    assert np.isclose(main(20), 0.0)
 
 
 def test_ev_multiple_calls():
