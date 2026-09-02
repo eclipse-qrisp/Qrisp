@@ -680,19 +680,6 @@ class QubitOperator(Hamiltonian):
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
 
-    @classmethod
-    def sum(cls, operators):
-        """Efficiently sum many QubitOperators. O(total terms), not O(total terms^2)."""
-        res_terms_dict = {}
-        for op in operators:
-            for term, coeff in op.terms_dict.items():
-                new_coeff = res_terms_dict.get(term, 0) + coeff
-                if abs(new_coeff) < threshold:
-                    res_terms_dict.pop(term, None)
-                else:
-                    res_terms_dict[term] = new_coeff
-        return cls(res_terms_dict)
-
     def to_sparse_matrix(self, factor_amount=None):
         r"""Returns a scipy matrix representing the operator
 
