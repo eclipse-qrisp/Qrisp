@@ -237,7 +237,7 @@ class QuantumFloat(QuantumVariable):
 
     >>> d = a//b
     >>> print(d)
-    {3.0: 1.0}
+    {3: 1.0}
 
     Inversion:
 
@@ -659,8 +659,7 @@ class QuantumFloat(QuantumVariable):
             return output_qf
 
         raise TypeError(
-            "QuantumFloat multiplication for type " + str(type(other)) + ""
-            " not implemented (available are QuantumFloat and int)"
+            f"QuantumFloat multiplication for type {type(other)} not implemented (available are QuantumFloat and int)"
         )
 
     @gate_wrap(permeability="args", is_qfree=True)
@@ -682,7 +681,7 @@ class QuantumFloat(QuantumVariable):
             cx(self, res)
             res += other
             return res
-        raise TypeError("Addition with type " + str(type(other)) + " not implemented")
+        raise TypeError(f"Addition with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
@@ -703,7 +702,7 @@ class QuantumFloat(QuantumVariable):
             cx(self, res)
             res -= other
             return res
-        raise TypeError("Subtraction with type " + str(type(other)) + " not implemented")
+        raise TypeError(f"Subtraction with type {type(other)} not implemented")
 
     __radd__ = __add__
     __rmul__ = __mul__
@@ -723,7 +722,7 @@ class QuantumFloat(QuantumVariable):
             x(res)
             res += other + 2**res.exponent
             return res
-        raise TypeError("Subtraction with type " + str(type(other)) + " not implemented")
+        raise TypeError(f"Subtraction with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __truediv__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
@@ -806,7 +805,8 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         elif isinstance(other, (int, float, np.number)):
-            if not int(other / 2**self.exponent) == other / 2**self.exponent:
+            scaled = other / 2**self.exponent
+            if int(scaled) != scaled:
                 raise ValueError(
                     "Tried to perform in-place addition with invalid number. QuantumFloat precision too low."
                 )
@@ -817,7 +817,7 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise TypeError("In-place addition for type " + str(type(other)) + " not implemented")
+            raise TypeError(f"In-place addition for type {type(other)} not implemented")
 
         return self
 
@@ -839,7 +839,8 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         elif isinstance(other, (int, float, np.integer, np.floating)):
-            if not int(other / 2**self.exponent) == other / 2**self.exponent:
+            scaled = other / 2**self.exponent
+            if int(scaled) != scaled:
                 raise ValueError(
                     "Tried to perform in-place subtraction with invalid number. QuantumFloat precision too low."
                 )
@@ -850,7 +851,7 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise TypeError("In-place substraction for type " + str(type(other)) + " not implemented")
+            raise TypeError(f"In-place subtraction for type {type(other)} not implemented")
 
         return self
 
@@ -970,22 +971,19 @@ class QuantumFloat(QuantumVariable):
         >>> print(a)
         {8: 1.0}
         >>> print(a.qs)
-
-        .. code-block:: none
-
-            QuantumCircuit:
-            --------------
-            a.0: ─────
-                 ┌───┐
-            a.1: ┤ X ├
-                 └───┘
-            a.2: ─────
-            <BLANKLINE>
-            a.3: ─────
-
-            Live QuantumVariables:
-            ---------------------
-            QuantumFloat a
+        QuantumCircuit:
+        ---------------
+        a.0: ─────
+             ┌───┐
+        a.1: ┤ X ├
+             └───┘
+        a.2: ─────
+        <BLANKLINE>
+        a.3: ─────
+        <BLANKLINE>
+        Live QuantumVariables:
+        ----------------------
+        QuantumFloat a
 
         """
         if not isinstance(shift, int):
@@ -1013,7 +1011,7 @@ class QuantumFloat(QuantumVariable):
 
         """
         if self.signed:
-            raise ValueError(r"Tried to add sign to signed QuantumFloat")
+            raise ValueError("Tried to add sign to signed QuantumFloat")
 
         self.extend(1, self.size)
         self.signed = True
@@ -1244,7 +1242,7 @@ class QuantumFloat(QuantumVariable):
 
         .. note::
 
-            Bit bit shifts based on a QuantumFloat are currently only possible
+            Bit shifts based on a QuantumFloat are currently only possible
             if both self and ``shift_amount`` are unsigned.
 
         .. warning::
@@ -1444,7 +1442,7 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
         msize = max_sig - min_sig
         exponent = min_sig
 
-        signed = bool(sum(int(operand.signed) for operand in operands))
+        signed = any(operand.signed for operand in operands)
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
@@ -1529,7 +1527,7 @@ def copy_qf(
 
     if qf2.signed:
         if not qf1.signed:
-            raise ValueError("Tried to copy signed into unsigend float")
+            raise ValueError("Tried to copy signed into unsigned float")
 
         qf1_len -= 1
         qf2_len -= 1

@@ -118,16 +118,7 @@ def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bo
 
 
 class TestArithmeticDifferentExponents:
-    """Regression tests for create_output_qf.
-
-    Its "add"/"sub" branches used to compute the output's exponent with
-    jnp.minimum/jnp.maximum unconditionally, even outside of tracing mode.
-    This silently turned a plain-int exponent into a 0-d jax.Array, which
-    then crashed with "TypeError: Integers cannot be raised to negative
-    powers" the moment that output was used in a further operation involving
-    2**exponent with a negative exponent (a very common case: the class
-    docstring's own subtraction example is exactly this).
-    """
+    """Regression tests for create_output_qf's exponent-type bug with different-exponent operands."""
 
     def test_add_then_reuse_result_with_negative_exponent(self):
         """Test that a QuantumFloat produced by + keeps a plain-int exponent."""
@@ -150,10 +141,7 @@ class TestArithmeticDifferentExponents:
         assert e.get_measurement() == {-0.0625: 1.0}
 
     def test_sub_different_exponents(self):
-        """Test that subtracting operands with different exponents works.
-
-        Also checks that the result keeps a plain-int exponent.
-        """
+        """Test that subtracting operands with different exponents keeps a plain-int exponent."""
         a = QuantumFloat(4, 0, signed=True)
         b = QuantumFloat(3, -2, signed=False)
         a[:] = 3
@@ -379,16 +367,7 @@ class TestComparisonOperators:
         assert (a != b).get_measurement() == {expected: 1.0}
 
     def test_comparison_as_conditional_environment(self):
-        """Regression test: comparisons must also work as `with` conditions.
-
-        Comparisons are decorated with ``adaptive_condition``, which decides
-        between returning a plain QuantumBool and a ConditionEnvironment by
-        inspecting the literal source text of its caller's call site a fixed
-        number of stack frames up. Routing a comparison through any extra
-        function call between the dunder and the decorated comparison
-        function shifts that lookup to the wrong line and silently breaks
-        `with qf == 0:`-style usage, without affecting plain `a == b` calls.
-        """
+        """Regression test: comparisons must also work as `with` conditions, not just plain expressions."""
         qf = QuantumFloat(3)
         qbl = QuantumBool()
         qf[:] = 0

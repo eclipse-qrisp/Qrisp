@@ -37,16 +37,9 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
-- Added type hints across :class:`~qrisp.QuantumFloat` using the ``qrisp.typing``
-  aliases, and fixed several stale docstring examples
-  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
-
-- Improved the performance of :class:`~qrisp.QuantumFloat`'s ``significant()``,
-  ``init_from()``, and ``encode(..., rounding=True)``. The latter previously
-  searched every representable outcome for the closest one (exponential in
-  the qubit count) and now finds it directly the same way ``truncate()``
-  does (round-and-clip against the uniform grid of representable values),
-  in O(1)
+- Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
+  docstring examples, and sped up ``significant()``, ``init_from()``, and
+  ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Other New Features
@@ -152,11 +145,9 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
-* Fixed a bug where adding or subtracting two :class:`~qrisp.QuantumFloat`
-  operands with different exponents, outside of Jasp tracing, silently
-  turned the result's exponent into a 0-d ``jax.Array`` instead of a plain
-  ``int``. This crashed any later operation computing ``2**exponent`` with a
-  negative exponent, including the class's own docstring example
+* Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
+  exponents silently produced a ``jax.Array`` exponent instead of a plain
+  ``int`` outside tracing, crashing later negative ``2**exponent`` calls
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Compatibility
@@ -169,11 +160,8 @@ Compatibility
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
 * :class:`~qrisp.QuantumFloat` methods now raise specific exception types
-  (``TypeError`` for an unsupported operand type, ``ValueError`` for an
-  invalid value or state, ``NotImplementedError`` for a genuinely
-  unimplemented feature) instead of a generic ``Exception``, at the 26
-  call sites that previously did so. Code using ``except Exception:``
-  continues to work; code catching a more specific type now can
+  (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
+  generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 .. Add compatibility notes above this line
@@ -278,12 +266,6 @@ Development
   which previously ran only on pushes to ``main``. This meant formatting
   regressions were never caught during PR review and only surfaced once
   merged into ``main``.
-
-* Fixed pylint/pyright findings in ``QuantumFloat``, verified its docstring
-  examples against ``doctest``, added regression tests for previously
-  uncovered code paths, and added explanatory comments to the local imports
-  required to avoid circular imports with ``qrisp.alg_primitives.arithmetic``
-  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Dependency Upgrades
 -------------------
