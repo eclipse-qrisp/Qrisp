@@ -471,6 +471,16 @@ class TestUtilityMethods:
         qf = QuantumFloat(4, -1)
         assert qf.truncate(0.5102341) == 0.5
 
+    def test_truncate_extreme_values(self):
+        """Test that truncate clips values far outside the representable range instead of overflowing."""
+        qf = QuantumFloat(4)
+        assert qf.truncate(1e30) == 15
+        assert qf.truncate(-1e30) == 0
+
+        signed_qf = QuantumFloat(4, signed=True)
+        assert signed_qf.truncate(1e30) == 15
+        assert signed_qf.truncate(-1e30) == -16
+
     def test_get_ev(self):
         """Test that get_ev computes the expectation value of a measurement."""
         qf = QuantumFloat(4)

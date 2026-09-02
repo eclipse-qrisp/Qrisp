@@ -30,7 +30,7 @@ from qrisp.core import QuantumVariable, cx, x
 from qrisp.environments import conjugate, invert
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import gate_wrap
-from qrisp.typing import FloatLike, ScalarLike
+from qrisp.typing import FloatLike
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -463,7 +463,7 @@ class QuantumFloat(QuantumVariable):
         """
         return self.decoder(i)
 
-    def encoder(self, i: ScalarLike) -> int | Array:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def encoder(self, i: int | float | bool | np.integer | np.floating | Tracer) -> int | Array:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Convert a human-readable value to an integer that represents the measurement result.
 
         Also validates that the input value can be represented within the bounds of the provided
@@ -475,10 +475,14 @@ class QuantumFloat(QuantumVariable):
             <qrisp.QuantumVariable.encoder>`, this parameter is named ``i``
             (not ``value``) for historical reasons specific to QuantumFloat.
 
+            Unlike the base's ``ScalarLike``, this does not accept ``complex``:
+            the bounds/sign checks below order ``i`` with ``<``/``>``, which
+            complex values don't support.
+
         Parameters
         ----------
-        i : ScalarLike
-            A human-readable numeric value.
+        i : int, float, bool, np.integer, np.floating, or jax.core.Tracer
+            A human-readable, real-valued number.
 
         Returns
         -------
@@ -488,9 +492,6 @@ class QuantumFloat(QuantumVariable):
         """
         # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
-        # ScalarLike includes complex, which isn't orderable -- i is never
-        # actually complex here (a complex value could never satisfy the
-        # bounds check below either), so this comparison is always safe.
         if not check_for_tracing_mode() and not self.signed and i < 0:  # pyright: ignore[reportOperatorIssue]
             raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
 
@@ -580,7 +581,10 @@ class QuantumFloat(QuantumVariable):
         return 2**self.exponent * poly  # pyright: ignore[reportReturnType]
 
     def encode(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, encoding_number: ScalarLike, rounding: bool = False, permit_dirtyness: bool = False
+        self,
+        encoding_number: int | float | bool | np.integer | np.floating | Tracer,
+        rounding: bool = False,
+        permit_dirtyness: bool = False,
     ) -> None:
         """Initialize a QuantumFloat to a specific value.
 
@@ -591,9 +595,13 @@ class QuantumFloat(QuantumVariable):
             ``rounding`` (inserted before ``permit_dirtyness``, for
             historical reasons specific to QuantumFloat).
 
+            Unlike the base's ``ScalarLike``, this does not accept ``complex``
+            (see :meth:`encoder <qrisp.QuantumFloat.encoder>`, which this
+            delegates to).
+
         Parameters
         ----------
-        encoding_number : ScalarLike
+        encoding_number : int, float, bool, np.integer, np.floating, or jax.core.Tracer
             The value to encode.
         rounding : bool, optional
             If ``True``, round ``encoding_number`` to the value this
@@ -614,8 +622,8 @@ class QuantumFloat(QuantumVariable):
             # does: representable values form a uniform grid, so the nearest
             # one is found directly by rounding and clipping, in O(1) --
             # no need to enumerate all 2**size outcomes to search for it.
-            # ScalarLike also covers complex/Tracer, which encoding_number
-            # never actually is here (this is an eager-only rounding path).
+            # truncate() is typed strictly as float, but a bool/np.integer/
+            # np.floating/Tracer here all support the same arithmetic at runtime.
             value = self.truncate(encoding_number)  # pyright: ignore[reportArgumentType]
 
         super().encode(value, permit_dirtyness=permit_dirtyness)
@@ -669,7 +677,7 @@ class QuantumFloat(QuantumVariable):
         )
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __add__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __add__(self, other: QuantumFloat | int | float | Tracer) -> QuantumFloat:
         """Add another QuantumFloat or a classical scalar to this QuantumFloat."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_add
@@ -690,7 +698,7 @@ class QuantumFloat(QuantumVariable):
         raise TypeError(f"Addition with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __sub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __sub__(self, other: QuantumFloat | int | float | Tracer) -> QuantumFloat:
         """Subtract another QuantumFloat or a classical scalar from this QuantumFloat."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_sub
@@ -714,7 +722,7 @@ class QuantumFloat(QuantumVariable):
     __rmul__ = __mul__
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __rsub__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __rsub__(self, other: QuantumFloat | int | float) -> QuantumFloat:
         """Subtract this QuantumFloat from a classical scalar or QuantumFloat."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import sbp_sub
@@ -731,7 +739,7 @@ class QuantumFloat(QuantumVariable):
         raise TypeError(f"Subtraction with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __truediv__(self, other: QuantumFloat | FloatLike) -> QuantumFloat:
+    def __truediv__(self, other: QuantumFloat) -> QuantumFloat:
         """Divide this QuantumFloat by another QuantumFloat."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
         from qrisp.alg_primitives.arithmetic import q_div
@@ -1205,14 +1213,18 @@ class QuantumFloat(QuantumVariable):
         {0.5: 1.0}
 
         """
-        res = jnp.int64(jnp.round(value / jnp.float64(2) ** self.exponent))
-        res = jnp.minimum(2**self.msize - 1, res)
+        # Clip in floating point before converting to int64: a huge input (e.g.
+        # 1e30) would otherwise overflow int64 on the cast, which is platform-
+        # dependent behavior rather than a guaranteed saturating clamp.
+        res = jnp.round(value / jnp.float64(2) ** self.exponent)
+        res = jnp.minimum(2.0**self.msize - 1, res)
 
         if self.signed:
-            res = jnp.maximum(-(2**self.msize), res)
-            res = _signed_int_iso(res, self.size)
+            res = jnp.maximum(-(2.0**self.msize), res)
+            res = _signed_int_iso(jnp.int64(res), self.size)
         else:
-            res = jnp.maximum(0, res)
+            res = jnp.maximum(0.0, res)
+            res = jnp.int64(res)
 
         return self.decoder(res)  # pyright: ignore[reportReturnType]
 
