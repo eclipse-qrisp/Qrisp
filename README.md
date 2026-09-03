@@ -107,5 +107,5 @@ If you want to cite Qrisp in your work, please use:
 
 
 ## License
-[Eclipse Public License 2.0](https://github.com/fraunhoferfokus/Qrisp/blob/main/LICENSE)
+[Eclipse Public License 2.0](https://github.com/eclipse-qrisp/Qrisp/blob/main/LICENSE)
 

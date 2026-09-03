@@ -85,7 +85,7 @@ nbsphinx_codecell_lexer = "ipython3"
 imgmath_latex_preamble = r"\usepackage{braket}\n\usepackage{xcolor}"
 
 thebe_config = {
-    "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
+    "repository_url": "https://github.com/eclipse-qrisp/Qrisp",
     "repository_branch": "thebe_branch",
     "selector": "div.input_area",
     "selector_output": "span.go",
