@@ -70,7 +70,10 @@ def cuccaro_adder(
     TypeError
         If carry in or carry out is not of type QuantumBool or Qubit in static mode.
     ValueError
-        If the inputs are not valid quantum or classical types.
+        If the second argument is not a quantum register, i.e. if ``b`` is not a
+        QuantumVariable, DynamicQubitArray or a non-empty ``list[Qubit]``.
+    ValueError
+        If the first argument is a ``list`` that does not contain only Qubits.
 
     Returns
     -------
@@ -79,7 +82,14 @@ def cuccaro_adder(
 
     Examples
     --------
-    Static mode with both quantum inputs:
+
+    The examples below show how to use
+    :func:`~qrisp.alg_primitives.arithmetic.adders.cuccaro_adder`. Because ``a``
+    and ``b`` are generic quantum variables, the adder works with any quantum
+    type that can store a value, e.g. ``QuantumFloat``, ``QuantumVariable`` or
+    ``QuantumModulus``.
+
+    Static mode with both quantum inputs of equal size:
 
     >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
@@ -89,6 +99,131 @@ def cuccaro_adder(
     >>> cuccaro_adder(a,b)
     >>> print(b)
     {9: 1.0}
+
+    Static mode with a classical first input:
+
+    >>> from qrisp import QuantumFloat, cuccaro_adder
+    >>> b = QuantumFloat(4)
+    >>> b[:] = 3
+    >>> cuccaro_adder(5, b)
+    >>> print(b)
+    {8: 1.0}
+
+    If the classical input is larger than the second input, it is truncated
+    modulo ``2**len(b)``. Here, the 4-qubit `QuantumFloat` ``b`` can only hold
+    values from 0 to 15, so the sum value 16 cannot be represented. Since 16
+    wraps around to 0 in this `QuantumFloat`, adding 16 is equivalent to adding
+    0:
+
+    >>> b = QuantumFloat(4)
+    >>> b[:] = 5
+    >>> cuccaro_adder(16, b)
+    >>> print(b)
+    {5: 1.0}
+
+    Static mode with a quantum first input larger than the second input. The
+    first input is truncated to the size of the second input (i.e. addition is
+    performed modulo ``2**len(b)``) by slicing off its high-order qubits. No
+    qubits are added or removed, so ``a`` keeps its value and size:
+
+    >>> a = QuantumFloat(4)
+    >>> b = QuantumFloat(2)
+    >>> a[:] = 9
+    >>> b[:] = 2
+    >>> cuccaro_adder(a, b)
+    >>> print(a)
+    {9: 1.0}
+    >>> print(a.size)
+    4
+    >>> print(b)
+    {3: 1.0}
+
+    Static mode with a quantum first input smaller than the second input. The
+    first input is temporarily padded with additional (ancilla) qubits. The
+    helper ancillas are created in the ``|0>`` state and appended to ``a`` so
+    that the adder can process a register as large as ``b``. They are deleted
+    once the addition is done, so no extra qubits are left over. ``a`` itself is
+    not modified:
+
+    >>> a = QuantumFloat(2)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 3
+    >>> b[:] = 2
+    >>> cuccaro_adder(a, b)
+    >>> print(a.size)
+    2
+    >>> print(b)
+    {5: 1.0}
+
+    Lists of :class:`~qrisp.circuit.Qubit` objects are supported as well. The
+    slices ``a[:]`` and ``b[:]`` return the qubit registers of ``a`` and ``b``
+    as plain lists of Qubits, which are passed to the adder instead of the
+    QuantumFloat objects:
+
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 10
+    >>> b[:] = 5
+    >>> cuccaro_adder(a[:], b[:])
+    >>> print(b)
+    {15: 1.0}
+
+    Addition with a carry-in and a carry-out qubit. ``c_in`` is an optional
+    carry-in bit, flipped to ``|1>`` here with ``x``, so it adds an extra 1 to
+    the sum. ``c_out`` records the overflow: it is set to ``True`` whenever the sum
+    does not fit in ``b``. The total sum is 6 + 3 + 1 = 10, which wraps around
+    in the 3-qubit ``b``, so ``b`` ends up with 10 mod 8 = 2 and ``c_out``
+    holds the overflow:
+
+    >>> from qrisp import QuantumBool, x
+    >>> b = QuantumFloat(3)
+    >>> b[:] = 6
+    >>> c_in = QuantumBool()
+    >>> x(c_in[0])
+    >>> c_out = QuantumBool()
+    >>> cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
+    >>> print(b)
+    {2: 1.0}
+    >>> print(c_out)
+    {True: 1.0}
+
+    Controlled addition. ``ctrl`` is an optional control qubit, flipped to ``|1>``
+    here with ``x``. When ``ctrl`` is in the ``|1>`` state the addition is
+    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 wraps
+    around in the 3-qubit ``b``, leaving 8 mod 8 = 0:
+
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(5)
+    >>> a[:] = 3
+    >>> b[:] = 5
+    >>> ctrl = QuantumBool()
+    >>> x(ctrl[0])
+    >>> cuccaro_adder(a, b, ctrl=ctrl)
+    >>> print(b)
+    {8: 1.0}
+
+    Dynamic mode (inside a :func:`~qrisp.jasp.jaspify` decorated function):
+
+    The examples above can also be run inside a :func:`~qrisp.jasp.jaspify`
+    function. As ``b`` holds the result, ``measure`` is used to read it out. In
+    static mode ``print(b)`` already simulates and shows the outcome, so no
+    explicit measurement is needed. Inside a jaspified function, however, the
+    result is a quantum state that has to be collapsed with ``measure`` before
+    it can be returned as a classical value:
+
+    >>> from qrisp import QuantumFloat, cuccaro_adder, measure
+    >>> from qrisp.jasp import jaspify
+    >>> @jaspify
+    ... def main():
+    ...     a = QuantumFloat(4)
+    ...     b = QuantumFloat(4)
+    ...     a[:] = 4
+    ...     b[:] = 5
+    ...     cuccaro_adder(a, b)
+    ...     return measure(b)
+    >>> result = main()
+    >>> result  # result is 9 (4 + 5 = 9)
+    Array(9., dtype=float64)
 
     """
     # The second argument is required to be a (non-empty) quantum register
@@ -105,7 +240,7 @@ def cuccaro_adder(
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
         # truncate the classical value modulo 2**len(b) so that values larger than the
-        # target register are handled via modulo addition (as documented above)
+        # target register are handled via modulo addition
         a = a % (1 << jlen(b))
 
         # create a quantum variable of the same size as the other quantum input
@@ -119,7 +254,7 @@ def cuccaro_adder(
         q_a.delete()
         return
 
-    # when the inputs are of unequal length
+    # when the quantum inputs are of unequal length
     # pad the size of the input with the smaller size
     dim_a = jlen(a)
     dim_b = jlen(b)
@@ -136,6 +271,7 @@ def cuccaro_adder(
     extended_a = a[:] + extension_anc_a[:]
     a = extended_a
 
+    # redefine the dimensions of a and b after the size adjustments
     dim_a = jlen(a)
     dim_b = jlen(b)
 
