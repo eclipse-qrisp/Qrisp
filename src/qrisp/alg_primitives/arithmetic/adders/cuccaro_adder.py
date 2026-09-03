@@ -129,15 +129,20 @@ def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
         cx(a[0], b[0])
 
 
-def _apply_c_out(c_out, a):
+def _apply_c_out(c_out, a, ctrl):
     """Copy the final carry into the carry-out qubit.
 
     After the maj phase the most significant carry still sits in the top ``a``
-    qubit. If a carry-out qubit was requested, this helper copies it over with
-    ``cx(a[-1], c_out)`` before the uma phase uncomputes the carries.
+    qubit. If a carry-out qubit was requested, this helper copies it over
+    before the uma phase uncomputes the carries. For a controlled addition,
+    the copy is also controlled so the carry-out remains unchanged when the
+    control is disabled.
     """
     if c_out is not None:
-        cx(a[-1], c_out)
+        if ctrl is None:
+            cx(a[-1], c_out)
+        else:
+            mcx([ctrl, a[-1]], c_out)
 
 
 def _uncompute_c_in(c_in, ancilla):
@@ -312,8 +317,8 @@ def cuccaro_adder(
 
     Controlled addition. ``ctrl`` is an optional control qubit, flipped to ``|1>``
     here with ``x``. When ``ctrl`` is in the ``|1>`` state the addition is
-    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 wraps
-    around in the 3-qubit ``b``, leaving 8 mod 8 = 0:
+    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 fits into
+    the 5-qubit ``b`` without wrap-around, so ``b`` ends up holding the sum 8:
 
     >>> a = QuantumFloat(5)
     >>> b = QuantumFloat(5)
@@ -406,8 +411,8 @@ def cuccaro_adder(
     # first maj gate application + iterator maj gate application
     _apply_maj_gates(a, b, ancilla, dim_a)
 
-    # cnot
-    _apply_c_out(c_out, a)
+    # copy carry-out
+    _apply_c_out(c_out, a, ctrl)
 
     # iterator + last uma gate application
     _apply_uma_gates(a, b, ancilla, ctrl, dim_a)
