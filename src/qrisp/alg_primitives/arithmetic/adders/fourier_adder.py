@@ -16,15 +16,22 @@
 
 """Implements the QFT-based (Draper) in-place adder and its QuasiRZZ helper gate."""
 
+from __future__ import annotations
+
 import numpy as np
 
 from qrisp.alg_primitives import QFT
-from qrisp.circuit import Operation, PGate, QuantumCircuit
+from qrisp.circuit import Operation, PGate, QuantumCircuit, Qubit
+from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cz, p
 from qrisp.environments import QuantumEnvironment, conjugate
 
 
-def fourier_adder(a, b, perform_QFT=True):
+def fourier_adder(
+    a: int | np.integer | QuantumVariable | list[Qubit],
+    b: QuantumVariable | list[Qubit],
+    perform_QFT: bool = True,
+) -> None:
     """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
     Performs the addition:
 
@@ -99,7 +106,7 @@ def fourier_adder(a, b, perform_QFT=True):
 
 
 class QuasiRZZ(Operation):
-    def __init__(self, angle):
+    def __init__(self, angle: float):
         qc = QuantumCircuit(2)
         qc.cx(qc.qubits[1], qc.qubits[0])
         qc.p(angle, qc.qubits[0])
@@ -110,10 +117,15 @@ class QuasiRZZ(Operation):
         self.permeability = {0: True, 1: True}
         self.is_qfree = True
 
-    def inverse(self):
+    def inverse(self) -> QuasiRZZ:
         return QuasiRZZ(-self.params[0])
 
-    def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
+    def control(
+        self,
+        num_ctrl_qubits: int = 1,
+        ctrl_state: int | str = -1,
+        method: str | None = None,
+    ) -> Operation:
 
         qc = QuantumCircuit(2 + num_ctrl_qubits)
         qc.cx(qc.qubits[-1], qc.qubits[-2])
