@@ -19,54 +19,16 @@
 import jax.numpy as jnp
 
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _resolve_c_in,
+    _resolve_c_out,
     _validate_adder_inputs,
 )
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool, QuantumFloat
-
-
-def _resolve_c_in(c_in, ancilla):
-    """Resolve the carry-in qubit and apply the initial c_in-controlled cx.
-
-    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit (raising a TypeError for any other type in static
-    mode) and then seeds the carry ancilla with the carry-in value via
-    CNOT gate. The resolved qubit is returned so the caller can
-    uncompute it after the addition.
-    """
-    if c_in is None:
-        return None
-
-    if isinstance(c_in, QuantumBool):
-        c_in = c_in[0]
-    elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
-
-    cx(c_in, ancilla[0])
-    return c_in
-
-
-def _resolve_c_out(c_out):
-    """Return the carry-out qubit.
-
-    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit and raises a TypeError for any other type in
-    static mode. It does not apply any gates itself.
-    """
-    if c_out is None:
-        return None
-
-    if isinstance(c_out, QuantumBool):
-        return c_out[0]
-
-    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
-
-    return c_out
 
 
 def _apply_maj_gates(a, b, ancilla, dim_a):
@@ -395,8 +357,12 @@ def cuccaro_adder(
 
     ancilla = QuantumFloat(max_size)
 
-    c_in = _resolve_c_in(c_in, ancilla)
+    c_in = _resolve_c_in(c_in)
     c_out = _resolve_c_out(c_out)
+
+    # seed the carry ancilla with the carry-in value
+    if c_in is not None:
+        cx(c_in, ancilla[0])
 
     # first maj gate application + iterator maj gate application
     _apply_maj_gates(a, b, ancilla, dim_a)

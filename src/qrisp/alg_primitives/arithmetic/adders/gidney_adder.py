@@ -39,6 +39,8 @@ if TYPE_CHECKING:  # noqa
     )  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
     _extract_bit,
+    _resolve_c_in,
+    _resolve_c_out,
     _validate_adder_inputs,
 )
 from qrisp.circuit import Qubit
@@ -322,8 +324,8 @@ def gidney_adder(
     a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
-    c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
-    c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
+    c_in_qb = _resolve_c_in(c_in)
+    c_out_qb = _resolve_c_out(c_out)
 
     # Semi-classical path (classical a, quantum b).
     if not a_is_quantum:
