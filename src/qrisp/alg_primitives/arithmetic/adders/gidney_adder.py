@@ -37,48 +37,14 @@ if TYPE_CHECKING:  # noqa
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )  # noqa
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _validate_adder_inputs,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.qtypes import QuantumBool
-
-
-def _validate_gidney_adder_inputs(a, b):
-    """Validate that ``(a, b)`` is a supported input pair.
-
-    Returns
-    -------
-    a_is_quantum : bool
-        Whether ``a`` is a quantum register.
-
-    Raises
-    ------
-    ValueError
-        If the pair is not classical-quantum or quantum-quantum.
-
-    """
-    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(b, list) and len(b) > 0 and all(isinstance(qb, Qubit) for qb in b)
-    )
-    # Empty list is valid for a (treated as a zero-size quantum register).
-    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(a, list) and all(isinstance(qb, Qubit) for qb in a)
-    )
-
-    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
-        check_for_tracing_mode()
-        and (
-            hasattr(a, "get_bit")
-            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
-        )
-    )
-    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
-        raise ValueError(
-            "gidney_adder expects inputs to be either classical-quantum "
-            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
-        )
-    return a_is_quantum
 
 
 def _extract_bit(a_int, digit_index):
@@ -378,7 +344,7 @@ def gidney_adder(
     {9: 1.0}
 
     """
-    a_is_quantum = _validate_gidney_adder_inputs(a, b)
+    a_is_quantum = _validate_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
