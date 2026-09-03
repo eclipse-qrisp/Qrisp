@@ -50,19 +50,6 @@ def _extract_bit(a_int, digit_index):
     return jnp.bool_((a_int >> digit_index) & 1)
 
 
-def _is_quantum_register(obj):
-    """Return True if ``obj`` is a quantum register.
-
-    A quantum register is a QuantumVariable (or subclass thereof), a
-    DynamicQubitArray or a list of Qubits.
-    """
-    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
-        return True
-    if isinstance(obj, list):
-        return all(isinstance(qb, Qubit) for qb in obj)
-    return False
-
-
 def _validate_adder_inputs(a, b):
     """Validate that ``(a, b)`` is a supported adder input pair.
 
@@ -80,9 +67,13 @@ def _validate_adder_inputs(a, b):
         If the pair is not classical-quantum or quantum-quantum.
 
     """
-    b_is_quantum = _is_quantum_register(b) and not (isinstance(b, list) and len(b) == 0)
+    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(b, list) and len(b) > 0 and all(isinstance(qb, Qubit) for qb in b)
+    )
     # Empty list is valid for a (treated as a zero-size quantum register).
-    a_is_quantum = _is_quantum_register(a)
+    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(a, list) and all(isinstance(qb, Qubit) for qb in a)
+    )
 
     is_valid_classical = isinstance(a, (int, np.integer, str)) or (
         check_for_tracing_mode()
