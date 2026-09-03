@@ -16,6 +16,9 @@
 
 """Defines the Pauli multiplication table and the QubitTerm class representing Pauli tensor products."""
 
+from collections.abc import Mapping
+from types import MappingProxyType
+
 import numpy as np
 from sympy import Symbol
 
@@ -95,25 +98,60 @@ PAULI_TABLE = {
 
 
 class QubitTerm:
-    r""" """
+    """Immutable sparse tensor product of single-qubit factors."""
 
-    def __init__(self, factor_dict={}):
-        self.factor_dict = dict(factor_dict)
+    __slots__ = ("_canonical_factors", "_factor_dict", "_hash")
 
-        self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: x[0])))
+    def __init__(self, factor_dict: Mapping[int, str] | None = None) -> None:
+        """Create a term from a mapping of qubit indices to factors."""
+        items = () if factor_dict is None else factor_dict.items()
+        canonical_factors = tuple(sorted((index, factor) for index, factor in items if factor != "I"))
+        object.__setattr__(self, "_canonical_factors", canonical_factors)
+        object.__setattr__(self, "_factor_dict", MappingProxyType(dict(canonical_factors)))
+        object.__setattr__(self, "_hash", hash(canonical_factors))
 
-    def update(self, update_dict):
-        self.factor_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
+    def __setattr__(self, name: str, value: object) -> None:
+        """Reject attribute assignment after construction."""
+        raise AttributeError("QubitTerm instances are immutable")
 
-    def __hash__(self):
-        return self.hash_value
+    def __delattr__(self, name: str) -> None:
+        """Reject attribute deletion."""
+        raise AttributeError("QubitTerm instances are immutable")
 
-    def __eq__(self, other):
-        return self.hash_value == other.hash_value
+    @property
+    def factor_dict(self) -> Mapping[int, str]:
+        """Return the factors as a read-only mapping ordered by qubit index."""
+        return self._factor_dict
 
-    def copy(self):
-        return QubitTerm(self.factor_dict.copy())
+    @property
+    def hash_value(self) -> int:
+        """Return the hash of the canonical factors."""
+        return self._hash
+
+    def _with_factors(self, update_dict: Mapping[int, str]) -> "QubitTerm":
+        """Return a term with factors from ``update_dict`` added or replaced."""
+        factors = dict(self._canonical_factors)
+        factors.update(update_dict)
+        return type(self)(factors)
+
+    def __hash__(self) -> int:
+        """Return the hash of the canonical factors."""
+        return self._hash
+
+    def __eq__(self, other: object) -> bool:
+        """Compare terms by their canonical factors."""
+        if not isinstance(other, QubitTerm):
+            return NotImplemented
+        return self._canonical_factors == other._canonical_factors
+
+    def __reduce__(self) -> tuple[type, tuple[dict[int, str]]]:
+        """Return the constructor data used to pickle this term."""
+        return type(self), (dict(self._canonical_factors),)
+
+    # TODO: Remove this compatibility method in the next breaking API release.
+    def copy(self) -> "QubitTerm":
+        """Return this immutable term."""
+        return self
 
     def is_identity(self):
         return len(self.factor_dict) == 0

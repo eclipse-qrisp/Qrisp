@@ -1037,12 +1037,12 @@ class QubitOperator(Hamiltonian):
                 for i in range(n):
                     commute_bool = bases[i].commute_qw(term)
                     if commute_bool:
-                        bases[i].update(term.factor_dict)
+                        bases[i] = bases[i]._with_factors(term.factor_dict)
                         groups[i].terms_dict[term] = coeff
                         break
             if len(groups) == 0 or not commute_bool:
                 groups.append(QubitOperator({term: coeff}))
-                bases.append(term.copy())
+                bases.append(term)
 
         if show_bases:
             return groups, bases
