@@ -43,20 +43,20 @@ from qrisp.misc import int_encoder
 
 def test_cuccaro_adder_static_quantum_a():
     """Quantum a + quantum b, equal size, no optional args."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
+    a = QuantumFloat(4)
+    b = QuantumFloat(4)
     a[:] = 5
     b[:] = 3
     cuccaro_adder(a, b)
-    assert b.get_measurement() == {0: 1.0}  # (5 + 3) % 8
+    assert b.get_measurement() == {8: 1.0}  # 5 + 3
 
 
 def test_cuccaro_adder_static_classical_a():
     """Classical a + quantum b."""
-    b = QuantumFloat(3)
+    b = QuantumFloat(4)
     b[:] = 3
     cuccaro_adder(5, b)
-    assert b.get_measurement() == {0: 1.0}
+    assert b.get_measurement() == {8: 1.0}  # 5 + 3
 
 
 def test_cuccaro_adder_static_cin():
@@ -78,7 +78,7 @@ def test_cuccaro_adder_static_cin_qubit():
     assert isinstance(c_in, Qubit)
     x(c_in)
     cuccaro_adder(3, b, c_in=c_in)
-    assert b.get_measurement() == {6: 1.0}
+    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
 
 
 def test_cuccaro_adder_static_c_in_type_error():
@@ -96,20 +96,33 @@ def test_cuccaro_adder_static_cout_overflow():
     b[:] = 6
     c_out = QuantumBool()
     cuccaro_adder(3, b, c_out=c_out)
+    # 6 + 3 = 9 = 8 + 1: the 8 cannot be stored on a 3-qubit QuantumFloat,
+    # so it spills out as the carry (c_out = True) and the leftover 1 stays in b
     assert b.get_measurement() == {1: 1.0}  # (6 + 3) % 8
     assert c_out.get_measurement() == {True: 1.0}
 
 
 def test_cuccaro_adder_static_ctrl():
     """Controlled addition (ctrl kwarg)."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
+    a = QuantumFloat(4)
+    b = QuantumFloat(4)
     a[:] = 3
     b[:] = 5
     ctrl = QuantumBool()
     x(ctrl[0])
     cuccaro_adder(a, b, ctrl=ctrl)
-    assert b.get_measurement() == {0: 1.0}  # (5 + 3) % 8
+    assert b.get_measurement() == {8: 1.0}  # 5 + 3
+
+
+def test_cuccaro_adder_static_no_addition_ctrl():
+    """No addition when ctrl is off."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 3
+    b[:] = 5
+    ctrl = QuantumBool()
+    cuccaro_adder(a, b, ctrl=ctrl)
+    assert b.get_measurement() == {5: 1.0}
 
 
 def test_cuccaro_adder_static_cin_cout():
@@ -157,8 +170,8 @@ def test_cuccaro_adder_static_inputs_unmodified():
     a = QuantumFloat(5)
     b = QuantumFloat(7)
     orig_a, orig_b = a.size, b.size
-    a[:] = 3
-    b[:] = 4
+    a[:] = 13
+    b[:] = 41
     cuccaro_adder(a, b)
     assert a.size == orig_a
     assert b.size == orig_b
@@ -171,19 +184,19 @@ def test_cuccaro_adder_static_inputs_unmodified():
 @pytest.mark.parametrize("b_spec", ["variable", "list"])
 def test_cuccaro_adder_static_list_combinations(a_spec, b_spec):
     """QuantumVariable and list[Qubit] inputs in all a/b combinations."""
-    b = QuantumFloat(3)
+    b = QuantumFloat(4)
     b[:] = 3
     if a_spec == "classical":
         a_arg = 5
     else:
-        a = QuantumFloat(3)
+        a = QuantumFloat(4)
         a[:] = 5
         a_arg = a[:] if a_spec == "list" else a
     b_arg = b[:] if b_spec == "list" else b
 
     cuccaro_adder(a_arg, b_arg)
 
-    assert b.get_measurement() == {0: 1.0}  # (3 + 5) % 8
+    assert b.get_measurement() == {8: 1.0}  # 3 + 5
     if a_spec == "quantum":
         assert a.get_measurement() == {5: 1.0}
 
@@ -191,11 +204,11 @@ def test_cuccaro_adder_static_list_combinations(a_spec, b_spec):
 def test_cuccaro_adder_static_list_unequal_sizes():
     """list[Qubit] inputs of unequal size (truncation + extension ancillas)."""
     a = QuantumFloat(5)
-    a[:] = 3
-    b = QuantumFloat(3)
-    b[:] = 7
+    a[:] = 20
+    b = QuantumFloat(4)
+    b[:] = 5
     cuccaro_adder(a[:], b[:])
-    assert b.get_measurement() == {2: 1.0}  # (7 + 3) % 8
+    assert b.get_measurement() == {9: 1.0}  # 5 + (20 % 16)
 
     a = QuantumFloat(3)
     a[:] = 3
@@ -217,39 +230,33 @@ def test_cuccaro_adder_static_classical_a_larger_than_b(b_is_list):
 # -- other quantum types ------------------------------------------------------
 
 
-def _measure_int(qv):
-    """Return the single-shot integer outcome of ``qv``.
-
-    Works regardless of the decoder of the concrete quantum type (int, bool or
-    little-endian bit string keys).
-    """
-    ((key, _),) = qv.get_measurement().items()
-    if isinstance(key, bool):
-        return int(key)
-    if isinstance(key, str):
-        return int(key[::-1], 2) if key else 0
-    return key
-
-
 def test_cuccaro_adder_static_quantum_variable():
     """Base QuantumVariable registers as a and b."""
     a_val, b_val = 5, 3
-    a = QuantumVariable(3)
-    b = QuantumVariable(3)
+
+    # quantum a + quantum b: both inputs are QuantumVariables
+    a = QuantumVariable(4)
+    b = QuantumVariable(4)
     int_encoder(a, a_val)
     int_encoder(b, b_val)
     cuccaro_adder(a, b)
-    assert _measure_int(a) == a_val
-    assert _measure_int(b) == 0  # (3 + 5) % 8
+    # base QuantumVariable measurements use little-endian bit-string keys,
+    # e.g. the value 5 (binary 0101) is reported as "1010" and 8 (1000) as "0001"
+    assert a.get_measurement() == {"1010": 1.0}  # a = 5 is unchanged
+    assert b.get_measurement() == {"0001": 1.0}  # b = 3 + 5 = 8
 
-    b = QuantumVariable(3)
+    # classical a + quantum b: a_val is a plain integer, exercising the
+    # classical-input path; the result must be the same as above
+    b = QuantumVariable(4)
     int_encoder(b, b_val)
     cuccaro_adder(a_val, b)
-    assert _measure_int(b) == 0  # (3 + 5) % 8
+    assert b.get_measurement() == {"0001": 1.0}  # b = 3 + 5 = 8
 
 
 def test_cuccaro_adder_static_quantum_bool():
     """QuantumBool (single-qubit) registers as a and b."""
+    # quantum a + quantum b: a QuantumBool is always a single qubit, so
+    # 1 + 1 = 2 cannot be represented and wraps around modulo 2 to False
     a = QuantumBool()
     b = QuantumBool()
     a.flip()  # a = 1
@@ -257,6 +264,7 @@ def test_cuccaro_adder_static_quantum_bool():
     cuccaro_adder(a, b)
     assert b.get_measurement() == {False: 1.0}  # (1 + 1) % 2
 
+    # classical a + quantum b: 0 + 1 = 1, which fits on the single qubit
     b = QuantumBool()
     cuccaro_adder(1, b)
     assert b.get_measurement() == {True: 1.0}
@@ -264,18 +272,21 @@ def test_cuccaro_adder_static_quantum_bool():
 
 def test_cuccaro_adder_static_quantum_modulus():
     """QuantumModulus registers as a and b (sum stays below the modulus)."""
+    # quantum a + quantum b: 5 + 3 = 8 < 13, so the sum fits without wrap-around
     a = QuantumModulus(13)
     b = QuantumModulus(13)
     a[:] = 5
     b[:] = 3
     cuccaro_adder(a, b)
-    assert a.get_measurement() == {5: 1.0}
-    assert b.get_measurement() == {8: 1.0}
+    assert a.get_measurement() == {5: 1.0}  # a = 5 is unchanged
+    assert b.get_measurement() == {8: 1.0}  # b = 3 + 5 = 8
 
+    # classical a + quantum b: exercises the classical-input path,
+    # the result must be the same as above
     b = QuantumModulus(13)
     b[:] = 3
     cuccaro_adder(5, b)
-    assert b.get_measurement() == {8: 1.0}
+    assert b.get_measurement() == {8: 1.0}  # b = 3 + 5 = 8
 
 
 # -- input validation and issue #839 regression -------------------------------
@@ -299,18 +310,20 @@ def test_cuccaro_adder_static_invalid_inputs_raise_value_error():
         cuccaro_adder([1, 0], b)
 
 
-def test_cuccaro_adder_quantum_modulus_issue_839():
-    """QuantumModulus with cuccaro_adder as inpl_adder (regression for #839).
+def test_cuccaro_adder_quantum_modulus_multiply():
+    """QuantumModulus with cuccaro_adder as inpl_adder.
 
     QuantumModulus hands the configured adder a raw ``list[Qubit]`` target (the
-    auxiliary register of the Montgomery multiplication). Before the fix this
-    raised ``AttributeError: 'list' object has no attribute 'duplicate'`` while
-    the circuit was being constructed.
+    auxiliary register of the Montgomery multiplication), so this verifies the
+    adder works when the target is passed as a plain qubit list. The modular
+    multiplication 5 * 10 mod 13 = 11 is checked at compile time, via a static
+    measurement and via @boolean_simulation.
     """
     a = QuantumModulus(13, inpl_adder=cuccaro_adder)
     a[:] = 5
     a *= 10
     a.qs.compile()
+    assert a.get_measurement() == {11: 1.0}  # (5 * 10) % 13
 
     @boolean_simulation
     def montgomery_multiply(N, value, factor):

@@ -312,8 +312,8 @@ def cuccaro_adder(
 
     Controlled addition. ``ctrl`` is an optional control qubit, flipped to ``|1>``
     here with ``x``. When ``ctrl`` is in the ``|1>`` state the addition is
-    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 wraps
-    around in the 3-qubit ``b``, leaving 8 mod 8 = 0:
+    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 fits into
+    the 5-qubit ``b`` without wrap-around, so ``b`` ends up holding the sum 8:
 
     >>> a = QuantumFloat(5)
     >>> b = QuantumFloat(5)
