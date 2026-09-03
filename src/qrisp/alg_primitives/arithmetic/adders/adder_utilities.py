@@ -16,24 +16,64 @@
 
 """Shared helpers for all the Qrisp adder implementations."""
 
-from jax.core import Tracer
+import numpy as np
+
+import jax.numpy as jnp
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable
-from qrisp.jasp import DynamicQubitArray
-from qrisp.jasp.primitives import AbstractQubit
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode
 
 
 def _is_quantum_register(obj):
     """Return True if ``obj`` is a quantum register.
 
     A quantum register is a QuantumVariable (or subclass thereof), a
-    DynamicQubitArray or a list of Qubits (including traced qubits).
+    DynamicQubitArray or a list of Qubits.
     """
     if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
         return True
     if isinstance(obj, list):
-        return all(
-            isinstance(qb, Qubit) or (isinstance(qb, Tracer) and isinstance(qb.aval, AbstractQubit)) for qb in obj
-        )
+        return all(isinstance(qb, Qubit) for qb in obj)
     return False
+
+
+def _validate_adder_inputs(a, b):
+    """Validate that ``(a, b)`` is a supported adder input pair.
+
+    Supported combinations are classical-quantum (classical ``a``, quantum
+    ``b``) and quantum-quantum (quantum ``a``, quantum ``b``).
+
+    Returns
+    -------
+    a_is_quantum : bool
+        Whether ``a`` is a quantum register.
+
+    Raises
+    ------
+    ValueError
+        If the pair is not classical-quantum or quantum-quantum.
+
+    """
+    b_is_quantum = _is_quantum_register(b) and not (
+        isinstance(b, list) and len(b) == 0
+    )
+    # Empty list is valid for a (treated as a zero-size quantum register).
+    a_is_quantum = _is_quantum_register(a)
+
+    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (
+                getattr(a, "ndim", None) == 0
+                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
+            )
+        )
+    )
+    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
+        raise ValueError(
+            "The adder expects inputs to be either classical-quantum "
+            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
+        )
+    return a_is_quantum
