@@ -19,7 +19,7 @@ import pytest
 import sympy as sp
 
 from qrisp import QuantumBool, QuantumFloat, h, multi_measurement, x
-from qrisp.qtypes.quantum_float import create_output_qf, trunc_poly
+from qrisp.qtypes.quantum_float import create_output_qf
 
 
 @pytest.mark.parametrize(
@@ -604,12 +604,6 @@ class TestModuleLevelHelpers:
 
         out = create_output_qf([a, b], poly)
         assert (out.msize, out.exponent, out.signed) == (7, 0, False)
-
-    def test_trunc_poly(self):
-        """Test that trunc_poly removes summands outside the given power-of-2 bounds."""
-        sym_x = sp.symbols("x")
-        poly = 8 * sym_x + 4 * sym_x**2 + 1
-        assert trunc_poly(poly, (2, 3)) == 4.0 * sym_x**2
 
     def test_create_output_qf_polynomial_operand_order_independent(self):
         """Test that create_output_qf's polynomial sizing doesn't depend on operand list order."""

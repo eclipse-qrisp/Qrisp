@@ -97,42 +97,6 @@ def _signed_int_iso_inv(y: int | Array, n: int) -> Array:
     return jnp.where(y_wrapped & sign_bit, y_wrapped - (jnp.int64(1) << (n + 1)), y_wrapped)
 
 
-def trunc_poly(poly: sp.Expr, trunc_bounds: tuple[int, int]) -> sp.Expr:
-    """Truncate a polynomial to the given power-of-2 bounds.
-
-    Truncates a polynomial of the form ``p(x) = 2**k_0*x**i_0 +
-    2**k_1*x**i_1 + ...`` by removing every summand whose coefficient's
-    power of 2 does not lie within ``trunc_bounds``.
-
-    Parameters
-    ----------
-    poly : sympy.Expr
-        The polynomial to truncate.
-    trunc_bounds : tuple[int, int]
-        The (lower, upper) power-of-2 bounds to truncate to.
-
-    Returns
-    -------
-    sympy.Expr
-        The truncated polynomial, expanded.
-
-    """
-    # sympy's type stubs don't model Poly's dynamic attribute surface, so
-    # pyright can't see .trunc()/.expr here even though they're real members.
-    # Convert to sympy polynomial
-    poly_repr = sp.poly(poly)
-
-    # Clip upper bound
-    poly_repr = poly_repr.trunc(2.0 ** (trunc_bounds[1]))  # pyright: ignore[reportAttributeAccessIssue]
-
-    # Clip lower bound
-    poly_repr = poly_repr / 2.0 ** trunc_bounds[0]
-    poly_repr = poly_repr - sp.poly(poly_repr).trunc(1)
-    poly_repr = poly_repr * 2.0 ** trunc_bounds[0]
-
-    return poly_repr.expr.expand()
-
-
 class QuantumFloat(QuantumVariable):
     r"""This subclass of :ref:`QuantumVariable` represents signed or unsigned floats to arbitrary precision.
 
@@ -408,12 +372,16 @@ class QuantumFloat(QuantumVariable):
 
     @property
     def mshape(self) -> tuple[int | Array, int | Array]:
-        """The (log2(min), log2(max)) bounds of the absolute values this QuantumFloat can represent.
+        """Return the mantissa's significance bounds.
+
+        For a ``QuantumFloat`` with exponent ``k`` and mantissa size ``n``,
+        the result is ``(k, k + n)``. The lower bound is inclusive and the
+        upper bound is exclusive: mantissa qubit ``i`` has significance ``k + i``.
 
         Returns
         -------
-        tuple[int, int]
-            The (minimal, maximal) exponent of the representable magnitude.
+        tuple[int | jax.Array, int | jax.Array]
+            The inclusive lower and exclusive upper significance bounds.
 
         """
         return (self.exponent, self.exponent + self.msize)
@@ -474,9 +442,8 @@ class QuantumFloat(QuantumVariable):
             <qrisp.QuantumVariable.encoder>`, this parameter is named ``i``
             (not ``value``) for historical reasons specific to QuantumFloat.
 
-            Unlike the base's ``ScalarLike``, this does not accept ``complex``:
-            the bounds/sign checks below order ``i`` with ``<``/``>``, which
-            complex values don't support.
+            This does not accept ``complex``: the bounds/sign checks below
+            order ``i`` with ``<``/``>``, which complex values don't support.
 
         Parameters
         ----------
@@ -594,9 +561,8 @@ class QuantumFloat(QuantumVariable):
             ``rounding`` (inserted before ``permit_dirtyness``, for
             historical reasons specific to QuantumFloat).
 
-            Unlike the base's ``ScalarLike``, this does not accept ``complex``
-            (see :meth:`encoder <qrisp.QuantumFloat.encoder>`, which this
-            delegates to).
+            This does not accept ``complex`` (see :meth:`encoder
+            <qrisp.QuantumFloat.encoder>`, which this delegates to).
 
         Parameters
         ----------
