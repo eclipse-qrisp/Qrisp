@@ -784,8 +784,7 @@ class Jaspr(ClosedJaxpr):
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_qir())
 
-        Yields
-        ------
+        This roughly yields the following QIR:
 
         .. code-block:: none
 
