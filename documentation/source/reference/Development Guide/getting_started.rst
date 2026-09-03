@@ -34,7 +34,7 @@ For development you will also want the test and documentation dependencies:
 
 .. code-block:: bash
 
-    # Install optional dependency groups (excluding test)
+    # Install optional dependency groups (excluding dev)
     pip install -e ".[docs,iqm,xdsl,aqt,qiskit]"
 
     # Install Windows-compatible testing framework tools
