@@ -38,6 +38,7 @@ if TYPE_CHECKING:  # noqa
         BigInteger,
     )  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _extract_bit,
     _validate_adder_inputs,
 )
 from qrisp.circuit import Qubit
@@ -45,32 +46,6 @@ from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.qtypes import QuantumBool
-
-
-def _extract_bit(a_int, digit_index):
-    """Extract one bit from a classical scalar as a JAX boolean.
-
-    Automatically detects BigInteger values by checking for a ``get_bit`` method.
-
-    Parameters
-    ----------
-    a_int : int, jnp.ndarray scalar, or BigInteger
-        Classical value whose bit is queried.
-    digit_index : int
-        Zero-based bit index to read (little-endian convention).
-
-    Examples
-    --------
-    >>> bool(_extract_bit(0b1010, 1))
-    True
-    >>> bool(_extract_bit(0b1010, 0))
-    False
-
-    """
-    # BigInteger (and other big-int wrappers) expose get_bit
-    if hasattr(a_int, "get_bit"):
-        return jnp.bool_(a_int.get_bit(digit_index))
-    return jnp.bool_((a_int >> digit_index) & 1)
 
 
 def _apply_x_bit(target, ctrl=None):

@@ -16,13 +16,38 @@
 
 """Shared helpers for all the Qrisp adder implementations."""
 
-import numpy as np
-
 import jax.numpy as jnp
+import numpy as np
 
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode
+
+
+def _extract_bit(a_int, digit_index):
+    """Extract one bit from a classical scalar as a JAX boolean.
+
+    Automatically detects BigInteger values by checking for a ``get_bit`` method.
+
+    Parameters
+    ----------
+    a_int : int, jnp.ndarray scalar, or BigInteger
+        Classical value whose bit is queried.
+    digit_index : int
+        Zero-based bit index to read (little-endian convention).
+
+    Examples
+    --------
+    >>> bool(_extract_bit(0b1010, 1))
+    True
+    >>> bool(_extract_bit(0b1010, 0))
+    False
+
+    """
+    # BigInteger (and other big-int wrappers) expose get_bit
+    if hasattr(a_int, "get_bit"):
+        return jnp.bool_(a_int.get_bit(digit_index))
+    return jnp.bool_((a_int >> digit_index) & 1)
 
 
 def _is_quantum_register(obj):
@@ -55,9 +80,7 @@ def _validate_adder_inputs(a, b):
         If the pair is not classical-quantum or quantum-quantum.
 
     """
-    b_is_quantum = _is_quantum_register(b) and not (
-        isinstance(b, list) and len(b) == 0
-    )
+    b_is_quantum = _is_quantum_register(b) and not (isinstance(b, list) and len(b) == 0)
     # Empty list is valid for a (treated as a zero-size quantum register).
     a_is_quantum = _is_quantum_register(a)
 
@@ -65,10 +88,7 @@ def _validate_adder_inputs(a, b):
         check_for_tracing_mode()
         and (
             hasattr(a, "get_bit")
-            or (
-                getattr(a, "ndim", None) == 0
-                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
-            )
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
     )
     if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
