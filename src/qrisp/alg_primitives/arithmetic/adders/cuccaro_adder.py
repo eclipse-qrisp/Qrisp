@@ -18,7 +18,9 @@
 
 import jax.numpy as jnp
 
-from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _validate_adder_inputs,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
@@ -349,19 +351,12 @@ def cuccaro_adder(
     Array(9., dtype=float64)
 
     """
-    # The second argument is required to be a (non-empty) quantum register
-    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
-        raise ValueError(
-            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
-        )
-
-    # A list that does not contain only Qubits is neither a valid quantum register
-    # nor a valid classical input.
-    if isinstance(a, list) and not _is_quantum_register(a):
-        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+    # The second argument is required to be a (non-empty) quantum register,
+    # and the first must be a quantum register or a classical value.
+    a_is_quantum = _validate_adder_inputs(a, b)
 
     # convert the classical input to a quantum input
-    if not _is_quantum_register(a):
+    if not a_is_quantum:
         # truncate the classical value modulo 2**len(b) so that values larger than the
         # target register are handled via modulo addition (as documented above)
         a = a % (1 << jlen(b))

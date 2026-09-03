@@ -16,8 +16,6 @@
 
 """Tests for the Cuccaro ripple-carry in-place adder."""
 
-import re
-
 import pytest
 
 from qrisp import (
@@ -299,14 +297,13 @@ def test_cuccaro_adder_static_invalid_inputs_raise_value_error():
     b = QuantumFloat(3)
     b[:] = 1
 
-    b_msg = "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
-    a_msg = "If the first argument is a list, it must contain only Qubits."
+    expected_msg = "The adder expects inputs"
 
-    with pytest.raises(ValueError, match=re.escape(b_msg)):
+    with pytest.raises(ValueError, match=expected_msg):
         cuccaro_adder(a, 7)
-    with pytest.raises(ValueError, match=re.escape(b_msg)):
+    with pytest.raises(ValueError, match=expected_msg):
         cuccaro_adder(a, [])
-    with pytest.raises(ValueError, match=re.escape(a_msg)):
+    with pytest.raises(ValueError, match=expected_msg):
         cuccaro_adder([1, 0], b)
 
 
