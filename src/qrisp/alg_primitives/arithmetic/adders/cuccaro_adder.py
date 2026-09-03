@@ -353,7 +353,7 @@ def cuccaro_adder(
     """
     # The second argument is required to be a (non-empty) quantum register,
     # and the first must be a quantum register or a classical value.
-    a_is_quantum = _validate_adder_inputs(a, b)
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # convert the classical input to a quantum input
     if not a_is_quantum:

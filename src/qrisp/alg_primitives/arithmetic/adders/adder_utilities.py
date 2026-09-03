@@ -60,6 +60,8 @@ def _validate_adder_inputs(a, b):
     -------
     a_is_quantum : bool
         Whether ``a`` is a quantum register.
+    b_is_quantum : bool
+        Whether ``b`` is a quantum register.
 
     Raises
     ------
@@ -87,4 +89,4 @@ def _validate_adder_inputs(a, b):
             "The adder expects inputs to be either classical-quantum "
             "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
         )
-    return a_is_quantum
+    return a_is_quantum, b_is_quantum
