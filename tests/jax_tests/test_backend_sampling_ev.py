@@ -302,7 +302,8 @@ def test_ev_zero_shots():
 
     Unlike sample(), expectation_value runs even a plain int through
     make_tracer, so the count is no longer inspectable while tracing. It is
-    caught in the callback instead, which means JAX wraps the ValueError.
+    caught in the callback instead, and the decorator restores the original
+    ValueError from the XlaRuntimeError that XLA raises in its place.
     """
 
     def kernel():
@@ -313,7 +314,7 @@ def test_ev_zero_shots():
     def main():
         return expectation_value(kernel, shots=0)()
 
-    with pytest.raises(Exception, match="positive number of shots"):
+    with pytest.raises(ValueError, match="positive number of shots"):
         main()
 
 
@@ -332,7 +333,7 @@ def test_ev_zero_shots_dynamic():
     def main(n):
         return expectation_value(kernel, shots=n)()
 
-    with pytest.raises(Exception, match="positive number of shots"):
+    with pytest.raises(ValueError, match="positive number of shots"):
         main(0)
 
     # a positive dynamic shot count still works

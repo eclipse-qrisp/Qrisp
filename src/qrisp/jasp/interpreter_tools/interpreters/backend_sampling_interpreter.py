@@ -20,7 +20,7 @@ This module implements the custom ``eval_jaxpr`` evaluators that replace
 quantum execution with pre-computed backend results inside
 :func:`~qrisp.jasp.backend_sampler`.  The outer interception (replacing
 ``sampling_eval_function`` / ``expectation_value_eval_function`` pjit
-calls with :func:`jax.pure_callback`) lives in
+calls with :func:`jax.experimental.io_callback`) lives in
 :mod:`~qrisp.jasp.evaluation_tools.backend_sampling`.
 
 Architecture
@@ -28,7 +28,7 @@ Architecture
 
 :func:`backend_sampler` is built from three pieces.  Pieces 1 and 2
 (the interpreter layer) live here; Piece 3 (the outer decorator and
-``pure_callback`` interception) lives in the evaluation-tools module.
+``io_callback`` interception) lives in the evaluation-tools module.
 
 **Piece 1 — :func:`_make_backend_sampling_fn`**
     A factory that receives a ``sampling_eval_function`` (or
@@ -100,8 +100,9 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
 
 There are two interception points, ① and ② (note that these do not
 line up one-to-one with the three *pieces* above).  Interception ① is
-Piece 3: it swaps the eval-function pjit for a :func:`jax.pure_callback`
-and lives in the evaluation-tools module.  Interception ② is Pieces 1
+Piece 3: it swaps the eval-function pjit for a
+:func:`jax.experimental.io_callback` and lives in the evaluation-tools
+module.  Interception ② is Pieces 1
 and 2: it replaces ``sampling_body_func`` with the pre-computed
 post-processing, and lives here along with the supporting
 :func:`_extract_to_qc_args`.
@@ -110,7 +111,7 @@ post-processing, and lives here along with the supporting
 
     ┌─ outer Jaspr ──────────────────────────────────────────────┐
     │                                                             │
-    │  sampling_eval_function / expectation_value_eval_function   │  ← intercept ① pure_callback (evaluation_tools)
+    │  sampling_eval_function / expectation_value_eval_function   │  ← intercept ① io_callback (evaluation_tools)
     │  ┌─ inner Jaxpr ─────────────────────────────────────────┐ │
     │  │  while i < shots:                                      │ │
     │  │    create_quantum_kernel                               │ │

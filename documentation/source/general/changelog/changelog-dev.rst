@@ -43,6 +43,8 @@ New Features
     (mid-circuit measurements whose outcomes control subsequent gates).
   * Raises ``RuntimeError`` when quantum operations are used without a
     surrounding ``sample()`` / ``expectation_value()`` call.
+  * Raises ``ValueError`` for a non-positive shot count — including a
+    dynamic one, which only becomes concrete once the backend runs.
 
 Improvements
 ------------

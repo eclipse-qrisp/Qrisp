@@ -24,7 +24,7 @@ The actual Jaspr interpreters (``_extract_to_qc_args``,
 ``_body_loop_evaluator``, ``_make_backend_sampling_fn``) live in
 :mod:`~qrisp.jasp.interpreter_tools.interpreters.backend_sampling_interpreter`.
 This module only contains the outer decorator and the
-``pure_callback`` interception layer.
+``io_callback`` interception layer.
 
 Architecture
 ============
@@ -36,14 +36,14 @@ Architecture
 **Piece 1 — :func:`_make_backend_eqn_evaluator`**
     Intercepts ``sampling_eval_function`` / ``expectation_value_eval_function``
     pjit calls in the outer Jaspr and replaces each with a
-    :func:`jax.pure_callback` wrapping the backend-sampling factory
+    :func:`jax.experimental.io_callback` wrapping the backend-sampling factory
     from the interpreter module.
 
 **Piece 2 — :func:`backend_sampler` / :func:`_make_backend_sampler_wrapper`**
     The decorator that traces the user function with
     :func:`~jax.make_jaxpr`, wires piece 1 into the standard
     Jaspr evaluation loop, and evaluates the Jaspr in pure Python
-    (the ``pure_callback`` provides the JIT boundary).
+    (the ``io_callback`` provides the JIT boundary).
 
 .. rubric:: Usage
 
@@ -66,7 +66,8 @@ Architecture
     result = main(1)  # JAX array, shape (100,), routed through backend
 """
 
-from jax import ShapeDtypeStruct, jit, pure_callback
+from jax import ShapeDtypeStruct, jit
+from jax.experimental import io_callback
 from jax.tree_util import tree_flatten
 
 from qrisp.circuit import fast_append
@@ -90,17 +91,36 @@ __all__ = ["backend_sampler"]
 
 
 # ===========================================================================
-# Eqn evaluator that intercepts eval functions with pure_callback
+# Eqn evaluator that intercepts eval functions with io_callback
 # ===========================================================================
 
 
-def _make_backend_eqn_evaluator(backend):
-    """Return an ``eqn_evaluator`` that swaps the eval functions for ``pure_callback`` calls.
+def _make_backend_eqn_evaluator(backend, error_box):
+    """Return an ``eqn_evaluator`` that swaps the eval functions for ``io_callback`` calls.
 
     Intercepts ``sampling_eval_function`` and
     ``expectation_value_eval_function`` pjit calls and wraps each in
-    :func:`jax.pure_callback`.  Every other primitive falls through to
-    default evaluation.
+    :func:`jax.experimental.io_callback`.  Every other primitive falls
+    through to default evaluation.
+
+    The effectful callback (as opposed to :func:`jax.pure_callback`) is
+    deliberate: the wrapped function submits a job to a backend and
+    consumes randomness while expanding the returned counts into
+    individual shots, so it is not a pure function of its arguments.
+    ``io_callback`` is the primitive JAX documents for this case, and it
+    guarantees the callback executes exactly once per logical call -- it
+    is never dropped by dead-code elimination nor replayed by a
+    transformation.  That guarantee is what makes it well defined for the
+    callback to raise, which the backend sampler relies on to report
+    invalid shot counts and real-time-feedback kernels
+    (:func:`jax.pure_callback` documents raising inside the callback as
+    undefined behaviour).
+
+    *error_box* is a list the callback appends the original exception to
+    before letting it escape.  XLA re-raises anything a callback throws as
+    an ``XlaRuntimeError`` carrying the Python traceback in its message,
+    so the caller in :func:`_make_backend_sampler_wrapper` uses the boxed
+    exception to restore the type and message the sampler reported.
     """
 
     def eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
@@ -111,15 +131,15 @@ def _make_backend_eqn_evaluator(backend):
         # function to mark itself for the terminal-sampling interpreter,
         # which returns a dict of outcomes.  There is no equivalent here:
         # results leave this decorator through a jitted
-        # :func:`jax.pure_callback`, which has to declare a static output
-        # shape and so cannot return a dict.  Reject it rather than fall
-        # through -- untouched, the quantum state reaches the jit boundary
-        # and XLA fails with an unintelligible aval error.
+        # :func:`jax.experimental.io_callback`, which has to declare a
+        # static output shape and so cannot return a dict.  Reject it
+        # rather than fall through -- untouched, the quantum state reaches
+        # the jit boundary and XLA fails with an unintelligible aval error.
         if prim in ("jit", "pjit") and name == "dict_sampling_eval_function":
             raise NotImplementedError(
                 "backend_sampler does not support "
                 "expectation_value(..., return_dict=True): a dict of outcomes "
-                "cannot be returned through the jitted pure_callback this "
+                "cannot be returned through the jitted io_callback this "
                 "decorator relies on. Use return_dict=False to obtain the "
                 "expectation value, sample() to obtain the individual shots, "
                 "or terminal_sampling() for the dict form."
@@ -133,12 +153,28 @@ def _make_backend_eqn_evaluator(backend):
             inner_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
 
             fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
-            result_shapes = ShapeDtypeStruct(
-                eqn.outvars[0].aval.shape,
-                eqn.outvars[0].aval.dtype,
-            )
-            outvals = pure_callback(fn, result_shapes, *invalues)
-            insert_outvalues(eqn, context_dic, [outvals])
+
+            # Both eval functions return a single array today, but declare a
+            # shape per outvar so an additional return value would flow
+            # through instead of being silently dropped.
+            result_shapes = tuple(ShapeDtypeStruct(outvar.aval.shape, outvar.aval.dtype) for outvar in eqn.outvars)
+
+            def callback(*args, fn=fn):
+                try:
+                    res = fn(*args)
+                except Exception as exc:
+                    error_box.append(exc)
+                    raise
+                # eval_jaxpr unpacks a lone output, while io_callback needs a
+                # pytree matching result_shapes.
+                return res if isinstance(res, tuple) else (res,)
+
+            # ``io_callback`` rather than ``pure_callback``: ``fn`` submits a
+            # backend job and consumes randomness, so it is neither pure nor
+            # safe to elide or replay.  See _make_backend_eqn_evaluator for
+            # the full rationale.
+            outvals = io_callback(callback, result_shapes, *invalues)
+            insert_outvalues(eqn, context_dic, list(outvals))
             return False
 
         # Everything else: default evaluation.
@@ -350,7 +386,11 @@ def _make_backend_sampler_wrapper(func, backend):
             raise
 
         # ── Build evaluators ────────────────────────────────────────
-        be_evaluator = _make_backend_eqn_evaluator(backend)
+        # Anything the backend callback raises comes back out of XLA as an
+        # XlaRuntimeError; error_box carries the original exception so it
+        # can be restored below.
+        error_box = []
+        be_evaluator = _make_backend_eqn_evaluator(backend, error_box)
 
         # Use a factory to avoid parameter-name shadowing:
         # the inner function captures itself via closure, so nested
@@ -366,7 +406,7 @@ def _make_backend_sampler_wrapper(func, backend):
                 # recursively calls eval_jaxpr with *eqn_evaluator* (our
                 # custom evaluator), so that sample() / expectation_value()
                 # calls nested inside jit, while, cond, or scan are
-                # intercepted and replaced with pure_callback.
+                # intercepted and replaced with io_callback.
                 handler = _CONTROL_FLOW_HANDLERS.get(eqn.primitive.name)
                 if handler is None:
                     return True
@@ -380,12 +420,22 @@ def _make_backend_sampler_wrapper(func, backend):
         # ── Evaluate the Jaspr ──────────────────────────────────────
         # The outer evaluator propagates through jit/pjit/while/cond/
         # scan via the handlers above, replacing sample()/EV calls with
-        # pure_callback.  The resulting computation graph contains only
-        # classical JAX ops and pure_callback — safe for jit.
+        # io_callback.  The resulting computation graph contains only
+        # classical JAX ops and io_callback — safe for jit.
         with fast_append(3):
             flat_args = list(tree_flatten(args)[0])
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
-            res = jit(eval_fn)(*flat_args)
+            try:
+                res = jit(eval_fn)(*flat_args)
+            except Exception:
+                # XLA wraps a callback error into an XlaRuntimeError whose
+                # message is the pasted-in Python traceback.  Re-raise what
+                # the sampler actually reported, so callers see e.g. the
+                # ValueError for an invalid shot count rather than an
+                # opaque runtime error.
+                if error_box:
+                    raise error_box[0] from None
+                raise
 
         return res
 

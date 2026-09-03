@@ -640,6 +640,105 @@ def test_raises_on_realtime_feedback():
 
 
 # ===========================================================================
+# Callback execution semantics
+# ===========================================================================
+#
+# The interception wraps the backend call in ``jax.experimental.io_callback``
+# rather than ``jax.pure_callback``, because submitting a backend job and
+# shuffling the returned counts is an effect, not a pure function of the
+# arguments.  These tests pin the two properties that follow from that
+# choice: the backend runs exactly once per logical sample() call, and it
+# still runs when the sampled result never reaches the output (a
+# ``pure_callback`` would be dropped by dead-code elimination here).
+
+
+class _CountingBackend:
+    """Delegating backend that records how often ``run`` was called."""
+
+    def __init__(self, backend):
+        self.backend = backend
+        self.run_count = 0
+
+    def run(self, qc, shots=None):
+        self.run_count += 1
+        return self.backend.run(qc, shots=shots)
+
+
+def test_backend_runs_once_per_sample_call():
+    """One backend execution per sample() call — no replay, no duplication."""
+    counting = _CountingBackend(_get_backend())
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=counting)
+    def one():
+        return sample(kernel, shots=20)()
+
+    res = one()
+    assert res.shape == (20,)
+    assert counting.run_count == 1
+
+    @backend_sampler(backend=counting)
+    def two():
+        return sample(kernel, shots=20)(), sample(kernel, shots=20)()
+
+    two()
+    assert counting.run_count == 3
+
+
+def test_backend_runs_when_result_is_discarded():
+    """The backend job fires even if the sampled result is unused.
+
+    ``io_callback`` guarantees execution; a ``pure_callback`` whose
+    outputs feed nothing would be eliminated before the backend is ever
+    reached.
+    """
+    counting = _CountingBackend(_get_backend())
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=counting)
+    def main():
+        sample(kernel, shots=15)()
+        return jnp.float64(1.0)
+
+    assert float(main()) == 1.0
+    assert counting.run_count == 1
+
+
+def test_raise_inside_callback_propagates():
+    """A backend that raises surfaces the error to the caller.
+
+    Errors raised while the callback runs -- an invalid shot count, a
+    real-time-feedback kernel, a backend that rejects the circuit -- must
+    reach the caller.  ``pure_callback`` documents raising inside the
+    callback as undefined behaviour; ``io_callback`` does not.
+    """
+
+    class _FailingBackend:
+        def run(self, qc, shots=None):
+            raise ValueError("backend refused the circuit")
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_FailingBackend())
+    def main():
+        return sample(kernel, shots=10)()
+
+    with pytest.raises(ValueError, match="backend refused the circuit"):
+        main()
+
+
+# ===========================================================================
 # Control flow propagation tests
 # ===========================================================================
 
