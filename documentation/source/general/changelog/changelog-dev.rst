@@ -261,6 +261,9 @@ Development
   regressions were never caught during PR review and only surfaced once
   merged into ``main``.
 
+* Consolidated all adder helpers
+  (`PR #853 <https://github.com/eclipse-qrisp/Qrisp/pull/853>`_).
+
 Dependency Upgrades
 -------------------
 
