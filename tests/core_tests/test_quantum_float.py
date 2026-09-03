@@ -611,25 +611,6 @@ class TestModuleLevelHelpers:
         poly = 8 * sym_x + 4 * sym_x**2 + 1
         assert trunc_poly(poly, (2, 3)) == 4.0 * sym_x**2
 
-    def test_create_output_qf_add_msize_is_tight(self):
-        """Test that create_output_qf's add sizing fits every possible sum without a spare qubit."""
-        a = QuantumFloat(3, -1)
-        b = QuantumFloat(2, -2, signed=True)
-        out = create_output_qf([a, b], "add")
-        assert out.msize == 5
-
-        a_vals = [float(a.decoder(i)) for i in range(2**a.size)]
-        b_vals = [float(b.decoder(i)) for i in range(2**b.size)]
-        for av in a_vals:
-            for bv in b_vals:
-                out.encoder(av + bv)  # must not raise
-
-        too_tight = QuantumFloat(out.msize - 1, out.exponent, signed=out.signed)
-        with pytest.raises(ValueError):
-            for av in a_vals:
-                for bv in b_vals:
-                    too_tight.encoder(av + bv)
-
     def test_create_output_qf_polynomial_operand_order_independent(self):
         """Test that create_output_qf's polynomial sizing doesn't depend on operand list order."""
         u = QuantumFloat(3, -1, name="order_u")

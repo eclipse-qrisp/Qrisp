@@ -1378,9 +1378,6 @@ def _addsub_bounds(op0: QuantumFloat, op1: QuantumFloat) -> tuple[int | Array, i
     -------
     tuple[int or jax.Array, int or jax.Array]
         The (exponent, max_sig) bounds for sizing the output QuantumFloat.
-        ``max_sig`` includes the extra bit a sum can carry into, so
-        ``msize = max_sig - exponent`` sizes the output to hold every
-        possible add/sub result.
 
     """
     if check_for_tracing_mode():
@@ -1539,7 +1536,17 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
     if op == "add":
         signed = operands[0].signed or operands[1].signed
         exponent, max_sig = _addsub_bounds(operands[0], operands[1])
-        msize = max_sig - exponent
+        # TODO: max_sig already includes the extra bit a sum can carry into, so
+        # this "+ 1" allocates one more mantissa qubit than an add/sub result
+        # actually needs (verified: every possible result still fits in
+        # max_sig - exponent). Left in place because removing it changes the
+        # output size of every QuantumFloat +/- for existing callers -- code
+        # that pre-allocates a same-sized register to inject a computation
+        # into (e.g. via QuantumArray's `<<`) can silently break if the two
+        # sizes stop matching. Tightening this needs that class of caller
+        # audited first, and should probably ship as a documented,
+        # version-flagged compatibility change rather than a quiet resize.
+        msize = max_sig - exponent + 1
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name="add_res*")
 
@@ -1559,7 +1566,8 @@ def create_output_qf(operands: list[QuantumFloat], op: str | sp.Expr) -> Quantum
 
     if op == "sub":
         exponent, max_sig = _addsub_bounds(operands[0], operands[1])
-        msize = max_sig - exponent
+        # TODO: see the identical "+ 1" note in the "add" branch above.
+        msize = max_sig - exponent + 1
 
         return QuantumFloat(msize, exponent, operands[0].qs, signed=True, name="sub_res*")
 
