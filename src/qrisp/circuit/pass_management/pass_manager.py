@@ -35,7 +35,7 @@ class PassManager:
     wrapped first, for example with the ``@CircuitPass`` decorator or by calling
     ``CircuitPass(my_func)``.
 
-    Example:
+    Examples
     --------
     Build a pipeline with ``+=``, then inspect, insert, and remove passes::
 
