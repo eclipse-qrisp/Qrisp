@@ -25,12 +25,12 @@ For development you will also want the test and documentation dependencies:
 
 .. code-block:: bash
 
-    pip install -e ".[test,docs]"
+    pip install -e ".[dev,docs]"
 
 **Windows**
 
 .. note::
-    The ``test`` dependency group includes ``pyscf``, which is not supported on Windows. Windows users must install the compatible dependencies individually:
+    The ``dev`` dependency group includes ``pyscf``, which is not supported on Windows. Windows users must install the compatible dependencies individually:
 
 .. code-block:: bash
 
