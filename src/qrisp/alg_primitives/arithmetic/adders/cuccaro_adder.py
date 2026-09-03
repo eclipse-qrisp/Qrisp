@@ -27,6 +27,130 @@ from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
+def _resolve_c_in(c_in, ancilla):
+    """Resolve the carry-in qubit and apply the initial c_in-controlled cx.
+
+    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit (raising a TypeError for any other type in static
+    mode) and then seeds the carry ancilla with the carry-in value via
+    CNOT gate. The resolved qubit is returned so the caller can
+    uncompute it after the addition.
+    """
+    if c_in is None:
+        return None
+
+    if isinstance(c_in, QuantumBool):
+        c_in = c_in[0]
+    elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
+        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
+
+    cx(c_in, ancilla[0])
+    return c_in
+
+
+def _resolve_c_out(c_out):
+    """Return the carry-out qubit.
+
+    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit and raises a TypeError for any other type in
+    static mode. It does not apply any gates itself.
+    """
+    if c_out is None:
+        return None
+
+    if isinstance(c_out, QuantumBool):
+        return c_out[0]
+
+    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
+        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
+
+    return c_out
+
+
+def _apply_maj_gates(a, b, ancilla, dim_a):
+    """Apply the majority (maj) gate chain of the Cuccaro adder.
+
+    The maj gates compute the carry bits into the ``ancilla`` (reusing the
+    ``a`` qubits as scratch space) while leaving the sum bits of ``b``
+    untouched. The first few gates set up the carry at the least significant
+    bit, and the loop then propagates it upward across the remaining ``dim_a``
+    bits.
+    """
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
+
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
+
+
+def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
+    """Apply the unmajority (uma) gate chain of the Cuccaro adder.
+
+    The uma gates run in reverse over the qubits and use the carries stored in
+    the previous phase to write the result of the addition back into ``b``.
+    There are two variants: the uncontrolled version toggles qubits with ``x``
+    to save an ancilla, while the controlled version (``ctrl`` given) replaces
+    those X gates with Toffolis controlled on ``ctrl`` so the addition only
+    happens when the control is |1>. 
+    """
+    if ctrl is None:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+    else:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i - 1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+
+def _apply_c_out(c_out, a):
+    """Copy the final carry into the carry-out qubit.
+
+    After the maj phase the most significant carry still sits in the top ``a``
+    qubit. If a carry-out qubit was requested, this helper copies it over with
+    ``cx(a[-1], c_out)`` before the uma phase uncomputes the carries. 
+    """
+    if c_out is not None:
+        cx(a[-1], c_out)
+
+
+def _uncompute_c_in(c_in, ancilla):
+    """Uncompute the carry-in seeding from the carry ancilla.
+
+    ``_resolve_c_in`` seeded the ancilla with the carry-in value at the start
+    of the addition. After the full adder has run, the same cnot is applied
+    again to clear the ancilla so it can be safely deleted.
+    """
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+
+
 @custom_control
 def cuccaro_adder(
     a: int | QuantumVariable | DynamicQubitArray | list,
@@ -82,7 +206,6 @@ def cuccaro_adder(
 
     Examples
     --------
-
     The examples below show how to use
     :func:`~qrisp.alg_primitives.arithmetic.adders.cuccaro_adder`. Because ``a``
     and ``b`` are generic quantum variables, the adder works with any quantum
@@ -240,7 +363,7 @@ def cuccaro_adder(
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
         # truncate the classical value modulo 2**len(b) so that values larger than the
-        # target register are handled via modulo addition
+        # target register are handled via modulo addition (as documented above)
         a = a % (1 << jlen(b))
 
         # create a quantum variable of the same size as the other quantum input
@@ -277,77 +400,19 @@ def cuccaro_adder(
 
     ancilla = QuantumFloat(max_size)
 
-    if c_in is not None:
-        if isinstance(c_in, QuantumBool):
-            c_in = c_in[0]
-        elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-            raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
-        cx(c_in, ancilla[0])
+    c_in = _resolve_c_in(c_in, ancilla)
+    c_out = _resolve_c_out(c_out)
 
-    if c_out is not None:
-        if isinstance(c_out, QuantumBool):
-            ancilla2 = c_out[0]
-        elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-            raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
-        else:
-            ancilla2 = c_out
-
-    # first maj gate application
-    cx(a[0], b[0])
-    cx(a[0], ancilla[0])
-    mcx([ancilla[0], b[0]], a[0])
-
-    # iterator maj gate application
-
-    for i in jrange(1, dim_a):
-        cx(a[i], b[i])
-        cx(a[i], a[i - 1])
-        mcx([a[i - 1], b[i]], a[i])
+    # first maj gate application + iterator maj gate application
+    _apply_maj_gates(a, b, ancilla, dim_a)
 
     # cnot
-    if c_out is not None:
-        cx(a[-1], ancilla2)
+    _apply_c_out(c_out, a)
 
-    if ctrl is None:
-        # iterator uma gate application
-        for j in jrange(dim_a - 1):
-            # reverse the iteration
-            i = dim_a - j - 1
+    # iterator + last uma gate application
+    _apply_uma_gates(a, b, ancilla, ctrl, dim_a)
 
-            x(b[i])
-            cx(a[i - 1], b[i])
-            mcx([a[i - 1], b[i]], a[i])
-            x(b[i])
-            cx(a[i], a[i - 1])
-            cx(a[i], b[i])
-
-        # last uma gate application
-        x(b[0])
-        cx(ancilla[0], b[0])
-        mcx([ancilla[0], b[0]], a[0])
-        x(b[0])
-        cx(a[0], ancilla[0])
-        cx(a[0], b[0])
-
-    else:
-        # iterator uma gate application
-        for j in jrange(dim_a - 1):
-            # reverse the iteration
-            i = dim_a - j - 1
-
-            mcx([a[i - 1], b[i]], a[i])
-            mcx([ctrl, a[i - 1]], b[i])
-            cx(a[i], a[i - 1])
-            cx(a[i], b[i])
-
-        # last uma gate application
-        mcx([ancilla[0], b[0]], a[0])
-        mcx([ctrl, ancilla[0]], b[0])
-        cx(a[0], ancilla[0])
-        cx(a[0], b[0])
-
-    if c_in is not None:
-        cx(c_in, ancilla[0])
+    _uncompute_c_in(c_in, ancilla)
 
     # delete the ancilla used for carry bits
     ancilla.delete()
