@@ -49,6 +49,25 @@ def test_qubit_term_with_factors_returns_new_term():
     assert term.copy() is term
 
 
+def test_qubit_term_cached_masks():
+    """Use cached support and ladder masks for term relationship checks."""
+    term = QubitTerm({0: "X", 2: "A", 4: "C"})
+    matching_ladders = QubitTerm({1: "Z", 2: "C", 4: "A"})
+    overlapping_ladder = QubitTerm({0: "Y", 4: "A"})
+    disjoint = QubitTerm({1: "X", 3: "C"})
+    expected_support_mask = sum(1 << index for index in (0, 2, 4))
+    expected_ladder_mask = sum(1 << index for index in (2, 4))
+
+    assert term.support_mask == expected_support_mask
+    assert term.ladder_mask == expected_ladder_mask
+    assert term.intersect(matching_ladders)
+    assert term.ladders_agree(matching_ladders)
+    assert term.ladders_intersect(overlapping_ladder)
+    assert not term.intersect(disjoint)
+    assert not term.ladders_agree(overlapping_ladder)
+    assert not term.ladders_intersect(disjoint)
+
+
 @pytest.mark.parametrize("serializer", [pickle, dill])
 def test_qubit_term_pickle_round_trip(serializer):
     """Preserve canonical equality and hashing through serialization."""

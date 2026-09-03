@@ -100,15 +100,26 @@ PAULI_TABLE = {
 class QubitTerm:
     """Immutable sparse tensor product of single-qubit factors."""
 
-    __slots__ = ("_canonical_factors", "_factor_dict", "_hash")
+    __slots__ = ("_canonical_factors", "_factor_dict", "_hash", "support_mask", "ladder_mask")
 
     def __init__(self, factor_dict: Mapping[int, str] | None = None) -> None:
         """Create a term from a mapping of qubit indices to factors."""
         items = () if factor_dict is None else factor_dict.items()
         canonical_factors = tuple(sorted((index, factor) for index, factor in items if factor != "I"))
+
+        # Encode occupied qubit indices as bits for constant-time overlap checks.
+        support_mask = 0
+        ladder_mask = 0
+        for index, factor in canonical_factors:
+            support_mask |= 1 << index
+            if factor in ("A", "C"):
+                ladder_mask |= 1 << index
+
         object.__setattr__(self, "_canonical_factors", canonical_factors)
         object.__setattr__(self, "_factor_dict", MappingProxyType(dict(canonical_factors)))
         object.__setattr__(self, "_hash", hash(canonical_factors))
+        object.__setattr__(self, "support_mask", support_mask)
+        object.__setattr__(self, "ladder_mask", ladder_mask)
 
     def __setattr__(self, name: str, value: object) -> None:
         """Reject attribute assignment after construction."""
@@ -753,40 +764,14 @@ class QubitTerm:
                 return False
         return True
 
-    def intersect(self, other):
+    def intersect(self, other: "QubitTerm") -> bool:
         """Checks if two QubitTerms operate on the same qubit."""
-        return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
+        return bool(self.support_mask & other.support_mask)
 
-    def ladders_agree(self, other):
-        """Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
+    def ladders_agree(self, other: "QubitTerm") -> bool:
+        """Check if both terms have ladder operators at the same qubits."""
+        return self.ladder_mask == other.ladder_mask
 
-        Parameters
-        ----------
-        other : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
-        return set(ladder_indices_self) == set(ladder_indices_other)
-
-    def ladders_intersect(self, other):
-        """Checks if the ladder operators of two QubitTerms operate on the same qubit.
-
-        Parameters
-        ----------
-        other : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
-        return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
+    def ladders_intersect(self, other: "QubitTerm") -> bool:
+        """Check if both terms have a ladder operator at any common qubit."""
+        return bool(self.ladder_mask & other.ladder_mask)
