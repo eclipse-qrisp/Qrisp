@@ -94,7 +94,7 @@ def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
     There are two variants: the uncontrolled version toggles qubits with ``x``
     to save an ancilla, while the controlled version (``ctrl`` given) replaces
     those X gates with Toffolis controlled on ``ctrl`` so the addition only
-    happens when the control is |1>. 
+    happens when the control is |1>.
     """
     if ctrl is None:
         for j in jrange(dim_a - 1):
@@ -134,7 +134,7 @@ def _apply_c_out(c_out, a):
 
     After the maj phase the most significant carry still sits in the top ``a``
     qubit. If a carry-out qubit was requested, this helper copies it over with
-    ``cx(a[-1], c_out)`` before the uma phase uncomputes the carries. 
+    ``cx(a[-1], c_out)`` before the uma phase uncomputes the carries.
     """
     if c_out is not None:
         cx(a[-1], c_out)
