@@ -286,10 +286,10 @@ Development
   typed as returning ``None``, breaking every subclass override
   (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
 
-* Added a ``pull_request`` trigger to the ``ruff format --check`` workflow,
-  which previously ran only on pushes to ``main``. This meant formatting
-  regressions were never caught during PR review and only surfaced once
-  merged into ``main``.
+* Consolidated the ``ruff`` ``reviewdog.yml`` and ``ruff_checks.yml``
+  workflows into a single ``code_style.yml``, with the ``ruff format --check``
+  gate now running on both pull requests and pushes to ``main``
+  (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
 Dependency Upgrades
 -------------------
