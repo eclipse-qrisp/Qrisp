@@ -266,7 +266,8 @@ def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
     second = BlockEncoding(3, [QuantumBool()], lambda ancilla, operand: None)
     third = BlockEncoding(5, [QuantumFloat(1)], lambda ancilla, operand: None)
 
-    product = (first @ second) @ third
+    nested_product = ProductBlockEncoding([first, second], strategy="separate")
+    product = ProductBlockEncoding([nested_product, third], strategy="separate")
 
     assert isinstance(product, ProductBlockEncoding)
     assert product.factors == (first, second, third)
@@ -283,19 +284,21 @@ def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
         product._factors = ()
 
 
-def test_block_encoding_product_supports_qubit_efficient_strategy_placeholder():
-    """Verify that the qubit-efficient strategy is explicit and currently a no-op."""
+def test_block_encoding_product_defaults_to_qubit_efficient_strategy():
+    """Verify the default optimized strategy's execution and structural metadata."""
     calls = []
 
     def factor_unitary(ancilla, operand):
         calls.append("factor")
 
     factor = BlockEncoding(1, [QuantumBool()], factor_unitary)
-    product = ProductBlockEncoding([factor], strategy="qubit_efficient")
+    product = ProductBlockEncoding([factor])
 
     assert product.strategy == "qubit_efficient"
+    assert (factor @ factor).strategy == "qubit_efficient"
     product.unitary(*product.create_ancillas(), QuantumVariable(1))
-    assert calls == []
+    assert calls == ["factor"]
+    assert product.num_ancs == factor.num_ancs
 
     leaves, treedef = tree_flatten(product)
     reconstructed = tree_unflatten(treedef, leaves)
@@ -308,6 +311,46 @@ def test_block_encoding_product_supports_qubit_efficient_strategy_placeholder():
         product.strategy = "separate"
     with pytest.raises(AttributeError):
         product._strategy = "separate"
+
+
+def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
+    """Verify that factors share the largest workspace plus a logarithmic shift register."""
+    first = BlockEncoding(1, [QuantumFloat(2), QuantumBool()], lambda *args: None)
+    second = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
+    third = BlockEncoding(1, [QuantumBool(), QuantumBool()], lambda *args: None)
+
+    product = ProductBlockEncoding([first, second, third], strategy="qubit_efficient")
+
+    assert product.num_ancs == 2
+    assert [template.qv_size for template in product._anc_templates] == [2, 3]
+
+
+@pytest.mark.parametrize(
+    "operators",
+    [
+        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0)],
+        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0), X(0) + 0.2 * Y(0)],
+        [
+            X(0) * X(1) + 0.2 * Z(0),
+            Y(0) * Y(1) + 0.3 * X(1),
+            Z(0) * Z(1) + 0.2 * X(0),
+            X(0) + 0.1 * Y(1),
+        ],
+    ],
+    ids=["two_factors", "three_factors", "four_multiqubit_factors"],
+)
+def test_block_encoding_qubit_efficient_product_matches_separate_strategy(operators):
+    """Verify shared-workspace products against the Jasp-compiled reference strategy."""
+    factors = [BlockEncoding.from_operator(operator) for operator in operators]
+    separate = ProductBlockEncoding(factors, strategy="separate")
+    qubit_efficient = ProductBlockEncoding(factors, strategy="qubit_efficient")
+    num_qubits = max(operator.find_minimal_qubit_amount() for operator in operators)
+
+    @terminal_sampling
+    def main(block_encoding):
+        return block_encoding.apply_rus(lambda: QuantumVariable(num_qubits))()
+
+    _compare_results(main(separate), main(qubit_efficient), num_qubits)
 
 
 def test_block_encoding_product_applies_factors_in_reverse_order():
