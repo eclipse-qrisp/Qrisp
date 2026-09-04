@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from types import NotImplementedType
 from typing import TYPE_CHECKING, Any
 
 import jax
@@ -1045,7 +1046,7 @@ class BlockEncoding:
     # Arithmetic
     #
 
-    def _get_lcu_terms(self):
+    def _get_lcu_terms(self) -> _LCUTerms:
         return ((1, self),)
 
     @classmethod
@@ -1101,7 +1102,7 @@ class BlockEncoding:
         return cls._from_lcu_terms(terms)
 
     @classmethod
-    def _from_lcu_terms(cls, terms):
+    def _from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
         """Build a linear-combination block encoding from weighted terms."""
         terms = tuple(terms)
         if len(terms) == 1:
@@ -1315,7 +1316,7 @@ class BlockEncoding:
 
         return NotImplemented
 
-    def __matmul__(self, other: "BlockEncoding") -> BlockEncoding:
+    def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
         r"""Returns a BlockEncoding of the product of two operators.
 
         This method implements the operator product $A \cdot B$ by composing
@@ -1391,7 +1392,7 @@ class BlockEncoding:
         new_alpha = self.alpha * other.alpha
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
 
-    def __radd__(self, other):
+    def __radd__(self, other: Any) -> BlockEncoding | NotImplementedType:
         """Support adding a BlockEncoding to the start value used by sum()."""
         if other == 0:
             return self
@@ -1620,11 +1621,15 @@ class BlockEncoding:
         svt = apply_svt
 
 
+_LCUTerm = tuple[ArrayLike, BlockEncoding]
+_LCUTerms = tuple[_LCUTerm, ...]
+
+
 @register_pytree_node_class
 class LinearCombinationBlockEncoding(BlockEncoding):
     """A block encoding represented by an immutable tuple of LCU terms."""
 
-    def __init__(self, terms):
+    def __init__(self, terms: Sequence[_LCUTerm]) -> None:
         r"""Initialize a linear-combination block encoding from weighted terms.
 
         Each term is a ``(coefficient, block_encoding)`` pair. If the child
@@ -1674,19 +1679,19 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
         self._terms = terms
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         """Prevent reassignment of the authoritative term representation."""
         if name == "_terms" and hasattr(self, "_terms"):
             raise AttributeError("Linear-combination terms are immutable.")
         object.__setattr__(self, name, value)
 
     @property
-    def terms(self):
+    def terms(self) -> _LCUTerms:
         """The immutable weighted child block encodings."""
         return self._terms
 
     @property
-    def alpha(self):
+    def alpha(self) -> ArrayLike:
         """Return the normalization derived from the weighted child encodings."""
         return sum(
             (jnp.abs(coefficient * block_encoding.alpha) for coefficient, block_encoding in self.terms),
@@ -1694,7 +1699,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         )
 
     @property
-    def _anc_templates(self):
+    def _anc_templates(self) -> list[QuantumVariableTemplate]:
         if len(self.terms) == 1:
             return list(self.terms[0][1]._anc_templates)
 
@@ -1709,7 +1714,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         ]
 
     @property
-    def unitary(self):
+    def unitary(self) -> Callable[..., None]:
         """Return the PREP-SELECT-PREP unitary derived from the terms."""
         if len(self.terms) == 1:
             coefficient, block_encoding = self.terms[0]
@@ -1768,30 +1773,34 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         return unitary
 
     @property
-    def num_ops(self):
+    def num_ops(self) -> int:
         """Return the common number of operands in the child encodings."""
         return self.terms[0][1].num_ops
 
     @property
-    def num_ancs(self):
+    def num_ancs(self) -> int:
         """Return the number of selector and shared-workspace ancillas."""
         return len(self._anc_templates)
 
     @property
-    def is_hermitian(self):
+    def is_hermitian(self) -> bool:
         """Return whether every child encoding has a Hermitian unitary."""
         return all(block_encoding.is_hermitian for _, block_encoding in self.terms)
 
-    def _get_lcu_terms(self):
+    def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
 
-    def tree_flatten(self):
+    def tree_flatten(self) -> tuple[tuple[ArrayLike | BlockEncoding, ...], int]:
         """Flatten only the authoritative terms for JAX pytree handling."""
         children = tuple(value for term in self.terms for value in term)
         return children, len(self.terms)
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
+    def tree_unflatten(
+        cls: type[LinearCombinationBlockEncoding],
+        aux_data: int,
+        children: tuple[ArrayLike | BlockEncoding, ...],
+    ) -> LinearCombinationBlockEncoding:
         """Reconstruct a linear combination from flattened terms."""
         terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
         return cls(terms)
