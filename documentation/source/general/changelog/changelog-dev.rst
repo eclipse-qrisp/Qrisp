@@ -144,6 +144,10 @@ Bug Fixes
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
 
+* Removed a stray double blank line in ``QubitOperator.simulate``, left behind
+  by an import-hoisting cleanup, which broke ``ruff format --check`` on
+  ``main`` right after merge.
+
 Compatibility
 -------------
 
@@ -175,6 +179,14 @@ API Changes
   helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
+* Renamed the *Split & Cyclic Shift* helper used by
+  :func:`~qrisp.dicke_state` from ``split_cycle_shift`` to
+  ``_split_cycle_shift``, marking it private.  Its parameters were renamed
+  from ``highIndex``/``lowIndex`` to ``n``/``k`` to match the notation of
+  `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
+  implemented is unchanged
+  (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 .. Add API changes above this line
 
@@ -234,6 +246,19 @@ Development
   used to avoid circular imports) and ``E402`` (module-level imports placed
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
+
+* Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
+  ``Hamiltonian`` operator algebra. This exposed two latent bugs:
+  ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,
+  etc.) had their ``cls`` parameter typed as an instance rather than
+  ``type[BlockEncoding]``, and ``Hamiltonian``'s abstract methods were
+  typed as returning ``None``, breaking every subclass override
+  (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
+
+* Added a ``pull_request`` trigger to the ``ruff format --check`` workflow,
+  which previously ran only on pushes to ``main``. This meant formatting
+  regressions were never caught during PR review and only surfaced once
+  merged into ``main``.
 
 Dependency Upgrades
 -------------------
