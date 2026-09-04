@@ -16,6 +16,9 @@
 
 """Defines the Pauli multiplication table and the QubitTerm class representing Pauli tensor products."""
 
+from collections.abc import Mapping
+from types import MappingProxyType
+
 import numpy as np
 from sympy import Symbol
 
@@ -95,25 +98,71 @@ PAULI_TABLE = {
 
 
 class QubitTerm:
-    r""" """
+    """Immutable sparse tensor product of single-qubit factors."""
 
-    def __init__(self, factor_dict={}):
-        self.factor_dict = dict(factor_dict)
+    __slots__ = ("_canonical_factors", "_factor_dict", "_hash", "support_mask", "ladder_mask")
 
-        self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: x[0])))
+    def __init__(self, factor_dict: Mapping[int, str] | None = None) -> None:
+        """Create a term from a mapping of qubit indices to factors."""
+        items = () if factor_dict is None else factor_dict.items()
+        canonical_factors = tuple(sorted((index, factor) for index, factor in items if factor != "I"))
 
-    def update(self, update_dict):
-        self.factor_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
+        # Encode occupied qubit indices as bits for constant-time overlap checks.
+        support_mask = 0
+        ladder_mask = 0
+        for index, factor in canonical_factors:
+            support_mask |= 1 << index
+            if factor in ("A", "C"):
+                ladder_mask |= 1 << index
 
-    def __hash__(self):
-        return self.hash_value
+        object.__setattr__(self, "_canonical_factors", canonical_factors)
+        object.__setattr__(self, "_factor_dict", MappingProxyType(dict(canonical_factors)))
+        object.__setattr__(self, "_hash", hash(canonical_factors))
+        object.__setattr__(self, "support_mask", support_mask)
+        object.__setattr__(self, "ladder_mask", ladder_mask)
 
-    def __eq__(self, other):
-        return self.hash_value == other.hash_value
+    def __setattr__(self, name: str, value: object) -> None:
+        """Reject attribute assignment after construction."""
+        raise AttributeError("QubitTerm instances are immutable")
 
-    def copy(self):
-        return QubitTerm(self.factor_dict.copy())
+    def __delattr__(self, name: str) -> None:
+        """Reject attribute deletion."""
+        raise AttributeError("QubitTerm instances are immutable")
+
+    @property
+    def factor_dict(self) -> Mapping[int, str]:
+        """Return the factors as a read-only mapping ordered by qubit index."""
+        return self._factor_dict
+
+    @property
+    def hash_value(self) -> int:
+        """Return the hash of the canonical factors."""
+        return self._hash
+
+    def _with_factors(self, update_dict: Mapping[int, str]) -> "QubitTerm":
+        """Return a term with factors from ``update_dict`` added or replaced."""
+        factors = dict(self._canonical_factors)
+        factors.update(update_dict)
+        return type(self)(factors)
+
+    def __hash__(self) -> int:
+        """Return the hash of the canonical factors."""
+        return self._hash
+
+    def __eq__(self, other: object) -> bool:
+        """Compare terms by their canonical factors."""
+        if not isinstance(other, QubitTerm):
+            return NotImplemented
+        return self._canonical_factors == other._canonical_factors
+
+    def __reduce__(self) -> tuple[type, tuple[dict[int, str]]]:
+        """Return the constructor data used to pickle this term."""
+        return type(self), (dict(self._canonical_factors),)
+
+    # TODO: Remove this compatibility method in the next breaking API release.
+    def copy(self) -> "QubitTerm":
+        """Return this immutable term."""
+        return self
 
     def is_identity(self):
         return len(self.factor_dict) == 0
@@ -706,49 +755,23 @@ class QubitTerm:
         a = self.factor_dict
         b = other.factor_dict
 
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
+        if len(a) > len(b):
+            a, b = b, a
 
-        for key in keys:
-            if not PAULI_TABLE[a.get(key, "I"), b.get(key, "I")] == PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]:
+        for key, factor_a in a.items():
+            factor_b = b.get(key, "I")
+            if PAULI_TABLE[factor_a, factor_b] != PAULI_TABLE[factor_b, factor_a]:
                 return False
         return True
 
-    def intersect(self, other):
+    def intersect(self, other: "QubitTerm") -> bool:
         """Checks if two QubitTerms operate on the same qubit."""
-        return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
+        return bool(self.support_mask & other.support_mask)
 
-    def ladders_agree(self, other):
-        """Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
+    def ladders_agree(self, other: "QubitTerm") -> bool:
+        """Check if both terms have ladder operators at the same qubits."""
+        return self.ladder_mask == other.ladder_mask
 
-        Parameters
-        ----------
-        other : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
-        return set(ladder_indices_self) == set(ladder_indices_other)
-
-    def ladders_intersect(self, other):
-        """Checks if the ladder operators of two QubitTerms operate on the same qubit.
-
-        Parameters
-        ----------
-        other : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
-        return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
+    def ladders_intersect(self, other: "QubitTerm") -> bool:
+        """Check if both terms have a ladder operator at any common qubit."""
+        return bool(self.ladder_mask & other.ladder_mask)

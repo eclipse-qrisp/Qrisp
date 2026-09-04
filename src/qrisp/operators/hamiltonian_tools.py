@@ -16,9 +16,14 @@
 
 """Graph-coloring utilities for grouping Hamiltonian terms and batched expectation-value measurement."""
 
-import networkx as nx
+from collections.abc import Callable, Sequence
+from typing import TypeVar
+
 import numba as nb
 import numpy as np
+import numpy.typing as npt
+
+T = TypeVar("T")
 
 
 def multi_hamiltonian_measurement(
@@ -91,7 +96,22 @@ def multi_hamiltonian_measurement(
 
 
 @nb.njit(cache=True)
-def rlf_coloring(num_vertices, adjacency_matrix):
+def _rlf_coloring(num_vertices: int, adjacency_matrix: npt.NDArray[np.int8]) -> npt.NDArray[np.int64]:
+    """Color a graph with the recursive largest first heuristic.
+
+    Parameters
+    ----------
+    num_vertices : int
+        Number of vertices in the graph.
+    adjacency_matrix : numpy.ndarray
+        Square matrix whose nonzero entries denote graph edges.
+
+    Returns
+    -------
+    numpy.ndarray
+        Integer color assigned to each vertex.
+
+    """
     colors = np.full(num_vertices, -1)
     uncolored_vertices = np.arange(num_vertices)
 
@@ -120,7 +140,22 @@ def rlf_coloring(num_vertices, adjacency_matrix):
 
 
 @nb.njit(cache=True)
-def dsatur_coloring(num_vertices, adjacency_matrix):
+def _dsatur_coloring(num_vertices: int, adjacency_matrix: npt.NDArray[np.int8]) -> npt.NDArray[np.int64]:
+    """Color a graph with the DSATUR heuristic.
+
+    Parameters
+    ----------
+    num_vertices : int
+        Number of vertices in the graph.
+    adjacency_matrix : numpy.ndarray
+        Square matrix whose nonzero entries denote graph edges.
+
+    Returns
+    -------
+    numpy.ndarray
+        Integer color assigned to each vertex.
+
+    """
     colors = np.full(num_vertices, -1)
     saturation_degrees = np.zeros(num_vertices, dtype=np.int64)
     uncolored_vertices = np.arange(num_vertices)
@@ -179,14 +214,25 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
     return colors
 
 
-def find_coloring(G):
-    if len(G) == 0:
+def _find_coloring(adjacency_matrix: npt.NDArray[np.int8]) -> npt.NDArray[np.int64] | list[int]:
+    """Choose the better coloring produced by the available heuristics.
+
+    Parameters
+    ----------
+    adjacency_matrix : numpy.ndarray
+        Square matrix whose nonzero entries denote graph edges.
+
+    Returns
+    -------
+    numpy.ndarray or list[int]
+        Integer color assigned to each vertex, or an empty list for an empty graph.
+
+    """
+    if len(adjacency_matrix) == 0:
         return []
 
-    adjacency_matrix = nx.to_numpy_array(G)
-
-    coloring_1 = rlf_coloring(len(G), adjacency_matrix)
-    coloring_2 = dsatur_coloring(len(G), adjacency_matrix)
+    coloring_1 = _rlf_coloring(len(adjacency_matrix), adjacency_matrix)
+    coloring_2 = _dsatur_coloring(len(adjacency_matrix), adjacency_matrix)
 
     if np.max(coloring_1) < np.max(coloring_2):
         return coloring_1
@@ -194,18 +240,31 @@ def find_coloring(G):
         return coloring_2
 
 
-def group_up_iterable(iterable, group_denominator):
-    G = nx.Graph()
+def group_up_iterable(iterable: Sequence[T], group_denominator: Callable[[T, T], bool]) -> list[list[T]]:
+    """Partition items into groups according to a pairwise compatibility predicate.
+
+    Parameters
+    ----------
+    iterable : collections.abc.Sequence
+        Items to partition.
+    group_denominator : collections.abc.Callable
+        Returns ``True`` when two items may share a group.
+
+    Returns
+    -------
+    list[list[T]]
+        Groups in which every pair satisfies ``group_denominator``.
+
+    """
+    adjacency_matrix = np.zeros((len(iterable), len(iterable)), dtype=np.int8)
 
     for i in range(len(iterable)):
-        G.add_node(i)
-        for j in range(len(iterable)):
-            if i == j:
-                continue
+        for j in range(i + 1, len(iterable)):
             if not group_denominator(iterable[i], iterable[j]):
-                G.add_edge(i, j)
+                adjacency_matrix[i, j] = 1
+                adjacency_matrix[j, i] = 1
 
-    coloring = find_coloring(G)
+    coloring = _find_coloring(adjacency_matrix)
 
     if len(coloring) == 0:
         return []
@@ -214,8 +273,7 @@ def group_up_iterable(iterable, group_denominator):
     for i in range(np.max(coloring) + 1):
         groups.append([])
 
-    node_list = list(G.nodes())
-    for i in range(len(G)):
-        groups[coloring[i]].append(iterable[node_list[i]])
+    for i in range(len(iterable)):
+        groups[coloring[i]].append(iterable[i])
 
     return groups
