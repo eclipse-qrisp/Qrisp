@@ -61,6 +61,11 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
+  docstring examples, and sped up ``significant()``, ``init_from()``, and
+  ``encode(..., rounding=True)`` (now O(1))
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
 Other New Features
 ------------------
 
@@ -164,6 +169,11 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
+* Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
+  exponents silently produced a ``jax.Array`` exponent instead of a plain
+  ``int`` outside tracing, crashing later negative ``2**exponent`` calls
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
 Compatibility
 -------------
 
@@ -172,6 +182,11 @@ Compatibility
   plain Python integers (i.e. outside of Jasp tracing).  The latter previously
   produced an incorrect state silently
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* :class:`~qrisp.QuantumFloat` methods now raise specific exception types
+  (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
+  generic ``Exception``. Code using ``except Exception:`` is unaffected
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 .. Add compatibility notes above this line
 
