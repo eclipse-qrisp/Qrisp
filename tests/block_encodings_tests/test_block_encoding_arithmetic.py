@@ -270,6 +270,7 @@ def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
 
     assert isinstance(product, ProductBlockEncoding)
     assert product.factors == (first, second, third)
+    assert product.strategy == "separate"
     assert product.alpha == 30
     assert product.num_ancs == first.num_ancs + second.num_ancs + third.num_ancs
     assert [template.qv_size for template in product._anc_templates] == [2, 1, 1]
@@ -280,6 +281,33 @@ def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
         product.factors = ()
     with pytest.raises(AttributeError):
         product._factors = ()
+
+
+def test_block_encoding_product_supports_qubit_efficient_strategy_placeholder():
+    """Verify that the qubit-efficient strategy is explicit and currently a no-op."""
+    calls = []
+
+    def factor_unitary(ancilla, operand):
+        calls.append("factor")
+
+    factor = BlockEncoding(1, [QuantumBool()], factor_unitary)
+    product = ProductBlockEncoding([factor], strategy="qubit_efficient")
+
+    assert product.strategy == "qubit_efficient"
+    product.unitary(*product.create_ancillas(), QuantumVariable(1))
+    assert calls == []
+
+    leaves, treedef = tree_flatten(product)
+    reconstructed = tree_unflatten(treedef, leaves)
+    assert reconstructed.strategy == "qubit_efficient"
+    assert reconstructed.dagger().strategy == "qubit_efficient"
+
+    with pytest.raises(ValueError, match="Unknown product strategy"):
+        ProductBlockEncoding([factor], strategy="unknown")
+    with pytest.raises(AttributeError):
+        product.strategy = "separate"
+    with pytest.raises(AttributeError):
+        product._strategy = "separate"
 
 
 def test_block_encoding_product_applies_factors_in_reverse_order():

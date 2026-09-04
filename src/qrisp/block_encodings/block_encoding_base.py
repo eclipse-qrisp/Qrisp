@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from types import NotImplementedType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
@@ -1618,6 +1618,7 @@ class BlockEncoding:
 _LCUTerm = tuple[ArrayLike, BlockEncoding]
 _LCUTerms = tuple[_LCUTerm, ...]
 _ProductFactors = tuple[BlockEncoding, ...]
+_ProductStrategy = Literal["separate", "qubit_efficient"]
 
 
 def _is_statically_zero(value: Any) -> bool:
@@ -1838,9 +1839,25 @@ class ProductBlockEncoding(BlockEncoding):
     reverse order, so ``A @ B`` applies ``B`` before ``A``. Each factor keeps
     its own ancillas; no ancilla reuse is assumed.
 
+    Parameters
+    ----------
+    factors : Sequence[BlockEncoding]
+        Block-encoding factors in mathematical order.
+    strategy : {"separate", "qubit_efficient"}
+        Unitary implementation strategy. ``"separate"`` is the default and
+        uses separate ancillas for every factor. ``"qubit_efficient"`` is a
+        placeholder for the future qubit-efficient implementation.
+
     """
 
-    def __init__(self, factors: Sequence[BlockEncoding]) -> None:
+    def __init__(
+        self,
+        factors: Sequence[BlockEncoding],
+        strategy: _ProductStrategy = "separate",
+    ) -> None:
+        if strategy not in ("separate", "qubit_efficient"):
+            raise ValueError(f"Unknown product strategy: {strategy}")
+
         flattened_factors: list[BlockEncoding] = []
         for factor in factors:
             if not isinstance(factor, BlockEncoding):
@@ -1855,17 +1872,23 @@ class ProductBlockEncoding(BlockEncoding):
             raise ValueError("All product factors must have the same number of operands.")
 
         self._factors = tuple(flattened_factors)
+        self._strategy = strategy
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Prevent reassignment of the authoritative factor representation."""
-        if name == "_factors" and hasattr(self, "_factors"):
-            raise AttributeError("Product factors are immutable.")
+        if name in {"_factors", "_strategy"} and hasattr(self, name):
+            raise AttributeError("Product representation is immutable.")
         object.__setattr__(self, name, value)
 
     @property
     def factors(self) -> _ProductFactors:
         """The immutable product factors in mathematical order."""
         return self._factors
+
+    @property
+    def strategy(self) -> _ProductStrategy:
+        """The unitary implementation strategy used by the product."""
+        return self._strategy
 
     @property
     def alpha(self) -> ArrayLike:
@@ -1881,8 +1904,14 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def unitary(self) -> Callable[..., None]:
-        """Return the unitary that composes the factor unitaries."""
-        # TODO: Implement qubit-efficient strategies from: https://arxiv.org/pdf/2509.15779
+        """Return the unitary selected by the product implementation strategy."""
+        if self.strategy == "qubit_efficient":
+            return self._unitary_qubit_efficient
+        return self._unitary_separate
+
+    @property
+    def _unitary_separate(self) -> Callable[..., None]:
+        """Return the unitary that composes factors with separate ancillas."""
         factor_ancilla_counts = tuple(factor.num_ancs for factor in self.factors)
 
         def unitary(*args):
@@ -1897,6 +1926,15 @@ class ProductBlockEncoding(BlockEncoding):
 
             for factor, factor_ancillas in reversed(factor_args):
                 factor.unitary(*factor_ancillas, *operands)
+
+        return unitary
+
+    @property
+    def _unitary_qubit_efficient(self) -> Callable[..., None]:
+        """Return the placeholder for the future qubit-efficient implementation."""
+
+        def unitary(*args):
+            pass
 
         return unitary
 
@@ -1920,17 +1958,20 @@ class ProductBlockEncoding(BlockEncoding):
 
     def dagger(self) -> ProductBlockEncoding:
         """Return the product dagger with reversed, individually inverted factors."""
-        return ProductBlockEncoding(tuple(factor.dagger() for factor in reversed(self.factors)))
+        return ProductBlockEncoding(
+            tuple(factor.dagger() for factor in reversed(self.factors)),
+            strategy=self.strategy,
+        )
 
-    def tree_flatten(self) -> tuple[_ProductFactors, None]:
+    def tree_flatten(self) -> tuple[_ProductFactors, _ProductStrategy]:
         """Flatten the authoritative product factors for JAX pytree handling."""
-        return self.factors, None
+        return self.factors, self.strategy
 
     @classmethod
     def tree_unflatten(
         cls: type[ProductBlockEncoding],
-        aux_data: None,
+        aux_data: _ProductStrategy,
         children: tuple[BlockEncoding, ...],
     ) -> ProductBlockEncoding:
         """Reconstruct a product from flattened factors."""
-        return cls(children)
+        return cls(children, strategy=aux_data)
