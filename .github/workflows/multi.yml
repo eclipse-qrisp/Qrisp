@@ -1,17 +1,10 @@
-name: Qrisp unit tests via Pytest
+name: Qrisp unit tests via Pytest Windows and macOS
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-    branches:
-      - main
   push:
     branches:
       - main
+      - multiple_enviroments
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         # Actual dimensions that need to be multiplied out
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.11.*", "3.12.*"]
+        os: [macos-latest, windows-latest]
+        python-version: ["3.11.*", "3.12.*", "3.13.*"]
         test-group-name: [core, algorithms-and-integrations]
 
         include:
@@ -38,8 +31,6 @@ jobs:
             test-group-paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
 
           # Assign pip-extras based on OS type
-          - os: ubuntu-latest
-            pip-extras: "[dev,catalyst,xdsl,iqm]"
           - os: macos-latest
             pip-extras: "[dev,catalyst,xdsl,iqm]"
           - os: windows-latest
@@ -58,14 +49,14 @@ jobs:
     steps:  
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[all]"
-      - name: Test with pytest (${{ matrix.test-group.name }})
+          pip install -e ".${{ matrix.pip-extras }}"
+      - name: Test with pytest (${{ matrix.test-group-name }})
         run: |
           pytest ${{ matrix.test-group-paths }} ${{ matrix.pytest-flags }}

@@ -69,18 +69,25 @@ docs = [
 dev-code-style = [
     "ruff==0.16.4",
 ]
-dev-testing = [
+dev-testing-windows = [
     "pytest==9.1.1",
     "pytest-cov>=6.0",
     "qiskit-aer",
-    "pyscf",
     "cirq",
     "tqecd",
     "iqm-client[qrisp]",
 ]
+dev-testing = [
+    "qrisp[dev-testing-windows]",
+    "pyscf",
+]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
 ]
+dev-windows = [
+    "qrisp[dev-code-style, dev-testing-windows]",
+]
+
 # aqt is intentionally excluded from `all` because qiskit-aqt-provider ships a
 # pytest plugin (qiskit_aqt_provider.test.fixtures) that fails to load when
 # pytest-httpx is not installed, breaking any pytest invocation. 
