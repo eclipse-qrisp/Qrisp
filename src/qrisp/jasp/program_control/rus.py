@@ -16,6 +16,7 @@
 
 """Implements the RUS (repeat-until-success) decorator for quantum subroutines."""
 
+import functools
 import inspect
 
 from qrisp.jasp import (
@@ -274,6 +275,7 @@ def RUS(*trial_function, **jit_kwargs):
     # to collect the output QuantumVariable object.
     # From the infered output signature the q_while_loop is constructed
 
+    @functools.wraps(trial_function)
     def return_function(*trial_args):
 
         # Filter out the static arguments
