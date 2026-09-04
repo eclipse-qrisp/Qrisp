@@ -31,7 +31,7 @@ Improvements
   reuse one shared ancilla workspace, including for heterogeneous ancilla
   layouts. Block-encoding linear combinations can be constructed explicitly with
   :meth:`~qrisp.block_encodings.BlockEncoding.linear_combination`
-  (`PR #832 <https://github.com/eclipse-qrisp/Qrisp/pull/832>`_).
+  (`PR #865 <https://github.com/eclipse-qrisp/Qrisp/pull/865>`_).
 
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
