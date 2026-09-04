@@ -161,6 +161,7 @@ html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
+    "community_day": [],
     # "tutorial": [],
     "tutorial/*": ["sidebar-nav-bs"],
     "auto_examples/index": [],

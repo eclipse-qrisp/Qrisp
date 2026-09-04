@@ -499,6 +499,7 @@ Qrisp is an open-source project developed across organizations. We are open to a
    reference/index
    reference/Development Guide/index
    general/setup
+   general/community_day
    general/papers/index
    general/changelog/index
    general/imprint
