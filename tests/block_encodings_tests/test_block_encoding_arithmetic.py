@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumBool, QuantumFloat, QuantumVariable, jaspify, measure, terminal_sampling, x
-from qrisp.block_encodings import BlockEncoding
+from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -166,8 +166,10 @@ def test_block_encoding_flattened_linear_combination():
     BE_chain = coefficients[0] * BE1 + coefficients[1] * BE2 + coefficients[2] * BE3
     BE_direct = BlockEncoding.linear_combination([BE1, BE2, BE3], coefficients=coefficients)
 
-    assert len(BE_chain._lcu_terms) == 3
-    assert len(BE_direct._lcu_terms) == 3
+    assert isinstance(BE_chain, LinearCombinationBlockEncoding)
+    assert isinstance(BE_direct, LinearCombinationBlockEncoding)
+    assert len(BE_chain.terms) == 3
+    assert len(BE_direct.terms) == 3
     assert BE_chain._anc_templates[0].qv_size == 2
     # A linear combination of block encodings has exactly 2 ancillas:
     # one for the LCU selection and one for the workspace.
@@ -175,8 +177,9 @@ def test_block_encoding_flattened_linear_combination():
 
     leaves, treedef = tree_flatten(BE_chain)
     reconstructed = tree_unflatten(treedef, leaves)
-    assert len(reconstructed._lcu_terms) == 3
-    assert len((reconstructed + BE1)._lcu_terms) == 4
+    assert isinstance(reconstructed, LinearCombinationBlockEncoding)
+    assert len(reconstructed.terms) == 3
+    assert len((reconstructed + BE1).terms) == 4
 
     H_target = coefficients[0] * H1 + coefficients[1] * H2 + coefficients[2] * H3
     BE_target = BlockEncoding.from_operator(H_target)
@@ -211,6 +214,27 @@ def test_block_encoding_linear_combination_validates_inputs():
 
     with pytest.raises(ValueError, match="same number of operands"):
         BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
+
+
+def test_linear_combination_block_encoding_has_immutable_derived_representation():
+    """Verify that LCU terms are authoritative and exposed immutably."""
+    first = BlockEncoding(2, [], lambda operand: None, is_hermitian=True)
+    second = BlockEncoding(3, [], lambda operand: None, is_hermitian=True)
+    combination = BlockEncoding.linear_combination([first, second], coefficients=[4, -1])
+
+    assert isinstance(combination, LinearCombinationBlockEncoding)
+    assert isinstance(combination.terms, tuple)
+    assert combination.alpha == 11
+    assert combination.num_ops == 1
+    assert combination.num_ancs == 2
+    assert combination.is_hermitian
+
+    with pytest.raises(TypeError):
+        combination.terms[0] = (1, first)
+    with pytest.raises(AttributeError):
+        combination.terms = ()
+    with pytest.raises(AttributeError):
+        combination._terms = ()
 
 
 def test_block_encoding_lcu_reuses_heterogeneous_ancillas():

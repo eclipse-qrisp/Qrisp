@@ -283,7 +283,6 @@ class BlockEncoding:
         self.num_ancs = len(ancillas)
         # More robust than inferring the number of operands for the unitary via inspect.
         self.num_ops = num_ops
-        self._lcu_terms = None
 
     def tree_flatten(self):
         """PyTree flatten for JAX.
@@ -295,20 +294,6 @@ class BlockEncoding:
             the digits array, and `aux_data` is `None`.
 
         """
-        if self._lcu_terms is not None:
-            children = tuple(
-                [self.alpha, self._anc_templates]
-                + [value for coefficient, block_encoding in self._lcu_terms for value in (coefficient, block_encoding)]
-            )
-            aux_data = (
-                self.unitary,
-                self.num_ops,
-                self.is_hermitian,
-                "lcu_terms",
-                len(self._lcu_terms),
-            )
-            return (children, aux_data)
-
         children = (
             self.alpha,
             self._anc_templates,
@@ -337,18 +322,6 @@ class BlockEncoding:
             Reconstructed instance.
 
         """
-        if aux_data[-2:-1] == ("lcu_terms",):
-            terms = [(children[2 * index + 2], children[2 * index + 3]) for index in range(aux_data[-1])]
-            result = cls(
-                children[0],
-                children[1],
-                aux_data[0],
-                num_ops=aux_data[1],
-                is_hermitian=aux_data[2],
-            )
-            result._lcu_terms = terms
-            return result
-
         return cls(*children, *aux_data)
 
     #
@@ -1069,9 +1042,7 @@ class BlockEncoding:
     #
 
     def _get_lcu_terms(self):
-        if self._lcu_terms is None:
-            return [(1, self)]
-        return self._lcu_terms
+        return ((1, self),)
 
     @classmethod
     def linear_combination(
@@ -1127,120 +1098,13 @@ class BlockEncoding:
 
     @classmethod
     def _from_lcu_terms(cls, terms):
-        """Build one block-encoding from a flattened list of weighted terms.
-
-        Each term is a ``(coefficient, block_encoding)`` pair. If the child
-        block-encoding represents ``A_i / alpha_i``, the combined LCU uses
-        ``coefficient * alpha_i`` as the coefficient of its child unitary.
-        The resulting normalization is therefore
-        ``sum(abs(coefficient * alpha_i))``.
-
-        The child ancillas are packed into one shared workspace after one
-        selector register. The workspace is sized to the largest child layout,
-        and each selected branch reconstructs its typed ancillas as views into
-        that workspace. Since the selector chooses exactly one child unitary,
-        nested sums can be lowered to one preparation/select/preparation
-        sequence.
-        The term list is retained on the result so subsequent arithmetic can
-        extend it instead of rebuilding a binary LCU tree.
-
-        Parameters
-        ----------
-        terms : list[tuple[ArrayLike, BlockEncoding]]
-            Weighted block-encoding terms. All terms must have the same
-            operand count.
-
-        Returns
-        -------
-        BlockEncoding
-            A block-encoding of the weighted sum.
-
-        """
-        num_ops = terms[0][1].num_ops
-        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
-            raise ValueError("All block-encodings must have the same number of operands.")
-
+        """Build a linear-combination block encoding from weighted terms."""
+        terms = tuple(terms)
         if len(terms) == 1:
             coefficient, block_encoding = terms[0]
             if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
                 return block_encoding
-
-            def unitary(*args):
-                block_encoding.unitary(*args)
-                with control(coefficient < 0):
-                    gphase(np.pi, args[0][0])
-
-            result = cls(
-                jnp.abs(coefficient * block_encoding.alpha),
-                block_encoding._anc_templates,
-                unitary,
-                num_ops=block_encoding.num_ops,
-                is_hermitian=block_encoding.is_hermitian,
-            )
-            result._lcu_terms = terms
-            return result
-
-        selector_size = (len(terms) - 1).bit_length()
-        term_layouts = [_AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in terms]
-
-        # All LCU branches are selected exclusively, so their ancillas can share
-        # one flat workspace. The helper uses jnp.maximum for static and dynamic
-        # sizes alike, keeping this allocation strategy uniform under Jasp.
-        shared_anc_size = _maximum_layout_size(term_layouts)
-
-        # The shared register is allocated once. Each branch below reconstructs
-        # its original typed ancillas as views into the prefix it actually uses.
-        shared_anc_template = QuantumVariable(shared_anc_size).template()
-        new_anc_templates = [QuantumFloat(selector_size).template(), shared_anc_template]
-
-        def unitary(*args):
-            selector = args[0]
-            shared_ancilla = args[1]
-            branches = []
-
-            for term_index, (_, block_encoding) in enumerate(terms):
-                child_ancillas = term_layouts[term_index].construct_views(shared_ancilla)
-
-                def branch(
-                    *branch_args,
-                    block_encoding=block_encoding,
-                    child_ancillas=child_ancillas,
-                ):
-                    block_encoding.unitary(*child_ancillas, *branch_args)
-
-                branches.append(branch)
-
-            def identity_branch(*unused_args):
-                pass
-
-            branches.extend([identity_branch] * ((1 << selector_size) - len(branches)))
-            operands = args[2:]
-            coefficients = jnp.array(
-                [coefficient * block_encoding.alpha for coefficient, block_encoding in terms],
-                dtype=complex,
-            )
-            coefficients = jnp.pad(coefficients, (0, (1 << selector_size) - len(terms)))
-            alpha = jnp.sum(jnp.abs(coefficients))
-            amplitudes = jnp.sqrt(coefficients / alpha)
-
-            if all(_is_non_negative_real(coefficient) for coefficient, _ in terms):
-                with conjugate(prepare)(selector, jnp.abs(amplitudes)):
-                    q_switch(selector, branches, *operands)
-            else:
-                prepare(selector, amplitudes)
-                q_switch(selector, branches, *operands)
-                with invert():
-                    prepare(selector, jnp.conjugate(amplitudes))
-
-        result = cls(
-            sum(jnp.abs(coefficient * block_encoding.alpha) for coefficient, block_encoding in terms),
-            new_anc_templates,
-            unitary,
-            num_ops=num_ops,
-            is_hermitian=all(block_encoding.is_hermitian for _, block_encoding in terms),
-        )
-        result._lcu_terms = terms
-        return result
+        return LinearCombinationBlockEncoding(terms)
 
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""Returns a BlockEncoding of the sum of two operators.
@@ -1372,7 +1236,7 @@ class BlockEncoding:
         if not isinstance(other, BlockEncoding):
             return NotImplemented
 
-        other_terms = [(-coefficient, block_encoding) for coefficient, block_encoding in other._get_lcu_terms()]
+        other_terms = tuple((-coefficient, block_encoding) for coefficient, block_encoding in other._get_lcu_terms())
         return type(self)._from_lcu_terms(self._get_lcu_terms() + other_terms)
 
     def __mul__(self, other: "ArrayLike") -> BlockEncoding:
@@ -1709,3 +1573,180 @@ class BlockEncoding:
             num_ops=self.num_ops,
             is_hermitian=self.is_hermitian,
         )
+
+
+@register_pytree_node_class
+class LinearCombinationBlockEncoding(BlockEncoding):
+    """A block encoding represented by an immutable tuple of LCU terms."""
+
+    def __init__(self, terms):
+        r"""Initialize a linear-combination block encoding from weighted terms.
+
+        Each term is a ``(coefficient, block_encoding)`` pair. If the child
+        block-encoding represents $A_i / \alpha_i$, the combined LCU uses
+        ``coefficient * child.alpha`` as the coefficient of its child unitary.
+        The resulting normalization is therefore
+        ``sum(abs(coefficient * child.alpha))``.
+
+        The child ancillas are packed into one shared workspace after one
+        selector register. The workspace is sized to the largest child layout,
+        and each selected branch reconstructs its typed ancillas as views into
+        that workspace. Since the selector chooses exactly one child unitary,
+        nested sums are lowered to one preparation/select/preparation sequence.
+        The terms are retained as the immutable authoritative representation;
+        the compiled unitary and metadata are derived from them.
+
+        Parameters
+        ----------
+        terms : tuple[tuple[ArrayLike, BlockEncoding], ...]
+            Weighted block-encoding terms. The terms must be non-empty, and all
+            child block-encodings must have the same number of operands.
+
+        Raises
+        ------
+        ValueError
+            If no terms are supplied or the child operand counts differ.
+        TypeError
+            If a term does not contain a BlockEncoding.
+
+        Notes
+        -----
+        A single term with coefficient ``1`` is returned as the original child
+        by the factory that constructs this class. A single term with another
+        coefficient uses the child's ancillas directly and applies the required
+        phase for a negative coefficient.
+
+        """
+        terms = tuple((coefficient, block_encoding) for coefficient, block_encoding in terms)
+        if len(terms) == 0:
+            raise ValueError("At least one block-encoding is required.")
+        if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
+            raise TypeError("Expected every item to be a BlockEncoding.")
+
+        num_ops = terms[0][1].num_ops
+        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
+            raise ValueError("All block-encodings must have the same number of operands.")
+
+        self._terms = terms
+
+    def __setattr__(self, name, value):
+        """Prevent reassignment of the authoritative term representation."""
+        if name == "_terms" and hasattr(self, "_terms"):
+            raise AttributeError("Linear-combination terms are immutable.")
+        object.__setattr__(self, name, value)
+
+    @property
+    def terms(self):
+        """The immutable weighted child block encodings."""
+        return self._terms
+
+    @property
+    def alpha(self):
+        """Return the normalization derived from the weighted child encodings."""
+        return sum(
+            (jnp.abs(coefficient * block_encoding.alpha) for coefficient, block_encoding in self.terms),
+            jnp.array(0),
+        )
+
+    @property
+    def _anc_templates(self):
+        if len(self.terms) == 1:
+            return list(self.terms[0][1]._anc_templates)
+
+        selector_size = (len(self.terms) - 1).bit_length()
+        term_layouts = [
+            _AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in self.terms
+        ]
+        shared_anc_size = _maximum_layout_size(term_layouts)
+        return [
+            QuantumFloat(selector_size).template(),
+            QuantumVariable(shared_anc_size).template(),
+        ]
+
+    @property
+    def unitary(self):
+        """Return the PREP-SELECT-PREP unitary derived from the terms."""
+        if len(self.terms) == 1:
+            coefficient, block_encoding = self.terms[0]
+
+            def unitary(*args):
+                block_encoding.unitary(*args)
+                with control(coefficient < 0):
+                    gphase(np.pi, args[0][0])
+
+            return unitary
+
+        term_layouts = [
+            _AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in self.terms
+        ]
+        selector_size = (len(self.terms) - 1).bit_length()
+
+        def unitary(*args):
+            selector = args[0]
+            shared_ancilla = args[1]
+            branches = []
+
+            for term_index, (_, block_encoding) in enumerate(self.terms):
+                child_ancillas = term_layouts[term_index].construct_views(shared_ancilla)
+
+                def branch(
+                    *branch_args,
+                    block_encoding=block_encoding,
+                    child_ancillas=child_ancillas,
+                ):
+                    block_encoding.unitary(*child_ancillas, *branch_args)
+
+                branches.append(branch)
+
+            def identity_branch(*unused_args):
+                pass
+
+            branches.extend([identity_branch] * ((1 << selector_size) - len(branches)))
+            operands = args[2:]
+            coefficients = jnp.array(
+                [coefficient * block_encoding.alpha for coefficient, block_encoding in self.terms],
+                dtype=complex,
+            )
+            coefficients = jnp.pad(coefficients, (0, (1 << selector_size) - len(self.terms)))
+            alpha = jnp.sum(jnp.abs(coefficients))
+            amplitudes = jnp.sqrt(coefficients / alpha)
+
+            if all(_is_non_negative_real(coefficient) for coefficient, _ in self.terms):
+                with conjugate(prepare)(selector, jnp.abs(amplitudes)):
+                    q_switch(selector, branches, *operands)
+            else:
+                prepare(selector, amplitudes)
+                q_switch(selector, branches, *operands)
+                with invert():
+                    prepare(selector, jnp.conjugate(amplitudes))
+
+        return unitary
+
+    @property
+    def num_ops(self):
+        """Return the common number of operands in the child encodings."""
+        return self.terms[0][1].num_ops
+
+    @property
+    def num_ancs(self):
+        """Return the number of selector and shared-workspace ancillas."""
+        return len(self._anc_templates)
+
+    @property
+    def is_hermitian(self):
+        """Return whether every child encoding has a Hermitian unitary."""
+        return all(block_encoding.is_hermitian for _, block_encoding in self.terms)
+
+    def _get_lcu_terms(self):
+        return self.terms
+
+    def tree_flatten(self):
+        """Flatten only the authoritative terms for JAX pytree handling."""
+        children = tuple(value for term in self.terms for value in term)
+        return children, len(self.terms)
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        """Reconstruct a linear combination from flattened terms."""
+        terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
+        return cls(terms)
