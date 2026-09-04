@@ -1836,10 +1836,11 @@ class ProductBlockEncoding(BlockEncoding):
     """A block encoding represented by an immutable product of factors.
 
     Factors are stored in mathematical order. The unitary applies them in
-    reverse order, so ``A @ B`` applies ``B`` before ``A``. The default
-    strategy keeps separate ancillas for every factor. The qubit-efficient
-    strategy packs the factor ancillas into one shared workspace and uses a
-    shift register to separate the garbage generated at successive steps.
+    reverse order, so ``A @ B`` applies ``B`` before ``A``. By default, the
+    qubit-efficient strategy packs the factor ancillas into one shared
+    workspace and uses a shift register to separate the garbage generated at
+    successive steps. The separate strategy retains distinct ancillas for
+    every factor.
 
     Parameters
     ----------
