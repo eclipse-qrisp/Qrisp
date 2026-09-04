@@ -32,7 +32,7 @@ from jax.typing import ArrayLike
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
@@ -1836,24 +1836,26 @@ class ProductBlockEncoding(BlockEncoding):
     """A block encoding represented by an immutable product of factors.
 
     Factors are stored in mathematical order. The unitary applies them in
-    reverse order, so ``A @ B`` applies ``B`` before ``A``. Each factor keeps
-    its own ancillas; no ancilla reuse is assumed.
+    reverse order, so ``A @ B`` applies ``B`` before ``A``. The default
+    strategy keeps separate ancillas for every factor. The qubit-efficient
+    strategy packs the factor ancillas into one shared workspace and uses a
+    shift register to separate the garbage generated at successive steps.
 
     Parameters
     ----------
     factors : Sequence[BlockEncoding]
         Block-encoding factors in mathematical order.
     strategy : {"separate", "qubit_efficient"}
-        Unitary implementation strategy. ``"separate"`` is the default and
-        uses separate ancillas for every factor. ``"qubit_efficient"`` is a
-        placeholder for the future qubit-efficient implementation.
+        Unitary implementation strategy. ``"qubit_efficient"`` is the default;
+        it reuses one workspace and records failed factor applications in a
+        shift register. ``"separate"`` uses distinct ancillas for every factor.
 
     """
 
     def __init__(
         self,
         factors: Sequence[BlockEncoding],
-        strategy: _ProductStrategy = "separate",
+        strategy: _ProductStrategy = "qubit_efficient",
     ) -> None:
         if strategy not in ("separate", "qubit_efficient"):
             raise ValueError(f"Unknown product strategy: {strategy}")
@@ -1900,6 +1902,18 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def _anc_templates(self) -> list[QuantumVariableTemplate]:
+        if self.strategy == "qubit_efficient":
+            if len(self.factors) == 1:
+                return list(self.factors[0]._anc_templates)
+            if all(factor.num_ancs == 0 for factor in self.factors):
+                return []
+
+            factor_layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in self.factors)
+            shift_size = (len(self.factors) - 1).bit_length()
+            return [
+                QuantumFloat(shift_size).template(),
+                QuantumVariable(_maximum_layout_size(factor_layouts)).template(),
+            ]
         return [template for factor in self.factors for template in factor._anc_templates]
 
     @property
@@ -1931,10 +1945,51 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def _unitary_qubit_efficient(self) -> Callable[..., None]:
-        """Return the placeholder for the future qubit-efficient implementation."""
+        """Return the unitary using one shared workspace and a shift register."""
+        if len(self.factors) == 1 or all(factor.num_ancs == 0 for factor in self.factors):
+
+            def unitary(*args):
+                operands = args[self.num_ancs :]
+                factor_ancillas = args[: self.num_ancs]
+                for factor in reversed(self.factors):
+                    factor.unitary(*factor_ancillas, *operands)
+
+            return unitary
+
+        factor_layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in self.factors)
 
         def unitary(*args):
-            pass
+            shift_register = args[0]
+            shared_workspace = args[1]
+            operands = args[2:]
+            zero_flag = QuantumBool()
+
+            for factor_index, factor in enumerate(reversed(self.factors)):
+                layout_index = len(self.factors) - 1 - factor_index
+                factor_layout = factor_layouts[layout_index]
+                factor_ancillas = factor_layout.construct_views(shared_workspace)
+
+                # Only the shift-zero sector carries the still-valid product
+                # branch. Other sectors contain garbage from earlier factors.
+                with conjugate(mcx)(shift_register, zero_flag, ctrl_state=0):
+                    with control(zero_flag):
+                        factor.unitary(*factor_ancillas, *operands)
+
+                if factor_index == len(self.factors) - 1 or len(factor_layout.sizes) == 0:
+                    continue
+
+                # Implement |s, w> -> |s + 1, w> for w != 0 and leave w = 0
+                # fixed on the workspace prefix used by this factor. This
+                # reversible permutation moves newly generated garbage out of
+                # shift zero without modifying its workspace value. The
+                # compute-control-uncompute pattern restores the temporary
+                # predicate qubit after every permutation.
+                active_workspace = shared_workspace.reg[: factor_layout.total_size]
+                with conjugate(mcx)(active_workspace, zero_flag, ctrl_state=0):
+                    with control(zero_flag, ctrl_state=0):
+                        shift_register += 1
+
+            zero_flag.delete()
 
         return unitary
 
@@ -1945,7 +2000,9 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def num_ancs(self) -> int:
-        """Return the total number of factor ancillas."""
+        """Return the number of ancilla variables used by the strategy."""
+        if self.strategy == "qubit_efficient":
+            return len(self._anc_templates)
         return sum(factor.num_ancs for factor in self.factors)
 
     @property
