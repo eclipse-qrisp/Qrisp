@@ -767,7 +767,7 @@ class Jaspr(ClosedJaxpr):
         --------
         We create a simple script and inspect the QIR string:
 
-        ::
+        .. code-block:: python
 
             from qrisp import *
             from qrisp.jasp import make_jaspr
@@ -784,8 +784,7 @@ class Jaspr(ClosedJaxpr):
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_qir())
 
-        Yields
-        ------
+        This yields:
 
         .. code-block:: none
 

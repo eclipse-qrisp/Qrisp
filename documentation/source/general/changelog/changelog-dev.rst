@@ -159,6 +159,10 @@ New Tutorials/ Updated Documentation
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
+
 .. Add new tutorials above this line
 
 API Changes
