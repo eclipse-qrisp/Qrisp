@@ -185,6 +185,9 @@ API Changes
 Development
 -----------
 
+* Added a PyZX bidirectional conversion interace
+  (`PR #782 <https://github.com/eclipse-qrisp/Qrisp/pull/782>`_).
+
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
 
@@ -290,6 +293,7 @@ Dependency Upgrades
 First Time Contributors 🎉
 --------------------------
 
+* `philipp-heinen <https://github.com/philipp-heinen>`_
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
