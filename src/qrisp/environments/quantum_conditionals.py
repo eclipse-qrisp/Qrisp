@@ -152,7 +152,7 @@ class ConditionEnvironment(QuantumEnvironment):
     state $\ket{0}$. After this, we apply regular X gates onto ``temp_qv`` such that
     the qubits where the inputs agree, are in state $\ket{1}$. Finally,
     we apply a multi-controlled X gate onto the result to flip the result, if
-    all of qubits of the qubits in ``temp_qv`` are in the $\ket{0}$ state.
+    all of qubits of the qubits in ``temp_qv`` are in the $\ket{1}$ state.
 
     We inspect the resulting QuantumCircuit
 
