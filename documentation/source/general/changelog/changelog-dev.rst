@@ -252,6 +252,10 @@ Development
   regressions were never caught during PR review and only surfaced once
   merged into ``main``.
 
+* Added Python 3.13 support to the CI pipeline according to 
+  (`Issue #823 <https://github.com/eclipse-qrisp/Qrisp/issues/823>`_)
+  (`PR #847 <https://github.com/eclipse-qrisp/Qrisp/pull/847>`_).
+
 Dependency Upgrades
 -------------------
 
