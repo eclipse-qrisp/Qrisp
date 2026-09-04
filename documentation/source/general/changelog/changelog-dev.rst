@@ -22,6 +22,30 @@ New Features
   rejects kernels that return classical values with a descriptive 
   error — use ``terminal_sampling=False`` (the default) for those cases.
 
+- **Backend-based sampling via** ``@backend_sampler``
+  The new :func:`~qrisp.jasp.backend_sampler` decorator routes
+  :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+  calls through a real quantum backend instead of the Jaspify simulator.
+  The quantum circuit is extracted once, executed on the backend for all
+  shots, and the classical post-processing (decoding, accumulator updates,
+  expectation-value computation) is replayed via the Jaspr's own while-loop
+  — compiled through :func:`jax.jit`.
+
+  Key capabilities:
+
+  * Supports any backend implementing the :ref:`Backend Interface <BackendInterface>`.
+  * Handles multiple ``sample()`` / ``expectation_value()`` calls in the
+    same decorated function, each independently routed.
+  * Propagates the backend interception through JAX control-flow
+    primitives (``fori_loop``, ``while_loop``, ``cond``, ``scan``,
+    nested ``jit`` / ``pjit``).
+  * Raises ``RuntimeError`` for kernels containing real-time feedback
+    (mid-circuit measurements whose outcomes control subsequent gates).
+  * Raises ``RuntimeError`` when quantum operations are used without a
+    surrounding ``sample()`` / ``expectation_value()`` call.
+  * Raises ``ValueError`` for a non-positive shot count — including a
+    dynamic one, which only becomes concrete once the backend runs.
+
 Improvements
 ------------
 

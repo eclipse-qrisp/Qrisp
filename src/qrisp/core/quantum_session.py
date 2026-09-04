@@ -208,7 +208,7 @@ class QuantumSession(QuantumCircuit):
 
         """
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-            raise RuntimeError("Variable name " + str(qv.name) + " already exists in quantum session")
+            raise QuantumVariableNamingError("Variable name " + str(qv.name) + " already exists in quantum session")
 
         # Hand qubits to quantum variable
         qv.reg = self.request_qubits(size, name=qv.name)
@@ -1231,3 +1231,7 @@ class QuantumSession(QuantumCircuit):
         self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 
         return list(self.qs_tracker)
+
+
+class QuantumVariableNamingError(Exception):
+    """The error to be thrown when a QuantumVariable already exists in a QuantumSession"""
